@@ -162,6 +162,28 @@ def parse_mp(path: str):
                             extra=[s[1] for s in slots],
                             tail_bytes=body - w * h * 3)
                 return info
+    # Variant C (observed on ToTPP-era AnticChina.MP, proven 2026-11-01):
+    # 8-byte header = w, h, u16 real count, u16 maps; then a 90-byte front
+    # blob; then real*6 bytes of stored tiles (3-byte data slot + 3-byte pad
+    # slot, pad = word 0x0001/0x003F + extra 0xF0|bits); then real bytes of
+    # per-tile flags (mostly 0). Stored grid is dense w/2 x h (display w = 2x).
+    if len(data) >= 8:
+        w, h = struct.unpack_from("<HH", data, 0)
+        real, maps = struct.unpack_from("<HH", data, 4)
+        if (w and h and w % 2 == 0 and maps == 1
+                and (w // 2) * h == real
+                and len(data) == 98 + 6 * real + real):
+            tiles, extra, pad = [], [], []
+            for t in range(real):
+                o = 98 + 6 * t
+                tiles.append(data[o] | (data[o + 1] << 8))
+                extra.append(data[o + 2])
+                pad.append(data[o + 3] | (data[o + 4] << 8))
+            info.update(layout="tot_paired_slot", header_bytes=98, width=w // 2,
+                        height=h, display_width=w, real_tiles=real, maps=maps,
+                        tiles=tiles, extra=extra, pad_words=pad,
+                        per_tile_flags=data[98 + 6 * real:98 + 7 * real])
+            return info
     # Variant B (classic Civ2 MP): 4-byte header, word per slot.
     for hdr in (4, 8, 2, 0):
         if len(data) < hdr + 4:
@@ -236,6 +258,46 @@ def render_mp(mp, names, out_png, scale=4):
         write_png(out_png, w * scale, h * scale, rows)
         return {"decode": decode,
                 "river_tiles": rivers,
+                "terrain_histogram": {str(k): v for k, v in
+                                      sorted(hist.items(), key=lambda kv: -kv[1])[:12]},
+                "png": out_png}
+
+    if mp.get("layout") == "tot_paired_slot":
+        # AnticChina.MP flavor (ToTPP-era): dense stored grid, word =
+        # terrain | river(0x80) | special(0x40) | improvement(0x3000);
+        # verified spatially 2026-11-01 (Yellow River/Yangtze networks,
+        # coastal specials, improvement clusters in river valleys).
+        def terr(i):
+            return tiles[i] & 0x7F
+
+        hist, rivers, specials, imps = {}, 0, 0, 0
+        for i in range(w * h):
+            t = tiles[i] & 0x3F
+            hist[t] = hist.get(t, 0) + 1
+            if tiles[i] & 0x80:
+                rivers += 1
+            if tiles[i] & 0x40:
+                specials += 1
+            if tiles[i] & 0x3000:
+                imps += 1
+        rows = []
+        for y in range(h):
+            row = bytearray()
+            for x in range(w):
+                i = y * w + x
+                if tiles[i] & 0x3000:
+                    rgb = (35, 35, 35)          # improvement flag
+                elif tiles[i] & 0x80:
+                    rgb = (0, 170, 230)         # river
+                else:
+                    rgb = terrain_color(terr(i), names)
+                row.extend(rgb * scale)
+            rows.extend([row] * scale)
+        write_png(out_png, w * scale, h * scale, rows)
+        return {"decode": "paired-slot: terrain=word&0x3F, river=0x80, "
+                          "special=0x40, improvement=0x3000",
+                "river_tiles": rivers, "special_tiles": specials,
+                "improvement_tiles": imps,
                 "terrain_histogram": {str(k): v for k, v in
                                       sorted(hist.items(), key=lambda kv: -kv[1])[:12]},
                 "png": out_png}

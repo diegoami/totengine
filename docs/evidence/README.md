@@ -12,6 +12,7 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 | `world-mp.png` / `world-mp.json` | `totctl map World.mp --rules Rules.txt` | ToT world map rendered to PNG (terrain-colored, voids black) |
 | `world-mp-rivers.png` | `totctl map World.mp --scale 3` | River overlay (word bit `0x80`) — dendritic Earth river networks |
 | `romfall-scnmap.png` | `totctl scnmap FallRome/ROMFALL.scn` | Embedded scenario map with river/road/railroad overlays |
+| `anticchina-map.png` | `totctl map Scenario/china/AnticChina.MP` | ToTPP-era paired-slot `.MP` flavor: China with river networks + improvement flags |
 | `romfall-walk.json` | `totctl save ROMFALL.scn` | Structural walk of a classic scenario (ToT 1.1, `0x0032`) |
 | `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked with base-format offsets |
 | `va-autosave-diff.json` | `totctl diff Va_Auto2.SAV Va_Auto.SAV` | Annotated diff of two real autosaves (oracle-methodology demo) |
@@ -120,6 +121,34 @@ and the ROMFALL_{ERE,HUN,VIS} variants:
    defaults `--rules`; `--scale` on renders; new `scnmap` subcommand renders the
    embedded scenario map with river/road/railroad overlays (artifacts:
    `romfall-scnmap.png`, `warring-states-scnmap.png` where applicable).
+
+## T0-8 findings (2026-11-01/02, fourth probe session)
+
+**`AnticChina.MP` (ToTPP-era `.MP` flavor) decoded** — artifact:
+`anticchina-map.png` + `golden/anticchina-reject.json` (now a parse result).
+
+1. **Layout:** `u16 display_width=224, u16 height=250, u16 real=28000,
+   u16 maps=1` + a 90-byte front blob (`44 ae 38 00 3f 00` + 84×`0xFF`) +
+   `6 × real` tile bytes + `real` per-tile flag bytes. Exact:
+   `196,098 = 98 + 7×28,000`.
+2. **Per stored tile: 6 bytes = [data slot][pad slot].** Data slot = `u16`
+   word + 1 extra byte (0x00/0xA0 observed); pad slot = word `0x0001`/`0x003F`
+   + extra `0xF0|bits`. The stored grid is dense `112×250` (display width 224
+   = 2× stored — the ToT half-tile display convention, matching the SCN map
+   headers).
+3. **Data word = terrain | flags**, unifying with the stock `.MP` word:
+   terrain = `word & 0x3F` (Warring States' own `Rules.txt` uses ids > 10:
+   Town, Nomad Settlement, Deep Desert…), special resource = `0x40`
+   (2,008 tiles — coastal clustering, fish-type specials *are* stored in this
+   flavor), river = `0x80` (3,454 tiles), improvement flag = `0x3000`
+   (304 tiles, 43% river-adjacent; exact meaning open).
+4. **Verified spatially:** the decoded 112×250 grid renders as China — the
+   Yellow River and Yangtze `0x80`-river networks, ocean east, Himalaya
+   mountain chains west, `0x3000` improvement clusters in the river valleys.
+5. **Open:** pad-slot low bits, the per-tile flag byte (mostly 0; values 1
+   [240×] and 2 [180×] observed — start-position candidates), the 90-byte
+   front blob (mirrors the stock format's 90-byte *tail*).
+
 
 
 ## Reproduce

@@ -9,6 +9,7 @@ installation and reads its data files directly.
 
 | Document | Purpose |
 |---|---|
+| [BACKLOG.md](BACKLOG.md) | Working queue: epics, stories, priorities, acceptance criteria |
 | [docs/feasibility.md](docs/feasibility.md) | Evidence-based feasibility evaluation: formats, prior art, risks, effort, value assessment, verdict |
 | [docs/plan.md](docs/plan.md) | Phased implementation plan: architecture, milestones, testing strategy |
 | [docs/evidence/](docs/evidence/) | Tier-0 probe results — measured format findings, rendered map, save walks |

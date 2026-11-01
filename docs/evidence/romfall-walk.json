@@ -1,0 +1,102 @@
+{
+  "file": "/mnt/d/games/CIVTOT/FallRome/ROMFALL.scn",
+  "size": 203227,
+  "magic": "CIVILIZE",
+  "version_raw": "0x0032",
+  "version": "ToT 1.1",
+  "unit_transport_relationships": {
+    "offset": 12,
+    "size": 640
+  },
+  "menu": {
+    "offset": 652,
+    "size": 16
+  },
+  "game": {
+    "offset": 668,
+    "size": 38,
+    "turn": 0,
+    "year": 5159
+  },
+  "technologies": {
+    "offset": 706,
+    "size": 200,
+    "first_discovered_count": 56,
+    "discovered_mask_popcount": 187
+  },
+  "wonders": {
+    "offset": 906,
+    "size": 56,
+    "built": 10,
+    "destroyed": 1
+  },
+  "unknown_288": {
+    "offset": 962,
+    "size": 288
+  },
+  "civ_names": [
+    [
+      "Valentianus III",
+      "West Romans",
+      "West Roman"
+    ],
+    [
+      "Hengist",
+      "ief",
+      "Anglo-Saxons",
+      "Anglo-Saxon"
+    ],
+    [
+      "Chlodwig",
+      "Francs",
+      "Franc"
+    ],
+    [
+      "Genseric",
+      "Vandals",
+      "Vandal"
+    ],
+    [
+      "Theodoric I",
+      "Visigoths",
+      "Visigoth"
+    ],
+    [
+      "Theodosius II",
+      "I",
+      "Byzantines",
+      "ns"
+    ],
+    [
+      "Rugila",
+      "Huns",
+      "ls",
+      "Hun"
+    ]
+  ],
+  "civ_properties": {
+    "offset": 2944,
+    "size": 26784
+  },
+  "transporters": {
+    "offset": 29728,
+    "fixed": 172,
+    "first_short": 0,
+    "guessed_count": 0
+  },
+  "map_header": {
+    "offset": 29900,
+    "values": [
+      150,
+      120,
+      9000,
+      1,
+      16908,
+      38,
+      30,
+      0
+    ]
+  },
+  "map_note": "fields 6&7 (1-based) multiply into a following blob per Mercator; maps repeat the data block in ToT",
+  "remaining_after_map_header": 173311
+}

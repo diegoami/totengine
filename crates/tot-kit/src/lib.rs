@@ -1,0 +1,12 @@
+//! `tot-kit` — Civilization II: Test of Time data-format readers and writers.
+//!
+//! Every reader documents what is *proven* (verified against the local install
+//! and recorded in `docs/evidence/`) versus what is still open. Writers must
+//! round-trip through the original game before they count as done (T1-8).
+//!
+//! Provenance: layout findings live in `docs/evidence/README.md`; the external
+//! structural spec is Mercator's Apolyton thread (see `docs/plan.md` §7).
+
+mod mp;
+
+pub use mp::{parse_mp, parse_mp_file, MpFormat, MpMap};

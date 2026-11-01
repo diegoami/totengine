@@ -51,11 +51,12 @@ game-design features before T4.
 └────────────────────────────────────────────────────────────┘
 ```
 
-**Stack recommendation:** Rust for `tot-kit`/engine/sim (safety, serde for the JSON
-tooling, `mlua` for Lua 5.3 with exact-version pinning, `sdl2` or `wgpu` for the
-client) — *or* C++17 if contributor affinity dictates. The decision is formally made
-at the end of Phase 0; the Phase-0 prototype (already started under `tools/`, in
-Python) is a **reference probe**, not the production language.
+**Stack decision (T0-5, 2026-11-01): Rust** — recorded with rationale in
+[`docs/decisions/0001-language.md`](decisions/0001-language.md). The workspace
+(`crates/tot-kit|engine|lua-host|totctl|totui`) is scaffolded with the proven
+`.MP` decoder already ported and cross-validated against the Python probe;
+CI (`.github/workflows/ci.yml`) runs fmt + clippy + tests on every push. The
+Python probes remain the fast RE loop until T0-9's golden tests flip ownership.
 
 **Why embed exactly Lua 5.3.6:** verified `lua.dll` in the local ToTPP install is
 Lua 5.3.6; scenario scripts exercise 5.3 semantics.
@@ -135,6 +136,8 @@ oracle/          Wine automation: launch, key macros (xdotool), save capture
 
 ## 7. Key references (collected)
 
+- **ToTPP Lua API (machine-readable, offline):** [`docs/refs/totpp-api-zerobrane.lua`](refs/totpp-api-zerobrane.lua)
+  — the full `civ.*`/`totpp.*` contract for Tier 3, with behavioral notes
 - **SAV/SCN structural spec:** Mercator's Apolyton thread "Civilization II SAV/SCN
   file format" (section sizes for ToT; transport-site block decoded by Catfish;
   settler work-point bytes by AGRICOLA) —

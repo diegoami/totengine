@@ -1,0 +1,8 @@
+[package]
+name = "tot-kit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Civilization II: Test of Time format readers and writers (Rules.txt, .MP, .SAV/.SCN)"
+
+[dependencies]

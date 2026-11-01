@@ -1,0 +1,13 @@
+[package]
+name = "totctl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "CLI for civtotre: inspect ToT game data (successor of the Python probe)"
+
+[[bin]]
+name = "totctl"
+path = "src/main.rs"
+
+[dependencies]
+tot-kit = { path = "../tot-kit" }

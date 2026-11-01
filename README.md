@@ -31,10 +31,20 @@ installation and reads its data files directly.
 
 ## Status
 
-**Tier 0 started — first tool works against real game data.**
+**Tier 0 in progress** — backlog burn-down started (see [BACKLOG.md](BACKLOG.md)):
+
+- Engine language decided: **Rust** ([decision 0001](docs/decisions/0001-language.md));
+  workspace scaffolded (`crates/tot-kit|engine|lua-host|totctl|totui`), CI on
+  fmt + clippy + tests
+- `.MP` decoder ported to Rust, cross-validated against the Python probe
+- ToTPP Lua API contract collected offline ([docs/refs/](docs/refs/))
+- SAV/SCN walker: front sections + city blocks + unit-count arithmetic proven
 
 ```bash
-# format probe: Rules.txt / .MP maps / .SAV+.SCN walks / save diffs
+# Rust CLI (successor of the Python probe)
+cargo run -- mp /mnt/d/games/CIVTOT/World.mp
+
+# Python format probe: Rules.txt / .MP maps / .SAV+.SCN walks / save diffs
 python3 tools/totctl.py rules /mnt/d/games/CIVTOT/Rules.txt -o /tmp/rules.json
 python3 tools/totctl.py map   /mnt/d/games/CIVTOT/World.mp \
         --rules /mnt/d/games/CIVTOT/Rules.txt -o /tmp/world.png --json /tmp/world.json

@@ -98,5 +98,64 @@
     ]
   },
   "map_note": "fields 6&7 (1-based) multiply into a following blob per Mercator; maps repeat the data block in ToT",
-  "remaining_after_map_header": 173311
+  "sections_derived": {
+    "map_data": {
+      "offset": 29916,
+      "size": 117002,
+      "per_map": 117002,
+      "maps": 1
+    },
+    "blob_2ab": {
+      "offset": 146918,
+      "size": 2280
+    },
+    "blob_10240": {
+      "offset": 149198,
+      "size": 10240,
+      "note": "mostly zeros in ROMFALL"
+    }
+  },
+  "cities": {
+    "offset": 187872,
+    "count": 146,
+    "record_size": 92,
+    "size": 13432,
+    "chain_found": 146,
+    "names": [
+      "Roma",
+      "Brundisium",
+      "Syracusae",
+      "Rhegium",
+      "Ravenna",
+      "Corfinium",
+      "Neapolis",
+      "Mediolanum",
+      "Salonea",
+      "Tyras",
+      "Olbia",
+      "Panticapaeum",
+      "Theodosia",
+      "Chersonesus",
+      "Carteia",
+      "Hispalis",
+      "Tingis",
+      "Sala",
+      "Rusaddir",
+      "Carthago"
+    ],
+    "names_total_named": 146,
+    "note": "name field 16 B at record start (verified ROMFALL: Roma first); trailing unnamed records possible; per-field decode is open"
+  },
+  "units": {
+    "region": [
+      159438,
+      187872
+    ],
+    "size": 28434,
+    "record_size": 40,
+    "preamble_bytes": 34,
+    "count": 710,
+    "count_arithmetic": "28434 = 34 + 40 x 710",
+    "note": "count via exact region arithmetic (preamble 34 B + 40 B records); per-record field semantics still open \u2014 x/y-like columns at record bytes 6-10, see docs/evidence/README.md"
+  }
 }

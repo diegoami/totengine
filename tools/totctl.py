@@ -324,8 +324,78 @@ def walk_save(path: str) -> dict:
     pos += 16
     out["map_note"] = ("fields 6&7 (1-based) multiply into a following blob per "
                        "Mercator; maps repeat the data block in ToT")
-    # do not blindly consume variable map data in this probe; report remaining
-    out["remaining_after_map_header"] = len(data) - pos
+    if ver == 0x0032:
+        maps, surface = hdr[3], hdr[2]
+        map_data = 13 * surface + 2 if maps else 0
+        blob = 2 * hdr[5] * hdr[6] if maps else 0
+        map_end = pos + maps * map_data + blob
+        blob10240_end = map_end + 10240
+        out["sections_derived"] = {
+            "map_data": {"offset": pos, "size": maps * map_data,
+                         "per_map": map_data, "maps": maps},
+            "blob_2ab": {"offset": pos + maps * map_data, "size": blob},
+            "blob_10240": {"offset": map_end, "size": 10240,
+                           "note": "mostly zeros in ROMFALL"},
+        }
+        # cities: find the 92-byte name grid — candidate printable name
+        # fields (16-byte slot: printable prefix + NUL padding), then the
+        # longest chain of candidates at exactly 92-byte stride.
+        cands = set()
+        i = blob10240_end
+        while i < len(data) - 16:
+            j = data.find(b"\x00", i, i + 16)
+            if 3 <= j - i <= 15:
+                nm = data[i:j]
+                if all(32 <= c < 127 or 0xA0 <= c <= 0xFF for c in nm) and data[i + 15] == 0:
+                    # require the previous record position to exist: the slot
+                    # before a real grid is data, not another name
+                    cands.add(i)
+                    i = j
+            i += 1
+        best_chain = []
+        for s in sorted(cands):
+            if best_chain and s <= best_chain[0] + 92 * (len(best_chain) - 1):
+                continue  # inside an existing chain
+            chain = [s]
+            while chain[-1] + 92 in cands:
+                chain.append(chain[-1] + 92)
+            if len(chain) > len(best_chain):
+                best_chain = chain
+        if len(best_chain) >= 8:
+            probe = best_chain[0]
+            n = (best_chain[-1] - probe) // 92 + 1
+            cities = {"offset": probe, "count": n, "record_size": 92,
+                      "size": n * 92, "chain_found": len(best_chain)}
+            names = []
+            for k in range(n):
+                rec = data[probe + 92 * k: probe + 92 * (k + 1)]
+                nm = rec[:16].split(b"\x00")[0].decode("latin-1", "replace")
+                names.append(nm)
+            cities["names"] = names[:20]
+            cities["names_total_named"] = sum(1 for x in names if x)
+            cities["note"] = ("name field 16 B at record start (verified "
+                              "ROMFALL: Roma first); trailing unnamed records "
+                              "possible; per-field decode is open")
+            out["cities"] = cities
+            u_end = cities["offset"]
+            region = u_end - blob10240_end
+            # Verified on ROMFALL (34 + 710*40 = 28434) and Va_Auto
+            # (34 + 711*40 = 28474): a 34-byte preamble, then 40-byte unit
+            # records. The count is not stored in the preamble (only a
+            # state u16 at +30 differs between scenario and in-game save).
+            unit_count, rem = divmod(region, 40)
+            out["units"] = {
+                "region": [blob10240_end, u_end],
+                "size": region,
+                "record_size": 40,
+                "preamble_bytes": rem,
+                "count": unit_count if rem == 34 else None,
+                "count_arithmetic": f"{region} = {rem} + 40 x {unit_count}",
+                "note": ("count via exact region arithmetic (preamble 34 B + "
+                         "40 B records); per-record field semantics still "
+                         "open — x/y-like columns at record bytes 6-10, "
+                         "see docs/evidence/README.md"),
+            }
     return out
 
 

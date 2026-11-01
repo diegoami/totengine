@@ -1,0 +1,161 @@
+{
+  "file": "/mnt/d/games/CIVTOT/Scenario/FallRome/Va_Auto.SAV",
+  "size": 226336,
+  "magic": "CIVILIZE",
+  "version_raw": "0x0032",
+  "version": "ToT 1.1",
+  "unit_transport_relationships": {
+    "offset": 12,
+    "size": 640
+  },
+  "menu": {
+    "offset": 652,
+    "size": 16
+  },
+  "game": {
+    "offset": 668,
+    "size": 38,
+    "turn": 0,
+    "year": 5159
+  },
+  "technologies": {
+    "offset": 706,
+    "size": 200,
+    "first_discovered_count": 56,
+    "discovered_mask_popcount": 187
+  },
+  "wonders": {
+    "offset": 906,
+    "size": 56,
+    "built": 10,
+    "destroyed": 1
+  },
+  "unknown_288": {
+    "offset": 962,
+    "size": 288
+  },
+  "civ_names": [
+    [
+      "Valentianus III",
+      "West Romans",
+      "West Roman"
+    ],
+    [
+      "Hengist",
+      "ief",
+      "Anglo-Saxons",
+      "Anglo-Saxon"
+    ],
+    [
+      "Chlodwig",
+      "Francs",
+      "Franc"
+    ],
+    [
+      "Genseric",
+      "Vandals",
+      "Vandal"
+    ],
+    [
+      "Theodoric I",
+      "Visigoths",
+      "Visigoth"
+    ],
+    [
+      "Theodosius II",
+      "I",
+      "Byzantines",
+      "ns"
+    ],
+    [
+      "Rugila",
+      "Huns",
+      "ls",
+      "Hun"
+    ]
+  ],
+  "civ_properties": {
+    "offset": 2944,
+    "size": 26784
+  },
+  "transporters": {
+    "offset": 29728,
+    "fixed": 172,
+    "first_short": 0,
+    "guessed_count": 0
+  },
+  "map_header": {
+    "offset": 29900,
+    "values": [
+      150,
+      120,
+      9000,
+      1,
+      16908,
+      38,
+      30,
+      0
+    ]
+  },
+  "map_note": "fields 6&7 (1-based) multiply into a following blob per Mercator; maps repeat the data block in ToT",
+  "sections_derived": {
+    "map_data": {
+      "offset": 29916,
+      "size": 117002,
+      "per_map": 117002,
+      "maps": 1
+    },
+    "blob_2ab": {
+      "offset": 146918,
+      "size": 2280
+    },
+    "blob_10240": {
+      "offset": 149198,
+      "size": 10240,
+      "note": "mostly zeros in ROMFALL"
+    }
+  },
+  "cities": {
+    "offset": 187912,
+    "count": 146,
+    "record_size": 92,
+    "size": 13432,
+    "chain_found": 146,
+    "names": [
+      "Roma",
+      "Brundisium",
+      "Syracusae",
+      "Rhegium",
+      "Ravenna",
+      "Corfinium",
+      "Neapolis",
+      "Mediolanum",
+      "Salonea",
+      "Tyras",
+      "Olbia",
+      "Panticapaeum",
+      "Theodosia",
+      "Chersonesus",
+      "Carteia",
+      "Hispalis",
+      "Tingis",
+      "Sala",
+      "Rusaddir",
+      "Carthago"
+    ],
+    "names_total_named": 146,
+    "note": "name field 16 B at record start (verified ROMFALL: Roma first); trailing unnamed records possible; per-field decode is open"
+  },
+  "units": {
+    "region": [
+      159438,
+      187912
+    ],
+    "size": 28474,
+    "record_size": 40,
+    "preamble_bytes": 34,
+    "count": 711,
+    "count_arithmetic": "28474 = 34 + 40 x 711",
+    "note": "count via exact region arithmetic (preamble 34 B + 40 B records); per-record field semantics still open \u2014 x/y-like columns at record bytes 6-10, see docs/evidence/README.md"
+  }
+}

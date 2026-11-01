@@ -53,6 +53,36 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
    where turn/year live. This is the oracle methodology of docs/plan.md working
    end-to-end on day one.
 
+## T0-6 findings (2026-11-01, second probe session)
+
+`totctl save` now walks deep into `0x32` saves. Verified on ROMFALL.scn, Va_Auto.SAV
+and the ROMFALL_{ERE,HUN,VIS} variants:
+
+1. **Section arithmetic closes exactly.** After the map header at 29,916:
+   map data `13×9000+2 = 117,002` → blob `2×38×30 = 2,280` → `10,240` blob ends at
+   **159,438**, which is precisely where ROMFALL's long zero run ends.
+2. **`turn`/`year` proven.** Offset 668/670: ROMFALL turn 0 → Va_Auto2 turn 1 with
+   year 5159 → 5164 (+5/turn for FallRome's 5-year turns); Warring States starts
+   year −4000. The field is a turn counter — the *display* year ladder
+   (Game.txt/initial settings) is still to be mapped.
+3. **City block fully located.** 92-byte records, 16-byte name at record start;
+   ROMFALL: **146 cities** (all named), Roma first, block [187,872, 201,304).
+   One grid member, *Arsinoë* (Latin-1 `0xEB`), breaks ASCII-only scanning — the
+   walker accepts Latin-1. Pre-name bytes belong to the previous record's tail
+   (city-size-like shorts: Roma 29, Ravenna 8, Lambaesis 1 … per-field decode open).
+4. **Unit section bounds & count via exact arithmetic.** Region between the 10,240
+   blob and the city block: ROMFALL `28,434 = 34 + 40×710` and Va_Auto
+   `28,474 = 34 + 40×711` (one more unit in-game — matches the autosave size delta).
+   So: 34-byte preamble + N×40-byte records. The unit count is *not* in the preamble
+   (only a state u16 at +30 changed: 2134 scenario vs 1 in-game).
+5. **Unit field semantics remain open.** Records show x/y-like columns at bytes
+   6–10 (values fit 150×120) and variant bytes at 14–19, but type/owner guesses did
+   not validate — the next step is the in-game cheat screen and/or a
+   move-one-unit save-diff pair. T0-6 stays open for this; see issue #3.
+6. **Va_Auto saved at turn 0 with 711 units vs the scenario's 710** — consistent
+   with a SCENARIOLOADED event creating a unit on load (Events.txt has
+   CREATEUNIT-on-load logic); worth confirming via the events interpreter in T1-7.
+
 ## Reproduce
 
 ```bash

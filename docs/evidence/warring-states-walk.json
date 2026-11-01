@@ -96,6 +96,5 @@
       1
     ]
   },
-  "map_note": "fields 6&7 (1-based) multiply into a following blob per Mercator; maps repeat the data block in ToT",
-  "remaining_after_map_header": 882811
+  "map_note": "fields 6&7 (1-based) multiply into a following blob per Mercator; maps repeat the data block in ToT"
 }

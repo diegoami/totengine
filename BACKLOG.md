@@ -54,7 +54,7 @@ SHA. The process: [docs/milestone-review.md](docs/milestone-review.md). Suggeste
 | T0-3 | ~~SAV/SCN structural walker + autosave differ~~ (done for front sections) | P0 | M | H | done | ROMFALL walk + 40-byte unit-record delta demonstrated |
 | T0-4 | Collect ToTPP Lua API reference (CHM/PDF from ToTPP release) + feature docs into `docs/refs/` | P0 | S | E | done | Lua `civ.*` API doc available offline; linked from plan |
 | T0-5 | Language & stack decision (Rust vs C++), repo skeleton, CI on first build | P0 | M | H | done | Decision recorded in `docs/decisions/0001-language.md`; CI green |
-| T0-6 | Extend SAV walker: unit records (40 B) & city records (92 B), count fields, `year` decoding | P0 | M | H | doing | Walk prints full unit/city tables for ROMFALL.scn, verified vs in-game cheatscreen |
+| T0-6 | Extend SAV walker: unit records (40 B) & city records (92 B), count fields, `year` decoding | P0 | M | H | done | Walk prints full unit/city tables for ROMFALL.scn, verified vs in-game cheatscreen |
 | T0-7 | Decode ToTPP `0x33` tail (diff `0x32` vs `0x33` of same scenario) | P0 | L | H | todo | Warring States autosave walks fully; layout documented |
 | T0-8 | `AnticChina.MP` variant decode (ToTPP-era MP flavor) | P1 | S | H | done | File parses + renders; layout note in evidence |
 | T0-9 | Golden-file harness: parse-corpus tests over local scenarios (FallRome ×8, Midgard, china ×3) | P1 | M | E | done | `make test` re-generates & compares evidence corpus |

@@ -149,6 +149,41 @@ and the ROMFALL_{ERE,HUN,VIS} variants:
    [240×] and 2 [180×] observed — start-position candidates), the 90-byte
    front blob (mirrors the stock format's 90-byte *tail*).
 
+## T0-6 findings (2026-11-02, fifth probe session — unit & city records decoded)
+
+Controlled experiments over ROMFALL + its playable-civ variants (ERE/HUN/VIS)
++ the Va_Auto session pair closed the unit/city records:
+
+1. **Unit record (40 B) field map, proven:**
+   - `u16@6 = x`, `u16@8 = y` on the **logical** 150×120 grid
+   - `u8@14 = unit type` — index into the scenario's `Rules.txt @UNITS`
+     (ROMFALL's 39 distinct types map to sensible rosters: WRE/ERE Legion &
+     Infantry, Hun Warrior, B. Warriors …)
+   - `u8@15 = owner` — **civ 0 = barbarians, civs 1–7 = the players**
+     (`civ_names[n-1]`), bit `0x10` = leader unit (the single owner-16 unit
+     is *Pope Leo I*)
+   - `u16@36 = unit id` — **re-assigned on every save** (ROMFALL_ERE differs
+     from ROMFALL in bytes 36–37 of all 710 units and *nothing else*; the
+     HUN/VIS variants additionally swap exactly one unit record — the
+     playable-civ flavor unit)
+2. **City record (92 B): `u16@58 = x`, `u16@60 = y`** (logical grid, same
+   space as units); tail shorts @86–91 = (5, 5, size) — Roma = 29.
+3. **The map geometry is settled.** The terrain grid stored in the map
+   section is **75×120 dense** (`hdr0/2 × hdr1`); unit/city coordinates live
+   on the **logical 150×120** grid. Mapping (proven by a unique alignment
+   optimum): `sx = (x − (y&1))//2 − 1, sy = y` — diamond tiles spanning 2
+   logical columns with 2 border columns at the west edge.
+4. **Verification (stronger than the planned cheat-screen eyeball):**
+   - 145/146 cities have a garrison unit on their exact tile;
+   - under the diamond mapping, 141/145 cities sit on land, 0 on ocean
+     (4 on desert — North-African cities), at the unique optimum dx=−1;
+   - all 32 ship-type units sit on ocean tiles, all 678 ground units on land;
+   - ROMFALL vs ROMFALL_ERE: zero content differences beyond per-save ids.
+5. **The Va_Auto/Va_Auto2 autosaves are from different play sessions** (the
+   id ranges 2..711 vs 1452..2171 prove re-registration) — they are *not* a
+   clean one-turn diff pair; true same-session pairs need the T0-10 oracle.
+
+
 
 
 ## Reproduce

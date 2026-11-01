@@ -9,7 +9,8 @@ installation and reads its data files directly.
 
 | Document | Purpose |
 |---|---|
-| [BACKLOG.md](BACKLOG.md) | Working queue: epics, stories, priorities, acceptance criteria |
+| [BACKLOG.md](BACKLOG.md) | Working queue: epics, stories, difficulty, acceptance criteria |
+| [docs/milestone-review.md](docs/milestone-review.md) | Release process: independent milestone review, AGREE/BLOCK verdict, tag-on-reviewed-SHA |
 | [docs/feasibility.md](docs/feasibility.md) | Evidence-based feasibility evaluation: formats, prior art, risks, effort, value assessment, verdict |
 | [docs/plan.md](docs/plan.md) | Phased implementation plan: architecture, milestones, testing strategy |
 | [docs/evidence/](docs/evidence/) | Tier-0 probe results — measured format findings, rendered map, save walks |

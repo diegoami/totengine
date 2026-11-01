@@ -37,6 +37,14 @@ Rules of thumb: anything gated by *oracle parity* is H regardless of size; anyth
 whose acceptance is "it parses/renders and tests pass" is E unless the format itself
 is unknown. An H story that grows two failed attempts gets split before a third.
 
+## Releases & milestone reviews
+
+Releases are tags `vX.Y.Z` on `main`, gated by an independent milestone review before the
+tag — one big review per release by a model family that implemented none of it, verdict
+AGREE/BLOCK on a milestone issue, findings as ordinary issues, tag on exactly the reviewed
+SHA. The process: [docs/milestone-review.md](docs/milestone-review.md). Suggested themes:
+`v0.1.0` = Tier 0 complete, `v0.2.0` = first Tier-1 headless milestone (per plan.md §5).
+
 ## Epic T0 — Format toolchain & reconnaissance (current)
 
 | ID | Story | Pri | Est | Diff | Status | Acceptance |

@@ -37,7 +37,7 @@ malpaco's `docs/milestone-review.md`, which adapted it from Geoclick2027's relea
 
 ## Instructions for the reviewer
 
-You are the independent reviewer of a civtotre release candidate. You implemented none of
+You are the independent reviewer of a ToTEngine release candidate. You implemented none of
 it: verify everything against the code and the data, not commit messages or docs.
 
 **Input.** The milestone issue number. `gh issue view <n> --comments` gives the tag,

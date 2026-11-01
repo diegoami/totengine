@@ -12,7 +12,7 @@ members = [
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-repository = "https://github.com/diegoami/civtotre"
+repository = "https://github.com/diegoami/totengine"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -1,4 +1,4 @@
-# civtotre — Civilization II: Test of Time, recreated
+# ToTEngine — Civilization II: Test of Time, recreated
 
 Goal: an open, cross-platform program that **replicates the gameplay of Civ2: Test
 of Time (ToT)**, with first-class support for the community's **scenarios** (both the

@@ -1,11 +1,11 @@
 # Backlog
 
-Working queue for civtotre. Mirrored on GitHub Issues — epics:
-[#19 Epic T0](https://github.com/diegoami/civtotre/issues/19) ·
-[#20 Epic T1](https://github.com/diegoami/civtotre/issues/20) ·
-[#21 Epic T2](https://github.com/diegoami/civtotre/issues/21) ·
-[#22 Epic T3](https://github.com/diegoami/civtotre/issues/22).
-Story `T0-4` is [issue #1](https://github.com/diegoami/civtotre/issues/1) and so on
+Working queue for ToTEngine. Mirrored on GitHub Issues — epics:
+[#19 Epic T0](https://github.com/diegoami/totengine/issues/19) ·
+[#20 Epic T1](https://github.com/diegoami/totengine/issues/20) ·
+[#21 Epic T2](https://github.com/diegoami/totengine/issues/21) ·
+[#22 Epic T3](https://github.com/diegoami/totengine/issues/22).
+Story `T0-4` is [issue #1](https://github.com/diegoami/totengine/issues/1) and so on
 sequentially through `T1-9` = #18. IDs here are the source of truth; issues are the
 working surface. Strategic context lives in
 [docs/plan.md](docs/plan.md); tiers T0–T4 are defined there.
@@ -19,7 +19,7 @@ a large parser port can be easy (L/E), a small format puzzle can be hard (S/H).
 
 ## Assigning work: difficulty and agents
 
-Two difficulty levels — a civtotre-local convention for picking the agent and its
+Two difficulty levels — a ToTEngine-local convention for picking the agent and its
 effort level. It is deliberately independent of the review process being adopted;
 when stories become harness tasks, the difficulty decides the assignment, the
 harness decides the review.

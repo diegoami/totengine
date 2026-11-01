@@ -1,4 +1,4 @@
-# Implementation Plan — civtotre
+# Implementation Plan — ToTEngine
 
 *Companion to [feasibility.md](feasibility.md). This plan is tiered so that every
 phase ships a standalone, useful artifact — the project produces value long before

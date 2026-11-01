@@ -1,7 +1,13 @@
 # Backlog
 
-Working queue for civtotre. IDs are stable and map 1:1 to GitHub issues when the
-repo is connected (`T0-4` → issue "T0-4 …"). Strategic context lives in
+Working queue for civtotre. Mirrored on GitHub Issues — epics:
+[#19 Epic T0](https://github.com/diegoami/civtotre/issues/19) ·
+[#20 Epic T1](https://github.com/diegoami/civtotre/issues/20) ·
+[#21 Epic T2](https://github.com/diegoami/civtotre/issues/21) ·
+[#22 Epic T3](https://github.com/diegoami/civtotre/issues/22).
+Story `T0-4` is [issue #1](https://github.com/diegoami/civtotre/issues/1) and so on
+sequentially through `T1-9` = #18. IDs here are the source of truth; issues are the
+working surface. Strategic context lives in
 [docs/plan.md](docs/plan.md); tiers T0–T4 are defined there.
 
 Legend — **Pri**: P0 = now, P1 = next, P2 = later · **Est**: S ≤ 1 day, M ≤ 1 week,

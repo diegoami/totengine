@@ -11,38 +11,62 @@ working surface. Strategic context lives in
 [docs/plan.md](docs/plan.md); tiers T0–T4 are defined there.
 
 Legend — **Pri**: P0 = now, P1 = next, P2 = later · **Est**: S ≤ 1 day, M ≤ 1 week,
-L ≤ 1 month (part-time) · **Status**: todo / doing / done.
+L ≤ 1 month (part-time) · **Diff**: E = easy, H = hard (see
+[Assigning work](#assigning-work-difficulty-and-agents)) · **Status**: todo / doing / done.
+
+Estimate is calendar size; difficulty is uncertainty. They are independent:
+a large parser port can be easy (L/E), a small format puzzle can be hard (S/H).
+
+## Assigning work: difficulty and agents
+
+Two difficulty levels — a civtotre-local convention for picking the agent and its
+effort level. It is deliberately independent of the review process being adopted;
+when stories become harness tasks, the difficulty decides the assignment, the
+harness decides the review.
+
+| Diff | Meaning | Agent assignment |
+|------|---------|------------------|
+| **E** | Low uncertainty: mechanical, well-specified, tooling or docs. Format known, acceptance testable in one pass. | `general` agent, standard effort — or `explore` (medium) for pure-research stories. One review pass. |
+| **H** | Reverse-engineering, parity-sensitive engine work, or architectural. Unknowns that only the oracle/experiments resolve. | `general` agent at **high effort**, design note agreed before code. Cross-model review; second opinion on milestone-critical stories. |
+
+Rules of thumb: anything gated by *oracle parity* is H regardless of size; anything
+whose acceptance is "it parses/renders and tests pass" is E unless the format itself
+is unknown. An H story that grows two failed attempts gets split before a third.
+
+Rules of thumb: anything gated by *oracle parity* is H regardless of size; anything
+whose acceptance is "it parses/renders and tests pass" is E unless the format itself
+is unknown. An H story that grows two failed attempts gets split before a third.
 
 ## Epic T0 — Format toolchain & reconnaissance (current)
 
-| ID | Story | Pri | Est | Status | Acceptance |
-|----|-------|-----|-----|--------|------------|
-| T0-1 | ~~Rules.txt parser → JSON summary~~ (done in first probe) | P0 | S | done | `totctl rules` output committed to `docs/evidence/` |
-| T0-2 | ~~`.MP` decode + PNG render~~ (done, proven via biome-latitude check) | P0 | S | done | World.mp renders as Earth; findings in `docs/evidence/` |
-| T0-3 | ~~SAV/SCN structural walker + autosave differ~~ (done for front sections) | P0 | M | done | ROMFALL walk + 40-byte unit-record delta demonstrated |
-| T0-4 | Collect ToTPP Lua API reference (CHM/PDF from ToTPP release) + feature docs into `docs/refs/` | P0 | S | todo | Lua `civ.*` API doc available offline; linked from plan |
-| T0-5 | Language & stack decision (Rust vs C++), repo skeleton, CI on first build | P0 | M | todo | Decision recorded in `docs/decisions/0001-language.md`; CI green |
-| T0-6 | Extend SAV walker: unit records (40 B) & city records (92 B), count fields, `year` decoding | P0 | M | todo | Walk prints full unit/city tables for ROMFALL.scn, verified vs in-game cheatscreen |
-| T0-7 | Decode ToTPP `0x33` tail (diff `0x32` vs `0x33` of same scenario) | P0 | L | todo | Warring States autosave walks fully; layout documented |
-| T0-8 | `AnticChina.MP` variant decode (ToTPP-era MP flavor) | P1 | S | todo | File parses + renders; layout note in evidence |
-| T0-9 | Golden-file harness: parse-corpus tests over local scenarios (FallRome ×8, Midgard, china ×3) | P1 | M | todo | `make test` re-generates & compares evidence corpus |
-| T0-10 | Oracle automation: launch game under Xvfb via Wine, xdotool macro performs one action, capture save, structural diff | P1 | M | todo | Scripted "save→act→save→diff" produces annotated deltas hands-free |
-| T0-11 | `totctl` UX: `CIVTOT_HOME` env, rivers/improvements overlay on map render, `--scale` | P1 | S | todo | Renders show rivers & railroads distinctly |
-| T0-12 | License check of prior-art repos (axx0/Civ2-clone, richardpenman/civ2); record what may be referenced | P2 | S | todo | Note in `docs/prior-art.md`; compliant referencing policy set |
+| ID | Story | Pri | Est | Diff | Status | Acceptance |
+|----|-------|-----|-----|------|--------|------------|
+| T0-1 | ~~Rules.txt parser → JSON summary~~ (done in first probe) | P0 | S | E | done | `totctl rules` output committed to `docs/evidence/` |
+| T0-2 | ~~`.MP` decode + PNG render~~ (done, proven via biome-latitude check) | P0 | S | H | done | World.mp renders as Earth; findings in `docs/evidence/` |
+| T0-3 | ~~SAV/SCN structural walker + autosave differ~~ (done for front sections) | P0 | M | H | done | ROMFALL walk + 40-byte unit-record delta demonstrated |
+| T0-4 | Collect ToTPP Lua API reference (CHM/PDF from ToTPP release) + feature docs into `docs/refs/` | P0 | S | E | todo | Lua `civ.*` API doc available offline; linked from plan |
+| T0-5 | Language & stack decision (Rust vs C++), repo skeleton, CI on first build | P0 | M | H | todo | Decision recorded in `docs/decisions/0001-language.md`; CI green |
+| T0-6 | Extend SAV walker: unit records (40 B) & city records (92 B), count fields, `year` decoding | P0 | M | H | todo | Walk prints full unit/city tables for ROMFALL.scn, verified vs in-game cheatscreen |
+| T0-7 | Decode ToTPP `0x33` tail (diff `0x32` vs `0x33` of same scenario) | P0 | L | H | todo | Warring States autosave walks fully; layout documented |
+| T0-8 | `AnticChina.MP` variant decode (ToTPP-era MP flavor) | P1 | S | H | todo | File parses + renders; layout note in evidence |
+| T0-9 | Golden-file harness: parse-corpus tests over local scenarios (FallRome ×8, Midgard, china ×3) | P1 | M | E | todo | `make test` re-generates & compares evidence corpus |
+| T0-10 | Oracle automation: launch game under Xvfb via Wine, xdotool macro performs one action, capture save, structural diff | P1 | M | H | todo | Scripted "save→act→save→diff" produces annotated deltas hands-free |
+| T0-11 | `totctl` UX: `CIVTOT_HOME` env, rivers/improvements overlay on map render, `--scale` | P1 | S | E | todo | Renders show rivers & railroads distinctly |
+| T0-12 | License check of prior-art repos (axx0/Civ2-clone, richardpenman/civ2); record what may be referenced | P2 | S | E | todo | Note in `docs/prior-art.md`; compliant referencing policy set |
 
 ## Epic T1 — Headless classic-scenario engine
 
-| ID | Story | Pri | Est | Status | Acceptance |
-|----|-------|-----|-----|--------|------------|
-| T1-1 | Typed rules model: all 22 Rules.txt sections → engine structs incl. ToT tables (@TERRAIN1..3, transport relationships) | P1 | L | todo | Round-trips Rules.txt losslessly (text → structs → text) |
-| T1-2 | World state model + deterministic turn kernel skeleton (seeded RNG abstraction) | P1 | L | todo | Headless boot of ROMFALL.scn into state; state checksum reproducible |
-| T1-3 | Movement, terrain costs, zone of control, multi-map slot | P1 | M | todo | Move orders match original outcomes on oracle cases |
-| T1-4 | Cities: food/shields/trade, growth, production queue, specialists, unrest | P1 | L | todo | 50-turn city math matches oracle saves exactly |
-| T1-5 | Research tree, governments, wonders (incl. obsolete-by-tech) | P1 | M | todo | Tech progression parity on scripted runs |
-| T1-6 | Combat: rounds, veterans, walls, terrain bonuses; identify original PRNG & seed | P1 | L | todo | Battle outcome sequences reproduced from same-seed oracle saves |
-| T1-7 | Macro events interpreter (@IF/@THEN, ~50 commands, DELAY heap, JUSTONCE) | P1 | L | todo | FallRome Events.txt fires identically on scripted turns |
-| T1-8 | Save writer: byte-compatible `0x32` .SAV | P1 | L | todo | Original (Wine) loads our save; re-save diff is field-explained |
-| T1-9 | CI milestone job: 50-turn headless FallRome run vs golden saves | P1 | M | todo | Nightly job green; regressions caught |
+| ID | Story | Pri | Est | Diff | Status | Acceptance |
+|----|-------|-----|-----|------|--------|------------|
+| T1-1 | Typed rules model: all 22 Rules.txt sections → engine structs incl. ToT tables (@TERRAIN1..3, transport relationships) | P1 | L | E | todo | Round-trips Rules.txt losslessly (text → structs → text) |
+| T1-2 | World state model + deterministic turn kernel skeleton (seeded RNG abstraction) | P1 | L | H | todo | Headless boot of ROMFALL.scn into state; state checksum reproducible |
+| T1-3 | Movement, terrain costs, zone of control, multi-map slot | P1 | M | H | todo | Move orders match original outcomes on oracle cases |
+| T1-4 | Cities: food/shields/trade, growth, production queue, specialists, unrest | P1 | L | H | todo | 50-turn city math matches oracle saves exactly |
+| T1-5 | Research tree, governments, wonders (incl. obsolete-by-tech) | P1 | M | E | todo | Tech progression parity on scripted runs |
+| T1-6 | Combat: rounds, veterans, walls, terrain bonuses; identify original PRNG & seed | P1 | L | H | todo | Battle outcome sequences reproduced from same-seed oracle saves |
+| T1-7 | Macro events interpreter (@IF/@THEN, ~50 commands, DELAY heap, JUSTONCE) | P1 | L | H | todo | FallRome Events.txt fires identically on scripted turns |
+| T1-8 | Save writer: byte-compatible `0x32` .SAV | P1 | L | H | todo | Original (Wine) loads our save; re-save diff is field-explained |
+| T1-9 | CI milestone job: 50-turn headless FallRome run vs golden saves | P1 | M | E | todo | Nightly job green; regressions caught |
 
 ## Epic T2 — Graphical classic client (planned; stories drafted on entry)
 
@@ -61,3 +85,5 @@ L ≤ 1 month (part-time) · **Status**: todo / doing / done.
   this automatic).
 - Every format claim gets an evidence artifact or oracle test — no folklore.
 - No original game assets in the repo, ever.
+- Difficulty is re-assessed when a story starts; a wrong guess is a finding, not a
+  failure — record it on the story.

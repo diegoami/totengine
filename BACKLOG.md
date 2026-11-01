@@ -52,7 +52,7 @@ SHA. The process: [docs/milestone-review.md](docs/milestone-review.md). Suggeste
 | T0-1 | ~~Rules.txt parser → JSON summary~~ (done in first probe) | P0 | S | E | done | `totctl rules` output committed to `docs/evidence/` |
 | T0-2 | ~~`.MP` decode + PNG render~~ (done, proven via biome-latitude check) | P0 | S | H | done | World.mp renders as Earth; findings in `docs/evidence/` |
 | T0-3 | ~~SAV/SCN structural walker + autosave differ~~ (done for front sections) | P0 | M | H | done | ROMFALL walk + 40-byte unit-record delta demonstrated |
-| T0-4 | Collect ToTPP Lua API reference (CHM/PDF from ToTPP release) + feature docs into `docs/refs/` | P0 | S | E | todo | Lua `civ.*` API doc available offline; linked from plan |
+| T0-4 | Collect ToTPP Lua API reference (CHM/PDF from ToTPP release) + feature docs into `docs/refs/` | P0 | S | E | done | Lua `civ.*` API doc available offline; linked from plan |
 | T0-5 | Language & stack decision (Rust vs C++), repo skeleton, CI on first build | P0 | M | H | todo | Decision recorded in `docs/decisions/0001-language.md`; CI green |
 | T0-6 | Extend SAV walker: unit records (40 B) & city records (92 B), count fields, `year` decoding | P0 | M | H | doing | Walk prints full unit/city tables for ROMFALL.scn, verified vs in-game cheatscreen |
 | T0-7 | Decode ToTPP `0x33` tail (diff `0x32` vs `0x33` of same scenario) | P0 | L | H | todo | Warring States autosave walks fully; layout documented |

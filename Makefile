@@ -1,6 +1,7 @@
 .PHONY: test rust fmt clippy evidence-regen evidence-check
 
-CARGO ?= cargo
+# prefer cargo on PATH, fall back to the rustup default location
+CARGO := $(shell command -v cargo 2>/dev/null || echo $$HOME/.cargo/bin/cargo)
 
 rust:
 	$(CARGO) test --workspace

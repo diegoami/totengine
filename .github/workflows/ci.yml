@@ -33,5 +33,7 @@ jobs:
           python-version: "3.12"
       - name: Compile check
         run: python3 -m py_compile tools/totctl.py
+      - name: Golden corpus (self-skips without CIVTOT_HOME)
+        run: bash tools/golden.sh check
       # Golden-file tests over the local corpus run only where the game is
       # installed (T0-9 will wire CIVTOT_HOME-aware skips into the same suite).

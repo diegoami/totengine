@@ -1,0 +1,100 @@
+{
+  "file": "@HOME@/Scenario/china/Warring States.scn",
+  "size": 912727,
+  "magic": "CIVILIZE",
+  "version_raw": "0x0033",
+  "version": "ToT 1.1 + ToTPP (extended)",
+  "note": "ToTPP-extended save: section sizes differ beyond the base walk; offsets below are base-format guesses",
+  "unit_transport_relationships": {
+    "offset": 12,
+    "size": 640
+  },
+  "menu": {
+    "offset": 652,
+    "size": 16
+  },
+  "game": {
+    "offset": 668,
+    "size": 38,
+    "turn": 1,
+    "year": -4000
+  },
+  "technologies": {
+    "offset": 706,
+    "size": 200,
+    "first_discovered_count": 75,
+    "discovered_mask_popcount": 77
+  },
+  "wonders": {
+    "offset": 906,
+    "size": 56,
+    "built": 5,
+    "destroyed": 0
+  },
+  "unknown_288": {
+    "offset": 962,
+    "size": 288
+  },
+  "civ_names": [
+    [
+      "Xiao",
+      "r",
+      "Qin",
+      "Qin"
+    ],
+    [
+      "Su",
+      "Zhao",
+      "Zhao"
+    ],
+    [
+      "Xuan",
+      "Chu",
+      "Chu"
+    ],
+    [
+      "Hui",
+      "Wei",
+      "Wei"
+    ],
+    [
+      "Wen",
+      "Yan",
+      "Yan"
+    ],
+    [
+      "Xi",
+      "Han",
+      "Han"
+    ],
+    [
+      "Wei",
+      "Qi",
+      "Qi"
+    ]
+  ],
+  "civ_properties": {
+    "offset": 2944,
+    "size": 26784
+  },
+  "transporters": {
+    "offset": 29728,
+    "fixed": 172,
+    "first_short": 512,
+    "guessed_count": 512
+  },
+  "map_header": {
+    "offset": 29900,
+    "values": [
+      224,
+      250,
+      28000,
+      1,
+      -20924,
+      56,
+      63,
+      1
+    ]
+  },
+  "map_note": "fields 6&7 (1-based) multiply into a following blob per Mercator; maps repeat the data block in ToT"
+}

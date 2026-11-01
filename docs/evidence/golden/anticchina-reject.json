@@ -1,0 +1,5 @@
+{
+  "file": "@HOME@/Scenario/china/AnticChina.MP",
+  "size": 196098,
+  "error": "no known layout fits: sizes tried tot_3byte_slot (8 + 3*w*h) and classic_2byte (hdr + 2*w*h)"
+}

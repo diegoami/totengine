@@ -44,11 +44,16 @@ installation and reads its data files directly.
 # Rust CLI (successor of the Python probe)
 cargo run -- mp /mnt/d/games/CIVTOT/World.mp
 
+# Full local suite: Rust tests + Python probe + golden evidence corpus
+export CIVTOT_HOME=/mnt/d/games/CIVTOT   # golden part self-skips when unset
+make test
+make evidence-regen                       # after an intentional format change
+
 # Python format probe: Rules.txt / .MP maps / .SAV+.SCN walks / save diffs
-python3 tools/totctl.py rules /mnt/d/games/CIVTOT/Rules.txt -o /tmp/rules.json
-python3 tools/totctl.py map   /mnt/d/games/CIVTOT/World.mp \
-        --rules /mnt/d/games/CIVTOT/Rules.txt -o /tmp/world.png --json /tmp/world.json
-python3 tools/totctl.py save  /mnt/d/games/CIVTOT/FallRome/ROMFALL.scn -o /tmp/walk.json
+python3 tools/totctl.py rules $CIVTOT_HOME/Rules.txt -o /tmp/rules.json
+python3 tools/totctl.py map   World.mp -o /tmp/world.png --json /tmp/world.json
+python3 tools/totctl.py scnmap FallRome/ROMFALL.scn -o /tmp/romfall.png
+python3 tools/totctl.py save  FallRome/ROMFALL.scn -o /tmp/walk.json
 python3 tools/totctl.py diff  <a.sav> <b.sav> -o /tmp/diff.json
 ```
 

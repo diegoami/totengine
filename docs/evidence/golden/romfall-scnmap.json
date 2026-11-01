@@ -1,0 +1,32 @@
+{
+  "png": "@TMP@/romfall-scnmap.png",
+  "stored_dims": [
+    75,
+    120
+  ],
+  "display_dims": [
+    150,
+    120
+  ],
+  "overlay_counts": {
+    "river": 210,
+    "road": 3369,
+    "rail": 413,
+    "terrain": {
+      "10": 2768,
+      "2": 1050,
+      "3": 1448,
+      "4": 870,
+      "7": 2,
+      "1": 1756,
+      "6": 43,
+      "74": 70,
+      "5": 70,
+      "8": 57,
+      "9": 65,
+      "0": 800,
+      "12": 1
+    }
+  },
+  "decode": "map byte4: terrain|river(0x80); map byte2: road(0x40), rail(0x80) \u2014 proven ROMFALL 2026-11-01"
+}

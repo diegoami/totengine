@@ -13,9 +13,13 @@ separately; this probe exists to validate format assumptions fast.
 
 Usage:
   totctl rules  <Rules.txt> [-o out.json]
-  totctl map    <file.mp>  [-o out.png] [--json out.json]
+  totctl map    <file.mp>  [-o out.png] [--json out.json] [--scale N]
+  totctl scnmap <file.scn> [-o out.png] [--json out.json] [--scale N]
   totctl save   <file.sav|scn> [-o out.json]
   totctl diff   <a.sav> <b.sav> [-o out.json]
+
+Relative input paths resolve against $CIVTOT_HOME when set (e.g.
+CIVTOT_HOME=/mnt/d/games/CIVTOT totctl map World.mp).
 """
 from __future__ import annotations
 
@@ -25,6 +29,14 @@ import os
 import struct
 import sys
 import zlib
+
+
+def resolve(path: str) -> str:
+    """Resolve an input path against $CIVTOT_HOME when relative."""
+    home = os.environ.get("CIVTOT_HOME")
+    if home and not os.path.isabs(path):
+        return os.path.join(home, path)
+    return path
 
 # --------------------------------------------------------------------------
 # generic helpers
@@ -190,19 +202,24 @@ def render_mp(mp, names, out_png, scale=4):
     w, h, tiles = mp["width"], mp["height"], mp["tiles"]
     extra = mp.get("extra")
     if mp.get("layout") == "tot_3byte_slot" and extra is not None:
-        # verified on ToT World.mp: terrain = word & 0x7F (bit 0x80 = special
-        # resource), void = extra byte & 0xF0; improvement bits in the rest.
+        # verified on ToT World.mp: terrain = word & 0x7F (bit 0x80 = RIVER,
+        # proven 2026-11-01: bit-0x80 tiles form dendritic chains matching
+        # Earth's rivers — Mississippi, African and Australian networks), void
+        # = extra byte & 0xF0. Special resources are NOT stored in .MP files.
         def is_void(i):
             return (extra[i] & 0xF0) != 0
 
         def terr(i):
             return tiles[i] & 0x7F
 
-        decode = "verified: word&0x7F, void=extra&0xF0"
+        decode = "verified: word&0x7F, river=word&0x80, void=extra&0xF0"
         hist = {}
+        rivers = 0
         for i in range(w * h):
             if not is_void(i):
                 hist[terr(i)] = hist.get(terr(i), 0) + 1
+                if tiles[i] & 0x80:
+                    rivers += 1
         rows = []
         for y in range(h):
             row = bytearray()
@@ -210,12 +227,15 @@ def render_mp(mp, names, out_png, scale=4):
                 i = y * w + x
                 if is_void(i):
                     rgb = (10, 10, 14)
+                elif tiles[i] & 0x80:
+                    rgb = (0, 170, 230)  # river: bright blue, distinct from ocean
                 else:
                     rgb = terrain_color(terr(i), names)
                 row.extend(rgb * scale)
             rows.extend([row] * scale)
         write_png(out_png, w * scale, h * scale, rows)
         return {"decode": decode,
+                "river_tiles": rivers,
                 "terrain_histogram": {str(k): v for k, v in
                                       sorted(hist.items(), key=lambda kv: -kv[1])[:12]},
                 "png": out_png}
@@ -337,6 +357,56 @@ def walk_save(path: str) -> dict:
             "blob_10240": {"offset": map_end, "size": 10240,
                            "note": "mostly zeros in ROMFALL"},
         }
+        # ---- embedded map decode (proven on ROMFALL, 2026-11-01) ----
+        # Per map: Visible Improvements (7 B/tile) + Map (6 B/tile); a 2-byte
+        # resource seed follows all maps (Mercator ToC). The stored grid is
+        # dense: width hdr0/2 x hdr1 = surface tiles (ROMFALL 75x120=9000,
+        # while hdr0=150 is the display width -- ToT tiles span 2 columns).
+        # Map tile: byte 4 = terrain | river(0x80) (same encoding as .MP
+        # words); byte 2 = improvements: 0x40 road, 0x80 railroad (verified
+        # spatially: roads form the empire-wide network, rails the dense
+        # Italy/Gaul core). Other bytes open.
+        if maps:
+            stored_w, stored_h = hdr[0] // 2, hdr[1]
+            out["map_decode"] = {"stored_dims": [stored_w, stored_h],
+                                 "display_dims": [hdr[0], hdr[1]],
+                                 "dense": stored_w * stored_h == surface,
+                                 "per_map": []}
+            for m in range(maps):
+                base = pos + m * map_data + 2  # +2 proven before tiles (ROMFALL)
+                imp0 = base
+                mp0 = base + 7 * surface
+                terr_hist: dict[int, int] = {}
+                river = road = rail = 0
+                vis_nz = [0] * 7
+                for t in range(surface):
+                    t6 = data[mp0 + 6 * t + 4]
+                    imp6 = data[mp0 + 6 * t + 2]
+                    terr_hist[t6 & 0x7F] = terr_hist.get(t6 & 0x7F, 0) + 1
+                    if t6 & 0x80:
+                        river += 1
+                    if imp6 & 0x40:
+                        road += 1
+                    if imp6 & 0x80:
+                        rail += 1
+                    for j in range(7):
+                        if data[imp0 + 7 * t + j]:
+                            vis_nz[j] += 1
+                out["map_decode"]["per_map"].append({
+                    "map_index": m,
+                    "improvements_offset": mp0,
+                    "terrain_histogram": {str(k): v for k, v in
+                                          sorted(terr_hist.items(),
+                                                 key=lambda kv: -kv[1])[:12]},
+                    "river_tiles": river, "road_tiles": road,
+                    "railroad_tiles": rail,
+                    "visibility_nonzero_per_civ": vis_nz,
+                    "note": ("imp byte2: road=0x40 rail=0x80 (proven "
+                             "ROMFALL); remaining bits open; visibility "
+                             "bytes' near-identical distribution suggests "
+                             "per-civ fog, unproven"),
+                })
+            out["map_decode"]["resource_seed_offset"] = pos + maps * map_data - 2
         # cities: find the 92-byte name grid — candidate printable name
         # fields (16-byte slot: printable prefix + NUL padding), then the
         # longest chain of candidates at exactly 92-byte stride.
@@ -400,7 +470,56 @@ def walk_save(path: str) -> dict:
 
 
 # --------------------------------------------------------------------------
-# save diff
+# SCN/SAV embedded map render (proven layout, see walk_save's map_decode)
+
+def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
+    """Render the surface map embedded in a .SCN/.SAV.
+
+    Uses the proven map-block layout (imp 7 B + map 6 B per tile, dense grid):
+    terrain from map byte 4 (river = bit 0x80), road/railroad from map byte 2
+    (0x40 / 0x80). Verified on ROMFALL: roads render as the empire-wide
+    network, rails as the dense Italy/Gaul core, rivers as coastal chains.
+    """
+    walk = walk_save(path)
+    md = walk.get("map_decode")
+    if not md:
+        return {"error": "no decodable map (walker found none): %s"
+                % walk.get("error", walk.get("note", "see save walk"))}
+    data = open(path, "rb").read()
+    w, h = md["stored_dims"]
+    surface = walk["map_header"]["values"][2]
+    mp0 = walk["sections_derived"]["map_data"]["offset"] + 2 + 7 * surface
+    rows = []
+    stats = {"river": 0, "road": 0, "rail": 0, "terrain": {}}
+    for y in range(h):
+        row = bytearray()
+        for x in range(w):
+            i = y * w + x
+            t6 = data[mp0 + 6 * i + 4]
+            imp6 = data[mp0 + 6 * i + 2]
+            terr = t6 & 0x7F
+            stats["terrain"][terr] = stats["terrain"].get(terr, 0) + 1
+            if imp6 & 0x80:
+                rgb = (35, 35, 35)            # railroad
+                stats["rail"] += 1
+            elif imp6 & 0x40:
+                rgb = (139, 105, 50)          # road
+                stats["road"] += 1
+            elif t6 & 0x80:
+                rgb = (0, 170, 230)           # river
+                stats["river"] += 1
+            else:
+                rgb = terrain_color(terr, names)
+            row.extend(rgb * scale)
+        rows.extend([row] * scale)
+    write_png(out_png, w * scale, h * scale, rows)
+    return {"png": os.path.abspath(out_png), "stored_dims": [w, h],
+            "display_dims": md["display_dims"],
+            "overlay_counts": stats,
+            "decode": ("map byte4: terrain|river(0x80); map byte2: "
+                       "road(0x40), rail(0x80) — proven ROMFALL 2026-11-01")}
+
+
 
 def diff_saves(path_a: str, path_b: str) -> dict:
     a = open(path_a, "rb").read()
@@ -461,7 +580,18 @@ def main(argv=None):
     p = sub.add_parser("map", help="parse .MP and render PNG")
     p.add_argument("path")
     p.add_argument("-o", "--out", default="map.png")
-    p.add_argument("--rules", help="Rules.txt for terrain names")
+    p.add_argument("--rules", help="Rules.txt for terrain names "
+                    "(defaults to $CIVTOT_HOME/Rules.txt when set)")
+    p.add_argument("--scale", type=int, default=4)
+    p.add_argument("--json", dest="json_out")
+
+    p = sub.add_parser("scnmap", help="render the map embedded in a .SCN/.SAV "
+                     "with road/railroad/river overlays")
+    p.add_argument("path")
+    p.add_argument("-o", "--out", default="scnmap.png")
+    p.add_argument("--rules", help="Rules.txt for terrain names "
+                    "(defaults to $CIVTOT_HOME/Rules.txt when set)")
+    p.add_argument("--scale", type=int, default=4)
     p.add_argument("--json", dest="json_out")
 
     p = sub.add_parser("save", help="structural walk of .SAV/.SCN")
@@ -478,23 +608,37 @@ def main(argv=None):
     json_out = None
     png_out = None
 
+    def default_rules(explicit):
+        if explicit:
+            return resolve(explicit)
+        home = os.environ.get("CIVTOT_HOME")
+        cand = os.path.join(home, "Rules.txt") if home else None
+        return cand if cand and os.path.exists(cand) else None
+
     if args.cmd == "rules":
-        result = rules_summary(parse_rules(args.path))
+        result = rules_summary(parse_rules(resolve(args.path)))
         json_out = args.out
     elif args.cmd == "map":
-        names = terrain_names(parse_rules(args.rules)) if args.rules else []
-        mp = parse_mp(args.path)
+        rules_path = default_rules(args.rules)
+        names = terrain_names(parse_rules(rules_path)) if rules_path else []
+        mp = parse_mp(resolve(args.path))
         result = {k: v for k, v in mp.items() if k not in ("tiles", "extra")}
         if "tiles" in mp:
             png_out = args.out
-            result["render"] = render_mp(mp, names, png_out)
+            result["render"] = render_mp(mp, names, png_out, args.scale)
             result["render"]["png"] = os.path.abspath(png_out)
         json_out = args.json_out
+    elif args.cmd == "scnmap":
+        rules_path = default_rules(args.rules)
+        names = terrain_names(parse_rules(rules_path)) if rules_path else []
+        png_out = args.out
+        result = render_scnmap(resolve(args.path), png_out, names, args.scale)
+        json_out = args.json_out
     elif args.cmd == "save":
-        result = walk_save(args.path)
+        result = walk_save(resolve(args.path))
         json_out = args.out
     elif args.cmd == "diff":
-        result = diff_saves(args.a, args.b)
+        result = diff_saves(resolve(args.a), resolve(args.b))
         json_out = args.out
 
     text = json.dumps(result, indent=2, default=str)

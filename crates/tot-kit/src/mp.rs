@@ -5,10 +5,12 @@
 //! * `Tot3ByteSlot` — ToT's own format (`World.mp`): 8-byte header
 //!   (`u16 width, u16 height, u32 real_tile_count`), then `width × height` slots
 //!   of 3 bytes, then a small tail (90 B on World.mp). Per slot: a little-endian
-//!   `u16` plus one extra byte. **Terrain = word & 0x7F** (bit 0x80 marks the
-//!   special-resource variant), **void tile = extra & 0xF0**. Verified by the
-//!   biome-latitude check: World.mp decodes to Earth with 66% ocean, Glacier at
-//!   mean latitude 0.081, Jungle at 0.670.
+//!   `u16` plus one extra byte. **Terrain = word & 0x7F**, **river = word & 0x80**
+//!   (proven 2026-11-01: bit-0x80 tiles form dendritic chains matching Earth's
+//!   rivers — Mississippi, African and Australian networks — all on land; special
+//!   resources are not stored in .MP at all), **void tile = extra & 0xF0**.
+//!   Verified by the biome-latitude check: World.mp decodes to Earth with 66%
+//!   ocean, Glacier at mean latitude 0.081, Jungle at 0.670.
 //! * `Classic2Byte` — classic Civ2 MP: 4-byte header, one `u16` per slot,
 //!   `0xFFFF` = void.
 //!
@@ -53,8 +55,9 @@ impl MpMap {
         }
     }
 
-    /// Special-resource flag of a slot (bit 0x80 of the terrain word).
-    pub fn is_special_resource(&self, index: usize) -> bool {
+    /// River flag of a slot (bit 0x80 of the terrain word; proven on
+    /// World.mp — see the module docs).
+    pub fn is_river(&self, index: usize) -> bool {
         self.tiles[index] & 0x80 != 0
     }
 
@@ -144,7 +147,7 @@ mod tests {
         let slots: [(u16, u8); 8] = [
             (10, 0x00),
             (10, 0x00),
-            (0x82, 0x00), // terrain 2 + special-resource bit
+            (0x82, 0x00), // terrain 2 + river bit
             (3, 0x00),
             (4, 0x00),
             (10, 0xF0), // void
@@ -167,8 +170,8 @@ mod tests {
         assert_eq!(map.terrain(0), Some(10));
         assert_eq!(map.terrain(5), None, "0xF0 extra byte marks void");
         assert_eq!(map.terrain(2), Some(2));
-        assert!(map.is_special_resource(2));
-        assert!(!map.is_special_resource(0));
+        assert!(map.is_river(2));
+        assert!(!map.is_river(0));
         assert_eq!(map.real_tile_count(), 7, "eight slots minus one void");
         assert_eq!(map.tail_bytes, 0);
     }

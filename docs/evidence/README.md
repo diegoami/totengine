@@ -10,6 +10,8 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 |---|---|---|
 | `rules-summary.json` | `totctl rules Rules.txt` | All 22 `@`-sections parsed; `@COSMIC` values, terrain/unit/government tables |
 | `world-mp.png` / `world-mp.json` | `totctl map World.mp --rules Rules.txt` | ToT world map rendered to PNG (terrain-colored, voids black) |
+| `world-mp-rivers.png` | `totctl map World.mp --scale 3` | River overlay (word bit `0x80`) — dendritic Earth river networks |
+| `romfall-scnmap.png` | `totctl scnmap FallRome/ROMFALL.scn` | Embedded scenario map with river/road/railroad overlays |
 | `romfall-walk.json` | `totctl save ROMFALL.scn` | Structural walk of a classic scenario (ToT 1.1, `0x0032`) |
 | `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked with base-format offsets |
 | `va-autosave-diff.json` | `totctl diff Va_Auto2.SAV Va_Auto.SAV` | Annotated diff of two real autosaves (oracle-methodology demo) |
@@ -19,7 +21,9 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 1. **`.MP` map format (ToT variant) — decoded.**
    8-byte header: `word width, word height, dword real_tile_count`; then
    `width×height` slots of **3 bytes**: `word` (little-endian) + 1 extra byte.
-   - Terrain id = `word & 0x7F`; bit `0x80` = special-resource variant
+   - Terrain id = `word & 0x7F`; bit `0x80` = **river** *(corrected 2026-11-01,
+     third session — initially mis-attributed to special resources; see
+     finding 7 below for the proof)*
    - Void/non-existent tile = `extra & 0xF0` (marks Civ2's round-world voids)
    - `World.mp`: 150×120 = 18,000 slots, 9,000 real tiles (matches dword), 90-byte tail
 
@@ -82,6 +86,41 @@ and the ROMFALL_{ERE,HUN,VIS} variants:
 6. **Va_Auto saved at turn 0 with 711 units vs the scenario's 710** — consistent
    with a SCENARIOLOADED event creating a unit on load (Events.txt has
    CREATEUNIT-on-load logic); worth confirming via the events interpreter in T1-7.
+
+## T0-11 findings (2026-11-01, third probe session)
+
+1. **`.MP` word bit `0x80` is RIVER, not special-resource — correction.** Evidence:
+   on `World.mp` the 246 bit-0x80 tiles are 100% on land (ocean specials would
+   exist if these were specials), form chains up to 10 tiles (105 adjacent pairs
+   vs ~60 expected for random isolated dots), and an ASCII render places them in
+   dendritic networks matching Earth: a long southward chain in eastern North
+   America (Mississippi system), clusters across Africa and Australia (Murray),
+   one chain wrapping the x=0/x=149 seam. Special resources are **not stored in
+   `.MP` at all** — they are RNG-placed per game (map tail likely holds seeds).
+2. **The embedded SCN/SAV map section is decoded (ROMFALL, `0x32`).** Per Mercator's
+   ToC the per-map block is Visible Improvements (7 B/tile) + Map (6 B/tile) + 2;
+   empirically the **2 bytes sit before the tile blocks** (decoding from the block
+   start yields garbage terrain; from +2 yields ids 0–10). The stored grid is
+   **dense**: `width = hdr0/2 × hdr1 = surface` tiles (ROMFALL 75×120 = 9,000;
+   `hdr0` = 150 is the *display* width — ToT tiles span 2 display columns).
+3. **Map tile (6 bytes): byte 4 = terrain | river(`0x80`)** — identical encoding to
+   the `.MP` word, cross-format consistency. ROMFALL terrain histogram: ocean
+   2,768 / plains 1,756 / forest 1,448 / grass 1,050 / hills 870 / desert 800 …
+4. **Improvements: map byte 2, bit `0x40` = road, bit `0x80` = railroad.** Verified
+   spatially on ROMFALL: 3,497 road tiles form a connected empire-wide network;
+   413 railroad tiles cluster densely in the Italy/Gaul core (128 tiles carry both;
+   rails never set `0x40`). ASCII renders show the Mediterranean, Italy's boot and
+   the road/rail networks in historically sensible places. Remaining bits
+   (`0x02` base, `0x08/0x10/0x20` variants — irrigation/mine/farmland/fortress
+   candidates) are open; oracle save-diffs will pin them.
+5. **The 7 visibility bytes per tile show near-identical per-byte distributions**
+   (~530 nonzero each on ROMFALL) — consistent with per-civ fog-of-war snapshots
+   (7 civs); unproven, needs a fog-changing oracle pair.
+6. **`totctl` UX (T0-11):** `CIVTOT_HOME` env resolves relative input paths and
+   defaults `--rules`; `--scale` on renders; new `scnmap` subcommand renders the
+   embedded scenario map with river/road/railroad overlays (artifacts:
+   `romfall-scnmap.png`, `warring-states-scnmap.png` where applicable).
+
 
 ## Reproduce
 

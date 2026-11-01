@@ -1,3 +1,9 @@
+-- Vendored from ProfGarfield/ZeroBraneForTOTPP (packages/totpp.lua), fetched
+-- 2026-11-01, unmodified below this notice.
+-- Upstream license: MIT (ZeroBrane Studio License, Copyright (c) 2011-2017
+-- Paul Kulchenko; the fork inherits it via its LICENSE file).
+-- Source: https://github.com/ProfGarfield/ZeroBraneForTOTPP/blob/main/packages/totpp.lua
+
 local plugin = {}
 package.path = package.path..";?.lua"
 

@@ -60,7 +60,7 @@ SHA. The process: [docs/milestone-review.md](docs/milestone-review.md). Suggeste
 | T0-9 | Golden-file harness: parse-corpus tests over local scenarios (FallRome ×8, Midgard, china ×3) | P1 | M | E | todo | `make test` re-generates & compares evidence corpus |
 | T0-10 | Oracle automation: launch game under Xvfb via Wine, xdotool macro performs one action, capture save, structural diff | P1 | M | H | todo | Scripted "save→act→save→diff" produces annotated deltas hands-free |
 | T0-11 | `totctl` UX: `CIVTOT_HOME` env, rivers/improvements overlay on map render, `--scale` | P1 | S | E | done | Renders show rivers & railroads distinctly |
-| T0-12 | License check of prior-art repos (axx0/Civ2-clone, richardpenman/civ2); record what may be referenced | P2 | S | E | todo | Note in `docs/prior-art.md`; compliant referencing policy set |
+| T0-12 | License check of prior-art repos (axx0/Civ2-clone, richardpenman/civ2); record what may be referenced | P2 | S | E | done | Note in `docs/prior-art.md`; compliant referencing policy set |
 
 ## Epic T1 — Headless classic-scenario engine
 

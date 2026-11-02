@@ -15,7 +15,8 @@ none of its assets.
 - `docs/` — `feasibility.md`, `plan.md` (tiers/principles), `BACKLOG.md`
   (story queue), `evidence/` (all proven format findings), `decisions/`,
   `refs/` (vendored ToTPP Lua API), `milestone-review.md` (release process),
-  `environment.md` (machine setup/quirks)
+  `environment.md` (machine setup/quirks), `lessons.md` (distilled
+  process/rig lessons — read before driving the oracle)
 - `docs/evidence/` + `tools/golden.sh` — golden corpus; `make
   evidence-regen` after *intentional* format changes, then commit
 

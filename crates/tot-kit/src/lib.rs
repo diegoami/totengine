@@ -8,5 +8,7 @@
 //! structural spec is Mercator's Apolyton thread (see `docs/plan.md` §7).
 
 mod mp;
+mod rules;
 
 pub use mp::{parse_mp, parse_mp_file, MpFormat, MpMap};
+pub use rules::{emit_rules, parse_rules, Rules, Section};

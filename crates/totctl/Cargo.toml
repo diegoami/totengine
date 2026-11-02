@@ -10,4 +10,5 @@ name = "totctl"
 path = "src/main.rs"
 
 [dependencies]
+engine = { path = "../engine" }
 tot-kit = { path = "../tot-kit" }

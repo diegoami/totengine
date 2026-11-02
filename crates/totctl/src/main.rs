@@ -5,12 +5,15 @@
 
 use std::process::ExitCode;
 
+use engine::rng::GameRng as _;
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().collect();
     let prog = args.first().map(String::as_str).unwrap_or("totctl");
     match args.get(1).map(String::as_str) {
         Some("mp") => cmd_mp(&args[2..]),
         Some("rules") => cmd_rules(&args[2..]),
+        Some("boot") => cmd_boot(&args[2..]),
         Some("--version") | Some("-V") => {
             println!("totctl {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
@@ -18,11 +21,113 @@ fn main() -> ExitCode {
         _ => {
             eprintln!(
                 "usage: {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
-                       {prog} --version"
+                        {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
+                        {prog} boot <file.sav|scn> — headless boot into engine state + checksum\n\
+                        {prog} --version"
             );
             ExitCode::from(2)
         }
     }
+}
+
+/// Headless boot of a scenario/save into the engine world state (T1-2):
+/// parse → `engine::boot` → state summary + reproducible checksum.
+/// `--turns N` advances the kernel N times before checksumming.
+fn cmd_boot(args: &[String]) -> ExitCode {
+    let mut path: Option<&String> = None;
+    let mut turns: usize = 0;
+    let mut seed: u64 = 1;
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--turns" => match it.next().and_then(|v| v.parse().ok()) {
+                Some(n) => turns = n,
+                None => {
+                    eprintln!("error: --turns needs a number");
+                    return ExitCode::from(2);
+                }
+            },
+            "--seed" => match it.next().and_then(|v| v.parse().ok()) {
+                Some(s) => seed = s,
+                None => {
+                    eprintln!("error: --seed needs a number");
+                    return ExitCode::from(2);
+                }
+            },
+            _ if path.is_none() => path = Some(a),
+            _ => {
+                eprintln!("error: unexpected argument {a}");
+                return ExitCode::from(2);
+            }
+        }
+    }
+    let Some(path) = path else {
+        eprintln!("usage: totctl boot <file.sav|scn> [--turns N] [--seed S]");
+        return ExitCode::from(2);
+    };
+    let bytes = match std::fs::read(path) {
+        Ok(b) => b,
+        Err(e) => {
+            eprintln!("error: read {path}: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let sav = match tot_kit::parse_sav(&bytes) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let mut world = engine::boot(&sav, seed);
+    for _ in 0..turns {
+        world.advance_turn();
+    }
+    println!("file          : {path}");
+    println!("version       : 0x{:04x}", sav.version);
+    println!("turn / year   : {} / {}", world.turn, world.year);
+    println!(
+        "difficulty    : {}  rivals: {}",
+        world.difficulty, world.rivals
+    );
+    let named: Vec<&engine::Civ> = world.civs.iter().filter(|c| !c.names.is_empty()).collect();
+    println!("civs (named)  : {}", named.len());
+    for c in &named {
+        println!(
+            "  owner {} : {:<28} units {}",
+            c.id,
+            c.names.join(" / "),
+            c.unit_count
+        );
+    }
+    println!(
+        "map           : {}x{} stored ({} tiles), blocks {}",
+        world.map.stored_w,
+        world.map.stored_h,
+        world.map.terrain.len(),
+        sav.maps.len()
+    );
+    let hist = sav.maps[0].terrain_histogram();
+    let mut top: Vec<(usize, &usize)> = hist.iter().enumerate().collect();
+    top.sort_by_key(|(_, &n)| std::cmp::Reverse(n));
+    let top_s: Vec<String> = top
+        .iter()
+        .take(6)
+        .map(|(id, n)| format!("{}={}", id, n))
+        .collect();
+    println!("terrain hist  : {}", top_s.join(" "));
+    println!(
+        "units / cities: {} / {}",
+        world.units.len(),
+        world.cities.len()
+    );
+    println!(
+        "rng seed      : {} (draws so far: {})",
+        seed,
+        world.rng.draws()
+    );
+    println!("checksum      : {:016x}", world.checksum());
+    ExitCode::SUCCESS
 }
 
 fn cmd_rules(args: &[String]) -> ExitCode {

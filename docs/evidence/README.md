@@ -4,6 +4,29 @@ Artifacts produced by `tools/totctl.py` (Python reference probe) against the loc
 install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 [../feasibility.md](../feasibility.md) with measured data.
 
+### T1-2 boot (2026-11-02 night): ROMFALL headless + checksum
+
+- `totctl boot <file.sav|scn>` parses the proven 0x32 layout (Rust port of
+  the Python walker) and boots the engine world state; `--turns N` / `--seed S`
+  drive the kernel skeleton. ROMFALL.scn boots to **710 units / 146 cities /
+  9000-tile 75×120 stored map**, civil names extracted as printable runs
+  (leader first: "Valentianus III", "West Romans", "West Roman").
+- **Checksum reproducible** (env-gated acceptance test
+  `crates/totctl/tests/boot_romfall.rs`, runs in `make test`): boot is pure
+  (same file + seed ⇒ same 64-bit FNV checksum); kernel turns are
+  deterministic given the seed; the skeleton consumes no randomness yet.
+- Layout finding from the port: the transporter section starts at
+  **29728** (`168 + 4 + 14×N`), so the map header sits at **29900 only
+  when N = 0** — which is every standard-game/ROMFALL file measured so
+  far (Midgard's N=12 shifts it by 168).
+- Civ-name blocks are extracted as printable runs (Python `null_strings`
+  semantics); **per-slot field semantics stay unproven** — ROMFALL reads
+  `leader, plural, adjective` but no offset→field mapping is claimed.
+- Kernel skeleton deliberately omits the year-advance schedule (no
+  oracle-verified table yet — folklore banned); year stays put until a
+  turnloop experiment lands in T1-3. RNG: `GameRng` trait + placeholder
+  MMIX LCG; the original PRNG identity is T1-6's open problem.
+
 ## RG-1 findings (2026-11-02, eighth+tenth sessions — standard-game setup state)
 
 Materials: rig-driven **standard Original-game** new games with

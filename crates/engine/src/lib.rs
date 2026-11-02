@@ -1,1 +1,373 @@
-//! Placeholder — the deterministic turn kernel starts in Tier 1 (T1-2).
+//! `engine` — world state model + deterministic turn kernel skeleton (T1-2).
+//!
+//! [`boot`] turns a parsed scenario/save ([`tot_kit::SaveFile`]) into a
+//! [`WorldState`]; [`WorldState::checksum`] is the reproducibility anchor
+//! (same input ⇒ same checksum, independent of process, time, or hash-map
+//! ordering); [`WorldState::advance_turn`] is the kernel skeleton — turn
+//! sequencing plus a seeded [`GameRng`], with per-phase work landing in
+//! T1-3..T1-7.
+
+pub mod rng;
+
+use std::fmt::Write as _;
+
+use rng::{GameRng, Lcg64};
+use tot_kit::{CityRecord, SaveFile, UnitRecord};
+
+/// A civilization slot: the 7 name blocks are players `1..7` in unit
+/// `owner` encoding; owner 0 is the barbarians (no name block).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Civ {
+    /// Owner id: 1..=7.
+    pub id: u8,
+    /// Printable strings of the civ-name block, file order (slot
+    /// semantics unproven; ROMFALL reads leader, plural, adjective…).
+    pub names: Vec<String>,
+    /// Unit count at boot (measured, not yet a maintained roster).
+    pub unit_count: usize,
+}
+
+/// Engine-side unit: the proven 40-B record fields, keyed by stable data
+/// (coordinates + type + owner) rather than the per-save re-assigned id.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Unit {
+    pub type_id: u8,
+    pub owner: u8,
+    pub x: u16,
+    pub y: u16,
+    pub is_leader: bool,
+}
+
+/// Engine-side city: name + logical-grid coordinates (size field boundary
+/// still open — `size_hint` carried for cross-checking only).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct City {
+    pub name: String,
+    pub x: u16,
+    pub y: u16,
+    pub size_hint: u16,
+}
+
+/// Terrain grid state: the decoded surface map block in stored order,
+/// with logical→stored access via the proven diamond mapping.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MapState {
+    pub stored_w: usize,
+    pub stored_h: usize,
+    /// One entry per stored tile: terrain id (& 0x3F).
+    pub terrain: Vec<u8>,
+    pub special: Vec<bool>,
+    pub river: Vec<bool>,
+    pub road: Vec<bool>,
+    pub rail: Vec<bool>,
+}
+
+impl MapState {
+    /// Logical (x, y) → stored index (`sx = (x - (y&1))/2 - 1, sy = y`;
+    /// outside-the-grid logical tiles map to None — the 2 western border
+    /// columns are not stored).
+    pub fn stored_index(&self, x: u16, y: u16) -> Option<usize> {
+        let (w, h) = (self.stored_w as isize, self.stored_h as isize);
+        let sx = (x as isize - (y as isize & 1)) / 2 - 1;
+        if sx < 0 || y as isize >= h || sx >= w {
+            return None;
+        }
+        Some(y as usize * self.stored_w + sx as usize)
+    }
+    pub fn terrain_at(&self, x: u16, y: u16) -> Option<u8> {
+        self.stored_index(x, y).map(|i| self.terrain[i])
+    }
+}
+
+/// The turn kernel's state. Boot is a pure function of the parsed file;
+/// every later transition is a pure function of (state, orders, rng).
+#[derive(Debug, Clone)]
+pub struct WorldState {
+    pub turn: i16,
+    pub year: i16,
+    pub difficulty: u8,
+    pub rivals: u8,
+    pub seed_word: u16,
+    pub wonders: [i16; 28],
+    pub civs: Vec<Civ>,
+    pub units: Vec<Unit>,
+    pub cities: Vec<City>,
+    pub map: MapState,
+    pub rng: Lcg64,
+    rng_seed: u64,
+}
+
+/// Boot a world from a parsed scenario/save. `rng_seed` seeds the kernel's
+/// generator — deliberately independent of the file's replay-seed word
+/// (that word is the original game's combat/event seed, whose generator is
+/// unidentified; T1-6).
+pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
+    let surface = sav.map_header.surface();
+    let m = sav
+        .maps
+        .first()
+        .expect("decodable saves carry at least the surface map block");
+    let mut terrain = Vec::with_capacity(surface);
+    let mut special = Vec::with_capacity(surface);
+    let mut river = Vec::with_capacity(surface);
+    let mut road = Vec::with_capacity(surface);
+    let mut rail = Vec::with_capacity(surface);
+    for t in 0..surface {
+        terrain.push(m.terrain(t));
+        special.push(m.is_special(t));
+        river.push(m.is_river(t));
+        road.push(m.has_road(t));
+        rail.push(m.has_rail(t));
+    }
+    let civs = sav
+        .civ_names
+        .iter()
+        .enumerate()
+        .map(|(i, names)| Civ {
+            id: i as u8 + 1,
+            names: names.strings.clone(),
+            unit_count: sav
+                .units
+                .iter()
+                .filter(|u| u.owner() & 0x0F == i as u8 + 1)
+                .count(),
+        })
+        .collect();
+    WorldState {
+        turn: sav.turn,
+        year: sav.year,
+        difficulty: sav.difficulty,
+        rivals: sav.rivals,
+        seed_word: sav.seed_word,
+        wonders: sav.wonders,
+        civs,
+        units: sav.units.iter().map(unit_from).collect(),
+        cities: sav.cities.iter().map(city_from).collect(),
+        map: MapState {
+            stored_w: sav.map_header.stored_w(),
+            stored_h: sav.map_header.stored_h(),
+            terrain,
+            special,
+            river,
+            road,
+            rail,
+        },
+        rng: Lcg64::new(rng_seed),
+        rng_seed,
+    }
+}
+
+fn unit_from(r: &UnitRecord) -> Unit {
+    Unit {
+        type_id: r.type_id(),
+        owner: r.owner() & 0x0F,
+        x: r.x(),
+        y: r.y(),
+        is_leader: r.is_leader(),
+    }
+}
+
+fn city_from(r: &CityRecord) -> City {
+    City {
+        name: r.name(),
+        x: r.x(),
+        y: r.y(),
+        size_hint: r.size_hint(),
+    }
+}
+
+/// What one kernel tick did (skeleton: turn sequencing only — per-phase
+/// simulation reports grow in T1-3..T1-7).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TurnReport {
+    pub turn: i16,
+    pub year: i16,
+    pub rng_draws: u64,
+}
+
+impl WorldState {
+    /// Advance one turn. The year-advance schedule is deliberately NOT
+    /// implemented: no oracle-verified table exists yet (the -4000…
+    /// progression needs a turnloop experiment — folklore is banned by
+    /// the evidence rule). Year stays put until that lands (T1-3).
+    pub fn advance_turn(&mut self) -> TurnReport {
+        self.turn += 1;
+        TurnReport {
+            turn: self.turn,
+            year: self.year,
+            rng_draws: self.rng.draws(),
+        }
+    }
+
+    /// Reproducibility anchor: FNV-1a over the canonical field order —
+    /// settings, wonders, civs, map bytes, units, cities, turn/year and
+    /// the RNG seed (NOT the RNG state: the checksum pins *game* state;
+    /// draw-sequence reproducibility is tested separately).
+    pub fn checksum(&self) -> u64 {
+        let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+        let mix = |h: &mut u64, bytes: &[u8]| {
+            for &b in bytes {
+                *h ^= b as u64;
+                *h = h.wrapping_mul(0x0000_0100_0000_01b3);
+            }
+        };
+        let mut buf = String::new();
+        let _ = write!(
+            buf,
+            "v1|turn|{}|year|{}|diff|{}|riv|{}|seed|{}|rngseed|{}",
+            self.turn, self.year, self.difficulty, self.rivals, self.seed_word, self.rng_seed
+        );
+        mix(&mut h, buf.as_bytes());
+        buf.clear();
+        for w in self.wonders {
+            let _ = write!(buf, "{w},");
+        }
+        mix(&mut h, buf.as_bytes());
+        for c in &self.civs {
+            buf.clear();
+            let _ = write!(buf, "civ|{}|{}|", c.id, c.names.join("\x1f"));
+            mix(&mut h, buf.as_bytes());
+            mix(&mut h, &c.unit_count.to_le_bytes());
+        }
+        mix(&mut h, &self.map.stored_w.to_le_bytes());
+        mix(&mut h, &self.map.stored_h.to_le_bytes());
+        for t in 0..self.map.terrain.len() {
+            let flags = (self.map.special[t] as u8)
+                | ((self.map.river[t] as u8) << 1)
+                | ((self.map.road[t] as u8) << 2)
+                | ((self.map.rail[t] as u8) << 3);
+            mix(&mut h, &[self.map.terrain[t], flags]);
+        }
+        for u in &self.units {
+            buf.clear();
+            let _ = write!(
+                buf,
+                "u|{}|{}|{}|{}|{}|",
+                u.type_id, u.owner, u.x, u.y, u.is_leader as u8
+            );
+            mix(&mut h, buf.as_bytes());
+        }
+        for c in &self.cities {
+            buf.clear();
+            let _ = write!(buf, "city|{}|{}|{}|", c.name, c.x, c.y);
+            mix(&mut h, buf.as_bytes());
+        }
+        h
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn synthetic_sav() -> tot_kit::SaveFile {
+        // reuse tot-kit's own synthetic fixture logic minimally: build a
+        // small decodable file via the crate's test helpers is not public,
+        // so boot from a hand-built SaveFile via parse of the same bytes
+        // is overkill here — instead construct via parse on fixture bytes
+        // produced by the same recipe (kept in sync by the boot test in
+        // totctl). Here: a tiny hand-built state suffices for kernel laws.
+        crate::tests_support::synthetic_save()
+    }
+
+    #[test]
+    fn boot_is_pure_and_checksum_reproducible() {
+        let sav = synthetic_sav();
+        let a = boot(&sav, 1);
+        let b = boot(&sav, 1);
+        assert_eq!(a.checksum(), b.checksum());
+        // different rng seed changes the checksum (it is part of state)
+        let c = boot(&sav, 2);
+        assert_ne!(a.checksum(), c.checksum());
+    }
+
+    #[test]
+    fn turn_kernel_is_deterministic_given_seed() {
+        let sav = synthetic_sav();
+        let mut a = boot(&sav, 7);
+        let mut b = boot(&sav, 7);
+        for _ in 0..10 {
+            assert_eq!(a.advance_turn(), b.advance_turn());
+        }
+        assert_eq!(a.checksum(), b.checksum());
+        assert_eq!(a.turn, sav.turn + 10);
+    }
+
+    #[test]
+    fn civ_unit_counts_match_owner_bytes() {
+        let sav = synthetic_sav();
+        let w = boot(&sav, 1);
+        let total: usize = w.civs.iter().map(|c| c.unit_count).sum();
+        let owned = w
+            .units
+            .iter()
+            .filter(|u| (1..=7).contains(&u.owner))
+            .count();
+        assert_eq!(total, owned);
+        assert_eq!(w.units.len(), sav.units.len());
+        assert_eq!(w.cities.len(), sav.cities.len());
+    }
+}
+
+/// Test fixtures shared with the doc tests (not public API).
+pub mod tests_support {
+    use tot_kit::parse_sav;
+
+    /// A minimal decodable 0x32 file (mirrors tot-kit's unit test fixture
+    /// recipe): 4×4 stored map, 2 units, 8-slot city grid.
+    pub fn synthetic_save() -> tot_kit::SaveFile {
+        let stored_w = 4usize;
+        let stored_h = 4usize;
+        let surface = stored_w * stored_h;
+        let mut d = vec![0u8; tot_kit::OFF_TRANSPORTERS + 172];
+        d[..8].copy_from_slice(tot_kit::MAGIC);
+        d[10..12].copy_from_slice(&0x0032u16.to_le_bytes());
+        d[668..670].copy_from_slice(&1i16.to_le_bytes());
+        d[670..672].copy_from_slice(&(-4000i16).to_le_bytes());
+        d[684] = 4;
+        d[685..689].copy_from_slice(&[0xdb, 0x02, 0xdb, 0x02]);
+        d[689] = 4;
+        let hdr: [i16; 8] = [
+            (2 * stored_w) as i16,
+            stored_h as i16,
+            surface as i16,
+            1,
+            0,
+            0,
+            0,
+            0,
+        ];
+        let mut out = d;
+        for v in hdr {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        out.extend_from_slice(&[0, 0]);
+        out.extend(std::iter::repeat_n(0u8, 7 * surface));
+        for t in 0..surface {
+            let mut f = [0u8; 6];
+            f[4] = if t == 2 { 1 | 0x80 } else { 1 };
+            out.extend_from_slice(&f);
+        }
+        out.extend(std::iter::repeat_n(0u8, 10240));
+        out.extend(std::iter::repeat_n(0u8, 34));
+        let unit_specs: [(u16, u16, u8, u8); 2] = [(3, 4, 0, 1), (5, 6, 1, 2)];
+        for (i, &(x, y, typ, owner)) in unit_specs.iter().enumerate() {
+            let mut r = [0u8; 40];
+            r[6..8].copy_from_slice(&x.to_le_bytes());
+            r[8..10].copy_from_slice(&y.to_le_bytes());
+            r[14] = typ;
+            r[15] = owner;
+            r[36..38].copy_from_slice(&(i as u16 + 1).to_le_bytes());
+            out.extend_from_slice(&r);
+        }
+        for i in 0..8 {
+            let mut r = [0u8; 92];
+            let name = format!("City{i}");
+            r[..name.len()].copy_from_slice(name.as_bytes());
+            r[58..60].copy_from_slice(&((i + 1) as u16).to_le_bytes());
+            r[60..62].copy_from_slice(&((i + 2) as u16).to_le_bytes());
+            out.extend_from_slice(&r);
+        }
+        parse_sav(&out).expect("synthetic fixture parses")
+    }
+}

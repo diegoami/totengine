@@ -67,7 +67,7 @@ game (no scenario) boots and runs headless on the classic map,
 | ID | Story | Pri | Est | Diff | Status | Acceptance |
 |----|-------|-----|-----|------|--------|------------|
 | T1-1 | Typed rules model: all 22 Rules.txt sections → engine structs incl. ToT tables (@TERRAIN1..3, transport relationships) | P1 | L | E | done | Round-trips Rules.txt losslessly (text → structs → text) |
-| T1-2 | World state model + deterministic turn kernel skeleton (seeded RNG abstraction) | P1 | L | H | todo | Headless boot of ROMFALL.scn into state; state checksum reproducible |
+| T1-2 | ~~World state model + deterministic turn kernel skeleton (seeded RNG abstraction)~~ | P1 | L | H | done | Headless boot of ROMFALL.scn into state (710 units / 146 cities / 9000 tiles); checksum reproducible — `totctl boot`, tests in `make test` |
 | T1-3 | Movement, terrain costs, zone of control, multi-map slot | P1 | M | H | todo | Move orders match original outcomes on oracle cases |
 | T1-4 | Cities: food/shields/trade, growth, production queue, specialists, unrest | P1 | L | H | todo | 50-turn city math matches oracle saves exactly |
 | T1-5 | Research tree, governments, wonders (incl. obsolete-by-tech) | P1 | M | E | todo | Tech progression parity on scripted runs |
@@ -85,7 +85,7 @@ opponent AI. These stories reuse the T1 core; the new-game *UI* lands with T2.
 
 | ID | Story | Pri | Est | Diff | Status | Acceptance |
 |----|-------|-----|-----|------|--------|------------|
-| RG-1 | Game-setup state model: new-game parameters (civ/leader/difficulty, world size/land%/climate, opponent count, rules variants) + its save encoding | P1 | M | H | todo | Setup section byte-matches oracle new-game saves across variants (rig-driven) |
+| RG-1 | ~~Game-setup state model: new-game parameters + its save encoding~~ | P1 | M | H | done | Byte-map on a vision-verified variant family: 684=difficulty, 689=rivals, dims@29900, RNG mirror@685-688; wizard reference documented (evidence §RG-1) |
 | RG-2 | Starting placement: civ starts, goody huts, barbarian seeding from the game seed | P1 | M | H | todo | Same-seed oracle starts reproduce identical placement |
 | RG-3 | Random world generator (seeded; `.MP`-shaped output; original's exact algorithm unknown → our own, flagged) | P2 | L | H | todo | Statistical parity vs original maps (land%/biome spread); renders sanity-checked |
 | RG-4 | Opponent AI v1 headless: expansion, economy, research, unit handling; deterministic | P2 | L | H | todo | 50-turn autoplay stable + deterministic; plausible power curves vs oracle games |

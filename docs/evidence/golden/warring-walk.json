@@ -4,7 +4,7 @@
   "magic": "CIVILIZE",
   "version_raw": "0x0033",
   "version": "ToT 1.1 + ToTPP (extended)",
-  "note": "ToTPP-extended save: section sizes differ beyond the base walk; offsets below are base-format guesses",
+  "note": "ToTPP-extended save: base 0x32 front sections apply; after the 10240-blob comes the ToTPP extended state (dynamic, mostly-sparse arrays), then a 'LUAE' magic followed by the serialized Lua state as plain text, ending with an 'EVNT' trailer + 4 bytes",
   "unit_transport_relationships": {
     "offset": 12,
     "size": 640
@@ -96,5 +96,213 @@
       1
     ]
   },
-  "map_note": "fields 6&7 (1-based) multiply into a following blob per Mercator; maps repeat the data block in ToT"
+  "map_note": "fields 6&7 (1-based) multiply into a following blob per Mercator; maps repeat the data block in ToT",
+  "sections_derived": {
+    "map_data": {
+      "offset": 29916,
+      "size": 364002,
+      "per_map": 364002,
+      "maps": 1
+    },
+    "blob_2ab": {
+      "offset": 393918,
+      "size": 7056
+    },
+    "blob_10240": {
+      "offset": 400974,
+      "size": 10240,
+      "note": "mostly zeros in ROMFALL"
+    }
+  },
+  "map_decode": {
+    "stored_dims": [
+      112,
+      250
+    ],
+    "display_dims": [
+      224,
+      250
+    ],
+    "dense": true,
+    "logical_to_stored": "sx = (x - (y&1))//2 - 1, sy = y",
+    "geometry_note": "logical grid (unit/city coords) is hdr0 x hdr1; the terrain grid is hdr0/2 x hdr1 dense (diamond tiles: 2 logical columns per stored column, 2 border columns west; proven ROMFALL: 141/145 cities on land, 0 on ocean, and 32/32 ships on ocean)",
+    "per_map": [
+      {
+        "map_index": 0,
+        "improvements_offset": 225918,
+        "terrain_histogram": {
+          "9": 8421,
+          "3": 5189,
+          "1": 3204,
+          "4": 2121,
+          "74": 2007,
+          "10": 1959,
+          "0": 1548,
+          "14": 1033,
+          "5": 822,
+          "2": 693,
+          "12": 263,
+          "11": 239
+        },
+        "river_tiles": 3456,
+        "road_tiles": 920,
+        "railroad_tiles": 1412,
+        "visibility_nonzero_per_civ": [
+          420,
+          480,
+          549,
+          485,
+          539,
+          533,
+          454
+        ],
+        "note": "imp byte2: road=0x40 rail=0x80 (proven ROMFALL); remaining bits open; visibility bytes' near-identical distribution suggests per-civ fog, unproven"
+      }
+    ],
+    "resource_seed_offset": 393916
+  },
+  "cities": {
+    "offset": 892018,
+    "count": 50,
+    "record_size": 92,
+    "size": 4600,
+    "chain_found": 50,
+    "names": [
+      "Wang",
+      "Qianzhong",
+      "Changsha",
+      "Linwu",
+      "Daliang",
+      "Tan",
+      "Langye",
+      "Zhongmu",
+      "Shanyang",
+      "Anyi",
+      "Nitta",
+      "Kamasaka",
+      "Ming Gua",
+      "Jiyang",
+      "Suiyang",
+      "Ningling",
+      "Yanling",
+      "Yangchen",
+      "Anling",
+      "Deng"
+    ],
+    "names_total_named": 50,
+    "coords_first_8": [
+      {
+        "i": 0,
+        "name": "Wang",
+        "x": 93,
+        "y": 189,
+        "tail_shorts": [
+          65535,
+          0,
+          12
+        ]
+      },
+      {
+        "i": 1,
+        "name": "Qianzhong",
+        "x": 120,
+        "y": 190,
+        "tail_shorts": [
+          65535,
+          0,
+          16
+        ]
+      },
+      {
+        "i": 2,
+        "name": "Changsha",
+        "x": 119,
+        "y": 225,
+        "tail_shorts": [
+          65535,
+          0,
+          11
+        ]
+      },
+      {
+        "i": 3,
+        "name": "Linwu",
+        "x": 128,
+        "y": 108,
+        "tail_shorts": [
+          65535,
+          0,
+          21
+        ]
+      },
+      {
+        "i": 4,
+        "name": "Daliang",
+        "x": 167,
+        "y": 105,
+        "tail_shorts": [
+          65535,
+          0,
+          12
+        ]
+      },
+      {
+        "i": 5,
+        "name": "Tan",
+        "x": 170,
+        "y": 94,
+        "tail_shorts": [
+          65535,
+          0,
+          14
+        ]
+      },
+      {
+        "i": 6,
+        "name": "Langye",
+        "x": 123,
+        "y": 95,
+        "tail_shorts": [
+          65535,
+          0,
+          11
+        ]
+      },
+      {
+        "i": 7,
+        "name": "Zhongmu",
+        "x": 117,
+        "y": 103,
+        "tail_shorts": [
+          65535,
+          0,
+          11
+        ]
+      }
+    ],
+    "note": "name 16 B @0; x u16@58 / y u16@60 on the logical grid (same space as unit coords; proven: 145/146 garrisons on the tile, all cities on land under the diamond mapping); tail shorts @86-91 = (5, 5, size) \u2014 size verified Roma=29"
+  },
+  "units": {
+    "region": [
+      411214,
+      892018
+    ],
+    "size": 480804,
+    "record_size": 40,
+    "preamble_bytes": 4,
+    "count": null,
+    "count_arithmetic": "480804 = 4 + 40 x 12020",
+    "fields_proven": {
+      "x_u16@6": "display-grid x (0..width-1)",
+      "y_u16@8": "display-grid y (0..height-1)",
+      "type_u8@14": "index into Rules.txt @UNITS",
+      "owner_u8@15": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
+      "id_u16@36": "per-save unit id (re-assigned on every save)"
+    },
+    "owner_histogram": {},
+    "type_histogram_top": {},
+    "sample_first_8": [],
+    "verification": "ROMFALL: 145/146 cities have a garrison unit on their exact tile; owner-by-type matrix matches the scenario rosters (WRE units under West Romans, Hun units under Huns, V. Warship under Vandals); all 32 ship-type units sit on ocean tiles and all 678 ground units on land; ROMFALL_ERE differs in unit bytes 36-37 ONLY (ids re-assigned per save)",
+    "note": "remaining bytes open: 0-5 constants(2,2,0), 12-13 counters/flags, 16-19 counters (veteran?), 20-35 sparse, 38-39 tail"
+  }
 }

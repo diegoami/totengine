@@ -357,8 +357,11 @@ def walk_save(path: str) -> dict:
         out["note"] = "walker targets ToT; other versions not parsed further"
         return out
     if ver == 0x0033:
-        out["note"] = ("ToTPP-extended save: section sizes differ beyond the "
-                       "base walk; offsets below are base-format guesses")
+        out["note"] = ("ToTPP-extended save: base 0x32 front sections apply; "
+                       "after the 10240-blob comes the ToTPP extended state "
+                       "(dynamic, mostly-sparse arrays), then a 'LUAE' magic "
+                       "followed by the serialized Lua state as plain text, "
+                       "ending with an 'EVNT' trailer + 4 bytes")
 
     pos = 12
     out["unit_transport_relationships"] = {"offset": pos, "size": 640}
@@ -406,7 +409,7 @@ def walk_save(path: str) -> dict:
     pos += 16
     out["map_note"] = ("fields 6&7 (1-based) multiply into a following blob per "
                        "Mercator; maps repeat the data block in ToT")
-    if ver == 0x0032:
+    if ver in (0x0032, 0x0033):  # front layout identical (proven on deiQin)
         maps, surface = hdr[3], hdr[2]
         map_data = 13 * surface + 2 if maps else 0
         blob = 2 * hdr[5] * hdr[6] if maps else 0
@@ -479,6 +482,34 @@ def walk_save(path: str) -> dict:
                              "per-civ fog, unproven"),
                 })
             out["map_decode"]["resource_seed_offset"] = pos + maps * map_data - 2
+        if ver == 0x0033 and maps:
+            # 0x33 tail framing (proven on deiQin/deiYan saves, Warring
+            # States, 2026-11-02): LUAE magic + serialized Lua state text
+            # ('return { ... }'), then EVNT + 4 bytes at EOF. ToTPP writes
+            # plain 0x32 (no tail) for scenarios without Lua events (verified
+            # via the oracle on Midgard).
+            lua = data.find(b"LUAE", blob10240_end if maps else pos)
+            evnt = data.rfind(b"EVNT")
+            if lua > 0 and evnt > lua:
+                blob_txt = data[lua + 4:evnt - 4]
+                import re as _re
+                keys = sorted(set(k.decode() for k in _re.findall(
+                    rb'\n  \["([A-Za-z_][A-Za-z0-9_]*)"\] = \{', blob_txt[:500000])))
+                tiles = len(_re.findall(rb'"tile\(\d+:\d+\)"', blob_txt))
+                out["totpp_tail"] = {
+                    "lua_magic_offset": lua,
+                    "mid_region": [blob10240_end, lua],
+                    "mid_region_size": lua - blob10240_end,
+                    "lua_state_bytes": len(blob_txt),
+                    "lua_head": blob_txt[:60].decode("latin-1", "replace"),
+                    "lua_top_level_tables": keys,
+                    "lua_tile_entries": tiles,
+                    "evnt_trailer_offset": evnt,
+                    "note": ("mid region = ToTPP extended dynamic state "
+                             "(structure open: near-zero sparse arrays, size "
+                             "varies between saves by multiples of 40); Lua "
+                             "state is plain readable text"),
+                }
         # cities: find the 92-byte name grid — candidate printable name
         # fields (16-byte slot: printable prefix + NUL padding), then the
         # longest chain of candidates at exactly 92-byte stride.

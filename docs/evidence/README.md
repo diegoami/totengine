@@ -183,6 +183,31 @@ Controlled experiments over ROMFALL + its playable-civ variants (ERE/HUN/VIS)
    id ranges 2..711 vs 1452..2171 prove re-registration) — they are *not* a
    clean one-turn diff pair; true same-session pairs need the T0-10 oracle.
 
+## T0-7 findings (2026-11-02, sixth session — 0x33 tail framing)
+
+Materials: `deiQin.sav` (turn 11) / `deiYan.sav` (turn 2), Warring States.
+
+1. **The `0x33` tail is framed by magics.** After the base-`0x32` front
+   (which applies unchanged: map arithmetic `13×28,000+2`, header
+   `[224, 250, 28000, 1, …]`, 10,240-blob ending at 411,214) comes the
+   ToTPP extended state, then **`LUAE`** + the **serialized Lua state as
+   plain readable text** (`return { ["tableTileCulture"] = { ["tile(18:4)"]
+   = {…} … } … }`), ending with an **`EVNT` + 4-byte trailer** at EOF.
+2. **The Lua blob is the scenario's persistent state**: deiQin carries
+   5,477,281 bytes of it with 23,969 `tile(x:y)` entries (86% of the
+   28,000-tile map) under tables like `tableTileCulture`/`cityTileWealth` —
+   this is why Lua-scenario saves are megabytes.
+3. **The mid-region (411,214 → LUAE) is dynamic extended state**: its size
+   differs between deiYan (501,981) and deiQin (510,821) by exactly
+   **8,840 = 221 × 40** — 40-byte unit records again. The walker's
+   name-grid scan finds **50 cities** (92-B records) inside it. Remaining
+   open: the exact unit/city/array block order and the near-zero sparse
+   arrays (`41/45/54/f0` flag patterns) that dominate the region.
+4. **ToTPP writes plain `0x32` (no tail) for scenarios without Lua events** —
+   verified via the T0-10 oracle on Midgard. So `0x33` ⇔ Lua/extension data
+   present, which also scopes T1/T3 save writing.
+
+
 
 
 

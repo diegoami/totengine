@@ -7,12 +7,16 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
 
 ## Process discipline
 
-- **Never inline process-killing.** The pkill self-kill trap struck FOUR
-  times: any command line containing both `pkill -f '[c]iv2'` and the literal
-  string `civ2` (a later `wine civ2.exe`, a `grep civ2`, even `pgrep civ2`)
-  kills its own shell mid-run. All process management lives in
-  `tools/oracle/stop_game.sh` / `restart_game.sh`; interactive commands only
-  ever call those scripts.
+- **Never inline process-killing.** The pkill self-kill trap struck FIVE
+  times across two strings: any command line containing a `pkill -f
+  '[p]attern'` AND the literal string matching that pattern ANYWHERE else
+  in the same command line (a later `wine civ2.exe`, a `grep`, an `echo`,
+  even a `setsid ... memspool.py serve` after a `pkill -f
+  '[m]emspool.py serve'`) kills its own shell mid-run. The bracket trick
+  only protects the pattern itself, not other occurrences. ALL process
+  management lives in scripts (`tools/oracle/stop_game.sh`,
+  `restart_game.sh`, `memspool_ctrl.sh`); interactive commands only ever
+  call those scripts.
 - **Force the rig display.** A caller's inherited `DISPLAY=:0` leaked through
   `${DISPLAY:-:99}` and the game silently opened windows on the wrong screen
   (zero windows on :99, looked like a hung game). Rig scripts

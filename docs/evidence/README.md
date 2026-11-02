@@ -58,6 +58,44 @@ all rotating slots AND byte-compare against the previous baseline
 NOT reproducible from wizard settings alone; the T1-6 RNG-state hunt (RAM,
 via `memspool.py`) is the path to reproducibility.
 
+### RNG / seed state (T1-6 notes, 2026-11-02 night)
+
+- **Save 684–689 is a byte-for-byte copy of a RAM globals block at
+  `0x607658`**: `difficulty | 0x02 | seed-word | seed-word | rivals`
+  (the seed word is `0x02XX`, i.e. one random byte + constant 02,
+  duplicated). Verified live: in-world RAM at 0x607658 reads exactly the
+  save's 684–689 bytes (S2f: `04 02 db 02 db 04`).
+- The seed word is a **placeholder (`0x0200`) while the City Style dialog
+  is open, set by the time the "In the Beginning" intro opens, and stable
+  through world-gen into the save** (pre-gen vs post-gen RAM snapshots,
+  runs S2d/S2f).
+- **Patching it at City-Style gets overwritten by gen** (write 0x0237 →
+  save came out 0x02db) — 0x60765a is a serialized MIRROR, not the live
+  generator state. And two runs with the same final seed word (P1 vs S2f,
+  both 0xdb) still produced different worlds → the 685–688 word is the
+  classic combat/event-replay seed, NOT the world-gen state.
+- **The game imports NO `rand`/`srand`/`time`**: exactly one
+  `GetLocalTime` (call site 0x463369 — date-string formatting), one
+  `GetSystemTime` (0x5b598a, adjacent to another GetLocalTime — a
+  formatting pair), and three `GetTickCount` calls (0x58fc60/0x58fca5/
+  0x592a66 — all inside ToTPP's own appended code, timing helpers).
+  World-gen entropy therefore does NOT come from a time import in the
+  original code — candidate sources: uninitialized memory, timer-driven
+  UI event counts, or a hardware-derived value. This also explains how
+  identical-answer rides can still diverge.
+- LCG constant scan of `.text`: `214013/2531011` (MSVC rand) found only at
+  **0x5b11f1** and `0x19660D` at **0x554a4f** — both in ToTPP's appended
+  code region (its bundled msvcrt `rand`, e.g. for Lua `math.random`),
+  NOT in the original game's code. The original RNG's constants are
+  unknown — next step: disassemble the writer of the 0x607658 block (find
+  code storing to 0x607658..0x60765d) and walk back to the generator.
+- Exe layout notes for that hunt: `.text` 0x401000–0x5c3fde (original game
+  code roughly below ~0x5a0000, ToTPP appended at the end), `.rdata`
+  0x5c5000, `.data` 0x5cc000, `.idata` 0x691000, `totpp` section
+  0x6b6000 holds the import table. Game runtime globals cluster at
+  0x6076xx (between `.data` end and `.idata` — an unlisted block; code
+  at 0x463322/0x46334a reads globals at 0x60764a/0x607652).
+
 ### Wizard reference (all items + defaults, vision-read)
 
 - **Game-type list** (remembers last selection): 1 Original Game, 2 Science

@@ -65,6 +65,24 @@ def read_mem(pid: int, addr: int, length: int) -> bytes:
     return bytes(out)
 
 
+def write_mem(pid: int, addr: int, data: bytes) -> int:
+    """process_vm_writev — for patch-and-prove experiments (seed hunting)."""
+    libc = ctypes.CDLL(None, use_errno=True)
+    libc.process_vm_writev.restype = ctypes.c_ssize_t
+    libc.process_vm_writev.argtypes = [ctypes.c_int, ctypes.POINTER(IOV),
+                                       ctypes.c_ulong, ctypes.POINTER(IOV),
+                                       ctypes.c_ulong, ctypes.c_ulong]
+    buf = ctypes.create_string_buffer(data, len(data))
+    local = IOV(ctypes.cast(buf, ctypes.c_void_p), len(data))
+    remote = IOV(ctypes.c_void_p(addr), len(data))
+    got = libc.process_vm_writev(pid, ctypes.byref(local), 1,
+                                 ctypes.byref(remote), 1, 0)
+    if got <= 0:
+        err = ctypes.get_errno()
+        raise OSError(err, os.strerror(err), hex(addr))
+    return got
+
+
 def descendants(pid: int = None) -> list:
     me = pid or os.getpid()
     children = {}
@@ -241,6 +259,10 @@ def handle(req: dict) -> dict:
     if cmd == "read":
         blob = read_mem(pid, int(req["addr"], 16), int(req["len"]))
         return {"hex": blob.hex()}
+    if cmd == "write":
+        n = write_mem(pid, int(req["addr"], 16),
+                      bytes.fromhex(req["hex"]))
+        return {"ok": True, "written": n}
     if cmd == "scan":
         return {"hits": scan(pid, bytes.fromhex(req["pattern"]),
                              bool(req.get("anon", True)))}

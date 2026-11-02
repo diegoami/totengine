@@ -185,6 +185,19 @@ via `memspool.py`) is the path to reproducibility.
   0x6b6000 holds the import table. Game runtime globals cluster at
   0x6076xx (between `.data` end and `.idata` — an unlisted block; code
   at 0x463322/0x46334a reads globals at 0x60764a/0x607652).
+- **0x607658 is the global SETTINGS struct, not an RNG variable**: a
+  store-site scan of `.text` finds hundreds of references (reads like
+  `mov al, [0x60765b]`, writes like `mov [0x60765a], al`) scattered
+  across the whole codebase — every subsystem touches the block, and the
+  save serializes a copy of it at 684–689. So the 685–688 word is a
+  *field of the settings struct* whose meaning (probably the game's
+  combat-replay seed) cannot be inferred from the block alone. The true
+  world-gen PRNG (which produced different worlds for identical
+  settings) still has not been located; candidates remain uninitialized
+  memory and a timer-driven event count. Next concrete step: trace the
+  function that *initializes* the settings block on new-game start
+  (write sites with immediate/zero stores) rather than reading it
+  everywhere.
 
 ### Wizard reference (all items + defaults, vision-read)
 

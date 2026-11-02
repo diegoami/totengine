@@ -267,8 +267,11 @@ def render_mp(mp, names, out_png, scale=4):
         # terrain | river(0x80) | special(0x40) | improvement(0x3000);
         # verified spatially 2026-11-01 (Yellow River/Yangtze networks,
         # coastal specials, improvement clusters in river valleys).
+        # paired-slot render mask = 0x3F per the documented decode (bit 0x40
+        # = special resource, 0x80 = river); a 0x7F mask mis-colours every
+        # special tile (issue #29: 2,008 tiles = 7% of AnticChina)
         def terr(i):
-            return tiles[i] & 0x7F
+            return tiles[i] & 0x3F
 
         hist, rivers, specials, imps = {}, 0, 0, 0
         for i in range(w * h):
@@ -369,8 +372,8 @@ def walk_ext033(data, hdr, blob10240_end, out):
 
     Verified arithmetic: deiQin = deiYan +198 units (+7920) +10 cities
     (+920) = +8840 bytes exactly; scn vs Hu_Auto (load+autosave, same
-    sizes) keep 1441 units, 1351 at identical (x,y), ids re-assigned
-    6527..7967 -> 10..423.
+    sizes) keep 1442 units, of which 1351 sit at an (x,y) occurring
+    somewhere in the .scn, ids re-assigned 6527..7967 -> 10..1450.
     """
     import struct as _s
     surface = hdr[2]
@@ -394,7 +397,25 @@ def walk_ext033(data, hdr, blob10240_end, out):
                         "(map variant?); tail framing only")
         out["ext033"] = ext
         return
-    units, off = [], ustart
+    # The formula is a LANDMARK inside the array, not necessarily its first
+    # record: on all four Warring States files exactly one more record
+    # (id=0, f4=0 — the bulk carries f4=2) precedes it. Extend backwards to
+    # the maximal contiguous block (bounded) so the block boundaries are
+    # measured, not assumed.
+    ustart2 = ustart
+    for _ in range(128):
+        if ustart2 - 40 >= blob10240_end and urec_valid(data[ustart2 - 40:ustart2]):
+            ustart2 -= 40
+        else:
+            break
+    if ustart2 != ustart:
+        ext["unit_start_measured"] = ustart2
+        ext["unit_start_formula_note"] = (
+            "formula lands %d record(s) into the block; id-0/f4-0 slot-0 "
+            "record(s) precede the f4=2 bulk; whether slot 0 belongs to the "
+            "unit array or terminates the preceding per-tile section is "
+            "open" % ((ustart - ustart2) // 40))
+    units, off = [], ustart2
     while off + 40 <= end and urec_valid(data[off:off + 40]):
         units.append(off)
         off += 40
@@ -413,7 +434,7 @@ def walk_ext033(data, hdr, blob10240_end, out):
             sample.append({"i": k, "id": uid, "x": x, "y": y,
                            "type": t, "owner": o})
     ext["units"] = {
-        "offset": ustart, "end": off, "count": len(units),
+        "offset": ustart2, "end": off, "count": len(units),
         "record_size": 40, "id_range": [min(ids), max(ids)],
         "owner_histogram": dict(sorted(owner_hist.items())),
         "type_histogram_top": dict(sorted(type_hist.items(),
@@ -453,12 +474,54 @@ def walk_ext033(data, hdr, blob10240_end, out):
                                  "open — trade-route-like records and id "
                                  "lists observed")}
     total = end - blob10240_end
-    calc = (32 + 15 * surface) + 40 * len(units) + interlude + 92 * ncities \
-        + (end - cend)
+    # Falsifiable structural checks (issue #25): the arithmetic below is a
+    # *description* — the post-city term is the leftover by construction and
+    # would absorb any mis-walk, so validity rests on these checks instead.
+    def printable_name_slot(o):
+        nm = data[o:o + 16].split(b"\x00")[0]
+        return bool(nm) and all(32 <= c < 127 for c in nm)
+
+    cands2 = set()
+    i = blob10240_end
+    while i < end - 16:
+        j = data.find(b"\x00", i, i + 16)
+        if 3 <= j - i <= 15 and data[i + 15] == 0 \
+                and all(32 <= c < 127 for c in data[i:j]):
+            cands2.add(i)
+            i = j
+        i += 1
+    competing_grids = []
+    seen = set()
+    for s in sorted(cands2):
+        if s in seen or (cstart <= s < cend):
+            continue
+        ch = [s]
+        while ch[-1] + 92 in cands2:
+            ch.append(ch[-1] + 92)
+        seen.update(ch[1:])
+        if len(ch) >= 8 and all(
+                _s.unpack_from("<H", data, c + 58)[0] <= xmax
+                and _s.unpack_from("<H", data, c + 60)[0] <= ymax
+                for c in ch):
+            competing_grids.append(s)
+    ext["checks"] = {
+        "unit_start_valid": True,  # an invalid start returns early above
+        "unit_block_preceded_by_invalid": (
+            not urec_valid(data[ustart2 - 40:ustart2])
+            if ustart2 - 40 >= blob10240_end else True),
+        "city0_name_printable": printable_name_slot(cstart),
+        "city_grid_is_only_name_grid": not competing_grids,
+        "competing_name_grids": competing_grids,
+    }
     ext["accounting"] = {
-        "total": total, "reconstructed": calc, "match": total == calc,
-        "formula": (f"{total} = 32+15*{surface} + 40*{len(units)} + 4 "
-                    f"+ 92*{ncities} + {end - cend}"),
+        "total": total,
+        "formula": (f"{total} = {ustart2 - blob10240_end} (per-tile arrays) "
+                    f"+ 40*{len(units)} + 4 + 92*{ncities} + "
+                    f"{end - cend} (post-city)"),
+        "note": ("descriptive decomposition: the post-city term is the "
+                 "leftover by construction — the falsifiable checks are in "
+                 "ext.checks (unit-start validity, block maximality, city-0 "
+                 "name, no competing 92-B name grid outside the walked one)"),
     }
     out["ext033"] = ext
 
@@ -562,10 +625,12 @@ def walk_save(path: str) -> dict:
                                                    "grid is hdr0/2 x hdr1 dense "
                                                    "(diamond tiles: 2 logical "
                                                    "columns per stored column, 2 "
-                                                   "border columns west; proven "
-                                                   "ROMFALL: 141/145 cities on "
-                                                   "land, 0 on ocean, and 32/32 "
-                                                   "ships on ocean)"),
+                                                   "border columns west; "
+                                                   "per-file support numbers "
+                                                   "measured in "
+                                                   "garrisons_measured / "
+                                                   "city_terrain_measured "
+                                                   "below)"),
                                  "per_map": []}
             for m in range(maps):
                 base = pos + m * map_data + 2  # +2 proven before tiles (ROMFALL)
@@ -676,8 +741,8 @@ def walk_save(path: str) -> dict:
             cities["coords_first_8"] = coords[:8]
             cities["note"] = ("name 16 B @0; x u16@58 / y u16@60 on the "
                               "logical grid (same space as unit coords; "
-                              "proven: 145/146 garrisons on the tile, all "
-                              "cities on land under the diamond mapping); "
+                              "per-file garrison/terrain support in "
+                              "garrisons_measured / city_terrain_measured); "
                               "tail shorts @86-91 = (5, 5, size) — size "
                               "verified Roma=29")
             out["cities"] = cities
@@ -716,19 +781,40 @@ def walk_save(path: str) -> dict:
                 "owner_histogram": dict(sorted(owner_hist.items())),
                 "type_histogram_top": dict(sorted(type_hist.items(), key=lambda kv: -kv[1])[:12]),
                 "sample_first_8": units_table[:8],
-                "verification": ("ROMFALL: 145/146 cities have a garrison unit "
-                                 "on their exact tile; owner-by-type matrix "
-                                 "matches the scenario rosters (WRE units "
-                                 "under West Romans, Hun units under Huns, V. "
-                                 "Warship under Vandals); all 32 ship-type "
-                                 "units sit on ocean tiles and all 678 "
-                                 "ground units on land; ROMFALL_ERE differs "
-                                 "in unit bytes 36-37 ONLY (ids re-assigned "
-                                 "per save)"),
+                "verification": ("layout facts: docs/evidence/README.md "
+                                 "§T0-6; the garrison support number is "
+                                 "measured per file in "
+                                 "cities.garrisons_measured / "
+                                 "cities.city_terrain_measured"),
                 "note": ("remaining bytes open: 0-5 constants(2,2,0), 12-13 "
                          "counters/flags, 16-19 counters (veteran?), 20-35 "
                          "sparse, 38-39 tail"),
             }
+            # per-file measured support for the garrison/geometry claims —
+            # issue #27: never stamp another file's verification results here
+            occ = {(u["x"], u["y"]) for u in units_table}
+            garrisoned = sum(1 for c in coords if (c["x"], c["y"]) in occ)
+            cities["garrisons_measured"] = (
+                f"{garrisoned}/{n} cities have a unit on their exact tile "
+                "(measured on this file)")
+            stored_w2, stored_h2 = hdr[0] // 2, hdr[1]
+            base = pos + 2 + 7 * surface
+            on_ocean = on_land = outside = 0
+            for c in coords:
+                x, y = c["x"], c["y"]
+                sx = (x - (y & 1)) // 2 - 1
+                if not (0 <= sx < stored_w2 and 0 <= y < stored_h2):
+                    outside += 1
+                    continue
+                t = data[base + 6 * (y * stored_w2 + sx) + 4] & 0x7F
+                if t == 10:
+                    on_ocean += 1
+                else:
+                    on_land += 1
+            cities["city_terrain_measured"] = (
+                f"{on_land}/{n} cities on non-ocean terrain, {on_ocean} on "
+                f"ocean, {outside} outside the stored grid (measured on "
+                "this file)")
     return out
 
 

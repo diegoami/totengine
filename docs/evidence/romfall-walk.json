@@ -1,5 +1,5 @@
 {
-  "file": "/mnt/d/games/CIVTOT/FallRome/ROMFALL.scn",
+  "file": "@HOME@/FallRome/ROMFALL.scn",
   "size": 203227,
   "magic": "CIVILIZE",
   "version_raw": "0x0032",
@@ -115,6 +115,53 @@
       "note": "mostly zeros in ROMFALL"
     }
   },
+  "map_decode": {
+    "stored_dims": [
+      75,
+      120
+    ],
+    "display_dims": [
+      150,
+      120
+    ],
+    "dense": true,
+    "logical_to_stored": "sx = (x - (y&1))//2 - 1, sy = y",
+    "geometry_note": "logical grid (unit/city coords) is hdr0 x hdr1; the terrain grid is hdr0/2 x hdr1 dense (diamond tiles: 2 logical columns per stored column, 2 border columns west; per-file support numbers measured in garrisons_measured / city_terrain_measured below)",
+    "per_map": [
+      {
+        "map_index": 0,
+        "improvements_offset": 92918,
+        "terrain_histogram": {
+          "10": 2768,
+          "1": 1756,
+          "3": 1448,
+          "2": 1050,
+          "4": 870,
+          "0": 800,
+          "74": 70,
+          "5": 70,
+          "9": 65,
+          "8": 57,
+          "6": 43,
+          "7": 2
+        },
+        "river_tiles": 534,
+        "road_tiles": 3497,
+        "railroad_tiles": 413,
+        "visibility_nonzero_per_civ": [
+          527,
+          556,
+          508,
+          535,
+          530,
+          545,
+          537
+        ],
+        "note": "imp byte2: road=0x40 rail=0x80 (proven ROMFALL); remaining bits open; visibility bytes' near-identical distribution suggests per-civ fog, unproven"
+      }
+    ],
+    "resource_seed_offset": 146916
+  },
   "cities": {
     "offset": 187872,
     "count": 146,
@@ -144,7 +191,99 @@
       "Carthago"
     ],
     "names_total_named": 146,
-    "note": "name field 16 B at record start (verified ROMFALL: Roma first); trailing unnamed records possible; per-field decode is open"
+    "coords_first_8": [
+      {
+        "i": 0,
+        "name": "Roma",
+        "x": 54,
+        "y": 84,
+        "tail_shorts": [
+          5,
+          5,
+          8
+        ]
+      },
+      {
+        "i": 1,
+        "name": "Brundisium",
+        "x": 47,
+        "y": 93,
+        "tail_shorts": [
+          5,
+          5,
+          15
+        ]
+      },
+      {
+        "i": 2,
+        "name": "Syracusae",
+        "x": 50,
+        "y": 90,
+        "tail_shorts": [
+          5,
+          5,
+          10
+        ]
+      },
+      {
+        "i": 3,
+        "name": "Rhegium",
+        "x": 50,
+        "y": 70,
+        "tail_shorts": [
+          5,
+          5,
+          15
+        ]
+      },
+      {
+        "i": 4,
+        "name": "Ravenna",
+        "x": 51,
+        "y": 77,
+        "tail_shorts": [
+          5,
+          3,
+          7
+        ]
+      },
+      {
+        "i": 5,
+        "name": "Corfinium",
+        "x": 50,
+        "y": 82,
+        "tail_shorts": [
+          3,
+          3,
+          12
+        ]
+      },
+      {
+        "i": 6,
+        "name": "Neapolis",
+        "x": 44,
+        "y": 66,
+        "tail_shorts": [
+          5,
+          5,
+          11
+        ]
+      },
+      {
+        "i": 7,
+        "name": "Mediolanum",
+        "x": 55,
+        "y": 69,
+        "tail_shorts": [
+          5,
+          6,
+          8
+        ]
+      }
+    ],
+    "note": "name 16 B @0; x u16@58 / y u16@60 on the logical grid (same space as unit coords; per-file garrison/terrain support in garrisons_measured / city_terrain_measured); tail shorts @86-91 = (5, 5, size) \u2014 size verified Roma=29",
+    "garrisons_measured": "145/146 cities have a unit on their exact tile (measured on this file)",
+    "city_terrain_measured": "145/146 cities on non-ocean terrain, 0 on ocean, 1 outside the stored grid (measured on this file)"
   },
   "units": {
     "region": [
@@ -156,6 +295,105 @@
     "preamble_bytes": 34,
     "count": 710,
     "count_arithmetic": "28434 = 34 + 40 x 710",
-    "note": "count via exact region arithmetic (preamble 34 B + 40 B records); per-record field semantics still open \u2014 x/y-like columns at record bytes 6-10, see docs/evidence/README.md"
+    "fields_proven": {
+      "x_u16@6": "display-grid x (0..width-1)",
+      "y_u16@8": "display-grid y (0..height-1)",
+      "type_u8@14": "index into Rules.txt @UNITS",
+      "owner_u8@15": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
+      "id_u16@36": "per-save unit id (re-assigned on every save)"
+    },
+    "owner_histogram": {
+      "0": 180,
+      "1": 162,
+      "2": 28,
+      "3": 45,
+      "4": 52,
+      "5": 31,
+      "6": 147,
+      "7": 64,
+      "16": 1
+    },
+    "type_histogram_top": {
+      "3": 88,
+      "21": 80,
+      "36": 76,
+      "2": 59,
+      "10": 56,
+      "20": 53,
+      "39": 36,
+      "16": 36,
+      "6": 29,
+      "24": 26,
+      "38": 25,
+      "18": 13
+    },
+    "sample_first_8": [
+      {
+        "i": 0,
+        "x": 109,
+        "y": 97,
+        "type": 60,
+        "owner": 0,
+        "id": 2135
+      },
+      {
+        "i": 1,
+        "x": 120,
+        "y": 96,
+        "type": 18,
+        "owner": 0,
+        "id": 2136
+      },
+      {
+        "i": 2,
+        "x": 120,
+        "y": 92,
+        "type": 18,
+        "owner": 0,
+        "id": 2137
+      },
+      {
+        "i": 3,
+        "x": 117,
+        "y": 71,
+        "type": 39,
+        "owner": 0,
+        "id": 2138
+      },
+      {
+        "i": 4,
+        "x": 117,
+        "y": 81,
+        "type": 39,
+        "owner": 0,
+        "id": 2139
+      },
+      {
+        "i": 5,
+        "x": 109,
+        "y": 87,
+        "type": 39,
+        "owner": 0,
+        "id": 2140
+      },
+      {
+        "i": 6,
+        "x": 116,
+        "y": 88,
+        "type": 18,
+        "owner": 0,
+        "id": 2141
+      },
+      {
+        "i": 7,
+        "x": 19,
+        "y": 19,
+        "type": 38,
+        "owner": 0,
+        "id": 2142
+      }
+    ],
+    "verification": "layout facts: docs/evidence/README.md \u00a7T0-6; the garrison support number is measured per file in cities.garrisons_measured / cities.city_terrain_measured",
+    "note": "remaining bytes open: 0-5 constants(2,2,0), 12-13 counters/flags, 16-19 counters (veteran?), 20-35 sparse, 38-39 tail"
   }
 }

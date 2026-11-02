@@ -14,7 +14,9 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 | `romfall-scnmap.png` | `totctl scnmap FallRome/ROMFALL.scn` | Embedded scenario map with river/road/railroad overlays |
 | `anticchina-map.png` | `totctl map Scenario/china/AnticChina.MP` | ToTPP-era paired-slot `.MP` flavor: China with river networks + improvement flags |
 | `romfall-walk.json` | `totctl save ROMFALL.scn` | Structural walk of a classic scenario (ToT 1.1, `0x0032`) |
-| `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked with base-format offsets |
+| `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked: `ext033` units/cities/structural checks + `totpp_tail` Lua framing |
+| `golden/warring-auto-walk.json`, `golden/warring-yan-walk.json`, `golden/warring-qin-walk.json` | `totctl save` on the 0x33 ladder | regression-protected turns 1/2/11 walks (T0-7) |
+| `crosscheck-mp.json` | `tools/crosscheck_mp.py` (runs both decoders) | Rust `tot-kit` vs Python probe: layout/dims/top-6 histogram must match |
 | `va-autosave-diff.json` | `totctl diff Va_Auto2.SAV Va_Auto.SAV` | Annotated diff of two real autosaves (oracle-methodology demo) |
 
 ## Findings (verified)
@@ -26,7 +28,9 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
      third session — initially mis-attributed to special resources; see
      finding 7 below for the proof)*
    - Void/non-existent tile = `extra & 0xF0` (marks Civ2's round-world voids)
-   - `World.mp`: 150×120 = 18,000 slots, 9,000 real tiles (matches dword), 90-byte tail
+   - `World.mp`: 150×120 = 18,000 slots; declared real-tile dword = 9,000,
+     **counted non-void slots = 8,568** (both decoders agree — the 432-tile
+     gap between dword and count is open), 90-byte tail
 
 2. **The decode is provably correct — geography check.** Terrain histogram of real
    tiles: Ocean 5,633 (66%), Grassland 673, Plains 518, Forest 508, Tundra 279,
@@ -41,9 +45,11 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
    subsequent rows are special-resource overlays.
 
 4. **SAV/SCN structural walk works on real scenarios.** ROMFALL.scn (`0x0032`):
-   turn 0; 7 civ name blocks decode perfectly (Valentianus III/West Romans, Hengist/
-   Anglo-Saxons, Chlodwig/Francs, Genseric/Vandals, Theodoric I/Visigoths,
-   Theodosius II/Byzantines, Rugila/Huns); 56 techs pre-discovered; 10 wonders
+   turn 0; 7 civ name blocks decode (leader names via NUL-terminated runs:
+   Valentianus III, Hengist, Chlodwig, Genseric, Theodoric I, Theodosius II,
+   Rugila — the adjective half can be cut by embedded bytes, e.g. `Hengist` +
+   `ief` for *Anglo-Saxons*; the full strings are present in the file but not
+   extracted by `null_strings()`); 56 techs pre-discovered; 10 wonders
    built, 1 destroyed; map header `[150, 120, 9000, 1, …]` consistent with the MP
    findings. *Open:* `year` field at offset 670 reads 5159 — decoding TBD.
 
@@ -163,9 +169,12 @@ Controlled experiments over ROMFALL + its playable-civ variants (ERE/HUN/VIS)
      (`civ_names[n-1]`), bit `0x10` = leader unit (the single owner-16 unit
      is *Pope Leo I*)
    - `u16@36 = unit id` — **re-assigned on every save** (ROMFALL_ERE differs
-     from ROMFALL in bytes 36–37 of all 710 units and *nothing else*; the
-     HUN/VIS variants additionally swap exactly one unit record — the
-     playable-civ flavor unit)
+     from ROMFALL at bytes 36–37 of 709/710 unit records — per-save ids.
+     Outside the unit section the two files differ in 324 more bytes: all
+     146 city records' owner byte @53 (cities re-owned by the ERE civ — the
+     ERE save is a later game state), 5 settings bytes (674; 679–681 =
+     human civ 1→6; 687), 3 civ-block bytes, 2 unit-preamble bytes and 22
+     post-city bytes);
 2. **City record (92 B): `u16@58 = x`, `u16@60 = y`** (logical grid, same
    space as units); tail shorts @86–91 = (5, 5, size) — Roma = 29.
 3. **The map geometry is settled.** The terrain grid stored in the map
@@ -173,12 +182,18 @@ Controlled experiments over ROMFALL + its playable-civ variants (ERE/HUN/VIS)
    on the **logical 150×120** grid. Mapping (proven by a unique alignment
    optimum): `sx = (x − (y&1))//2 − 1, sy = y` — diamond tiles spanning 2
    logical columns with 2 border columns at the west edge.
-4. **Verification (stronger than the planned cheat-screen eyeball):**
-   - 145/146 cities have a garrison unit on their exact tile;
+4. **Verification (measured per file by the walker — `garrisons_measured` /
+   `city_terrain_measured` fields):**
+   - 145/146 cities have a garrison unit on their exact tile (holds for
+     ROMFALL, ROMFALL_ERE and Va_Auto alike);
    - under the diamond mapping, 141/145 cities sit on land, 0 on ocean
      (4 on desert — North-African cities), at the unique optimum dx=−1;
-   - all 32 ship-type units sit on ocean tiles, all 678 ground units on land;
-   - ROMFALL vs ROMFALL_ERE: zero content differences beyond per-save ids.
+   - of 710 units, 32 sit on ocean tiles and 678 on non-ocean — but the
+     *domain* labels do not all match those terrains (14 of the 32 are
+     land-domain leaders, plausibly transported; 90 of 108 sea-domain units
+     sit on non-ocean tiles, 66 of them on city tiles — ships in harbour),
+     so the domain check does not discriminate the mapping; the garrison
+     and city-terrain checks are the supporting evidence.
 5. **The Va_Auto/Va_Auto2 autosaves are from different play sessions** (the
    id ranges 2..711 vs 1452..2171 prove re-registration) — they are *not* a
    clean one-turn diff pair; true same-session pairs need the T0-10 oracle.
@@ -219,8 +234,9 @@ end of the base front (411,214 here):
 **The 0x33 unit record is a different layout from the 0x32 base record**:
 
 - `@0 u16 id` — sequential, **re-assigned on every save** (proof: scn ids
-  6527..7967 → Hu_Auto ids 10..423, same 1,441 units, 1,351 at identical
-  (x,y) after load+autosave);
+  6527..7967 → Hu_Auto ids 10..1450, sequential from 10 with 16 records
+  carrying id 0; same 1,442 units, of which 1,351 sit at an (x,y) that
+  occurs somewhere in the .scn after load+autosave);
 - `@10/@12 s16 x/y` — **logical** grid coords (not the stored/diamond
   space); off-board units carry negative coords (−100/−500 observed);
 - `@18 u8 type` — Rules.txt @UNITS index (190 rows in Warring States,
@@ -229,22 +245,27 @@ end of the base front (411,214 here):
 - `@28 u16` optional link, 0xffff = none (home city?);
 - rest flags/counters (open).
 
-**Byte-exact accounting** (walker `ext033`, verified on all four files):
+**Decomposition** (walker `ext033`; the arithmetic is *descriptive* — the
+post-city term is the leftover by construction — so validity rests on the
+falsifiable structural checks in `ext033.checks`: unit-start validity,
+block maximality, city-0 name printable, and no competing 92-B name grid
+outside the walked one; corrupting a unit id flips them to FAIL):
 
 ```
-deiQin   510821 = 32+15*28000 + 40*1646 + 4 + 92*132 + 12801
-deiYan   501981 = 32+15*28000 + 40*1448 + 4 + 92*121 + 12893
-scn      501513 = 32+15*28000 + 40*1441 + 4 + 92*119 + 12889
-Hu_Auto  501513 = 32+15*28000 + 40*1441 + 4 + 92*119 + 12889
+deiQin   510821 = 419992 + 40*1647 + 4 + 92*132 + 12801
+deiYan   501981 = 419992 + 40*1449 + 4 + 92*121 + 12893
+scn      501513 = 419992 + 40*1442 + 4 + 92*119 + 12889
+Hu_Auto  501513 = 419992 + 40*1442 + 4 + 92*119 + 12889
 ```
 
-deiQin − deiYan = **+198 units (+7,920) + 11 city slots (+1,012) − 92 in
-the post-city block = +8,840 exactly** (the post-city block absorbs one
-city slot, suggesting an empty/razed slot mid-grid stops the naive walk).
-The turn-1→2 delta (+468) decomposes as +7 units, +2 city slots, +4 bytes
-in post-city. The unit-start formula `32+15×surface` held for all four
-files (one map); re-verify on a second 0x33 map before trusting it
-generally.
+The unit-start formula `32+15×surface` is a *landmark* that lands one
+record into the block: an id-0/f4-0 slot precedes the f4=2 bulk in all four
+files (whether it belongs to the unit array or terminates the preceding
+per-tile section is open). deiQin − deiYan = **+198 units (+7,920) + 11
+city slots (+1,012) − 92 in the post-city block = +8,840 exactly**. The
+turn-1→2 delta (+468) decomposes as +7 units, +2 city slots, +4 bytes in
+post-city. The landmark formula held for all four files (one map);
+re-verify on a second 0x33 map before trusting it generally.
 
 
 

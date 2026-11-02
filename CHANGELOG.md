@@ -20,10 +20,11 @@ against real game files, evidence committed under `docs/evidence/`.
   settings, civs, transporters, turn/year; embedded map (visibility 7 B +
   map 6 B per tile; road 0x40 / rail 0x80); unit records (x/y, type→@UNITS,
   owner with 0x10 leader bit, per-save re-assigned ids — garrisons-on-cities
-  145/146, ships-on-ocean 32/32); city records (name, x/y, size).
+  145/146 measured per file by the walker); city records (name, x/y, size).
 - **ToTPP `0x33` extension** — tail framing (`LUAE` + serialized Lua state
-  as plain text + `EVNT` trailer) and the mid-region, byte-exact on the
-  four-file Warring States ladder: `[32+15×surface per-tile arrays][40 B
+  as plain text + `EVNT` trailer) and the mid-region, with an exact
+  decomposition on the four-file Warring States ladder and falsifiable
+  structural checks in the walker: `[32+15×surface per-tile arrays][40 B
   units][4 B][92 B cities][fixed post-city]`; 0x33 unit layout differs from
   the 0x32 base (id@0 sequential, logical signed coords, type@18, owner@19).
   ToTPP writes plain 0x32 for non-Lua scenarios (oracle-verified).
@@ -31,7 +32,9 @@ against real game files, evidence committed under `docs/evidence/`.
 ### Toolchain
 
 - Rust workspace `tot-kit | engine | lua-host | totctl | totui`; MP decoder
-  ported and cross-validated byte-for-byte against the Python probe; CI on
+  ported and cross-validated against the Python probe on the corpus maps —
+  enforced by `make test` via `docs/evidence/crosscheck-mp.json`; terrain
+  mask is per-layout (stock `0x7F`, ToTPP paired `0x3F`); CI on
   fmt + clippy + tests.
 - `tools/totctl.py` — reference probe (rules/map/save/diff/scnmap),
   stdlib-only, `CIVTOT_HOME` for the install root.

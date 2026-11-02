@@ -1,5 +1,5 @@
 {
-  "file": "/mnt/d/games/CIVTOT/World.mp",
+  "file": "@HOME@/World.mp",
   "size": 54098,
   "layout": "tot_3byte_slot",
   "header_bytes": 8,
@@ -8,7 +8,8 @@
   "real_tiles": 9000,
   "tail_bytes": 90,
   "render": {
-    "decode": "verified: word&0x7F, void=extra&0xF0",
+    "decode": "verified: word&0x7F, river=word&0x80, void=extra&0xF0",
+    "river_tiles": 246,
     "terrain_histogram": {
       "10": 5633,
       "2": 673,
@@ -22,6 +23,6 @@
       "5": 121,
       "8": 31
     },
-    "png": "/home/diego/projects/civtotre/docs/evidence/world-mp.png"
+    "png": "@TMP@/world-map.png"
   }
 }

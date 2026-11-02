@@ -1,6 +1,6 @@
 {
-  "a": "/mnt/d/games/CIVTOT/Scenario/FallRome/Va_Auto2.SAV",
-  "b": "/mnt/d/games/CIVTOT/Scenario/FallRome/Va_Auto.SAV",
+  "a": "@HOME@/Scenario/FallRome/Va_Auto2.SAV",
+  "b": "@HOME@/Scenario/FallRome/Va_Auto.SAV",
   "size_a": 226376,
   "size_b": 226336,
   "note": "size delta -40 bytes = -1 unit record (ToT)(s)",

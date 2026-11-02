@@ -46,8 +46,8 @@ pub struct MpMap {
     pub format: MpFormat,
     pub width: u16,
     pub height: u16,
-    /// Terrain word per tile (`word & 0x3F` is the terrain id; `0x40` the
-    /// special-resource bit where stored, `0x80` the river bit).
+    /// Terrain word per tile (terrain id = `word & terrain_mask(format)`;
+    /// `0x40` the special-resource bit where stored, `0x80` the river bit).
     pub tiles: Vec<u16>,
     /// The third byte per tile (ToT layouts; void when `extra & 0xF0 != 0`
     /// in `Tot3ByteSlot`).
@@ -64,8 +64,19 @@ pub struct MpMap {
 }
 
 impl MpMap {
-    /// Terrain id of a tile (`word & 0x3F`), or `None` for void slots
-    /// (`Tot3ByteSlot` only; the paired layout is a dense grid).
+    /// Terrain-id mask — a property of the *layout*, not the accessor
+    /// (issue #28): stock ToT words carry terrain in `& 0x7F`; the
+    /// ToTPP paired layout uses `& 0x3F` with `0x40` = special resource.
+    /// Classic 2-byte words follow the stock mask (unproven separately).
+    pub fn terrain_mask(&self) -> u16 {
+        match self.format {
+            MpFormat::Tot3ByteSlot | MpFormat::Classic2Byte => 0x7F,
+            MpFormat::TotPairedSlot => 0x3F,
+        }
+    }
+
+    /// Terrain id of a tile (`word & terrain_mask()`), or `None` for void
+    /// slots (`Tot3ByteSlot` only; the paired layout is a dense grid).
     pub fn terrain(&self, index: usize) -> Option<u8> {
         let void = match &self.extra {
             Some(extra) if self.format == MpFormat::Tot3ByteSlot => extra[index] & 0xF0 != 0,
@@ -74,7 +85,7 @@ impl MpMap {
         if void {
             None
         } else {
-            Some((self.tiles[index] & 0x3F) as u8)
+            Some((self.tiles[index] & self.terrain_mask()) as u8)
         }
     }
 
@@ -251,6 +262,37 @@ mod tests {
         assert!(!map.is_river(0));
         assert_eq!(map.real_tile_count(), 7, "eight slots minus one void");
         assert_eq!(map.tail_bytes, 0);
+    }
+
+    #[test]
+    fn terrain_mask_is_per_layout() {
+        // issue #28: the mask is a property of the layout, not the accessor.
+        // Stock ToT words keep bit 0x40 inside the terrain id (special
+        // overlay rows in @TERRAIN); the paired ToTPP layout splits it out
+        // as the special-resource bit (terrain & 0x3F).
+        let mut v = synthetic_tot_mp();
+        v[8 + 3] = 0x4A; // slot 1 word low byte: 0x40 | terrain 10
+        v[8 + 4] = 0x00;
+        let stock = parse_mp(&v).expect("parses");
+        assert_eq!(stock.terrain_mask(), 0x7F);
+        assert_eq!(stock.terrain(1), Some(0x4A), "stock keeps 0x40 in the id");
+
+        let mut p = Vec::new();
+        p.extend_from_slice(&8u16.to_le_bytes());
+        p.extend_from_slice(&2u16.to_le_bytes());
+        p.extend_from_slice(&8u16.to_le_bytes());
+        p.extend_from_slice(&1u16.to_le_bytes());
+        p.extend_from_slice(&[0xAB; 90]);
+        for w in [0x02u16, 0x4A, 0, 0, 0, 0, 0, 0] {
+            p.extend_from_slice(&w.to_le_bytes());
+            p.push(0x00);
+            p.extend_from_slice(&0x003Fu16.to_le_bytes());
+            p.push(0xF0);
+        }
+        p.extend_from_slice(&[0u8; 8]);
+        let paired = parse_mp(&p).expect("parses");
+        assert_eq!(paired.terrain_mask(), 0x3F);
+        assert!(paired.is_special(1) && paired.terrain(1) == Some(10));
     }
 
     #[test]

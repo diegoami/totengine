@@ -126,7 +126,7 @@
     ],
     "dense": true,
     "logical_to_stored": "sx = (x - (y&1))//2 - 1, sy = y",
-    "geometry_note": "logical grid (unit/city coords) is hdr0 x hdr1; the terrain grid is hdr0/2 x hdr1 dense (diamond tiles: 2 logical columns per stored column, 2 border columns west; proven ROMFALL: 141/145 cities on land, 0 on ocean, and 32/32 ships on ocean)",
+    "geometry_note": "logical grid (unit/city coords) is hdr0 x hdr1; the terrain grid is hdr0/2 x hdr1 dense (diamond tiles: 2 logical columns per stored column, 2 border columns west; per-file support numbers measured in garrisons_measured / city_terrain_measured below)",
     "per_map": [
       {
         "map_index": 0,
@@ -281,7 +281,9 @@
         ]
       }
     ],
-    "note": "name 16 B @0; x u16@58 / y u16@60 on the logical grid (same space as unit coords; proven: 145/146 garrisons on the tile, all cities on land under the diamond mapping); tail shorts @86-91 = (5, 5, size) \u2014 size verified Roma=29"
+    "note": "name 16 B @0; x u16@58 / y u16@60 on the logical grid (same space as unit coords; per-file garrison/terrain support in garrisons_measured / city_terrain_measured); tail shorts @86-91 = (5, 5, size) \u2014 size verified Roma=29",
+    "garrisons_measured": "145/146 cities have a unit on their exact tile (measured on this file)",
+    "city_terrain_measured": "145/146 cities on non-ocean terrain, 0 on ocean, 1 outside the stored grid (measured on this file)"
   },
   "units": {
     "region": [
@@ -391,7 +393,7 @@
         "id": 6408
       }
     ],
-    "verification": "ROMFALL: 145/146 cities have a garrison unit on their exact tile; owner-by-type matrix matches the scenario rosters (WRE units under West Romans, Hun units under Huns, V. Warship under Vandals); all 32 ship-type units sit on ocean tiles and all 678 ground units on land; ROMFALL_ERE differs in unit bytes 36-37 ONLY (ids re-assigned per save)",
+    "verification": "layout facts: docs/evidence/README.md \u00a7T0-6; the garrison support number is measured per file in cities.garrisons_measured / cities.city_terrain_measured",
     "note": "remaining bytes open: 0-5 constants(2,2,0), 12-13 counters/flags, 16-19 counters (veteran?), 20-35 sparse, 38-39 tail"
   }
 }

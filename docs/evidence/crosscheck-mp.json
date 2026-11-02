@@ -1,0 +1,73 @@
+{
+ "files": {
+  "Scenario/china/AnticChina.MP": {
+   "match": true,
+   "python": {
+    "dims": [
+     112,
+     250
+    ],
+    "layout": "tot_paired_slot",
+    "terrain_top": {
+     "0": 2576,
+     "1": 3261,
+     "10": 3967,
+     "3": 5340,
+     "4": 2261,
+     "9": 8434
+    }
+   },
+   "rust": {
+    "counted_real": 28000,
+    "dims": [
+     112,
+     250
+    ],
+    "layout": "TotPairedSlot",
+    "terrain_top": {
+     "0": 2576,
+     "1": 3261,
+     "10": 3967,
+     "3": 5340,
+     "4": 2261,
+     "9": 8434
+    }
+   }
+  },
+  "World.mp": {
+   "match": true,
+   "python": {
+    "dims": [
+     150,
+     120
+    ],
+    "layout": "tot_3byte_slot",
+    "terrain_top": {
+     "0": 273,
+     "1": 518,
+     "10": 5633,
+     "2": 673,
+     "3": 508,
+     "6": 279
+    }
+   },
+   "rust": {
+    "counted_real": 8568,
+    "dims": [
+     150,
+     120
+    ],
+    "layout": "Tot3ByteSlot",
+    "terrain_top": {
+     "0": 273,
+     "1": 518,
+     "10": 5633,
+     "2": 673,
+     "3": 508,
+     "6": 279
+    }
+   }
+  }
+ },
+ "note": "Rust tot-kit vs Python probe: layout/dims and the exact top-6 terrain histogram must agree (the top-6 of python's sorted top-12 equals rust's printed top-6). The declared dword is NOT compared \u2014 World.mp declares 9,000 real tiles but 8,568 slots are non-void"
+}

@@ -1,0 +1,347 @@
+{
+  "file": "@HOME@/Scenario/china/deiYan.sav",
+  "size": 6385737,
+  "magic": "CIVILIZE",
+  "version_raw": "0x0033",
+  "version": "ToT 1.1 + ToTPP (extended)",
+  "note": "ToTPP-extended save: base 0x32 front sections apply; after the 10240-blob comes the ToTPP extended state (dynamic, mostly-sparse arrays), then a 'LUAE' magic followed by the serialized Lua state as plain text, ending with an 'EVNT' trailer + 4 bytes",
+  "unit_transport_relationships": {
+    "offset": 12,
+    "size": 640
+  },
+  "menu": {
+    "offset": 652,
+    "size": 16
+  },
+  "game": {
+    "offset": 668,
+    "size": 38,
+    "turn": 2,
+    "year": -1399
+  },
+  "technologies": {
+    "offset": 706,
+    "size": 200,
+    "first_discovered_count": 75,
+    "discovered_mask_popcount": 77
+  },
+  "wonders": {
+    "offset": 906,
+    "size": 56,
+    "built": 5,
+    "destroyed": 0
+  },
+  "unknown_288": {
+    "offset": 962,
+    "size": 288
+  },
+  "civ_names": [
+    [
+      "Xiao",
+      "r",
+      "Qin",
+      "Qin"
+    ],
+    [
+      "Su",
+      "Zhao",
+      "Zhao"
+    ],
+    [
+      "Xuan",
+      "Chu",
+      "Chu"
+    ],
+    [
+      "Hui",
+      "Wei",
+      "Wei"
+    ],
+    [
+      "Wen",
+      "Yan",
+      "Yan"
+    ],
+    [
+      "Xi",
+      "Han",
+      "Han"
+    ],
+    [
+      "Wei",
+      "Qi",
+      "Qi"
+    ]
+  ],
+  "civ_properties": {
+    "offset": 2944,
+    "size": 26784
+  },
+  "transporters": {
+    "offset": 29728,
+    "fixed": 172,
+    "first_short": 512,
+    "guessed_count": 512
+  },
+  "map_header": {
+    "offset": 29900,
+    "values": [
+      224,
+      250,
+      28000,
+      1,
+      -20924,
+      56,
+      63,
+      1
+    ]
+  },
+  "map_note": "fields 6&7 (1-based) multiply into a following blob per Mercator; maps repeat the data block in ToT",
+  "sections_derived": {
+    "map_data": {
+      "offset": 29916,
+      "size": 364002,
+      "per_map": 364002,
+      "maps": 1
+    },
+    "blob_2ab": {
+      "offset": 393918,
+      "size": 7056
+    },
+    "blob_10240": {
+      "offset": 400974,
+      "size": 10240,
+      "note": "mostly zeros in ROMFALL"
+    }
+  },
+  "map_decode": {
+    "stored_dims": [
+      112,
+      250
+    ],
+    "display_dims": [
+      224,
+      250
+    ],
+    "dense": true,
+    "logical_to_stored": "sx = (x - (y&1))//2 - 1, sy = y",
+    "geometry_note": "logical grid (unit/city coords) is hdr0 x hdr1; the terrain grid is hdr0/2 x hdr1 dense (diamond tiles: 2 logical columns per stored column, 2 border columns west; per-file support numbers measured in garrisons_measured / city_terrain_measured below)",
+    "per_map": [
+      {
+        "map_index": 0,
+        "improvements_offset": 225918,
+        "terrain_histogram": {
+          "9": 8421,
+          "3": 5189,
+          "1": 3168,
+          "4": 2121,
+          "74": 2007,
+          "10": 1959,
+          "0": 1548,
+          "14": 1033,
+          "5": 822,
+          "2": 729,
+          "12": 257,
+          "11": 238
+        },
+        "river_tiles": 3456,
+        "road_tiles": 920,
+        "railroad_tiles": 1412,
+        "visibility_nonzero_per_civ": [
+          426,
+          483,
+          575,
+          496,
+          557,
+          550,
+          467
+        ],
+        "note": "imp byte2: road=0x40 rail=0x80 (proven ROMFALL); remaining bits open; visibility bytes' near-identical distribution suggests per-civ fog, unproven"
+      }
+    ],
+    "resource_seed_offset": 393916
+  },
+  "totpp_tail": {
+    "lua_magic_offset": 913195,
+    "mid_region": [
+      411214,
+      913195
+    ],
+    "mid_region_size": 501981,
+    "lua_state_bytes": 5472526,
+    "lua_head": "return {\r\n  [\"tableTileCulture\"] = {\r\n  [\"tile(189:187)\"] = ",
+    "lua_top_level_tables": [
+      "tableTileCulture"
+    ],
+    "lua_tile_entries": 23952,
+    "evnt_trailer_offset": 6385729,
+    "note": "mid region walked below (ext033); Lua state is plain readable text"
+  },
+  "ext033": {
+    "unit_start_offset": 831246,
+    "unit_start_formula": "blob10240_end + 32 + 15*surface",
+    "unit_start_measured": 831206,
+    "unit_start_formula_note": "formula lands 1 record(s) into the block; id-0/f4-0 slot-0 record(s) precede the f4=2 bulk; whether slot 0 belongs to the unit array or terminates the preceding per-tile section is open",
+    "units": {
+      "offset": 831206,
+      "end": 889166,
+      "count": 1449,
+      "record_size": 40,
+      "id_range": [
+        0,
+        6316
+      ],
+      "owner_histogram": {
+        "0": 400,
+        "1": 146,
+        "2": 143,
+        "3": 220,
+        "4": 176,
+        "5": 150,
+        "6": 101,
+        "7": 113
+      },
+      "type_histogram_top": {
+        "8": 212,
+        "187": 106,
+        "2": 82,
+        "6": 60,
+        "5": 58,
+        "35": 47,
+        "4": 45,
+        "31": 43,
+        "34": 39,
+        "30": 38,
+        "60": 34,
+        "17": 32
+      },
+      "sample": [
+        {
+          "i": 0,
+          "id": 0,
+          "x": 92,
+          "y": 118,
+          "type": 8,
+          "owner": 1
+        },
+        {
+          "i": 1,
+          "id": 4773,
+          "x": 128,
+          "y": 86,
+          "type": 27,
+          "owner": 2
+        },
+        {
+          "i": 2,
+          "id": 4774,
+          "x": 98,
+          "y": 164,
+          "type": 17,
+          "owner": 3
+        },
+        {
+          "i": 3,
+          "id": 4775,
+          "x": 167,
+          "y": 105,
+          "type": 28,
+          "owner": 3
+        },
+        {
+          "i": 4,
+          "id": 4776,
+          "x": 113,
+          "y": 125,
+          "type": 17,
+          "owner": 3
+        },
+        {
+          "i": 5,
+          "id": 4777,
+          "x": 123,
+          "y": 113,
+          "type": 37,
+          "owner": 6
+        },
+        {
+          "i": 6,
+          "id": 4778,
+          "x": 165,
+          "y": 79,
+          "type": 44,
+          "owner": 7
+        },
+        {
+          "i": 7,
+          "id": 4779,
+          "x": 134,
+          "y": 120,
+          "type": 28,
+          "owner": 3
+        },
+        {
+          "i": 1447,
+          "id": 6283,
+          "x": 119,
+          "y": 247,
+          "type": 13,
+          "owner": 0
+        },
+        {
+          "i": 1448,
+          "id": 6284,
+          "x": 73,
+          "y": 117,
+          "type": 8,
+          "owner": 0
+        }
+      ],
+      "fields_proven": {
+        "id_u16@0": "sequential, re-assigned on every save",
+        "x_s16@10": "logical-grid x (negative = off-board)",
+        "y_s16@12": "logical-grid y (negative = off-board)",
+        "type_u8@18": "index into Rules.txt @UNITS",
+        "owner_u8@19": "0=barbarians, 1..7 = civs"
+      }
+    },
+    "cities": {
+      "offset": 889170,
+      "count": 121,
+      "record_size": 92,
+      "named": 121,
+      "names_first_12": [
+        "Xianyang",
+        "Chang'An",
+        "Iantien",
+        "Jingyang",
+        "Gaoling",
+        "Yueyang",
+        "Dali",
+        "Yong",
+        "Mianzhu",
+        "Yuan",
+        "Longxi",
+        "Hangzong"
+      ],
+      "note": "same 92-B record as the 0x32 base format (name @0, x u16@58, y u16@60 logical)"
+    },
+    "post_city": {
+      "offset": 900302,
+      "size": 12893,
+      "note": "fixed-size block (~12.9 KB here; does not scale with city count); internal layout open \u2014 trade-route-like records and id lists observed"
+    },
+    "checks": {
+      "unit_start_valid": true,
+      "unit_block_preceded_by_invalid": true,
+      "city0_name_printable": true,
+      "city_grid_is_only_name_grid": true,
+      "competing_name_grids": []
+    },
+    "accounting": {
+      "total": 501981,
+      "formula": "501981 = 419992 (per-tile arrays) + 40*1449 + 4 + 92*121 + 12893 (post-city)",
+      "note": "descriptive decomposition: the post-city term is the leftover by construction \u2014 the falsifiable checks are in ext.checks (unit-start validity, block maximality, city-0 name, no competing 92-B name grid outside the walked one)"
+    }
+  }
+}

@@ -17,17 +17,12 @@ installation and reads its data files directly.
 
 ## Local reference environment (verified)
 
-- Game: **Civ2 Test of Time 1.1** at `/mnt/d/games/CIVTOT` (all four built-in game
-  modes: Original, Extended Original, Fantasy/Midgard, Sci-Fi)
-- **ToTPP** (Test of Time Patch Project) installed — extended limits, Lua 5.3.6, mods
-- Test scenarios: `FallRome` (classic `Events.txt` macro) and
-  `Scenario/china` *Warring States* (2024, heavy ToTPP Lua, 6 MB saves)
-- Runs under **Wine 10** with prefix `~/.wine_civ2tot` — usable as a behavioral
-  *oracle* for differential testing:
-
-  ```bash
-  WINEPREFIX=~/.wine_civ2tot wine /mnt/d/games/CIVTOT/civ2.exe
-  ```
+Civ2 Test of Time 1.1 + ToTPP at `/mnt/d/games/CIVTOT`, running under Wine 10
+(prefix `~/.wine_civ2tot`) as a behavioral *oracle* for differential testing.
+Full provisioning for a new machine — toolchain, scratch space, rebuild
+steps for the gitignored oracle binaries, box quirks — lives in
+[docs/environment.md](docs/environment.md); the oracle rig recipe in
+[tools/oracle/README.md](tools/oracle/README.md).
 
 ## Status
 

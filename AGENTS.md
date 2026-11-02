@@ -1,0 +1,54 @@
+# ToTEngine — agent orientation
+
+Open-source recreation of Civilization II: Test of Time gameplay (especially
+community scenarios), in Rust. Reads the user's original ToT install; ships
+none of its assets.
+
+## Layout
+
+- `crates/` — Rust workspace: `tot-kit` (format decoders), `engine`,
+  `lua-host`, `totctl` (CLI, successor of the Python probe), `totui`
+- `tools/totctl.py` — Python format probe (rules/map/save/diff/scnmap);
+  stdlib only
+- `tools/oracle/` — headless-Wine rig that drives the original game as a
+  behavioral oracle; **read its README before touching or running it**
+- `docs/` — `feasibility.md`, `plan.md` (tiers/principles), `BACKLOG.md`
+  (story queue), `evidence/` (all proven format findings), `decisions/`,
+  `refs/` (vendored ToTPP Lua API), `milestone-review.md` (release process),
+  `environment.md` (machine setup/quirks)
+- `docs/evidence/` + `tools/golden.sh` — golden corpus; `make
+  evidence-regen` after *intentional* format changes, then commit
+
+## Commands
+
+```sh
+make test            # cargo test + py_compile + golden corpus (self-skips w/o CIVTOT_HOME)
+make fmt clippy      # CI runs these with -D warnings
+python3 tools/totctl.py save $CIVTOT_HOME/FallRome/ROMFALL.scn -o /tmp/walk.json
+```
+
+`CIVTOT_HOME` points at the original install (reference box:
+`/mnt/d/games/CIVTOT` — provisioning on a new machine: `docs/environment.md`).
+
+## Hard rules
+
+- **Never commit original game assets** (sprites, maps, saves, sounds).
+  Evidence artifacts are derived data only (JSON summaries, renders we made),
+  small.
+- **Every format claim needs evidence** — an artifact in `docs/evidence/` or
+  a check that re-derives it. No folklore from forums without verification
+  against real data.
+- The oracle's absolute paths stay in tools behind `CIVTOT_HOME`, never in
+  library code.
+- Releases are tags gated by independent review: read
+  `docs/milestone-review.md` before proposing a version.
+- Prior art was license-audited (`docs/prior-art.md`); GPL projects are
+  reference-only (no code copying). MIT vendors keep their notices.
+- The checkout dir may be named `civtotre` while the remote is `totengine`;
+  pass explicit working directories.
+
+## Status shorthand
+
+Tier 0 (format foundations) is nearly complete — the open story is the 0x33
+mid-region; see `BACKLOG.md` for the live queue and `docs/evidence/README.md`
+for everything proven so far.

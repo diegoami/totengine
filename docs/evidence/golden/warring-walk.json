@@ -161,148 +161,163 @@
     ],
     "resource_seed_offset": 393916
   },
-  "cities": {
-    "offset": 892018,
-    "count": 50,
-    "record_size": 92,
-    "size": 4600,
-    "chain_found": 50,
-    "names": [
-      "Wang",
-      "Qianzhong",
-      "Changsha",
-      "Linwu",
-      "Daliang",
-      "Tan",
-      "Langye",
-      "Zhongmu",
-      "Shanyang",
-      "Anyi",
-      "Nitta",
-      "Kamasaka",
-      "Ming Gua",
-      "Jiyang",
-      "Suiyang",
-      "Ningling",
-      "Yanling",
-      "Yangchen",
-      "Anling",
-      "Deng"
-    ],
-    "names_total_named": 50,
-    "coords_first_8": [
-      {
-        "i": 0,
-        "name": "Wang",
-        "x": 93,
-        "y": 189,
-        "tail_shorts": [
-          65535,
-          0,
-          12
-        ]
+  "ext033": {
+    "unit_start_offset": 831246,
+    "unit_start_formula": "blob10240_end + 32 + 15*surface",
+    "units": {
+      "offset": 831246,
+      "end": 888886,
+      "count": 1441,
+      "record_size": 40,
+      "id_range": [
+        6527,
+        7967
+      ],
+      "owner_histogram": {
+        "0": 408,
+        "1": 141,
+        "2": 148,
+        "3": 217,
+        "4": 190,
+        "5": 110,
+        "6": 112,
+        "7": 115
       },
-      {
-        "i": 1,
-        "name": "Qianzhong",
-        "x": 120,
-        "y": 190,
-        "tail_shorts": [
-          65535,
-          0,
-          16
-        ]
+      "type_histogram_top": {
+        "8": 205,
+        "2": 138,
+        "187": 104,
+        "6": 62,
+        "5": 58,
+        "35": 53,
+        "4": 52,
+        "31": 44,
+        "34": 39,
+        "30": 37,
+        "60": 36,
+        "17": 32
       },
-      {
-        "i": 2,
-        "name": "Changsha",
-        "x": 119,
-        "y": 225,
-        "tail_shorts": [
-          65535,
-          0,
-          11
-        ]
-      },
-      {
-        "i": 3,
-        "name": "Linwu",
-        "x": 128,
-        "y": 108,
-        "tail_shorts": [
-          65535,
-          0,
-          21
-        ]
-      },
-      {
-        "i": 4,
-        "name": "Daliang",
-        "x": 167,
-        "y": 105,
-        "tail_shorts": [
-          65535,
-          0,
-          12
-        ]
-      },
-      {
-        "i": 5,
-        "name": "Tan",
-        "x": 170,
-        "y": 94,
-        "tail_shorts": [
-          65535,
-          0,
-          14
-        ]
-      },
-      {
-        "i": 6,
-        "name": "Langye",
-        "x": 123,
-        "y": 95,
-        "tail_shorts": [
-          65535,
-          0,
-          11
-        ]
-      },
-      {
-        "i": 7,
-        "name": "Zhongmu",
-        "x": 117,
-        "y": 103,
-        "tail_shorts": [
-          65535,
-          0,
-          11
-        ]
+      "sample": [
+        {
+          "i": 0,
+          "id": 6527,
+          "x": 128,
+          "y": 86,
+          "type": 27,
+          "owner": 2
+        },
+        {
+          "i": 1,
+          "id": 6528,
+          "x": 98,
+          "y": 164,
+          "type": 17,
+          "owner": 3
+        },
+        {
+          "i": 2,
+          "id": 6529,
+          "x": 167,
+          "y": 105,
+          "type": 28,
+          "owner": 3
+        },
+        {
+          "i": 3,
+          "id": 6530,
+          "x": 113,
+          "y": 125,
+          "type": 17,
+          "owner": 3
+        },
+        {
+          "i": 4,
+          "id": 6531,
+          "x": 123,
+          "y": 113,
+          "type": 37,
+          "owner": 6
+        },
+        {
+          "i": 5,
+          "id": 6532,
+          "x": 165,
+          "y": 79,
+          "type": 44,
+          "owner": 7
+        },
+        {
+          "i": 6,
+          "id": 6533,
+          "x": 134,
+          "y": 120,
+          "type": 28,
+          "owner": 3
+        },
+        {
+          "i": 7,
+          "id": 6534,
+          "x": 73,
+          "y": 117,
+          "type": 20,
+          "owner": 1
+        },
+        {
+          "i": 1439,
+          "id": 7966,
+          "x": 53,
+          "y": 175,
+          "type": 4,
+          "owner": 0
+        },
+        {
+          "i": 1440,
+          "id": 7967,
+          "x": 73,
+          "y": 117,
+          "type": 0,
+          "owner": 0
+        }
+      ],
+      "fields_proven": {
+        "id_u16@0": "sequential, re-assigned on every save",
+        "x_s16@10": "logical-grid x (negative = off-board)",
+        "y_s16@12": "logical-grid y (negative = off-board)",
+        "type_u8@18": "index into Rules.txt @UNITS",
+        "owner_u8@19": "0=barbarians, 1..7 = civs"
       }
-    ],
-    "note": "name 16 B @0; x u16@58 / y u16@60 on the logical grid (same space as unit coords; proven: 145/146 garrisons on the tile, all cities on land under the diamond mapping); tail shorts @86-91 = (5, 5, size) \u2014 size verified Roma=29"
-  },
-  "units": {
-    "region": [
-      411214,
-      892018
-    ],
-    "size": 480804,
-    "record_size": 40,
-    "preamble_bytes": 4,
-    "count": null,
-    "count_arithmetic": "480804 = 4 + 40 x 12020",
-    "fields_proven": {
-      "x_u16@6": "display-grid x (0..width-1)",
-      "y_u16@8": "display-grid y (0..height-1)",
-      "type_u8@14": "index into Rules.txt @UNITS",
-      "owner_u8@15": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
-      "id_u16@36": "per-save unit id (re-assigned on every save)"
     },
-    "owner_histogram": {},
-    "type_histogram_top": {},
-    "sample_first_8": [],
-    "verification": "ROMFALL: 145/146 cities have a garrison unit on their exact tile; owner-by-type matrix matches the scenario rosters (WRE units under West Romans, Hun units under Huns, V. Warship under Vandals); all 32 ship-type units sit on ocean tiles and all 678 ground units on land; ROMFALL_ERE differs in unit bytes 36-37 ONLY (ids re-assigned per save)",
-    "note": "remaining bytes open: 0-5 constants(2,2,0), 12-13 counters/flags, 16-19 counters (veteran?), 20-35 sparse, 38-39 tail"
+    "cities": {
+      "offset": 888890,
+      "count": 119,
+      "record_size": 92,
+      "named": 119,
+      "names_first_12": [
+        "Xianyang",
+        "Chang'An",
+        "Iantien",
+        "Jingyang",
+        "Gaoling",
+        "Yueyang",
+        "Dali",
+        "Yong",
+        "Mianzhu",
+        "Yuan",
+        "Longxi",
+        "Hangzong"
+      ],
+      "note": "same 92-B record as the 0x32 base format (name @0, x u16@58, y u16@60 logical)"
+    },
+    "post_city": {
+      "offset": 899838,
+      "size": 12889,
+      "note": "fixed-size block (~12.9 KB here; does not scale with city count); internal layout open \u2014 trade-route-like records and id lists observed"
+    },
+    "accounting": {
+      "total": 501513,
+      "reconstructed": 501513,
+      "match": true,
+      "formula": "501513 = 32+15*28000 + 40*1441 + 4 + 92*119 + 12889"
+    }
   }
 }

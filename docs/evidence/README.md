@@ -197,15 +197,54 @@ Materials: `deiQin.sav` (turn 11) / `deiYan.sav` (turn 2), Warring States.
    5,477,281 bytes of it with 23,969 `tile(x:y)` entries (86% of the
    28,000-tile map) under tables like `tableTileCulture`/`cityTileWealth` —
    this is why Lua-scenario saves are megabytes.
-3. **The mid-region (411,214 → LUAE) is dynamic extended state**: its size
-   differs between deiYan (501,981) and deiQin (510,821) by exactly
-   **8,840 = 221 × 40** — 40-byte unit records again. The walker's
-   name-grid scan finds **50 cities** (92-B records) inside it. Remaining
-   open: the exact unit/city/array block order and the near-zero sparse
-   arrays (`41/45/54/f0` flag patterns) that dominate the region.
-4. **ToTPP writes plain `0x32` (no tail) for scenarios without Lua events** —
+3. **ToTPP writes plain `0x32` (no tail) for scenarios without Lua events** —
    verified via the T0-10 oracle on Midgard. So `0x33` ⇔ Lua/extension data
    present, which also scopes T1/T3 save writing.
+
+## T0-7 findings (2026-11-02, seventh session — mid-region decoded)
+
+Materials: the four-file Warring States ladder — `Warring States.scn`
+(pristine, turn 1), `Hu_Auto.SAV` (oracle rig autosave, turn 1),
+`deiYan.sav` (turn 2), `deiQin.sav` (turn 11). All offsets relative to the
+end of the base front (411,214 here):
+
+| Range | Content |
+|---|---|
+| `[+0, +32+15×surface)` | extended per-tile arrays, mostly sparse; a dense **6 B/tile band** (168,960 B ≈ 28,000×6) and a **10,240-B blob** sit inside; sub-layout open |
+| `[+32+15×surface, …)` | **unit records, 40 B each, count-based** (no fixed cap written) |
+| `+4 B` | interlude |
+| next | **city records, 92 B each, count-based** (same record layout as 0x32: name@0, x u16@58, y u16@60) |
+| `[city end, LUAE/EOF)` | fixed-size post-city block (~12.9 KB here; trade-route-like records + sequential u16 id lists; internal layout open) |
+
+**The 0x33 unit record is a different layout from the 0x32 base record**:
+
+- `@0 u16 id` — sequential, **re-assigned on every save** (proof: scn ids
+  6527..7967 → Hu_Auto ids 10..423, same 1,441 units, 1,351 at identical
+  (x,y) after load+autosave);
+- `@10/@12 s16 x/y` — **logical** grid coords (not the stored/diamond
+  space); off-board units carry negative coords (−100/−500 observed);
+- `@18 u8 type` — Rules.txt @UNITS index (190 rows in Warring States,
+  values 0..188 observed);
+- `@19 u8 owner` — 0=barbarians, 1..7 = civs (exactly 8 distinct values);
+- `@28 u16` optional link, 0xffff = none (home city?);
+- rest flags/counters (open).
+
+**Byte-exact accounting** (walker `ext033`, verified on all four files):
+
+```
+deiQin   510821 = 32+15*28000 + 40*1646 + 4 + 92*132 + 12801
+deiYan   501981 = 32+15*28000 + 40*1448 + 4 + 92*121 + 12893
+scn      501513 = 32+15*28000 + 40*1441 + 4 + 92*119 + 12889
+Hu_Auto  501513 = 32+15*28000 + 40*1441 + 4 + 92*119 + 12889
+```
+
+deiQin − deiYan = **+198 units (+7,920) + 11 city slots (+1,012) − 92 in
+the post-city block = +8,840 exactly** (the post-city block absorbs one
+city slot, suggesting an empty/razed slot mid-grid stops the naive walk).
+The turn-1→2 delta (+468) decomposes as +7 units, +2 city slots, +4 bytes
+in post-city. The unit-start formula `32+15×surface` held for all four
+files (one map); re-verify on a second 0x33 map before trusting it
+generally.
 
 
 

@@ -343,6 +343,126 @@ SAVE_VERSIONS = {0x0027: "Classic/CiC", 0x0028: "Fantastic Worlds",
                  0x0033: "ToT 1.1 + ToTPP (extended)"}
 
 
+def walk_ext033(data, hdr, blob10240_end, out):
+    """Deep-walk the ToTPP 0x33 extension (proven on the Warring States
+    family: Warring States.scn / Hu_Auto.SAV / deiYan.sav / deiQin.sav,
+    2026-11-02). Layout relative to blob10240_end:
+
+      [+0, +32+15*surface)   extended per-tile arrays (mostly sparse; a
+                             dense 6 B/tile band and a 10,240-B blob sit
+                             inside; sub-layout open)
+      [+u0, +u0+40*N)        unit records, 40 B, count-based
+      [+4 interlude)         4 bytes (00 00 2a 00 seen)
+      [+c0, +c0+92*M)        city records, 92 B, count-based
+      [+c_end, LUAE|EOF)     fixed-size post-city block (~12.9 KB)
+
+    0x33 unit record layout (differs from the 0x32 base layout!):
+      @0  u16 id — sequential, re-assigned on every save
+      @4  u16 const 2 (kind?), @6 u16 const 2
+      @10/@12 s16 x/y — LOGICAL grid coords; off-board units carry
+      negative coords (-100/-500 observed)
+      @18 u8 type — Rules.txt @UNITS index (190 rows in Warring
+      States; values 0..188 observed)
+      @19 u8 owner — 0=barbarians, 1..7 = civs
+      @28 u16 optional link, 0xffff = none (home city?)
+      remaining bytes flags/counters (open)
+
+    Verified arithmetic: deiQin = deiYan +198 units (+7920) +10 cities
+    (+920) = +8840 bytes exactly; scn vs Hu_Auto (load+autosave, same
+    sizes) keep 1441 units, 1351 at identical (x,y), ids re-assigned
+    6527..7967 -> 10..423.
+    """
+    import struct as _s
+    surface = hdr[2]
+    xmax, ymax = 2 * hdr[0], hdr[1]
+    lua = data.find(b"LUAE", blob10240_end)
+    end = lua if lua > 0 else len(data)
+    ustart = blob10240_end + 32 + 15 * surface
+
+    def urec_valid(rec):
+        if rec.count(0) == 40:
+            return False
+        uid, f4 = _s.unpack_from("<HH", rec, 0)
+        x, y = _s.unpack_from("<hh", rec, 10)
+        return (uid < 8192 and f4 < 16
+                and -1000 <= x <= xmax and -1000 <= y <= ymax)
+
+    ext = {"unit_start_offset": ustart,
+           "unit_start_formula": "blob10240_end + 32 + 15*surface"}
+    if ustart + 40 > len(data) or not urec_valid(data[ustart:ustart + 40]):
+        ext["error"] = ("unit-start formula did not land on a valid record "
+                        "(map variant?); tail framing only")
+        out["ext033"] = ext
+        return
+    units, off = [], ustart
+    while off + 40 <= end and urec_valid(data[off:off + 40]):
+        units.append(off)
+        off += 40
+    owner_hist, type_hist = {}, {}
+    ids = []
+    sample = []
+    for k, uo in enumerate(units):
+        r = data[uo:uo + 40]
+        uid = _s.unpack_from("<H", r, 0)[0]
+        x, y = _s.unpack_from("<hh", r, 10)
+        t, o = r[18], r[19]
+        ids.append(uid)
+        owner_hist[o] = owner_hist.get(o, 0) + 1
+        type_hist[t] = type_hist.get(t, 0) + 1
+        if k < 8 or k >= len(units) - 2:
+            sample.append({"i": k, "id": uid, "x": x, "y": y,
+                           "type": t, "owner": o})
+    ext["units"] = {
+        "offset": ustart, "end": off, "count": len(units),
+        "record_size": 40, "id_range": [min(ids), max(ids)],
+        "owner_histogram": dict(sorted(owner_hist.items())),
+        "type_histogram_top": dict(sorted(type_hist.items(),
+                                          key=lambda kv: -kv[1])[:12]),
+        "sample": sample,
+        "fields_proven": {
+            "id_u16@0": "sequential, re-assigned on every save",
+            "x_s16@10": "logical-grid x (negative = off-board)",
+            "y_s16@12": "logical-grid y (negative = off-board)",
+            "type_u8@18": "index into Rules.txt @UNITS",
+            "owner_u8@19": "0=barbarians, 1..7 = civs",
+        },
+    }
+    interlude = 4
+    cstart = off + interlude
+    ncities = 0
+    names = []
+    while cstart + 92 * ncities + 92 <= end:
+        s = data[cstart + 92 * ncities: cstart + 92 * (ncities + 1)]
+        x, y = _s.unpack_from("<HH", s, 58)
+        if x > xmax or y > ymax:
+            break
+        nm = s[:16].split(b"\x00")[0].decode("latin-1", "replace")
+        names.append(nm)
+        ncities += 1
+    cend = cstart + 92 * ncities
+    ext["cities"] = {
+        "offset": cstart, "count": ncities, "record_size": 92,
+        "named": sum(1 for n in names if n),
+        "names_first_12": names[:12],
+        "note": ("same 92-B record as the 0x32 base format (name @0, "
+                 "x u16@58, y u16@60 logical)"),
+    }
+    ext["post_city"] = {"offset": cend, "size": end - cend,
+                        "note": ("fixed-size block (~12.9 KB here; does not "
+                                 "scale with city count); internal layout "
+                                 "open — trade-route-like records and id "
+                                 "lists observed")}
+    total = end - blob10240_end
+    calc = (32 + 15 * surface) + 40 * len(units) + interlude + 92 * ncities \
+        + (end - cend)
+    ext["accounting"] = {
+        "total": total, "reconstructed": calc, "match": total == calc,
+        "formula": (f"{total} = 32+15*{surface} + 40*{len(units)} + 4 "
+                    f"+ 92*{ncities} + {end - cend}"),
+    }
+    out["ext033"] = ext
+
+
 def walk_save(path: str) -> dict:
     data = open(path, "rb").read()
     out = {"file": path, "size": len(data)}
@@ -505,11 +625,13 @@ def walk_save(path: str) -> dict:
                     "lua_top_level_tables": keys,
                     "lua_tile_entries": tiles,
                     "evnt_trailer_offset": evnt,
-                    "note": ("mid region = ToTPP extended dynamic state "
-                             "(structure open: near-zero sparse arrays, size "
-                             "varies between saves by multiples of 40); Lua "
-                             "state is plain readable text"),
+                    "note": ("mid region walked below (ext033); Lua state "
+                             "is plain readable text"),
                 }
+            # 0x33 deep walk; the 0x32 units/cities scan below does not
+            # apply (that layout lives in the extension instead)
+            walk_ext033(data, hdr, blob10240_end, out)
+            return out
         # cities: find the 92-byte name grid — candidate printable name
         # fields (16-byte slot: printable prefix + NUL padding), then the
         # longest chain of candidates at exactly 92-byte stride.

@@ -75,6 +75,17 @@ Goal: reach a *new game without scenario* for setup-section diffs. Findings:
   shell command — it kills its own shell (use `[p]attern` brackets and keep
   the pattern out of the same command line).
 
+## Rules-column oracle channel (no in-world input needed)
+
+To prove which Rules.txt column drives an in-game value: back up the
+install's `Rules.txt` (+ `Original/Rules.txt`) with a sha256 record, change
+only the candidate field, start a fresh standard game through the launcher
+(XTest works on dialogs), read the unit/status panel ("Movers N" gives the
+movement rate), then restore both files and `sha256sum -c` the record. This
+is how T1-3 proved `@UNITS` field 3 = movement rate without touching the
+map surface. Fresh-game setup also re-reads Rules.txt, so no restart tricks
+are needed.
+
 ## Proven run
 
 `turnloop.sh 6 Midgard Oc_Auto.SAV …` → turns 4→9, six consecutive saves;

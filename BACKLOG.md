@@ -66,7 +66,7 @@ game (no scenario) boots and runs headless on the classic map,
 
 | ID | Story | Pri | Est | Diff | Status | Acceptance |
 |----|-------|-----|-----|------|--------|------------|
-| T1-1 | Typed rules model: all 22 Rules.txt sections → engine structs incl. ToT tables (@TERRAIN1..3, transport relationships) | P1 | L | E | doing | Round-trips Rules.txt losslessly (text → structs → text) |
+| T1-1 | Typed rules model: all 22 Rules.txt sections → engine structs incl. ToT tables (@TERRAIN1..3, transport relationships) | P1 | L | E | done | Round-trips Rules.txt losslessly (text → structs → text) |
 | T1-2 | World state model + deterministic turn kernel skeleton (seeded RNG abstraction) | P1 | L | H | todo | Headless boot of ROMFALL.scn into state; state checksum reproducible |
 | T1-3 | Movement, terrain costs, zone of control, multi-map slot | P1 | M | H | todo | Move orders match original outcomes on oracle cases |
 | T1-4 | Cities: food/shields/trade, growth, production queue, specialists, unrest | P1 | L | H | todo | 50-turn city math matches oracle saves exactly |

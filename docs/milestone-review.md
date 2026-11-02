@@ -26,6 +26,42 @@ malpaco's `docs/milestone-review.md`, which adapted it from Geoclick2027's relea
    ```
 
    The reviewer must be a model family that implemented none of the candidate.
+
+   **The main session NEVER launches the review itself.** When the candidate lands, the
+   main session's job ends at printing the review prompt (template below) for the owner.
+   This is an owner decision (2026-11-02): agent-launched reviews have proven unreliable
+   (permission stalls, wrong-SHA scopes, duplicate verdicts) — the owner launches, or
+   explicitly instructs otherwise for a specific round.
+
+   **Review prompt template** (fill in `<N>` and `<SHA>`; print it, do not run it):
+
+   ```text
+   You are the independent milestone reviewer for diegoami/totengine
+   (local checkout: /home/diego/projects/civtotre, branch main, clean tree).
+   Your model family implemented none of this release — you are the referee.
+
+   Review milestone issue #<N> exactly per docs/milestone-review.md, section
+   "Instructions for the reviewer". Read that file first and follow it precisely.
+
+   Inputs: candidate SHA <SHA> (verify it equals origin/main after
+   `git fetch origin --tags`; if not, say so on the issue and stop). If this is
+   a re-review, verify the previous round's findings are actually fixed in
+   code, not in comments.
+
+   Setup: `git status` must be clean; `git checkout --detach <SHA>`; restore
+   `main` when done. Evidence re-runs need
+   `export CIVTOT_HOME=/mnt/d/games/CIVTOT` (checks self-skip without it —
+   note what you cannot run). `gh` is authed as diegoami. Do not disturb any
+   running processes (a Wine/Xvfb oracle session may be live).
+
+   Write to GitHub yourself, and only this; never edit, commit, push, tag,
+   merge: one issue per reproduced finding (labels review + bug|tests|design|
+   cleanup|documentation; MUST-FIX or follow-up prefix; link the milestone
+   issue and SHA); exactly one verdict comment on the issue: AGREE, or BLOCK
+   if any MUST-FIX remains — include the SHA, your model, checkout status,
+   checks run + results, fix verifications for prior rounds, issues opened,
+   and what you found clean. Use --body-file (UTF-8) for bodies.
+   ```
 5. The reviewer opens one issue per reproduced finding and posts one verdict, AGREE or
    BLOCK, on the milestone issue. Nothing is pasted back.
 6. BLOCK: the findings are fixed in ordinary PRs, the candidate moves to the new `main`

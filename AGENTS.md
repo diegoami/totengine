@@ -41,7 +41,10 @@ python3 tools/totctl.py save $CIVTOT_HOME/FallRome/ROMFALL.scn -o /tmp/walk.json
 - The oracle's absolute paths stay in tools behind `CIVTOT_HOME`, never in
   library code.
 - Releases are tags gated by independent review: read
-  `docs/milestone-review.md` before proposing a version.
+  `docs/milestone-review.md` before proposing a version. **The main session
+  never launches the milestone review** — the owner does. At a milestone,
+  print the review-prompt template from that doc and stop; agent-launched
+  reviews proved unreliable (owner decision, 2026-11-02).
 - Prior art was license-audited (`docs/prior-art.md`); GPL projects are
   reference-only (no code copying). MIT vendors keep their notices.
 - The checkout dir may be named `civtotre` while the remote is `totengine`;

@@ -12,7 +12,7 @@ mod rules;
 mod sav;
 
 pub use mp::{parse_mp, parse_mp_file, MpFormat, MpMap};
-pub use rules::{emit_rules, parse_rules, Rules, Section};
+pub use rules::{emit_rules, parse_rules, Rules, Section, TechDef, WonderDef};
 pub use sav::{
     civ_names_from, parse_sav, parse_sav_file, CityRecord, CivNames, MapBlock, MapHeader, SavError,
     SaveFile, UnitRecord, MAGIC, OFF_CIV_NAMES, OFF_CIV_PROPS, OFF_GAME, OFF_MENU, OFF_TECH,

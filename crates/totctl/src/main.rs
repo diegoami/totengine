@@ -14,6 +14,7 @@ fn main() -> ExitCode {
         Some("mp") => cmd_mp(&args[2..]),
         Some("rules") => cmd_rules(&args[2..]),
         Some("boot") => cmd_boot(&args[2..]),
+        Some("tech") => cmd_tech(&args[2..]),
         Some("--version") | Some("-V") => {
             println!("totctl {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
@@ -24,6 +25,7 @@ fn main() -> ExitCode {
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
                         {prog} boot <file.sav|scn> [--rules PATH] [--turns N] [--seed S]\n\
                         \x20                        — headless boot into engine state + checksum\n\
+                        {prog} tech <Rules.txt>    — advance tree + wonders (reachability run)\n\
                         {prog} --version"
             );
             ExitCode::from(2)
@@ -164,6 +166,93 @@ fn cmd_boot(args: &[String]) -> ExitCode {
         world.rng.draws()
     );
     println!("checksum      : {:016x}", world.checksum());
+    ExitCode::SUCCESS
+}
+
+/// Advance tree + wonder table (T1-5): resolves prerequisites, runs the
+/// deterministic scripted research pass and reports reachability.
+fn cmd_tech(args: &[String]) -> ExitCode {
+    let Some(path) = args.first() else {
+        eprintln!("usage: totctl tech <Rules.txt>");
+        return ExitCode::from(2);
+    };
+    let text = match std::fs::read_to_string(path) {
+        Ok(t) => t,
+        Err(e) => {
+            eprintln!("error: read {path}: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let rules = tot_kit::parse_rules(&text);
+    let tree = engine::research::TechTree::from_rules(&rules);
+    let wonders = engine::research::WonderTable::from_rules(&rules, &tree);
+    println!("advances      : {}", tree.techs.len());
+    let mut epochs = [0usize; 4];
+    for t in &tree.techs {
+        if let Some(e) = t.epoch {
+            if let Some(slot) = epochs.get_mut(e as usize) {
+                *slot += 1;
+            }
+        }
+    }
+    println!(
+        "epochs        : Ancient {} / Renaissance {} / Industrial {} / Modern {}",
+        epochs[0], epochs[1], epochs[2], epochs[3]
+    );
+    if tree.unresolved_prereqs.is_empty() {
+        println!("prereqs       : all resolved");
+    } else {
+        println!("prereqs       : UNRESOLVED {:?}", tree.unresolved_prereqs);
+    }
+    let show = |name: &str| {
+        let Some(id) = tree.techs.iter().position(|t| t.name == name) else {
+            return format!("{name}: ?");
+        };
+        let pre: Vec<String> = tree.techs[id]
+            .prereqs
+            .iter()
+            .map(|p| {
+                p.and_then(|pid| tree.techs[pid].name.clone().into())
+                    .unwrap_or_else(|| "—".into())
+            })
+            .collect();
+        format!("{name} <- {}", pre.join(" + "))
+    };
+    for name in ["Monarchy", "Iron Working", "Trade", "Writing"] {
+        println!("  {}", show(name));
+    }
+    let (order, unreached) = tree.scripted_research();
+    println!(
+        "scripted run  : researched {} advances in {} steps",
+        order.len(),
+        order.len()
+    );
+    if unreached.is_empty() {
+        println!("reachability  : every advance reachable from zero");
+    } else {
+        let names: Vec<&str> = unreached
+            .iter()
+            .map(|&i| tree.techs[i].name.as_str())
+            .collect();
+        println!("reachability  : UNREACHABLE {names:?}");
+    }
+    println!("wonders       : {}", wonders.wonders.len());
+    for w in wonders.wonders.iter().take(4) {
+        let prereq = w
+            .prereq
+            .map(|id| tree.techs[id].name.as_str())
+            .unwrap_or("—");
+        let obs = w
+            .obsolete_by
+            .map(|id| tree.techs[id].name.as_str())
+            .unwrap_or("never");
+        println!(
+            "  {:<28} cost {:>3} prereq {:<14} obsolete {obs}",
+            w.name,
+            w.cost.unwrap_or(0),
+            prereq
+        );
+    }
     ExitCode::SUCCESS
 }
 

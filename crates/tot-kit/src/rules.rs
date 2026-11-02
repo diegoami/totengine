@@ -46,6 +46,36 @@ pub struct Rules {
     pub sections: BTreeMap<String, Section>,
 }
 
+/// One scientific advance (`@CIVILIZE` row, T1-5). Prerequisites are the
+/// three-letter abbreviations exactly as written in the file; resolve
+/// them via [`Rules::tech_defs`] (abbrev → index).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TechDef {
+    pub name: String,
+    /// Three-letter abbreviation (row comment, e.g. "Alp").
+    pub abbrev: Option<String>,
+    /// `nil` means none — each slot is an abbreviation or None.
+    pub prereqs: [Option<String>; 2],
+    /// AI value (field 1).
+    pub ai_value: Option<i32>,
+    /// Civilized modifier (field 2).
+    pub modifier: Option<i32>,
+    /// 0 Ancient, 1 Renaissance, 2 Industrial, 3 Modern (field 5).
+    pub epoch: Option<u8>,
+    /// 0 Military, 1 Economic, 2 Social, 3 Academic, 4 Applied (field 6).
+    pub category: Option<u8>,
+}
+
+/// One wonder of the world (T1-5): name, `@IMPROVE` cost/prerequisite,
+/// `@ENDWONDER` obsolescence (None = never expires).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WonderDef {
+    pub name: String,
+    pub cost: Option<u32>,
+    pub prereq: Option<String>,
+    pub obsolete_by: Option<String>,
+}
+
 impl Rules {
     pub fn section(&self, name: &str) -> Option<&Section> {
         self.sections.get(name)
@@ -201,6 +231,130 @@ impl Rules {
             .into_iter()
             .find(|(k, _)| k.starts_with("Road movement multiplier"))
             .and_then(|(_, v)| v.trim().parse().ok())
+    }
+
+    /// Unit AI role (row field 11; 0=attack, 1=defend, 2=naval, 3=air,
+    /// 4=transport, 5=settle — roles ≥5 change abilities). Documented in
+    /// the @UNITS comment block in Rules.txt itself
+    /// (`until, domain, move, rng, att, def, hit, firepwr, cost, hold,
+    /// role, preq, flags`).
+    pub fn unit_role(&self, id: usize) -> Option<u8> {
+        self.unit_num(id, 11).map(|v| v as u8)
+    }
+
+    /// Unit air range/fuel (row field 4) — 0 for non-air units.
+    pub fn unit_range(&self, id: usize) -> Option<u32> {
+        self.unit_num(id, 4)
+    }
+
+    /// Unit prerequisite advance abbreviation (row field 12), if any.
+    pub fn unit_prereq_abbrev(&self, id: usize) -> Option<&str> {
+        self.section("UNITS")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(12))
+            .map(|f| f.trim())
+            .filter(|f| !f.is_empty() && *f != "nil" && *f != "no")
+    }
+
+    /// Scientific advances: one [`TechDef`] per `@CIVILIZE` row. Column
+    /// layout is documented in the file itself above `@CIVILIZE`
+    /// (`Ai Value, Civilized Modifier, Preq1, Preq2, Epoch, Category`);
+    /// the trailing comment is the three-letter abbreviation used by
+    /// prerequisite references (`Adp` rows, `@ENDWONDER`, unit `preq`).
+    /// Epoch: 0 Ancient, 1 Renaissance, 2 Industrial, 3 Modern.
+    /// Category: 0 Military, 1 Economic, 2 Social, 3 Academic, 4 Applied.
+    pub fn tech_defs(&self) -> Vec<TechDef> {
+        let Some(s) = self.section("CIVILIZE") else {
+            return Vec::new();
+        };
+        s.rows
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| !r.is_empty() && !r[0].trim().is_empty())
+            .map(|(i, r)| TechDef {
+                name: r[0].trim().to_string(),
+                abbrev: s
+                    .comments
+                    .get(i)
+                    .map(|c| c.trim().to_string())
+                    .filter(|c| !c.is_empty()),
+                ai_value: r.get(1).and_then(|f| f.trim().parse().ok()),
+                modifier: r.get(2).and_then(|f| f.trim().parse().ok()),
+                prereqs: [
+                    r.get(3)
+                        .map(|f| f.trim().to_string())
+                        .filter(|f| f != "nil" && f != "no"),
+                    r.get(4)
+                        .map(|f| f.trim().to_string())
+                        .filter(|f| f != "nil" && f != "no"),
+                ],
+                epoch: r.get(5).and_then(|f| f.trim().parse().ok()),
+                category: r.get(6).and_then(|f| f.trim().parse().ok()),
+            })
+            .collect()
+    }
+
+    /// Wonders of the world: names come from the `@ENDWONDER` comments
+    /// (Pyramids … Cure for Cancer — 28 in the base rules; the global
+    /// files carry a duplicated "Women's Suffrage" row, deduplicated
+    /// here). Cost/prerequisite are read from the wonder's `@IMPROVE`
+    /// row by name; obsolescence from its `@ENDWONDER` row (field 0,
+    /// `nil` = never expires).
+    pub fn wonder_defs(&self) -> Vec<WonderDef> {
+        let Some(end) = self.section("ENDWONDER") else {
+            return Vec::new();
+        };
+        let improve = self.section("IMPROVE");
+        let mut seen = std::collections::HashSet::new();
+        let mut out = Vec::new();
+        for (i, row) in end.rows.iter().enumerate() {
+            let Some(name) = end.comments.get(i).map(|c| c.trim().to_string()) else {
+                continue;
+            };
+            if name.is_empty() || !seen.insert(name.clone()) {
+                continue;
+            }
+            let obsolete_by = row
+                .first()
+                .map(|f| f.trim().to_string())
+                .filter(|f| f != "nil" && f != "no");
+            // @ENDWONDER labels can be shorter than the @IMPROVE names
+            // ("Apollo" vs "Apollo Program", "SETI" vs "SETI Program"):
+            // match exact first, then a UNIQUE prefix; the canonical name
+            // is the @IMPROVE one (the 28 @IMPROVE wonder rows are what
+            // the save's 28 slots align with).
+            let rows = improve.map(|s| s.rows.as_slice()).unwrap_or_default();
+            let imp = rows
+                .iter()
+                .find(|r| r.first().map(|f| f.trim()) == Some(name.as_str()))
+                .or_else(|| {
+                    let hits: Vec<&Vec<String>> = rows
+                        .iter()
+                        .filter(|r| {
+                            r.first()
+                                .map(|f| f.trim().starts_with(name.as_str()))
+                                .unwrap_or(false)
+                        })
+                        .collect();
+                    (hits.len() == 1).then(|| hits[0])
+                });
+            let canonical = imp
+                .and_then(|r| r.first())
+                .map(|f| f.trim().to_string())
+                .unwrap_or(name);
+            out.push(WonderDef {
+                name: canonical,
+                cost: imp
+                    .and_then(|r| r.get(1))
+                    .and_then(|f| f.trim().parse().ok()),
+                prereq: imp
+                    .and_then(|r| r.get(3))
+                    .map(|f| f.trim().to_string())
+                    .filter(|f| f != "nil" && f != "no"),
+                obsolete_by,
+            });
+        }
+        out
     }
 
     /// `@GOVERNMENTS` names (row field 0; Anarchy first — the #44 lesson).

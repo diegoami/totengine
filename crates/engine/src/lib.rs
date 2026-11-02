@@ -8,6 +8,7 @@
 //! T1-3..T1-7.
 
 pub mod movement;
+pub mod research;
 pub mod rng;
 
 use std::fmt::Write as _;

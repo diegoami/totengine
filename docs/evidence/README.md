@@ -16,12 +16,30 @@ answer: A = Chieftain, B = Deity, C = Emperor (`/home/diego/review-tmp/oracle-ru
    confirmation; the surrounding 600–999 block is otherwise stable (386/400
    bytes identical across the three runs, differences concentrated in a few
    fields).
-2. Candidate neighbors (undecoded): `save[698]` = 7/8/13 across the three
-   runs — plausibly the number of civs actually placed (per-random-world);
-   `655` = 0x32/0x33; 814/815, 842, 853, 871, 892/893, 962 vary irregularly
-   (seed/world-derived). Next variants: same-seed pairs and
-   competition-level/world-size diffs to pin them.
-3. **The new-game wizard chain** (all dialogs accept plain Return; the
+2. **The new-game world is DETERMINISTIC given the wizard settings** —
+   three runs at different wall-clock times with the same effective answers
+   produced **byte-identical saves** (C ≡ D ≡ E, 96,607 bytes, including the
+   entire map and unit placement), while any settings change (A vs C:
+   difficulty 0→4) reshuffles the whole world (~8.4k differing bytes,
+   map+civs). The world-gen seed is derived from the settings vector, not
+   the clock. Consequences: RG-2 (starting placement from seed) is fully
+   reproducible; the T1-6 RNG hunt has a stable target; and setup-field
+   isolation must diff against a same-settings baseline, not across knobs.
+3. **The wizard remembers previous answers** (the difficulty dialog opened
+   pre-selected with the previous run's level — D/E inherited C's Emperor,
+   re-confirming 684=4 twice). "Defaults" are never assumed: verify every
+   dialog's selection by vision before confirming.
+4. **Arrow keys can be silently swallowed** when racing a dialog's opening
+   (two wizard variants silently lost their Downs and produced the baseline
+   settings). The reliable pattern: wait for the window title, focus the new
+   HWND, keys at ≥0.7 s spacing, vision-verify the highlighted item, THEN
+   Return.
+5. Candidate neighbors (undecoded): `save[698]` = 7/8/13 across the three
+   world families — plausibly the number of civs actually placed
+   (world-dependent, tracks the settings-seeded world, not the knob);
+   `655` = 0x32/0x33; 814/815, 842, 853, 871, 892/893, 962 vary with the
+   world family. Load-time saves all read **turn=1, year=−4000**.
+6. **The new-game wizard chain** (all dialogs accept plain Return; the
    game-type list needs arrow navigation — see the oracle README):
    game-type list (item 1 "Original Game") → untitled pre-dialog → Select
    Size of World → Select Difficulty Level → Select Level Of Competition →
@@ -29,7 +47,7 @@ answer: A = Chieftain, B = Deity, C = Emperor (`/home/diego/review-tmp/oracle-ru
    Select Your Tribe → Please Enter Your Name → Select Your City Style →
    "In the Beginning" intro → Civ Tutorial popups → in-world (autosave
    written at world load).
-4. Methodology upgrades this session: **vision-model screen reading**
+7. Methodology upgrades this session: **vision-model screen reading**
    (screenshots → PNG → a vision-capable model reads dialogs literally) and
    **live memory access** (`tools/oracle/memspool.py` — the game runs as a
    descendant of a spawner daemon, so `/proc` reads work; snapshot/diff/scan

@@ -39,8 +39,11 @@ is unknown. An H story that grows two failed attempts gets split before a third.
 Releases are tags `vX.Y.Z` on `main`, gated by an independent milestone review before the
 tag — one big review per release by a model family that implemented none of it, verdict
 AGREE/BLOCK on a milestone issue, findings as ordinary issues, tag on exactly the reviewed
-SHA. The process: [docs/milestone-review.md](docs/milestone-review.md). Suggested themes:
-`v0.1.0` = Tier 0 complete, `v0.2.0` = first Tier-1 headless milestone (per plan.md §5).
+SHA. The process: [docs/milestone-review.md](docs/milestone-review.md). Themes:
+`v0.1.0` = Tier 0 complete (released 2026-11-02 after 5 review rounds),
+`v0.2.0` = headless game loop — T1 core + **RG-1/RG-2** so a *standard*
+game (no scenario) boots and runs headless on the classic map,
+`v0.3.0` = generated-world campaign (RG-3/4/5/7).
 
 ## Epic T0 — Format toolchain & reconnaissance (current)
 
@@ -82,8 +85,8 @@ opponent AI. These stories reuse the T1 core; the new-game *UI* lands with T2.
 
 | ID | Story | Pri | Est | Diff | Status | Acceptance |
 |----|-------|-----|-----|------|--------|------------|
-| RG-1 | Game-setup state model: new-game parameters (civ/leader/difficulty, world size/land%/climate, opponent count, rules variants) + its save encoding | P2 | M | H | todo | Setup section byte-matches oracle new-game saves across variants (rig-driven) |
-| RG-2 | Starting placement: civ starts, goody huts, barbarian seeding from the game seed | P2 | M | H | todo | Same-seed oracle starts reproduce identical placement |
+| RG-1 | Game-setup state model: new-game parameters (civ/leader/difficulty, world size/land%/climate, opponent count, rules variants) + its save encoding | P1 | M | H | todo | Setup section byte-matches oracle new-game saves across variants (rig-driven) |
+| RG-2 | Starting placement: civ starts, goody huts, barbarian seeding from the game seed | P1 | M | H | todo | Same-seed oracle starts reproduce identical placement |
 | RG-3 | Random world generator (seeded; `.MP`-shaped output; original's exact algorithm unknown → our own, flagged) | P2 | L | H | todo | Statistical parity vs original maps (land%/biome spread); renders sanity-checked |
 | RG-4 | Opponent AI v1 headless: expansion, economy, research, unit handling; deterministic | P2 | L | H | todo | 50-turn autoplay stable + deterministic; plausible power curves vs oracle games |
 | RG-5 | Diplomacy model: contacts, embassies, treaties, tribute, AI stances; save encoding | P2 | M | H | todo | Diplomacy state round-trips; oracle-save contacts match |

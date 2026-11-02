@@ -1,56 +1,80 @@
 {
   "sections": {
     "COSMIC": {
-      "columns": [
-        "3       ; Road movement multiplier"
-      ],
-      "row_count": 31,
+      "row_count": 32,
       "values": {
-        "2       ; 1 in x chance Trireme lost (mod. by Seafaring": "Navigation)",
-        "2       ; # of food each citizen eats per turn": "",
-        "10      ; # of rows in food box (rows * city_size+1 = box)": "",
-        "10      ; # of rows in shield box": "",
-        "1       ; Settlers eat (govt <= Monarchy)": "",
-        "2       ; Settlers eat (govt >= Communism)": "",
-        "7       ; City size for first unhappiness at Chieftain level": "",
-        "14      ; Riot factor based on # cities (higher factor lessens the effect)": "",
-        "8       ; Aqueduct needed to exceed this size": "",
-        "12      ; Sewer System needed to exceed this size": "",
-        "10      ; Tech paradigm (higher # slows research)": "",
-        "20      ; Base time for engineers to transform terrain (x2)": "",
-        "3       ; Monarchy  pays support for all units past this (max 8)": "",
-        "3       ; Communism pays support for all units past this (max 8)": "",
-        "8       ; Fundamentalism pays support for all units past this (max 8)": "",
-        "0       ; Communism is equivalent of this palace distance.": "",
-        "50      ; Fundamentalism loses this % of science": "",
-        "50      ; Percent shield penalty for production type change": "",
-        "10      ; Max paradrop range": "",
-        "75      ; Mass/Thrust paradigm (increasing slows spaceship time)": "",
-        "5       ; Max effective science rate in fundamentalism (x10": "so 5 = 50%)",
-        "1\t; Value of each citizen to the Civilization Score.": "",
-        "20\t; Value of each wonder to the Civilization Score.": "",
-        "1\t; Reward for landing on A. Centauri first = this multiplier*(# of habitats)*(prob. of success)": "",
-        "-10\t; Cost to Civilization Score (+ or -) for each extant non-AI controlled polluted tile.": "",
-        "1\t; For each turn of peace after turn 199": "this amount *3 is added to Civilization Score.",
-        "5\t; Value to the Civilization Score of each future tech researched.": "",
-        "0\t; Penalty assessed to Civilization Score each time player betrays another race.": "",
-        "0\t; Cost to Civilization Score (+ or -) for each unit destroyed.": "",
-        "11110111\t; bitmask for goodie huts": "right bit =map0",
-        "0    ; Helicopters pick up huts 0=no 1=yes": ""
-      }
+        "Road movement multiplier": "3",
+        "1 in x chance Trireme lost (mod. by Seafaring, Navigation)": "2",
+        "# of food each citizen eats per turn": "2",
+        "# of rows in food box (rows * city_size+1 = box)": "10",
+        "# of rows in shield box": "10",
+        "Settlers eat (govt <= Monarchy)": "1",
+        "Settlers eat (govt >= Communism)": "2",
+        "City size for first unhappiness at Chieftain level": "7",
+        "Riot factor based on # cities (higher factor lessens the effect)": "14",
+        "Aqueduct needed to exceed this size": "8",
+        "Sewer System needed to exceed this size": "12",
+        "Tech paradigm (higher # slows research)": "10",
+        "Base time for engineers to transform terrain (x2)": "20",
+        "Monarchy  pays support for all units past this (max 8)": "3",
+        "Communism pays support for all units past this (max 8)": "3",
+        "Fundamentalism pays support for all units past this (max 8)": "8",
+        "Communism is equivalent of this palace distance.": "0",
+        "Fundamentalism loses this % of science": "50",
+        "Percent shield penalty for production type change": "50",
+        "Max paradrop range": "10",
+        "Mass/Thrust paradigm (increasing slows spaceship time)": "75",
+        "Max effective science rate in fundamentalism (x10, so 5 = 50%)": "5",
+        "Value of each citizen to the Civilization Score.": "1",
+        "Value of each wonder to the Civilization Score.": "20",
+        "Reward for landing on A. Centauri first = this multiplier*(# of habitats)*(prob. of success)": "1",
+        "Cost to Civilization Score (+ or -) for each extant non-AI controlled polluted tile.": "-10",
+        "For each turn of peace after turn 199, this amount *3 is added to Civilization Score.": "1",
+        "Value to the Civilization Score of each future tech researched.": "5",
+        "Penalty assessed to Civilization Score each time player betrays another race.": "0",
+        "Cost to Civilization Score (+ or -) for each unit destroyed.": "0",
+        "bitmask for goodie huts, right bit =map0, 0=no goodie huts": "11110111",
+        "Helicopters pick up huts 0=no 1=yes": "0"
+      },
+      "values_raw_order": [
+        "3",
+        "2",
+        "2",
+        "10",
+        "10",
+        "1",
+        "2",
+        "7",
+        "14",
+        "8",
+        "12",
+        "10",
+        "20",
+        "3",
+        "3",
+        "8",
+        "0",
+        "50",
+        "50",
+        "10",
+        "75",
+        "5",
+        "1",
+        "20",
+        "1",
+        "-10",
+        "1",
+        "5",
+        "0",
+        "0",
+        "11110111",
+        "0"
+      ]
     },
     "CIVILIZE": {
-      "columns": [
-        "Advanced Flight",
-        "4",
-        "-2",
-        "Rad",
-        "Too",
-        "3",
-        "4    ; AFl"
-      ],
-      "row_count": 99,
+      "row_count": 100,
       "first_column": [
+        "Advanced Flight",
         "Alphabet",
         "Amphibious Warfare",
         "Astronomy",
@@ -129,20 +153,13 @@
         "Space Flight",
         "Stealth",
         "Steam Engine",
-        "Steel",
-        "Superconductor"
+        "Steel"
       ]
     },
     "IMPROVE": {
-      "columns": [
-        "Nothing",
-        "1",
-        "0",
-        "nil",
-        ""
-      ],
-      "row_count": 67,
+      "row_count": 68,
       "first_column": [
+        "Nothing",
         "Palace",
         "Barracks",
         "Granary",
@@ -213,31 +230,12 @@
       ]
     },
     "ENDWONDER": {
-      "columns": [
-        "nil",
-        "; Pyramids"
-      ],
-      "row_count": 28
+      "row_count": 29
     },
     "UNITS": {
-      "columns": [
-        "Settlers",
-        "Exp",
-        "0",
-        "1.",
-        "0",
-        "0a",
-        "1d",
-        "2h",
-        "1f",
-        "4",
-        "0",
-        "5",
-        "nil",
-        "000000000000000"
-      ],
-      "row_count": 80,
+      "row_count": 81,
       "first_column": [
+        "Settlers",
         "Engineers",
         "Warriors",
         "Phalanx",
@@ -316,32 +314,13 @@
         "New Unit w",
         "New Unit x",
         "New Unit y",
-        "New Unit z",
-        ": Extra1.wav through extra8.wav for the 8 test units.  These should be"
+        "New Unit z"
       ]
     },
     "TERRAIN": {
-      "columns": [
-        "Desert",
-        "1",
-        "2",
-        "0",
-        "1",
-        "0",
-        "yes",
-        "1",
-        "5",
-        "5",
-        "yes",
-        "1",
-        "5",
-        "3",
-        "Pln",
-        "no",
-        "; Drt"
-      ],
-      "row_count": 32,
+      "row_count": 33,
       "first_column": [
+        "Desert",
         "Plains",
         "Grassland",
         "Forest",
@@ -377,79 +356,18 @@
       ]
     },
     "TERRAIN1": {
-      "columns": [
-        "Desert",
-        "1",
-        "2",
-        "0",
-        "1",
-        "0",
-        "yes",
-        "1",
-        "5",
-        "5",
-        "yes",
-        "1",
-        "5",
-        "3",
-        "Pln",
-        "no",
-        "; Drt"
-      ],
-      "row_count": 32
+      "row_count": 33
     },
     "TERRAIN2": {
-      "columns": [
-        "Desert",
-        "1",
-        "2",
-        "0",
-        "1",
-        "0",
-        "yes",
-        "1",
-        "5",
-        "5",
-        "yes",
-        "1",
-        "5",
-        "3",
-        "Pln",
-        "no",
-        "; Drt"
-      ],
-      "row_count": 32
+      "row_count": 33
     },
     "TERRAIN3": {
-      "columns": [
-        "Desert",
-        "1",
-        "2",
-        "0",
-        "1",
-        "0",
-        "yes",
-        "1",
-        "5",
-        "5",
-        "yes",
-        "1",
-        "5",
-        "3",
-        "Pln",
-        "no",
-        "; Drt"
-      ],
-      "row_count": 32
+      "row_count": 33
     },
     "GOVERNMENTS": {
-      "columns": [
-        "Anarchy",
-        "Mr.",
-        "Ms."
-      ],
-      "row_count": 6,
+      "row_count": 7,
       "first_column": [
+        "Anarchy",
         "Despotism",
         "Monarchy",
         "Communism",
@@ -459,113 +377,46 @@
       ]
     },
     "LEADERS": {
-      "columns": [
-        "Caesar",
-        "Livia",
-        "0",
-        "1",
-        "1",
-        "Romans",
-        "Roman",
-        "0",
-        "1",
-        "1",
-        "1",
-        "Dictator",
-        "Dictator",
-        "2",
-        "Imperator",
-        "Imperatrix"
-      ],
-      "row_count": 22
+      "row_count": 23
     },
     "CARAVAN": {
-      "columns": [
-        "Hides",
-        ""
-      ],
-      "row_count": 15
+      "row_count": 16
     },
     "ORDERS": {
-      "columns": [
-        "Fortify",
-        "F"
-      ],
-      "row_count": 11
+      "row_count": 12
     },
     "DIFFICULTY": {
-      "columns": [
-        "Chieftain"
-      ],
-      "row_count": 5
+      "row_count": 6
     },
     "ATTITUDES": {
-      "columns": [
-        "Worshipful"
-      ],
-      "row_count": 8
+      "row_count": 9
     },
     "CIVILIZE2": {
-      "columns": [
-        "0\t\t; AFl"
-      ],
-      "row_count": 99
+      "row_count": 100
     },
     "LEADERS2": {
-      "columns": [
-        "00000000\t\t;Romans",
-        "Roman",
-        "0",
-        "1",
-        "1",
-        "1",
-        "Dictator",
-        "Dictator",
-        "2",
-        "Imperator",
-        "Imperatrix"
-      ],
-      "row_count": 22
+      "row_count": 23
     },
     "UNITS_ADVANCED": {
-      "columns": [
-        "11111111",
-        "00000000",
-        "0",
-        "0000000000000000",
-        "0000000000000000",
-        "0000000000000000",
-        "00000000  ;Settlers"
-      ],
-      "row_count": 61
+      "row_count": 62
     },
     "MAP_TRANSPORT_RELATIONSHIPS": {
-      "columns": [
-        "1",
-        "2"
-      ],
-      "row_count": 2
+      "row_count": 3
     },
     "INITIAL_SETTINGS": {
-      "columns": [
-        "0",
-        "0",
-        "3\t;Romans"
-      ],
-      "row_count": 20
+      "row_count": 21
     },
     "SOUNDS": {
-      "columns": [
-        "<none>  \t; Settlers"
-      ],
-      "row_count": 79
+      "row_count": 80
     },
     "RIVERS": {
-      "columns": [
-        "River",
-        "; map 1"
-      ],
-      "row_count": 3
+      "row_count": 4
     }
+  },
+  "semantic_checks": {
+    "terrain_id0": "Desert",
+    "terrain_id10": "Ocean",
+    "pass": true,
+    "note": "ids 0..10 are the base terrains Desert..Ocean; a parser that eats the first data row shifts these (issue #44)"
   }
 }

@@ -4,7 +4,9 @@
   "size_a": 226376,
   "size_b": 226336,
   "note": "size delta -40 bytes = -1 unit record (ToT)(s)",
-  "diff_bytes_common_prefix": 47057,
+  "metric_note": "span = merged regions (equal-byte gaps <=7 included, for presentation); exact = count of unequal bytes only (issue #46)",
+  "changed_bytes_exact_common_prefix": 27283,
+  "merged_region_span_bytes": 47057,
   "region_count": 1933,
   "regions_first_50": [
     [

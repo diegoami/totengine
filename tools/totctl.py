@@ -77,6 +77,11 @@ def null_strings(block: bytes, limit: int = 5):
 # Rules.txt
 
 def parse_rules(path: str) -> dict:
+    """Parse Rules.txt. Every non-comment line after @SECTION is DATA —
+    there are no header rows (issue #44: the first data row used to be
+    stashed as a 'header', shifting every terrain name/color by one).
+    ';' starts a comment anywhere (inline comments are common in @COSMIC);
+    strip them before splitting fields."""
     sections: dict[str, dict] = {}
     name = None
     with open(path, "r", encoding="latin-1") as fh:
@@ -86,28 +91,42 @@ def parse_rules(path: str) -> dict:
                 continue
             if line.startswith("@"):
                 name = line[1:].strip()
-                sections.setdefault(name, {"header": None, "rows": []})
+                sections.setdefault(name, {"rows": [], "comments": []})
                 continue
             if name is None:
                 continue
+            comment = ""
+            if ";" in line:  # inline comment — in @COSMIC it is the key text
+                line, comment = line.split(";", 1)
+            line = line.strip().rstrip(",").strip()
+            if not line:
+                continue
             sec = sections[name]
-            if sec["header"] is None:
-                sec["header"] = [c.strip() for c in line.split(",")]
-            else:
-                sec["rows"].append([c.strip() for c in line.split(",")])
+            sec["rows"].append([c.strip() for c in line.split(",")])
+            sec["comments"].append(comment.strip())
     return sections
 
 
 def rules_summary(sections: dict) -> dict:
     out = {"sections": {}}
     for name, sec in sections.items():
-        entry = {"columns": sec["header"], "row_count": len(sec["rows"])}
-        if name == "COSMIC":  # key=value style
-            entry["values"] = {r[0]: (r[1] if len(r) > 1 else "")
-                               for r in sec["rows"]}
+        entry = {"row_count": len(sec["rows"])}
+        if name == "COSMIC":  # 'value ; description' — the comment is the key
+            keys = sec.get("comments") or ["" for _ in sec["rows"]]
+            entry["values"] = {k: r[0] for k, r in zip(keys, sec["rows"])
+                               if r and r[0]}
+            entry["values_raw_order"] = [r[0] for r in sec["rows"] if r]
         if name in ("TERRAIN", "UNITS", "IMPROVE", "CIVILIZE", "GOVERNMENTS"):
             entry["first_column"] = [r[0] for r in sec["rows"]][:80]
         out["sections"][name] = entry
+    terr = [r[0] for r in sections.get("TERRAIN", {}).get("rows", [])][:11]
+    out["semantic_checks"] = {
+        "terrain_id0": terr[0] if terr else None,
+        "terrain_id10": terr[10] if len(terr) > 10 else None,
+        "pass": terr[:1] == ["Desert"] and terr[10:11] == ["Ocean"],
+        "note": ("ids 0..10 are the base terrains Desert..Ocean; a parser "
+                 "that eats the first data row shifts these (issue #44)"),
+    }
     return out
 
 
@@ -828,7 +847,7 @@ def walk_save(path: str) -> dict:
                 if not (0 <= sx < stored_w2 and 0 <= y < stored_h2):
                     outside += 1
                     continue
-                t = data[base + 6 * (y * stored_w2 + sx) + 4] & 0x7F
+                t = data[base + 6 * (y * stored_w2 + sx) + 4] & 0x3F
                 if t == 10:
                     on_ocean += 1
                 else:
@@ -900,6 +919,9 @@ def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
 def diff_saves(path_a: str, path_b: str) -> dict:
     a = open(path_a, "rb").read()
     b = open(path_b, "rb").read()
+    note_diff = ("span = merged regions (equal-byte gaps <=7 included, for "
+                 "presentation); exact = count of unequal bytes only "
+                 "(issue #46)")
     if len(a) != len(b):
         delta = len(b) - len(a)
         note = "size delta %+d bytes" % delta
@@ -910,13 +932,18 @@ def diff_saves(path_a: str, path_b: str) -> dict:
         common = min(len(a), len(b))
         regions = _diff_regions(a[:common], b[:common])
         return {"a": path_a, "b": path_b, "size_a": len(a), "size_b": len(b),
-                "note": note,
-                "diff_bytes_common_prefix": sum(r[1] - r[0] + 1 for r in regions),
+                "note": note, "metric_note": note_diff,
+                "changed_bytes_exact_common_prefix":
+                    sum(1 for i in range(common) if a[i] != b[i]),
+                "merged_region_span_bytes":
+                    sum(r[1] - r[0] + 1 for r in regions),
                 "region_count": len(regions),
                 "regions_first_50": regions[:50]}
     regions = _diff_regions(a, b)
-    return {"a": path_a, "b": path_b, "size": len(a),
-            "diff_bytes": sum(r[1] - r[0] + 1 for r in regions),
+    return {"a": path_a, "b": path_b, "size": len(a), "metric_note": note_diff,
+            "changed_bytes_exact":
+                sum(1 for i in range(len(a)) if a[i] != b[i]),
+            "merged_region_span_bytes": sum(r[1] - r[0] + 1 for r in regions),
             "regions": regions, "region_count": len(regions)}
 
 

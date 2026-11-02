@@ -41,5 +41,6 @@ Headless Wine + Xvfb harness that drives the original game and harvests saves.
 
 `turnloop.sh 6 Midgard Oc_Auto.SAV …` → turns 4→9, six consecutive saves;
 `totctl diff turn01 turn02` → "size delta +92 bytes = +1 city record (ToT)"
-(Midgard's events founded a city between turns), 64,202 differing bytes in
+(Midgard's events founded a city between turns), 64,202 merged-region span
+/ 52,073 exactly-changed bytes in
 1,873 regions — the fog-of-war map block dominates, as expected.

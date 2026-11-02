@@ -28,5 +28,5 @@
       "12": 1
     }
   },
-  "decode": "terrain byte mp0+6t+4: terrain=&0x3F, 0x40=special (rendered as its terrain), 0x80=river; road/rail bits at mp0+6t+12: 0x40/0x80 \u2014 ROMFALL 2026-11-02"
+  "decode": "terrain byte mp0+6t+4: terrain=&0x3F, 0x40=special (rendered as its terrain), 0x80=river; road/rail bits at mp0+6t+14: 0x40/0x80 \u2014 ROMFALL 2026-11-02"
 }

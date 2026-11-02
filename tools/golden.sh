@@ -52,7 +52,7 @@ warring-yan-walk|save|Scenario/china/deiYan.sav
 warring-qin-walk|save|Scenario/china/deiQin.sav
 romfall-scnmap|scnmap|FallRome/ROMFALL.scn
 va-autosave-diff|diff|Scenario/FallRome/Va_Auto2.SAV|Scenario/FallRome/Va_Auto.SAV
-anticchina-map|map|Scenario/china/AnticChina.MP
+anticchina-map|map|Scenario/china/AnticChina.MP||rules:Scenario/china/Rules.txt
 "
 
 # top-level artifacts (README "Files" table): corpus name -> files under
@@ -82,9 +82,13 @@ while IFS='|' read -r name cmd a b opt; do
   [ -z "$name" ] && continue
   scale_args=""
   [ "${opt:-}" = "scale3" ] && scale_args="--scale 3"
+  rules_args=""
+  case "${opt:-}" in
+    rules:*) rules_args="--rules $CIVTOT_HOME/${opt#rules:}" ;;
+  esac
   case "$cmd" in
-    map)    python3 "$HERE/tools/totctl.py" "$cmd" "$a" -o "$TMP/$name.png" --json "$TMP/$name.json" $scale_args >/dev/null 2>&1 ;;
-    scnmap) python3 "$HERE/tools/totctl.py" "$cmd" "$a" -o "$TMP/$name.png" --json "$TMP/$name.json" $scale_args >/dev/null 2>&1 ;;
+    map)    python3 "$HERE/tools/totctl.py" "$cmd" "$a" -o "$TMP/$name.png" --json "$TMP/$name.json" $scale_args $rules_args >/dev/null 2>&1 ;;
+    scnmap) python3 "$HERE/tools/totctl.py" "$cmd" "$a" -o "$TMP/$name.png" --json "$TMP/$name.json" $scale_args $rules_args >/dev/null 2>&1 ;;
     diff)   python3 "$HERE/tools/totctl.py" "$cmd" "$a" "$b" -o "$TMP/$name.json" >/dev/null 2>&1 ;;
     *)      python3 "$HERE/tools/totctl.py" "$cmd" "$a" -o "$TMP/$name.json" >/dev/null 2>&1 ;;
   esac
@@ -146,6 +150,21 @@ while IFS='|' read -r name cmd a b opt; do
     fi
   done
 done <<< "$CORPUS"
+
+# Semantic enforcement (#53): the rules entry's own semantic_checks must
+# PASS before it can be blessed or compared — a regen must never silently
+# accept a shifted parse (e.g. the #44 first-data-row bug).
+if [ -s "$TMP/rules.norm" ]; then
+  if ! python3 -c '
+import json, sys
+d = json.load(open(sys.argv[1]))
+sc = d.get("semantic_checks", {})
+sys.exit(0 if sc.get("pass") is True else 1)
+' "$TMP/rules.norm" 2>/dev/null; then
+    echo "FAIL rules: semantic_checks.pass is not true — refusing to bless/compare a shifted parse"
+    fail=1
+  fi
+fi
 
 # Rust tot-kit vs Python probe crosscheck (#28)
 python3 "$HERE/tools/crosscheck_mp.py" "$MODE" || fail=1

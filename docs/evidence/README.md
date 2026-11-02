@@ -14,7 +14,7 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 | `romfall-scnmap.png` | `totctl scnmap FallRome/ROMFALL.scn` | Embedded scenario map with river/road/railroad overlays |
 | `anticchina-map.png` | `totctl map Scenario/china/AnticChina.MP` | ToTPP-era paired-slot `.MP` flavor: China with river networks + improvement flags |
 | `romfall-walk.json` | `totctl save ROMFALL.scn` | Structural walk of a classic scenario (ToT 1.1, `0x0032`) |
-| `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked: `ext033` units/cities/structural checks + `totpp_tail` Lua framing |
+| `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked: `ext033` units/cities/structural checks (this pristine scenario has no `LUAE` — the Lua tail framing appears in the deiYan/deiQin ladder rows) |
 | `golden/warring-auto-walk.json`, `golden/warring-yan-walk.json`, `golden/warring-qin-walk.json` | `totctl save` on the 0x33 ladder | regression-protected turns 1/2/11 walks (T0-7) |
 | `crosscheck-mp.json` | `tools/crosscheck_mp.py` (runs both decoders) | Rust `tot-kit` vs Python probe: layout/dims/top-6 histogram must match |
 | `va-autosave-diff.json` | `totctl diff Va_Auto2.SAV Va_Auto.SAV` | Annotated diff of two real autosaves (oracle-methodology demo) |
@@ -50,12 +50,12 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
    an encoding-artifact fragment, plural and singular adjective); 56 techs
    pre-discovered; 10 wonders
    built, 1 destroyed; map header `[150, 120, 9000, 1, …]` consistent with the MP
-   findings. *Open:* `year` field at offset 670 reads 5159 — decoding TBD.
+   findings.
 
 5. **ToTPP `0x33` saves keep the base layout at the front.** *Warring States.scn*
    walks successfully through settings + civ names ("Xiao", "Qin") at the same
-   offsets as `0x32` — extension differences start later. (Its 6.4 MB autosaves
-   will define the `0x33` tail layout in Phase 1/3.)
+   offsets as `0x32` — extension differences start later. (The `0x33` tail was
+   decoded later the same day — see §T0-7.)
 
 6. **The save-differ turns file sizes into semantics.** Two real autosaves 1.5 h
    apart: size delta exactly **−40 bytes = one ToT unit record** (a unit died or was
@@ -88,7 +88,7 @@ and the ROMFALL_{ERE,HUN,VIS} variants:
 5. **Unit field semantics remain open.** Records show x/y-like columns at bytes
    6–10 (values fit 150×120) and variant bytes at 14–19, but type/owner guesses did
    not validate — the next step is the in-game cheat screen and/or a
-   move-one-unit save-diff pair. T0-6 stays open for this; see issue #3.
+   move-one-unit save-diff pair. (Resolved by T0-6 — issue #3, closed.)
 6. **Va_Auto saved at turn 0 with 711 units vs the scenario's 710** — consistent
    with a SCENARIOLOADED event creating a unit on load (Events.txt has
    CREATEUNIT-on-load logic); worth confirming via the events interpreter in T1-7.
@@ -123,7 +123,8 @@ and the ROMFALL_{ERE,HUN,VIS} variants:
 4. **Improvements: road = bit `0x40`, railroad = bit `0x80` at
    `map_base + 6t + 14`.** Verified spatially on ROMFALL: 3,497 road tiles
    form a connected empire-wide network; 413 railroad tiles cluster densely
-   in the Italy/Gaul core (128 tiles carry both; rails never set `0x40`).
+   in the Italy/Gaul core. Of the rail tiles, 128 carry the road bit too
+   (rails DO set `0x40` when a road is also present) and 285 are rail-only.
    ASCII renders show the Mediterranean, Italy's boot and the road/rail
    networks in historically sensible places. Remaining bits
    (`0x02` base, `0x08/0x10/0x20` variants — irrigation/mine/farmland/fortress
@@ -152,8 +153,11 @@ and the ROMFALL_{ERE,HUN,VIS} variants:
    its meaning is open. Pad slot = `u16` word + 1 extra byte: word 0x003F
    on 22,488 records, 0x0001 on 4,293, and 22 further values (mostly
    `0xXX3F`: 0x023F 340, 0x043F 166, 0x103F 153, 0x803F 133) on the
-   remaining 1,219; extra 0xF0 on 25,882, 0xFF on 1,219, plus low-bit
-   variants of 0xF0 (0xF7 268, 0xFE 150, 0xFD 85, 0xFC 57, …). Dominant
+   remaining 1,219; extra byte: 0xF0 on 25,882, 0xFF on 1,219, high-bit
+   variants of 0xF0 (0xF7 268, 0xFE 150, 0xFD 85, 0xFC 57, …), and 264
+   records with a LOW high-nibble (0x10 82, 0x20 37, 0x40 30, 0x70 26,
+   0x50 19, 0x60 19, 0x30 16, 0x00 6, plus two-digit oddities like
+   0x77/0x37/0x47) — semantics open. Dominant
    combinations: (0x003F, 0xF0) 20,884 and (0x0001, 0xF0) 4,209. The stored
    grid is dense `112×250` (display width 224
    = 2× stored — the ToT half-tile display convention, matching the SCN map
@@ -249,7 +253,7 @@ end of the base front (411,214 here):
 
 | Range | Content |
 |---|---|
-| `[+0, +32+15×surface)` | extended per-tile arrays, mostly sparse; a dense **6 B/tile band** (168,960 B ≈ 28,000×6) and a **10,240-B blob** sit inside; sub-layout open |
+| `[+0, +32+15×surface)` | extended per-tile arrays, mostly sparse; a dense **6 B/tile band** (168,960 B = 6×28,160 — 960 B beyond 6× the 28,000-tile surface; exact structure open) and a **10,240-B blob** sit inside; sub-layout open |
 | `[+32+15×surface, …)` | **unit records, 40 B each, count-based** (no fixed cap written) |
 | `+4 B` | interlude |
 | next | **city records, 92 B each, count-based** (same record layout as 0x32: name@0, x u16@58, y u16@60) |
@@ -262,7 +266,8 @@ end of the base front (411,214 here):
   carrying id 0**; same 1,442 units, of which **1,352** sit at an (x,y)
   that occurs somewhere in the .scn after load+autosave);
 - `@10/@12 s16 x/y` — **logical** grid coords (not the stored/diamond
-  space); off-board units carry negative coords (−100/−500 observed);
+  space); off-board units carry negative coords (−100…−700 observed:
+  −200 deiQin, −700 deiYan/Hu_Auto);
 - `@18 u8 type` — Rules.txt @UNITS index (190 rows in Warring States,
   values 0..188 observed);
 - `@19 u8 owner` — 0=barbarians, 1..7 = civs (exactly 8 distinct values);

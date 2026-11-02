@@ -79,9 +79,10 @@
   },
   "transporters": {
     "offset": 29728,
-    "fixed": 172,
-    "first_short": 512,
-    "guessed_count": 512
+    "fixed_bytes": 168,
+    "record_count_u32@168": 0,
+    "record_size": 14,
+    "records_first_8": []
   },
   "map_header": {
     "offset": 29900,
@@ -158,7 +159,7 @@
           540,
           461
         ],
-        "note": "terrain byte mp0+6t+4: terrain=&0x3F (ids 0-10), 0x40=special resource (70 ocean specials on ROMFALL), 0x80=river; road/rail bits at mp0+6t+12: 0x40 road / 0x80 rail (ROMFALL 3497/413, 128 both \u2014 matches the original spatial verification); the 6-B-stride field interleave is open; visibility bytes' near-identical distribution suggests per-civ fog, unproven"
+        "note": "terrain byte mp0+6t+4: terrain=&0x3F (ids 0-10), 0x40=special resource (70 ocean specials on ROMFALL), 0x80=river; road/rail bits at mp0+6t+14: 0x40 road / 0x80 rail (ROMFALL 3497/413, 128 both \u2014 matches the original spatial verification); the 6-B-stride field interleave is open; visibility bytes' near-identical distribution suggests per-civ fog, unproven"
       }
     ],
     "resource_seed_offset": 393916

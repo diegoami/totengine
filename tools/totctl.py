@@ -599,17 +599,24 @@ def walk_save(path: str) -> dict:
     out["civ_names"] = []
     for i in range(7):
         block = data[pos + i * 242: pos + (i + 1) * 242]
-        out["civ_names"].append(null_strings(block, 4))
+        out["civ_names"].append(null_strings(block, 8))
     pos += 7 * 242
     out["civ_properties"] = {"offset": pos, "size": 8 * 3348}
     pos += 8 * 3348
 
-    # transporters (ToT 1.1): 172 + 14*n — count assumed in first short
-    t_first = struct.unpack_from("<h", data, pos)[0]
-    out["transporters"] = {"offset": pos, "fixed": 172,
-                           "first_short": t_first,
-                           "guessed_count": max(0, t_first)}
-    pos += 172  # variable tail unknown; treat as fixed for the base probe
+    # transporters (ToT 1.1 / Mercator+Catfish): a fixed 168-byte block,
+    # then a u32 record count, then count x 14-byte records (issue #49:
+    # ROMFALL/Va_Auto/Warring States have count 0 — which is why a fixed
+    # 172 ever worked — Midgard.SCN has 12)
+    tcount = struct.unpack_from("<I", data, pos + 168)[0]
+    out["transporters"] = {
+        "offset": pos, "fixed_bytes": 168,
+        "record_count_u32@168": tcount, "record_size": 14,
+        "records_first_8": [list(struct.unpack_from("<7H", data,
+                                                    pos + 172 + 14 * k))
+                            for k in range(min(8, tcount))],
+    }
+    pos += 172 + 14 * tcount
 
     # map header: 16 bytes = 8 shorts
     hdr = struct.unpack_from("<8h", data, pos)
@@ -635,7 +642,7 @@ def walk_save(path: str) -> dict:
         # Measured byte positions (ROMFALL 2026-11-02, re-verified against
         # the section's known histograms): terrain|river|special byte at
         # mp0+6t+4 (terrain = &0x3F: ids 0-10; 0x40 = special resource,
-        # 0x80 = river); road/rail bits at mp0+6t+12 (0x40 road, 0x80
+        # 0x80 = river); road/rail bits at mp0+6t+14 (0x40 road, 0x80
         # railroad — 3,497 road / 413 rail / 128 both on ROMFALL, matching
         # the original spatial verification). The exact interleaving of the
         # 6-B-stride fields inside the section remains open.
@@ -695,7 +702,7 @@ def walk_save(path: str) -> dict:
                     "note": ("terrain byte mp0+6t+4: terrain=&0x3F (ids 0-10), "
                              "0x40=special resource (70 ocean specials on "
                              "ROMFALL), 0x80=river; road/rail bits at "
-                             "mp0+6t+12: 0x40 road / 0x80 rail (ROMFALL "
+                             "mp0+6t+14: 0x40 road / 0x80 rail (ROMFALL "
                              "3497/413, 128 both — matches the original "
                              "spatial verification); the 6-B-stride field "
                              "interleave is open; visibility bytes' "
@@ -715,7 +722,7 @@ def walk_save(path: str) -> dict:
                 blob_txt = data[lua + 4:evnt - 4]
                 import re as _re
                 keys = sorted(set(k.decode() for k in _re.findall(
-                    rb'\n  \["([A-Za-z_][A-Za-z0-9_]*)"\] = \{', blob_txt[:500000])))
+                    rb'\n  \["([A-Za-z_][A-Za-z0-9_]*)"\] = \{', blob_txt)))
                 tiles = len(_re.findall(rb'"tile\(\d+:\d+\)"', blob_txt))
                 out["totpp_tail"] = {
                     "lua_magic_offset": lua,
@@ -736,126 +743,136 @@ def walk_save(path: str) -> dict:
         # cities: find the 92-byte name grid — candidate printable name
         # fields (16-byte slot: printable prefix + NUL padding), then the
         # longest chain of candidates at exactly 92-byte stride.
-        cands = set()
-        i = blob10240_end
-        while i < len(data) - 16:
-            j = data.find(b"\x00", i, i + 16)
-            if 3 <= j - i <= 15:
-                nm = data[i:j]
-                if all(32 <= c < 127 or 0xA0 <= c <= 0xFF for c in nm) and data[i + 15] == 0:
-                    # require the previous record position to exist: the slot
-                    # before a real grid is data, not another name
-                    cands.add(i)
-                    i = j
-            i += 1
-        best_chain = []
-        for s in sorted(cands):
-            if best_chain and s <= best_chain[0] + 92 * (len(best_chain) - 1):
-                continue  # inside an existing chain
-            chain = [s]
-            while chain[-1] + 92 in cands:
-                chain.append(chain[-1] + 92)
-            if len(chain) > len(best_chain):
-                best_chain = chain
-        if len(best_chain) >= 8:
-            probe = best_chain[0]
-            n = (best_chain[-1] - probe) // 92 + 1
-            cities = {"offset": probe, "count": n, "record_size": 92,
-                      "size": n * 92, "chain_found": len(best_chain)}
-            names = []
-            coords = []
-            for k in range(n):
-                rec = data[probe + 92 * k: probe + 92 * (k + 1)]
-                nm = rec[:16].split(b"\x00")[0].decode("latin-1", "replace")
-                names.append(nm)
-                coords.append({"i": k, "name": nm,
-                               "x": struct.unpack_from("<H", rec, 58)[0],
-                               "y": struct.unpack_from("<H", rec, 60)[0],
-                               "tail_shorts": list(struct.unpack_from("<3H", rec, 86))})
-            cities["names"] = names[:20]
-            cities["names_total_named"] = sum(1 for x in names if x)
-            cities["coords_first_8"] = coords[:8]
-            cities["note"] = ("name 16 B @0; x u16@58 / y u16@60 on the "
-                              "logical grid (same space as unit coords; "
-                              "per-file garrison/terrain support in "
-                              "garrisons_measured / city_terrain_measured); "
-                              "tail shorts @86-91 measured, e.g. Roma "
-                              "(5, 5, 8) — NOT the city size: a size-like "
-                              "short sits in the two bytes immediately "
-                              "BEFORE each name (Roma 29 = its in-game "
-                              "size), i.e. at the final short of the "
-                              "preceding 92-B slot; exact field boundary "
-                              "open")
-            out["cities"] = cities
-            u_end = cities["offset"]
-            region = u_end - blob10240_end
-            # Verified on ROMFALL (34 + 710*40 = 28434) and Va_Auto
-            # (34 + 711*40 = 28474): a 34-byte preamble, then 40-byte unit
-            # records. The count is not stored in the preamble (only a
-            # state u16 at +30 differs between scenario and in-game save).
-            unit_count, rem = divmod(region, 40)
-            units_table = []
-            owner_hist: dict[int, int] = {}
-            type_hist: dict[int, int] = {}
-            for i in range(unit_count if rem == 34 else 0):
-                r = data[blob10240_end + 34 + 40*i: blob10240_end + 34 + 40*(i+1)]
-                x, y = struct.unpack_from("<HH", r, 6)
-                rec = {"i": i, "x": x, "y": y, "type": r[14],
-                       "owner": r[15], "id": struct.unpack_from("<H", r, 36)[0]}
-                units_table.append(rec)
-                owner_hist[r[15]] = owner_hist.get(r[15], 0) + 1
-                type_hist[r[14]] = type_hist.get(r[14], 0) + 1
-            out["units"] = {
-                "region": [blob10240_end, u_end],
-                "size": region,
-                "record_size": 40,
-                "preamble_bytes": rem,
-                "count": unit_count if rem == 34 else None,
-                "count_arithmetic": f"{region} = {rem} + 40 x {unit_count}",
-                "fields_proven": {
-                    "x_u16@6": "display-grid x (0..width-1)",
-                    "y_u16@8": "display-grid y (0..height-1)",
-                    "type_u8@14": "index into Rules.txt @UNITS",
-                    "owner_u8@15": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
-                    "id_u16@36": "per-save unit id (re-assigned on every save)",
-                },
-                "owner_histogram": dict(sorted(owner_hist.items())),
-                "type_histogram_top": dict(sorted(type_hist.items(), key=lambda kv: -kv[1])[:12]),
-                "sample_first_8": units_table[:8],
-                "verification": ("layout facts: docs/evidence/README.md "
-                                 "§T0-6; the garrison support number is "
-                                 "measured per file in "
-                                 "cities.garrisons_measured / "
-                                 "cities.city_terrain_measured"),
-                "note": ("remaining bytes open: 0-5 constants(2,2,0), 12-13 "
-                         "counters/flags, 16-19 counters (veteran?), 20-35 "
-                         "sparse, 38-39 tail"),
-            }
-            # per-file measured support for the garrison/geometry claims —
-            # issue #27: never stamp another file's verification results here
-            occ = {(u["x"], u["y"]) for u in units_table}
-            garrisoned = sum(1 for c in coords if (c["x"], c["y"]) in occ)
-            cities["garrisons_measured"] = (
-                f"{garrisoned}/{n} cities have a unit on their exact tile "
-                "(measured on this file)")
-            stored_w2, stored_h2 = hdr[0] // 2, hdr[1]
-            base = pos + 2 + 7 * surface
-            on_ocean = on_land = outside = 0
-            for c in coords:
-                x, y = c["x"], c["y"]
-                sx = (x - (y & 1)) // 2 - 1
-                if not (0 <= sx < stored_w2 and 0 <= y < stored_h2):
-                    outside += 1
-                    continue
-                t = data[base + 6 * (y * stored_w2 + sx) + 4] & 0x3F
-                if t == 10:
-                    on_ocean += 1
-                else:
-                    on_land += 1
-            cities["city_terrain_measured"] = (
-                f"{on_land}/{n} cities on non-ocean terrain, {on_ocean} on "
-                f"ocean, {outside} outside the stored grid (measured on "
-                "this file)")
+        if maps == 0:
+            # no embedded map section (e.g. Midgard.SCN: hdr[3]=0, surface
+            # invariant 9943 = 61x163 holds) — the classic unit/city layout
+            # is not locatable without the map-derived blob; do not scan
+            # (issue #49: the old fixed-172 walk fabricated a city table
+            # from transporter bytes)
+            out["units"] = {"note": ("maps=0: no embedded map section; "
+                                     "classic unit/city scan not applicable "
+                                     "(multi-map walker is known-open)")}
+        else:
+            cands = set()
+            i = blob10240_end
+            while i < len(data) - 16:
+                j = data.find(b"\x00", i, i + 16)
+                if 3 <= j - i <= 15:
+                    nm = data[i:j]
+                    if all(32 <= c < 127 or 0xA0 <= c <= 0xFF for c in nm) and data[i + 15] == 0:
+                        # require the previous record position to exist: the slot
+                        # before a real grid is data, not another name
+                        cands.add(i)
+                        i = j
+                i += 1
+            best_chain = []
+            for s in sorted(cands):
+                if best_chain and s <= best_chain[0] + 92 * (len(best_chain) - 1):
+                    continue  # inside an existing chain
+                chain = [s]
+                while chain[-1] + 92 in cands:
+                    chain.append(chain[-1] + 92)
+                if len(chain) > len(best_chain):
+                    best_chain = chain
+            if len(best_chain) >= 8:
+                probe = best_chain[0]
+                n = (best_chain[-1] - probe) // 92 + 1
+                cities = {"offset": probe, "count": n, "record_size": 92,
+                          "size": n * 92, "chain_found": len(best_chain)}
+                names = []
+                coords = []
+                for k in range(n):
+                    rec = data[probe + 92 * k: probe + 92 * (k + 1)]
+                    nm = rec[:16].split(b"\x00")[0].decode("latin-1", "replace")
+                    names.append(nm)
+                    coords.append({"i": k, "name": nm,
+                                   "x": struct.unpack_from("<H", rec, 58)[0],
+                                   "y": struct.unpack_from("<H", rec, 60)[0],
+                                   "tail_shorts": list(struct.unpack_from("<3H", rec, 86))})
+                cities["names"] = names[:20]
+                cities["names_total_named"] = sum(1 for x in names if x)
+                cities["coords_first_8"] = coords[:8]
+                cities["note"] = ("name 16 B @0; x u16@58 / y u16@60 on the "
+                                  "logical grid (same space as unit coords; "
+                                  "per-file garrison/terrain support in "
+                                  "garrisons_measured / city_terrain_measured); "
+                                  "tail shorts @86-91 measured, e.g. Roma "
+                                  "(5, 5, 8) — NOT the city size: a size-like "
+                                  "short sits in the two bytes immediately "
+                                  "BEFORE each name (Roma 29 = its in-game "
+                                  "size), i.e. at the final short of the "
+                                  "preceding 92-B slot; exact field boundary "
+                                  "open")
+                out["cities"] = cities
+                u_end = cities["offset"]
+                region = u_end - blob10240_end
+                # Verified on ROMFALL (34 + 710*40 = 28434) and Va_Auto
+                # (34 + 711*40 = 28474): a 34-byte preamble, then 40-byte unit
+                # records. The count is not stored in the preamble (only a
+                # state u16 at +30 differs between scenario and in-game save).
+                unit_count, rem = divmod(region, 40)
+                units_table = []
+                owner_hist: dict[int, int] = {}
+                type_hist: dict[int, int] = {}
+                for i in range(unit_count if rem == 34 else 0):
+                    r = data[blob10240_end + 34 + 40*i: blob10240_end + 34 + 40*(i+1)]
+                    x, y = struct.unpack_from("<HH", r, 6)
+                    rec = {"i": i, "x": x, "y": y, "type": r[14],
+                           "owner": r[15], "id": struct.unpack_from("<H", r, 36)[0]}
+                    units_table.append(rec)
+                    owner_hist[r[15]] = owner_hist.get(r[15], 0) + 1
+                    type_hist[r[14]] = type_hist.get(r[14], 0) + 1
+                out["units"] = {
+                    "region": [blob10240_end, u_end],
+                    "size": region,
+                    "record_size": 40,
+                    "preamble_bytes": rem,
+                    "count": unit_count if rem == 34 else None,
+                    "count_arithmetic": f"{region} = {rem} + 40 x {unit_count}",
+                    "fields_proven": {
+                        "x_u16@6": "display-grid x (0..width-1)",
+                        "y_u16@8": "display-grid y (0..height-1)",
+                        "type_u8@14": "index into Rules.txt @UNITS",
+                        "owner_u8@15": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
+                        "id_u16@36": "per-save unit id (re-assigned on every save)",
+                    },
+                    "owner_histogram": dict(sorted(owner_hist.items())),
+                    "type_histogram_top": dict(sorted(type_hist.items(), key=lambda kv: -kv[1])[:12]),
+                    "sample_first_8": units_table[:8],
+                    "verification": ("layout facts: docs/evidence/README.md "
+                                     "§T0-6; the garrison support number is "
+                                     "measured per file in "
+                                     "cities.garrisons_measured / "
+                                     "cities.city_terrain_measured"),
+                    "note": ("remaining bytes open: 0-5 constants(2,2,0), 12-13 "
+                             "counters/flags, 16-19 counters (veteran?), 20-35 "
+                             "sparse, 38-39 tail"),
+                }
+                # per-file measured support for the garrison/geometry claims —
+                # issue #27: never stamp another file's verification results here
+                occ = {(u["x"], u["y"]) for u in units_table}
+                garrisoned = sum(1 for c in coords if (c["x"], c["y"]) in occ)
+                cities["garrisons_measured"] = (
+                    f"{garrisoned}/{n} cities have a unit on their exact tile "
+                    "(measured on this file)")
+                stored_w2, stored_h2 = hdr[0] // 2, hdr[1]
+                base = pos + 2 + 7 * surface
+                on_ocean = on_land = outside = 0
+                for c in coords:
+                    x, y = c["x"], c["y"]
+                    sx = (x - (y & 1)) // 2 - 1
+                    if not (0 <= sx < stored_w2 and 0 <= y < stored_h2):
+                        outside += 1
+                        continue
+                    t = data[base + 6 * (y * stored_w2 + sx) + 4] & 0x3F
+                    if t == 10:
+                        on_ocean += 1
+                    else:
+                        on_land += 1
+                cities["city_terrain_measured"] = (
+                    f"{on_land}/{n} cities on non-ocean terrain, {on_ocean} on "
+                    f"ocean, {outside} outside the stored grid (measured on "
+                    "this file)")
     return out
 
 
@@ -868,7 +885,7 @@ def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
     Uses the measured tile-field positions (ROMFALL 2026-11-02): terrain
     from the byte at mp0+6t+4 (terrain = &0x3F, 0x40 = special resource,
     river = 0x80 — special-ocean tiles render as ocean), road/railroad
-    bits from the byte at mp0+6t+12 (0x40 / 0x80). Verified on ROMFALL:
+    bits from the byte at mp0+6t+14 (0x40 / 0x80). Verified on ROMFALL:
     3,497 road / 413 rail / 128 both tiles, matching the original spatial
     verification of the networks.
     """
@@ -912,7 +929,7 @@ def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
             "overlay_counts": stats,
             "decode": ("terrain byte mp0+6t+4: terrain=&0x3F, 0x40=special "
                        "(rendered as its terrain), 0x80=river; road/rail "
-                       "bits at mp0+6t+12: 0x40/0x80 — ROMFALL 2026-11-02")}
+                       "bits at mp0+6t+14: 0x40/0x80 — ROMFALL 2026-11-02")}
 
 
 
@@ -928,7 +945,8 @@ def diff_saves(path_a: str, path_b: str) -> dict:
         for label, size in (("unit record (ToT)", 40), ("city record (ToT)", 92),
                             ("compiled macro event (ToT)", 276)):
             if delta != 0 and delta % size == 0:
-                note += " = %+d %s(s)" % (delta // size, label)
+                plural = "" if abs(delta // size) == 1 else "s"
+                note += " = %+d %s%s" % (delta // size, label, plural)
         common = min(len(a), len(b))
         regions = _diff_regions(a[:common], b[:common])
         return {"a": path_a, "b": path_b, "size_a": len(a), "size_b": len(b),

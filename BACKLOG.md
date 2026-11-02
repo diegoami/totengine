@@ -34,10 +34,6 @@ Rules of thumb: anything gated by *oracle parity* is H regardless of size; anyth
 whose acceptance is "it parses/renders and tests pass" is E unless the format itself
 is unknown. An H story that grows two failed attempts gets split before a third.
 
-Rules of thumb: anything gated by *oracle parity* is H regardless of size; anything
-whose acceptance is "it parses/renders and tests pass" is E unless the format itself
-is unknown. An H story that grows two failed attempts gets split before a third.
-
 ## Releases & milestone reviews
 
 Releases are tags `vX.Y.Z` on `main`, gated by an independent milestone review before the

@@ -276,8 +276,9 @@ end of the base front (411,214 here):
 
 **Decomposition** (walker `ext033`; the arithmetic is *descriptive* — the
 post-city term is the leftover by construction — so validity rests on the
-falsifiable structural checks in `ext033.checks`: unit-start validity,
-block maximality, city-0 name printable, and no competing 92-B name grid
+falsifiable structural checks in `ext033.checks`: the formula landmark
+sits inside the measured block, city-0 name is printable, and no competing
+92-B name grid exists
 outside the walked one; corrupting a unit id flips them to FAIL):
 
 ```

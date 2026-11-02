@@ -172,21 +172,73 @@
   "sections_derived": {
     "map_data": {
       "offset": 30084,
-      "size": 0,
-      "per_map": 0,
-      "maps": 0
+      "size": 129261,
+      "per_map": 129261,
+      "map_blocks": 1,
+      "hdr3_raw": 0,
+      "note": "hdr[3] is NOT the map count: 0-file Original/Ca_Auto.SAV decodes its surface map (#58)"
     },
     "blob_2ab": {
-      "offset": 30084,
-      "size": 0
+      "offset": 159345,
+      "size": 2542
     },
     "blob_10240": {
-      "offset": 30084,
+      "offset": 161887,
       "size": 10240,
       "note": "mostly zeros in ROMFALL"
     }
   },
+  "map_decode": {
+    "stored_dims": [
+      61,
+      163
+    ],
+    "display_dims": [
+      122,
+      163
+    ],
+    "dense": true,
+    "logical_to_stored": "sx = (x - (y&1))//2 - 1, sy = y",
+    "geometry_note": "logical grid (unit/city coords) is hdr0 x hdr1; the terrain grid is hdr0/2 x hdr1 dense (diamond tiles: 2 logical columns per stored column, 2 border columns west; per-file support numbers measured in garrisons_measured / city_terrain_measured below)",
+    "per_map": [
+      {
+        "map_index": 0,
+        "improvements_offset": 99687,
+        "terrain_histogram": {
+          "10": 6391,
+          "2": 1157,
+          "3": 550,
+          "1": 380,
+          "4": 350,
+          "5": 324,
+          "0": 258,
+          "6": 202,
+          "7": 122,
+          "9": 88,
+          "8": 79,
+          "42": 22
+        },
+        "river_tiles": 399,
+        "road_tiles": 46,
+        "railroad_tiles": 0,
+        "special_tiles": 246,
+        "road_and_rail_tiles": 0,
+        "visibility_nonzero_per_civ": [
+          7,
+          10,
+          9,
+          9,
+          6,
+          10,
+          10
+        ],
+        "note": "terrain byte mp0+6t+4: terrain=&0x3F (ids 0-10), 0x40=special resource (70 ocean specials on ROMFALL), 0x80=river; road/rail bits at mp0+6t+14: 0x40 road / 0x80 rail (ROMFALL 3497/413, 128 both \u2014 matches the original spatial verification); the 6-B-stride field interleave is open; visibility bytes' near-identical distribution suggests per-civ fog, unproven"
+      }
+    ],
+    "resource_seed_offset": 30082
+  },
   "units": {
-    "note": "maps=0: no embedded map section; classic unit/city scan not applicable (multi-map walker is known-open)"
+    "note": "unit-region arithmetic did not validate (region 391017 = 40x9775+17, expected remainder 34) \u2014 layout not located (multi-map files are known-open)",
+    "chain_name_candidates_seen": 10
   }
 }

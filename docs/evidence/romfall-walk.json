@@ -107,7 +107,9 @@
       "offset": 29916,
       "size": 117002,
       "per_map": 117002,
-      "maps": 1
+      "map_blocks": 1,
+      "hdr3_raw": 1,
+      "note": "hdr[3] is NOT the map count: 0-file Original/Ca_Auto.SAV decodes its surface map (#58)"
     },
     "blob_2ab": {
       "offset": 146918,

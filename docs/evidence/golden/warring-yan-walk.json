@@ -4,7 +4,7 @@
   "magic": "CIVILIZE",
   "version_raw": "0x0033",
   "version": "ToT 1.1 + ToTPP (extended)",
-  "note": "ToTPP-extended save: base 0x32 front sections apply; after the 10240-blob comes the ToTPP extended state (dynamic, mostly-sparse arrays), then a 'LUAE' magic followed by the serialized Lua state as plain text, ending with an 'EVNT' trailer + 4 bytes",
+  "note": "ToTPP-extended save: base 0x32 front sections apply; after the 10240-blob comes the ToTPP extended state, then a 'LUAE' magic followed by the serialized Lua state as plain text, ending with an 'EVNT' trailer + 4 bytes",
   "unit_transport_relationships": {
     "offset": 12,
     "size": 640
@@ -103,7 +103,9 @@
       "offset": 29916,
       "size": 364002,
       "per_map": 364002,
-      "maps": 1
+      "map_blocks": 1,
+      "hdr3_raw": 1,
+      "note": "hdr[3] is NOT the map count: 0-file Original/Ca_Auto.SAV decodes its surface map (#58)"
     },
     "blob_2ab": {
       "offset": 393918,
@@ -336,8 +338,7 @@
       "note": "fixed-size block (~12.9 KB here; does not scale with city count); internal layout open \u2014 trade-route-like records and id lists observed"
     },
     "checks": {
-      "unit_start_valid": true,
-      "unit_block_preceded_by_invalid": true,
+      "formula_landmark_inside_block": true,
       "city0_name_printable": true,
       "city_grid_is_only_name_grid": true,
       "competing_name_grids": []
@@ -345,7 +346,7 @@
     "accounting": {
       "total": 501981,
       "formula": "501981 = 419992 (per-tile arrays) + 40*1449 + 4 + 92*121 + 12893 (post-city)",
-      "note": "descriptive decomposition: the post-city term is the leftover by construction \u2014 the falsifiable checks are in ext.checks (unit-start validity, block maximality, city-0 name, no competing 92-B name grid outside the walked one)"
+      "note": "descriptive decomposition: the post-city term is the leftover by construction \u2014 the falsifiable checks are in ext.checks (formula landmark inside the block, city-0 name, no competing 92-B name grid outside the walked one)"
     }
   }
 }

@@ -4,7 +4,43 @@ Artifacts produced by `tools/totctl.py` (Python reference probe) against the loc
 install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 [../feasibility.md](../feasibility.md) with measured data.
 
-### T1-2 boot (2026-11-02 night): ROMFALL headless + checksum
+#### T1-3 movement (2026-11-02 night): Rules columns + kernel
+
+- **`@UNITS` field 3 (written `N.`) = movement rate** — proven twice:
+  (a) the game's unit panel reads **"Movers 1"** for standard Settlers
+  (`Settlers, Exp, 0, 1.,0, …`); (b) editing that field to `4.` in both
+  the global and `Original/Rules.txt` and starting a fresh standard game
+  made the panel read **"Movers 4"** (install restored + sha256-verified
+  afterwards). Cross-checked against classic Civ2 values across ~25
+  units: Trireme 3, Caravel 3, Galleon 4, Destroyer 6, Transport 5,
+  Cruise Missile 12, Nuclear Missile 16, Diplomat 2, Spy 3, Caravan 1.
+- **`@UNITS` field 9 = shield cost / 10** (Trireme 40, Ironclad 60,
+  Battleship/Carrier 160, Settlers 40, Spy 30 — all classic).
+  **Field 10 = transport capacity (hold)**: Trireme 2, Caravel 3,
+  Galleon 4, Transport 8, everything else 0.
+  Fields 5–8 = attack/defense/hits/firepower (`Na`/`Nd`/`Nh`/`Nf`).
+- **`@TERRAIN` field 1 = movement cost** — global file matches classic
+  Civ2 on all 11 base terrains (Desert/Plains/Grassland 1, Forest/Hills/
+  Tundra/Glacier/Swamp/Jungle 2, **Mountains 3**, Ocean 1; FallRome
+  tunes Mountains to 4). **Field 2 = defense bonus** (classic relative:
+  Plains 2 < Forest/Swamp/Jungle 3 < Hills 4 < Mountains 6).
+- **`@COSMIC` "Road movement multiplier" = 3** (three road tiles per
+  movement point) — comment-keyed row.
+- Engine kernel (`engine::movement`): movement tracked in thirds of a
+  point; terrain = 3×cost thirds; road = 1 third (multiplier 3);
+  railroad = 0; classic "any movement left ⇒ one tile" rule; classic ZOC
+  (moving from enemy-adjacent to enemy-adjacent tile ends movement);
+  domain gating (sea↔ocean, land↔non-ocean). ROMFALL boots with 641/710
+  units movable.
+- **Rig limitation found**: this post-reboot rig instance accepted no
+  in-world input at all — the game surface reports 1032×796 inside the
+  592×411 X window, and both winject SendInput and XTest clicks/keys
+  were silently discarded (launcher/dialog input still worked). The
+  column proof above therefore used the *Rules-edit + new-game panel*
+  channel, which needs no map input. Re-check the window/surface size
+  mismatch before in-world experiments on a fresh rig.
+
+## T1-2 boot (2026-11-02 night): ROMFALL headless + checksum
 
 - `totctl boot <file.sav|scn>` parses the proven 0x32 layout (Rust port of
   the Python walker) and boots the engine world state; `--turns N` / `--seed S`

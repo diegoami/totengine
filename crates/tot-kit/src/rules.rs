@@ -112,6 +112,97 @@ impl Rules {
             .and_then(|f| f.trim().parse().ok())
     }
 
+    /// Unit movement rate (row field 3, written `N.` — trailing dot
+    /// stripped). Column identified 2026-11-02 by cross-checking classic
+    /// Civ2 values across ~25 units in the global Rules.txt: Trireme 3,
+    /// Caravel 3, Galleon 4, Destroyer 6, Transport 5, Cruise Missile 12,
+    /// Nuclear Missile 16, Diplomat 2, Spy 3, Caravan 1 — all match;
+    /// Alpine Troops 1 (move 1 + ignore-terrain ability, classic).
+    pub fn unit_move(&self, id: usize) -> Option<u32> {
+        self.section("UNITS")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(3))
+            .and_then(|f| f.trim().trim_end_matches('.').parse().ok())
+    }
+
+    /// Unit shield cost / 10 (row field 9): classic values across the
+    /// global table — Trireme 40, Ironclad 60, Battleship 160, Carrier
+    /// 160, Settlers 40, Knights 40, Spy 30, Battleship 160.
+    pub fn unit_cost(&self, id: usize) -> Option<u32> {
+        self.unit_num(id, 9)
+    }
+
+    /// Unit transport capacity (`hold`, row field 10): Trireme 2,
+    /// Caravel 3, Galleon 4, Transport 8, all others 0 — classic values.
+    pub fn unit_hold(&self, id: usize) -> Option<u32> {
+        self.unit_num(id, 10)
+    }
+
+    /// Unit attack (row field 5, `Na` suffix).
+    pub fn unit_attack(&self, id: usize) -> Option<u32> {
+        self.unit_num_strip(id, 5, &['a', 'A'])
+    }
+
+    /// Unit defense (row field 6, `Nd` suffix).
+    pub fn unit_defense(&self, id: usize) -> Option<u32> {
+        self.unit_num_strip(id, 6, &['d', 'D'])
+    }
+
+    /// Unit hit points (row field 7, `Nh` suffix).
+    pub fn unit_hits(&self, id: usize) -> Option<u32> {
+        self.unit_num_strip(id, 7, &['h', 'H'])
+    }
+
+    /// Unit firepower (row field 8, `Nf` suffix).
+    pub fn unit_firepower(&self, id: usize) -> Option<u32> {
+        self.unit_num_strip(id, 8, &['f', 'F'])
+    }
+
+    fn unit_num(&self, id: usize, field: usize) -> Option<u32> {
+        self.section("UNITS")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(field))
+            .and_then(|f| f.trim().parse().ok())
+    }
+
+    fn unit_num_strip(&self, id: usize, field: usize, suffixes: &[char]) -> Option<u32> {
+        self.section("UNITS")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(field))
+            .and_then(|f| f.trim().trim_end_matches(suffixes).parse().ok())
+    }
+
+    /// Terrain movement cost (row field 1). Verified against the global
+    /// Rules.txt: Desert/Plains/Grassland 1, Forest/Hills/Tundra/Swamp/
+    /// Jungle/Glacier 2, Mountains 3, Ocean 1 — the classic Civ2 costs.
+    /// (FallRome raises Mountains to 4 — scenario tuning; always read the
+    /// scenario's own Rules.txt.)
+    pub fn terrain_move_cost(&self, id: usize) -> Option<u32> {
+        self.section("TERRAIN")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(1))
+            .and_then(|f| f.trim().parse().ok())
+    }
+
+    /// Terrain defense bonus (row field 2; classic relative values:
+    /// Desert/Plains/Grassland/Tundra/Glacier/Ocean 2, Forest/Swamp/
+    /// Jungle 3, Hills 4, Mountains 6).
+    pub fn terrain_defense(&self, id: usize) -> Option<u32> {
+        self.section("TERRAIN")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(2))
+            .and_then(|f| f.trim().parse().ok())
+    }
+
+    /// `@COSMIC` road movement multiplier (comment-keyed row; the global
+    /// value is 3 — three road tiles per movement point).
+    pub fn road_multiplier(&self) -> Option<u32> {
+        self.cosmic()
+            .into_iter()
+            .find(|(k, _)| k.starts_with("Road movement multiplier"))
+            .and_then(|(_, v)| v.trim().parse().ok())
+    }
+
     /// `@GOVERNMENTS` names (row field 0; Anarchy first — the #44 lesson).
     pub fn government_names(&self) -> Vec<&str> {
         self.section("GOVERNMENTS")

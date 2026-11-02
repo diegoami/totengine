@@ -35,4 +35,61 @@ fn real_rules_roundtrips_and_passes_semantics() {
         "cosmic road multiplier: {:?}",
         &cosmic[..3.min(cosmic.len())]
     );
+
+    // T1-3: movement columns against classic Civ2 values in the GLOBAL
+    // rules (the scenario files tune their own numbers).
+    assert_eq!(rules.road_multiplier(), Some(3));
+    let unit = |name: &str| {
+        rules
+            .unit_names()
+            .iter()
+            .position(|n| *n == name)
+            .unwrap_or_else(|| panic!("unit {name} not in @UNITS"))
+    };
+    // classic movement rates: Settlers 1, Caravan 1, Knights 2, Trireme 3,
+    // Ironclad 4, Cruise Missile 12, Nuclear Missile 16
+    for (name, mv) in [
+        ("Settlers", 1u32),
+        ("Caravan", 1),
+        ("Knights", 2),
+        ("Trireme", 3),
+        ("Ironclad", 4),
+        ("Cruise Msl.", 12),
+        ("Nuclear Msl.", 16),
+    ] {
+        let id = unit(name);
+        assert_eq!(rules.unit_move(id), Some(mv), "{name} move");
+    }
+    // classic hold (transport capacity) and cost/10
+    assert_eq!(rules.unit_hold(unit("Trireme")), Some(2));
+    assert_eq!(rules.unit_hold(unit("Caravan")), Some(0));
+    assert_eq!(rules.unit_cost(unit("Ironclad")), Some(6)); // 60 shields
+    assert_eq!(rules.unit_cost(unit("Battleship")), Some(16));
+    // classic terrain move costs (global file)
+    let terr = |name: &str| {
+        rules
+            .base_terrain_names()
+            .iter()
+            .position(|n| *n == name)
+            .unwrap_or_else(|| panic!("terrain {name} not in @TERRAIN"))
+    };
+    for (name, cost) in [
+        ("Desert", 1u32),
+        ("Plains", 1),
+        ("Grassland", 1),
+        ("Forest", 2),
+        ("Hills", 2),
+        ("Mountains", 3),
+        ("Tundra", 1),
+        ("Glacier", 2),
+        ("Swamp", 2),
+        ("Jungle", 2),
+        ("Ocean", 1),
+    ] {
+        let id = terr(name);
+        assert_eq!(rules.terrain_move_cost(id), Some(cost), "{name} move cost");
+    }
+    // classic defense bonuses: Forest 3 < Hills 4 < Mountains 6
+    assert!(rules.terrain_defense(terr("Mountains")) > rules.terrain_defense(terr("Hills")));
+    assert!(rules.terrain_defense(terr("Hills")) > rules.terrain_defense(terr("Plains")));
 }

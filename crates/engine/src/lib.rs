@@ -7,6 +7,7 @@
 //! sequencing plus a seeded [`GameRng`], with per-phase work landing in
 //! T1-3..T1-7.
 
+pub mod movement;
 pub mod rng;
 
 use std::fmt::Write as _;
@@ -36,6 +37,9 @@ pub struct Unit {
     pub x: u16,
     pub y: u16,
     pub is_leader: bool,
+    /// Movement left this turn, in thirds of a point (T1-3). 0 until the
+    /// first `start_turn` (movement rates come from Rules).
+    pub moves_left: u32,
 }
 
 /// Engine-side city: name + logical-grid coordinates (size field boundary
@@ -164,6 +168,7 @@ fn unit_from(r: &UnitRecord) -> Unit {
         x: r.x(),
         y: r.y(),
         is_leader: r.is_leader(),
+        moves_left: 0,
     }
 }
 

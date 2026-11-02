@@ -22,7 +22,8 @@ fn main() -> ExitCode {
             eprintln!(
                 "usage: {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
-                        {prog} boot <file.sav|scn> — headless boot into engine state + checksum\n\
+                        {prog} boot <file.sav|scn> [--rules PATH] [--turns N] [--seed S]\n\
+                        \x20                        — headless boot into engine state + checksum\n\
                         {prog} --version"
             );
             ExitCode::from(2)
@@ -35,6 +36,7 @@ fn main() -> ExitCode {
 /// `--turns N` advances the kernel N times before checksumming.
 fn cmd_boot(args: &[String]) -> ExitCode {
     let mut path: Option<&String> = None;
+    let mut rules_path: Option<String> = None;
     let mut turns: usize = 0;
     let mut seed: u64 = 1;
     let mut it = args.iter();
@@ -44,6 +46,13 @@ fn cmd_boot(args: &[String]) -> ExitCode {
                 Some(n) => turns = n,
                 None => {
                     eprintln!("error: --turns needs a number");
+                    return ExitCode::from(2);
+                }
+            },
+            "--rules" => match it.next() {
+                Some(p) => rules_path = Some(p.clone()),
+                None => {
+                    eprintln!("error: --rules needs a path");
                     return ExitCode::from(2);
                 }
             },
@@ -79,9 +88,26 @@ fn cmd_boot(args: &[String]) -> ExitCode {
             return ExitCode::from(1);
         }
     };
+    // rules: explicit --rules, else a sibling Rules.txt (scenario dir)
+    let rules = rules_path.or_else(|| {
+        let sib = std::path::Path::new(path).with_file_name("Rules.txt");
+        sib.exists().then(|| sib.to_string_lossy().into_owned())
+    });
+    let rules = rules.and_then(|rp| {
+        std::fs::read_to_string(&rp).ok().map(|text| {
+            println!("rules         : {rp}");
+            tot_kit::parse_rules(&text)
+        })
+    });
     let mut world = engine::boot(&sav, seed);
+    if let Some(r) = &rules {
+        world.start_turn(r);
+    }
     for _ in 0..turns {
         world.advance_turn();
+        if let Some(r) = &rules {
+            world.start_turn(r);
+        }
     }
     println!("file          : {path}");
     println!("version       : 0x{:04x}", sav.version);
@@ -121,6 +147,17 @@ fn cmd_boot(args: &[String]) -> ExitCode {
         world.units.len(),
         world.cities.len()
     );
+    if let Some(r) = &rules {
+        let movable = world
+            .units
+            .iter()
+            .filter(|u| r.unit_move(u.type_id as usize).unwrap_or(0) > 0)
+            .count();
+        println!(
+            "moves         : {movable}/{} units movable at turn start",
+            world.units.len()
+        );
+    }
     println!(
         "rng seed      : {} (draws so far: {})",
         seed,

@@ -68,7 +68,7 @@ game (no scenario) boots and runs headless on the classic map,
 |----|-------|-----|-----|------|--------|------------|
 | T1-1 | Typed rules model: all 22 Rules.txt sections → engine structs incl. ToT tables (@TERRAIN1..3, transport relationships) | P1 | L | E | done | Round-trips Rules.txt losslessly (text → structs → text) |
 | T1-2 | ~~World state model + deterministic turn kernel skeleton (seeded RNG abstraction)~~ | P1 | L | H | done | Headless boot of ROMFALL.scn into state (710 units / 146 cities / 9000 tiles); checksum reproducible — `totctl boot`, tests in `make test` |
-| T1-3 | Movement, terrain costs, zone of control, multi-map slot | P1 | M | H | todo | Move orders match original outcomes on oracle cases |
+| T1-3 | ~~Movement, terrain costs, zone of control, multi-map slot~~ | P1 | M | H | done | Rules columns oracle-proven (move field 3: panel 1→4 test); kernel implements thirds/road/rail/min-1/ZOC/domain; ROMFALL 641/710 movable |
 | T1-4 | Cities: food/shields/trade, growth, production queue, specialists, unrest | P1 | L | H | todo | 50-turn city math matches oracle saves exactly |
 | T1-5 | Research tree, governments, wonders (incl. obsolete-by-tech) | P1 | M | E | todo | Tech progression parity on scripted runs |
 | T1-6 | Combat: rounds, veterans, walls, terrain bonuses; identify original PRNG & seed | P1 | L | H | todo | Battle outcome sequences reproduced from same-seed oracle saves |

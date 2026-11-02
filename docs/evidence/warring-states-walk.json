@@ -133,20 +133,22 @@
         "terrain_histogram": {
           "9": 8421,
           "3": 5189,
+          "10": 3966,
           "1": 3204,
-          "4": 2121,
-          "74": 2007,
-          "10": 1959,
+          "4": 2122,
           "0": 1548,
           "14": 1033,
           "5": 822,
           "2": 693,
           "12": 263,
-          "11": 239
+          "11": 239,
+          "13": 151
         },
         "river_tiles": 3456,
         "road_tiles": 920,
         "railroad_tiles": 1412,
+        "special_tiles": 2008,
+        "road_and_rail_tiles": 14,
         "visibility_nonzero_per_civ": [
           420,
           480,
@@ -156,7 +158,7 @@
           533,
           454
         ],
-        "note": "imp byte2: road=0x40 rail=0x80 (proven ROMFALL); remaining bits open; visibility bytes' near-identical distribution suggests per-civ fog, unproven"
+        "note": "terrain byte mp0+6t+4: terrain=&0x3F (ids 0-10), 0x40=special resource (70 ocean specials on ROMFALL), 0x80=river; road/rail bits at mp0+6t+12: 0x40 road / 0x80 rail (ROMFALL 3497/413, 128 both \u2014 matches the original spatial verification); the 6-B-stride field interleave is open; visibility bytes' near-identical distribution suggests per-civ fog, unproven"
       }
     ],
     "resource_seed_offset": 393916
@@ -165,7 +167,7 @@
     "unit_start_offset": 831246,
     "unit_start_formula": "blob10240_end + 32 + 15*surface",
     "unit_start_measured": 831206,
-    "unit_start_formula_note": "formula lands 1 record(s) into the block; id-0/f4-0 slot-0 record(s) precede the f4=2 bulk; whether slot 0 belongs to the unit array or terminates the preceding per-tile section is open",
+    "unit_start_formula_note": "formula lands 1 record(s) into the block; id-0/f2-0 slot-0 record(s) precede the f2=2 bulk; whether slot 0 belongs to the unit array or terminates the preceding per-tile section is open",
     "units": {
       "offset": 831206,
       "end": 888886,

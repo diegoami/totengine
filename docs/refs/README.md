@@ -15,8 +15,10 @@ definitions, kept verbatim with attribution.
 - **Source:** [`packages/totpp.lua`](https://github.com/ProfGarfield/ZeroBraneForTOTPP/blob/main/packages/totpp.lua)
   from [ProfGarfield/ZeroBraneForTOTPP](https://github.com/ProfGarfield/ZeroBraneForTOTPP)
   (ZeroBrane Studio fork for ToTPP Lua scenario programming). Fetched 2026-11-01,
-  unmodified below the prepended MIT notice (the fork inherits ZeroBrane Studio's
-  MIT license; see `docs/prior-art.md`).
+  unmodified below the prepended header, which carries the FULL upstream
+  ZeroBrane Studio MIT notice (copyright, permission grant and warranty
+  disclaimer; the fork inherits ZeroBrane Studio's MIT license; see
+  `docs/prior-art.md`).
 - **Why it matters:** this is the *contract* Tier 3 must implement. `civ.scen.*`
   triggers define where the engine must call into Lua; the object property lists
   define the game-state surface Lua must see. It doubles as autocomplete data for

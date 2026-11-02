@@ -16,17 +16,23 @@
 //! * `TotPairedSlot` — ToTPP-era flavor (proven on `AnticChina.MP`,
 //!   2026-11-01): 8-byte header `u16 width, u16 height, u16 real, u16 maps`,
 //!   a 90-byte front blob, then per stored tile 6 bytes = a 3-byte data slot
-//!   (`u16` word + 1 extra byte) followed by a 3-byte pad slot (word
-//!   `0x0001`/`0x003F`, extra `0xF0|bits`), then one flag byte per tile. The
-//!   stored grid is dense `(width/2) × height`; `width` is the display width
-//!   (ToT tiles span 2 columns). Word: terrain = `word & 0x3F`, special
-//!   resource = `0x40` (stored in this flavor, unlike stock maps), river =
-//!   `0x80`, improvement flag = `0x3000` (exact meaning open).
+//!   (`u16` word + 1 extra byte) followed by a 3-byte pad slot, then one
+//!   flag byte per tile. The stored grid is dense `(width/2) × height`;
+//!   `width` is the display width (ToT tiles span 2 columns). Word: terrain
+//!   = `word & 0x3F`, special resource = `0x40` (stored in this flavor,
+//!   unlike stock maps), river = `0x80`, improvement flag = `0x3000`
+//!   (exact meaning open). Data-slot extra byte takes the 8 values
+//!   0x00/0x20/…/0xE0 (low 5 bits always 0); pad-slot word is 0x003F on
+//!   22,488 records and 0x0001 on 4,293, with 22 further values on the
+//!   remaining 1,219; pad-slot extra is 0xF0 (25,882) or 0xFF (1,219) plus
+//!   low-bit variants — full distributions in `docs/evidence/README.md`
+//!   §T0-8; roles open.
 //!
 //! Open: the meaning of the pad-slot low bits, the per-tile flag byte
 //! (mostly 0; values 1/2 observed) and the 90-byte front blob.
 //!
-//! Open (T0-8): `AnticChina.MP` from a ToTPP-era tool fits neither layout.
+//! Note (T0-8): `AnticChina.MP` parses as `TotPairedSlot` — the earlier
+//! "fits neither layout" remark predates the paired-slot decode.
 
 use std::fs;
 use std::path::Path;

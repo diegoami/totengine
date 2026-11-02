@@ -165,8 +165,11 @@ def parse_mp(path: str):
     # Variant C (observed on ToTPP-era AnticChina.MP, proven 2026-11-01):
     # 8-byte header = w, h, u16 real count, u16 maps; then a 90-byte front
     # blob; then real*6 bytes of stored tiles (3-byte data slot + 3-byte pad
-    # slot, pad = word 0x0001/0x003F + extra 0xF0|bits); then real bytes of
-    # per-tile flags (mostly 0). Stored grid is dense w/2 x h (display w = 2x).
+    # slot: pad word 0x003F on 22,488 records / 0x0001 on 4,293 / 22 other
+    # values on 1,219; pad extra 0xF0 on 25,882 / 0xFF on 1,219 plus
+    # low-bit variants; data-slot extra byte takes the 8 values
+    # 0x00..0xE0 in 0x20 steps); then real bytes of per-tile flags (mostly
+    # 0). Stored grid is dense w/2 x h (display w = 2x).
     if len(data) >= 8:
         w, h = struct.unpack_from("<HH", data, 0)
         real, maps = struct.unpack_from("<HH", data, 4)
@@ -361,7 +364,9 @@ def walk_ext033(data, hdr, blob10240_end, out):
 
     0x33 unit record layout (differs from the 0x32 base layout!):
       @0  u16 id — sequential, re-assigned on every save
-      @4  u16 const 2 (kind?), @6 u16 const 2
+      @2  u16 tail short (values 0..7 observed, bulk = 2; role open)
+      @4  u16 = 2 on the bulk (the 16 id-0 records excepted)
+      @6  u16 varies 0..7 (sub-kind? role open)
       @10/@12 s16 x/y — LOGICAL grid coords; off-board units carry
       negative coords (-100/-500 observed)
       @18 u8 type — Rules.txt @UNITS index (190 rows in Warring
@@ -370,10 +375,11 @@ def walk_ext033(data, hdr, blob10240_end, out):
       @28 u16 optional link, 0xffff = none (home city?)
       remaining bytes flags/counters (open)
 
-    Verified arithmetic: deiQin = deiYan +198 units (+7920) +10 cities
-    (+920) = +8840 bytes exactly; scn vs Hu_Auto (load+autosave, same
-    sizes) keep 1442 units, of which 1351 sit at an (x,y) occurring
-    somewhere in the .scn, ids re-assigned 6527..7967 -> 10..1450.
+    Verified arithmetic: deiQin − deiYan = +198 units (+7,920) and +11
+    city slots (+1,012), post-city block −92 = +8,840 bytes exactly;
+    scn vs Hu_Auto (load+autosave, same sizes) keep 1442 units, of
+    which 1351 sit at an (x,y) occurring somewhere in the .scn, ids
+    re-assigned 6527..7967 -> 10..1450.
     """
     import struct as _s
     surface = hdr[2]
@@ -385,9 +391,9 @@ def walk_ext033(data, hdr, blob10240_end, out):
     def urec_valid(rec):
         if rec.count(0) == 40:
             return False
-        uid, f4 = _s.unpack_from("<HH", rec, 0)
+        uid, f2 = _s.unpack_from("<HH", rec, 0)
         x, y = _s.unpack_from("<hh", rec, 10)
-        return (uid < 8192 and f4 < 16
+        return (uid < 8192 and f2 < 16
                 and -1000 <= x <= xmax and -1000 <= y <= ymax)
 
     ext = {"unit_start_offset": ustart,
@@ -399,7 +405,7 @@ def walk_ext033(data, hdr, blob10240_end, out):
         return
     # The formula is a LANDMARK inside the array, not necessarily its first
     # record: on all four Warring States files exactly one more record
-    # (id=0, f4=0 — the bulk carries f4=2) precedes it. Extend backwards to
+    # (id=0, f2=0 — the bulk carries f2=2) precedes it. Extend backwards to
     # the maximal contiguous block (bounded) so the block boundaries are
     # measured, not assumed.
     ustart2 = ustart
@@ -411,8 +417,8 @@ def walk_ext033(data, hdr, blob10240_end, out):
     if ustart2 != ustart:
         ext["unit_start_measured"] = ustart2
         ext["unit_start_formula_note"] = (
-            "formula lands %d record(s) into the block; id-0/f4-0 slot-0 "
-            "record(s) precede the f4=2 bulk; whether slot 0 belongs to the "
+            "formula lands %d record(s) into the block; id-0/f2-0 slot-0 "
+            "record(s) precede the f2=2 bulk; whether slot 0 belongs to the "
             "unit array or terminates the preceding per-tile section is "
             "open" % ((ustart - ustart2) // 40))
     units, off = [], ustart2
@@ -605,15 +611,15 @@ def walk_save(path: str) -> dict:
             "blob_10240": {"offset": map_end, "size": 10240,
                            "note": "mostly zeros in ROMFALL"},
         }
-        # ---- embedded map decode (proven on ROMFALL, 2026-11-01) ----
-        # Per map: Visible Improvements (7 B/tile) + Map (6 B/tile); a 2-byte
-        # resource seed follows all maps (Mercator ToC). The stored grid is
-        # dense: width hdr0/2 x hdr1 = surface tiles (ROMFALL 75x120=9000,
-        # while hdr0=150 is the display width -- ToT tiles span 2 columns).
-        # Map tile: byte 4 = terrain | river(0x80) (same encoding as .MP
-        # words); byte 2 = improvements: 0x40 road, 0x80 railroad (verified
-        # spatially: roads form the empire-wide network, rails the dense
-        # Italy/Gaul core). Other bytes open.
+        # ---- embedded map decode (proven on ROMFALL, 2026-11-01/02) ----
+        # Per map: a 7 B/tile visibility block, then 6 B-stride tile fields.
+        # Measured byte positions (ROMFALL 2026-11-02, re-verified against
+        # the section's known histograms): terrain|river|special byte at
+        # mp0+6t+4 (terrain = &0x3F: ids 0-10; 0x40 = special resource,
+        # 0x80 = river); road/rail bits at mp0+6t+12 (0x40 road, 0x80
+        # railroad — 3,497 road / 413 rail / 128 both on ROMFALL, matching
+        # the original spatial verification). The exact interleaving of the
+        # 6-B-stride fields inside the section remains open.
         if maps:
             stored_w, stored_h = hdr[0] // 2, hdr[1]
             out["map_decode"] = {"stored_dims": [stored_w, stored_h],
@@ -633,22 +639,27 @@ def walk_save(path: str) -> dict:
                                                    "below)"),
                                  "per_map": []}
             for m in range(maps):
-                base = pos + m * map_data + 2  # +2 proven before tiles (ROMFALL)
+                base = pos + m * map_data + 2
                 imp0 = base
                 mp0 = base + 7 * surface
                 terr_hist: dict[int, int] = {}
-                river = road = rail = 0
+                river = road = rail = special = both = 0
                 vis_nz = [0] * 7
                 for t in range(surface):
                     t6 = data[mp0 + 6 * t + 4]
-                    imp6 = data[mp0 + 6 * t + 2]
-                    terr_hist[t6 & 0x7F] = terr_hist.get(t6 & 0x7F, 0) + 1
+                    imp6 = data[mp0 + 6 * t + 14]
+                    terr_hist[t6 & 0x3F] = terr_hist.get(t6 & 0x3F, 0) + 1
                     if t6 & 0x80:
                         river += 1
-                    if imp6 & 0x40:
+                    if t6 & 0x40:
+                        special += 1
+                    r6, l6 = imp6 & 0x40, imp6 & 0x80
+                    if r6:
                         road += 1
-                    if imp6 & 0x80:
+                    if l6:
                         rail += 1
+                    if r6 and l6:
+                        both += 1
                     for j in range(7):
                         if data[imp0 + 7 * t + j]:
                             vis_nz[j] += 1
@@ -659,12 +670,18 @@ def walk_save(path: str) -> dict:
                                           sorted(terr_hist.items(),
                                                  key=lambda kv: -kv[1])[:12]},
                     "river_tiles": river, "road_tiles": road,
-                    "railroad_tiles": rail,
+                    "railroad_tiles": rail, "special_tiles": special,
+                    "road_and_rail_tiles": both,
                     "visibility_nonzero_per_civ": vis_nz,
-                    "note": ("imp byte2: road=0x40 rail=0x80 (proven "
-                             "ROMFALL); remaining bits open; visibility "
-                             "bytes' near-identical distribution suggests "
-                             "per-civ fog, unproven"),
+                    "note": ("terrain byte mp0+6t+4: terrain=&0x3F (ids 0-10), "
+                             "0x40=special resource (70 ocean specials on "
+                             "ROMFALL), 0x80=river; road/rail bits at "
+                             "mp0+6t+12: 0x40 road / 0x80 rail (ROMFALL "
+                             "3497/413, 128 both — matches the original "
+                             "spatial verification); the 6-B-stride field "
+                             "interleave is open; visibility bytes' "
+                             "near-identical distribution suggests per-civ "
+                             "fog, unproven"),
                 })
             out["map_decode"]["resource_seed_offset"] = pos + maps * map_data - 2
         if ver == 0x0033 and maps:
@@ -743,8 +760,13 @@ def walk_save(path: str) -> dict:
                               "logical grid (same space as unit coords; "
                               "per-file garrison/terrain support in "
                               "garrisons_measured / city_terrain_measured); "
-                              "tail shorts @86-91 = (5, 5, size) — size "
-                              "verified Roma=29")
+                              "tail shorts @86-91 measured, e.g. Roma "
+                              "(5, 5, 8) — NOT the city size: a size-like "
+                              "short sits in the two bytes immediately "
+                              "BEFORE each name (Roma 29 = its in-game "
+                              "size), i.e. at the final short of the "
+                              "preceding 92-B slot; exact field boundary "
+                              "open")
             out["cities"] = cities
             u_end = cities["offset"]
             region = u_end - blob10240_end
@@ -824,10 +846,12 @@ def walk_save(path: str) -> dict:
 def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
     """Render the surface map embedded in a .SCN/.SAV.
 
-    Uses the proven map-block layout (imp 7 B + map 6 B per tile, dense grid):
-    terrain from map byte 4 (river = bit 0x80), road/railroad from map byte 2
-    (0x40 / 0x80). Verified on ROMFALL: roads render as the empire-wide
-    network, rails as the dense Italy/Gaul core, rivers as coastal chains.
+    Uses the measured tile-field positions (ROMFALL 2026-11-02): terrain
+    from the byte at mp0+6t+4 (terrain = &0x3F, 0x40 = special resource,
+    river = 0x80 — special-ocean tiles render as ocean), road/railroad
+    bits from the byte at mp0+6t+12 (0x40 / 0x80). Verified on ROMFALL:
+    3,497 road / 413 rail / 128 both tiles, matching the original spatial
+    verification of the networks.
     """
     walk = walk_save(path)
     md = walk.get("map_decode")
@@ -839,14 +863,14 @@ def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
     surface = walk["map_header"]["values"][2]
     mp0 = walk["sections_derived"]["map_data"]["offset"] + 2 + 7 * surface
     rows = []
-    stats = {"river": 0, "road": 0, "rail": 0, "terrain": {}}
+    stats = {"river": 0, "road": 0, "rail": 0, "special": 0, "terrain": {}}
     for y in range(h):
         row = bytearray()
         for x in range(w):
             i = y * w + x
             t6 = data[mp0 + 6 * i + 4]
-            imp6 = data[mp0 + 6 * i + 2]
-            terr = t6 & 0x7F
+            imp6 = data[mp0 + 6 * i + 14]
+            terr = t6 & 0x3F
             stats["terrain"][terr] = stats["terrain"].get(terr, 0) + 1
             if imp6 & 0x80:
                 rgb = (35, 35, 35)            # railroad
@@ -858,6 +882,8 @@ def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
                 rgb = (0, 170, 230)           # river
                 stats["river"] += 1
             else:
+                if t6 & 0x40:
+                    stats["special"] += 1
                 rgb = terrain_color(terr, names)
             row.extend(rgb * scale)
         rows.extend([row] * scale)
@@ -865,8 +891,9 @@ def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
     return {"png": os.path.abspath(out_png), "stored_dims": [w, h],
             "display_dims": md["display_dims"],
             "overlay_counts": stats,
-            "decode": ("map byte4: terrain|river(0x80); map byte2: "
-                       "road(0x40), rail(0x80) — proven ROMFALL 2026-11-01")}
+            "decode": ("terrain byte mp0+6t+4: terrain=&0x3F, 0x40=special "
+                       "(rendered as its terrain), 0x80=river; road/rail "
+                       "bits at mp0+6t+12: 0x40/0x80 — ROMFALL 2026-11-02")}
 
 
 

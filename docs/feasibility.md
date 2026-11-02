@@ -81,7 +81,7 @@ scenarios first (Tier 1–2), ToTPP/Lua second (Tier 3)** — see the plan.
 
 | Format | Magic / layout | Difficulty |
 |---|---|---|
-| `.MP` map | **Decoded & proven (2026-11-01)**: `word w, word h, dword real_tiles`, then `w×h` slots of 3 bytes — terrain = `word&0x7F`, bit 0x80 = special resource, void = `extra&0xF0`. `World.mp` = 150×120, 9,000 real tiles; renders Earth with correct biome latitudes (see [evidence/](evidence/)) | **Trivial** |
+| `.MP` map | **Decoded & proven (2026-11-01)**: `word w, word h, dword real_tiles`, then `w×h` slots of 3 bytes — terrain = `word&0x7F`, **bit 0x80 = river** (corrected 2026-11-01; originally mis-read as special resource — see [evidence §T0-11](evidence/README.md); specials are RNG-placed per game, not stored), void = `extra&0xF0`. `World.mp` = 150×120, 9,000 real tiles; renders Earth with correct biome latitudes (see [evidence/](evidence/)) | **Trivial** |
 | `.SAV`/`.SCN` | `"CIVILIZE"` magic, then version `0x001A`, then game version byte: `0x32` = ToT base (FallRome saves ≈ 203–226 KB), `0x33` = ToTPP-extended (Warring States ≈ 6.4 MB) | **Moderate** — full section map published (Mercator/Apolyton, §3.5); walker already validated on ROMFALL.scn (turn, 7 civ names, map header) |
 | Sprite art | 8-bit indexed GIF sheets; scenarios may swap in same-layout BMP (verified: FallRome & china use `.bmp` variants) | **Easy–moderate** (palette handling, ToT's 640×480 isometric grid) |
 | Sound | WAV files + CD-audio tracks (ToTPP adds DirectShow paths) | Easy |

@@ -26,7 +26,8 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-**Tier 0 in progress** — backlog burn-down started (see [BACKLOG.md](BACKLOG.md)):
+**Tier 0 complete** — v0.1.0 candidate (see [CHANGELOG.md](CHANGELOG.md) and
+[BACKLOG.md](BACKLOG.md)):
 
 - Engine language decided: **Rust** ([decision 0001](docs/decisions/0001-language.md));
   workspace scaffolded (`crates/tot-kit|engine|lua-host|totctl|totui`), CI on

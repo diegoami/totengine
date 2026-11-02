@@ -18,9 +18,12 @@ against real game files, evidence committed under `docs/evidence/`.
   corrected from an earlier mis-attribution.
 - **`.SAV`/`.SCN` base (`0x32`) front** — section walk verified byte-exact:
   settings, civs, transporters, turn/year; embedded map (visibility 7 B +
-  map 6 B per tile; road 0x40 / rail 0x80); unit records (x/y, type→@UNITS,
+  6-B-stride tile fields: terrain &0x3F, special 0x40, river 0x80; road
+  0x40 / rail 0x80); unit records (x/y, type→@UNITS,
   owner with 0x10 leader bit, per-save re-assigned ids — garrisons-on-cities
-  145/146 measured per file by the walker); city records (name, x/y, size).
+  145/146 measured per file by the walker); city records (name, x/y;
+  the city-size-like short sits in the two bytes before each name —
+  exact field boundary open).
 - **ToTPP `0x33` extension** — tail framing (`LUAE` + serialized Lua state
   as plain text + `EVNT` trailer) and the mid-region, with an exact
   decomposition on the four-file Warring States ladder and falsifiable

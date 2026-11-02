@@ -9,18 +9,18 @@
     120
   ],
   "overlay_counts": {
-    "river": 210,
+    "river": 224,
     "road": 3369,
     "rail": 413,
+    "special": 43,
     "terrain": {
-      "10": 2768,
+      "10": 2838,
       "2": 1050,
       "3": 1448,
       "4": 870,
       "7": 2,
       "1": 1756,
       "6": 43,
-      "74": 70,
       "5": 70,
       "8": 57,
       "9": 65,
@@ -28,5 +28,5 @@
       "12": 1
     }
   },
-  "decode": "map byte4: terrain|river(0x80); map byte2: road(0x40), rail(0x80) \u2014 proven ROMFALL 2026-11-01"
+  "decode": "terrain byte mp0+6t+4: terrain=&0x3F, 0x40=special (rendered as its terrain), 0x80=river; road/rail bits at mp0+6t+12: 0x40/0x80 \u2014 ROMFALL 2026-11-02"
 }

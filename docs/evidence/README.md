@@ -105,19 +105,28 @@ and the ROMFALL_{ERE,HUN,VIS} variants:
    one chain wrapping the x=0/x=149 seam. Special resources are **not stored in
    `.MP` at all** — they are RNG-placed per game (map tail likely holds seeds).
 2. **The embedded SCN/SAV map section is decoded (ROMFALL, `0x32`).** Per Mercator's
-   ToC the per-map block is Visible Improvements (7 B/tile) + Map (6 B/tile) + 2;
-   empirically the **2 bytes sit before the tile blocks** (decoding from the block
-   start yields garbage terrain; from +2 yields ids 0–10). The stored grid is
-   **dense**: `width = hdr0/2 × hdr1 = surface` tiles (ROMFALL 75×120 = 9,000;
-   `hdr0` = 150 is the *display* width — ToT tiles span 2 display columns).
-3. **Map tile (6 bytes): byte 4 = terrain | river(`0x80`)** — identical encoding to
-   the `.MP` word, cross-format consistency. ROMFALL terrain histogram: ocean
-   2,768 / plains 1,756 / forest 1,448 / grass 1,050 / hills 870 / desert 800 …
-4. **Improvements: map byte 2, bit `0x40` = road, bit `0x80` = railroad.** Verified
-   spatially on ROMFALL: 3,497 road tiles form a connected empire-wide network;
-   413 railroad tiles cluster densely in the Italy/Gaul core (128 tiles carry both;
-   rails never set `0x40`). ASCII renders show the Mediterranean, Italy's boot and
-   the road/rail networks in historically sensible places. Remaining bits
+   ToC the per-map block is Visible Improvements (7 B/tile) + Map (6 B/tile) + 2.
+   The stored grid is **dense**: `width = hdr0/2 × hdr1 = surface` tiles
+   (ROMFALL 75×120 = 9,000; `hdr0` = 150 is the *display* width — ToT tiles
+   span 2 display columns). **Byte-position correction (2026-11-02, review
+   #35):** the 6-B-stride tile fields read cleanly at fixed phases —
+   terrain|river|special byte at `map_base + 6t + 4`, road/rail bits at
+   `map_base + 6t + 14`; the exact interleaving of the fields inside the
+   section (and the role of the 2-byte values Mercator places after the
+   maps) is open. The original "+2 before the tile blocks" note came from a
+   mis-phased reader; the corrected phases reproduce every histogram below.
+3. **Terrain byte: terrain = `&0x3F`, `0x40` = special resource, `0x80` =
+   river.** ROMFALL terrain histogram under the `0x3F` mask: ocean
+   2,838 (including 70 special-resource ocean tiles), plains 1,756 / forest
+   1,448 / grass 1,050 / hills 870 / desert 800 … A `0x7F` mask
+   mis-decodes those 70 special ocean tiles as a nonexistent terrain id 74
+   (`0x40|10`) — fixed 2026-11-02. Rivers: 534 tiles.
+4. **Improvements: road = bit `0x40`, railroad = bit `0x80` at
+   `map_base + 6t + 14`.** Verified spatially on ROMFALL: 3,497 road tiles
+   form a connected empire-wide network; 413 railroad tiles cluster densely
+   in the Italy/Gaul core (128 tiles carry both; rails never set `0x40`).
+   ASCII renders show the Mediterranean, Italy's boot and the road/rail
+   networks in historically sensible places. Remaining bits
    (`0x02` base, `0x08/0x10/0x20` variants — irrigation/mine/farmland/fortress
    candidates) are open; oracle save-diffs will pin them.
 5. **The 7 visibility bytes per tile show near-identical per-byte distributions**
@@ -131,15 +140,23 @@ and the ROMFALL_{ERE,HUN,VIS} variants:
 ## T0-8 findings (2026-11-01/02, fourth probe session)
 
 **`AnticChina.MP` (ToTPP-era `.MP` flavor) decoded** — artifact:
-`anticchina-map.png` + `golden/anticchina-reject.json` (now a parse result).
+`anticchina-map.png` + `golden/anticchina-map.json`.
 
 1. **Layout:** `u16 display_width=224, u16 height=250, u16 real=28000,
    u16 maps=1` + a 90-byte front blob (`44 ae 38 00 3f 00` + 84×`0xFF`) +
    `6 × real` tile bytes + `real` per-tile flag bytes. Exact:
    `196,098 = 98 + 7×28,000`.
 2. **Per stored tile: 6 bytes = [data slot][pad slot].** Data slot = `u16`
-   word + 1 extra byte (0x00/0xA0 observed); pad slot = word `0x0001`/`0x003F`
-   + extra `0xF0|bits`. The stored grid is dense `112×250` (display width 224
+   word + 1 extra byte — the extra byte takes exactly 8 values in 0x20
+   steps: 0x00 (25,955) / 0x20 (657) / 0x40 (305) / 0x60 (215) / 0x80 (253)
+   / 0xA0 (199) / 0xC0 (169) / 0xE0 (247); its low 5 bits are always 0 and
+   its meaning is open. Pad slot = `u16` word + 1 extra byte: word 0x003F
+   on 22,488 records, 0x0001 on 4,293, and 22 further values (mostly
+   `0xXX3F`: 0x023F 340, 0x043F 166, 0x103F 153, 0x803F 133) on the
+   remaining 1,219; extra 0xF0 on 25,882, 0xFF on 1,219, plus low-bit
+   variants of 0xF0 (0xF7 268, 0xFE 150, 0xFD 85, 0xFC 57, …). Dominant
+   combinations: (0x003F, 0xF0) 20,884 and (0x0001, 0xF0) 4,209. The stored
+   grid is dense `112×250` (display width 224
    = 2× stored — the ToT half-tile display convention, matching the SCN map
    headers).
 3. **Data word = terrain | flags**, unifying with the stock `.MP` word:
@@ -176,7 +193,11 @@ Controlled experiments over ROMFALL + its playable-civ variants (ERE/HUN/VIS)
      human civ 1→6; 687), 3 civ-block bytes, 2 unit-preamble bytes and 22
      post-city bytes);
 2. **City record (92 B): `u16@58 = x`, `u16@60 = y`** (logical grid, same
-   space as units); tail shorts @86–91 = (5, 5, size) — Roma = 29.
+   space as units). Tail shorts @86–91 measured, e.g. Roma (5, 5, 8) —
+   **not** the city size: a size-like short sits in the two bytes
+   immediately BEFORE each name (Roma 29 = its in-game size; see item 3 of
+   the second session above), i.e. at the final short of the preceding
+   92-B slot; the exact field boundary is open.
 3. **The map geometry is settled.** The terrain grid stored in the map
    section is **75×120 dense** (`hdr0/2 × hdr1`); unit/city coordinates live
    on the **logical 150×120** grid. Mapping (proven by a unique alignment

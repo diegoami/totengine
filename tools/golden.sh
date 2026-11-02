@@ -37,7 +37,15 @@ world-map|map|World.mp
 world-map-rivers|map|World.mp||scale3
 romfall-walk|save|FallRome/ROMFALL.scn
 ere-walk|save|FallRome/SCN/ROMFALL_ERE.scn
+romfall-fra-walk|save|FallRome/SCN/ROMFALL_FRA.scn
+romfall-hun-walk|save|FallRome/SCN/ROMFALL_HUN.scn
+romfall-sax-walk|save|FallRome/SCN/ROMFALL_SAX.scn
+romfall-van-walk|save|FallRome/SCN/ROMFALL_VAN.scn
+romfall-vis-walk|save|FallRome/SCN/ROMFALL_VIS.scn
+romfall-wre-walk|save|FallRome/SCN/ROMFALL_WRE.scn
 va-auto-walk|save|Scenario/FallRome/Va_Auto.SAV
+midgard-walk|save|Midgard/Midgard.SCN
+midgard-auto-walk|save|Midgard/Oc_Auto.SAV
 warring-walk|save|Scenario/china/Warring States.scn
 warring-auto-walk|save|Scenario/china/Hu_Auto.SAV
 warring-yan-walk|save|Scenario/china/deiYan.sav

@@ -4,54 +4,101 @@ Artifacts produced by `tools/totctl.py` (Python reference probe) against the loc
 install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 [../feasibility.md](../feasibility.md) with measured data.
 
-## RG-1 findings (2026-11-02, eighth session — standard-game setup state)
+## RG-1 findings (2026-11-02, eighth+tenth sessions — standard-game setup state)
 
-Materials: three rig-driven **standard Original-game** new games, load-time
-autosaves (`Original/Ca_Auto.SAV` — the standard game autosaves into the game
-folder, prefix from the ruler name), differing ONLY in the difficulty dialog
-answer: A = Chieftain, B = Deity, C = Emperor (`/home/diego/review-tmp/oracle-runs/orig-{A,B,C}`).
+Materials: rig-driven **standard Original-game** new games with
+**vision-verified wizard answers**, load-time autosaves
+(`Original/Ca_Auto*.SAV` — the standard game autosaves into the game folder,
+prefix from the ruler name; slots ROTATE, see the staleness lesson in
+`../lessons.md`). Verified family (ninth session): **C2** = Large/Emperor/5civ,
+**D2** = Large/Emperor/3civ, **E2** = Normal/Emperor/5civ, **S2** = Small/
+Emperor/5civ, plus **S2b/S2c** repeats of S2's exact answers
+(`/home/diego/review-tmp/oracle-runs/orig-{C2,D2,E2,S2,S2b,S2c}`). Older
+A/B/C runs (all-Return rides, answers inferred): A = Chieftain + out-of-box
+defaults, B = Deity + defaults, C = Emperor + defaults.
 
-1. **`save[684] = difficulty level`** — A/B/C give 0/5/4 exactly matching
-   Chieftain/Deity/Emperor (Rules.txt @DIFFICULTY order). Three-point
-   confirmation; the surrounding 600–999 block is otherwise stable (386/400
-   bytes identical across the three runs, differences concentrated in a few
-   fields).
-2. **The new-game world is DETERMINISTIC given the wizard settings** —
-   three runs at different wall-clock times with the same effective answers
-   produced **byte-identical saves** (C ≡ D ≡ E, 96,607 bytes, including the
-   entire map and unit placement), while any settings change (A vs C:
-   difficulty 0→4) reshuffles the whole world (~8.4k differing bytes,
-   map+civs). The world-gen seed is derived from the settings vector, not
-   the clock. Consequences: RG-2 (starting placement from seed) is fully
-   reproducible; the T1-6 RNG hunt has a stable target; and setup-field
-   isolation must diff against a same-settings baseline, not across knobs.
-3. **The wizard remembers previous answers** (the difficulty dialog opened
-   pre-selected with the previous run's level — D/E inherited C's Emperor,
-   re-confirming 684=4 twice). "Defaults" are never assumed: verify every
-   dialog's selection by vision before confirming.
-4. **Arrow keys can be silently swallowed** when racing a dialog's opening
-   (two wizard variants silently lost their Downs and produced the baseline
-   settings). The reliable pattern: wait for the window title, focus the new
-   HWND, keys at ≥0.7 s spacing, vision-verify the highlighted item, THEN
-   Return.
-5. Candidate neighbors (undecoded): `save[698]` = 7/8/13 across the three
-   world families — plausibly the number of civs actually placed
-   (world-dependent, tracks the settings-seeded world, not the knob);
-   `655` = 0x32/0x33; 814/815, 842, 853, 871, 892/893, 962 vary with the
-   world family. Load-time saves all read **turn=1, year=−4000**.
-6. **The new-game wizard chain** (all dialogs accept plain Return; the
-   game-type list needs arrow navigation — see the oracle README):
-   game-type list (item 1 "Original Game") → untitled pre-dialog → Select
-   Size of World → Select Difficulty Level → Select Level Of Competition →
-   Select Level Of Barbarian Activity → Select Game Rules → Select Gender →
-   Select Your Tribe → Please Enter Your Name → Select Your City Style →
-   "In the Beginning" intro → Civ Tutorial popups → in-world (autosave
-   written at world load).
-7. Methodology upgrades this session: **vision-model screen reading**
-   (screenshots → PNG → a vision-capable model reads dialogs literally) and
-   **live memory access** (`tools/oracle/memspool.py` — the game runs as a
-   descendant of a spawner daemon, so `/proc` reads work; snapshot/diff/scan
-   commands). Both documented in `tools/oracle/README.md`.
+### Decoded setup fields
+
+1. **`save[684] = difficulty level`** (0=Chieftain … 5=Deity, Rules.txt
+   @DIFFICULTY order) — A/B/C = 0/5/4; C2/D2/E2/S2/S2b/S2c all = 4 (Emperor).
+2. **`save[689] = rivals`** (number of AI civilizations) — competition
+   dialog answer minus one: 5 Civs → 4 (C2/E2/S2 agree across three
+   different worlds), 3 Civs → 2 (D2), 7 Civs → 6 (A and C, whose
+   competition was the out-of-box default — see the dialog defaults below).
+3. **Map dimensions at 29900 = `(2×height, width, height×width)`** —
+   confirmed on all three sizes: Small 40×50 → `(80, 50, 2000)`; Normal
+   50×80 → `(100, 80, 4000)`; Large 75×120 → `(150, 120, 9000)`. The wizard
+   dialog's "40x50 squares" reads height×width. Save size tracks world size:
+   ~70,047 (Small) / ~96,6xx (Normal) / ~162,8xx (Large).
+4. **No front-section byte encodes the size ANSWER** — the three-way
+   isolation (C2/D2/E2, plus S2) shows size only manifests structurally
+   (dims at 29900, file length, map block); every other front-section
+   candidate (660, 807, 826, 853, 894, 962 …) wobbles across same-size
+   worlds, i.e. is world-noise.
+5. **`save[698]` is world-derived, not a settings field** — 5–13 across
+   worlds including same-answer repeats (S2=6, S2b, S2c differ); earlier
+   "civs placed" reading retired. `save[655]` = 0x32/0x33 and 814/815, 842,
+   853, 871, 892/893, 962 move with the world too.
+6. Load-time saves all read **turn=1, year=−4000**.
+
+### World generation is NON-deterministic (CORRECTION)
+
+**S2, S2b, S2c — three runs with identical, vision-verified answers —
+produced three DIFFERENT worlds** (~3.5k differing bytes each; same
+structure: length 70,047, dims, 684, 689). The world-gen seed comes from a
+non-settings source (time / PRNG state at load).
+
+An earlier revision of this section claimed the opposite ("C ≡ D ≡ E
+byte-identical ⇒ deterministic"). That was an artifact: D's and E's harvests
+copied C's STALE autosave (the fresh saves had rotated into the other
+`Ca_Auto*` slot — E's true save was a 162,927-byte Large world, initially
+mistaken for a "stray"). The lesson: harvest checks must compare mtimes of
+all rotating slots AND byte-compare against the previous baseline
+(`docs/lessons.md`). Consequence for planning: RG-2 starting placement is
+NOT reproducible from wizard settings alone; the T1-6 RNG-state hunt (RAM,
+via `memspool.py`) is the path to reproducibility.
+
+### Wizard reference (all items + defaults, vision-read)
+
+- **Game-type list** (remembers last selection): 1 Original Game, 2 Science
+  Fiction Game, 3 Fantasy Game, 4 Extended Original Game, 5 Begin the
+  Midgard Scenario, 6 Begin a Scenario, 7 Load a Saved Game., 8 Play a Mod.
+  The list WRAPS (Up from 1 → 8).
+- **Start-mode menu** (after game-type, titled "The Test of Time"):
+  Start a New Game (default) / Start on Pre-made World / Customize World.
+- **Size of World**: Small 40×50 / Normal 50×80 / Large 75×120 (+ Custom
+  button).
+- **Difficulty Level**: Chieftain/Warlord/Prince/King/Emperor/Deity; the
+  list wraps (5 Downs from Deity → Emperor — retro-explains C=4).
+- **Level of Competition**: 7/6/5/4/3 Civilizations (+ Random); out-of-box
+  default **7 Civilizations**.
+- **Barbarian Activity**: Villages Only / Roving Bands / Restless Tribes
+  (remembered default) / Raging Hordes (+ Random).
+- **Game Rules**: Use Standard Rules (default) / Customize Rules.
+- **Gender**: Male (default) / Female. **Tribe**: 21 tribes in 3 columns,
+  Romans default. **Name**: Caesar. **City Style**: Bronze Age Monolith /
+  Classical Forum (default) / Far East Pavilion / Medieval Castle.
+- **Dialogs remember previous answers** across restarts (difficulty, size,
+  competition, game-type all verified remembering). Never assume defaults —
+  the remembered value IS your baseline; restore knobs changed by earlier
+  variants before isolating a new one.
+- **Arrow keys can be silently swallowed** when racing a dialog's opening
+  (two early knob variants silently produced baseline settings). Reliable
+  pattern: wait for the window TITLE → focus the NEW dialog HWND → keys
+  ≥0.7 s apart → vision-verify the highlighted item → Return.
+- **The new-game wizard chain**: game-type list → start-mode menu → Select
+  Size of World → Select Difficulty Level → Select Level Of Competition →
+  Select Level Of Barbarian Activity → Select Game Rules → Select Gender →
+  Select Your Tribe → Please Enter Your Name → Select Your City Style →
+  "In the Beginning" intro → Civ Tutorial popups → in-world (autosave
+  written at world load). Plain Return confirms every dialog.
+
+### Methodology
+
+**Vision-model screen reading** (screenshots → PNG → a vision-capable model
+reads dialogs literally) and **live memory access** (`tools/oracle/memspool.py`
+— the game runs as a descendant of a spawner daemon, so `/proc` reads work;
+snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
 
 ## Files
 

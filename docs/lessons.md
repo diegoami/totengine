@@ -57,20 +57,28 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
 
 ## Experiment method (RG-1 style)
 
-- **World-gen is deterministic given the wizard settings** (seed = settings
-  vector, NOT the clock; three same-answer runs at different times were
-  byte-identical, ~96 KB including the map). Consequences: (a) isolate a knob
-  by diffing against a same-settings baseline, never across knobs — any
-  setting change reshuffles the whole world (~8.4k bytes); (b) experiments
-  are exactly reproducible, which is what makes byte-isolation meaningful.
+- **World-gen is NON-deterministic** (CORRECTED 2026-11-02 evening): three
+  runs with identical, vision-verified answers produced three different
+  worlds (same structure — length/dims/684/689 — different terrain and
+  placement, ~3.5k bytes). An earlier "deterministic given settings" claim
+  was an artifact of the stale-harvest bug below (C's autosave copied three
+  times). Diff experiments remain valid — just diff verified specimens
+  directly; don't promise reproducibility from settings alone.
+- **Stale-harvest once manufactured a false law.** The bogus C≡D≡E
+  byte-identity ("determinism") came from copying a stale autosave slot
+  while the fresh save rotated into the other `Ca_Auto*` slot. The two
+  checks that catch it: compare mtimes of ALL rotating slots, and
+  byte-compare the harvest against the previous baseline — a "new world"
+  that is byte-identical to the previous run is a RED FLAG, not a law.
 - **Validate wizard variants mechanically at harvest**, before analysis:
-  map-header dims at 29900 (100×80 default — a world-size change must move
-  it), `save[684]` difficulty, `save[698]` civ-count candidate. If a value
-  that should have moved didn't, the Downs were swallowed — redo the run
-  rather than analyze garbage.
-- Classify diff bytes three ways (A vs B, A vs C, B vs C): bytes that differ
-  in every pair are seed-noise; bytes specific to one variant's comparisons
-  are that knob's fields.
+  map dims at 29900 (2×height, width, area), `save[684]` difficulty,
+  `save[689]` rivals. If a value that should have moved didn't, the Downs
+  were swallowed — redo the run rather than analyze garbage.
+- Classify diff bytes three-way across verified variants (e.g. C2/D2/E2):
+  bytes differing only in the competition pair are competition fields, only
+  in the size pair are size fields, in both pairs are world-noise. Then
+  CONFIRM candidates against a third specimen (a candidate that wobbles
+  across same-answer worlds is noise, not a field).
 - Every format claim gets an evidence artifact and a commit that re-derives
   it (repo hard rule); rig findings go to `tools/oracle/README.md` +
   `docs/evidence/README.md` in the same commit as the tooling that produced

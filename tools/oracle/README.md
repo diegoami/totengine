@@ -22,6 +22,39 @@ Headless Wine + Xvfb harness that drives the original game and harvests saves.
 
 ## Findings (2026-11-02)
 
+### Standard-game navigation attempt (RG-1, evening session)
+
+Goal: reach a *new game without scenario* for setup-section diffs. Findings:
+
+- The **launcher overlay** ("The Test of Time", 287×245 at +369+484) sits ON TOP
+  of the main window; the main title screen's own art occupies x≈56–330 —
+  don't confuse the two (cost an hour). The launcher's items are the bands at
+  x≈372–654, y≈495–712 (~30 px apart, ~7 rows).
+- **Keyboard works on the launcher; injected clicks do not** (neither winject
+  SendInput `dblclickat` nor XTest `xtool clickat` activated an item, with or
+  without focus/PointerRoot). `xtool focus <hwnd>` + `xtool key Return`
+  reliably activates the focused/default item.
+- **Return on the launcher default opens a 291×344 game-type dialog**
+  (at +367+385) whose first item is highlighted — and whose default led to the
+  **Midgard Scenario browser** (ToTPP remembers the last-used scenario; NOT in
+  TOTPP.ini — feature flags only there). Down+Return from the launcher default
+  selected the scenario flow; the standard game needs a different item in the
+  game-type dialog (arrow keys + Return; unread as of this session).
+- Wizard chain once a game type is chosen (Midgard path): scenario browser →
+  (load) → **Select Difficulty Level** (352×278 at +336+451) → **Select Gender**
+  (352×146 at +336+583; neither Return nor Escape advanced it — needs a click
+  or arrow+Return). Escape backs out one dialog per press, all the way to the
+  title screen.
+- Wine window coordinates == X coordinates (desktop 1024×768); `winject wins`
+  lists HWNDs with rects — use it to locate dialogs instead of guessing from
+  screenshots.
+- **The pkill trap claimed another victim**: `pkill -f '[c]iv2'` in a command
+  that also contains the literal `civ2` (e.g. a later `wine civ2.exe` or even
+  `pgrep civ2`) kills the own shell. The kill must live in a command line that
+  contains the bracketed form ONLY.
+
+### Older findings (2026-11-02 morning)
+
 - **Classic `civ2.bak` cannot run headless**: after its "Please Note" dialog it
   exits — the ToT CD check wants the mixed-mode CD's *audio tracks* (MCI
   cdaudio: the exe contains "Failed to open CDAUDIO device"; no GetVolumeInformation

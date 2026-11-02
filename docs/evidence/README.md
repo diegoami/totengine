@@ -4,7 +4,35 @@ Artifacts produced by `tools/totctl.py` (Python reference probe) against the loc
 install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 [../feasibility.md](../feasibility.md) with measured data.
 
-#### T1-3 movement (2026-11-02 night): Rules columns + kernel
+#### T1-8 save writer (2026-11-03): surgical edits accepted by the original
+
+- `tot-kit::sav::SavEditor` — surgical `0x32` writer: validates the file
+  with the same gates as the parser, then applies typed edits to proven
+  offsets: turn@668, year@670, difficulty@684, rivals@689, unit x@6/y@8/
+  type@14 (40-B records), city name@0 (16-B slot, ≤15 bytes), city
+  x@58/y@60 (92-B records). A no-edit round trip is **byte-identical**
+  on ROMFALL.scn, ROMFALL_WRE.scn and Va_Auto.SAV (env-gated test).
+- **Oracle acceptance**: a Va_Auto.SAV copy with city 0 renamed
+  "Roma"→"TESTCITY" (`EDITEST2.SAV`, 8 bytes changed) was loaded by the
+  original through its own *Load a Saved Game* dialog; the game's
+  **Find City list shows `TESTCITY (OBJECTIVEx3)`** (the OBJECTIVE tag
+  proving the edit landed in the right record), and the game's own
+  *Save Game* (`429dec.sav`, same 226,336 bytes) **preserves
+  TESTCITY** through a full save cycle.
+- **Re-save diff is field-explained**: our input vs the game's re-save =
+  974 differing bytes in 161 regions: one byte per unit record (diffs at
+  a 40-byte stride — the game's per-unit bookkeeping byte), front bytes
+  655–658/674, and one map byte at 34663 (fog/visibility). No structural
+  drift, identical size, identical turn/year.
+- Finding: the displayed scenario date ("Dec 429") is **not** driven by
+  the year field@670 — the edited −3000 year left the display unchanged.
+  Scenario calendar source still open (likely the scenario date
+  settings; matters for T1-7/T1-4 displays).
+- Multi-map saves (Midgard.SCN) are correctly **refused** by the parser
+  (the unit-region gate fails; the walker cannot locate them either) —
+  no fabricated tables.
+
+### T1-3 movement (2026-11-02 night): Rules columns + kernel
 
 - **`@UNITS` field 3 (written `N.`) = movement rate** — proven twice:
   (a) the game's unit panel reads **"Movers 1"** for standard Settlers

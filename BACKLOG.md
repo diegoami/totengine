@@ -73,7 +73,7 @@ game (no scenario) boots and runs headless on the classic map,
 | T1-5 | ~~Research tree, governments, wonders (incl. obsolete-by-tech)~~ | P1 | M | E | done | @CIVILIZE tree (100 advances, classic prereqs, all reachable in the scripted run); 28 wonders w/ @ENDWONDER obsolescence; `totctl tech` |
 | T1-6 | Combat: rounds, veterans, walls, terrain bonuses; identify original PRNG & seed | P1 | L | H | todo | Battle outcome sequences reproduced from same-seed oracle saves |
 | T1-7 | Macro events interpreter (@IF/@THEN, ~50 commands, DELAY heap, JUSTONCE) | P1 | L | H | todo | FallRome Events.txt fires identically on scripted turns |
-| T1-8 | Save writer: byte-compatible `0x32` .SAV | P1 | L | H | todo | Original (Wine) loads our save; re-save diff is field-explained |
+| T1-8 | ~~Save writer: byte-compatible `0x32` .SAV~~ | P1 | L | H | done | `SavEditor` surgical writer (round-trip byte-identical; typed edits); oracle loaded an edited save and preserved the rename; re-save diff field-explained (974 B, unit-bookkeeping stride) |
 | T1-9 | CI milestone job: 50-turn headless FallRome run vs golden saves | P1 | M | E | todo | Nightly job green; regressions caught |
 
 ## Epic RG — Regular game track (roadmap; enters after the T1 core)

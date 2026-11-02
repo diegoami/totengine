@@ -46,6 +46,8 @@ pub enum SavError {
         rem: usize,
     },
     NoCityChain,
+    /// writer edit rejected (out-of-range index, oversize string, …)
+    BadEdit(&'static str),
 }
 
 impl fmt::Display for SavError {
@@ -61,6 +63,7 @@ impl fmt::Display for SavError {
             SavError::NoCityChain => {
                 write!(f, "no 92-B city name-chain located after the map blob")
             }
+            SavError::BadEdit(why) => write!(f, "bad save edit: {why}"),
         }
     }
 }
@@ -492,6 +495,124 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
 /// Read a save/scenario from disk.
 pub fn parse_sav_file(path: &std::path::Path) -> Result<SaveFile, SavError> {
     parse_sav(&std::fs::read(path).map_err(|_| SavError::Truncated("file read"))?)
+}
+
+// ---------------------------------------------------------------- writer
+//
+// Surgical `0x32` writer (T1-8). The editor starts from an existing file
+// and applies typed edits to the proven field offsets, leaving every
+// other byte untouched — a no-edit round trip is byte-identical by
+// construction. Full generation from scratch is T1-8's later increment;
+// this is the increment the oracle can already accept (write → load in
+// the original → field-explained diffs).
+
+/// Byte offsets the editor writes (all proven; see module docs).
+pub const OFF_TURN: usize = OFF_GAME;
+pub const OFF_YEAR: usize = OFF_GAME + 2;
+
+/// A mutable view over one save file for typed field edits.
+#[derive(Debug, Clone)]
+pub struct SavEditor {
+    buf: Vec<u8>,
+    /// first byte of unit record 0 (region start + 34-byte preamble)
+    unit_base: usize,
+    city_base: usize,
+    n_units: usize,
+    n_cities: usize,
+}
+
+impl SavEditor {
+    /// Open a file for editing; validates the layout first (the same
+    /// gates as [`parse_sav`], so we never edit a misaligned file).
+    pub fn new(raw: &[u8]) -> Result<Self, SavError> {
+        let sav = parse_sav(raw)?;
+        Ok(SavEditor {
+            buf: raw.to_vec(),
+            unit_base: sav.unit_region.0 + 34,
+            city_base: sav.city_offset,
+            n_units: sav.units.len(),
+            n_cities: sav.cities.len(),
+        })
+    }
+
+    pub fn set_turn(&mut self, turn: i16) {
+        self.buf[OFF_TURN..OFF_TURN + 2].copy_from_slice(&turn.to_le_bytes());
+    }
+
+    pub fn set_year(&mut self, year: i16) {
+        self.buf[OFF_YEAR..OFF_YEAR + 2].copy_from_slice(&year.to_le_bytes());
+    }
+
+    /// Game block @684 (0 = Chieftain … 5 = Deity).
+    pub fn set_difficulty(&mut self, difficulty: u8) {
+        self.buf[684] = difficulty;
+    }
+
+    /// Game block @689 (number of rival civs).
+    pub fn set_rivals(&mut self, rivals: u8) {
+        self.buf[689] = rivals;
+    }
+
+    /// Move a unit on the logical grid (x u16@6, y u16@8 of its record).
+    pub fn set_unit_pos(&mut self, idx: usize, x: u16, y: u16) -> Result<(), SavError> {
+        if idx >= self.n_units {
+            return Err(SavError::BadEdit("unit index out of range"));
+        }
+        let base = self.unit_base + 40 * idx;
+        self.buf[base + 6..base + 8].copy_from_slice(&x.to_le_bytes());
+        self.buf[base + 8..base + 10].copy_from_slice(&y.to_le_bytes());
+        Ok(())
+    }
+
+    /// Change a unit's type id (Rules @UNITS index) or owner byte.
+    pub fn set_unit_type(&mut self, idx: usize, type_id: u8) -> Result<(), SavError> {
+        if idx >= self.n_units {
+            return Err(SavError::BadEdit("unit index out of range"));
+        }
+        self.buf[self.unit_base + 40 * idx + 14] = type_id;
+        Ok(())
+    }
+
+    /// Rename a city (≤15 bytes; the 16-byte slot is NUL-padded).
+    pub fn set_city_name(&mut self, idx: usize, name: &str) -> Result<(), SavError> {
+        if idx >= self.n_cities {
+            return Err(SavError::BadEdit("city index out of range"));
+        }
+        let bytes = name.as_bytes();
+        if bytes.len() > 15 {
+            return Err(SavError::BadEdit("city name longer than 15 bytes"));
+        }
+        let base = self.city_base + 92 * idx;
+        for b in &mut self.buf[base..base + 16] {
+            *b = 0;
+        }
+        self.buf[base..base + bytes.len()].copy_from_slice(bytes);
+        Ok(())
+    }
+
+    /// Move a city (x u16@58, y u16@60 of its record).
+    pub fn set_city_pos(&mut self, idx: usize, x: u16, y: u16) -> Result<(), SavError> {
+        if idx >= self.n_cities {
+            return Err(SavError::BadEdit("city index out of range"));
+        }
+        let base = self.city_base + 92 * idx;
+        self.buf[base + 58..base + 60].copy_from_slice(&x.to_le_bytes());
+        self.buf[base + 60..base + 62].copy_from_slice(&y.to_le_bytes());
+        Ok(())
+    }
+
+    pub fn bytes(&self) -> &[u8] {
+        &self.buf
+    }
+
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.buf
+    }
+}
+
+/// Convenience: parse, unmodified re-emit (must equal the input bytes).
+pub fn emit_sav(raw: &[u8]) -> Result<Vec<u8>, SavError> {
+    Ok(SavEditor::new(raw)?.into_bytes())
 }
 
 #[cfg(test)]

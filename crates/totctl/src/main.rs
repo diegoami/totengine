@@ -16,6 +16,7 @@ fn main() -> ExitCode {
         Some("boot") => cmd_boot(&args[2..]),
         Some("tech") => cmd_tech(&args[2..]),
         Some("run") => cmd_run(&args[2..]),
+        Some("edit") => cmd_edit(&args[2..]),
         Some("--version") | Some("-V") => {
             println!("totctl {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
@@ -29,6 +30,9 @@ fn main() -> ExitCode {
                         {prog} tech <Rules.txt>    — advance tree + wonders (reachability run)\n\
                         {prog} run <file.sav|scn> --turns N [--seed S] [--rules P]\n\
                         \x20                        — deterministic N-turn headless run (per-turn checksums)\n\
+                        {prog} edit <in> <out> [--turn N] [--year N] [--difficulty N]\n\
+                        \x20      [--rivals N] [--unit-pos IDX X Y] [--city-name IDX NAME]\n\
+                        \x20                        — surgical field edits (T1-8 writer)\n\
                         {prog} --version"
             );
             ExitCode::from(2)
@@ -169,6 +173,102 @@ fn cmd_boot(args: &[String]) -> ExitCode {
         world.rng.draws()
     );
     println!("checksum      : {:016x}", world.checksum());
+    ExitCode::SUCCESS
+}
+
+/// Surgical save edits (T1-8): copy the input applying typed field edits
+/// to the proven offsets; every other byte stays untouched.
+fn cmd_edit(args: &[String]) -> ExitCode {
+    let mut positional: Vec<&String> = Vec::new();
+    let mut turn: Option<i16> = None;
+    let mut year: Option<i16> = None;
+    let mut difficulty: Option<u8> = None;
+    let mut rivals: Option<u8> = None;
+    let mut unit_pos: Option<(usize, u16, u16)> = None;
+    let mut city_name: Option<(usize, String)> = None;
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--turn" => turn = it.next().and_then(|v| v.parse().ok()),
+            "--year" => year = it.next().and_then(|v| v.parse().ok()),
+            "--difficulty" => difficulty = it.next().and_then(|v| v.parse().ok()),
+            "--rivals" => rivals = it.next().and_then(|v| v.parse().ok()),
+            "--unit-pos" => {
+                let idx = it.next().and_then(|v| v.parse().ok());
+                let x = it.next().and_then(|v| v.parse().ok());
+                let y = it.next().and_then(|v| v.parse().ok());
+                match (idx, x, y) {
+                    (Some(i), Some(x), Some(y)) => unit_pos = Some((i, x, y)),
+                    _ => {
+                        eprintln!("error: --unit-pos needs IDX X Y");
+                        return ExitCode::from(2);
+                    }
+                }
+            }
+            "--city-name" => {
+                let idx = it.next().and_then(|v| v.parse().ok());
+                let name = it.next().cloned();
+                match (idx, name) {
+                    (Some(i), Some(n)) => city_name = Some((i, n)),
+                    _ => {
+                        eprintln!("error: --city-name needs IDX NAME");
+                        return ExitCode::from(2);
+                    }
+                }
+            }
+            _ => positional.push(a),
+        }
+    }
+    if positional.len() != 2 {
+        eprintln!("usage: totctl edit <in> <out> [edits]");
+        return ExitCode::from(2);
+    }
+    let (src, dst) = (positional[0], positional[1]);
+    let raw = match std::fs::read(src) {
+        Ok(b) => b,
+        Err(e) => {
+            eprintln!("error: read {src}: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let mut ed = match tot_kit::SavEditor::new(&raw) {
+        Ok(e) => e,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    if let Some(t) = turn {
+        ed.set_turn(t);
+    }
+    if let Some(y) = year {
+        ed.set_year(y);
+    }
+    if let Some(d) = difficulty {
+        ed.set_difficulty(d);
+    }
+    if let Some(r) = rivals {
+        ed.set_rivals(r);
+    }
+    if let Some((i, x, y)) = unit_pos {
+        if let Err(e) = ed.set_unit_pos(i, x, y) {
+            eprintln!("error: {e}");
+            return ExitCode::from(1);
+        }
+    }
+    if let Some((i, n)) = city_name {
+        if let Err(e) = ed.set_city_name(i, &n) {
+            eprintln!("error: {e}");
+            return ExitCode::from(1);
+        }
+    }
+    let out = ed.into_bytes();
+    if let Err(e) = std::fs::write(dst, &out) {
+        eprintln!("error: write {dst}: {e}");
+        return ExitCode::from(1);
+    }
+    let changed = raw.iter().zip(out.iter()).filter(|(a, b)| a != b).count();
+    println!("wrote {dst} ({} bytes, {changed} bytes edited)", out.len());
     ExitCode::SUCCESS
 }
 

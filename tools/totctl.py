@@ -378,7 +378,7 @@ def walk_ext033(data, hdr, blob10240_end, out):
     Verified arithmetic: deiQin − deiYan = +198 units (+7,920) and +11
     city slots (+1,012), post-city block −92 = +8,840 bytes exactly;
     scn vs Hu_Auto (load+autosave, same sizes) keep 1442 units, of
-    which 1351 sit at an (x,y) occurring somewhere in the .scn, ids
+    which 1352 sit at an (x,y) occurring somewhere in the .scn, ids
     re-assigned 6527..7967 -> 10..1450.
     """
     import struct as _s

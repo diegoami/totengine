@@ -1,6 +1,7 @@
 *.pyc
 /target
 __pycache__/
+tools/oracle/wininject*.exe
 tools/oracle/winject*.exe
 tools/oracle/winject.exe
 tools/oracle/winject32.exe

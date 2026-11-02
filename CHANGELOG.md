@@ -41,7 +41,9 @@ against real game files, evidence committed under `docs/evidence/`.
   fmt + clippy + tests.
 - `tools/totctl.py` — reference probe (rules/map/save/diff/scnmap),
   stdlib-only, `CIVTOT_HOME` for the install root.
-- Golden-file harness (`make test`): 9-item evidence corpus, machine-
+- Golden-file harness (`make test`): 21-entry evidence corpus (all 8
+  FallRome variants + Midgard ×2 + Warring States ×4 + maps/rules/diff),
+  machine-
   normalized, self-skipping in CI.
 - **Wine oracle rig** (`tools/oracle/`): the original game driven headless
   under Xvfb (custom XTest tool + Win32 SendInput injector), automated turn

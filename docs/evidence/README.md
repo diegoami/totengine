@@ -45,11 +45,10 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
    subsequent rows are special-resource overlays.
 
 4. **SAV/SCN structural walk works on real scenarios.** ROMFALL.scn (`0x0032`):
-   turn 0; 7 civ name blocks decode (leader names via NUL-terminated runs:
-   Valentianus III, Hengist, Chlodwig, Genseric, Theodoric I, Theodosius II,
-   Rugila — the adjective half can be cut by embedded bytes, e.g. `Hengist` +
-   `ief` for *Anglo-Saxons*; the full strings are present in the file but not
-   extracted by `null_strings()`); 56 techs pre-discovered; 10 wonders
+   turn 0; 7 civ name blocks decode — the walker extracts every NUL-run in
+   each block (e.g. `Hengist`/`ief`/`Anglo-Saxons`/`Anglo-Saxon`: leader,
+   an encoding-artifact fragment, plural and singular adjective); 56 techs
+   pre-discovered; 10 wonders
    built, 1 destroyed; map header `[150, 120, 9000, 1, …]` consistent with the MP
    findings. *Open:* `year` field at offset 670 reads 5159 — decoding TBD.
 
@@ -187,11 +186,13 @@ Controlled experiments over ROMFALL + its playable-civ variants (ERE/HUN/VIS)
      is *Pope Leo I*)
    - `u16@36 = unit id` — **re-assigned on every save** (ROMFALL_ERE differs
      from ROMFALL at bytes 36–37 of 709/710 unit records — per-save ids.
-     Outside the unit section the two files differ in 324 more bytes: all
-     146 city records' owner byte @53 (cities re-owned by the ERE civ — the
-     ERE save is a later game state), 5 settings bytes (674; 679–681 =
-     human civ 1→6; 687), 3 civ-block bytes, 2 unit-preamble bytes and 22
-     post-city bytes);
+     Outside the unit section the two files differ in 324 more bytes:
+     **292** in the city records (all 146 cities differ at bytes 52–53,
+     2 B each — owner re-assigned to the ERE civ, the ERE save being a
+     later game state) and **32** elsewhere (5 settings bytes: 674,
+     679–681 = human civ 1→6, 687; 3 civ-block bytes; 2 unit-preamble
+     bytes; 22 post-city bytes). Total 1,418 + 292 + 32 = 1,742
+     differing bytes.
 2. **City record (92 B): `u16@58 = x`, `u16@60 = y`** (logical grid, same
    space as units). Tail shorts @86–91 measured, e.g. Roma (5, 5, 8) —
    **not** the city size: a size-like short sits in the two bytes
@@ -209,12 +210,14 @@ Controlled experiments over ROMFALL + its playable-civ variants (ERE/HUN/VIS)
      ROMFALL, ROMFALL_ERE and Va_Auto alike);
    - under the diamond mapping, 141/145 cities sit on land, 0 on ocean
      (4 on desert — North-African cities), at the unique optimum dx=−1;
-   - of 710 units, 32 sit on ocean tiles and 678 on non-ocean — but the
-     *domain* labels do not all match those terrains (14 of the 32 are
-     land-domain leaders, plausibly transported; 90 of 108 sea-domain units
-     sit on non-ocean tiles, 66 of them on city tiles — ships in harbour),
-     so the domain check does not discriminate the mapping; the garrison
-     and city-terrain checks are the supporting evidence.
+   - of 710 units, the **32 sea-domain units** (per the scenario's own
+     `Rules.txt @UNITS`: Scan. Warship ×5, Roman Warship ×13, V. Warship
+     ×7, Heavy Warship ×7) **all sit on ocean tiles** under the mapping,
+     and all 678 remaining units sit off ocean — the domain check
+     supports the mapping. (Independently re-verified with a raw decode
+     in both round-2 reviews; a round-1 objection to this check used a
+     wrong domain mapping — from the global instead of the scenario
+     Rules.txt — and was withdrawn.)
 5. **The Va_Auto/Va_Auto2 autosaves are from different play sessions** (the
    id ranges 2..711 vs 1452..2171 prove re-registration) — they are *not* a
    clean one-turn diff pair; true same-session pairs need the T0-10 oracle.
@@ -255,9 +258,9 @@ end of the base front (411,214 here):
 **The 0x33 unit record is a different layout from the 0x32 base record**:
 
 - `@0 u16 id` — sequential, **re-assigned on every save** (proof: scn ids
-  6527..7967 → Hu_Auto ids 10..1450, sequential from 10 with 16 records
-  carrying id 0; same 1,442 units, of which 1,351 sit at an (x,y) that
-  occurs somewhere in the .scn after load+autosave);
+  6527..7967 → Hu_Auto ids 10..1450, sequential from 10 with **17 records
+  carrying id 0**; same 1,442 units, of which **1,352** sit at an (x,y)
+  that occurs somewhere in the .scn after load+autosave);
 - `@10/@12 s16 x/y` — **logical** grid coords (not the stored/diamond
   space); off-board units carry negative coords (−100/−500 observed);
 - `@18 u8 type` — Rules.txt @UNITS index (190 rows in Warring States,

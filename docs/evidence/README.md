@@ -4,6 +4,37 @@ Artifacts produced by `tools/totctl.py` (Python reference probe) against the loc
 install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 [../feasibility.md](../feasibility.md) with measured data.
 
+## RG-1 findings (2026-11-02, eighth session — standard-game setup state)
+
+Materials: three rig-driven **standard Original-game** new games, load-time
+autosaves (`Original/Ca_Auto.SAV` — the standard game autosaves into the game
+folder, prefix from the ruler name), differing ONLY in the difficulty dialog
+answer: A = Chieftain, B = Deity, C = Emperor (`/home/diego/review-tmp/oracle-runs/orig-{A,B,C}`).
+
+1. **`save[684] = difficulty level`** — A/B/C give 0/5/4 exactly matching
+   Chieftain/Deity/Emperor (Rules.txt @DIFFICULTY order). Three-point
+   confirmation; the surrounding 600–999 block is otherwise stable (386/400
+   bytes identical across the three runs, differences concentrated in a few
+   fields).
+2. Candidate neighbors (undecoded): `save[698]` = 7/8/13 across the three
+   runs — plausibly the number of civs actually placed (per-random-world);
+   `655` = 0x32/0x33; 814/815, 842, 853, 871, 892/893, 962 vary irregularly
+   (seed/world-derived). Next variants: same-seed pairs and
+   competition-level/world-size diffs to pin them.
+3. **The new-game wizard chain** (all dialogs accept plain Return; the
+   game-type list needs arrow navigation — see the oracle README):
+   game-type list (item 1 "Original Game") → untitled pre-dialog → Select
+   Size of World → Select Difficulty Level → Select Level Of Competition →
+   Select Level Of Barbarian Activity → Select Game Rules → Select Gender →
+   Select Your Tribe → Please Enter Your Name → Select Your City Style →
+   "In the Beginning" intro → Civ Tutorial popups → in-world (autosave
+   written at world load).
+4. Methodology upgrades this session: **vision-model screen reading**
+   (screenshots → PNG → a vision-capable model reads dialogs literally) and
+   **live memory access** (`tools/oracle/memspool.py` — the game runs as a
+   descendant of a spawner daemon, so `/proc` reads work; snapshot/diff/scan
+   commands). Both documented in `tools/oracle/README.md`.
+
 ## Files
 
 | File | Produced by | What it shows |

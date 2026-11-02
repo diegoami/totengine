@@ -9,6 +9,10 @@ Headless Wine + Xvfb harness that drives the original game and harvests saves.
 | `xtool.c` | X11 automation: XTest key/button injection, `focus`/`focusptr` (no WM on Xvfb — set input focus explicitly or make it follow the pointer), `shot` (PPM, palette-aware for 8-bit screens), `stats` (state fingerprint), `windows`. Build: `gcc -O2 -o xtool xtool.c -lX11 /usr/lib/x86_64-linux-gnu/libXtst.so.6` |
 | `winject.c` | Win32-level injector (SendInput/SetCursorPos + `post` WM_LBUTTONDOWN). Build with llvm-mingw: `clang --target=x86_64-pc-windows-gnu -O2 -o winject.exe winject.c -luser32`. Run inside the game prefix: `wine winject.exe key 13`. **X-level keys never reach the game's DirectDraw surface; SendInput does.** |
 | `ppm_bands.py` / `ppm_text.py` | Read the screen without eyes: bright-row detection and ASCII rendering of PPM regions. |
+| `ppm2png.py` | PPM→PNG so **vision-capable models can read the screen** (the session model hands `/tmp/*.png` to a vision subagent — dialog items, selection state and coordinates come back literally; this replaced ASCII squinting entirely). |
+| `memspool.py` | **Live memory access**: daemon that spawns the game as its own descendant (yama ptrace_scope=1 compliant), then serves `pids/maps/read/scan/snapshot/diffsnap` over a unix socket. Cheat-Engine-grade RE with zero installs. |
+| `newgame.sh` | Drive a fresh STANDARD game through the wizard (params: world-size/difficulty/competition Downs). |
+| `restart_game.sh` / `stop_game.sh` | All game process management lives in scripts — never put a pkill pattern in an interactive command line (the self-kill trap struck four times; `restart_game.sh` also forces DISPLAY=:99 — a caller's :0 once leaked in and the game opened windows on the wrong screen). |
 | `build_cd.py` | Builds a fake-CD ISO of the install (needs `PYTHONPATH` to a pip-less pycdlib install). |
 | `turnloop.sh` | The acceptance loop: ends N turns (3× SPACE + RETURN via winject) and snapshots the autosave each turn. |
 

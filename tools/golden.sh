@@ -166,6 +166,31 @@ sys.exit(0 if sc.get("pass") is True else 1)
   fi
 fi
 
+# T1-9: deterministic 50-turn headless run (Rust engine) vs golden
+# per-turn fingerprints. Runs wherever the install exists; normalized to
+# @HOME@ like the rest of the corpus.
+RUN50="$EV/fallrome-50turn.txt"
+if ! ( cd "$HERE" && "$(command -v cargo 2>/dev/null || echo "$HOME/.cargo/bin/cargo")" run -q -p totctl -- run "$CIVTOT_HOME/FallRome/ROMFALL.scn" --turns 50 ) > "$TMP/run50.raw" 2> "$TMP/run50.err"; then
+  echo "FAIL run50: totctl run failed:"
+  head -5 "$TMP/run50.err"
+  fail=1
+else
+  normalize "$TMP/run50.raw" > "$TMP/run50.norm"
+  if [ "$MODE" = regen ]; then
+    cp "$TMP/run50.norm" "$RUN50"
+    echo "regen run50 (rust 50-turn)"
+  elif [ ! -f "$RUN50" ]; then
+    echo "FAIL run50: golden missing (run: make evidence-regen)"
+    fail=1
+  elif ! diff -u "$RUN50" "$TMP/run50.norm" > "$TMP/run50.diff"; then
+    echo "FAIL run50: 50-turn fingerprints differ from golden (first hunk):"
+    head -20 "$TMP/run50.diff"
+    fail=1
+  else
+    echo "ok    run50 (rust 50-turn deterministic)"
+  fi
+fi
+
 # Rust tot-kit vs Python probe crosschecks (#28 mp, T1-1 rules)
 python3 "$HERE/tools/crosscheck_mp.py" "$MODE" || fail=1
 python3 "$HERE/tools/crosscheck_rules.py" "$MODE" || fail=1

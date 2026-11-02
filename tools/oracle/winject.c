@@ -77,6 +77,24 @@ int main(int argc, char **argv)
 
     if (!strcmp(cmd, "wins") && argc == 2) {
         EnumWindows(enum_cb, 0);
+    } else if (!strcmp(cmd, "focus") && argc == 3) {
+        /* focus <hwnd-hex> — make the window the Wine foreground/active
+           window (Xvfb has no WM; SendInput goes to the foreground window,
+           so a stale foreground silently drops every in-world key/click). */
+        HWND h = (HWND)(DWORD_PTR)strtoul(argv[2], NULL, 16);
+        if (!h || !IsWindow(h))
+            die("bad hwnd");
+        DWORD pid = 0;
+        DWORD tid = GetWindowThreadProcessId(h, &pid);
+        DWORD cur = GetCurrentThreadId();
+        BOOL attached = (tid != cur) && AttachThreadInput(cur, tid, TRUE);
+        ShowWindow(h, SW_RESTORE);
+        SetForegroundWindow(h);
+        SetActiveWindow(h);
+        SetFocus(h);
+        if (attached)
+            AttachThreadInput(cur, tid, FALSE);
+        printf("focus %08lx pid=%lu\n", (unsigned long)(DWORD_PTR)h, (unsigned long)pid);
     } else if (!strcmp(cmd, "post") && argc == 5) {
         /* post <hwnd-hex> <x> <y> — WM_LBUTTONDOWN/UP in client coords */
         HWND h = (HWND)(DWORD_PTR)strtoul(argv[2], NULL, 16);

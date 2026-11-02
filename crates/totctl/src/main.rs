@@ -15,6 +15,7 @@ fn main() -> ExitCode {
         Some("rules") => cmd_rules(&args[2..]),
         Some("boot") => cmd_boot(&args[2..]),
         Some("tech") => cmd_tech(&args[2..]),
+        Some("run") => cmd_run(&args[2..]),
         Some("--version") | Some("-V") => {
             println!("totctl {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
@@ -26,6 +27,8 @@ fn main() -> ExitCode {
                         {prog} boot <file.sav|scn> [--rules PATH] [--turns N] [--seed S]\n\
                         \x20                        — headless boot into engine state + checksum\n\
                         {prog} tech <Rules.txt>    — advance tree + wonders (reachability run)\n\
+                        {prog} run <file.sav|scn> --turns N [--seed S] [--rules P]\n\
+                        \x20                        — deterministic N-turn headless run (per-turn checksums)\n\
                         {prog} --version"
             );
             ExitCode::from(2)
@@ -166,6 +169,90 @@ fn cmd_boot(args: &[String]) -> ExitCode {
         world.rng.draws()
     );
     println!("checksum      : {:016x}", world.checksum());
+    ExitCode::SUCCESS
+}
+
+/// Deterministic headless run (T1-9): boot, then advance N turns,
+/// printing one fingerprint line per turn. The golden suite diffs this
+/// against `docs/evidence/fallrome-50turn.txt`.
+fn cmd_run(args: &[String]) -> ExitCode {
+    let mut path: Option<&String> = None;
+    let mut turns: usize = 50;
+    let mut seed: u64 = 1;
+    let mut rules_path: Option<String> = None;
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--turns" => match it.next().and_then(|v| v.parse().ok()) {
+                Some(n) => turns = n,
+                None => {
+                    eprintln!("error: --turns needs a number");
+                    return ExitCode::from(2);
+                }
+            },
+            "--seed" => match it.next().and_then(|v| v.parse().ok()) {
+                Some(s) => seed = s,
+                None => {
+                    eprintln!("error: --seed needs a number");
+                    return ExitCode::from(2);
+                }
+            },
+            "--rules" => match it.next() {
+                Some(p) => rules_path = Some(p.clone()),
+                None => {
+                    eprintln!("error: --rules needs a path");
+                    return ExitCode::from(2);
+                }
+            },
+            _ if path.is_none() => path = Some(a),
+            _ => {
+                eprintln!("error: unexpected argument {a}");
+                return ExitCode::from(2);
+            }
+        }
+    }
+    let Some(path) = path else {
+        eprintln!("usage: totctl run <file.sav|scn> --turns N [--seed S] [--rules P]");
+        return ExitCode::from(2);
+    };
+    let bytes = match std::fs::read(path) {
+        Ok(b) => b,
+        Err(e) => {
+            eprintln!("error: read {path}: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let sav = match tot_kit::parse_sav(&bytes) {
+        Ok(s) => s,
+        Err(e) => {
+            eprintln!("error: {e}");
+            return ExitCode::from(1);
+        }
+    };
+    let rules = rules_path.or_else(|| {
+        let sib = std::path::Path::new(path).with_file_name("Rules.txt");
+        sib.exists().then(|| sib.to_string_lossy().into_owned())
+    });
+    let rules = rules.and_then(|rp| {
+        std::fs::read_to_string(&rp)
+            .ok()
+            .map(|t| tot_kit::parse_rules(&t))
+    });
+    let mut world = engine::boot(&sav, seed);
+    if let Some(r) = &rules {
+        world.start_turn(r);
+    }
+    println!("file {}", path);
+    println!("seed {seed}");
+    for t in 0..=turns {
+        println!("{t:04} {:016x}", world.checksum());
+        if t < turns {
+            world.advance_turn();
+            if let Some(r) = &rules {
+                world.start_turn(r);
+            }
+        }
+    }
     ExitCode::SUCCESS
 }
 

@@ -52,6 +52,37 @@ fn romfall_boots_headless_with_reproducible_checksum() {
 }
 
 #[test]
+fn fifty_turn_run_is_deterministic() {
+    let Some(path) = romfall() else {
+        eprintln!("skipping: CIVTOT_HOME/FallRome/ROMFALL.scn not present");
+        return;
+    };
+    let sav = tot_kit::parse_sav_file(&path).expect("ROMFALL parses");
+    let rules_path = path.with_file_name("Rules.txt");
+    let rules = std::fs::read_to_string(&rules_path).expect("scenario Rules.txt");
+    let rules = tot_kit::parse_rules(&rules);
+
+    let run = |turns: usize| {
+        let mut w = engine::boot(&sav, 1);
+        w.start_turn(&rules);
+        let mut sums = Vec::with_capacity(turns + 1);
+        for t in 0..=turns {
+            sums.push(w.checksum());
+            if t < turns {
+                w.advance_turn();
+                w.start_turn(&rules);
+            }
+        }
+        sums
+    };
+    let a = run(50);
+    let b = run(50);
+    assert_eq!(a, b, "50-turn checksum sequence must be reproducible");
+    // every turn moves the state fingerprint (no accidental freeze)
+    assert!(a.windows(2).all(|w| w[0] != w[1]), "checksums must advance");
+}
+
+#[test]
 fn totctl_boot_cli_reports_stable_checksum() {
     let Some(path) = romfall() else {
         eprintln!("skipping: CIVTOT_HOME/FallRome/ROMFALL.scn not present");

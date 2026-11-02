@@ -32,13 +32,16 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
   (moving from enemy-adjacent to enemy-adjacent tile ends movement);
   domain gating (sea↔ocean, land↔non-ocean). ROMFALL boots with 641/710
   units movable.
-- **Rig limitation found**: this post-reboot rig instance accepted no
-  in-world input at all — the game surface reports 1032×796 inside the
-  592×411 X window, and both winject SendInput and XTest clicks/keys
-  were silently discarded (launcher/dialog input still worked). The
-  column proof above therefore used the *Rules-edit + new-game panel*
-  channel, which needs no map input. Re-check the window/surface size
-  mismatch before in-world experiments on a fresh rig.
+- In-world input on the rig: winject's SendInput was being discarded
+  until a **`winject focus <hwnd>`** command (thread-attach +
+  SetForegroundWindow + SetActiveWindow + SetFocus) made the game the
+  Wine foreground window — then keys land. This is the fix for the
+  post-reboot silence; keep it in every in-world recipe (focus, then
+  key). XTest remains useless for the DirectDraw surface as documented.
+- **Movement cost confirmed live**: with Settlers at move 4 (the rules
+  edit), stepping onto **Forest** dropped the panel to **Movers 2** —
+  exactly the parsed `@TERRAIN` Forest cost (field 1 = 2). Terrain cost
+  deduction is oracle-verified end-to-end.
 
 ## T1-2 boot (2026-11-02 night): ROMFALL headless + checksum
 

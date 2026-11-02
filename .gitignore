@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 /target
 tools/oracle/xtool
+tools/oracle/winject*.exe

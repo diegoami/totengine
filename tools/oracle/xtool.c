@@ -70,6 +70,54 @@ static XImage *grab(int retries)
     return NULL;
 }
 
+/* Convert an XImage to 24-bit RGB rows, honoring 8-bit palettized roots
+ * (classic DirectDraw games run 8bpp; XGetImage then yields palette
+ * indices, which we resolve through the installed colormap). */
+static unsigned char *to_rgb24(XImage *img, unsigned long *cmap, int cmap_n,
+                               int *out_len)
+{
+    int n = img->width * img->height;
+    unsigned char *rgb = malloc(3 * n);
+    for (int i = 0; i < n; i++) {
+        unsigned long p = XGetPixel(img, i % img->width, i / img->width);
+        int r, g, b;
+        if (img->depth == 8 && img->bits_per_pixel == 8) {
+            unsigned long idx = p & 0xFF;
+            if (cmap && idx < (unsigned long)cmap_n) {
+                r = cmap[idx * 3] >> 8; g = cmap[idx * 3 + 1] >> 8;
+                b = cmap[idx * 3 + 2] >> 8;
+            } else { r = g = b = idx; }
+        } else {
+            r = (p >> 16) & 0xFF; g = (p >> 8) & 0xFF; b = p & 0xFF;
+        }
+        rgb[i * 3] = r; rgb[i * 3 + 1] = g; rgb[i * 3 + 2] = b;
+    }
+    *out_len = 3 * n;
+    return rgb;
+}
+
+static unsigned long *root_cmap(int *n)
+{
+    XWindowAttributes attr;
+    XGetWindowAttributes(d, root, &attr);
+    if (attr.depth != 8) { *n = 0; return NULL; }
+    Colormap cm;
+    int count;
+    Colormap *inst = XListInstalledColormaps(d, root, &count);
+    cm = (inst && count) ? inst[0] : attr.colormap;
+    if (inst) XFree(inst);
+    unsigned long *cmap = calloc(256 * 3, sizeof(unsigned long));
+    XColor cols[256];
+    for (int i = 0; i < 256; i++) cols[i].pixel = i;
+    XQueryColors(d, cm, cols, 256);
+    for (int i = 0; i < 256; i++) {
+        cmap[i * 3] = cols[i].red; cmap[i * 3 + 1] = cols[i].green;
+        cmap[i * 3 + 2] = cols[i].blue;
+    }
+    *n = 256;
+    return cmap;
+}
+
 int main(int argc, char **argv)
 {
     if (argc < 2) die("usage: xtool <key|click|move|clickat|shot|stats|windows> ...");
@@ -105,15 +153,11 @@ int main(int argc, char **argv)
         if (!img) die("XGetImage failed (display mode in flux?)");
         FILE *f = fopen(argv[2], "wb");
         if (!f) die("cannot open output");
+        int cn; unsigned long *cm = root_cmap(&cn); int rgblen;
+        unsigned char *rgb = to_rgb24(img, cm, cn, &rgblen);
         fprintf(f, "P6\n%d %d\n255\n", img->width, img->height);
-        for (int y = 0; y < img->height; y++)
-            for (int x = 0; x < img->width; x++) {
-                unsigned long p = XGetPixel(img, x, y);
-                unsigned char rgb[3] = {
-                    (p >> 16) & 0xFF, (p >> 8) & 0xFF, p & 0xFF
-                };
-                fwrite(rgb, 1, 3, f);
-            }
+        fwrite(rgb, 1, rgblen, f);
+        free(rgb); free(cm);
         fclose(f);
         XDestroyImage(img);
         printf("shot %dx%d -> %s\n", attr.width, attr.height, argv[2]);
@@ -124,10 +168,13 @@ int main(int argc, char **argv)
         if (!img) die("XGetImage failed (display mode in flux?)");
         double sr = 0, sg = 0, sb = 0;
         long blue = 0, dark = 0, bright = 0, total = (long)img->width * img->height;
+        int cn; unsigned long *cm = root_cmap(&cn); int rgblen;
+        unsigned char *rgb = to_rgb24(img, cm, cn, &rgblen);
+        int W = img->width;
         for (int y = 0; y < img->height; y += 4)
             for (int x = 0; x < img->width; x += 4) {
-                unsigned long p = XGetPixel(img, x, y);
-                int r = (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, b = p & 0xFF;
+                int o = (y * W + x) * 3;
+                int r = rgb[o], g = rgb[o + 1], b = rgb[o + 2];
                 sr += r; sg += g; sb += b;
                 int lum = (r + g + b) / 3;
                 if (b > 90 && b > r + 30 && b > g + 20) blue++;
@@ -138,7 +185,24 @@ int main(int argc, char **argv)
         printf("size %dx%d mean %.0f,%.0f,%.0f blue%% %.0f dark%% %.0f bright%% %.0f\n",
                img->width, img->height, sr / n, sg / n, sb / n,
                100.0 * blue / n, 100.0 * dark / n, 100.0 * bright / n);
+        free(rgb); free(cm);
         XDestroyImage(img);
+    } else if (!strcmp(cmd, "focusptr")) {
+        /* no window manager: make the server deliver keys to whatever window
+         * is under the pointer (game DirectDraw windows reject direct focus) */
+        XSync(d, False);
+        x_error_caught = 0;
+        XSetInputFocus(d, PointerRoot, RevertToPointerRoot, CurrentTime);
+        XSync(d, False);
+        printf("focus follows pointer\n");
+    } else if (!strcmp(cmd, "focus") && argc == 3) {
+        Window w = (Window)strtoul(argv[2], NULL, 0);
+        XSync(d, False);
+        x_error_caught = 0;
+        XSetInputFocus(d, w, RevertToPointerRoot, CurrentTime);
+        XSync(d, False);
+        if (x_error_caught) die("XSetInputFocus failed");
+        printf("focus set on 0x%lx\n", w);
     } else if (!strcmp(cmd, "windows")) {
         Window r, parent, *children;
         unsigned int n;

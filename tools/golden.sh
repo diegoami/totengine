@@ -166,8 +166,9 @@ sys.exit(0 if sc.get("pass") is True else 1)
   fi
 fi
 
-# Rust tot-kit vs Python probe crosscheck (#28)
+# Rust tot-kit vs Python probe crosschecks (#28 mp, T1-1 rules)
 python3 "$HERE/tools/crosscheck_mp.py" "$MODE" || fail=1
+python3 "$HERE/tools/crosscheck_rules.py" "$MODE" || fail=1
 
 if [ "$fail" = 0 ] && [ "$MODE" = check ]; then
   echo "golden: all corpus outputs match"

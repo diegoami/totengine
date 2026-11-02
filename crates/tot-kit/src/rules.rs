@@ -90,6 +90,86 @@ impl Rules {
             None => Vec::new(),
         }
     }
+
+    // ---- typed views over sections (named accessors for fields whose
+    // semantics are PROVEN; everything else stays raw) ----
+
+    /// `@UNITS` names in id order (index = Rules @UNITS row).
+    pub fn unit_names(&self) -> Vec<&str> {
+        self.section("UNITS")
+            .map(|s| s.rows.iter().map(|r| r[0].as_str()).collect())
+            .unwrap_or_default()
+    }
+
+    /// Unit domain (row field 2): 0 = land, 1 = air, 2 = sea. Proven on
+    /// FallRome's own table (issue #30: exactly the 32 domain-2 units sit
+    /// on ocean). NOTE: scenarios override @UNITS — parse the scenario's
+    /// own Rules.txt, not the global one.
+    pub fn unit_domain(&self, id: usize) -> Option<u8> {
+        self.section("UNITS")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(2))
+            .and_then(|f| f.trim().parse().ok())
+    }
+
+    /// `@GOVERNMENTS` names (row field 0; Anarchy first — the #44 lesson).
+    pub fn government_names(&self) -> Vec<&str> {
+        self.section("GOVERNMENTS")
+            .map(|s| s.rows.iter().map(|r| r[0].as_str()).collect())
+            .unwrap_or_default()
+    }
+
+    /// `@DIFFICULTY` levels, easiest first (Chieftain first).
+    pub fn difficulties(&self) -> Vec<&str> {
+        self.section("DIFFICULTY")
+            .map(|s| s.rows.iter().map(|r| r[0].as_str()).collect())
+            .unwrap_or_default()
+    }
+
+    /// `@ATTITUDES` (diplomacy stance names, best first).
+    pub fn attitudes(&self) -> Vec<&str> {
+        self.section("ATTITUDES")
+            .map(|s| s.rows.iter().map(|r| r[0].as_str()).collect())
+            .unwrap_or_default()
+    }
+
+    /// `@CARAVAN` commodity names (field 0).
+    pub fn caravan_commodities(&self) -> Vec<&str> {
+        self.section("CARAVAN")
+            .map(|s| s.rows.iter().map(|r| r[0].as_str()).collect())
+            .unwrap_or_default()
+    }
+
+    /// `@MAP_TRANSPORT_RELATIONSHIPS` pairs (map A, map B) — ToT
+    /// multi-map transport links.
+    pub fn transport_relationships(&self) -> Vec<(u8, u8)> {
+        self.section("MAP_TRANSPORT_RELATIONSHIPS")
+            .map(|s| {
+                s.rows
+                    .iter()
+                    .filter_map(|r| {
+                        Some((
+                            r.first()?.trim().parse().ok()?,
+                            r.get(1)?.trim().parse().ok()?,
+                        ))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    /// Section names in original file order.
+    pub fn section_order(&self) -> &[String] {
+        &self.order
+    }
+
+    /// Row count per section name, in file order.
+    pub fn row_counts(&self) -> Vec<(&str, usize)> {
+        self.order
+            .iter()
+            .map(|n| (n.as_str(), self.sections[n].rows.len()))
+            .collect()
+    }
 }
 
 /// Parse Rules.txt text (CRLF or LF tolerant).
@@ -170,7 +250,7 @@ mod tests {
     use super::*;
 
     /// Synthetic fixture mirroring the real structure (no game data).
-    const FIXTURE: &str = "; Rules.txt fixture\r\n; second preamble line\r\n@COSMIC\r\n3       ; Road movement multiplier\r\n2       ; food each citizen eats\r\n@TERRAIN\r\nDesert,  0, 1, a\r\nPlains,  1, 1, b\r\nOcean, 10, 1, c\r\n; an inter-row comment\r\n@UNITS\r\nSettlers,     Exp, 0,  1.,0\r\nEngineers,    nil, 0,  2.,0 ; build faster\r\n";
+    const FIXTURE: &str = "; Rules.txt fixture\r\n; second preamble line\r\n@COSMIC\r\n3       ; Road movement multiplier\r\n2       ; food each citizen eats\r\n@TERRAIN\r\nDesert,  0, 1, a\r\nPlains,  1, 1, b\r\nOcean, 10, 1, c\r\n; an inter-row comment\r\n@UNITS\r\nSettlers,     Exp, 0,  1.,0\r\nEngineers,    nil, 0,  2.,0 ; build faster\r\nTrireme,      nil, 2,  1.,0\r\n@GOVERNMENTS\r\nAnarchy,        Mr.,         Ms.\r\n@MAP_TRANSPORT_RELATIONSHIPS\r\n1,2\r\n2,3\r\n";
 
     #[test]
     fn first_data_row_is_not_eaten() {
@@ -183,6 +263,36 @@ mod tests {
         assert_eq!(units.rows[1][0], "Engineers");
         assert_eq!(units.comments[1], "build faster");
         assert_eq!(r.preamble.len(), 2);
+    }
+
+    #[test]
+    fn typed_views_read_proven_fields() {
+        let r = parse_rules(FIXTURE);
+        assert_eq!(r.unit_names(), vec!["Settlers", "Engineers", "Trireme"]);
+        assert_eq!(r.unit_domain(0), Some(0), "Settlers land");
+        assert_eq!(r.unit_domain(2), Some(2), "Trireme sea");
+        assert_eq!(r.government_names(), vec!["Anarchy"]);
+        assert_eq!(r.transport_relationships(), vec![(1u8, 2u8), (2u8, 3u8)]);
+        assert_eq!(
+            r.section_order(),
+            vec![
+                "COSMIC",
+                "TERRAIN",
+                "UNITS",
+                "GOVERNMENTS",
+                "MAP_TRANSPORT_RELATIONSHIPS"
+            ]
+        );
+        assert_eq!(
+            r.row_counts(),
+            vec![
+                ("COSMIC", 2),
+                ("TERRAIN", 3),
+                ("UNITS", 3),
+                ("GOVERNMENTS", 1),
+                ("MAP_TRANSPORT_RELATIONSHIPS", 2)
+            ]
+        );
     }
 
     #[test]

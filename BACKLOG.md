@@ -4,7 +4,8 @@ Working queue for ToTEngine. Mirrored on GitHub Issues — epics:
 [#19 Epic T0](https://github.com/diegoami/totengine/issues/19) ·
 [#20 Epic T1](https://github.com/diegoami/totengine/issues/20) ·
 [#21 Epic T2](https://github.com/diegoami/totengine/issues/21) ·
-[#22 Epic T3](https://github.com/diegoami/totengine/issues/22).
+[#22 Epic T3](https://github.com/diegoami/totengine/issues/22) ·
+[#23 Epic RG](https://github.com/diegoami/totengine/issues/23).
 Story `T0-4` is [issue #1](https://github.com/diegoami/totengine/issues/1) and so on
 sequentially through `T1-9` = #18. IDs here are the source of truth; issues are the
 working surface. Strategic context lives in
@@ -75,6 +76,26 @@ SHA. The process: [docs/milestone-review.md](docs/milestone-review.md). Suggeste
 | T1-7 | Macro events interpreter (@IF/@THEN, ~50 commands, DELAY heap, JUSTONCE) | P1 | L | H | todo | FallRome Events.txt fires identically on scripted turns |
 | T1-8 | Save writer: byte-compatible `0x32` .SAV | P1 | L | H | todo | Original (Wine) loads our save; re-save diff is field-explained |
 | T1-9 | CI milestone job: 50-turn headless FallRome run vs golden saves | P1 | M | E | todo | Nightly job green; regressions caught |
+
+## Epic RG — Regular game track (roadmap; enters after the T1 core)
+
+Playing a *regular* game — new game from scratch, random or Earth world, AI
+opponents, full campaign to a victory — needs more than the scenario engine:
+nothing in T1–T3 produces a new-game state, generates a world, or fields
+opponent AI. These stories reuse the T1 core; the new-game *UI* lands with T2.
+
+| ID | Story | Pri | Est | Diff | Status | Acceptance |
+|----|-------|-----|-----|------|--------|------------|
+| RG-1 | Game-setup state model: new-game parameters (civ/leader/difficulty, world size/land%/climate, opponent count, rules variants) + its save encoding | P2 | M | H | todo | Setup section byte-matches oracle new-game saves across variants (rig-driven) |
+| RG-2 | Starting placement: civ starts, goody huts, barbarian seeding from the game seed | P2 | M | H | todo | Same-seed oracle starts reproduce identical placement |
+| RG-3 | Random world generator (seeded; `.MP`-shaped output; original's exact algorithm unknown → our own, flagged) | P2 | L | H | todo | Statistical parity vs original maps (land%/biome spread); renders sanity-checked |
+| RG-4 | Opponent AI v1 headless: expansion, economy, research, unit handling; deterministic | P2 | L | H | todo | 50-turn autoplay stable + deterministic; plausible power curves vs oracle games |
+| RG-5 | Diplomacy model: contacts, embassies, treaties, tribute, AI stances; save encoding | P2 | M | H | todo | Diplomacy state round-trips; oracle-save contacts match |
+| RG-6 | Victory & scoring: spaceship chain, conquest, score/time; end-game state | P2 | M | H | todo | Victory conditions trigger identically on scripted oracle campaigns |
+| RG-7 | Headless campaign loop: new game → autoplay N turns → outcome; CI golden run | P2 | M | H | todo | Nightly autoplay green; determinism (same seed+build ⇒ identical saves) |
+
+ToT's four built-in campaigns (Original/Extended Original, Fantasy, Sci-Fi
+quest modes) finish in T4 on top of RG + multi-map (see plan.md §5).
 
 ## Epic T2 — Graphical classic client (planned; stories drafted on entry)
 

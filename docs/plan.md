@@ -27,7 +27,8 @@ phase ships a standalone, useful artifact — the project produces value long be
 |---|---|---|
 | **T0** | Format toolchain | `totctl` dumps/converts Rules/MP/SAV/SCN; save-diff harness works |
 | **T1** | Headless classic-scenario engine | FallRome `.scn` loads, turns resolve, macro events fire, `.sav` round-trips into the original |
-| **T2** | Graphical play (classic) | FallRome playable end-to-end with original art, sound, city screen, orders |
+| **T2** | Graphical play (classic) | FallRome playable end-to-end with original art, sound, city screen, orders; new-game setup UI (RG-1) included |
+| **RG** | Regular-game track (enters after T1 core) | New game → generated world → AI opponents → victory, headless first; see BACKLOG.md Epic RG |
 | **T3** | ToTPP layer | Lua 5.3 embedded; `0x33` saves; *Warring States* loads, its Lua runs, dialogs show |
 | **T4** | Full ToT + polish | Midgard/Sci-Fi 4-map modes, editor, packaging, performance |
 
@@ -110,8 +111,16 @@ oracle/          Wine automation: launch, key macros (xdotool), save capture
 - **Accept:** a human completes FallRome start-to-end without the original running;
   playtesters report no rule discrepancies beyond the published known-differences list.
 
-### Phase 3 — ToTPP layer (T3) · +6–12 months
-- `0x33` save variant (extended limits: 1024 cities / 4096 units from `TOTPP.ini`)
+### Phase RG — Regular game (parallel with T2; core is headless) · see BACKLOG.md Epic RG
+- Game-setup state (new-game parameters) + starting placement, oracle-diffed
+- Seeded random world generator (own algorithm, flagged — original's exact
+  generator is unknown; statistical parity targets)
+- Opponent AI v1 (expansion/economy/research), diplomacy model, victory &
+  scoring (spaceship/conquest/score)
+- **Accept:** headless new-game campaign autoplays deterministically; setup &
+  diplomacy state round-trips against oracle saves; new-game UI ships with T2.
+
+### Phase 3 — ToTPP layer (T3) · +6–12 months- `0x33` save variant (extended limits: 1024 cities / 4096 units from `TOTPP.ini`)
 - Lua host + `civ` API in slices: core objects → triggers → UI (dialogs, text,
   sound) → teleporters/mods; conformance = *Warring States* `events.lua` runs
 - `Static.spr` sprites, custom BMP resources, ToTPP feature flags honored

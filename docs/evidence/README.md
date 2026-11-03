@@ -464,6 +464,38 @@ snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
    where turn/year live. This is the oracle methodology of docs/plan.md working
    end-to-end on day one.
 
+### T1-6 the whole RNG *API* decoded from the binary (2026-11-03 night)
+
+Static decode of the four functions around VA 0x554a00 (`civ2.exe`, `objdump
+-M intel`; `.text` VMA 0x401000 / file 0x400):
+
+| VA | role | semantics |
+|---|---|---|
+| `0x554a00` | context exchange | `x ^= a; a ^= x; x ^= a` on `0x5dd53c` — i.e. store `a`, return the old value. The per-context swap primitive. |
+| `0x554a43` | **the draw** | `state = state*0x19660d + 0x3c6ef35f`; returns a `double` `state / 4294967295.0` (`fild` of the 64-bit-zero-extended state over 0xFFFFFFFF) |
+| `0x554aa0` | **`rand_int(lo, hi)`** | the only random function gameplay code calls (58 static call sites) |
+| `0x5b4f70` | float→int | truncation (the `(int)` in `rand_int`) |
+
+`rand_int(lo, hi)` in full:
+
+```text
+if lo == hi:            rnd(); return lo           # burns one draw anyway
+if hi <  lo:            swap(lo, hi)
+span = hi - lo
+return lo + trunc( (state / 4294967295.0) * (span + 0.999999) )
+```
+
+`0.999999` is a `double` constant at VA **0x5c62f0** (`e9 0b 21 e7 fd ff ef 3f`),
+read directly from `.rdata`. The range is **inclusive of `hi`**, and the
+`lo == hi` case still consumes a draw — so every call is exactly one draw,
+which is what makes draw-count parity checkable.
+
+**Shipped**: `engine::rng::GameRng::next_between(lo, hi)` implements that
+formula verbatim; `next_below(n)` is now `next_between(0, n-1)`, replacing the
+previous multiply-shift *approximation* (the doc comment said so). Tests
+restate the binary formula independently and check the degenerate-range draw
+burn. Golden `run50` fingerprints regenerated for the (now exact) mapping.
+
 ### T1-6 PRNG RUNTIME-VERIFIED (2026-11-03 night) — the original generator is in the engine
 
 - **Patch-and-prove, end to end**: writing `state = 1` into the live

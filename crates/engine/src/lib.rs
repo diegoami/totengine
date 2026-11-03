@@ -60,8 +60,7 @@ pub struct Unit {
 }
 
 /// Engine-side city: identity, coordinates and the proven economics
-/// fields (§T1-4). `size` comes from the u16 at `city_base − 13` (0 for
-/// civs whose encoding there is still open — treat 0 as unknown).
+/// fields (§T1-4). `size` is the record's u8@11.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct City {
     pub name: String,
@@ -205,8 +204,8 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
 }
 
 /// Map records to engine units and number each tile stack by walking the
-/// save's links from every head (prev = −1). Link values are game indices
-/// (record index + 1).
+/// save's links from every head (prev = −1). Link values are unit
+/// indices (= record indices since the 2026-11-03 framing fix).
 fn units_from(recs: &[UnitRecord]) -> Vec<Unit> {
     let mut units: Vec<Unit> = recs.iter().map(unit_from).collect();
     for (i, r) in recs.iter().enumerate() {
@@ -217,10 +216,10 @@ fn units_from(recs: &[UnitRecord]) -> Vec<Unit> {
         loop {
             units[cur].stack_pos = pos;
             let next = recs[cur].stack_next();
-            if next < 1 || next as usize > recs.len() || pos == u16::MAX {
+            if next < 0 || next as usize >= recs.len() || pos == u16::MAX {
                 break;
             }
-            cur = next as usize - 1;
+            cur = next as usize;
             pos += 1;
         }
     }
@@ -247,7 +246,7 @@ fn city_from(r: &CityRecord) -> City {
         name: r.name(),
         x: r.x(),
         y: r.y(),
-        size: r.size,
+        size: r.size(),
         owner: r.owner(),
         city_id: r.city_id(),
         gross_food: r.gross_food(),

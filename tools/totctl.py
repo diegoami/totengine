@@ -829,64 +829,70 @@ def walk_save(path: str) -> dict:
                         "chain_name_candidates_seen": len(best_chain),
                     }
                 else:
-                    cities = {"offset": probe, "count": n, "record_size": 92,
+                    # Record framing (evidence §T1-6 combat, 2026-11-03):
+                    # city records start 34 bytes BEFORE the name, so the
+                    # unit records fill exactly 40*N from the blob end.
+                    cbase = probe - 34
+                    cities = {"offset": cbase, "first_name_offset": probe,
+                              "count": n, "record_size": 92,
                               "size": n * 92, "chain_found": len(best_chain)}
                     names = []
                     coords = []
                     for k in range(n):
-                        rec = data[probe + 92 * k: probe + 92 * (k + 1)]
-                        nm = rec[:16].split(b"\x00")[0].decode("latin-1", "replace")
+                        rec = data[cbase + 92 * k: cbase + 92 * (k + 1)]
+                        nm = rec[34:50].split(b"\x00")[0].decode("latin-1", "replace")
                         names.append(nm)
                         coords.append({"i": k, "name": nm,
-                                       "x": struct.unpack_from("<H", rec, 58)[0],
-                                       "y": struct.unpack_from("<H", rec, 60)[0],
-                                       "tail_shorts": list(struct.unpack_from("<3H", rec, 86))})
+                                       "x": struct.unpack_from("<H", rec, 0)[0],
+                                       "y": struct.unpack_from("<H", rec, 2)[0],
+                                       "owner": rec[10], "size": rec[11],
+                                       "boxes": list(struct.unpack_from("<3H", rec, 28))})
                     cities["names"] = names[:20]
                     cities["names_total_named"] = sum(1 for x in names if x)
                     cities["coords_first_8"] = coords[:8]
-                    cities["note"] = ("name 16 B @0; x u16@58 / y u16@60 on the "
-                                      "logical grid (same space as unit coords; "
-                                      "per-file garrison/terrain support in "
-                                      "garrisons_measured / city_terrain_measured); "
-                                      "tail shorts @86-91 measured, e.g. Roma "
-                                      "(5, 5, 8) — NOT the city size: a size-like "
-                                      "short sits in the two bytes immediately "
-                                      "BEFORE each name (Roma 29 = its in-game "
-                                      "size), i.e. at the final short of the "
-                                      "preceding 92-B slot; exact field boundary "
-                                      "open")
+                    cities["note"] = ("game framing: x u16@0 / y u16@2 (logical "
+                                      "grid, same space as unit coords), owner "
+                                      "u8@10, size u8@11, food/shield box "
+                                      "u16@28/@30, name 16 B @34; per-file "
+                                      "garrison/home/terrain support in "
+                                      "garrisons_measured / homes_measured / "
+                                      "city_terrain_measured")
                     out["cities"] = cities
-                    u_end = cities["offset"]
-                    region = u_end - blob10240_end
-                    # Verified on ROMFALL (34 + 710*40 = 28434) and Va_Auto
-                    # (34 + 711*40 = 28474): a 34-byte preamble, then 40-byte unit
-                    # records. The count is not stored in the preamble (only a
-                    # state u16 at +30 differs between scenario and in-game save).
+                    u_end = cbase
+                    region = probe - blob10240_end
+                    # Gate (#49/#58): blob end -> first name = 40*N + 34
+                    # (ROMFALL 28434, Va_Auto 28474); the 34 is city 0's
+                    # head, so units are exactly 40*N.
                     unit_count, rem = divmod(region, 40)
                     units_table = []
                     owner_hist: dict[int, int] = {}
                     type_hist: dict[int, int] = {}
                     for i in range(unit_count if rem == 34 else 0):
-                        r = data[blob10240_end + 34 + 40*i: blob10240_end + 34 + 40*(i+1)]
-                        x, y = struct.unpack_from("<HH", r, 6)
-                        rec = {"i": i, "x": x, "y": y, "type": r[14],
-                               "owner": r[15], "id": struct.unpack_from("<H", r, 36)[0]}
+                        r = data[blob10240_end + 40*i: blob10240_end + 40*(i+1)]
+                        x, y = struct.unpack_from("<HH", r, 0)
+                        rec = {"i": i, "x": x, "y": y, "type": r[8],
+                               "owner": r[9], "home": r[18],
+                               "id": struct.unpack_from("<H", r, 30)[0]}
                         units_table.append(rec)
-                        owner_hist[r[15]] = owner_hist.get(r[15], 0) + 1
-                        type_hist[r[14]] = type_hist.get(r[14], 0) + 1
+                        owner_hist[r[9]] = owner_hist.get(r[9], 0) + 1
+                        type_hist[r[8]] = type_hist.get(r[8], 0) + 1
                     out["units"] = {
                         "region": [blob10240_end, u_end],
-                        "size": region,
+                        "size": u_end - blob10240_end,
                         "record_size": 40,
-                        "preamble_bytes": rem,
                         "count": unit_count if rem == 34 else None,
-                        "count_arithmetic": f"{region} = {rem} + 40 x {unit_count}",
+                        "count_arithmetic": f"{region} = 40 x {unit_count} + {rem} (city 0 head)",
                         "fields_proven": {
-                            "x_u16@6": "display-grid x (0..width-1)",
-                            "y_u16@8": "display-grid y (0..height-1)",
-                            "type_u8@14": "index into Rules.txt @UNITS",
-                            "owner_u8@15": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
-                            "id_u16@36": "per-save unit id (re-assigned on every save)",
+                            "x_u16@0": "display-grid x (0..width-1)",
+                            "y_u16@2": "display-grid y (0..height-1)",
+                            "attr_u16@6": "bit 0x2000 veteran",
+                            "type_u8@8": "index into Rules.txt @UNITS",
+                            "owner_u8@9": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
+                            "damage_u8@12": "hit points lost",
+                            "orders_u8@17": "0xff none, 2 fortified",
+                            "home_u8@18": "home city index, 0xff none",
+                            "stack_links_i16@26/@28": "prev/next unit on the tile",
+                            "id_u16@30": "per-save unit id (re-assigned on every save)",
                         },
                         "owner_histogram": dict(sorted(owner_hist.items())),
                         "type_histogram_top": dict(sorted(type_hist.items(), key=lambda kv: -kv[1])[:12]),
@@ -896,9 +902,9 @@ def walk_save(path: str) -> dict:
                                          "measured per file in "
                                          "cities.garrisons_measured / "
                                          "cities.city_terrain_measured"),
-                        "note": ("remaining bytes open: 0-5 constants(2,2,0), 12-13 "
-                                 "counters/flags, 16-19 counters (veteran?), 20-35 "
-                                 "sparse, 38-39 tail"),
+                        "note": ("game framing (evidence §T1-6 combat); "
+                                 "remaining bytes open: 4-5 z, 10 moves spent, "
+                                 "11 visibility, 13 last dir, 14-16, 19-25, 32-39"),
                     }
                     # per-file measured support for the garrison/geometry claims —
                     # issue #27: never stamp another file's verification results here
@@ -907,6 +913,13 @@ def walk_save(path: str) -> dict:
                     cities["garrisons_measured"] = (
                         f"{garrisoned}/{n} cities have a unit on their exact tile "
                         "(measured on this file)")
+                    cpos = {(c["x"], c["y"]): c["i"] for c in coords}
+                    homed = [u for u in units_table
+                             if (u["x"], u["y"]) in cpos and u["home"] != 0xFF]
+                    cities["homes_measured"] = (
+                        f"{sum(1 for u in homed if u['home'] == cpos[(u['x'], u['y'])])}"
+                        f"/{len(homed)} homed units on a city tile are homed "
+                        "there (measured on this file; the framing proof)")
                     stored_w2, stored_h2 = hdr[0] // 2, hdr[1]
                     base = pos + 2 + 7 * surface
                     on_ocean = on_land = outside = 0

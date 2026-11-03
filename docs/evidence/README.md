@@ -4,6 +4,65 @@ Artifacts produced by `tools/totctl.py` (Python reference probe) against the loc
 install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 [../feasibility.md](../feasibility.md) with measured data.
 
+#### Record framing FIXED: units and cities in the game's own framing (2026-11-03)
+
+**Supersedes every older unit/city offset in this file** (T0-6, T1-4, T1-8,
+the T1-6 "unit-record corrections"). Both walkers (`tot-kit` `sav.rs`,
+`tools/totctl.py`) framed records wrongly: unit records 6 bytes late, city
+records 34 bytes late. The region arithmetic `blob end → first name =
+40·N + 34` was always right; the 34 bytes are the **head of city record
+0**, not a unit preamble. So the units are exactly `40·N` from the blob
+end, and each city record starts 34 bytes before its name.
+
+Proof (re-derived by `crates/tot-kit/tests/framing_install.rs` and reported
+per file as `cities.homes_measured` in the walk JSONs):
+
+- **Home city.** Every homed unit standing on a city tile is homed in that
+  city: ROMFALL **349/349** in true framing, **0/342** in the old one.
+  Standard-game lab turn 44: 10/12 vs 0/10.
+- **Owner.** City u8@10 equals the owner of every unit in it (ROMFALL
+  116/116). The old "owner u16@50" (true @84) is not the owner: Roma
+  reads 3 there.
+- **Geography.** In the old framing each name carried the *next* city's
+  coordinates, which put Brundisium west of Roma. True framing gives Roma
+  (47,79), Brundisium (54,84) east-south-east, Syracusae (47,93) south.
+- **Size = u8@11.** It reads the City Status values for all 8 WRE cities
+  (15,5,11,6,12,4,11,10) **and** reads cleanly in standard games and for
+  AI civs, where the old "u16 at base−13" read 0.
+- **The Madrid "mirage" was real.** True framing puts Madrid at **(53,9)**,
+  the position the screen showed; (43,37) is Pasargadae. The T1-4 note that
+  "settled" (43,37) was the mistake (its RAM patch proved nothing either
+  way).
+
+True layouts (the classic Civ2 records shifted by two bytes):
+
+| Unit (40 B) | | City (92 B) | |
+|---|---|---|---|
+| x u16@0, y u16@2, z @4 | | x u16@0, y u16@2 | |
+| attr u16@6 (0x2000 veteran) | | owner u8@10, size u8@11, original owner u8@12 | |
+| type u8@8, owner u8@9 | | food box u16@28, shield box u16@30, u16@32 open | |
+| moves spent @10, visibility @11 | | name 16 B @34 | |
+| damage @12, last dir @13 | | net science u16@76, net taxes u16@78 | |
+| orders @17, home city @18 | | gross trade u16@80, food u8@82, shields u8@83 | |
+| stack prev/next i16@26/@28, id u16@30 | | u8@84 open (old "owner"), city id u16@86 | |
+
+Old-to-new translation: unit `old − 6` with index `old + 1`, and old
+record 0's bytes 0..5 were the previous unit's tail. City fields at old
+`@0..57` → `+34`, same record. Old `@58..91` (x/y, the boxes, "tail90") →
+`−58` **in the next city's record**, so every old per-city box value
+belonged to the following city.
+
+Consequences: the engine's unit index now equals the game's (the battle-2
+defender is `units[510]`, game unit 510). The old walker invented a fake
+last unit out of city 0's head (a "leader" at (47,79)) and dropped real unit
+0. The engine's city owners and positions were wrong for every city.
+**Open:** the T1-4 growth/box samples (Madrid, Carthage, Little Bighorn
+turn citations) were read in the old framing, i.e. off by one city. The
+growth rules still fit true-framing data (Carthage turn 13→14: size 1→2,
+box 18→2 within one record), but the per-sample citations need
+re-reading. The 0x33 (ToTPP) records were not re-checked: their unit
+layout differs (id@0, x@10) and the home test is inconclusive there (2/3).
+
 #### T1-7 events: matching and CREATEUNIT corrected against Macro.txt (2026-11-03)
 
 The game ships its own macro-language reference, `$CIVTOT_HOME/Macro.txt`.
@@ -31,9 +90,10 @@ under `FallRome/` and `Scenario/FallRome/`, has `owner=Visigoths` and 6.
 
 - `tot-kit::sav::SavEditor` — surgical `0x32` writer: validates the file
   with the same gates as the parser, then applies typed edits to proven
-  offsets: turn@668, year@670, difficulty@684, rivals@689, unit x@6/y@8/
-  type@14 (40-B records), city name@0 (16-B slot, ≤15 bytes), city
-  x@58/y@60 (92-B records). A no-edit round trip is **byte-identical**
+  offsets: turn@668, year@670, difficulty@684, rivals@689, unit x@0/y@2/
+  type@8 (40-B records), city name@34 (16-B slot, ≤15 bytes), city
+  x@0/y@2 (92-B records) — game framing, see §Record framing FIXED (the
+  offsets here were old-framing until 2026-11-03). A no-edit round trip is **byte-identical**
   on ROMFALL.scn, ROMFALL_WRE.scn and Va_Auto.SAV (env-gated test).
 - **Oracle acceptance**: a Va_Auto.SAV copy with city 0 renamed
   "Roma"→"TESTCITY" (`EDITEST2.SAV`, 8 bytes changed) was loaded by the
@@ -91,7 +151,9 @@ full 383 MB address space — `tools/oracle/ramdump.py`):
   special-id decode are still wrong; city-sum achievability is too weak
   a channel. Next: per-tile ground truth (city-screen yield labels,
   tile by tile) before more fitting.
-- **Settled by patch-and-prove (final)**: @58/@60 IS the city's true
+- **REVERSED by §Record framing FIXED**: Madrid is at (53,9); the
+  verdict below read the next city's coordinates.
+- *(superseded)* **Settled by patch-and-prove (final)**: @58/@60 IS the city's true
   map position. Patching Madrid's record x 43→44 in RAM changed nothing
   on screen (the record array is the save buffer, not the render
   source) — but patching the "live" 0x653860 field (53→54) ALSO changed
@@ -138,7 +200,7 @@ memspool daemon (`tools/oracle/stdloop.sh`), autosaves harvested per turn
 turns 4–43, zero war noise.
 
 **Growth model (7 growth events, turn-by-turn samples, 4 cities):**
-- **Food box = u16@86**; ticks by surplus (`gross_food@48 − food_per_citizen×size
+- **Food box = u16@86** (true framing: u16@28 of the *next* record — §Record framing FIXED; sample citations below are off by one city); ticks by surplus (`gross_food@48 − food_per_citizen×size
   − settler_food×settlers`) each turn.
 - **Growth capacity = (rows − 1) × (size + 1)** with `@COSMIC` rows=10 →
   **18 at size 1, 27 at size 2**. The `@COSMIC` comment
@@ -151,7 +213,7 @@ turns 4–43, zero war noise.
 - `engine::cities::{CityRules, CityEcon}` implements exactly this
   (unit tests cite each oracle sample); `CityRules::from_rules` reads the
   `@COSMIC` constants (typed accessors in tot-kit).
-- **Shield box = u16@88**: ticks by net shields (S − unit support), resets
+- **Shield box = u16@88** (true: u16@30, same caveat): ticks by net shields (S − unit support), resets
   on production completion (Carthage 35→3, 15→3, 31→12…). Production
   items themselves not located yet — open.
 - **Settlers eat** (`@COSMIC` rows 6/7) and are INVISIBLE in the save:
@@ -191,7 +253,8 @@ Proven (7/7 rows match, FallRome/Va_Auto state):
 - **u16@42 = net science**, **u16@44 = net taxes** (city-screen Net values;
   trade×rates then improvement multipliers: Roma 29T @7.0.3 → 20/9, market
   +50% → 30 tax, library → 13 sci).
-- **u16@50 = owner** (1..7 like units), **u16@52 = city id** (sequential,
+- *(superseded by §Record framing FIXED: owner is u8@10, size u8@11, all
+  offsets below +34)* **u16@50 = owner** (1..7 like units), **u16@52 = city id** (sequential,
   i+1).
 - **City size = u16 at (city_base − 13)** — duplicated byte at −14/−13 for
   WRE cities (15,5,11,6,12,4,11,10 all verified); for some AI/other-civ
@@ -606,7 +669,8 @@ all equal the oracle):
   test fires it against the real FallRome Events.txt.
 
 **Unit-record corrections that fell out of this** (these supersede the
-40-byte record notes elsewhere in this file):
+40-byte record notes elsewhere in this file; the framing itself is now
+fixed in both walkers — §Record framing FIXED, which also covers cities):
 
 - totctl/tot-kit frame each unit record **6 bytes late**. The true record
   starts at the units region start (ROMFALL 159438; the "34-byte preamble"
@@ -900,7 +964,8 @@ Controlled experiments over ROMFALL + its playable-civ variants (ERE/HUN/VIS)
      679–681 = human civ 1→6, 687; 3 civ-block bytes; 2 unit-preamble
      bytes; 22 post-city bytes). Total 1,418 + 292 + 32 = 1,742
      differing bytes.
-2. **City record (92 B): `u16@58 = x`, `u16@60 = y`** (logical grid, same
+2. *(superseded by §Record framing FIXED — x/y are u16@0/@2 of a record
+   that starts 34 B before the name)* **City record (92 B): `u16@58 = x`, `u16@60 = y`** (logical grid, same
    space as units). Tail shorts @86–91 measured, e.g. Roma (5, 5, 8) —
    **not** the city size: a size-like short sits in the two bytes
    immediately BEFORE each name (Roma 29 = its in-game size; see item 3 of

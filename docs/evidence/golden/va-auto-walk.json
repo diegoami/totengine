@@ -171,7 +171,8 @@
     "resource_seed_offset": 146916
   },
   "cities": {
-    "offset": 187992,
+    "offset": 187958,
+    "first_name_offset": 187992,
     "count": 146,
     "record_size": 92,
     "size": 13432,
@@ -203,123 +204,143 @@
       {
         "i": 0,
         "name": "TESTCITY",
+        "x": 47,
+        "y": 79,
+        "owner": 1,
+        "size": 15,
+        "boxes": [
+          5,
+          15,
+          29
+        ]
+      },
+      {
+        "i": 1,
+        "name": "Brundisium",
         "x": 54,
         "y": 84,
-        "tail_shorts": [
+        "owner": 1,
+        "size": 5,
+        "boxes": [
           7,
           7,
           8
         ]
       },
       {
-        "i": 1,
-        "name": "Brundisium",
+        "i": 2,
+        "name": "Syracusae",
         "x": 47,
         "y": 93,
-        "tail_shorts": [
+        "owner": 1,
+        "size": 11,
+        "boxes": [
           5,
           17,
           15
         ]
       },
       {
-        "i": 2,
-        "name": "Syracusae",
+        "i": 3,
+        "name": "Rhegium",
         "x": 50,
         "y": 90,
-        "tail_shorts": [
+        "owner": 1,
+        "size": 6,
+        "boxes": [
           5,
           7,
           10
         ]
       },
       {
-        "i": 3,
-        "name": "Rhegium",
+        "i": 4,
+        "name": "Ravenna",
         "x": 50,
         "y": 70,
-        "tail_shorts": [
+        "owner": 1,
+        "size": 12,
+        "boxes": [
           7,
           25,
           15
         ]
       },
       {
-        "i": 4,
-        "name": "Ravenna",
+        "i": 5,
+        "name": "Corfinium",
         "x": 51,
         "y": 77,
-        "tail_shorts": [
+        "owner": 1,
+        "size": 4,
+        "boxes": [
           7,
           9,
           7
         ]
       },
       {
-        "i": 5,
-        "name": "Corfinium",
+        "i": 6,
+        "name": "Neapolis",
         "x": 50,
         "y": 82,
-        "tail_shorts": [
+        "owner": 1,
+        "size": 11,
+        "boxes": [
           5,
           31,
           12
         ]
       },
       {
-        "i": 6,
-        "name": "Neapolis",
+        "i": 7,
+        "name": "Mediolanum",
         "x": 44,
         "y": 66,
-        "tail_shorts": [
+        "owner": 1,
+        "size": 10,
+        "boxes": [
           7,
           13,
           11
         ]
-      },
-      {
-        "i": 7,
-        "name": "Mediolanum",
-        "x": 55,
-        "y": 69,
-        "tail_shorts": [
-          5,
-          14,
-          8
-        ]
       }
     ],
-    "note": "name 16 B @0; x u16@58 / y u16@60 on the logical grid (same space as unit coords; per-file garrison/terrain support in garrisons_measured / city_terrain_measured); tail shorts @86-91 measured, e.g. Roma (5, 5, 8) \u2014 NOT the city size: a size-like short sits in the two bytes immediately BEFORE each name (Roma 29 = its in-game size), i.e. at the final short of the preceding 92-B slot; exact field boundary open",
-    "garrisons_measured": "141/146 cities have a unit on their exact tile (measured on this file)",
-    "city_terrain_measured": "145/146 cities on non-ocean terrain, 0 on ocean, 1 outside the stored grid (measured on this file)"
+    "note": "game framing: x u16@0 / y u16@2 (logical grid, same space as unit coords), owner u8@10, size u8@11, food/shield box u16@28/@30, name 16 B @34; per-file garrison/home/terrain support in garrisons_measured / homes_measured / city_terrain_measured",
+    "garrisons_measured": "143/146 cities have a unit on their exact tile (measured on this file)",
+    "homes_measured": "308/316 homed units on a city tile are homed there (measured on this file; the framing proof)",
+    "city_terrain_measured": "146/146 cities on non-ocean terrain, 0 on ocean, 0 outside the stored grid (measured on this file)"
   },
   "units": {
     "region": [
       159438,
-      187992
+      187958
     ],
-    "size": 28554,
+    "size": 28520,
     "record_size": 40,
-    "preamble_bytes": 34,
     "count": 713,
-    "count_arithmetic": "28554 = 34 + 40 x 713",
+    "count_arithmetic": "28554 = 40 x 713 + 34 (city 0 head)",
     "fields_proven": {
-      "x_u16@6": "display-grid x (0..width-1)",
-      "y_u16@8": "display-grid y (0..height-1)",
-      "type_u8@14": "index into Rules.txt @UNITS",
-      "owner_u8@15": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
-      "id_u16@36": "per-save unit id (re-assigned on every save)"
+      "x_u16@0": "display-grid x (0..width-1)",
+      "y_u16@2": "display-grid y (0..height-1)",
+      "attr_u16@6": "bit 0x2000 veteran",
+      "type_u8@8": "index into Rules.txt @UNITS",
+      "owner_u8@9": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
+      "damage_u8@12": "hit points lost",
+      "orders_u8@17": "0xff none, 2 fortified",
+      "home_u8@18": "home city index, 0xff none",
+      "stack_links_i16@26/@28": "prev/next unit on the tile",
+      "id_u16@30": "per-save unit id (re-assigned on every save)"
     },
     "owner_histogram": {
-      "0": 181,
+      "0": 182,
       "1": 156,
       "2": 30,
       "3": 47,
       "4": 52,
       "5": 32,
       "6": 147,
-      "7": 67,
-      "16": 1
+      "7": 67
     },
     "type_histogram_top": {
       "3": 86,
@@ -330,7 +351,7 @@
       "20": 53,
       "16": 36,
       "39": 34,
-      "6": 30,
+      "6": 31,
       "24": 27,
       "38": 25,
       "18": 15
@@ -338,70 +359,78 @@
     "sample_first_8": [
       {
         "i": 0,
+        "x": 65,
+        "y": 41,
+        "type": 6,
+        "owner": 0,
+        "home": 255,
+        "id": 1
+      },
+      {
+        "i": 1,
         "x": 109,
         "y": 97,
         "type": 60,
         "owner": 0,
+        "home": 255,
         "id": 2
       },
       {
-        "i": 1,
+        "i": 2,
         "x": 126,
         "y": 102,
         "type": 18,
         "owner": 0,
+        "home": 255,
         "id": 3
       },
       {
-        "i": 2,
+        "i": 3,
         "x": 123,
         "y": 89,
         "type": 18,
         "owner": 0,
+        "home": 255,
         "id": 4
       },
       {
-        "i": 3,
+        "i": 4,
         "x": 110,
         "y": 92,
         "type": 18,
         "owner": 0,
+        "home": 255,
         "id": 719
       },
       {
-        "i": 4,
+        "i": 5,
         "x": 117,
         "y": 81,
         "type": 39,
         "owner": 0,
+        "home": 255,
         "id": 6
       },
       {
-        "i": 5,
+        "i": 6,
         "x": 109,
         "y": 87,
         "type": 39,
         "owner": 0,
+        "home": 255,
         "id": 7
       },
       {
-        "i": 6,
+        "i": 7,
         "x": 114,
         "y": 92,
         "type": 18,
         "owner": 0,
+        "home": 255,
         "id": 8
-      },
-      {
-        "i": 7,
-        "x": 19,
-        "y": 19,
-        "type": 38,
-        "owner": 0,
-        "id": 9
       }
     ],
     "verification": "layout facts: docs/evidence/README.md \u00a7T0-6; the garrison support number is measured per file in cities.garrisons_measured / cities.city_terrain_measured",
-    "note": "remaining bytes open: 0-5 constants(2,2,0), 12-13 counters/flags, 16-19 counters (veteran?), 20-35 sparse, 38-39 tail"
+    "note": "game framing (evidence \u00a7T1-6 combat); remaining bytes open: 4-5 z, 10 moves spent, 11 visibility, 13 last dir, 14-16, 19-25, 32-39"
   }
 }

@@ -66,7 +66,7 @@ fn typed_edits_roundtrip_and_are_confined() {
     let allowed: Vec<usize> = {
         let mut v = vec![668, 669, 670, 671, 684, 689];
         v.extend(iterator_offsets(&before, 0)); // unit 0 slot
-        v.extend(before.city_offset..before.city_offset + 16); // city 0 name
+        v.extend(before.city_offset + 34..before.city_offset + 50); // city 0 name
         v
     };
     let diffs: Vec<usize> = (0..raw.len()).filter(|&i| raw[i] != out[i]).collect();
@@ -78,11 +78,11 @@ fn typed_edits_roundtrip_and_are_confined() {
     }
 }
 
-/// Byte offsets of unit 0's x/y slot (region start + 34 + 40*0 + 6..10)
-/// plus type/owner — the only bytes `set_unit_pos`/`set_unit_type` touch.
+/// Byte offsets of unit 0's x/y slot (region start + 40*idx + 0..4)
+/// plus type — the only bytes `set_unit_pos`/`set_unit_type` touch.
 fn iterator_offsets(sav: &tot_kit::SaveFile, idx: usize) -> Vec<usize> {
-    let base = sav.unit_region.0 + 34 + 40 * idx;
-    vec![base + 6, base + 7, base + 8, base + 9, base + 14]
+    let base = sav.unit_region.0 + 40 * idx;
+    vec![base, base + 1, base + 2, base + 3, base + 8]
 }
 
 #[test]

@@ -135,3 +135,14 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   which reads as "the key doesn't work" rather than "the turn is spent".
   Before concluding a key is broken, check whether the turn still has orders
   to give.
+- **Test record framing with a cross-record invariant, not with fields
+  inside one record.** Every field the walkers "proved" sat at a
+  consistent offset, and a 92-B record framed 34 bytes late still reads
+  plausible numbers. What exposed it was a relation *between* tables:
+  units on a city tile should be homed in that city (0/342 in the old
+  framing, 349/349 in the true one). Run such a check (home city, owner,
+  geography) whenever a record boundary comes from arithmetic alone.
+- **A "settled" screen-vs-save conflict can be settled the wrong way.** The
+  T1-4 Madrid (53,9) vs (43,37) question was closed in favour of the save
+  by a RAM patch that changed nothing on screen. A null result is not a
+  proof; the screen was right.

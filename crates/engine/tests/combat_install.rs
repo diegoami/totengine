@@ -52,9 +52,9 @@ fn oracle_battle_2_through_move_unit() {
     assert!(w.units[legion].veteran);
     let horsemen = find(&w, 22, 30, 0);
     assert_eq!(horsemen.len(), 2, "two B. Horsemen at (22,30)");
-    // The save's stack list is 689 -> 510 (game indices); the original
-    // picked 510 (the later one) — engine index = game index - 1.
-    let expected_defender = w.units[509].clone();
+    // The save's stack list is 689 -> 510 (game indices = engine
+    // indices); the original picked 510 (the later one).
+    let expected_defender = w.units[510].clone();
     assert_eq!((expected_defender.x, expected_defender.y), (22, 30));
 
     w.combat_rng = CrtRand::new(0x3a69_6ba7);

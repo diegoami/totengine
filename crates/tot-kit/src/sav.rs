@@ -24,9 +24,10 @@
 //! | 29728+172+14N | 16 | map header, 8 × i16 (see [`MapHeader`]) |
 //!
 //! The map blocks follow the header, then a `2*hdr[5]*hdr[6]` blob and a
-//! 10240-byte blob; units (34-byte preamble + N × 40 B) and cities
-//! (N × 92 B) are located after that by the name-chain scan with the
-//! anti-fabrication arithmetic gate (issues #49/#58).
+//! 10240-byte blob; units (N × 40 B) and cities (M × 92 B, name at
+//! +34, so blob end → first name = 40·N + 34) are located after that by
+//! the name-chain scan with the anti-fabrication arithmetic gate (issues
+//! #49/#58).
 
 use std::fmt;
 
@@ -194,10 +195,16 @@ impl MapBlock {
     }
 }
 
-/// A 40-byte unit record. Proven fields (§T0-6): x u16@6 / y u16@8
-/// (logical grid), type u8@14 (Rules.txt @UNITS index), owner u8@15
-/// (0 = barbarians, 1..7 = players, bit 0x10 = leader unit), id u16@36
-/// (re-assigned on every save). Remaining bytes open.
+/// A 40-byte unit record in the **game's own framing** (evidence §T1-6
+/// combat, "record framing"): record `i` is the game's unit index `i` (the
+/// active-unit field @674 and the stack links use these indices). Until
+/// 2026-11-03 this crate framed records 6 bytes late (old offsets were
+/// these plus 6, the index was the game index − 1, and the last "record"
+/// was the first city's 34-byte head). Fields: x u16@0 / y u16@2 (logical grid), z @4, attr
+/// u16@6, type u8@8 (Rules @UNITS index), owner u8@9 (0 = barbarians,
+/// 1..7 = players, bit 0x10 = leader unit), moves spent @10, visibility
+/// @11, damage @12, last direction @13, orders @17, home city @18, stack
+/// links i16@26/@28, id u16@30 (re-assigned on every save).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnitRecord {
     pub raw: [u8; 40],
@@ -205,143 +212,147 @@ pub struct UnitRecord {
 
 impl UnitRecord {
     pub fn x(&self) -> u16 {
-        u16::from_le_bytes([self.raw[6], self.raw[7]])
+        u16::from_le_bytes([self.raw[0], self.raw[1]])
     }
     pub fn y(&self) -> u16 {
-        u16::from_le_bytes([self.raw[8], self.raw[9]])
+        u16::from_le_bytes([self.raw[2], self.raw[3]])
     }
     pub fn type_id(&self) -> u8 {
-        self.raw[14]
+        self.raw[8]
     }
     pub fn owner(&self) -> u8 {
-        self.raw[15]
+        self.raw[9]
     }
     /// Leader-unit flag (bit 0x10 of owner — e.g. Pope Leo I in ROMFALL).
     pub fn is_leader(&self) -> bool {
-        self.raw[15] & 0x10 != 0
+        self.raw[9] & 0x10 != 0
     }
     pub fn id(&self) -> u16 {
-        u16::from_le_bytes([self.raw[36], self.raw[37]])
+        u16::from_le_bytes([self.raw[30], self.raw[31]])
     }
-    /// Attribute word u16@12 (the game's own record +6 — this struct's
-    /// framing starts 6 bytes into the game's record, evidence §T1-6
-    /// combat): bit `0x2000` = veteran (read by the attack/defence
-    /// strength functions, set by promotion; oracle battle 6), bit
-    /// `0x0100` set on fortified/sentried units.
+    /// Attribute word u16@6: bit `0x2000` = veteran (read by the
+    /// attack/defence strength functions, set by promotion; oracle battle
+    /// 6), bit `0x0100` set on fortified/sentried units.
     pub fn attr(&self) -> u16 {
-        u16::from_le_bytes([self.raw[12], self.raw[13]])
+        u16::from_le_bytes([self.raw[6], self.raw[7]])
     }
     pub fn is_veteran(&self) -> bool {
         self.attr() & 0x2000 != 0
     }
-    /// Movement spent this turn, u8@16, in units of the game's one-move
+    /// Movement spent this turn, u8@10, in units of the game's one-move
     /// byte (15 in FallRome; panel "Moves: 0 12/15" for 3 spent).
     pub fn moves_spent(&self) -> u8 {
-        self.raw[16]
+        self.raw[10]
     }
-    /// Damage taken (hit points lost; HP = Rules `h` × 10), u8@18 —
+    /// Damage taken (hit points lost; HP = Rules `h` × 10), u8@12 —
     /// oracle battles: 0→5, 1→4, and 10 on the killed unit.
     pub fn damage(&self) -> u8 {
-        self.raw[18]
+        self.raw[12]
     }
-    /// Orders u8@23: 0xff none, 1 fortifying, 2 fortified (2 makes the
+    /// Orders u8@17: 0xff none, 1 fortifying, 2 fortified (2 makes the
     /// defence ×1.5 — oracle battle 5).
     pub fn orders(&self) -> u8 {
-        self.raw[23]
+        self.raw[17]
     }
-    /// Tile-stack links i16@32 / i16@34 (game record +0x1a / +0x1c): the
-    /// previous / next unit on the same tile, as GAME indices (= this
-    /// crate's index + 1), −1 = none. The game walks them to pick a
-    /// defender (VA 0x56909a / 0x568fdf); ROMFALL (22,30): 689 → 510,
-    /// and 510 defended first — the last unit in list order wins ties.
+    /// Home city u8@18: index into the city grid, 0xff = none. Every
+    /// homed unit standing on a city tile in ROMFALL (349/349) is homed
+    /// there — the check that fixed the record framing.
+    pub fn home(&self) -> u8 {
+        self.raw[18]
+    }
+    /// Tile-stack links i16@26 / i16@28 (game record +0x1a / +0x1c): the
+    /// previous / next unit on the same tile, as unit indices, −1 = none.
+    /// The game walks them to pick a defender (VA 0x56909a / 0x568fdf);
+    /// ROMFALL (22,30): 689 → 510, and 510 defended first — the last unit
+    /// in list order wins ties.
     pub fn stack_prev(&self) -> i16 {
-        i16::from_le_bytes([self.raw[32], self.raw[33]])
+        i16::from_le_bytes([self.raw[26], self.raw[27]])
     }
     pub fn stack_next(&self) -> i16 {
-        i16::from_le_bytes([self.raw[34], self.raw[35]])
+        i16::from_le_bytes([self.raw[28], self.raw[29]])
     }
 }
 
-/// A 92-byte city record located by the name-chain scan. Proven fields
-/// (oracle-verified against the game's City Status report, F1 — evidence
-/// §T1-4): name 16 B @0, x u16@58 / y u16@60 (logical grid), owner u16@50,
-/// city id u16@52 (sequential), net science u16@42, net taxes u16@44,
-/// gross trade u16@46, gross food u8@48, gross shields u8@49. The dynamic
-/// shorts u16@86/@88 are the food/shield boxes (AI-city evolution,
-/// standard game; see evidence), u16@90 is size-correlated but unresolved.
-/// City size is NOT inside the record: it lives in the two bytes at
-/// `city_base − 13` (i.e. in the previous slot / the interlude) — see
-/// [`SaveFile::city_size`].
+/// A 92-byte city record in the **game's own framing**: it starts 34 bytes
+/// before the name (evidence §T1-6 combat, "record framing"; until
+/// 2026-11-03 this crate framed it at the name, so its x/y and boxes were
+/// the NEXT city's). The layout is the classic Civ2 city record shifted by
+/// two bytes: x u16@0 / y u16@2 (logical grid), owner u8@10, size u8@11,
+/// original owner u8@12, food box u16@28, shield box u16@30, name 16 B
+/// @34, net science u16@76, net taxes u16@78, gross trade u16@80, gross
+/// food u8@82, gross shields u8@83, city id u16@86. Proof: units standing
+/// on a city tile are homed there 349/349 (ROMFALL) and their owner equals
+/// u8@10 116/116; sizes @11 equal the City Status report.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CityRecord {
     pub raw: [u8; 92],
-    /// City size, read from the u16 at `city_base − 13` (inside the
-    /// previous slot / the interlude before the grid) at parse time.
-    /// Verified 8/8 against the City Status report in FallRome; the
-    /// encoding for some non-WRE civs and standard-game cities read 0 —
-    /// treat 0 as "unknown" there (evidence §T1-4).
-    pub size: u16,
 }
 
 impl CityRecord {
     pub fn name(&self) -> String {
-        let end = self.raw[..16].iter().position(|&b| b == 0).unwrap_or(16);
-        String::from_utf8_lossy(&self.raw[..end]).into_owned()
+        let n = &self.raw[34..50];
+        let end = n.iter().position(|&b| b == 0).unwrap_or(16);
+        String::from_utf8_lossy(&n[..end]).into_owned()
     }
     pub fn x(&self) -> u16 {
-        u16::from_le_bytes([self.raw[58], self.raw[59]])
+        u16::from_le_bytes([self.raw[0], self.raw[1]])
     }
     pub fn y(&self) -> u16 {
-        u16::from_le_bytes([self.raw[60], self.raw[61]])
+        u16::from_le_bytes([self.raw[2], self.raw[3]])
     }
-    /// Gross food output — the City Status report's Food column (u8@48).
+    /// City size u8@11 (FallRome WRE 15,5,11,6,12,4,11,10 = City Status;
+    /// also reads clean in standard games, where the old framing read 0).
+    pub fn size(&self) -> u16 {
+        self.raw[11] as u16
+    }
+    /// Gross food output — the City Status report's Food column (u8@82).
     pub fn gross_food(&self) -> u8 {
-        self.raw[48]
+        self.raw[82]
     }
-    /// Gross shield output — the City Status Shields column (u8@49).
+    /// Gross shield output — the City Status Shields column (u8@83).
     pub fn gross_shields(&self) -> u8 {
-        self.raw[49]
+        self.raw[83]
     }
-    /// Gross trade arrows — the City Status Trade column (u16@46).
+    /// Gross trade arrows — the City Status Trade column (u16@80).
     pub fn gross_trade(&self) -> u16 {
-        u16::from_le_bytes([self.raw[46], self.raw[47]])
+        u16::from_le_bytes([self.raw[80], self.raw[81]])
     }
-    /// Net science after the civ's rate split and library bonuses (u16@42).
+    /// Net science after the civ's rate split and library bonuses (u16@76).
     pub fn net_science(&self) -> u16 {
-        u16::from_le_bytes([self.raw[42], self.raw[43]])
+        u16::from_le_bytes([self.raw[76], self.raw[77]])
     }
-    /// Net taxes after the rate split and marketplace bonuses (u16@44).
+    /// Net taxes after the rate split and marketplace bonuses (u16@78).
     pub fn net_taxes(&self) -> u16 {
-        u16::from_le_bytes([self.raw[44], self.raw[45]])
+        u16::from_le_bytes([self.raw[78], self.raw[79]])
     }
-    /// Owner civ (u16@50). FallRome scenario: 1..7 = civs (0 = barbarians).
-    /// Standard-game encoding unverified (all observed values were 0).
+    /// Owner civ u8@10 (0 = barbarians, 1..7). Equals the owner of every
+    /// unit standing in the city (ROMFALL 116/116). The old "owner u16@50"
+    /// (now @84) is NOT the owner: Roma reads 3 there.
     pub fn owner(&self) -> u16 {
-        u16::from_le_bytes([self.raw[50], self.raw[51]])
+        self.raw[10] as u16
     }
-    /// Sequential city id (u16@52; i+1 in every file examined).
+    /// Original owner u8@12 (equals @10 for 125/146 ROMFALL cities).
+    pub fn original_owner(&self) -> u8 {
+        self.raw[12]
+    }
+    /// Sequential city id (u16@86).
     pub fn city_id(&self) -> u16 {
-        u16::from_le_bytes([self.raw[52], self.raw[53]])
-    }
-    /// Food storage box (u16@86): ticks by food surplus each turn,
-    /// consumed by growth (evidence §T1-4, standard-game AI cities).
-    pub fn food_box(&self) -> u16 {
         u16::from_le_bytes([self.raw[86], self.raw[87]])
     }
-    /// Shield/production box (u16@88): ticks by net shields, reset on
+    /// Food storage box (u16@28): ticks by food surplus each turn,
+    /// consumed by growth (evidence §T1-4; the per-city sample citations
+    /// predate the framing fix, see there).
+    pub fn food_box(&self) -> u16 {
+        u16::from_le_bytes([self.raw[28], self.raw[29]])
+    }
+    /// Shield/production box (u16@30): ticks by net shields, reset on
     /// production completion.
     pub fn shield_box(&self) -> u16 {
-        u16::from_le_bytes([self.raw[88], self.raw[89]])
+        u16::from_le_bytes([self.raw[30], self.raw[31]])
     }
-    /// Size-correlated short (u16@90): size+2 fits most observations but
-    /// Babylon breaks it — semantics open, carried for cross-checking.
-    pub fn tail90(&self) -> u16 {
-        u16::from_le_bytes([self.raw[90], self.raw[91]])
-    }
-    /// Size-like short measured just before the name — superseded by
-    /// [`SaveFile::city_size`], kept for compatibility.
-    pub fn size_hint(&self) -> u16 {
-        u16::from_le_bytes([self.raw[90], self.raw[91]])
+    /// u16@32 (the old "tail90"): semantics open.
+    pub fn field32(&self) -> u16 {
+        u16::from_le_bytes([self.raw[32], self.raw[33]])
     }
 }
 
@@ -435,9 +446,10 @@ pub struct SaveFile {
     pub maps: Vec<MapBlock>,
     pub units: Vec<UnitRecord>,
     pub cities: Vec<CityRecord>,
-    /// Byte range of the unit region (34 + 40*N), for diff tooling.
+    /// Byte range of the unit records (40*N; ends where city record 0
+    /// starts), for diff tooling.
     pub unit_region: (usize, usize),
-    /// Offset of the city grid.
+    /// Offset of city record 0 (its name sits at +34).
     pub city_offset: usize,
 }
 
@@ -574,19 +586,22 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         // length only locates the grid.
         return Err(SavError::NoCityChain);
     }
-    let city_offset = best_chain[0];
-    let n_cities = (best_chain.last().unwrap() - city_offset) / 92 + 1;
+    let first_name = best_chain[0];
+    let n_cities = (best_chain.last().unwrap() - first_name) / 92 + 1;
 
-    // units: the region between the 10240 blob and the city grid must be
-    // 34 + 40*N (proven on ROMFALL/Va_Auto; #49/#58 gate)
-    let region = city_offset - blob10240_end;
+    // units: the region between the 10240 blob and the first city NAME
+    // must be 40*N + 34 (proven on ROMFALL/Va_Auto; #49/#58 gate). The
+    // 34 is the head of city record 0 (names sit at +34 of each record),
+    // so the unit records are exactly 40*N from the blob end.
+    let region = first_name - blob10240_end;
     let (unit_count, rem) = (region / 40, region % 40);
     if rem != 34 {
         return Err(SavError::UnitRegionArithmetic { region, rem });
     }
     let mut units = Vec::with_capacity(unit_count);
+    let city_offset = blob10240_end + 40 * unit_count;
     for u in 0..unit_count {
-        let start = blob10240_end + 34 + 40 * u;
+        let start = blob10240_end + 40 * u;
         let mut raw = [0u8; 40];
         raw.copy_from_slice(
             data.get(start..start + 40)
@@ -602,13 +617,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
             data.get(start..start + 92)
                 .ok_or(SavError::Truncated("city record"))?,
         );
-        // size: u16 at city_base − 13 (may reach into the interlude)
-        let sz = if start >= 13 {
-            u16::from_le_bytes([data[start - 13], data[start - 12]])
-        } else {
-            0
-        };
-        cities.push(CityRecord { raw, size: sz });
+        cities.push(CityRecord { raw });
     }
 
     Ok(SaveFile {
@@ -654,8 +663,9 @@ pub const OFF_YEAR: usize = OFF_GAME + 2;
 #[derive(Debug, Clone)]
 pub struct SavEditor {
     buf: Vec<u8>,
-    /// first byte of unit record 0 (region start + 34-byte preamble)
+    /// first byte of unit record 0
     unit_base: usize,
+    /// first byte of city record 0 (name at +34)
     city_base: usize,
     n_units: usize,
     n_cities: usize,
@@ -668,7 +678,7 @@ impl SavEditor {
         let sav = parse_sav(raw)?;
         Ok(SavEditor {
             buf: raw.to_vec(),
-            unit_base: sav.unit_region.0 + 34,
+            unit_base: sav.unit_region.0,
             city_base: sav.city_offset,
             n_units: sav.units.len(),
             n_cities: sav.cities.len(),
@@ -693,14 +703,14 @@ impl SavEditor {
         self.buf[689] = rivals;
     }
 
-    /// Move a unit on the logical grid (x u16@6, y u16@8 of its record).
+    /// Move a unit on the logical grid (x u16@0, y u16@2 of its record).
     pub fn set_unit_pos(&mut self, idx: usize, x: u16, y: u16) -> Result<(), SavError> {
         if idx >= self.n_units {
             return Err(SavError::BadEdit("unit index out of range"));
         }
         let base = self.unit_base + 40 * idx;
-        self.buf[base + 6..base + 8].copy_from_slice(&x.to_le_bytes());
-        self.buf[base + 8..base + 10].copy_from_slice(&y.to_le_bytes());
+        self.buf[base..base + 2].copy_from_slice(&x.to_le_bytes());
+        self.buf[base + 2..base + 4].copy_from_slice(&y.to_le_bytes());
         Ok(())
     }
 
@@ -709,7 +719,7 @@ impl SavEditor {
         if idx >= self.n_units {
             return Err(SavError::BadEdit("unit index out of range"));
         }
-        self.buf[self.unit_base + 40 * idx + 14] = type_id;
+        self.buf[self.unit_base + 40 * idx + 8] = type_id;
         Ok(())
     }
 
@@ -722,7 +732,7 @@ impl SavEditor {
         if bytes.len() > 15 {
             return Err(SavError::BadEdit("city name longer than 15 bytes"));
         }
-        let base = self.city_base + 92 * idx;
+        let base = self.city_base + 92 * idx + 34;
         for b in &mut self.buf[base..base + 16] {
             *b = 0;
         }
@@ -730,14 +740,14 @@ impl SavEditor {
         Ok(())
     }
 
-    /// Move a city (x u16@58, y u16@60 of its record).
+    /// Move a city (x u16@0, y u16@2 of its record).
     pub fn set_city_pos(&mut self, idx: usize, x: u16, y: u16) -> Result<(), SavError> {
         if idx >= self.n_cities {
             return Err(SavError::BadEdit("city index out of range"));
         }
         let base = self.city_base + 92 * idx;
-        self.buf[base + 58..base + 60].copy_from_slice(&x.to_le_bytes());
-        self.buf[base + 60..base + 62].copy_from_slice(&y.to_le_bytes());
+        self.buf[base..base + 2].copy_from_slice(&x.to_le_bytes());
+        self.buf[base + 2..base + 4].copy_from_slice(&y.to_le_bytes());
         Ok(())
     }
 
@@ -813,26 +823,25 @@ mod tests {
             out.extend_from_slice(&f);
         }
         out.extend(std::iter::repeat_n(0u8, 10240)); // blob 10240
-                                                     // units: 34-byte preamble + 2 × 40 B
-        out.extend(std::iter::repeat_n(0u8, 34));
+                                                     // units: 2 × 40 B
         let unit_specs: [(u16, u16, u8, u8); 2] = [(3, 4, 0, 1), (5, 6, 1, 2)];
         for (i, &(x, y, typ, owner)) in unit_specs.iter().enumerate() {
             let mut r = [0u8; 40];
-            r[6..8].copy_from_slice(&x.to_le_bytes());
-            r[8..10].copy_from_slice(&y.to_le_bytes());
-            r[14] = typ;
-            r[15] = owner;
-            r[36..38].copy_from_slice(&(i as u16 + 1).to_le_bytes());
+            r[0..2].copy_from_slice(&x.to_le_bytes());
+            r[2..4].copy_from_slice(&y.to_le_bytes());
+            r[8] = typ;
+            r[9] = owner;
+            r[30..32].copy_from_slice(&(i as u16 + 1).to_le_bytes());
             out.extend_from_slice(&r);
         }
-        // city grid: 8 × 92 with names at +0, NUL padding to +16
+        // city grid: 8 × 92 with names at +34, NUL padding to +50
         for i in 0..n_cities {
             let mut r = [0u8; 92];
             let name = format!("City{i}");
-            r[..name.len()].copy_from_slice(name.as_bytes());
-            r[58..60].copy_from_slice(&((i + 1) as u16).to_le_bytes());
-            r[60..62].copy_from_slice(&((i + 2) as u16).to_le_bytes());
-            r[90..92].copy_from_slice(&((i + 3) as u16).to_le_bytes());
+            r[34..34 + name.len()].copy_from_slice(name.as_bytes());
+            r[0..2].copy_from_slice(&((i + 1) as u16).to_le_bytes());
+            r[2..4].copy_from_slice(&((i + 2) as u16).to_le_bytes());
+            r[32..34].copy_from_slice(&((i + 3) as u16).to_le_bytes());
             out.extend_from_slice(&r);
         }
         out

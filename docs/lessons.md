@@ -105,6 +105,24 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
 - ToTPP needs high color: Xvfb must be `-screen 0 1024x768x24`.
 - ToT classic (`civ2.bak`) cannot run headless (CD-audio check); the ToTPP
   exe's NoCD patch is the only practical oracle exe.
+- **Drive units through RAM, not the map** (`tools/oracle/unitram.py`). A
+  single key press with a `.data` diff before and after finds any UI global
+  in minutes (cursor, view struct, active unit). Navigation was never the
+  real blocker for T1-6.
+- **When a known generator slot does not move, hunt the generator, not the
+  formula.** Snapshot `.data` + heap around the action and test every u32
+  for `after = step^n(before)` under each candidate LCG (NR, MSVC
+  214013/2531011, Borland 22695477). Static call-site surveys of one RNG
+  function miss a second generator entirely; that cost T1-6 a full
+  session.
+- **ToTPP patches `.text` immediates at load time.** For relocated tables
+  (units, unit types), disassemble the *live* `.text` read from the
+  process, not the exe file. Over 35k bytes differ.
+- **Long-running functions can be read live.** The combat function's
+  stack frame persists through the attack animation (over 1 s). Polling
+  the stack for a signature of known locals (x/y of both units) recovers
+  intermediate values (strengths, rolls) that no save or post-hoc
+  snapshot holds.
 - **Do not build a vision-click navigator for the map.** Four calibration
   clicks plus arrow-key runs proved there is no usable linear pixel→tile map
   in this build (the view origin is not where the click re-centres). The

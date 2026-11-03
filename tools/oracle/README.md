@@ -20,9 +20,25 @@ Headless Wine + Xvfb harness that drives the original game and harvests saves.
 | `drain_dialogs.sh` | Dismiss ANY visible titled window not on the allowlist (Defense/Domestic advisors, Civ Tutorial, Game-saved toasts, emissary spam all block turn end AND Ctrl+S). |
 | `saveturn.sh` / `cityloop.sh` | Ctrl+S save + turn-advance with turn-counter verification. CAUTION: the save dialog remembers the last-used folder (may be FallRome!) and name collisions stack overwrite prompts that wedge the game — prefer autosave harvesting. |
 | `lab_std.sh` | Fresh standard game under the memspool daemon (wizard flow from newgame.sh, RAM access for snapshots). |
-| `rngslot.py` | `get` / `set <v>` the live RNG state at VA `0x5dd53c` (memspool-backed). Seeding it to 1 and reading `0x0438e694` later is the T1-6 runtime proof; use it to force a known roll sequence before an action. |
+| `rngslot.py` | `get` / `set <v>` the live RNG state at VA `0x5dd53c` (memspool-backed). Seeding it to 1 and reading `0x0438e694` later is the T1-6 runtime proof. **`--crt`** addresses the MSVC `rand()` state at `0x5e2590` instead. **Combat rolls come from that one**, so seed `--crt` to force a known battle. |
+| `unitram.py` | RAM-level unit driver: `bases`, `unit <idx>`, `near x y [r]`, `state` (cursor/active/both RNGs), `ready`/`select <idx>` (make a unit active without clicking), `frame ax ay dx dy` (poll live combat A/D/rolls). Bases are read from the live `.text` immediates (ToTPP relocates the tables). |
 
 ## Navigation: what works and what does not (2026-11-03)
+
+**Update (late night): units are driven through RAM, no map navigation
+needed.** `unitram.py` (table above) reads the live unit array, cursor,
+active unit and both RNG slots, and `select <idx>` makes any unit active.
+It clears its orders, the fortified attr bit `0x0100` and moves spent, then
+presses `W` until the game's active-unit field shows it. After that a
+numpad key (winject VK `0x61..0x69`) moves or attacks in a known direction
+(NE=9, SE=3, N=8, ...). `unitram.py frame` polls the combat function's stack
+frame during the attack animation (A, D, firepower, rolls). Writing the
+active-unit field yourself does **not** select a unit; the game keeps its
+own copy and only writes this field out. The view struct is at `0x61fb34`
+(evidence §T1-6 combat) if you ever do need pixels.
+
+The 2026-11-03 notes below still describe the click/keyboard behaviour
+correctly:
 
 Getting the cursor to a *known map tile* is the rig's weakest point. Measured facts:
 

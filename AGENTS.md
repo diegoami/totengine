@@ -56,8 +56,12 @@ python3 tools/totctl.py save $CIVTOT_HOME/FallRome/ROMFALL.scn -o /tmp/walk.json
 v0.1.0 (Tier 0) is released. v0.2.0 "headless game loop" is in progress:
 T1-1/2/3/5/8/9 and RG-1 are done. T1-6's randomness half is **done**
 (the original LCG and its `rand_int` are decoded, runtime-verified and
-shipped in `engine::rng`); its combat-round half is open, and it is the
-blocker for RG-2 and for T1-7's UNITKILLED acceptance. T1-4 (cities) and
+shipped in `engine::rng`). Its combat-round half is decoded and shipped
+in `engine::combat`: rolls come from a *second* generator (the MSVC CRT
+`rand()`), and four oracle battles are bit-exact. Open: defence-strength
+modifiers (ToTPP hooks), then turn-loop wiring for T1-7's UNITKILLED.
+Units are driven in the oracle through RAM (`tools/oracle/unitram.py`),
+not by map navigation. T1-4 (cities) and
 T1-7 (events) are partially landed. `BACKLOG.md` is the live queue,
 `docs/evidence/README.md` carries every proven finding (and, for T1-6,
 an explicit list of what has been ruled out), and `docs/lessons.md` the

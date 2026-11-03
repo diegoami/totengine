@@ -1,0 +1,61 @@
+{
+  "what": "T1-6 combat: four battles observed in the live original (ToTPP civ2.exe under the memspool rig), FallRome scenario game, Dec 429, WRE (civ 1) units attacking barbarian B. Horsemen. All values are derived numbers read from RAM; no game assets.",
+  "date": "2026-11-03",
+  "replayed_by": "crates/engine/src/combat.rs tests oracle_battle_1..4",
+  "generator": {
+    "function": "MSVC CRT rand() at VA 0x5b11d0 (srand 0x5b11b0)",
+    "state_va": "0x5e2590",
+    "recurrence": "x = x*214013 + 2531011 mod 2^32; return (x >> 16) & 0x7fff",
+    "note": "NOT the rand_int LCG at 0x5dd53c - that slot stayed at the seeded value 0x1 through every battle"
+  },
+  "round_loop_va": "0x543b3d..0x543c43 inside combat function 0x541425(attacker, dir, real)",
+  "strength_locals": {"A": "[ebp-0xb0]", "D": "[ebp-0x60]", "fpA": "[ebp-0x7c]", "fpD": "[ebp-0x30]", "reroll": "[ebp-0xc8]"},
+  "battles": [
+    {
+      "n": 1,
+      "attacker": {"game_idx": 57, "type": "WRE Roman Inf. (2a 2d 1h 1f)", "veteran": false, "tile": [22, 28], "damage_before": 0},
+      "defender": {"game_idx": 509, "type": "B. Horsemen (5a 3d 1h 1f)", "veteran": true, "tile": [23, 29]},
+      "direction": "SE (numpad 3)",
+      "A": 32, "D": 54, "A_source": "attack_strength(2,0)=16, x2 (wonder 6 vs barbarian defender)", "D_source": "back-solved (unique among candidates)",
+      "crt_before": "0x3a696ba7 minus 31 draws (back-solved; pre-state not captured)",
+      "crt_after": "0x3a696ba7",
+      "observed": {"attacker_damage": 10, "defender_damage": 5, "attacker_record": "dead: x/y/z=-200, id=0, moves spent 15"},
+      "replay": {"rounds": 15, "draws": 31, "match": true}
+    },
+    {
+      "n": 2,
+      "attacker": {"game_idx": 523, "type": "WRE Legion (4a 2d 1h 1f)", "veteran": true, "tile": [21, 31], "damage_before": 0},
+      "defender": {"game_idx": 510, "type": "B. Horsemen", "veteran": true, "tile": [22, 30]},
+      "direction": "NE (numpad 9)",
+      "A": 96, "D": 54,
+      "crt_before": "0x3a696ba7", "crt_after": "0xa925748c",
+      "observed": {"attacker_damage": 1, "defender_damage": 10, "defender_record": "dead: x/y/z=-100", "stackmate_689": "survived (no stack kill)"},
+      "replay": {"rounds": 11, "draws": 23, "match": true}
+    },
+    {
+      "n": 3,
+      "attacker": {"game_idx": 523, "veteran": true, "damage_before": 1},
+      "defender": {"game_idx": 689, "tile": [22, 30]},
+      "direction": "NE",
+      "A": 96, "D": 54, "A_D_source": "read live from the combat stack frame (ebp 0x12e7d8) during the animation",
+      "crt_before": "0xa925748c", "crt_after": "0xb87662c9",
+      "polled_rolls": [[54, 13], [73, 45]],
+      "observed": {"attacker_damage": 4, "defender_damage": 10},
+      "replay": {"rounds": 13, "draws": 27, "polled_rolls_at_rounds": [6, 13], "match": true}
+    },
+    {
+      "n": 4,
+      "kind": "PREDICTIVE: CRT seeded by us before the attack",
+      "attacker": {"game_idx": 523, "veteran": true, "damage_before": 4},
+      "defender": {"game_idx": 506, "tile": [21, 29]},
+      "direction": "N (numpad 8), combat arg dir=7",
+      "A": 96, "D": 54,
+      "crt_before": "0x12345678 (written)", "crt_after": "0x65e81e53",
+      "polled_rolls": [[0, 4], [22, 27], [67, 21]],
+      "observed": {"attacker_damage": 6, "defender_damage": 10},
+      "replay": {"rounds": 12, "draws": 25, "polled_rolls_at_rounds": [3, 7], "match": true},
+      "note": "polled (0,4) is the frame's pre-first-round content, not a roll"
+    }
+  ],
+  "trailing_draw": "every battle consumes exactly one rand() after the last round (2 x rounds + 1); purpose not decoded - both winners in battles 2-4 and the winner in battle 1 were already veterans"
+}

@@ -465,7 +465,100 @@ snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
    where turn/year live. This is the oracle methodology of docs/plan.md working
    end-to-end on day one.
 
-### T1-6 combat: still OPEN, and what has been ruled out (2026-11-03 night)
+### T1-6 combat round formula DECODED and oracle-exact (2026-11-03, late night)
+
+Artifact: [`t1-6-combat-oracle.json`](t1-6-combat-oracle.json) (four live
+battles, all derived numbers). Replayed by `engine::combat` tests
+`oracle_battle_1..4`.
+
+- **Combat randomness is the MSVC CRT `rand()`, not `rand_int`.** VA
+  `0x5b11d0` (`srand` `0x5b11b0`), state at VA **`0x5e2590`**:
+  `x = x·214013 + 2531011`, return `(x >> 16) & 0x7fff` (the multiplier is
+  built by a lea/shl chain; restated in a unit test). It has **269** static
+  call sites, which is why the 58-site `rand_int` survey below found nothing
+  combat-shaped. How it was found: `0x5dd53c` stayed at the seeded `0x1`
+  through a whole battle, so `.data`+heap were snapshotted around an attack
+  and every u32 tested for `after = step^n(before)`. Only `0x5e2590`
+  matched (23 MSVC steps), and it is quiet when the game is idle.
+- **Round loop** (inside the combat function `0x541425(attacker, dir,
+  real)`, VA `0x543b3d..0x543c43`):
+  `a = A>1 ? rand()%A : 0; d = D>1 ? rand()%D : 0; attacker wins iff a > d`
+  (strict). The winner deals its firepower as damage (unit +0x0c). The loop
+  runs while `hp·10 − damage > 0` for both sides. An optional defender
+  re-roll (`[ebp-0xc8]`, set only in barbarian-attacker/difficulty
+  branches) rolls a second pair and overturns an attacker win if `a2 < d2`.
+  **Exactly one more `rand()` follows the last round** in every battle,
+  with any winner (purpose open; both winners were already veterans, so it
+  is not just a promotion roll). Draws per battle = 2·rounds + 1.
+- **`real = 0` is the AI's odds probe.** It returns `min(A·8/(D+1), 0x400)`
+  with no rolls and no partial-move scaling.
+- **Attack strength** (`0x53f604`), fully decoded: `attack·8`, then `+= >>1`
+  for veteran (attr `0x2000`) and again for attr bit `0x10` (meaning open).
+  In the combat function: `A·min(moves_left, M)/M` with `M` = byte
+  `@0x5f5eb8` (when `real`), and, when the defender is a barbarian, `×2` if
+  the attacker's civ has wonder 6 (`0x444a61(civ, 6)`). The latter applies
+  to every battle here (48 → 96, 16 → 32).
+- **Defence strength** (`0x53f67a`) is only partly decoded: `def·4 ·
+  (terrain multiplier + river bit)`, a `0x65b49c` multiplier (2 = ×1;
+  ×2/×4 paths for walls/coast), veteran ×1.5. Terrain and fortification
+  go through **ToTPP hooks** (`call 0x76c14…`), so the engine takes D as an
+  input. Observed: veteran B. Horsemen (def 3) = **54** on all three tiles.
+- **Oracle proof, four battles, all bit-exact** (outcome, damage, round
+  count, CRT end state). Battle 4 was **predictive**: the CRT was seeded to
+  `0x12345678` by us, and the original's outcome and end state matched the
+  engine's prediction. In battles 3/4, A, D and individual rolls were
+  **polled from the live combat stack frame** during the animation (the
+  frame stays up for over a second), and the polled rolls sit at the
+  predicted round positions.
+
+**Unit-record corrections that fell out of this** (these supersede the
+40-byte record notes elsewhere in this file):
+
+- totctl/tot-kit frame each unit record **6 bytes late**. The true record
+  starts at the units region start (ROMFALL 159438; the "34-byte preamble"
+  is record 0 minus its first 6 bytes), with **x@0, y@2, z@4, attr u16@6,
+  type@8, owner@9, moves spent@10, visibility@11, damage@12, last
+  dir@13, orders@17, home@18, id u16@30**. In totctl offsets that is +6, so
+  totctl's x@6/type@14/owner@15/id@36 are right *within its framing*, but
+  its index is the game's index − 1 and its bytes 0..5 belong to the
+  previous unit. The game's own index (the active-unit field) proves the
+  true framing.
+- **u8@16 (totctl framing) = moves spent, not a per-owner value.** It is
+  in units of the byte `@0x5f5eb8`, which is **15 in FallRome** (Rules says
+  road multiplier 3, so ToTPP aggregates movement multipliers). The panel
+  shows "Moves: 0 12/15" for 3 spent. The "3 WRE / 15 ERE / 30 emperors"
+  pattern is spent movement in the saved turn. This matters for T1-3: the
+  engine's "thirds" equal the original only when that byte is 3.
+- **Damage = true@12** (totctl u8@18), HP = Rules `h`·10. Dead units get
+  x/y/z = −200 (killed attacker) or −100 (killed defender) and id 0. A lost
+  defence killed **only the defender**; its stack-mates survived (FallRome,
+  open field).
+- attr bit `0x0100` is set on fortified/sentried units and keeps them out of
+  the `W` rotation; orders `0xff` none / `1` fortifying / `2` fortified.
+
+**Live addresses** (ToTPP relocates the unit and unit-type tables to the heap
+and patches the `.text` immediates, so stock-exe disassembly shows different
+addresses; read them from the live `.text`, as `tools/oracle/unitram.py`
+does): units base = imm32@`0x5414de` − 9 (`0x19e0028` this run), types base
+= imm32@`0x53f623` − 0xc (`0x76c5a430`; stride 40: +10 move, +12 att, +13
+def, +14 hp·10, +15 fp, +16 cost, +17 hold, +18 role, +19 prereq). Cursor:
+i32 y@`0x5f46f8`, x@`0x5f46fc`. Active unit: u16@`0x60764e` (in the RAM
+copy of the game block; written by the game, not a selector). Map view
+struct @`0x61fb34` (i16 centre x/y, then i32 left/top/right/bottom, then
+tile px 64×32).
+
+**Still open for T1-6**: the defence-strength ToTPP hooks (terrain,
+fortified, walls), the trailing draw's purpose, veteran promotion, and
+damage/HP edge cases at FP > remaining HP. Then wire into the turn loop
+(UNITKILLED for T1-7).
+
+### T1-6 combat: still OPEN, and what has been ruled out (2026-11-03 night) — SUPERSEDED
+
+*Superseded by §T1-6 combat round formula DECODED above. Kept for the record.
+Two claims below were wrong: combat does **not** go through `rand_int` (it uses
+the CRT `rand()` at 0x5b11d0), and `u8@16` is moves spent, not a per-owner value.
+Navigation was not the blocker either: units are driven through RAM
+(`tools/oracle/unitram.py`).*
 
 The combat round formula is **not** decoded yet. Recorded so the next session
 does not repeat the dead ends:

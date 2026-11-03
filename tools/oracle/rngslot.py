@@ -1,8 +1,14 @@
 #!/usr/bin/env python3
 """rngslot.py — read / write the original game's live RNG state.
 
-    rngslot.py get                # print the 32-bit state as 0x........
-    rngslot.py set <value>        # seed it (decimal or 0x hex) and echo
+    rngslot.py get [--crt]        # print the 32-bit state as 0x........
+    rngslot.py set <value> [--crt]  # seed it (decimal or 0x hex) and echo
+
+There are TWO generators. Default: the Numerical-Recipes LCG behind
+`rand_int` (VA 0x5dd53c). `--crt`: the MSVC CRT `rand()` state (VA
+0x5e2590, x = x*214013 + 2531011) — **combat rolls come from this one**,
+not from 0x5dd53c (evidence §T1-6 combat). Seed it before an attack to
+force a known roll sequence; `engine::combat::resolve` replays it.
 
 The slot is the global at VA `0x5dd53c` inside the running `civ2.exe`
 (see docs/evidence/README.md §T1-6). Writing `1` there and then reading a
@@ -26,6 +32,7 @@ import sys
 
 SOCK = os.path.expanduser("~/review-tmp/memspool.sock")
 SLOT = "0x5dd53c"
+CRT_SLOT = "0x5e2590"
 
 
 def rpc(req, timeout=10.0):
@@ -43,28 +50,32 @@ def rpc(req, timeout=10.0):
     return json.loads(buf.decode() or "{}")
 
 
-def get():
-    r = rpc({"cmd": "read", "addr": SLOT, "len": 4})
+def get(slot=SLOT):
+    r = rpc({"cmd": "read", "addr": slot, "len": 4})
     return struct.unpack("<I", bytes.fromhex(r.get("hex", "")))[0]
 
 
-def set_(value):
-    r = rpc({"cmd": "write", "addr": SLOT, "hex": struct.pack("<I", value & 0xFFFFFFFF).hex()})
+def set_(value, slot=SLOT):
+    r = rpc({"cmd": "write", "addr": slot, "hex": struct.pack("<I", value & 0xFFFFFFFF).hex()})
     return r.get("written")
 
 
 def main(argv):
+    slot = SLOT
+    if "--crt" in argv:
+        argv = [a for a in argv if a != "--crt"]
+        slot = CRT_SLOT
     if len(argv) < 2 or argv[1] not in ("get", "set"):
         print(__doc__.strip())
         return 2
     if argv[1] == "get":
-        print(hex(get()))
+        print(hex(get(slot)))
         return 0
     if len(argv) < 3:
         print("set needs a value", file=sys.stderr)
         return 2
-    set_(int(argv[2], 0))
-    print(hex(get()))
+    set_(int(argv[2], 0), slot)
+    print(hex(get(slot)))
     return 0
 
 

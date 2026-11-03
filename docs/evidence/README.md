@@ -256,7 +256,8 @@ frozen "Dec 429" for turns).
 - Kernel skeleton deliberately omits the year-advance schedule (no
   oracle-verified table yet — folklore banned); year stays put until a
   turnloop experiment lands in T1-3. RNG: `GameRng` trait + placeholder
-  MMIX LCG; the original PRNG identity is T1-6's open problem.
+  MMIX LCG. *(Superseded: the original generator was identified and
+  runtime-verified in T1-6 on 2026-11-03 — see §T1-6 above.)*
 
 ## RG-1 findings (2026-11-02, eighth+tenth sessions — standard-game setup state)
 
@@ -464,6 +465,43 @@ snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
    where turn/year live. This is the oracle methodology of docs/plan.md working
    end-to-end on day one.
 
+### T1-6 combat: still OPEN, and what has been ruled out (2026-11-03 night)
+
+The combat round formula is **not** decoded yet. Recorded so the next session
+does not repeat the dead ends:
+
+- All gameplay randomness funnels through `rand_int(lo, hi)` at VA `0x554aa0`
+  (58 static call sites; the float draw `0x554a43` has no other caller, and
+  `0x5dd53c` is touched only by the RNG functions and the context-swap sites).
+  So combat *must* consume randomness through `rand_int` — but **none of the 58
+  call sites passes combat-shaped bounds** (most are literal small ranges
+  0..7 or one variable bound with `lo=0`). Either combat's rolls are among the
+  variable-bound sites and the bounds are built by a helper we have not traced
+  (candidates: `0x428fc5` `hi=[ebp-0x710]-1`; `0x51a1bc`
+  `hi=ecx-table[eax*4+0x5f68bd]`; `0x53213f` `hi=ecx`), or there is a second
+  RNG entry point reached by an indirect call.
+- `0x5602d3` (the "combat context" function previously noted at 0x5602cf —
+  which is actually the `pop esi` of the *previous* function) is a **UI/dialog
+  builder**: it saves `0x5dd53c`, loads `[this+0x100]`, calls `0x55fb2c` with
+  `0x5ddea8`, then issues a long run of `0x57de0c` control-creation calls. It
+  is a good model of the context-swap pattern, not the combat math.
+- `0x5dea8` stays all-zero in `.data`, so it is a scratch object, not a
+  pre-seeded table.
+- Unresolved prerequisite: the **unit record's HP field is not identified**.
+  Of the 0x32 40-byte unit record (`totctl` proves the region arithmetic
+  exactly: ROMFALL `159472 + 710*40 = 187872` = city block start), bytes
+  16..35 are still open; `u8@16` looks like a per-owner value (3 for WRE, 15
+  for ERE, 0 for most barbarians, 30 for emperors), **not** HP. Without HP the
+  round-by-round outcome cannot be read back, which is why a save-diff around
+  a single attack is the decisive experiment.
+- The experiment is blocked only by **rig navigation** (see
+  `tools/oracle/README.md` §Navigation, 2026-11-03): there is no reliable way
+  yet to place the cursor on a known tile, and a session of blind clicking
+  consumes every unit's orders. Once the view origin is readable from RAM, the
+  plan is: seed `0x5dd53c=1`, save, press the attack direction, read the new
+  state (draw count), save again, diff the two unit records — that yields both
+  the HP field and the per-round outcome for a known roll sequence.
+
 ### T1-6 the whole RNG *API* decoded from the binary (2026-11-03 night)
 
 Static decode of the four functions around VA 0x554a00 (`civ2.exe`, `objdump
@@ -512,9 +550,12 @@ burn. Golden `run50` fingerprints regenerated for the (now exact) mapping.
   fingerprints) — all checks green.
 - Still open for T1-6: which ctx (`ctx+0x100`) feeds combat vs turn
   processing, the per-action roll counts, and the combat round formula
-  itself (rounds/veterans/walls/terrain). The `ctx` decode: combat
-  function at RVA 0x5602cf is `__thiscall`, saves the global, loads
-  `[this+0x100]`, calls 0x55fa28 with the static object 0x5dea8.
+  itself. **Correction (2026-11-03):** the function previously filed here as
+  "combat at RVA 0x5602cf" is `0x5602d3` — a UI/dialog builder, and 0x5602cf
+  is just the `pop esi` of the preceding function. It is a *model* of the
+  save/swap/roll/restore pattern (load `[this+0x100]`, call `0x55fb2c` with
+  `0x5ddea8`, then a long run of `0x57de0c` control creation), not the combat
+  math. See §T1-6 combat: still OPEN for the current state of that hunt.
 
 ### T1-6 PRNG identified statically: Numerical-Recipes LCG at RVA 0x554a4f (2026-11-03 late)
 

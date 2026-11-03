@@ -20,6 +20,37 @@ Headless Wine + Xvfb harness that drives the original game and harvests saves.
 | `drain_dialogs.sh` | Dismiss ANY visible titled window not on the allowlist (Defense/Domestic advisors, Civ Tutorial, Game-saved toasts, emissary spam all block turn end AND Ctrl+S). |
 | `saveturn.sh` / `cityloop.sh` | Ctrl+S save + turn-advance with turn-counter verification. CAUTION: the save dialog remembers the last-used folder (may be FallRome!) and name collisions stack overwrite prompts that wedge the game — prefer autosave harvesting. |
 | `lab_std.sh` | Fresh standard game under the memspool daemon (wizard flow from newgame.sh, RAM access for snapshots). |
+| `rngslot.py` | `get` / `set <v>` the live RNG state at VA `0x5dd53c` (memspool-backed). Seeding it to 1 and reading `0x0438e694` later is the T1-6 runtime proof; use it to force a known roll sequence before an action. |
+
+## Navigation: what works and what does not (2026-11-03)
+
+Getting the cursor to a *known map tile* is the rig's weakest point. Measured facts:
+
+- **Clicks are not a usable coordinate input.** Four calibration clicks
+  (viewport centre ±192/±120 px, reading the resulting `Loc:` each time) gave
+  no consistent linear pixel→tile map, so the assumption "click recentres the
+  view and `tile = f(pixel − centre)`" is **false** in this build. Do not build
+  a click-arithmetic navigator until the view origin is read from RAM instead.
+- **Arrow keys do not give a clean basis either.** 32×Up + 10×Right from
+  `(44,70)` landed on `(62,12)`, i.e. not the expected `(22,28)` offset —
+  sign/step per key still unmeasured. If you need this, measure ONE key with a
+  single press and a single `Loc:` read.
+- **`Loc:` only renders in Viewing Pieces mode.** In Moving Units mode the
+  panel shows the active unit instead, so you cannot read the cursor.
+- **Find City does not recentre the map.** The row is selected correctly
+  (click the ROW, then OK — a highlight alone is not a selection) and the view
+  stays where it was. It is a lookup, not a jump.
+- **The Find City listbox only does SINGLE-LETTER prefix jumps.** Typing
+  "MEDIOLANUM" lands on the first `M` entry (the last key's prefix), never on
+  the full string. Multi-character type-ahead does not exist in this control —
+  use one letter, then Up/Down, then verify by vision. (This — not fog and not
+  key timing — was the long-running "Find City is broken" mystery.)
+- **`W` (wait) and `Enter` do nothing when no unit needs orders.** Every map
+  click while a unit is active issues that unit a goto order, so a session of
+  blind clicking quietly consumes the whole turn's order budget and leaves the
+  game in Viewing Pieces with no activatable unit. Symptom: `W`/`Enter` do
+  nothing and arrow keys consume no randomness. Recovery is a fresh save or a
+  scenario restart, not more clicking.
 
 ## Launch recipe (what finally worked)
 

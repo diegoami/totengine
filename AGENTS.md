@@ -54,7 +54,11 @@ python3 tools/totctl.py save $CIVTOT_HOME/FallRome/ROMFALL.scn -o /tmp/walk.json
 ## Status shorthand
 
 v0.1.0 (Tier 0) is released. v0.2.0 "headless game loop" is in progress:
-T1-1/2/3/5/8/9 and RG-1 are done, T1-4 (cities), T1-6 (combat + original
-PRNG), T1-7 (events) and RG-2 (starting placement) are open. `BACKLOG.md`
-is the live queue, `docs/evidence/README.md` carries every proven finding,
-and `docs/lessons.md` the rig/process traps.
+T1-1/2/3/5/8/9 and RG-1 are done. T1-6's randomness half is **done**
+(the original LCG and its `rand_int` are decoded, runtime-verified and
+shipped in `engine::rng`); its combat-round half is open, and it is the
+blocker for RG-2 and for T1-7's UNITKILLED acceptance. T1-4 (cities) and
+T1-7 (events) are partially landed. `BACKLOG.md` is the live queue,
+`docs/evidence/README.md` carries every proven finding (and, for T1-6,
+an explicit list of what has been ruled out), and `docs/lessons.md` the
+rig/process traps.

@@ -105,3 +105,15 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
 - ToTPP needs high color: Xvfb must be `-screen 0 1024x768x24`.
 - ToT classic (`civ2.bak`) cannot run headless (CD-audio check); the ToTPP
   exe's NoCD patch is the only practical oracle exe.
+- **Do not build a vision-click navigator for the map.** Four calibration
+  clicks plus arrow-key runs proved there is no usable linear pixel→tile map
+  in this build (the view origin is not where the click re-centres). The
+  cheap fix is to read the view origin from RAM; until then, "navigate to a
+  known tile" is not a reliable rig primitive. Details in
+  `tools/oracle/README.md` §Navigation.
+- **Blind clicking silently burns the turn.** Every map click while a unit is
+  active issues a goto order, so a session of exploratory clicking ends with
+  no activatable unit (`W`/`Enter` dead, arrow keys consume no randomness) —
+  which reads as "the key doesn't work" rather than "the turn is spent".
+  Before concluding a key is broken, check whether the turn still has orders
+  to give.

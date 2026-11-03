@@ -195,6 +195,36 @@ impl Rules {
             .and_then(|f| f.trim().parse().ok())
     }
 
+    /// `@COSMIC` row 3 (0-based 2): food each citizen eats per turn.
+    /// Verified live: FallRome 3 (Roma 45 F = 15×3 → surplus 0 = the
+    /// city screen's Net Food 0), standard 2 (every standard-game city's
+    /// box ticks F − 2×size).
+    pub fn cosmic_food_per_citizen(&self) -> u32 {
+        self.cosmic_row(2).unwrap_or(2)
+    }
+
+    /// `@COSMIC` row 4 (0-based 3): food-box rows. The comment
+    /// "rows * city_size+1 = box" is ambiguous and does NOT match the
+    /// measured capacities (20 at size 1, 27 at size 2 — see engine
+    /// `CityRules::growth_cap`); carried because the row exists.
+    pub fn cosmic_food_box_rows(&self) -> u32 {
+        self.cosmic_row(3).unwrap_or(10)
+    }
+
+    /// `@COSMIC` rows 6/7: food eaten by a supported settler under
+    /// pre-Monarchy / post-Communism governments.
+    pub fn cosmic_settler_food(&self, post_communism: bool) -> u32 {
+        self.cosmic_row(if post_communism { 6 } else { 5 })
+            .unwrap_or(2)
+    }
+
+    fn cosmic_row(&self, idx: usize) -> Option<u32> {
+        self.section("COSMIC")
+            .and_then(|s| s.rows.get(idx))
+            .and_then(|r| r.first())
+            .and_then(|f| f.trim().parse().ok())
+    }
+
     fn unit_num_strip(&self, id: usize, field: usize, suffixes: &[char]) -> Option<u32> {
         self.section("UNITS")
             .and_then(|s| s.rows.get(id))

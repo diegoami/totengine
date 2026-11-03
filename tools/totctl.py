@@ -804,7 +804,13 @@ def walk_save(path: str) -> dict:
                     chain.append(chain[-1] + 92)
                 if len(chain) > len(best_chain):
                     best_chain = chain
-            if len(best_chain) >= 8:
+            if len(best_chain) >= 2:
+                # >= 2, not >= 8 (T1-4, 2026-11-03): standard-game early
+                # saves hold only the AI capitals (orig-A turn02 = 6 cities,
+                # region arithmetic 11514 = 40x287+34 validates). The
+                # anti-fabrication authority stays the 34+40*N unit-region
+                # gate + coordinate sanity below; chain length only locates
+                # the grid.
                 probe = best_chain[0]
                 n = (best_chain[-1] - probe) // 92 + 1
                 u_end_pre = probe

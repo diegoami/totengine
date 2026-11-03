@@ -48,7 +48,7 @@ send_downs_then_return() {  # $1 = count of Down presses
     timeout 8 "$XT" key Return
 }
 
-pkill -f '[c]iv2' 2>/dev/null
+pkill -9 -x civ2.exe 2>/dev/null
 sleep 2
 (cd "$CIVTOT_HOME" && wine "$CIVTOT_HOME/civ2.exe" >/tmp/civ2-ng.log 2>&1 &)
 wait_title "The Test of Time" 30 || { echo "launcher never appeared"; exit 1; }

@@ -156,6 +156,21 @@ fn cmd_boot(args: &[String]) -> ExitCode {
         world.units.len(),
         world.cities.len()
     );
+    if let Some(c) = world.cities.first() {
+        println!(
+            "city[0]       : {} size{} owner{} F{}/S{}/T{} sci{} tax{} box {}/{}",
+            c.name,
+            c.size,
+            c.owner,
+            c.gross_food,
+            c.gross_shields,
+            c.gross_trade,
+            c.net_science,
+            c.net_taxes,
+            c.food_box,
+            c.shield_box
+        );
+    }
     if let Some(r) = &rules {
         let movable = world
             .units

@@ -9,7 +9,7 @@ export WINEPREFIX="${WINEPREFIX:-$HOME/.wine_civ2tot}"
 # once leaked in and the game opened windows on the wrong screen)
 export DISPLAY=:99
 
-pkill -f '[c]iv2' 2>/dev/null
+pkill -9 -x civ2.exe 2>/dev/null
 sleep 2
 (cd "$CIVTOT_HOME" && nohup wine "$CIVTOT_HOME/civ2.exe" >/tmp/civ2.log 2>&1 &)
 sleep 10

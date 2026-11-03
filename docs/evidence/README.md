@@ -32,6 +32,54 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
   (the unit-region gate fails; the walker cannot locate them either) —
   no fabricated tables.
 
+### T1-4 city model (2026-11-03 evening): growth math closed on a peaceful standard-game lab
+
+A fresh STANDARD game driven turn-by-turn through the original under the
+memspool daemon (`tools/oracle/stdloop.sh`), autosaves harvested per turn
+(`~/review-tmp/oracle-runs/std1/`): 5 AI capitals + a human-founded Madrid,
+turns 4–43, zero war noise.
+
+**Growth model (7 growth events, turn-by-turn samples, 4 cities):**
+- **Food box = u16@86**; ticks by surplus (`gross_food@48 − food_per_citizen×size
+  − settler_food×settlers`) each turn.
+- **Growth capacity = (rows − 1) × (size + 1)** with `@COSMIC` rows=10 →
+  **18 at size 1, 27 at size 2**. The `@COSMIC` comment
+  ("rows * city_size+1 = box") is garbled — the measured rule is
+  (rows−1)×(size+1).
+- **Growth is strictly greater**: a box sitting exactly at 18/27 persists
+  (Madrid fb 18@t36, LB/Carthage 18@t22/27@t40 — all sat a full turn).
+  Overflow carries: `box −= cap` (Madrid 18+4=22 → grow → 4 ✓ t38;
+  Carthage 27+2=29 → grow → 2 ✓ t41).
+- `engine::cities::{CityRules, CityEcon}` implements exactly this
+  (unit tests cite each oracle sample); `CityRules::from_rules` reads the
+  `@COSMIC` constants (typed accessors in tot-kit).
+- **Shield box = u16@88**: ticks by net shields (S − unit support), resets
+  on production completion (Carthage 35→3, 15→3, 31→12…). Production
+  items themselves not located yet — open.
+- **Settlers eat** (`@COSMIC` rows 6/7) and are INVISIBLE in the save:
+  Madrid's box only decodes with 2 supported settlers (surplus 6−2−2=+2),
+  LB's post-t42 ticks need a settler too. Full-series replay tests are
+  therefore impossible without settler counts — transitions are covered
+  by unit tests instead.
+- **u16@90 is NOT size** (Babylon stays 3 through a growth; correlates
+  with size+capital for most cities — open).
+- **City size = u16 at city_base − 13** holds for WRE cities in
+  FallRome (8/8 vs the City Status report) but reads 0 for standard-game
+  cities and some AI civs — per-civ encoding open. The walker exposes it
+  as `CityRecord::size` (0 = unknown).
+- FallRome/standard contradiction resolved as **war contamination**: the
+  earlier FallRome turn-1 "shield box at @86" fit was a coincidence on
+  small deltas; the peaceful lab is authoritative.
+- Standard-game saves now parse (chain gate ≥8 → ≥2; orig-A turn01/02 =
+  2/6 AI-capital cities, arithmetic gate 11514 = 40×287+34 intact).
+
+**Rig lessons (std lab):** the autosave rotates Ph_Auto/Ph_Auto2 per turn
+(harvest by mtime); Ctrl+S saves into the LAST-USED folder (FallRome!) and
+colliding names stack overwrite prompts that wedge everything; SPACE does
+NOT skip units (arrow-move settlers to exhaust them, then Return; Return
+only ends the turn when no unit has moves); AI turns under Xvfb take
+minutes with dialog waves — `drain_dialogs.sh` + patience.
+
 ### T1-4 city records (2026-11-03): economics fields oracle-verified
 
 Oracle channel: the game's own **City Status report** (Advisors→City Status,

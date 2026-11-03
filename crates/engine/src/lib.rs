@@ -7,6 +7,7 @@
 //! sequencing plus a seeded [`GameRng`], with per-phase work landing in
 //! T1-3..T1-7.
 
+pub mod cities;
 pub mod movement;
 pub mod research;
 pub mod rng;
@@ -43,14 +44,27 @@ pub struct Unit {
     pub moves_left: u32,
 }
 
-/// Engine-side city: name + logical-grid coordinates (size field boundary
-/// still open — `size_hint` carried for cross-checking only).
+/// Engine-side city: identity, coordinates and the proven economics
+/// fields (§T1-4). `size` comes from the u16 at `city_base − 13` (0 for
+/// civs whose encoding there is still open — treat 0 as unknown).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct City {
     pub name: String,
     pub x: u16,
     pub y: u16,
-    pub size_hint: u16,
+    pub size: u16,
+    pub owner: u16,
+    pub city_id: u16,
+    /// Gross food/shields/trade (the City Status report's columns).
+    pub gross_food: u8,
+    pub gross_shields: u8,
+    pub gross_trade: u16,
+    /// Net science/taxes after the rate split and improvements.
+    pub net_science: u16,
+    pub net_taxes: u16,
+    /// Food/shield boxes (u16@86/@88 — AI-city evolution proven).
+    pub food_box: u16,
+    pub shield_box: u16,
 }
 
 /// Terrain grid state: the decoded surface map block in stored order,
@@ -178,7 +192,16 @@ fn city_from(r: &CityRecord) -> City {
         name: r.name(),
         x: r.x(),
         y: r.y(),
-        size_hint: r.size_hint(),
+        size: r.size,
+        owner: r.owner(),
+        city_id: r.city_id(),
+        gross_food: r.gross_food(),
+        gross_shields: r.gross_shields(),
+        gross_trade: r.gross_trade(),
+        net_science: r.net_science(),
+        net_taxes: r.net_taxes(),
+        food_box: r.food_box(),
+        shield_box: r.shield_box(),
     }
 }
 

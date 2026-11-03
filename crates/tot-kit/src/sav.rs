@@ -225,13 +225,25 @@ impl UnitRecord {
     }
 }
 
-/// A 92-byte city record located by the name-chain scan. Proven: name
-/// 16 B @0, x u16@58 / y u16@60 (logical grid). A size-like short sits in
-/// the two bytes immediately *before* each name (end of the previous
-/// slot) — exact field boundary open, exposed as [`Self::size_hint`].
+/// A 92-byte city record located by the name-chain scan. Proven fields
+/// (oracle-verified against the game's City Status report, F1 — evidence
+/// §T1-4): name 16 B @0, x u16@58 / y u16@60 (logical grid), owner u16@50,
+/// city id u16@52 (sequential), net science u16@42, net taxes u16@44,
+/// gross trade u16@46, gross food u8@48, gross shields u8@49. The dynamic
+/// shorts u16@86/@88 are the food/shield boxes (AI-city evolution,
+/// standard game; see evidence), u16@90 is size-correlated but unresolved.
+/// City size is NOT inside the record: it lives in the two bytes at
+/// `city_base − 13` (i.e. in the previous slot / the interlude) — see
+/// [`SaveFile::city_size`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CityRecord {
     pub raw: [u8; 92],
+    /// City size, read from the u16 at `city_base − 13` (inside the
+    /// previous slot / the interlude before the grid) at parse time.
+    /// Verified 8/8 against the City Status report in FallRome; the
+    /// encoding for some non-WRE civs and standard-game cities read 0 —
+    /// treat 0 as "unknown" there (evidence §T1-4).
+    pub size: u16,
 }
 
 impl CityRecord {
@@ -245,8 +257,52 @@ impl CityRecord {
     pub fn y(&self) -> u16 {
         u16::from_le_bytes([self.raw[60], self.raw[61]])
     }
-    /// Size-like short measured just before the name (Roma 29 = its
-    /// in-game size) — evidence §T0-6, boundary open.
+    /// Gross food output — the City Status report's Food column (u8@48).
+    pub fn gross_food(&self) -> u8 {
+        self.raw[48]
+    }
+    /// Gross shield output — the City Status Shields column (u8@49).
+    pub fn gross_shields(&self) -> u8 {
+        self.raw[49]
+    }
+    /// Gross trade arrows — the City Status Trade column (u16@46).
+    pub fn gross_trade(&self) -> u16 {
+        u16::from_le_bytes([self.raw[46], self.raw[47]])
+    }
+    /// Net science after the civ's rate split and library bonuses (u16@42).
+    pub fn net_science(&self) -> u16 {
+        u16::from_le_bytes([self.raw[42], self.raw[43]])
+    }
+    /// Net taxes after the rate split and marketplace bonuses (u16@44).
+    pub fn net_taxes(&self) -> u16 {
+        u16::from_le_bytes([self.raw[44], self.raw[45]])
+    }
+    /// Owner civ (u16@50). FallRome scenario: 1..7 = civs (0 = barbarians).
+    /// Standard-game encoding unverified (all observed values were 0).
+    pub fn owner(&self) -> u16 {
+        u16::from_le_bytes([self.raw[50], self.raw[51]])
+    }
+    /// Sequential city id (u16@52; i+1 in every file examined).
+    pub fn city_id(&self) -> u16 {
+        u16::from_le_bytes([self.raw[52], self.raw[53]])
+    }
+    /// Food storage box (u16@86): ticks by food surplus each turn,
+    /// consumed by growth (evidence §T1-4, standard-game AI cities).
+    pub fn food_box(&self) -> u16 {
+        u16::from_le_bytes([self.raw[86], self.raw[87]])
+    }
+    /// Shield/production box (u16@88): ticks by net shields, reset on
+    /// production completion.
+    pub fn shield_box(&self) -> u16 {
+        u16::from_le_bytes([self.raw[88], self.raw[89]])
+    }
+    /// Size-correlated short (u16@90): size+2 fits most observations but
+    /// Babylon breaks it — semantics open, carried for cross-checking.
+    pub fn tail90(&self) -> u16 {
+        u16::from_le_bytes([self.raw[90], self.raw[91]])
+    }
+    /// Size-like short measured just before the name — superseded by
+    /// [`SaveFile::city_size`], kept for compatibility.
     pub fn size_hint(&self) -> u16 {
         u16::from_le_bytes([self.raw[90], self.raw[91]])
     }
@@ -439,7 +495,12 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
             best_chain = chain;
         }
     }
-    if best_chain.len() < 8 {
+    if best_chain.len() < 2 {
+        // >= 2, not >= 8 (T1-4, 2026-11-03): standard-game early saves
+        // hold only the AI capitals (orig-A turn02 = 6 cities, region
+        // arithmetic 11514 = 40x287+34 validates). The anti-fabrication
+        // authority stays the 34+40*N unit-region gate below; chain
+        // length only locates the grid.
         return Err(SavError::NoCityChain);
     }
     let city_offset = best_chain[0];
@@ -470,7 +531,13 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
             data.get(start..start + 92)
                 .ok_or(SavError::Truncated("city record"))?,
         );
-        cities.push(CityRecord { raw });
+        // size: u16 at city_base − 13 (may reach into the interlude)
+        let sz = if start >= 13 {
+            u16::from_le_bytes([data[start - 13], data[start - 12]])
+        } else {
+            0
+        };
+        cities.push(CityRecord { raw, size: sz });
     }
 
     Ok(SaveFile {

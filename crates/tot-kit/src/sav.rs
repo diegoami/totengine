@@ -441,6 +441,12 @@ pub struct SaveFile {
     pub wonders: [i16; 28],
     /// 7 name blocks (players are `owner 1..7`; block n-1 matches).
     pub civ_names: Vec<CivNames>,
+    /// Treasury per civ, index = owner (0 = barbarians): i32@10 of the
+    /// 3348-B civ-properties blocks @2944 (8 blocks end exactly at the
+    /// transporter section @29728). Oracle patch-and-prove: RAM copy at
+    /// VA 0x5F68A0 (same stride), WRE 9919 → patched 12345 → the status
+    /// panel read "12345 Gold" (evidence §T1-7 treasury).
+    pub treasury: [i32; 8],
     pub transporter_count: u32,
     pub map_header: MapHeader,
     pub maps: Vec<MapBlock>,
@@ -462,6 +468,9 @@ pub const OFF_WONDERS: usize = 906;
 pub const OFF_UNKNOWN_288: usize = 962;
 pub const OFF_CIV_NAMES: usize = 1250;
 pub const OFF_CIV_PROPS: usize = 2944;
+/// Civ-properties block size: 8 blocks (barbarians + 7) fill
+/// 2944..29728 exactly.
+pub const CIV_PROPS_STRIDE: usize = 3348;
 pub const OFF_TRANSPORTERS: usize = 29728;
 
 /// Parse a `0x32`/`0x33` SAV or SCN. For `0x33` (ToTPP-extended) this
@@ -500,6 +509,17 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
             .get(OFF_CIV_NAMES + i * 242..OFF_CIV_NAMES + (i + 1) * 242)
             .ok_or(SavError::Truncated("civ name block"))?;
         civ_names.push(civ_names_from(block));
+    }
+
+    let mut treasury = [0i32; 8];
+    for (c, t) in treasury.iter_mut().enumerate() {
+        let o = OFF_CIV_PROPS + CIV_PROPS_STRIDE * c + 10;
+        *t = i32::from_le_bytes(
+            data.get(o..o + 4)
+                .ok_or(SavError::Truncated("civ properties"))?
+                .try_into()
+                .unwrap(),
+        );
     }
 
     // transporters: fixed 168 B, then u32 count, then count × 14 B (#49)
@@ -631,6 +651,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         rivals,
         wonders,
         civ_names,
+        treasury,
         transporter_count,
         map_header: hdr,
         maps,

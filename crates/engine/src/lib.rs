@@ -9,6 +9,7 @@
 
 pub mod cities;
 pub mod combat;
+pub mod effects;
 pub mod events;
 pub mod movement;
 pub mod research;
@@ -126,6 +127,9 @@ pub struct WorldState {
     /// Human-players bitmask (save @687; bit n = civ n).
     pub human_mask: u8,
     pub wonders: [i16; 28],
+    /// Treasury per civ, index = owner (0 = barbarians); save i32@10 of
+    /// each civ-properties block (oracle-proven, evidence §T1-7 treasury).
+    pub treasury: [i32; 8],
     pub civs: Vec<Civ>,
     pub units: Vec<Unit>,
     pub cities: Vec<City>,
@@ -185,6 +189,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         game_flags: sav.game_flags,
         human_mask: sav.human_mask,
         wonders: sav.wonders,
+        treasury: sav.treasury,
         civs,
         units: units_from(&sav.units),
         cities: sav.cities.iter().map(city_from).collect(),
@@ -318,6 +323,9 @@ impl WorldState {
         buf.clear();
         for w in self.wonders {
             let _ = write!(buf, "{w},");
+        }
+        for t in self.treasury {
+            let _ = write!(buf, "${t},");
         }
         mix(&mut h, buf.as_bytes());
         for c in &self.civs {

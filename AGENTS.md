@@ -64,7 +64,9 @@ wired into `move_unit` with a UNITKILLED context for T1-7. Open: sea/air
 and improvement-dependent special cases.
 Units are driven in the oracle through RAM (`tools/oracle/unitram.py`),
 not by map navigation. T1-4 (cities) and
-T1-7 (events) are partially landed. `BACKLOG.md` is the live queue,
+T1-7 (events) are partially landed (T1-7 effects now change the world:
+treasury, CREATEUNIT). Unit and city records are read in the game's own
+framing since 2026-11-03 (evidence §Record framing FIXED). `BACKLOG.md` is the live queue,
 `docs/evidence/README.md` carries every proven finding (and, for T1-6,
 an explicit list of what has been ruled out), and `docs/lessons.md` the
 rig/process traps.

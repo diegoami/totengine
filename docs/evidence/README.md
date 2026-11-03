@@ -63,6 +63,38 @@ box 18→2 within one record), but the per-sample citations need
 re-reading. The 0x33 (ToTPP) records were not re-checked: their unit
 layout differs (id@0, x@10) and the home test is inconclusive there (2/3).
 
+#### T1-7 treasury + effects applied to the world (2026-11-03)
+
+- **Treasury = i32@10 of each civ-properties block.** There are 8 blocks
+  of 3348 B at save @2944, indexed by owner (0 = barbarians), and they end
+  exactly at the transporter section @29728. ROMFALL:
+  `[4050, 10000, 200, 100, 100, 200, 10000, 208]`.
+  **Oracle patch-and-prove:** the live game keeps the same table at VA
+  `0x5F68A0`, located by scanning for ROMFALL's untouched civ 0/6 block
+  bytes. The WRE value read 9919 and the status panel showed
+  "9919 Gold". Writing 12345 there and pressing W made the panel show
+  "12345 Gold"; the value was then restored.
+- **Three more interpreter bugs found against Macro.txt and FallRome's
+  Events.txt:**
+  - GIVETECHNOLOGY was read through a `tech=` key that never occurs (the
+    file writes `technology=<index>` + `receiver=`), so it never fired.
+  - CHANGEMONEY dropped its `receiver=`.
+  - CITYTAKEN's `city=` was not matched at all, so taking any city fired
+    all 9 CITYTAKEN events.
+  - Action civ parameters now resolve `TRIGGERATTACKER` /
+    `TRIGGERDEFENDER` (Macro.txt) against the trigger context; FallRome
+    uses both.
+- **`engine::effects`** applies the effects: `WorldState::apply_effects`,
+  `fire_event` (fire + apply), and `move_unit_with_events` (a kill fires
+  UNITKILLED). CHANGEMONEY clamps at 0 (Macro.txt). CREATEUNIT places
+  `count` units at the first valid location. **"Valid" is the engine's
+  rule, not oracle-checked**: on the map, terrain fits the domain, no
+  other civ's units. GIVETECHNOLOGY is reported as skipped (no per-civ
+  techs in the state). `crates/engine/tests/events_install.rs` fires the
+  real Events.txt against the booted ROMFALL: Merchant kill → WRE
+  10000 → 10050; Theodoric I's death → a veteran Theodoric II for the
+  Visigoths at (24,60), once.
+
 #### T1-7 events: matching and CREATEUNIT corrected against Macro.txt (2026-11-03)
 
 The game ships its own macro-language reference, `$CIVTOT_HOME/Macro.txt`.

@@ -59,7 +59,16 @@ fn oracle_battle_2_through_move_unit() {
 
     w.combat_rng = CrtRand::new(0x3a69_6ba7);
     let before = w.units.len();
-    let out = w.move_unit(&rules, legion, 22, 30);
+    let home = std::path::PathBuf::from(std::env::var_os("CIVTOT_HOME").unwrap());
+    let src = String::from_utf8_lossy(&std::fs::read(home.join("FallRome/Events.txt")).unwrap())
+        .into_owned();
+    let mut eng = engine::events::EventEngine::new(tot_kit::parse_events(&src).unwrap());
+    let treasury = w.treasury;
+    let (out, fired) = w.move_unit_with_events(&rules, &mut eng, legion, 22, 30);
+    // the kill went through the real Events.txt: no FallRome event for a
+    // B. Horsemen, so nothing fires and the treasuries stand
+    assert!(fired.is_empty(), "{fired:?}");
+    assert_eq!(w.treasury, treasury);
     assert!(!out.moved, "an attack does not move the attacker");
     let b = out.battle.expect("moving onto barbarians is an attack");
     assert_eq!((b.attack, b.defense), (96, 54), "live-frame values");
@@ -85,10 +94,6 @@ fn oracle_battle_2_through_move_unit() {
     assert_eq!(ctx.unit.as_deref(), Some("B. Horsemen"));
     assert_eq!(ctx.attacker.as_deref(), Some("West Romans"));
     assert_eq!(ctx.defender.as_deref(), Some("Barbarians"));
-    let home = std::path::PathBuf::from(std::env::var_os("CIVTOT_HOME").unwrap());
-    let src = String::from_utf8_lossy(&std::fs::read(home.join("FallRome/Events.txt")).unwrap())
-        .into_owned();
-    let mut eng = engine::events::EventEngine::new(tot_kit::parse_events(&src).unwrap());
     assert!(
         eng.fire("UNITKILLED", &ctx).is_empty(),
         "no FallRome event for a horseman"
@@ -101,7 +106,10 @@ fn oracle_battle_2_through_move_unit() {
     };
     let eff = eng.fire("UNITKILLED", &merchant);
     assert!(
-        eff.contains(&engine::events::Effect::ChangeMoney(50)),
+        eff.contains(&engine::events::Effect::ChangeMoney {
+            receiver: "West Romans".into(),
+            amount: 50
+        }),
         "{eff:?}"
     );
 }

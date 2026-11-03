@@ -24,8 +24,11 @@ pub enum Effect {
         count: u32,
         locations: Vec<(i32, i32)>,
     },
-    ChangeMoney(i32),
-    GiveTechnology(String),
+    /// Macro.txt: add `amount` to `receiver`'s treasury; a result below
+    /// zero becomes zero.
+    ChangeMoney { receiver: String, amount: i32 },
+    /// `technology=` is a Rules @CIVILIZE index (FallRome: 91, 99).
+    GiveTechnology { receiver: String, technology: i32 },
     Text(String),
     PlayTrack(i32),
     DontPlayWonders,
@@ -39,6 +42,8 @@ pub struct Ctx {
     pub defender: Option<String>,
     pub talker: Option<String>,
     pub listener: Option<String>,
+    /// CITYTAKEN's `city=` (exact name match like every other name).
+    pub city: Option<String>,
     pub denominator: Option<i32>,
 }
 
@@ -58,6 +63,21 @@ fn word_of(v: Option<&Value>) -> Option<&str> {
 /// "unit types, civilization names, and so on must match the
 /// corresponding names in the rules.txt file exactly". (Prefix matching
 /// would fire FallRome's "Theodoric II dies" event when Theodoric I dies.)
+/// Action civ parameters may name the trigger's parties (Macro.txt:
+/// TriggerAttacker / TriggerDefender); resolve them against the context.
+/// Unresolvable names pass through unchanged.
+fn resolve_civ(name: &str, ctx: &Ctx) -> String {
+    let n = name.trim();
+    let r = if n.eq_ignore_ascii_case("TRIGGERATTACKER") {
+        ctx.attacker.as_deref()
+    } else if n.eq_ignore_ascii_case("TRIGGERDEFENDER") {
+        ctx.defender.as_deref()
+    } else {
+        None
+    };
+    r.unwrap_or(n).to_string()
+}
+
 fn matches(param: Option<&str>, actual: Option<&str>) -> bool {
     let Some(p) = param else { return true };
     if p.eq_ignore_ascii_case("ANYBODY") || p.eq_ignore_ascii_case("ANYONE") {
@@ -89,6 +109,7 @@ impl EventEngine {
                 || !matches(word_of(t.param("defender")), ctx.defender.as_deref())
                 || !matches(word_of(t.param("talker")), ctx.talker.as_deref())
                 || !matches(word_of(t.param("listener")), ctx.listener.as_deref())
+                || !matches(word_of(t.param("city")), ctx.city.as_deref())
             {
                 continue;
             }
@@ -112,7 +133,7 @@ impl EventEngine {
                     }
                     "CREATEUNIT" => {
                         let unit = word_of(a.param("unit")).unwrap_or("").to_string();
-                        let owner = word_of(a.param("owner")).unwrap_or("ANYBODY").to_string();
+                        let owner = resolve_civ(word_of(a.param("owner")).unwrap_or("ANYBODY"), ctx);
                         let veteran = word_of(a.param("veteran"))
                             .map(|v| v.eq_ignore_ascii_case("yes"))
                             .unwrap_or(false);
@@ -134,8 +155,14 @@ impl EventEngine {
                         }
                     }
                     "CHANGEMONEY" => {
-                        if let Some(n) = a.param("amount").and_then(|v| v.number()) {
-                            effects.push(Effect::ChangeMoney(n));
+                        if let (Some(n), Some(r)) = (
+                            a.param("amount").and_then(|v| v.number()),
+                            word_of(a.param("receiver")),
+                        ) {
+                            effects.push(Effect::ChangeMoney {
+                                receiver: resolve_civ(r, ctx),
+                                amount: n,
+                            });
                         }
                     }
                     "PLAYCDTRACK" => {
@@ -145,8 +172,16 @@ impl EventEngine {
                     }
                     "DONTPLAYWONDERS" => effects.push(Effect::DontPlayWonders),
                     "GIVETECHNOLOGY" => {
-                        if let Some(t) = word_of(a.param("tech")) {
-                            effects.push(Effect::GiveTechnology(t.to_string()));
+                        // Macro.txt: `technology=` (an index) and
+                        // `receiver=`; the old `tech=` key never occurs.
+                        if let (Some(t), Some(r)) = (
+                            a.param("technology").and_then(|v| v.number()),
+                            word_of(a.param("receiver")),
+                        ) {
+                            effects.push(Effect::GiveTechnology {
+                                receiver: resolve_civ(r, ctx),
+                                technology: t,
+                            });
                         }
                     }
                     _ => {} // JUSTONCE and unknown actions carry no effect
@@ -244,5 +279,62 @@ mod tests {
         }
         let wrong = Ctx { defender: Some("West".into()), ..ctx };
         assert!(eng.fire("UNITKILLED", &wrong).is_empty(), "no prefix match");
+    }
+
+    #[test]
+    fn receivers_and_trigger_parties_resolve() {
+        let Some(f) = fallrome_events() else {
+            eprintln!("skipping: no FallRome Events.txt");
+            return;
+        };
+        let mut eng = EventEngine::new(f);
+        // Theodoric II's death: CREATEUNIT owner=TRIGGERDEFENDER
+        let ctx = Ctx {
+            unit: Some("Theodoric II".into()),
+            attacker: Some("Huns".into()),
+            defender: Some("Visigoths".into()),
+            ..Default::default()
+        };
+        let eff = eng.fire("UNITKILLED", &ctx);
+        assert!(
+            eff.iter().any(|e| matches!(e, Effect::CreateUnit { unit_name, owner, .. }
+                if unit_name == "Barbarian King" && owner == "Visigoths")),
+            "{eff:?}"
+        );
+        // Tyras taken from the Huns: GIVETECHNOLOGY receiver=TRIGGERATTACKER
+        // technology=99 (it never fired under the old `tech=` key)
+        let ctx = Ctx {
+            attacker: Some("Byzantines".into()),
+            defender: Some("Huns".into()),
+            city: Some("Tyras".into()),
+            ..Default::default()
+        };
+        let other = Ctx { city: Some("Olbia".into()), ..ctx.clone() };
+        assert!(
+            !eng.fire("CITYTAKEN", &other)
+                .iter()
+                .any(|e| matches!(e, Effect::GiveTechnology { .. })),
+            "city= must match: Olbia is not Tyras"
+        );
+        let eff = eng.fire("CITYTAKEN", &ctx);
+        assert!(
+            eff.contains(&Effect::GiveTechnology {
+                receiver: "Byzantines".into(),
+                technology: 99
+            }),
+            "{eff:?}"
+        );
+        // Merchant ransacked by the Anglo-Saxons: CHANGEMONEY receiver
+        let ctx = Ctx {
+            unit: Some("Merchant".into()),
+            attacker: Some("Anglo-Saxons".into()),
+            defender: Some("West Romans".into()),
+            ..Default::default()
+        };
+        let eff = eng.fire("UNITKILLED", &ctx);
+        assert!(eff.contains(&Effect::ChangeMoney {
+            receiver: "Anglo-Saxons".into(),
+            amount: 50
+        }));
     }
 }

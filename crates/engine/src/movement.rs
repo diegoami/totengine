@@ -185,6 +185,7 @@ mod tests {
             game_flags: 0x10,
             human_mask: 0x02,
             wonders: [-1; 28],
+            treasury: [0; 8],
             civs: vec![],
             units: vec![
                 Unit {

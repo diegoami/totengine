@@ -8,6 +8,7 @@
 //! T1-3..T1-7.
 
 pub mod cities;
+pub mod events;
 pub mod movement;
 pub mod research;
 pub mod rng;

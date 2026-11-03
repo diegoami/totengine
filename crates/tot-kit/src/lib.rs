@@ -7,10 +7,12 @@
 //! Provenance: layout findings live in `docs/evidence/README.md`; the external
 //! structural spec is Mercator's Apolyton thread (see `docs/plan.md` §7).
 
+mod events;
 mod mp;
 mod rules;
 mod sav;
 
+pub use events::{parse_events, Command, Event, EventError, EventFile, Value};
 pub use mp::{parse_mp, parse_mp_file, MpFormat, MpMap};
 pub use rules::{emit_rules, parse_rules, Rules, Section, TechDef, WonderDef};pub use sav::{
     civ_names_from, emit_sav, parse_sav, parse_sav_file, CityRecord, CivNames, MapBlock,

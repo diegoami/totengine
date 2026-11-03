@@ -17,6 +17,7 @@ fn main() -> ExitCode {
         Some("tech") => cmd_tech(&args[2..]),
         Some("run") => cmd_run(&args[2..]),
         Some("edit") => cmd_edit(&args[2..]),
+        Some("events") => cmd_events(&args[2..]),
         Some("--version") | Some("-V") => {
             println!("totctl {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
@@ -552,4 +553,41 @@ fn cmd_mp(args: &[String]) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+fn cmd_events(args: &[String]) -> ExitCode {
+    let Some(path) = args.first() else {
+        eprintln!("usage: totctl events <Events.txt>");
+        return ExitCode::FAILURE;
+    };
+    let Ok(src) = std::fs::read_to_string(path) else {
+        eprintln!("cannot read {path}");
+        return ExitCode::FAILURE;
+    };
+    let f = match tot_kit::parse_events(&src) {
+        Ok(f) => f,
+        Err(e) => {
+            eprintln!("parse error: {e:?}");
+            return ExitCode::FAILURE;
+        }
+    };
+    use std::collections::BTreeMap;
+    let mut triggers: BTreeMap<&str, usize> = BTreeMap::new();
+    let mut actions: BTreeMap<&str, usize> = BTreeMap::new();
+    for e in &f.events {
+        *triggers.entry(e.trigger.keyword.as_str()).or_default() += 1;
+        for a in &e.actions {
+            *actions.entry(a.keyword.as_str()).or_default() += 1;
+        }
+    }
+    println!("events       : {}", f.events.len());
+    println!("triggers     :");
+    for (k, n) in &triggers {
+        println!("  {k:<18} {n}");
+    }
+    println!("actions      :");
+    for (k, n) in &actions {
+        println!("  {k:<18} {n}");
+    }
+    ExitCode::SUCCESS
 }

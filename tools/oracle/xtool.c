@@ -203,6 +203,16 @@ int main(int argc, char **argv)
         XSync(d, False);
         if (x_error_caught) die("XSetInputFocus failed");
         printf("focus set on 0x%lx\n", w);
+    } else if (!strcmp(cmd, "resize") && argc == 5) {
+        /* no WM on Xvfb: resize directly (bigger game window = the city
+         * view and full-map screenshots stop being clipped) */
+        Window w = (Window)strtoul(argv[2], NULL, 0);
+        XSync(d, False);
+        x_error_caught = 0;
+        XResizeWindow(d, w, (unsigned)atoi(argv[3]), (unsigned)atoi(argv[4]));
+        XSync(d, False);
+        if (x_error_caught) die("XResizeWindow failed");
+        printf("resized 0x%lx to %sx%s\n", w, argv[3], argv[4]);
     } else if (!strcmp(cmd, "windows")) {
         Window r, parent, *children;
         unsigned int n;

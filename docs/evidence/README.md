@@ -32,6 +32,29 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
   (the unit-region gate fails; the walker cannot locate them either) —
   no fabricated tables.
 
+### T1-4 walker fixes + young-city quirk (2026-11-03 night)
+
+- **Two-character city names are real**: "Ur" in the standard-game corpus
+  broke the name-chain at the 3-char minimum, hiding every later city
+  (Malaca sat undetected behind it). Both walkers now accept 2..15-char
+  names (Rust `sav.rs`, Python `totctl.py`).
+- **Young city records are half-initialized**: a freshly founded city
+  carries placeholder coords (x=1, y=256-pattern) and zeroed boxes until
+  its first full processing (Madrid @turn 25, Malaca @turn 43 — same
+  signature). Not corruption; do not reject on it.
+- The "**post-city block**" interpretation from T0-6 is revised: at least
+  part of it is the *extended city array* (cities beyond the walked chain)
+  followed by end-game quote strings ("…Theory is to be…", "WE WON THE
+  GAME!") — not a fixed per-city structure.
+- `xtool resize` added (XResizeWindow, no WM needed): the game WINDOW
+  resizes but the DirectDraw surface stays 600×440 — city views stay
+  clipped; not a path to bigger screenshots.
+- @TERRAIN fields 3/4/5 = food/shields/trade (classic layout); the city
+  screen's worked-tile labels agree on the samples read (grassland tile
+  "2F+1S" = 2,1,0). Full verification needs the worked-tile array, which
+  is NOT a 0xFF-sentinel map-parallel array (scan found none) — next
+  experiment: RAM-diff while toggling a worked tile via the city screen.
+
 ### T1-4 city model (2026-11-03 evening): growth math closed on a peaceful standard-game lab
 
 A fresh STANDARD game driven turn-by-turn through the original under the

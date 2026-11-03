@@ -462,13 +462,16 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
 
     // cities: 92-B name-chain scan (anti-fabrication #49/#58) after the
     // 10240 blob. Mirrors the Python walker byte-for-byte: a candidate is
-    // a 3..15-byte printable run whose 16-byte slot NUL-pads to +15, and
+    // a 2..15-byte printable run whose 16-byte slot NUL-pads to +15, and
     // the scan jumps past a found name (interior starts are not examined).
     let mut cands: Vec<usize> = Vec::new();
     let mut i = blob10240_end;
     while i + 16 <= data.len() {
         let j = data[i..i + 16].iter().position(|&b| b == 0).unwrap_or(16);
-        if (3..16).contains(&j) {
+        // 2..15: two-letter city names are real ("Ur" in a standard-game
+        // corpus broke the chain at exactly this bound, hiding later
+        // cities — T1-4 2026-11-03)
+        if (2..16).contains(&j) {
             let nm = &data[i..i + j];
             let printable = nm
                 .iter()

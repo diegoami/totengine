@@ -517,7 +517,7 @@ def walk_ext033(data, hdr, blob10240_end, out):
     i = blob10240_end
     while i < end - 16:
         j = data.find(b"\x00", i, i + 16)
-        if 3 <= j - i <= 15 and data[i + 15] == 0 \
+        if 2 <= j - i <= 15 and data[i + 15] == 0 \
                 and all(32 <= c < 127 for c in data[i:j]):
             cands2.add(i)
             i = j
@@ -787,7 +787,7 @@ def walk_save(path: str) -> dict:
             i = blob10240_end
             while i < len(data) - 16:
                 j = data.find(b"\x00", i, i + 16)
-                if 3 <= j - i <= 15:
+                if 2 <= j - i <= 15:
                     nm = data[i:j]
                     if all(32 <= c < 127 or 0xA0 <= c <= 0xFF for c in nm) and data[i + 15] == 0:
                         # require the previous record position to exist: the slot

@@ -3,6 +3,76 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
+## [0.2.0] — Headless game loop
+
+ToTEngine boots the original's scenarios **and standard-game saves** into a
+world state and runs them headless: movement, combat, macro events and city
+growth, each checked against the original game (Wine oracle + RAM access) or
+against its own documentation (`Macro.txt`). **Scope (owner decision,
+2026-11-03):** RG-2 (start placement from the game seed) moved to v0.3.0.
+The new-game entropy source is not found yet; see evidence §RG-2.
+
+### Engine
+
+- **Turn loop** (`engine::turn::WorldState::run_turn`): city growth,
+  TURN/TURNINTERVAL/RANDOMTURN events with their effects applied, and
+  movement reset. Deterministic: same save + seed + rules gives the same
+  fingerprints. Checks: asset-free 50-turn test in CI, FallRome 50-turn
+  golden (`docs/evidence/fallrome-50turn.txt`), and a standard-game save
+  (`standard_game_install.rs`).
+- **Movement** (T1-3): Rules columns oracle-proven; thirds, roads/rail,
+  ZOC, domains.
+- **Combat** (T1-6): the original's two generators, decoded and shipped:
+  - the NR LCG `rand_int`, runtime-verified;
+  - the MSVC CRT `rand()`, which drives combat.
+  Round formula, attack/defence strength (incl. ToTPP's hooks),
+  promotion, defender choice and damage persistence. **Six oracle battles
+  are bit-exact, three of them predicted from seeds we wrote.** Combat is
+  wired into `move_unit`.
+- **Events** (T1-7): `@IF/@THEN` parser and interpreter. Matching and
+  CREATEUNIT/CHANGEMONEY/GIVETECHNOLOGY/CITYTAKEN semantics were corrected
+  against `Macro.txt`. Effects change the world (`engine::effects`):
+  treasuries (oracle-proven field), units created. Kills fire UNITKILLED.
+- **Cities** (T1-4): economics fields oracle-verified. The growth model
+  replays the whole standard-game lab series: 126 transitions exact, 10 of
+  them growths.
+- **Research/wonders** (T1-5), **rules model** (T1-1), **world state +
+  checksum** (T1-2).
+
+### Formats
+
+- **Unit and city records are read in the game's own framing.** Both
+  walkers had units 6 B late and cities 34 B late, so every city carried
+  the next city's coordinates and boxes. Proof: a unit standing on a city
+  is homed there 349/349 (evidence §Record framing FIXED). City owner is
+  u8@10, size u8@11. Unit fields decoded: veteran, damage, orders, home,
+  stack links.
+- Save fields: game flags @652, human mask @687, treasury (civ block
+  i32@10), civ-name slots.
+- **Save writer** (T1-8): surgical `0x32` edits, a byte-identical round
+  trip, and an edited save loaded by the original.
+- Standard-game setup byte-map (RG-1).
+
+### Oracle rig
+
+- RAM-level unit driver (`unitram.py`), RNG slot tools (`rngslot.py`),
+  live combat-frame polling, and `/proc/<pid>/mem` writes for `.text`
+  patches.
+- Standard-game lab scripts, and the derived growth series generator
+  (`tools/growth_series.py`).
+
+### Known open
+
+- RG-2 (moved to v0.3.0).
+- Combat special cases: pikemen bonus, ships, air, improvement-dependent
+  bonuses (fortress, walls, coastal fortress, SAM, SDI). Wonder
+  obsolescence needs per-civ techs.
+- GIVETECHNOLOGY is reported but not applied (no per-civ techs).
+  CREATEUNIT's "valid location" rule is the engine's own.
+- Tile yields, production items, unrest. The turn-loop step order is the
+  engine's choice. Parity with the original's per-turn saves is T1-10.
+- The `0x33` record framing was not re-checked.
+
 ## [0.1.0] — Tier 0: format toolchain & reconnaissance
 
 First release: ToTEngine reads the original game's data — every claim proven

@@ -41,9 +41,10 @@ tag — one big review per release by a model family that implemented none of it
 AGREE/BLOCK on a milestone issue, findings as ordinary issues, tag on exactly the reviewed
 SHA. The process: [docs/milestone-review.md](docs/milestone-review.md). Themes:
 `v0.1.0` = Tier 0 complete (released 2026-11-02 after 5 review rounds),
-`v0.2.0` = headless game loop — T1 core + **RG-1/RG-2** so a *standard*
-game (no scenario) boots and runs headless on the classic map,
-`v0.3.0` = generated-world campaign (RG-3/4/5/7).
+`v0.2.0` = headless game loop — T1 core + **RG-1** so scenarios *and*
+standard games boot and run headless (**RG-2 moved to v0.3.0**, owner
+decision 2026-11-03: the new-game entropy source is not found yet),
+`v0.3.0` = generated-world campaign (RG-2/3/4/5/7).
 
 ## Epic T0 — Format toolchain & reconnaissance (current)
 

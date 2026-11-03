@@ -59,8 +59,9 @@ T1-1/2/3/5/8/9 and RG-1 are done. T1-6's randomness half is **done**
 shipped in `engine::rng`). Its combat-round half is decoded and shipped
 in `engine::combat`: rolls come from a *second* generator (the MSVC CRT
 `rand()`); attack/defence strength (incl. ToTPP hooks) and the promotion
-roll are decoded too, and six oracle battles are bit-exact. Open: sea/air
-special cases, then turn-loop wiring for T1-7's UNITKILLED.
+roll are decoded too, six oracle battles are bit-exact, and combat is
+wired into `move_unit` with a UNITKILLED context for T1-7. Open: sea/air
+and improvement-dependent special cases.
 Units are driven in the oracle through RAM (`tools/oracle/unitram.py`),
 not by map navigation. T1-4 (cities) and
 T1-7 (events) are partially landed. `BACKLOG.md` is the live queue,

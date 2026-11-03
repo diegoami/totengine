@@ -354,6 +354,257 @@ pub fn resolve(rng: &mut CrtRand, mut att: Fighter, mut def: Fighter, reroll: bo
     }
 }
 
+/// Unit-type flag bits (Rules @UNITS field 13, read right to left).
+pub const FLAG_CAN_ATTACK_AIR: u32 = 1 << 4;
+pub const FLAG_NEGATES_WALLS: u32 = 1 << 6;
+pub const FLAG_PIKEMEN: u32 = 1 << 10;
+pub const FLAG_ONE_SHOT: u32 = 1 << 12;
+pub const FLAG_AEGIS: u32 = 1 << 13;
+
+/// Game-flags bit: damage persists between battles (save @652).
+pub const GAME_FLAG_PERSISTENT_DAMAGE: u16 = 0x10;
+
+/// What one attack did, for the turn report and the event engine
+/// (UNITKILLED).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Battle {
+    pub attacker: crate::Unit,
+    pub defender: crate::Unit,
+    pub attack: i32,
+    pub defense: i32,
+    pub outcome: Outcome,
+    /// The unit that died (a copy of its last state).
+    pub killed: crate::Unit,
+}
+
+impl Battle {
+    /// The UNITKILLED trigger context for this battle, per the game's own
+    /// Macro.txt: "Attacker is the civilization that killed the unit,
+    /// defender is the one who owned the unit" — so when the attacker
+    /// dies, `attacker` is the *defending* civ. `unit` is the killed
+    /// unit's Rules name. (`Defender Only` is not modelled; FallRome does
+    /// not use it.)
+    pub fn unitkilled_ctx(&self, w: &crate::WorldState, rules: &Rules) -> crate::events::Ctx {
+        let winner = if self.outcome.attacker_won {
+            &self.attacker
+        } else {
+            &self.defender
+        };
+        crate::events::Ctx {
+            unit: rules
+                .unit_names()
+                .get(self.killed.type_id as usize)
+                .map(|s| s.to_string()),
+            attacker: Some(w.civ_name(winner.owner)),
+            defender: Some(w.civ_name(self.killed.owner)),
+            ..Default::default()
+        }
+    }
+}
+
+impl crate::WorldState {
+    /// Does `civ` own wonder `w` (VA 0x444a61 minus obsolescence)? The
+    /// original also returns false once ANY civ knows the obsoleting tech
+    /// (VA 0x4449b0); per-civ techs are not in the world state yet, so
+    /// obsolescence is not modelled.
+    pub fn civ_has_wonder(&self, civ: u8, w: usize) -> bool {
+        let Some(&city) = self.wonders.get(w) else {
+            return false;
+        };
+        city >= 0
+            && self
+                .cities
+                .get(city as usize)
+                .is_some_and(|c| (c.owner & 0x0f) as u8 == civ)
+    }
+
+    fn city_at(&self, x: u16, y: u16) -> Option<usize> {
+        self.cities.iter().position(|c| (c.x, c.y) == (x, y))
+    }
+
+    fn defense_of(&self, rules: &Rules, d: &crate::Unit, att: Option<&crate::Unit>) -> i32 {
+        let t = d.type_id as usize;
+        let terrain = self.map.terrain_at(d.x, d.y).unwrap_or(0);
+        let river = self
+            .map
+            .stored_index(d.x, d.y)
+            .is_some_and(|i| self.map.river[i]);
+        let in_city = self.city_at(d.x, d.y).is_some();
+        let input = DefenseInput {
+            defense: rules.unit_defense(t).unwrap_or(0) as u8,
+            domain: rules.unit_domain(t).unwrap_or(0),
+            veteran: d.veteran,
+            terrain_defense: rules.terrain_defense(terrain as usize).unwrap_or(2) as u8,
+            river,
+            fortified: d.orders == 2,
+            // Fortress / City Walls are tile/city improvements the world
+            // state does not carry yet; the Great Wall stands in for walls.
+            fortress: false,
+            in_city,
+            city_walls_or_great_wall: self.civ_has_wonder(d.owner, 6),
+            attacker: att.map(|a| {
+                let at = a.type_id as usize;
+                (
+                    rules.unit_domain(at).unwrap_or(0),
+                    rules.unit_flags(at).unwrap_or(0) & FLAG_NEGATES_WALLS != 0,
+                )
+            }),
+        };
+        defense_strength(&input, &DefenseMultipliers::default())
+    }
+
+    fn hp_max(rules: &Rules, u: &crate::Unit) -> i32 {
+        rules.unit_hits(u.type_id as usize).unwrap_or(1) as i32 * 10
+    }
+
+    /// The original's defender choice (VA 0x53fa30): every unit on the
+    /// tile is rated in tile-list order ([`crate::Unit::stack_pos`]); the
+    /// LAST unit with `rating >= best` defends. Land units on an ocean tile
+    /// are skipped.
+    fn select_defender(&self, rules: &Rules, att: &crate::Unit, x: u16, y: u16) -> Option<usize> {
+        let ocean = self.map.terrain_at(x, y) == Some(crate::movement::OCEAN_TERRAIN);
+        let att_domain = rules.unit_domain(att.type_id as usize).unwrap_or(0);
+        let att_flags = rules.unit_flags(att.type_id as usize).unwrap_or(0);
+        let in_city = self.city_at(x, y).is_some();
+        let mut best = 0;
+        let mut pick = None;
+        let mut tile: Vec<usize> = (0..self.units.len())
+            .filter(|&i| {
+                let u = &self.units[i];
+                (u.x, u.y) == (x, y) && u.owner != att.owner
+            })
+            .collect();
+        tile.sort_by_key(|&i| self.units[i].stack_pos); // stable: index order within a position
+        for i in tile {
+            let u = &self.units[i];
+            let t = u.type_id as usize;
+            let domain = rules.unit_domain(t).unwrap_or(0);
+            if ocean && domain == DOMAIN_LAND {
+                continue;
+            }
+            let flags = rules.unit_flags(t).unwrap_or(0);
+            let mut r = self.defense_of(rules, u, Some(att));
+            if self.game_flags & GAME_FLAG_PERSISTENT_DAMAGE != 0 {
+                let max = Self::hp_max(rules, u);
+                r = r * (max - u.damage as i32) / max;
+            }
+            if flags & FLAG_PIKEMEN != 0 {
+                r += 1;
+            }
+            if flags & FLAG_AEGIS != 0 && att_domain == DOMAIN_AIR {
+                r *= if att_flags & FLAG_ONE_SHOT != 0 { 5 } else { 3 };
+            }
+            if flags & FLAG_CAN_ATTACK_AIR != 0
+                && att_domain == DOMAIN_AIR
+                && att_flags & FLAG_CAN_ATTACK_AIR != 0
+            {
+                r <<= 1;
+            }
+            if domain == DOMAIN_SEA && in_city {
+                // ×2 vs air only without SDI (improvement 0x1b — not in
+                // the world state yet, so treated as absent); halved else.
+                r = if att_domain == DOMAIN_AIR {
+                    r << 1
+                } else {
+                    r / 2
+                };
+            }
+            if r >= best {
+                best = r;
+                pick = Some(i);
+            }
+        }
+        pick
+    }
+
+    /// `attacker_idx` attacks the enemy-held tile (x, y). Returns `None`
+    /// when there is nothing to attack or the unit cannot attack (no
+    /// movement, attack factor 0 — the latter is an engine rule, not
+    /// decoded). The loser is removed from `units` (indices after it
+    /// shift); only the defender dies, its stack-mates survive (observed
+    /// in all FallRome battles, open field). The attacker stays on its
+    /// tile and spends one movement point (oracle: moves spent 0 → 15).
+    pub fn attack(&mut self, rules: &Rules, attacker_idx: usize, x: u16, y: u16) -> Option<Battle> {
+        let att = self.units.get(attacker_idx)?.clone();
+        if att.moves_left == 0 {
+            return None;
+        }
+        let at = att.type_id as usize;
+        let attack = rules.unit_attack(at).unwrap_or(0);
+        if attack == 0 {
+            return None;
+        }
+        let def_idx = self.select_defender(rules, &att, x, y)?;
+        if self.game_flags & GAME_FLAG_PERSISTENT_DAMAGE == 0 {
+            self.units[attacker_idx].damage = 0;
+            self.units[def_idx].damage = 0;
+        }
+        let (att, def) = (
+            self.units[attacker_idx].clone(),
+            self.units[def_idx].clone(),
+        );
+        let civ_cities = self
+            .cities
+            .iter()
+            .filter(|c| (c.owner & 0x0f) as u8 == def.owner)
+            .count() as i32;
+        let ctx = AttackContext {
+            moves_left: att.moves_left as i32,
+            move_unit: 3, // engine movement is in thirds (T1-3 caveat)
+            attacker_barbarian: att.owner == 0,
+            defender_barbarian: def.owner == 0,
+            attacker_great_wall: self.civ_has_wonder(att.owner, 6),
+            defender_great_wall: self.civ_has_wonder(def.owner, 6),
+            defender_human: self.human_mask & (1 << (def.owner & 7)) != 0,
+            difficulty: self.difficulty as i32,
+            defender_city_count: civ_cities,
+            // Improvements are not in the world state yet.
+            defender_city_has_palace: false,
+            defender_in_city: self.city_at(x, y).is_some(),
+        };
+        let attr = if att.veteran { ATTR_VETERAN } else { 0 };
+        let (a, reroll) = attack_in_context(attack_strength(attack as u8, attr), &ctx);
+        let d = self.defense_of(rules, &def, Some(&att));
+        let fighter = |u: &crate::Unit, strength: i32| Fighter {
+            strength,
+            hp: Self::hp_max(rules, u),
+            firepower: rules.unit_firepower(u.type_id as usize).unwrap_or(1) as i32,
+            damage: u.damage as i32,
+            wonder7: self.civ_has_wonder(u.owner, 7),
+        };
+        let (fa, fd) = (fighter(&att, a), fighter(&def, d));
+        let o = resolve(&mut self.combat_rng, fa, fd, reroll);
+        let one_shot = |u: &crate::Unit| {
+            rules.unit_flags(u.type_id as usize).unwrap_or(0) & FLAG_ONE_SHOT != 0
+        };
+        {
+            let u = &mut self.units[attacker_idx];
+            u.damage = o.attacker_damage.clamp(0, 255) as u8;
+            u.moves_left = u.moves_left.saturating_sub(3);
+        }
+        self.units[def_idx].damage = o.defender_damage.clamp(0, 255) as u8;
+        let (winner, loser) = if o.attacker_won {
+            (attacker_idx, def_idx)
+        } else {
+            (def_idx, attacker_idx)
+        };
+        if o.winner_promoted && !one_shot(&self.units[winner]) {
+            self.units[winner].veteran = true;
+        }
+        let killed = self.units.remove(loser);
+        Some(Battle {
+            attacker: att,
+            defender: def,
+            attack: a,
+            defense: d,
+            outcome: o,
+            killed,
+        })
+    }
+}
+
+use tot_kit::Rules;
+
 #[cfg(test)]
 mod tests {
     use super::*;

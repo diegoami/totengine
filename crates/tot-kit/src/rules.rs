@@ -188,6 +188,28 @@ impl Rules {
         self.unit_num_strip(id, 8, &['f', 'F'])
     }
 
+    /// Unit flags (row field 13): the 15-character 0/1 string read RIGHT
+    /// to left, bit 0 = last character. The game's type record holds it as
+    /// a u32 at +4 (read live: B. Horsemen `000000000000010` → 2). Bits
+    /// used by combat (evidence §T1-6 combat): 4 can attack air, 6
+    /// negates city walls, 10 ×1.5 vs horse (pikemen), 12 one-shot.
+    pub fn unit_flags(&self, id: usize) -> Option<u32> {
+        let f = self
+            .section("UNITS")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(13))?;
+        let f = f.trim();
+        if f.is_empty() || !f.bytes().all(|b| b == b'0' || b == b'1') {
+            return None;
+        }
+        Some(
+            f.bytes()
+                .rev()
+                .enumerate()
+                .fold(0u32, |acc, (i, b)| acc | (((b == b'1') as u32) << i)),
+        )
+    }
+
     fn unit_num(&self, id: usize, field: usize) -> Option<u32> {
         self.section("UNITS")
             .and_then(|s| s.rows.get(id))
@@ -526,6 +548,19 @@ mod tests {
 
     /// Synthetic fixture mirroring the real structure (no game data).
     const FIXTURE: &str = "; Rules.txt fixture\r\n; second preamble line\r\n@COSMIC\r\n3       ; Road movement multiplier\r\n2       ; food each citizen eats\r\n@TERRAIN\r\nDesert,  0, 1, a\r\nPlains,  1, 1, b\r\nOcean, 10, 1, c\r\n; an inter-row comment\r\n@UNITS\r\nSettlers,     Exp, 0,  1.,0\r\nEngineers,    nil, 0,  2.,0 ; build faster\r\nTrireme,      nil, 2,  1.,0\r\n@GOVERNMENTS\r\nAnarchy,        Mr.,         Ms.\r\n@MAP_TRANSPORT_RELATIONSHIPS\r\n1,2\r\n2,3\r\n";
+
+    #[test]
+    fn unit_flags_read_right_to_left() {
+        // Rows shaped like FallRome's B. Horsemen / Scan. Warship.
+        let r = parse_rules(
+            "@UNITS\r\nB. Horsemen, nil, 0, 3.,0, 5a,3d, 1h,1f, 6,0, 0, AFl, 000000000000010\r\nWarship, nil, 2, 7.,0, 4a,3d, 2h,1f, 7,4, 4, Amp, 100000000000001\r\nBroken, nil, 0, 1.,0, 1a,1d, 1h,1f, 1,0, 0, no, 01x\r\n",
+        );
+        assert_eq!(r.unit_flags(0), Some(0x2)); // live type record +4 = 2
+        assert_eq!(r.unit_flags(1), Some(0x4001));
+        assert_eq!(r.unit_flags(2), None);
+        assert_eq!(r.unit_attack(0), Some(5));
+        assert_eq!(r.unit_defense(0), Some(3));
+    }
 
     #[test]
     fn first_data_row_is_not_eaten() {

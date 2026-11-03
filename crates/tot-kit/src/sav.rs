@@ -223,6 +223,43 @@ impl UnitRecord {
     pub fn id(&self) -> u16 {
         u16::from_le_bytes([self.raw[36], self.raw[37]])
     }
+    /// Attribute word u16@12 (the game's own record +6 — this struct's
+    /// framing starts 6 bytes into the game's record, evidence §T1-6
+    /// combat): bit `0x2000` = veteran (read by the attack/defence
+    /// strength functions, set by promotion; oracle battle 6), bit
+    /// `0x0100` set on fortified/sentried units.
+    pub fn attr(&self) -> u16 {
+        u16::from_le_bytes([self.raw[12], self.raw[13]])
+    }
+    pub fn is_veteran(&self) -> bool {
+        self.attr() & 0x2000 != 0
+    }
+    /// Movement spent this turn, u8@16, in units of the game's one-move
+    /// byte (15 in FallRome; panel "Moves: 0 12/15" for 3 spent).
+    pub fn moves_spent(&self) -> u8 {
+        self.raw[16]
+    }
+    /// Damage taken (hit points lost; HP = Rules `h` × 10), u8@18 —
+    /// oracle battles: 0→5, 1→4, and 10 on the killed unit.
+    pub fn damage(&self) -> u8 {
+        self.raw[18]
+    }
+    /// Orders u8@23: 0xff none, 1 fortifying, 2 fortified (2 makes the
+    /// defence ×1.5 — oracle battle 5).
+    pub fn orders(&self) -> u8 {
+        self.raw[23]
+    }
+    /// Tile-stack links i16@32 / i16@34 (game record +0x1a / +0x1c): the
+    /// previous / next unit on the same tile, as GAME indices (= this
+    /// crate's index + 1), −1 = none. The game walks them to pick a
+    /// defender (VA 0x56909a / 0x568fdf); ROMFALL (22,30): 689 → 510,
+    /// and 510 defended first — the last unit in list order wins ties.
+    pub fn stack_prev(&self) -> i16 {
+        i16::from_le_bytes([self.raw[32], self.raw[33]])
+    }
+    pub fn stack_next(&self) -> i16 {
+        i16::from_le_bytes([self.raw[34], self.raw[35]])
+    }
 }
 
 /// A 92-byte city record located by the name-chain scan. Proven fields
@@ -316,6 +353,15 @@ impl CityRecord {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct CivNames {
     pub strings: Vec<String>,
+    /// Fixed 24-byte NUL-terminated slots: leader @2, plural @26,
+    /// adjective @50 of the 242-byte block (file 1252/1276/1300 for civ 1;
+    /// the block's first 2 bytes are not a name). All 7 ROMFALL blocks read clean there, and the
+    /// plurals are the names FallRome's Events.txt matches — "West
+    /// Romans", "Huns"; the stray strings `strings` picks up are stale
+    /// bytes after a slot's NUL).
+    pub leader: String,
+    pub plural: String,
+    pub adjective: String,
 }
 
 /// Port of the Python walker's `null_strings` (limit 8): collect runs of
@@ -342,7 +388,17 @@ pub fn civ_names_from(block: &[u8]) -> CivNames {
             break;
         }
     }
-    CivNames { strings }
+    let slot = |o: usize| -> String {
+        let b = block.get(o..(o + 24).min(block.len())).unwrap_or(&[]);
+        let end = b.iter().position(|&c| c == 0).unwrap_or(b.len());
+        String::from_utf8_lossy(&b[..end]).into_owned()
+    };
+    CivNames {
+        strings,
+        leader: slot(2),
+        plural: slot(26),
+        adjective: slot(50),
+    }
 }
 
 /// A parsed `0x32` (or `0x33`-front) save/scenario. See the module docs
@@ -353,6 +409,16 @@ pub struct SaveFile {
     pub version: u16,
     pub turn: i16,
     pub year: i16,
+    /// Game-flags word u16@652 (the RAM copy at VA 0x607638 aligns byte for
+    /// byte). Bit `0x10`: damage persists between battles — without it
+    /// the hit-point helper (VA 0x568d3e) zeroes damage first (evidence
+    /// §T1-6 combat). ROMFALL: `0x81bf`.
+    pub game_flags: u16,
+    /// Human-players bitmask u8@687 (bit n = civ n): the byte the combat
+    /// and promotion code test as "is this civ human" (VA 0x60765b, which
+    /// aligns with @687). ROMFALL `0x02` = WRE only. Note @685..688 are also
+    /// read as `seed_word` below — that label is unproven for @687.
+    pub human_mask: u8,
     /// Game block @684 — §RG-1 (0 = Chieftain … 5 = Deity).
     pub difficulty: u8,
     /// Duplicated word @685..688 (`0x02XX`) — the combat/event-replay
@@ -405,6 +471,8 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     let year = i16le(data, OFF_GAME + 2)?;
     // §RG-1: 684 difficulty | 685..688 seed word ×2 | 689 rivals. The two
     // copies must agree on every file observed; keep the first.
+    let game_flags = u16le(data, 652)?;
+    let human_mask = data[687];
     let difficulty = data[684];
     let seed_word = u16le(data, 685)?;
     let rivals = data[689];
@@ -547,6 +615,8 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         version,
         turn,
         year,
+        game_flags,
+        human_mask,
         difficulty,
         seed_word,
         rivals,

@@ -539,6 +539,49 @@ battles, all derived numbers). Replayed by `engine::combat` tests
   the animation (the frame stays up for over a second), and the polled
   rolls sit at the predicted round positions.
 
+**Turn-loop wiring facts** (decoded for `WorldState::attack`; acceptance
+test `crates/engine/tests/combat_install.rs` replays battle 2 from the real
+ROMFALL.scn + Rules: A 96, D 54, outcome, CRT end state and the dying unit
+all equal the oracle):
+
+- **Defender choice** (`0x53fa30`): walk the tile's stack list (game
+  record +0x1a prev / +0x1c next, game indices; totctl i16@32/@34) and
+  skip land units on an ocean tile. Rate each unit
+  `defense_strength(unit, attacker)`, scaled by `hp_left/hp_max` when game
+  flag `0x10` is set. Pikemen get +1. Vs an air attacker, AEGIS gets ×5
+  (missile) or ×3, and a fighter-flag unit vs a fighter-flag attacker
+  gets ×2. Ships in a city are halved, but ×2 vs air when the city lacks
+  improvement 0x1b. The **last** unit with `rating >= best` defends.
+  ROMFALL (22,30): list 689 → 510, and 510 defended battle 2, 689 battle
+  3, which matches.
+- **Game-flags word = save @652** (RAM `0x607638` aligns byte for byte with
+  the save from 652 on; tot-kit called 652..667 "menu"). Bit `0x10`: damage
+  persists. Without it the HP helper `0x568d3e` zeroes damage before use.
+  ROMFALL `0x81bf`. Same alignment: **active unit = save @674**,
+  **difficulty @684** (`0x607658`, used as `(diff+1)·A/4` for barbarian
+  attacks), **human-players bitmask @687** (`0x60765b`; ROMFALL `0x02` =
+  WRE). So @687 is not part of a "seed word".
+- **The combat RNG is seeded from the wall clock**: `srand(time())` at VA
+  `0x598423` (`0x5b5970` = GetLocalTime-based `time`), plus a second
+  `srand` at `0x4156dc`. A save does not determine combat; the engine
+  seeds `combat_rng` from its own seed.
+- **`has_wonder(civ, w)`** (`0x444a61`): false when the wonder is obsolete.
+  That is decided by `0x4449b0`: ANY civ 1..7 knows the obsoleting tech
+  (ToTPP hook `0x76c2b575`). Otherwise the owner byte (+6) of city
+  `wonders[w]` (save @906) is compared. Obsolescence is not modelled yet
+  (no per-civ techs in the world state).
+- **Attack cost**: the attacker stays on its tile and spends one movement
+  point (battles 2–4: spent 0 → 15 = one FallRome point). The only
+  observed case is 1-move units.
+- **Civ-name block slots** (242 B @1250): leader @2, plural @26, adjective
+  @50, 24 B each, NUL-terminated. All 7 ROMFALL plurals read clean and are
+  exactly the names FallRome's Events.txt uses.
+- **UNITKILLED semantics** from the game's own `Macro.txt`: "Attacker is
+  the civilization that killed the unit, defender is the one who owned the
+  unit". It fires whichever side initiated, unless `Defender Only` is
+  given. `Battle::unitkilled_ctx` builds exactly that, and the acceptance
+  test fires it against the real FallRome Events.txt.
+
 **Unit-record corrections that fell out of this** (these supersede the
 40-byte record notes elsewhere in this file):
 
@@ -575,9 +618,10 @@ copy of the game block; written by the game, not a selector). Map view
 struct @`0x61fb34` (i16 centre x/y, then i32 left/top/right/bottom, then
 tile px 64×32).
 
-**Still open for T1-6**: the special cases listed as not implemented, and
-wiring combat into the turn loop (moving into an enemy tile → `resolve` →
-UNITKILLED for T1-7).
+**Still open for T1-6**: the special cases listed as not implemented;
+fortress/walls/palace/SDI need tile and city improvements in the world
+state; wonder obsolescence needs per-civ techs; the engine's
+stack-insertion point for moved units; `Defender Only`.
 
 ### T1-6 combat: still OPEN, and what has been ruled out (2026-11-03 night) — SUPERSEDED
 

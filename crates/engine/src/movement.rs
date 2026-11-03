@@ -20,13 +20,16 @@ use tot_kit::Rules;
 use crate::WorldState;
 
 /// Outcome of a single [`WorldState::move_unit`] attempt.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MoveOutcome {
     pub moved: bool,
     /// Cost charged, in thirds of a movement point.
     pub cost_thirds: u32,
     /// Movement was terminated by zone of control.
     pub zoc_ended: bool,
+    /// The destination held another civ's units: the move became an
+    /// attack (T1-6, [`WorldState::attack`]); the unit did not move.
+    pub battle: Option<crate::combat::Battle>,
 }
 
 /// Ocean terrain id in every Rules.txt observed (id 10 — the #44 lesson:
@@ -51,12 +54,24 @@ impl WorldState {
             moved: false,
             cost_thirds: 0,
             zoc_ended: false,
+            battle: None,
         };
         let Some(unit) = self.units.get(unit_idx) else {
             return none;
         };
         if (unit.x, unit.y) == (x, y) || unit.moves_left == 0 {
             return none;
+        }
+        let owner = unit.owner;
+        if self
+            .units
+            .iter()
+            .any(|u| (u.x, u.y) == (x, y) && u.owner != owner)
+        {
+            return MoveOutcome {
+                battle: self.attack(rules, unit_idx, x, y),
+                ..none
+            };
         }
         let domain = rules.unit_domain(unit.type_id as usize).unwrap_or(0);
         let Some(dest_terrain) = self.map.terrain_at(x, y) else {
@@ -107,6 +122,7 @@ impl WorldState {
             moved: true,
             cost_thirds: charge,
             zoc_ended,
+            battle: None,
         }
     }
 
@@ -166,7 +182,9 @@ mod tests {
             difficulty: 4,
             rivals: 1,
             seed_word: 0x0200,
-            wonders: [0; 28],
+            game_flags: 0x10,
+            human_mask: 0x02,
+            wonders: [-1; 28],
             civs: vec![],
             units: vec![
                 Unit {
@@ -176,6 +194,10 @@ mod tests {
                     y: 1,
                     is_leader: false,
                     moves_left: 6,
+                    veteran: false,
+                    damage: 0,
+                    orders: 0xff,
+                    stack_pos: 0,
                 },
                 Unit {
                     type_id: 2, // Trireme, sea on (3,0)=ocean
@@ -184,6 +206,10 @@ mod tests {
                     y: 0,
                     is_leader: false,
                     moves_left: 9,
+                    veteran: false,
+                    damage: 0,
+                    orders: 0xff,
+                    stack_pos: 0,
                 },
                 Unit {
                     type_id: 1,
@@ -192,6 +218,10 @@ mod tests {
                     y: 3,
                     is_leader: false,
                     moves_left: 6,
+                    veteran: false,
+                    damage: 0,
+                    orders: 0xff,
+                    stack_pos: 0,
                 },
             ],
             cities: vec![],
@@ -205,6 +235,7 @@ mod tests {
                 rail: vec![false; surface],
             },
             rng: Lcg64::new(1),
+            combat_rng: crate::combat::CrtRand::new(1),
             rng_seed: 1,
         }
     }

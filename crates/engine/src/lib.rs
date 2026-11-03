@@ -28,6 +28,9 @@ pub struct Civ {
     /// Printable strings of the civ-name block, file order (slot
     /// semantics unproven; ROMFALL reads leader, plural, adjective…).
     pub names: Vec<String>,
+    /// Plural name from the block's fixed slot @24 ("West Romans") — the
+    /// name macro events match civs by.
+    pub plural: String,
     /// Unit count at boot (measured, not yet a maintained roster).
     pub unit_count: usize,
 }
@@ -44,6 +47,16 @@ pub struct Unit {
     /// Movement left this turn, in thirds of a point (T1-3). 0 until the
     /// first `start_turn` (movement rates come from Rules).
     pub moves_left: u32,
+    /// Veteran (record attr bit 0x2000), damage taken (HP lost, HP = Rules
+    /// `h`·10) and orders (0xff none, 2 fortified) — evidence §T1-6 combat.
+    pub veteran: bool,
+    pub damage: u8,
+    pub orders: u8,
+    /// Position in its tile's stack list (from the save's +0x1a/+0x1c
+    /// links; 0 = head). Defender ties go to the highest position. Units
+    /// the engine moves keep their position — the original's insertion
+    /// point on entering a tile is not decoded.
+    pub stack_pos: u16,
 }
 
 /// Engine-side city: identity, coordinates and the proven economics
@@ -109,12 +122,21 @@ pub struct WorldState {
     pub difficulty: u8,
     pub rivals: u8,
     pub seed_word: u16,
+    /// Game-flags word (save @652); bit 0x10 = damage persists (T1-6).
+    pub game_flags: u16,
+    /// Human-players bitmask (save @687; bit n = civ n).
+    pub human_mask: u8,
     pub wonders: [i16; 28],
     pub civs: Vec<Civ>,
     pub units: Vec<Unit>,
     pub cities: Vec<City>,
     pub map: MapState,
     pub rng: Lcg64,
+    /// Combat's generator: the original's MSVC CRT `rand()`, which it seeds
+    /// from the wall clock at startup (`srand(time())`, VA 0x598423) — so a
+    /// save does not determine combat, and the engine seeds it from
+    /// `rng_seed`.
+    pub combat_rng: combat::CrtRand,
     rng_seed: u64,
 }
 
@@ -147,6 +169,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         .map(|(i, names)| Civ {
             id: i as u8 + 1,
             names: names.strings.clone(),
+            plural: names.plural.clone(),
             unit_count: sav
                 .units
                 .iter()
@@ -160,9 +183,11 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         difficulty: sav.difficulty,
         rivals: sav.rivals,
         seed_word: sav.seed_word,
+        game_flags: sav.game_flags,
+        human_mask: sav.human_mask,
         wonders: sav.wonders,
         civs,
-        units: sav.units.iter().map(unit_from).collect(),
+        units: units_from(&sav.units),
         cities: sav.cities.iter().map(city_from).collect(),
         map: MapState {
             stored_w: sav.map_header.stored_w(),
@@ -174,8 +199,32 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             rail,
         },
         rng: Lcg64::new(rng_seed as u32),
+        combat_rng: combat::CrtRand::new(rng_seed as u32),
         rng_seed,
     }
+}
+
+/// Map records to engine units and number each tile stack by walking the
+/// save's links from every head (prev = −1). Link values are game indices
+/// (record index + 1).
+fn units_from(recs: &[UnitRecord]) -> Vec<Unit> {
+    let mut units: Vec<Unit> = recs.iter().map(unit_from).collect();
+    for (i, r) in recs.iter().enumerate() {
+        if r.stack_prev() >= 0 {
+            continue;
+        }
+        let (mut cur, mut pos) = (i, 0u16);
+        loop {
+            units[cur].stack_pos = pos;
+            let next = recs[cur].stack_next();
+            if next < 1 || next as usize > recs.len() || pos == u16::MAX {
+                break;
+            }
+            cur = next as usize - 1;
+            pos += 1;
+        }
+    }
+    units
 }
 
 fn unit_from(r: &UnitRecord) -> Unit {
@@ -186,6 +235,10 @@ fn unit_from(r: &UnitRecord) -> Unit {
         y: r.y(),
         is_leader: r.is_leader(),
         moves_left: 0,
+        veteran: r.is_veteran(),
+        damage: r.damage(),
+        orders: r.orders(),
+        stack_pos: 0,
     }
 }
 
@@ -217,6 +270,20 @@ pub struct TurnReport {
 }
 
 impl WorldState {
+    /// The name events use for `owner`: the civ's plural; owner 0 is
+    /// "Barbarians" (an engine label — no name block exists for it, and
+    /// FallRome's events only ever match barbarians via ANYBODY).
+    pub fn civ_name(&self, owner: u8) -> String {
+        if owner == 0 {
+            return "Barbarians".into();
+        }
+        self.civs
+            .iter()
+            .find(|c| c.id == owner)
+            .map(|c| c.plural.clone())
+            .unwrap_or_default()
+    }
+
     /// Advance one turn. The year-advance schedule is deliberately NOT
     /// implemented: no oracle-verified table exists yet (the -4000…
     /// progression needs a turnloop experiment — folklore is banned by

@@ -51,7 +51,7 @@ warring-auto-walk|save|Scenario/china/Hu_Auto.SAV
 warring-yan-walk|save|Scenario/china/deiYan.sav
 warring-qin-walk|save|Scenario/china/deiQin.sav
 romfall-scnmap|scnmap|FallRome/ROMFALL.scn
-va-autosave-diff|diff|Scenario/FallRome/Va_Auto2.SAV|Scenario/FallRome/Va_Auto.SAV
+t4-pair-diff|diff|Scenario/FallRome/T4PAIR_A.SAV|Scenario/FallRome/T4PAIR_B.SAV
 anticchina-map|map|Scenario/china/AnticChina.MP||rules:Scenario/china/Rules.txt
 "
 

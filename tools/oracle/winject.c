@@ -117,6 +117,23 @@ int main(int argc, char **argv)
         send_key((WORD)atoi(argv[2]), FALSE);
     } else if (!strcmp(cmd, "keyup") && argc == 3) {
         send_key((WORD)atoi(argv[2]), TRUE);
+    } else if (!strcmp(cmd, "text") && argc == 4) {
+        /* text <string> <delay_ms> — type a whole string from ONE process:
+           listbox type-ahead buffers reset after a few hundred ms, so
+           one-winject-process-per-key never accumulates a prefix */
+        const char *t = argv[2];
+        int ms = atoi(argv[3]);
+        for (const char *c = t; *c; c++) {
+            SHORT vk = VkKeyScanA(*c);
+            WORD lo = LOBYTE(vk), shift = HIBYTE(vk) & 1;
+            if (vk == -1) continue;
+            if (shift) send_key(VK_SHIFT, FALSE);
+            send_key(lo, FALSE);
+            nap(25);
+            send_key(lo, TRUE);
+            if (shift) send_key(VK_SHIFT, TRUE);
+            if (c[1]) nap(ms);
+        }
     } else if (!strcmp(cmd, "seq") && argc == 5) {
         /* seq <vk> <count> <delay_ms> — press a key count times (unit-skip
            loops: one winject process instead of one wine spawn per key) */

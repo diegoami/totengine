@@ -1,6 +1,6 @@
 {
   "file": "@HOME@/Scenario/FallRome/Va_Auto.SAV",
-  "size": 226336,
+  "size": 226416,
   "magic": "CIVILIZE",
   "version_raw": "0x0032",
   "version": "ToT 1.1",
@@ -15,8 +15,8 @@
   "game": {
     "offset": 668,
     "size": 38,
-    "turn": 0,
-    "year": 5159
+    "turn": 1,
+    "year": 5164
   },
   "technologies": {
     "offset": 706,
@@ -152,17 +152,17 @@
           "12": 1
         },
         "river_tiles": 534,
-        "road_tiles": 3497,
-        "railroad_tiles": 413,
+        "road_tiles": 3498,
+        "railroad_tiles": 463,
         "special_tiles": 70,
-        "road_and_rail_tiles": 128,
+        "road_and_rail_tiles": 164,
         "visibility_nonzero_per_civ": [
-          527,
-          556,
+          531,
+          559,
           509,
-          535,
-          530,
-          545,
+          532,
+          533,
+          536,
           537
         ],
         "note": "terrain byte mp0+6t+4: terrain=&0x3F (ids 0-10), 0x40=special resource (70 ocean specials on ROMFALL), 0x80=river; road/rail bits at mp0+6t+14: 0x40 road / 0x80 rail (ROMFALL 3497/413, 128 both \u2014 matches the original spatial verification); the 6-B-stride field interleave is open; visibility bytes' near-identical distribution suggests per-civ fog, unproven"
@@ -171,13 +171,13 @@
     "resource_seed_offset": 146916
   },
   "cities": {
-    "offset": 187912,
+    "offset": 187992,
     "count": 146,
     "record_size": 92,
     "size": 13432,
     "chain_found": 146,
     "names": [
-      "Roma",
+      "TESTCITY",
       "Brundisium",
       "Syracusae",
       "Rhegium",
@@ -202,12 +202,12 @@
     "coords_first_8": [
       {
         "i": 0,
-        "name": "Roma",
+        "name": "TESTCITY",
         "x": 54,
         "y": 84,
         "tail_shorts": [
-          6,
-          6,
+          7,
+          7,
           8
         ]
       },
@@ -218,7 +218,7 @@
         "y": 93,
         "tail_shorts": [
           5,
-          11,
+          17,
           15
         ]
       },
@@ -229,7 +229,7 @@
         "y": 90,
         "tail_shorts": [
           5,
-          6,
+          7,
           10
         ]
       },
@@ -239,8 +239,8 @@
         "x": 50,
         "y": 70,
         "tail_shorts": [
-          6,
-          15,
+          7,
+          25,
           15
         ]
       },
@@ -250,8 +250,8 @@
         "x": 51,
         "y": 77,
         "tail_shorts": [
-          6,
-          6,
+          7,
+          9,
           7
         ]
       },
@@ -261,8 +261,8 @@
         "x": 50,
         "y": 82,
         "tail_shorts": [
-          4,
-          17,
+          5,
+          31,
           12
         ]
       },
@@ -272,8 +272,8 @@
         "x": 44,
         "y": 66,
         "tail_shorts": [
-          6,
-          9,
+          7,
+          13,
           11
         ]
       },
@@ -284,25 +284,25 @@
         "y": 69,
         "tail_shorts": [
           5,
-          10,
+          14,
           8
         ]
       }
     ],
     "note": "name 16 B @0; x u16@58 / y u16@60 on the logical grid (same space as unit coords; per-file garrison/terrain support in garrisons_measured / city_terrain_measured); tail shorts @86-91 measured, e.g. Roma (5, 5, 8) \u2014 NOT the city size: a size-like short sits in the two bytes immediately BEFORE each name (Roma 29 = its in-game size), i.e. at the final short of the preceding 92-B slot; exact field boundary open",
-    "garrisons_measured": "145/146 cities have a unit on their exact tile (measured on this file)",
+    "garrisons_measured": "141/146 cities have a unit on their exact tile (measured on this file)",
     "city_terrain_measured": "145/146 cities on non-ocean terrain, 0 on ocean, 1 outside the stored grid (measured on this file)"
   },
   "units": {
     "region": [
       159438,
-      187912
+      187992
     ],
-    "size": 28474,
+    "size": 28554,
     "record_size": 40,
     "preamble_bytes": 34,
-    "count": 711,
-    "count_arithmetic": "28474 = 34 + 40 x 711",
+    "count": 713,
+    "count_arithmetic": "28554 = 34 + 40 x 713",
     "fields_proven": {
       "x_u16@6": "display-grid x (0..width-1)",
       "y_u16@8": "display-grid y (0..height-1)",
@@ -311,29 +311,29 @@
       "id_u16@36": "per-save unit id (re-assigned on every save)"
     },
     "owner_histogram": {
-      "0": 180,
-      "1": 162,
-      "2": 28,
-      "3": 46,
+      "0": 181,
+      "1": 156,
+      "2": 30,
+      "3": 47,
       "4": 52,
-      "5": 31,
+      "5": 32,
       "6": 147,
-      "7": 64,
+      "7": 67,
       "16": 1
     },
     "type_histogram_top": {
-      "3": 88,
+      "3": 86,
       "21": 80,
-      "36": 76,
-      "2": 59,
+      "36": 79,
       "10": 56,
+      "2": 55,
       "20": 53,
-      "39": 36,
       "16": 36,
-      "6": 29,
-      "24": 26,
+      "39": 34,
+      "6": 30,
+      "24": 27,
       "38": 25,
-      "18": 13
+      "18": 15
     },
     "sample_first_8": [
       {
@@ -346,27 +346,27 @@
       },
       {
         "i": 1,
-        "x": 120,
-        "y": 96,
+        "x": 126,
+        "y": 102,
         "type": 18,
         "owner": 0,
         "id": 3
       },
       {
         "i": 2,
-        "x": 120,
-        "y": 92,
+        "x": 123,
+        "y": 89,
         "type": 18,
         "owner": 0,
         "id": 4
       },
       {
         "i": 3,
-        "x": 117,
-        "y": 71,
-        "type": 39,
+        "x": 110,
+        "y": 92,
+        "type": 18,
         "owner": 0,
-        "id": 5
+        "id": 719
       },
       {
         "i": 4,
@@ -386,8 +386,8 @@
       },
       {
         "i": 6,
-        "x": 116,
-        "y": 88,
+        "x": 114,
+        "y": 92,
         "type": 18,
         "owner": 0,
         "id": 8

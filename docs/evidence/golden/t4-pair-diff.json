@@ -1,17 +1,21 @@
 {
-  "a": "@HOME@/Scenario/FallRome/Va_Auto2.SAV",
-  "b": "@HOME@/Scenario/FallRome/Va_Auto.SAV",
-  "size_a": 226376,
-  "size_b": 226336,
-  "note": "size delta -40 bytes = -1 unit record (ToT)",
+  "a": "@HOME@/Scenario/FallRome/T4PAIR_A.SAV",
+  "b": "@HOME@/Scenario/FallRome/T4PAIR_B.SAV",
+  "size_a": 226336,
+  "size_b": 226416,
+  "note": "size delta +80 bytes = +2 unit record (ToT)s",
   "metric_note": "span = merged regions (equal-byte gaps <=7 included, for presentation); exact = count of unequal bytes only (issue #46)",
-  "changed_bytes_exact_common_prefix": 27283,
-  "merged_region_span_bytes": 47057,
-  "region_count": 1933,
+  "changed_bytes_exact_common_prefix": 25821,
+  "merged_region_span_bytes": 42120,
+  "region_count": 1707,
   "regions_first_50": [
     [
+      658,
+      658
+    ],
+    [
       668,
-      677
+      681
     ],
     [
       698,
@@ -42,7 +46,7 @@
       3174
     ],
     [
-      3184,
+      3186,
       3186
     ],
     [
@@ -54,8 +58,8 @@
       3228
     ],
     [
-      3264,
-      3264
+      3266,
+      3266
     ],
     [
       3287,
@@ -126,20 +130,12 @@
       6160
     ],
     [
-      6292,
-      6292
-    ],
-    [
       6302,
-      6308
-    ],
-    [
-      6322,
-      6323
+      6303
     ],
     [
       6333,
-      6349
+      6350
     ],
     [
       6361,
@@ -147,15 +143,11 @@
     ],
     [
       6402,
-      6412
+      6402
     ],
     [
       6518,
       6519
-    ],
-    [
-      6551,
-      6551
     ],
     [
       6598,
@@ -164,34 +156,6 @@
     [
       6679,
       6679
-    ],
-    [
-      6760,
-      6764
-    ],
-    [
-      7272,
-      7276
-    ],
-    [
-      7782,
-      7784
-    ],
-    [
-      8038,
-      8040
-    ],
-    [
-      8552,
-      8552
-    ],
-    [
-      8808,
-      8808
-    ],
-    [
-      9062,
-      9074
     ],
     [
       9126,
@@ -207,7 +171,43 @@
     ],
     [
       9667,
-      9668
+      9670
+    ],
+    [
+      9679,
+      9700
+    ],
+    [
+      9710,
+      9710
+    ],
+    [
+      9750,
+      9762
+    ],
+    [
+      9878,
+      9888
+    ],
+    [
+      9900,
+      9900
+    ],
+    [
+      9958,
+      9968
+    ],
+    [
+      10028,
+      10028
+    ],
+    [
+      10038,
+      10038
+    ],
+    [
+      10048,
+      10049
     ]
   ]
 }

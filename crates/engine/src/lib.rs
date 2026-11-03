@@ -172,7 +172,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             road,
             rail,
         },
-        rng: Lcg64::new(rng_seed),
+        rng: Lcg64::new(rng_seed as u32),
         rng_seed,
     }
 }

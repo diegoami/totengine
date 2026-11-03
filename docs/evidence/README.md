@@ -464,6 +464,26 @@ snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
    where turn/year live. This is the oracle methodology of docs/plan.md working
    end-to-end on day one.
 
+### T1-6 PRNG RUNTIME-VERIFIED (2026-11-03 night) — the original generator is in the engine
+
+- **Patch-and-prove, end to end**: writing `state = 1` into the live
+  game's `0x5dd53c` and reading it later returned **0x0438e694 — exactly
+  LCG step 9 from 1** (`x = x·1664525 + 1013904223 mod 2³²`). Game rolls
+  flow through this recurrence and the post-roll state persists in the
+  global (the earlier "survived unchanged" reading was a mid-swap
+  restore leftover, not the live state).
+- `engine::rng::OrigRng` now implements exactly this (with
+  `set_state`/`state` for the original's save/swap/roll/restore context
+  pattern); the unit test reproduces the oracle step-9 value. The
+  placeholder MMIX LCG is gone (`Lcg64` is now an alias).
+- Golden corpus regenerated for the semantic change (run50
+  fingerprints) — all checks green.
+- Still open for T1-6: which ctx (`ctx+0x100`) feeds combat vs turn
+  processing, the per-action roll counts, and the combat round formula
+  itself (rounds/veterans/walls/terrain). The `ctx` decode: combat
+  function at RVA 0x5602cf is `__thiscall`, saves the global, loads
+  `[this+0x100]`, calls 0x55fa28 with the static object 0x5dea8.
+
 ### T1-6 PRNG identified statically: Numerical-Recipes LCG at RVA 0x554a4f (2026-11-03 late)
 
 - The exe contains **`state = state * 1664525 + 1013904223`** (Numerical

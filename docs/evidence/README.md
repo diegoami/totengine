@@ -32,6 +32,35 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
   (the unit-region gate fails; the walker cannot locate them either) —
   no fabricated tables.
 
+### T1-4 live-RAM city struct + the @58 coordinate problem (2026-11-03 late)
+
+RAM-diff experiment (toggle one worked tile in Madrid's city view, diff
+full 383 MB address space — `tools/oracle/ramdump.py`):
+
+- **The live city-view econ struct** sits at ~0x653848 for the viewed
+  city: F/S/T as **u32s in 32-bit layout** (F@+0, S@+4), four bytes
+  00→01 nearby (worked-tile flags), a 02→00 (entertainer count) — the
+  record array at 0x19c0xxx ALSO updated on the toggle (F@48 6→4→6,
+  S@49, owner/lux byte@51), so **@48/@49/@46 live-sync with the game**.
+- **The @58/@60 "coords" are NOT the render position**: Madrid's record
+  says (43,37) in every save (incl. a fresh turn-44 autosave written
+  AFTER the toggle), but the game itself — Find City jump, panel Loc,
+  the garrisoning home-Phalanx, and the live econ struct — places
+  Madrid at **(53,9)**, which the record assigns to *Utica*. F/S/T in
+  the same record ARE Madrid's own. For FallRome the garrison/terrain
+  checks validated @58 as position-*like* (145/146 + land checks), so
+  the field means something subtly different (per-civ slot? founding
+  order vs record order?) — **open, and blocking the yield layer**
+  (which needs true positions to decode radii).
+- The worked-tile flags found in RAM are NOT a map-parallel 0xFF array;
+  they are per-view-struct bytes (only the opened city's struct
+  appears; Carthage's F/S/T signature sits 0x280E0 away — cache, not
+  an array).
+- Experiment plan (next session): open each city's view once (Find City
+  + dblclick), toggle a tile, diff — collect every city's live struct +
+  true position, then map record↔live (slot permutation? second table?)
+  and decode the worked-tile set per city.
+
 ### T1-4 tile yields: first fits + open geometry (2026-11-03 night)
 
 - **@TERRAIN fields 3/4/5 = food/shields/trade** (classic layout,

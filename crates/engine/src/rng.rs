@@ -79,7 +79,10 @@ pub struct OrigRng {
 
 impl OrigRng {
     pub fn new(seed: u32) -> Self {
-        OrigRng { state: seed, draws: 0 }
+        OrigRng {
+            state: seed,
+            draws: 0,
+        }
     }
     /// The original's context-swap primitive (VA 0x554a00): store `v` in
     /// the slot and return the value that was there. Used around
@@ -91,10 +94,7 @@ impl OrigRng {
 
 impl GameRng for OrigRng {
     fn next_u32(&mut self) -> u32 {
-        self.state = self
-            .state
-            .wrapping_mul(1664525)
-            .wrapping_add(1013904223);
+        self.state = self.state.wrapping_mul(1664525).wrapping_add(1013904223);
         self.draws += 1;
         self.state
     }

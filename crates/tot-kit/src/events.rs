@@ -122,10 +122,19 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                     }
                     break lt.to_uppercase();
                 }
-                None => return Err(EventError::UnclosedBlock { line: lineno, what: "trigger" }),
+                None => {
+                    return Err(EventError::UnclosedBlock {
+                        line: lineno,
+                        what: "trigger",
+                    })
+                }
             }
         };
-        let mut trigger = Command { keyword: trigger_kw, args: Vec::new(), params: BTreeMap::new() };
+        let mut trigger = Command {
+            keyword: trigger_kw,
+            args: Vec::new(),
+            params: BTreeMap::new(),
+        };
         // consume trigger params until @THEN
         loop {
             match lines.peek() {
@@ -147,7 +156,10 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                     }
                 }
                 None => {
-                    return Err(EventError::UnclosedBlock { line: lineno, what: "@THEN" });
+                    return Err(EventError::UnclosedBlock {
+                        line: lineno,
+                        what: "@THEN",
+                    });
                 }
             }
         }
@@ -170,7 +182,11 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                         }
                     }
                     let kw = lt.to_uppercase();
-                    let mut cmd = Command { keyword: kw.clone(), args: Vec::new(), params: BTreeMap::new() };
+                    let mut cmd = Command {
+                        keyword: kw.clone(),
+                        args: Vec::new(),
+                        params: BTreeMap::new(),
+                    };
                     if kw == "LOCATIONS" {
                         let mut pts = Vec::new();
                         for (_, l2) in lines.by_ref() {
@@ -216,7 +232,9 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                     // positional line: a bare number belongs to the
                     // previous keyword (e.g. PLAYCDTRACK\n11), not to a
                     // new command
-                    if !actions.is_empty() && !lt.contains('=') && !lt.starts_with('@')
+                    if !actions.is_empty()
+                        && !lt.contains('=')
+                        && !lt.starts_with('@')
                         && lt.trim().parse::<i32>().is_ok()
                         && actions.last().map(|c| c.params.is_empty()).unwrap_or(false)
                     {
@@ -226,7 +244,12 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                     actions.push(cmd);
                     let _ = lno;
                 }
-                None => return Err(EventError::UnclosedBlock { line: lineno, what: "@ENDIF" }),
+                None => {
+                    return Err(EventError::UnclosedBlock {
+                        line: lineno,
+                        what: "@ENDIF",
+                    })
+                }
             }
         }
         events.push(Event { trigger, actions });
@@ -247,7 +270,8 @@ mod tests {
 
     #[test]
     fn parses_minimal_event() {
-        let src = "@BEGINEVENTS\n@IF\nTURN\nturn=5\n@THEN\nTEXT\nhello\nENDTEXT\n@ENDIF\n@ENDEVENTS\n";
+        let src =
+            "@BEGINEVENTS\n@IF\nTURN\nturn=5\n@THEN\nTEXT\nhello\nENDTEXT\n@ENDIF\n@ENDEVENTS\n";
         let f = parse_events(src).unwrap();
         assert_eq!(f.events.len(), 1);
         assert_eq!(f.events[0].trigger.keyword, "TURN");
@@ -268,14 +292,29 @@ mod tests {
         let f = parse_events(&src).unwrap();
         assert_eq!(f.events.len(), 64, "FallRome has 64 @IF blocks");
         // a UNITKILLED event with CREATEUNIT + locations
-        let e = f.events.iter().find(|e| e.trigger.keyword == "UNITKILLED"
-            && e.trigger.param("unit").and_then(|v| v.word()) == Some("Theodoric I"))
+        let e = f
+            .events
+            .iter()
+            .find(|e| {
+                e.trigger.keyword == "UNITKILLED"
+                    && e.trigger.param("unit").and_then(|v| v.word()) == Some("Theodoric I")
+            })
             .expect("Theodoric I event");
-        let create = e.actions.iter().find(|c| c.keyword == "CREATEUNIT").unwrap();
+        let create = e
+            .actions
+            .iter()
+            .find(|c| c.keyword == "CREATEUNIT")
+            .unwrap();
         // The install's file (FallRome/ and Scenario/FallRome/ identical):
         // owner=Visigoths and six locations, 24,60 first.
-        assert_eq!(create.param("owner").and_then(|v| v.word()), Some("Visigoths"));
-        assert_eq!(create.param("unit").and_then(|v| v.word()), Some("Theodoric II"));
+        assert_eq!(
+            create.param("owner").and_then(|v| v.word()),
+            Some("Visigoths")
+        );
+        assert_eq!(
+            create.param("unit").and_then(|v| v.word()),
+            Some("Theodoric II")
+        );
         match create.args.iter().find(|v| matches!(v, Value::Points(_))) {
             Some(Value::Points(pts)) => {
                 assert_eq!(pts.len(), 6);

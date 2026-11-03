@@ -72,11 +72,14 @@ impl CityEcon {
     /// Advance one turn. `gross_food` is the city's food output this turn
     /// (the save's u8@48), `settlers` the supported-settler count.
     pub fn turn(&mut self, gross_food: u32, settlers: u32, rules: &CityRules) -> CityTurn {
-        let eaten = rules.food_per_citizen * self.size as u32
-            + rules.settler_food * settlers;
+        let eaten = rules.food_per_citizen * self.size as u32 + rules.settler_food * settlers;
         let surplus = gross_food as i32 - eaten as i32;
         let cap = rules.growth_cap(self.size);
-        let mut result = CityTurn { surplus_food: surplus, grew: false, famined: false };
+        let mut result = CityTurn {
+            surplus_food: surplus,
+            grew: false,
+            famined: false,
+        };
         if surplus >= 0 {
             self.food_box += surplus as u32;
             if self.food_box > cap {
@@ -107,8 +110,16 @@ mod tests {
     /// Oracle: fb 18@t36, grew (@90 3→4) by t38 with fb 4, then 6/8/10.
     #[test]
     fn madrid_growth_size1() {
-        let rules = CityRules { food_per_citizen: 2, settler_food: 1, food_box_rows: 10 };
-        let mut m = CityEcon { size: 1, food_box: 18, shield_box: 0 };
+        let rules = CityRules {
+            food_per_citizen: 2,
+            settler_food: 1,
+            food_box_rows: 10,
+        };
+        let mut m = CityEcon {
+            size: 1,
+            food_box: 18,
+            shield_box: 0,
+        };
         let t = m.turn(6, 0, &rules); // +4: 22 > 18 → grow, carry 4
         assert!(t.grew);
         assert_eq!((m.size, m.food_box), (2, 4));
@@ -122,8 +133,16 @@ mod tests {
     /// Madrid 18@t36 — all sat there a full turn without growing).
     #[test]
     fn box_at_exact_capacity_persists() {
-        let rules = CityRules { food_per_citizen: 2, settler_food: 1, food_box_rows: 10 };
-        let mut c = CityEcon { size: 1, food_box: 16, shield_box: 0 };
+        let rules = CityRules {
+            food_per_citizen: 2,
+            settler_food: 1,
+            food_box_rows: 10,
+        };
+        let mut c = CityEcon {
+            size: 1,
+            food_box: 16,
+            shield_box: 0,
+        };
         let t = c.turn(4, 0, &rules); // +2 → 18, not > 18
         assert!(!t.grew);
         assert_eq!(c.food_box, 18);
@@ -135,8 +154,16 @@ mod tests {
     /// 27+2 = 29 > 27 → grow, carry 2. Oracle t40 fb 27 → t41 fb 2.
     #[test]
     fn carthage_lb_growth_size2() {
-        let rules = CityRules { food_per_citizen: 2, settler_food: 1, food_box_rows: 10 };
-        let mut c = CityEcon { size: 2, food_box: 25, shield_box: 0 };
+        let rules = CityRules {
+            food_per_citizen: 2,
+            settler_food: 1,
+            food_box_rows: 10,
+        };
+        let mut c = CityEcon {
+            size: 2,
+            food_box: 25,
+            shield_box: 0,
+        };
         c.turn(6, 0, &rules);
         assert_eq!((c.size, c.food_box), (2, 27));
         let t = c.turn(6, 0, &rules);
@@ -148,8 +175,16 @@ mod tests {
     /// box frozen — the city screen's "Net Food: 0" (oracle 2026-11-03).
     #[test]
     fn roma_fallrome_zero_surplus() {
-        let rules = CityRules { food_per_citizen: 3, settler_food: 2, food_box_rows: 10 };
-        let mut r = CityEcon { size: 15, food_box: 6, shield_box: 6 };
+        let rules = CityRules {
+            food_per_citizen: 3,
+            settler_food: 2,
+            food_box_rows: 10,
+        };
+        let mut r = CityEcon {
+            size: 15,
+            food_box: 6,
+            shield_box: 6,
+        };
         let t = r.turn(45, 0, &rules);
         assert_eq!(t.surplus_food, 0);
         assert!(!t.grew && !t.famined);

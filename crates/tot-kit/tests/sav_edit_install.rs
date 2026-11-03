@@ -60,7 +60,10 @@ fn typed_edits_roundtrip_and_are_confined() {
     // structure untouched
     assert_eq!(after.units.len(), before.units.len());
     assert_eq!(after.cities.len(), before.cities.len());
-    assert_eq!(after.maps[0].terrain_histogram(), before.maps[0].terrain_histogram());
+    assert_eq!(
+        after.maps[0].terrain_histogram(),
+        before.maps[0].terrain_histogram()
+    );
 
     // every differing byte is an offset the edits touch
     let allowed: Vec<usize> = {
@@ -71,10 +74,7 @@ fn typed_edits_roundtrip_and_are_confined() {
     };
     let diffs: Vec<usize> = (0..raw.len()).filter(|&i| raw[i] != out[i]).collect();
     for d in &diffs {
-        assert!(
-            allowed.contains(d),
-            "unexpected edited byte at offset {d}"
-        );
+        assert!(allowed.contains(d), "unexpected edited byte at offset {d}");
     }
 }
 

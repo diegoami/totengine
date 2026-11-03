@@ -26,9 +26,15 @@ pub enum Effect {
     },
     /// Macro.txt: add `amount` to `receiver`'s treasury; a result below
     /// zero becomes zero.
-    ChangeMoney { receiver: String, amount: i32 },
+    ChangeMoney {
+        receiver: String,
+        amount: i32,
+    },
     /// `technology=` is a Rules @CIVILIZE index (FallRome: 91, 99).
-    GiveTechnology { receiver: String, technology: i32 },
+    GiveTechnology {
+        receiver: String,
+        technology: i32,
+    },
     Text(String),
     PlayTrack(i32),
     DontPlayWonders,
@@ -89,7 +95,11 @@ fn matches(param: Option<&str>, actual: Option<&str>) -> bool {
 
 impl EventEngine {
     pub fn new(file: EventFile) -> Self {
-        EventEngine { file, fired: HashSet::new(), log: Vec::new() }
+        EventEngine {
+            file,
+            fired: HashSet::new(),
+            log: Vec::new(),
+        }
     }
 
     /// Evaluate every event with this trigger keyword; returns effects.
@@ -133,7 +143,8 @@ impl EventEngine {
                     }
                     "CREATEUNIT" => {
                         let unit = word_of(a.param("unit")).unwrap_or("").to_string();
-                        let owner = resolve_civ(word_of(a.param("owner")).unwrap_or("ANYBODY"), ctx);
+                        let owner =
+                            resolve_civ(word_of(a.param("owner")).unwrap_or("ANYBODY"), ctx);
                         let veteran = word_of(a.param("veteran"))
                             .map(|v| v.eq_ignore_ascii_case("yes"))
                             .unwrap_or(false);
@@ -206,17 +217,17 @@ mod tests {
 
     fn fallrome_events() -> Option<EventFile> {
         let p = std::env::var_os("CIVTOT_HOME")?;
-        let src = std::fs::read_to_string(
-            std::path::Path::new(&p).join("Scenario/FallRome/Events.txt")).ok()?;
+        let src =
+            std::fs::read_to_string(std::path::Path::new(&p).join("Scenario/FallRome/Events.txt"))
+                .ok()?;
         parse_events(&src).ok()
     }
 
     #[test]
     fn scenario_loaded_fires_track_only() {
-        let f = parse_events(
-            "@IF\nSCENARIOLOADED\n@THEN\nPLAYCDTRACK\n11\nDONTPLAYWONDERS\n@ENDIF",
-        )
-        .unwrap();
+        let f =
+            parse_events("@IF\nSCENARIOLOADED\n@THEN\nPLAYCDTRACK\n11\nDONTPLAYWONDERS\n@ENDIF")
+                .unwrap();
         let mut eng = EventEngine::new(f);
         let eff = eng.fire("SCENARIOLOADED", &Ctx::default());
         assert_eq!(eff, vec![Effect::PlayTrack(11), Effect::DontPlayWonders]);
@@ -244,8 +255,17 @@ mod tests {
         // fallbacks) of one veteran Theodoric II, six candidate tiles.
         assert_eq!(creates.len(), 1, "{creates:?}");
         match creates[0] {
-            Effect::CreateUnit { unit_name, owner, veteran, count, locations } => {
-                assert_eq!((unit_name.as_str(), owner.as_str()), ("Theodoric II", "Visigoths"));
+            Effect::CreateUnit {
+                unit_name,
+                owner,
+                veteran,
+                count,
+                locations,
+            } => {
+                assert_eq!(
+                    (unit_name.as_str(), owner.as_str()),
+                    ("Theodoric II", "Visigoths")
+                );
                 assert!(*veteran);
                 assert_eq!(*count, 1);
                 assert_eq!(locations.len(), 6);
@@ -253,7 +273,9 @@ mod tests {
             }
             _ => unreachable!(),
         }
-        assert!(eff.iter().any(|e| matches!(e, Effect::Text(t) if t.contains("Theodoric II"))));
+        assert!(eff
+            .iter()
+            .any(|e| matches!(e, Effect::Text(t) if t.contains("Theodoric II"))));
         // JUSTONCE: a second kill of the same king does not re-fire
         let again = eng.fire("UNITKILLED", &ctx);
         assert!(again.is_empty(), "JUSTONCE latch held");
@@ -272,12 +294,24 @@ mod tests {
             defender: Some("West Romans".into()),
             ..Default::default()
         };
-        assert!(!eng.fire("UNITKILLED", &ctx).is_empty(), "exact (any case) + ANYBODY");
+        assert!(
+            !eng.fire("UNITKILLED", &ctx).is_empty(),
+            "exact (any case) + ANYBODY"
+        );
         for unit in ["Theodoric II", "Theodoric"] {
-            let wrong = Ctx { unit: Some(unit.into()), ..ctx.clone() };
-            assert!(eng.fire("UNITKILLED", &wrong).is_empty(), "{unit} is not Theodoric I");
+            let wrong = Ctx {
+                unit: Some(unit.into()),
+                ..ctx.clone()
+            };
+            assert!(
+                eng.fire("UNITKILLED", &wrong).is_empty(),
+                "{unit} is not Theodoric I"
+            );
         }
-        let wrong = Ctx { defender: Some("West".into()), ..ctx };
+        let wrong = Ctx {
+            defender: Some("West".into()),
+            ..ctx
+        };
         assert!(eng.fire("UNITKILLED", &wrong).is_empty(), "no prefix match");
     }
 
@@ -297,7 +331,8 @@ mod tests {
         };
         let eff = eng.fire("UNITKILLED", &ctx);
         assert!(
-            eff.iter().any(|e| matches!(e, Effect::CreateUnit { unit_name, owner, .. }
+            eff.iter()
+                .any(|e| matches!(e, Effect::CreateUnit { unit_name, owner, .. }
                 if unit_name == "Barbarian King" && owner == "Visigoths")),
             "{eff:?}"
         );
@@ -309,7 +344,10 @@ mod tests {
             city: Some("Tyras".into()),
             ..Default::default()
         };
-        let other = Ctx { city: Some("Olbia".into()), ..ctx.clone() };
+        let other = Ctx {
+            city: Some("Olbia".into()),
+            ..ctx.clone()
+        };
         assert!(
             !eng.fire("CITYTAKEN", &other)
                 .iter()

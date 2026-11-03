@@ -32,6 +32,47 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
   (the unit-region gate fails; the walker cannot locate them either) —
   no fabricated tables.
 
+### T1-4 city records (2026-11-03): economics fields oracle-verified
+
+Oracle channel: the game's own **City Status report** (Advisors→City Status,
+F1) lists the human civ's cities in *save-record order* with size + gross
+Food/Shields/Trade — cross-read against saves and RAM (memspool, city array
+at RAM stride 92 identical to the save record).
+
+Proven (7/7 rows match, FallRome/Va_Auto state):
+- **u8@48 = gross food**, **u8@49 = gross shields**, **u16@46 = gross
+  trade** — exactly the City Status columns.
+- **u16@42 = net science**, **u16@44 = net taxes** (city-screen Net values;
+  trade×rates then improvement multipliers: Roma 29T @7.0.3 → 20/9, market
+  +50% → 30 tax, library → 13 sci).
+- **u16@50 = owner** (1..7 like units), **u16@52 = city id** (sequential,
+  i+1).
+- **City size = u16 at (city_base − 13)** — duplicated byte at −14/−13 for
+  WRE cities (15,5,11,6,12,4,11,10 all verified); for some AI/other-civ
+  cities those bytes read 0/bogus → the *encoding* there is still open.
+- `@COSMIC` (FallRome): **citizens eat 3 food/turn** (Roma 45F = 15×3 →
+  surplus 0 = city screen Net Food 0), settlers eat 2, food/shield box =
+  "10 rows × size(+1)", aqueduct >8, sewer >12.
+- Independent-run comparison (two turn-0→1 runs from the same base): F/S/T
+  + sci/tax are **deterministic** (tile economics); the short accumulators
+  @86/@88/@90 tick differently — **@86 behaves like the shield box**
+  (net = S − support on 7/7 sampled cities), @88 ~+1/turn typical with
+  unexplained big jumps on war-event cities, @90 mostly static. Exact
+  accumulator semantics open — best answered in a peaceful standard-game
+  lab (war events distort FallRome turn 1+).
+- Famine signal: Chersonesus @86 went 72 → −2 (s16) in one turn — the food
+  box draining past zero (famine/capture), consistent with @86-as-storage
+  but the dual use vs shields is unresolved.
+
+Rig lessons (this session): the "Viewing Pieces" viewer swallows keys —
+`v` exits it; queued AI-turn dialogs (Defense/Domestic Minister, Civ
+Tutorial after capital loss, Game-saved toasts) block turn end AND Ctrl+S
+— `drain_dialogs.sh` (allowlist dismiss, return-to-accept); Ctrl+S only
+works with a movable unit active; a FallRome turn end takes minutes under
+Xvfb (dialog waves) — patience + drain beats retrying; turn@668 of the
+newest save is the only reliable turn counter (panel date is event-driven,
+frozen "Dec 429" for turns).
+
 ### T1-3 movement (2026-11-02 night): Rules columns + kernel
 
 - **`@UNITS` field 3 (written `N.`) = movement rate** — proven twice:

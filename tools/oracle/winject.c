@@ -6,6 +6,7 @@
  *
  *   winject key <vk>          press & release a virtual key
  *   winject keydown/up <vk>
+ *   winject seq <vk> <n> <ms> press a key n times, ms between presses
  *   winject click             left click at current position
  *   winject dblclick
  *   winject move <x> <y>
@@ -116,6 +117,18 @@ int main(int argc, char **argv)
         send_key((WORD)atoi(argv[2]), FALSE);
     } else if (!strcmp(cmd, "keyup") && argc == 3) {
         send_key((WORD)atoi(argv[2]), TRUE);
+    } else if (!strcmp(cmd, "seq") && argc == 5) {
+        /* seq <vk> <count> <delay_ms> — press a key count times (unit-skip
+           loops: one winject process instead of one wine spawn per key) */
+        WORD vk = (WORD)atoi(argv[2]);
+        int n = atoi(argv[3]), ms = atoi(argv[4]);
+        for (int i = 0; i < n; i++) {
+            send_key(vk, FALSE);
+            nap(30);
+            send_key(vk, TRUE);
+            if (i + 1 < n)
+                nap(ms);
+        }
     } else if (!strcmp(cmd, "click") && argc == 2) {
         click();
     } else if (!strcmp(cmd, "dblclick") && argc == 2) {

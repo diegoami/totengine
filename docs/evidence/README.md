@@ -42,16 +42,10 @@ full 383 MB address space — `tools/oracle/ramdump.py`):
   00→01 nearby (worked-tile flags), a 02→00 (entertainer count) — the
   record array at 0x19c0xxx ALSO updated on the toggle (F@48 6→4→6,
   S@49, owner/lux byte@51), so **@48/@49/@46 live-sync with the game**.
-- **The @58/@60 "coords" are NOT the render position**: Madrid's record
-  says (43,37) in every save (incl. a fresh turn-44 autosave written
-  AFTER the toggle), but the game itself — Find City jump, panel Loc,
-  the garrisoning home-Phalanx, and the live econ struct — places
-  Madrid at **(53,9)**, which the record assigns to *Utica*. F/S/T in
-  the same record ARE Madrid's own. For FallRome the garrison/terrain
-  checks validated @58 as position-*like* (145/146 + land checks), so
-  the field means something subtly different (per-civ slot? founding
-  order vs record order?) — **open, and blocking the yield layer**
-  (which needs true positions to decode radii).
+- The @58 scare (record (43,37) vs apparent live (53,9)) is **resolved:
+  @58 is the true position** (see the settled note above). The 0x653848
+  live-struct finding itself stands: F/S/T u32s + worked-flag bytes +
+  entertainer count, live-syncing with @48/@49/@46 in the record.
 - The worked-tile flags found in RAM are NOT a map-parallel 0xFF array;
   they are per-view-struct bytes (only the opened city's struct
   appears; Carthage's F/S/T signature sits 0x280E0 away — cache, not
@@ -74,12 +68,18 @@ full 383 MB address space — `tools/oracle/ramdump.py`):
   special-id decode are still wrong; city-sum achievability is too weak
   a channel. Next: per-tile ground truth (city-screen yield labels,
   tile by tile) before more fitting.
-- **Correction (same night)**: the "Madrid at (53,9)" vision read was
-  NOT a mirage — the live game really places Madrid there (see the
-  live-RAM section above); the *record's* (43,37) is the outlier. The
-  earlier mirage verdict over-trusted the save. Lesson stands, sharpened:
-  when screen and save disagree, suspect the save field, not the eyes —
-  and settle it with the live struct, not with more screen reads.
+- **Settled by patch-and-prove (final)**: @58/@60 IS the city's true
+  map position. Patching Madrid's record x 43→44 in RAM changed nothing
+  on screen (the record array is the save buffer, not the render
+  source) — but patching the "live" 0x653860 field (53→54) ALSO changed
+  nothing, including after reopening the view: that struct's 53/9 is
+  cursor/goto data (a unit path list through (53,9) sits at 0x5f73b0).
+  The city view's radius matches the (43,37) decode (ocean NNW/NNE,
+  mountain NW, grass E), and the panel's "Loc (53,9)" is the SELECTED
+  PHALANX's position (home Madrid ≠ on Madrid). The screen-vs-save
+  conflict was a vision mirage after all; the original verdict stands.
+  Lesson: settle screen-vs-save with a memory patch, not with more
+  screen reads.
 - The standard-game save's unit coords are **@6 (x,y)** in the walker
   frame (the @10 pair is something else) — the garrison check passes
   10/10 with @6 vs cities@58; the earlier "0/10" used the wrong field.

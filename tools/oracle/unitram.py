@@ -166,6 +166,10 @@ def main(argv):
                 return 0
             winject_key(0x57)  # W = wait -> next unit in the rotation
             time.sleep(0.8)
+        time.sleep(1.5)  # the field is written late after the last W
+        if u16(0x60764E) == idx:
+            print(f"active {idx}")
+            return 0
         print(f"not reached after {maxw} W presses (active {u16(0x60764E)})",
               file=sys.stderr)
         return 1

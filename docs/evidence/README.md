@@ -467,9 +467,9 @@ snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
 
 ### T1-6 combat round formula DECODED and oracle-exact (2026-11-03, late night)
 
-Artifact: [`t1-6-combat-oracle.json`](t1-6-combat-oracle.json) (four live
+Artifact: [`t1-6-combat-oracle.json`](t1-6-combat-oracle.json) (six live
 battles, all derived numbers). Replayed by `engine::combat` tests
-`oracle_battle_1..4`.
+`oracle_battle_1..6`.
 
 - **Combat randomness is the MSVC CRT `rand()`, not `rand_int`.** VA
   `0x5b11d0` (`srand` `0x5b11b0`), state at VA **`0x5e2590`**:
@@ -487,9 +487,8 @@ battles, all derived numbers). Replayed by `engine::combat` tests
   runs while `hp·10 − damage > 0` for both sides. An optional defender
   re-roll (`[ebp-0xc8]`, set only in barbarian-attacker/difficulty
   branches) rolls a second pair and overturns an attacker win if `a2 < d2`.
-  **Exactly one more `rand()` follows the last round** in every battle,
-  with any winner (purpose open; both winners were already veterans, so it
-  is not just a promotion roll). Draws per battle = 2·rounds + 1.
+  **Exactly one more `rand()` follows the last round**: the promotion roll
+  (below). Draws per battle = 2·rounds + 1 (+2 per re-rolled round).
 - **`real = 0` is the AI's odds probe.** It returns `min(A·8/(D+1), 0x400)`
   with no rolls and no partial-move scaling.
 - **Attack strength** (`0x53f604`), fully decoded: `attack·8`, then `+= >>1`
@@ -498,18 +497,47 @@ battles, all derived numbers). Replayed by `engine::combat` tests
   `@0x5f5eb8` (when `real`), and, when the defender is a barbarian, `×2` if
   the attacker's civ has wonder 6 (`0x444a61(civ, 6)`). The latter applies
   to every battle here (48 → 96, 16 → 32).
-- **Defence strength** (`0x53f67a`) is only partly decoded: `def·4 ·
-  (terrain multiplier + river bit)`, a `0x65b49c` multiplier (2 = ×1;
-  ×2/×4 paths for walls/coast), veteran ×1.5. Terrain and fortification
-  go through **ToTPP hooks** (`call 0x76c14…`), so the engine takes D as an
-  input. Observed: veteran B. Horsemen (def 3) = **54** on all three tiles.
-- **Oracle proof, four battles, all bit-exact** (outcome, damage, round
-  count, CRT end state). Battle 4 was **predictive**: the CRT was seeded to
-  `0x12345678` by us, and the original's outcome and end state matched the
-  engine's prediction. In battles 3/4, A, D and individual rolls were
-  **polled from the live combat stack frame** during the animation (the
-  frame stays up for over a second), and the polled rolls sit at the
-  predicted round positions.
+- **Defence strength** (`0x53f67a` + TOTPP.dll hooks), decoded for the
+  land path and runtime-proven: `def·4·(terrain_def + river)` (ToTPP base
+  hook `0x76c14f86` → terrain hook `0x76c14f23`: Rules @TERRAIN defence
+  column in halves, plus the tile's river bit 7; air/sea defenders use it
+  too when ToTPP's two options are on, which they are here, else a flat 2).
+  Then a multiplier in halves (`0x65b49c`). It starts at 2. Fortified land
+  unit (orders 2) → 3. Fortress tile (flags `&0x42 == 0x40`) vs a non-air
+  attacker that doesn't negate walls → 4, *replacing* fortified. In a city
+  with City Walls (improvement 8) **or** the defender civ owns wonder 6, vs
+  a land attacker that doesn't negate walls → 6. Non-land defenders reset
+  to 2. The ToTPP hooks store the configurable values 3/4/6 (read live from
+  TOTPP.dll data). Veteran ×1.5 last. Observed D: 54 (vet def 3 on
+  Grassland/Plains + river), **81 with the defender fortified** (battle 5,
+  set via RAM, predicted statically before the fight), 24 (non-vet,
+  Grassland, no river; battle 6).
+- **Wonder 6** is FallRome's **Hadrianus' Wall** (Great Wall slot, in
+  Eburacum, WRE): A ×2 vs barbarian defenders, barbarian A halved vs its
+  owner, walls everywhere. It is why every WRE-vs-barbarian battle had A ×2,
+  and why the Anglo-Saxon battle 6 did not.
+- **The trailing draw is the promotion roll** (VA `0x544554`/`0x5445dc`):
+  `r = rand() % (A+D)`. The winner is promoted if `r <=` the **loser's**
+  strength (underdog wins promote more often), or always if the winner's
+  civ has wonder 7 (FallRome: Warrior Culture, the Sun Tzu slot).
+  Promotion (`0x53ff5e`) sets attr `0x2000` unless already veteran or
+  one-shot (type flags bit 12). **Battle 6 predicted it**: seed `0x1008`
+  chosen so a non-veteran defender wins and passes the roll, and the
+  original set its attr `0 → 0x2000`.
+- Unit-type flags (u32 at type +4) are the Rules flag string read right to
+  left: bit 6 negates walls, bit 10 pikemen, bit 12 one-shot, bit 4
+  can-attack-air.
+- **Not implemented** (decoded only as far as their branch conditions):
+  pikemen ×1.5 vs land units with exactly 2 move points, barbarian
+  Archers/Legion types 4/5 halved, coastal fortress (0x1c) vs ships, SAM
+  (0x11) vs air, SDI (0x1b), fighters vs air, air defenders in cities.
+- **Oracle proof, six battles, all bit-exact** (outcome, damage, round
+  count, CRT end state). Battles 4–6 were **predictive**: we wrote the CRT
+  seed (`0x12345678`, `0x0badf00d`, `0x1008`) and the engine's prediction
+  matched the original's outcome and end state. In battles 3–6, A, D and
+  individual rolls were **polled from the live combat stack frame** during
+  the animation (the frame stays up for over a second), and the polled
+  rolls sit at the predicted round positions.
 
 **Unit-record corrections that fell out of this** (these supersede the
 40-byte record notes elsewhere in this file):
@@ -547,10 +575,9 @@ copy of the game block; written by the game, not a selector). Map view
 struct @`0x61fb34` (i16 centre x/y, then i32 left/top/right/bottom, then
 tile px 64×32).
 
-**Still open for T1-6**: the defence-strength ToTPP hooks (terrain,
-fortified, walls), the trailing draw's purpose, veteran promotion, and
-damage/HP edge cases at FP > remaining HP. Then wire into the turn loop
-(UNITKILLED for T1-7).
+**Still open for T1-6**: the special cases listed as not implemented, and
+wiring combat into the turn loop (moving into an enemy tile → `resolve` →
+UNITKILLED for T1-7).
 
 ### T1-6 combat: still OPEN, and what has been ruled out (2026-11-03 night) — SUPERSEDED
 

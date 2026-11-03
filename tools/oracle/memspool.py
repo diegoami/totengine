@@ -79,7 +79,14 @@ def write_mem(pid: int, addr: int, data: bytes) -> int:
                                  ctypes.byref(remote), 1, 0)
     if got <= 0:
         err = ctypes.get_errno()
-        raise OSError(err, os.strerror(err), hex(addr))
+        # Read-only pages (live .text patches): /proc/<pid>/mem writes
+        # through page protection for a tracer-permitted ancestor.
+        try:
+            with open(f"/proc/{pid}/mem", "r+b", buffering=0) as f:
+                f.seek(addr)
+                return f.write(data)
+        except OSError:
+            raise OSError(err, os.strerror(err), hex(addr))
     return got
 
 

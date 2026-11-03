@@ -87,7 +87,7 @@ opponent AI. These stories reuse the T1 core; the new-game *UI* lands with T2.
 | ID | Story | Pri | Est | Diff | Status | Acceptance |
 |----|-------|-----|-----|------|--------|------------|
 | RG-1 | ~~Game-setup state model: new-game parameters + its save encoding~~ | P1 | M | H | done | Byte-map on a vision-verified variant family: 684=difficulty, 689=rivals, dims@29900, RNG mirror@685-688; wizard reference documented (evidence §RG-1) |
-| RG-2 | Starting placement: civ starts, goody huts, barbarian seeding from the game seed | P1 | M | H | todo | Same-seed oracle starts reproduce identical placement |
+| RG-2 | Starting placement: civ starts, goody huts, barbarian seeding from the game seed | P1 | L | H | in progress | Same-seed oracle starts reproduce identical placement. **Re-estimated M→L (2026-11-03):** both known generators pinned at City Style + the tick reseed (`0x41562b`) patched out still give different worlds — the new-game entropy source is not found yet (evidence §RG-2 new-game seeding) |
 | RG-3 | Random world generator (seeded; `.MP`-shaped output; original's exact algorithm unknown → our own, flagged) | P2 | L | H | todo | Statistical parity vs original maps (land%/biome spread); renders sanity-checked |
 | RG-4 | Opponent AI v1 headless: expansion, economy, research, unit handling; deterministic | P2 | L | H | todo | 50-turn autoplay stable + deterministic; plausible power curves vs oracle games |
 | RG-5 | Diplomacy model: contacts, embassies, treaties, tribute, AI stances; save encoding | P2 | M | H | todo | Diplomacy state round-trips; oracle-save contacts match |

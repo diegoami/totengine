@@ -481,6 +481,35 @@ all rotating slots AND byte-compare against the previous baseline
 NOT reproducible from wizard settings alone; the T1-6 RNG-state hunt (RAM,
 via `memspool.py`) is the path to reproducibility.
 
+### RG-2 new-game seeding: what reseeds, and a negative experiment (2026-11-03)
+
+Static (live `.text`, ToTPP build):
+- **`0x41562b` seeds both generators from the clock**:
+  `srand(GetTickCount())` (CRT, `0x4156dc`) and `exchange_state(GetTickCount())`
+  (NR LCG, `0x4156ea`). `0x554a00` is an **XOR-swap**: it installs the
+  argument as the new NR state and returns the old one. The only caller is
+  `0x41a6f9`, in an init-style function (`0x41a68c`).
+- **Local, deterministic reseeds** save the NR state, install a seed and
+  restore it afterwards:
+  - `0x445eb2`: seed = `(city x << 8) + city y + u16@0x6705a8`, per city.
+  - `0x5602d3`: seed = `object[+0x100]`, restored at `0x560cc1`.
+  These are not world-generation sources.
+- `srand(time())` at `0x598423` (CRT, startup).
+
+**Negative experiment** (scratch script driving the `lab_std.sh` wizard
+flow; placement read from the live unit table):
+1. At the City Style dialog, write NR := `0x1234` and CRT := `0x5678`.
+2. Optionally patch `0x41562b` to `ret` through `/proc/<pid>/mem` (new
+   `memspool.py` write fallback for read-only pages).
+3. Finish the wizard.
+
+Result: **two runs still produced different start positions**, with and
+without the patch. Even the settings seed word differed (`0x103f` vs
+`0x103b`). So pinning both known generators at City Style does not
+determine the new game: entropy enters elsewhere (earlier wizard steps,
+another tick read, or timing). RG-2 "same-seed oracle starts" needs that
+source found first.
+
 ### RNG / seed state (T1-6 notes, 2026-11-02 night)
 
 - **Save 684–689 is a byte-for-byte copy of a RAM globals block at

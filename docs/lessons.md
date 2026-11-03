@@ -146,3 +146,10 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   T1-4 Madrid (53,9) vs (43,37) question was closed in favour of the save
   by a RAM patch that changed nothing on screen. A null result is not a
   proof; the screen was right.
+- **When local rustfmt wants to change files you didn't touch, believe it.**
+  A session assumed "this machine's rustfmt formats differently" and
+  reverted the changes each time; CI's `cargo fmt --check` had been red
+  for many commits on exactly those files. Check `gh run list` before
+  explaining a check failure away, and gate commits on fmt + clippy +
+  `make test` together (a `&&` chain that skips the test result commits
+  red code).

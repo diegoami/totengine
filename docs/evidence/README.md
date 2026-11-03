@@ -63,6 +63,33 @@ box 18→2 within one record), but the per-sample citations need
 re-reading. The 0x33 (ToTPP) records were not re-checked: their unit
 layout differs (id@0, x@10) and the home test is inconclusive there (2/3).
 
+#### T1-4 growth replayed on the whole std1 series (2026-11-03)
+
+With true record framing (§Record framing FIXED), **settlers are visible**:
+they are units of type 0/1 homed in the city (u8@18). The old note "settlers
+are invisible in the save" was a framing artifact.
+`tools/growth_series.py` writes the lab's 26 saves as
+`docs/evidence/t1-4-growth-series.tsv` (turn, city, size u8@11, box u16@28,
+gross food u8@82, settlers). The engine test
+`cities::tests::std1_series_replays` steps the model across every save
+pair:
+
+- **126 transitions reproduce exactly, including 10 growth events**.
+  Pairs where the settler count changes mid-span, or where growth
+  re-assigns tiles before the last step, are skipped. One mismatch: Ur,
+  turn 40→41, box 1 observed vs 2 predicted, while its F moved 4→5
+  across the growth.
+- Food eaten = 2 × size + 1 per settler, the standard `@COSMIC` rows
+  "food each citizen eats" = 2 and "Settlers eat (govt <= Monarchy)" = 1.
+- Growth when the box **exceeds** `(rows − 1)(size + 1)` (18/27/36).
+- **On growth the box restarts at that turn's surplus, not the overflow.**
+  This corrects the old "carry" rule, which was fitted on mis-paired
+  cities. Utica, turn 41: 28 + 1 = 29 at size 1 → size 2, box 1 (carry
+  would give 11). Persepolis, turns 22→27 (box 22 after a settler
+  shrink): grows, then +1 × 4 = 5 (carry would give 9).
+- Building a settler shrinks the city by one and keeps the box (Persepolis
+  turn 20, Utica turn 40).
+
 #### T1-7 treasury + effects applied to the world (2026-11-03)
 
 - **Treasury = i32@10 of each civ-properties block.** There are 8 blocks

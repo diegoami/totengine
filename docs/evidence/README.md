@@ -74,11 +74,12 @@ full 383 MB address space — `tools/oracle/ramdump.py`):
   special-id decode are still wrong; city-sum achievability is too weak
   a channel. Next: per-tile ground truth (city-screen yield labels,
   tile by tile) before more fitting.
-- **Vision lesson**: the "Madrid at Loc (53,9)" reading was a mirage —
-  the cursor sat on Utica's tile and the panel showed a Phalanx whose
-  HOME is Madrid; the model read the map label as "Madrid" twice,
-  letter-by-letter. Panel home-city lines anchor vision misreads;
-  cross-check every coordinate claim against the save before acting.
+- **Correction (same night)**: the "Madrid at (53,9)" vision read was
+  NOT a mirage — the live game really places Madrid there (see the
+  live-RAM section above); the *record's* (43,37) is the outlier. The
+  earlier mirage verdict over-trusted the save. Lesson stands, sharpened:
+  when screen and save disagree, suspect the save field, not the eyes —
+  and settle it with the live struct, not with more screen reads.
 - The standard-game save's unit coords are **@6 (x,y)** in the walker
   frame (the @10 pair is something else) — the garrison check passes
   10/10 with @6 vs cities@58; the earlier "0/10" used the wrong field.

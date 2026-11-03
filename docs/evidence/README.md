@@ -32,6 +32,28 @@ install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
   (the unit-region gate fails; the walker cannot locate them either) —
   no fabricated tables.
 
+### T1-4 tile yields: first fits + open geometry (2026-11-03 night)
+
+- **@TERRAIN fields 3/4/5 = food/shields/trade** (classic layout,
+  Original/Rules.txt); special resources are further rows of the same
+  table with the same columns (Oasis 3,1,0; Gold 0,1,6; Fish 3,0,2 …).
+- **Madrid exact fit**: center Grassland (2,1,0) + 2 worked grass tiles
+  = the recorded (F6, S3, T0) — with rivers NOT adding trade (its tiles
+  carry the 0x80 river flag yet T=0). But Persepolis (T3) fits only
+  WITH river-trade (+1T) — and Carthage/Little Bighorn/Utica fit under
+  no rule tried. Conclusion: the radius-shape offsets and/or the
+  special-id decode are still wrong; city-sum achievability is too weak
+  a channel. Next: per-tile ground truth (city-screen yield labels,
+  tile by tile) before more fitting.
+- **Vision lesson**: the "Madrid at Loc (53,9)" reading was a mirage —
+  the cursor sat on Utica's tile and the panel showed a Phalanx whose
+  HOME is Madrid; the model read the map label as "Madrid" twice,
+  letter-by-letter. Panel home-city lines anchor vision misreads;
+  cross-check every coordinate claim against the save before acting.
+- The standard-game save's unit coords are **@6 (x,y)** in the walker
+  frame (the @10 pair is something else) — the garrison check passes
+  10/10 with @6 vs cities@58; the earlier "0/10" used the wrong field.
+
 ### T1-4 walker fixes + young-city quirk (2026-11-03 night)
 
 - **Two-character city names are real**: "Ur" in the standard-game corpus

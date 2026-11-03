@@ -4,6 +4,29 @@ Artifacts produced by `tools/totctl.py` (Python reference probe) against the loc
 install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 [../feasibility.md](../feasibility.md) with measured data.
 
+#### T1-7 events: matching and CREATEUNIT corrected against Macro.txt (2026-11-03)
+
+The game ships its own macro-language reference, `$CIVTOT_HOME/Macro.txt`.
+Three interpreter behaviours were wrong against it, and the two env-gated
+event tests asserted content that is not in the install's FallRome
+Events.txt (`owner=TRIGGERDEFENDER`, 7 locations). The real file, identical
+under `FallRome/` and `Scenario/FallRome/`, has `owner=Visigoths` and 6.
+
+- **Names match exactly** (case-insensitive), not by prefix. Macro.txt:
+  "unit types, civilization names, and so on must match the corresponding
+  names in the rules.txt file exactly". Prefix matching made a Theodoric I
+  kill also fire FallRome's "Theodoric II dies" event.
+- **`locations … endlocations` belongs to the preceding CREATEUNIT**. The
+  parser used to emit it as a separate action, so the interpreter created
+  nothing. Points may carry an optional `,z` (map); it is parsed and
+  dropped.
+- **CREATEUNIT creates `Count` units (default 1) at the first valid
+  location**, with later ones as fallbacks. The interpreter used to emit
+  one unit per location. `Randomize` and `InCapital` are not modelled.
+- UNITKILLED: "Attacker is the civilization that killed the unit, defender
+  is the one who owned the unit", and it fires whichever side initiated
+  unless `Defender Only` is given (used by `combat::Battle::unitkilled_ctx`).
+
 #### T1-8 save writer (2026-11-03): surgical edits accepted by the original
 
 - `tot-kit::sav::SavEditor` — surgical `0x32` writer: validates the file

@@ -4,9 +4,8 @@
 //! Scope (from the FallRome corpus — 64 events): triggers
 //! SCENARIOLOADED / UNITKILLED / CITYTAKEN / NEGOTIATION / RANDOMTURN,
 //! actions TEXT / CREATEUNIT / CHANGEMONEY / PLAYCDTRACK / JUSTONCE /
-//! DONTPLAYWONDERS. Matching follows the classic macro-events rules:
-//! `ANYBODY` is a wildcard and a shorter parameter value matches by
-//! prefix (e.g. `defender=West` matches "West Romans").
+//! DONTPLAYWONDERS. Matching follows Macro.txt: `ANYBODY` is a wildcard,
+//! every other name must match exactly (case-insensitive).
 //! `JUSTONCE` marks the event as fired (a one-shot latch).
 
 use std::collections::HashSet;
@@ -15,12 +14,15 @@ use tot_kit::{EventFile, Value};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
+    /// Macro.txt: create `count` units (default 1) at the FIRST valid
+    /// location of `locations`; later entries are fallbacks tried in order
+    /// (`Randomize` picks one at random — not modelled).
     CreateUnit {
         unit_name: String,
         owner: String,
         veteran: bool,
-        x: i32,
-        y: i32,
+        count: u32,
+        locations: Vec<(i32, i32)>,
     },
     ChangeMoney(i32),
     GiveTechnology(String),
@@ -51,16 +53,18 @@ fn word_of(v: Option<&Value>) -> Option<&str> {
     v.and_then(|v| v.word())
 }
 
-/// Classic prefix match: ANYBODY (or ANY*) matches everything; a value
-/// matches when either side is a case-insensitive prefix of the other.
+/// ANYBODY / ANYONE match everything; otherwise names must match
+/// **exactly**, case-insensitively — Macro.txt (shipped with the game):
+/// "unit types, civilization names, and so on must match the
+/// corresponding names in the rules.txt file exactly". (Prefix matching
+/// would fire FallRome's "Theodoric II dies" event when Theodoric I dies.)
 fn matches(param: Option<&str>, actual: Option<&str>) -> bool {
     let Some(p) = param else { return true };
     if p.eq_ignore_ascii_case("ANYBODY") || p.eq_ignore_ascii_case("ANYONE") {
         return true;
     }
     let Some(a) = actual else { return false };
-    let (p, a) = (p.to_lowercase(), a.to_lowercase());
-    a.starts_with(&p) || p.starts_with(&a)
+    p.trim().eq_ignore_ascii_case(a.trim())
 }
 
 impl EventEngine {
@@ -112,18 +116,21 @@ impl EventEngine {
                         let veteran = word_of(a.param("veteran"))
                             .map(|v| v.eq_ignore_ascii_case("yes"))
                             .unwrap_or(false);
+                        let count = a
+                            .param("count")
+                            .and_then(|v| v.number())
+                            .map(|n| n.clamp(1, 255) as u32)
+                            .unwrap_or(1);
                         if let Some(Value::Points(pts)) =
                             a.args.iter().find(|v| matches!(v, Value::Points(_)))
                         {
-                            for (x, y) in pts {
-                                effects.push(Effect::CreateUnit {
-                                    unit_name: unit.clone(),
-                                    owner: owner.clone(),
-                                    veteran,
-                                    x: *x,
-                                    y: *y,
-                                });
-                            }
+                            effects.push(Effect::CreateUnit {
+                                unit_name: unit,
+                                owner,
+                                veteran,
+                                count,
+                                locations: pts.clone(),
+                            });
                         }
                     }
                     "CHANGEMONEY" => {
@@ -198,7 +205,19 @@ mod tests {
             .iter()
             .filter(|e| matches!(e, Effect::CreateUnit { .. }))
             .collect();
-        assert_eq!(creates.len(), 7, "7 locations -> 7 create effects (first free slot used by the loop)");
+        // ONE create (Macro.txt: first valid location, the rest are
+        // fallbacks) of one veteran Theodoric II, six candidate tiles.
+        assert_eq!(creates.len(), 1, "{creates:?}");
+        match creates[0] {
+            Effect::CreateUnit { unit_name, owner, veteran, count, locations } => {
+                assert_eq!((unit_name.as_str(), owner.as_str()), ("Theodoric II", "Visigoths"));
+                assert!(*veteran);
+                assert_eq!(*count, 1);
+                assert_eq!(locations.len(), 6);
+                assert_eq!(locations[0], (24, 60));
+            }
+            _ => unreachable!(),
+        }
         assert!(eff.iter().any(|e| matches!(e, Effect::Text(t) if t.contains("Theodoric II"))));
         // JUSTONCE: a second kill of the same king does not re-fire
         let again = eng.fire("UNITKILLED", &ctx);
@@ -206,20 +225,24 @@ mod tests {
     }
 
     #[test]
-    fn prefix_and_anybody_matching() {
+    fn exact_and_anybody_matching() {
         let f = parse_events(
-            "@IF\nUNITKILLED\nunit=WRE\ndefender=West\nattacker=ANYBODY\n@THEN\nTEXT\nhit\nENDTEXT\n@ENDIF",
+            "@IF\nUNITKILLED\nunit=Theodoric I\ndefender=west romans\nattacker=ANYBODY\n@THEN\nTEXT\nhit\nENDTEXT\n@ENDIF",
         )
         .unwrap();
         let mut eng = EventEngine::new(f);
         let ctx = Ctx {
-            unit: Some("WRE General".into()),
+            unit: Some("Theodoric I".into()),
             attacker: Some("Francs".into()),
             defender: Some("West Romans".into()),
             ..Default::default()
         };
-        assert!(!eng.fire("UNITKILLED", &ctx).is_empty(), "WRE prefix + West prefix + ANYBODY");
-        let wrong = Ctx { unit: Some("Hun Warrior".into()), ..ctx.clone() };
-        assert!(eng.fire("UNITKILLED", &wrong).is_empty());
+        assert!(!eng.fire("UNITKILLED", &ctx).is_empty(), "exact (any case) + ANYBODY");
+        for unit in ["Theodoric II", "Theodoric"] {
+            let wrong = Ctx { unit: Some(unit.into()), ..ctx.clone() };
+            assert!(eng.fire("UNITKILLED", &wrong).is_empty(), "{unit} is not Theodoric I");
+        }
+        let wrong = Ctx { defender: Some("West".into()), ..ctx };
+        assert!(eng.fire("UNITKILLED", &wrong).is_empty(), "no prefix match");
     }
 }

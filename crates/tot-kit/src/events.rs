@@ -181,16 +181,23 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                             if t2.is_empty() || t2.starts_with(';') {
                                 continue;
                             }
-                            if let Some((a, b)) = t2.split_once(',') {
-                                if let (Ok(x), Ok(y)) =
-                                    (a.trim().parse::<i32>(), b.trim().parse::<i32>())
-                                {
-                                    pts.push((x, y));
-                                }
+                            // `x,y` or `x,y,z` (z = map, Macro.txt; not kept)
+                            let mut it = t2.split(',').map(|v| v.trim().parse::<i32>());
+                            if let (Some(Ok(x)), Some(Ok(y))) = (it.next(), it.next()) {
+                                pts.push((x, y));
                             }
                         }
-                        cmd.args.push(Value::Points(pts));
-                        actions.push(cmd);
+                        // `locations … endlocations` is a parameter of the
+                        // preceding CREATEUNIT (Macro.txt), not an action.
+                        match actions.last_mut() {
+                            Some(prev) if prev.keyword == "CREATEUNIT" => {
+                                prev.args.push(Value::Points(pts));
+                            }
+                            _ => {
+                                cmd.args.push(Value::Points(pts));
+                                actions.push(cmd);
+                            }
+                        }
                         continue;
                     }
                     if kw == "TEXT" {
@@ -265,11 +272,18 @@ mod tests {
             && e.trigger.param("unit").and_then(|v| v.word()) == Some("Theodoric I"))
             .expect("Theodoric I event");
         let create = e.actions.iter().find(|c| c.keyword == "CREATEUNIT").unwrap();
-        assert_eq!(create.param("owner").and_then(|v| v.word()), Some("TRIGGERDEFENDER"));
+        // The install's file (FallRome/ and Scenario/FallRome/ identical):
+        // owner=Visigoths and six locations, 24,60 first.
+        assert_eq!(create.param("owner").and_then(|v| v.word()), Some("Visigoths"));
+        assert_eq!(create.param("unit").and_then(|v| v.word()), Some("Theodoric II"));
         match create.args.iter().find(|v| matches!(v, Value::Points(_))) {
-            Some(Value::Points(pts)) => assert_eq!(pts.len(), 7),
-            _ => panic!("expected a 7-point locations list"),
+            Some(Value::Points(pts)) => {
+                assert_eq!(pts.len(), 6);
+                assert_eq!(pts[0], (24, 60));
+            }
+            _ => panic!("expected the locations list on CREATEUNIT"),
         }
+        assert!(!e.actions.iter().any(|c| c.keyword == "LOCATIONS"));
         assert!(e.actions.iter().any(|c| c.keyword == "JUSTONCE"));
     }
 }

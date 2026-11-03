@@ -103,7 +103,7 @@ mod tests {
 
     /// Madrid, standard game: size 1, F=6 (surplus +4) — box 18 sits at
     /// capacity (no growth at exactly 18 — measured t36), then 18+4 = 22
-    /// > 18 → grows, box 4; size 2 with F=6 (+2): 6, 8, 10 …
+    /// \> 18 → grows, box 4; size 2 with F=6 (+2): 6, 8, 10 …
     /// Oracle: fb 18@t36, grew (@90 3→4) by t38 with fb 4, then 6/8/10.
     #[test]
     fn madrid_growth_size1() {

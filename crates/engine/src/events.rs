@@ -50,6 +50,8 @@ pub struct Ctx {
     pub listener: Option<String>,
     /// CITYTAKEN's `city=` (exact name match like every other name).
     pub city: Option<String>,
+    /// Current turn, for TURN (`turn=N` or `Every`) and TURNINTERVAL.
+    pub turn: Option<i32>,
     pub denominator: Option<i32>,
 }
 
@@ -105,6 +107,20 @@ impl EventEngine {
     /// Evaluate every event with this trigger keyword; returns effects.
     /// JUSTONCE events fire at most once; non-JUSTONCE events re-arm.
     pub fn fire(&mut self, trigger: &str, ctx: &Ctx) -> Vec<Effect> {
+        let d = ctx.denominator;
+        self.fire_with(trigger, ctx, &mut |denom| d == Some(denom))
+    }
+
+    /// [`EventEngine::fire`] with the RANDOMTURN roll supplied by the
+    /// caller: `roll(n)` is asked once per RANDOMTURN event, in file order,
+    /// and returns whether its 1-in-`n` chance came up (Macro.txt: "a one
+    /// in 40 chance every turn").
+    pub fn fire_with(
+        &mut self,
+        trigger: &str,
+        ctx: &Ctx,
+        roll: &mut dyn FnMut(i32) -> bool,
+    ) -> Vec<Effect> {
         let mut effects = Vec::new();
         for (i, e) in self.file.events.iter().enumerate() {
             if !e.trigger.keyword.eq_ignore_ascii_case(trigger) {
@@ -123,12 +139,27 @@ impl EventEngine {
             {
                 continue;
             }
-            // RANDOMTURN: fire with probability 1/denominator
             if e.trigger.keyword.eq_ignore_ascii_case("RANDOMTURN") {
                 let denom = t.param("denominator").and_then(|v| v.number()).unwrap_or(2);
-                // caller decides via ctx.denominator == Some(roll); here we
-                // treat Some(n) as "roll succeeded" only when n == denom
-                if ctx.denominator != Some(denom) {
+                if !roll(denom) {
+                    continue;
+                }
+            }
+            // TURN: turn=N or turn=Every (Macro.txt)
+            if e.trigger.keyword.eq_ignore_ascii_case("TURN") {
+                let every =
+                    word_of(t.param("turn")).is_some_and(|w| w.eq_ignore_ascii_case("every"));
+                let n = t.param("turn").and_then(|v| v.number());
+                if !(every || (n.is_some() && n == ctx.turn)) {
+                    continue;
+                }
+            }
+            // TURNINTERVAL: modelled as `turn % interval == 0`. Macro.txt
+            // counts from the last activation; the two agree when that
+            // was a multiple of the interval (unverified otherwise).
+            if e.trigger.keyword.eq_ignore_ascii_case("TURNINTERVAL") {
+                let i = t.param("interval").and_then(|v| v.number()).unwrap_or(0);
+                if i <= 0 || ctx.turn.is_none_or(|turn| turn % i != 0) {
                     continue;
                 }
             }

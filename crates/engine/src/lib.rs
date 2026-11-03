@@ -14,6 +14,7 @@ pub mod events;
 pub mod movement;
 pub mod research;
 pub mod rng;
+pub mod turn;
 
 use std::fmt::Write as _;
 
@@ -58,6 +59,9 @@ pub struct Unit {
     /// the engine moves keep their position — the original's insertion
     /// point on entering a tile is not decoded.
     pub stack_pos: u16,
+    /// Home city index (record u8@18; 0xff = none). Supported settlers eat
+    /// from their home city (evidence §T1-4 growth replay).
+    pub home: u8,
 }
 
 /// Engine-side city: identity, coordinates and the proven economics
@@ -243,6 +247,7 @@ fn unit_from(r: &UnitRecord) -> Unit {
         damage: r.damage(),
         orders: r.orders(),
         stack_pos: 0,
+        home: r.home(),
     }
 }
 
@@ -354,7 +359,11 @@ impl WorldState {
         }
         for c in &self.cities {
             buf.clear();
-            let _ = write!(buf, "city|{}|{}|{}|", c.name, c.x, c.y);
+            let _ = write!(
+                buf,
+                "city|{}|{}|{}|{}|{}|",
+                c.name, c.x, c.y, c.size, c.food_box
+            );
             mix(&mut h, buf.as_bytes());
         }
         h
@@ -432,6 +441,9 @@ pub mod tests_support {
         d[684] = 4;
         d[685..689].copy_from_slice(&[0xdb, 0x02, 0xdb, 0x02]);
         d[689] = 4;
+        // civ 1's plural ("Testers") in its name block's fixed slot @26
+        let b1 = tot_kit::OFF_CIV_NAMES + 26;
+        d[b1..b1 + 7].copy_from_slice(b"Testers");
         let hdr: [i16; 8] = [
             (2 * stored_w) as i16,
             stored_h as i16,
@@ -454,23 +466,32 @@ pub mod tests_support {
             out.extend_from_slice(&f);
         }
         out.extend(std::iter::repeat_n(0u8, 10240));
-        out.extend(std::iter::repeat_n(0u8, 34));
-        let unit_specs: [(u16, u16, u8, u8); 2] = [(3, 4, 0, 1), (5, 6, 1, 2)];
-        for (i, &(x, y, typ, owner)) in unit_specs.iter().enumerate() {
+        // units, game framing: (x, y, type, owner, home city)
+        let unit_specs: [(u16, u16, u8, u8, u8); 2] = [(3, 4, 0, 1, 0), (5, 6, 1, 2, 0xff)];
+        for (i, &(x, y, typ, owner, home)) in unit_specs.iter().enumerate() {
             let mut r = [0u8; 40];
-            r[6..8].copy_from_slice(&x.to_le_bytes());
-            r[8..10].copy_from_slice(&y.to_le_bytes());
-            r[14] = typ;
-            r[15] = owner;
-            r[36..38].copy_from_slice(&(i as u16 + 1).to_le_bytes());
+            r[0..2].copy_from_slice(&x.to_le_bytes());
+            r[2..4].copy_from_slice(&y.to_le_bytes());
+            r[8] = typ;
+            r[9] = owner;
+            r[17] = 0xff; // no orders
+            r[18] = home;
+            r[26..28].copy_from_slice(&(-1i16).to_le_bytes());
+            r[28..30].copy_from_slice(&(-1i16).to_le_bytes());
+            r[30..32].copy_from_slice(&(i as u16 + 1).to_le_bytes());
             out.extend_from_slice(&r);
         }
+        // cities, game framing: x@0 y@2 owner@10 size@11 box@28 name@34
+        // gross food@82 — size 1, F 4 (surplus 2, or 1 with a settler)
         for i in 0..8 {
             let mut r = [0u8; 92];
+            r[0..2].copy_from_slice(&((i + 1) as u16).to_le_bytes());
+            r[2..4].copy_from_slice(&((i + 2) as u16).to_le_bytes());
+            r[10] = 1;
+            r[11] = 1;
             let name = format!("City{i}");
-            r[..name.len()].copy_from_slice(name.as_bytes());
-            r[58..60].copy_from_slice(&((i + 1) as u16).to_le_bytes());
-            r[60..62].copy_from_slice(&((i + 2) as u16).to_le_bytes());
+            r[34..34 + name.len()].copy_from_slice(name.as_bytes());
+            r[82] = 4;
             out.extend_from_slice(&r);
         }
         parse_sav(&out).expect("synthetic fixture parses")

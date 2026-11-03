@@ -63,6 +63,29 @@ box 18→2 within one record), but the per-sample citations need
 re-reading. The 0x33 (ToTPP) records were not re-checked: their unit
 layout differs (id@0, x@10) and the home test is inconclusive there (2/3).
 
+#### Headless turn loop (v0.2.0, 2026-11-03)
+
+`engine::turn` (`WorldState::run_turn`) runs one turn in three steps:
+1. Cities grow or starve on the replayed T1-4 model. Gross food is the
+   save's value, held constant.
+2. TURN, TURNINTERVAL and RANDOMTURN events fire and apply. RANDOMTURN
+   rolls `next_below(n) == 0` on the kernel generator.
+3. The turn advances and movement resets.
+
+**Step order and the RANDOMTURN generator are engine choices, not
+decoded**; TURNINTERVAL is modelled as `turn % interval == 0`. The loop is
+deterministic. Checks:
+- `turn::tests` (asset-free, CI): 50 turns, same seed ⇒ same
+  fingerprints.
+- `fallrome-50turn.txt` (golden.sh run50): FallRome with its own Rules and
+  Events.
+- `standard_game_install.rs`: a standard game, `Original/Ph_Auto.SAV`,
+  50 turns.
+
+Fixed on the way: `totctl run` read FallRome's non-UTF-8 Rules.txt with
+`read_to_string`, so the old 50-turn golden had silently run with **no
+rules**.
+
 #### T1-4 growth replayed on the whole std1 series (2026-11-03)
 
 With true record framing (§Record framing FIXED), **settlers are visible**:

@@ -152,6 +152,7 @@ impl WorldState {
                         damage: 0,
                         orders: 0xff,
                         stack_pos: top + k as u16,
+                        home: 0xff,
                     });
                 }
                 Applied::Created {

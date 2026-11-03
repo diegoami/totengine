@@ -345,28 +345,49 @@ fn cmd_run(args: &[String]) -> ExitCode {
             return ExitCode::from(1);
         }
     };
-    let rules = rules_path.or_else(|| {
-        let sib = std::path::Path::new(path).with_file_name("Rules.txt");
-        sib.exists().then(|| sib.to_string_lossy().into_owned())
-    });
-    let rules = rules.and_then(|rp| {
-        std::fs::read_to_string(&rp)
+    // Scenario files are not strictly UTF-8 (FallRome): read lossily.
+    let read_lossy = |p: &std::path::Path| {
+        std::fs::read(p)
             .ok()
-            .map(|t| tot_kit::parse_rules(&t))
+            .map(|b| String::from_utf8_lossy(&b).into_owned())
+    };
+    let rules_path = rules_path.map(std::path::PathBuf::from).or_else(|| {
+        let sib = std::path::Path::new(path).with_file_name("Rules.txt");
+        sib.exists().then_some(sib)
     });
+    let rules = rules_path
+        .as_deref()
+        .and_then(read_lossy)
+        .map(|t| tot_kit::parse_rules(&t));
+    let mut events = read_lossy(&std::path::Path::new(path).with_file_name("Events.txt"))
+        .and_then(|t| tot_kit::parse_events(&t).ok())
+        .map(engine::events::EventEngine::new);
     let mut world = engine::boot(&sav, seed);
     if let Some(r) = &rules {
         world.start_turn(r);
     }
     println!("file {}", path);
     println!("seed {seed}");
+    println!(
+        "rules {} events {}",
+        if rules.is_some() { "yes" } else { "no" },
+        events.as_ref().map_or(0, |e| e.file.events.len())
+    );
     for t in 0..=turns {
-        println!("{t:04} {:016x}", world.checksum());
+        let line = format!("{t:04} {:016x}", world.checksum());
         if t < turns {
-            world.advance_turn();
-            if let Some(r) = &rules {
-                world.start_turn(r);
+            match &rules {
+                Some(r) => {
+                    let s = world.run_turn(r, events.as_mut());
+                    println!("{line} grew {} events {}", s.grew.len(), s.events.len());
+                }
+                None => {
+                    world.advance_turn();
+                    println!("{line}");
+                }
             }
+        } else {
+            println!("{line}");
         }
     }
     ExitCode::SUCCESS

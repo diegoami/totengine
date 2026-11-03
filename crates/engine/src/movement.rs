@@ -199,6 +199,7 @@ mod tests {
                     damage: 0,
                     orders: 0xff,
                     stack_pos: 0,
+                    home: 0xff,
                 },
                 Unit {
                     type_id: 2, // Trireme, sea on (3,0)=ocean
@@ -211,6 +212,7 @@ mod tests {
                     damage: 0,
                     orders: 0xff,
                     stack_pos: 0,
+                    home: 0xff,
                 },
                 Unit {
                     type_id: 1,
@@ -223,6 +225,7 @@ mod tests {
                     damage: 0,
                     orders: 0xff,
                     stack_pos: 0,
+                    home: 0xff,
                 },
             ],
             cities: vec![],

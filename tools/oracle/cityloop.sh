@@ -9,7 +9,8 @@ export WINEPREFIX="${WINEPREFIX:-$HOME/.wine_civ2tot}"
 export DISPLAY="${DISPLAY:-:99}"
 EXPECT=${1:?expected new turn number}
 NUNITS=${2:-170}
-SCENDIR=/mnt/d/games/CIVTOT/Scenario/FallRome
+SCENDIR="${SCENDIR:-${CIVTOT_HOME:?set CIVTOT_HOME}/Scenario/FallRome}"
+export SCENDIR  # saveturn.sh harvests from the same directory
 cd "$(dirname "$0")"
 
 G=$(timeout 15 wine ./winject.exe wins 2>/dev/null \

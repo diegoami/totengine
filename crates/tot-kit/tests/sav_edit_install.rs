@@ -85,6 +85,21 @@ fn iterator_offsets(sav: &tot_kit::SaveFile, idx: usize) -> Vec<usize> {
     vec![base, base + 1, base + 2, base + 3, base + 8]
 }
 
+/// Reviewer finding #64, the exact reproduction on the real file: a
+/// negative map-header blob dimension is an error, not a panic.
+#[test]
+fn malformed_map_header_is_an_error() {
+    let Some(mut raw) = read("FallRome/ROMFALL.scn") else {
+        eprintln!("skipping: install not present");
+        return;
+    };
+    let sav = tot_kit::parse_sav(&raw).unwrap();
+    let hdr = tot_kit::OFF_TRANSPORTERS + 172 + 14 * sav.transporter_count as usize;
+    raw[hdr + 10..hdr + 12].copy_from_slice(&(-1i16).to_le_bytes());
+    let r = std::panic::catch_unwind(|| tot_kit::parse_sav(&raw));
+    assert!(matches!(r, Ok(Err(_))), "{r:?}");
+}
+
 #[test]
 fn rejects_bad_edits() {
     let Some(raw) = read("FallRome/ROMFALL.scn") else {
@@ -94,4 +109,16 @@ fn rejects_bad_edits() {
     let mut ed = tot_kit::SavEditor::new(&raw).expect("editor opens");
     assert!(ed.set_unit_pos(1_000_000, 0, 0).is_err());
     assert!(ed.set_city_name(0, "WayTooLongName123").is_err());
+    // Reviewer finding #65: names the locator cannot read are refused and
+    // leave the buffer untouched; an accepted rename always re-parses.
+    let before = ed.bytes().to_vec();
+    for bad in ["A", "", "Ro\0ma", "Ro\nma"] {
+        assert!(ed.set_city_name(0, bad).is_err(), "{bad:?} accepted");
+        assert_eq!(ed.bytes(), &before[..], "{bad:?} mutated the buffer");
+    }
+    ed.set_city_name(0, "Ur")
+        .expect("two-letter names are real");
+    let after = tot_kit::parse_sav(ed.bytes()).expect("edited file parses");
+    assert_eq!(after.cities[0].name(), "Ur");
+    assert_eq!(after.cities.len(), 146);
 }

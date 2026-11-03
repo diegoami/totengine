@@ -36,6 +36,16 @@ pub struct MoveOutcome {
 /// an off-by-one parser shifts this; `Rules::terrain_semantic_ok` guards).
 pub const OCEAN_TERRAIN: u8 = 10;
 
+/// Neighbouring tiles on the logical diamond grid (x + y is even for every
+/// tile): the 8 offsets (±1, ±1), (±2, 0), (0, ±2). Oracle battles used
+/// three of them: NE (21,31)→(22,30), N (21,31)→(21,29), E (24,34)→(26,34).
+/// East-west map wrap is not modelled: a step across the seam is refused.
+pub fn is_adjacent(a: (u16, u16), b: (u16, u16)) -> bool {
+    let dx = (a.0 as i32 - b.0 as i32).abs();
+    let dy = (a.1 as i32 - b.1 as i32).abs();
+    matches!((dx, dy), (1, 1) | (2, 0) | (0, 2))
+}
+
 impl WorldState {
     /// Reset every unit's movement for a new turn (`rate * 3` thirds).
     /// Unknown unit types get 0 (they cannot move until the rules table
@@ -59,7 +69,9 @@ impl WorldState {
         let Some(unit) = self.units.get(unit_idx) else {
             return none;
         };
-        if (unit.x, unit.y) == (x, y) || unit.moves_left == 0 {
+        // one step per request: the destination must be a neighbour
+        // (reviewer finding #62 — no teleporting moves or attacks)
+        if !is_adjacent((unit.x, unit.y), (x, y)) || unit.moves_left == 0 {
             return none;
         }
         let owner = unit.owner;
@@ -126,15 +138,13 @@ impl WorldState {
         }
     }
 
-    /// True when (x, y) is adjacent (8-neighbourhood on the logical grid)
-    /// to any unit of another civilization. `owner` 0 (barbarians) is
-    /// hostile to everyone; everyone is hostile to owner 0.
+    /// True when (x, y) is adjacent ([`is_adjacent`]) to any unit of
+    /// another civilization. `owner` 0 (barbarians) is hostile to everyone;
+    /// everyone is hostile to owner 0.
     fn is_zoc(&self, _rules: &Rules, owner: u8, x: u16, y: u16) -> bool {
-        self.units.iter().any(|u| {
-            let dx = (u.x as i32 - x as i32).abs();
-            let dy = (u.y as i32 - y as i32).abs();
-            dx <= 1 && dy <= 1 && (dx + dy) > 0 && u.owner != owner
-        })
+        self.units
+            .iter()
+            .any(|u| u.owner != owner && is_adjacent((u.x, u.y), (x, y)))
     }
 }
 
@@ -164,10 +174,9 @@ mod tests {
     }
 
     fn world_with_map() -> WorldState {
-        // 4x4 stored grid. Logical coordinates map as
-        // sx = (x - (y&1))/2 - 1, sy = y (proven diamond mapping): valid
-        // logical x starts at 3 (even y) / 4 (odd y).
-        //   tile (3,0) [stored 0]  = ocean
+        // 4x4 stored grid. Logical coordinates (x + y even) map as
+        // sx = (x - (y&1))/2 - 1, sy = y (proven diamond mapping).
+        //   tile (2,0) [stored 0]  = ocean
         //   stored row 2           = road strip (logical y=2)
         let surface = 16usize;
         let mut terrain = vec![1u8; surface];
@@ -191,7 +200,7 @@ mod tests {
                 Unit {
                     type_id: 1, // Knights, move 2
                     owner: 1,
-                    x: 4,
+                    x: 5,
                     y: 1,
                     is_leader: false,
                     moves_left: 6,
@@ -202,9 +211,9 @@ mod tests {
                     home: 0xff,
                 },
                 Unit {
-                    type_id: 2, // Trireme, sea on (3,0)=ocean
+                    type_id: 2, // Trireme, sea on (2,0)=ocean
                     owner: 1,
-                    x: 3,
+                    x: 2,
                     y: 0,
                     is_leader: false,
                     moves_left: 9,
@@ -217,7 +226,7 @@ mod tests {
                 Unit {
                     type_id: 1,
                     owner: 2, // enemy knight for ZOC
-                    x: 6,
+                    x: 7,
                     y: 3,
                     is_leader: false,
                     moves_left: 6,
@@ -258,8 +267,8 @@ mod tests {
         let rules = tot_kit::parse_rules(rules_text());
         let mut w = world_with_map();
         w.start_turn(&rules);
-        // (4,1) → (5,1): plains, no road (road only on stored row 2)
-        let out = w.move_unit(&rules, 0, 5, 1);
+        // (5,1) → (6,0) NE: plains, no road (road only on stored row 2)
+        let out = w.move_unit(&rules, 0, 6, 0);
         assert!(out.moved);
         assert_eq!(out.cost_thirds, 3);
         assert_eq!(w.units[0].moves_left, 3);
@@ -270,7 +279,7 @@ mod tests {
         let rules = tot_kit::parse_rules(rules_text());
         let mut w = world_with_map();
         w.start_turn(&rules);
-        let out = w.move_unit(&rules, 0, 5, 2); // stored row 2 road
+        let out = w.move_unit(&rules, 0, 6, 2); // SE, stored row 2 road
         assert!(out.moved);
         assert_eq!(out.cost_thirds, 1);
     }
@@ -279,10 +288,10 @@ mod tests {
     fn terrain_cost_scales_and_min_charge() {
         let rules = tot_kit::parse_rules(rules_text());
         let mut w = world_with_map();
-        // forest (cost 2 ⇒ 6 thirds) at (5,1); unit has 6 ⇒ lands with 0
-        let idx = w.map.stored_index(5, 1).unwrap();
+        // forest (cost 2 ⇒ 6 thirds) at (6,0); unit has 6 ⇒ lands with 0
+        let idx = w.map.stored_index(6, 0).unwrap();
         w.map.terrain[idx] = 3; // Forest
-        let out = w.move_unit(&rules, 0, 5, 1);
+        let out = w.move_unit(&rules, 0, 6, 0);
         assert!(out.moved);
         assert_eq!(out.cost_thirds, 6);
         assert_eq!(w.units[0].moves_left, 0);
@@ -293,10 +302,11 @@ mod tests {
         let rules = tot_kit::parse_rules(rules_text());
         let mut w = world_with_map();
         w.start_turn(&rules);
-        // land unit onto ocean (3,0): refused
-        assert!(!w.move_unit(&rules, 0, 3, 0).moved);
-        // sea unit onto land (5,1): refused
-        assert!(!w.move_unit(&rules, 1, 5, 1).moved);
+        // land unit at (3,1) onto ocean (2,0), NW: refused
+        w.units[0].x = 3;
+        assert!(!w.move_unit(&rules, 0, 2, 0).moved);
+        // sea unit (2,0) onto land (4,0), E: refused
+        assert!(!w.move_unit(&rules, 1, 4, 0).moved);
     }
 
     #[test]
@@ -304,8 +314,8 @@ mod tests {
         let rules = tot_kit::parse_rules(rules_text());
         let mut w = world_with_map();
         w.start_turn(&rules);
-        // enemy knight at (6,3). Put our knight adjacent at (5,3) and
-        // move to (6,2) — both tiles adjacent to the enemy ⇒ ZOC end.
+        // enemy knight at (7,3). Put our knight adjacent at (5,3) (E of
+        // it is the enemy) and move NE to (6,2) — also adjacent ⇒ ZOC end.
         w.units[0].x = 5;
         w.units[0].y = 3;
         let out = w.move_unit(&rules, 0, 6, 2);
@@ -320,6 +330,43 @@ mod tests {
         let mut w = world_with_map();
         w.start_turn(&rules);
         w.units[0].moves_left = 0;
-        assert!(!w.move_unit(&rules, 0, 5, 1).moved);
+        assert!(!w.move_unit(&rules, 0, 6, 0).moved);
+    }
+
+    /// Reviewer finding #62: one request moves or attacks one step only.
+    #[test]
+    fn non_adjacent_destinations_are_refused() {
+        let rules = tot_kit::parse_rules(rules_text());
+        let mut w = world_with_map();
+        w.start_turn(&rules);
+        // empty land two steps away (E of E)
+        let out = w.move_unit(&rules, 0, 9, 1);
+        assert!(!out.moved && out.battle.is_none());
+        assert_eq!(
+            (w.units[0].x, w.units[0].y, w.units[0].moves_left),
+            (5, 1, 6)
+        );
+        // the enemy at (7,3) is two steps away: no battle, either entry point
+        assert!(w.move_unit(&rules, 0, 7, 3).battle.is_none());
+        assert!(w.attack(&rules, 0, 7, 3).is_none());
+        assert_eq!(w.units.len(), 3);
+        // the eight diamond neighbours, and nothing else
+        let n: Vec<_> = (0..12u16)
+            .flat_map(|x| (0..8u16).map(move |y| (x, y)))
+            .filter(|&t| is_adjacent((5, 3), t))
+            .collect();
+        assert_eq!(
+            n,
+            [
+                (3, 3),
+                (4, 2),
+                (4, 4),
+                (5, 1),
+                (5, 5),
+                (6, 2),
+                (6, 4),
+                (7, 3)
+            ]
+        );
     }
 }

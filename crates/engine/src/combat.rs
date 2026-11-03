@@ -517,8 +517,9 @@ impl crate::WorldState {
         pick
     }
 
-    /// `attacker_idx` attacks the enemy-held tile (x, y). Returns `None`
-    /// when there is nothing to attack or the unit cannot attack (no
+    /// `attacker_idx` attacks the enemy-held neighbouring tile (x, y).
+    /// Returns `None` when the tile is not adjacent, holds nothing to
+    /// attack, or the unit cannot attack (no
     /// movement, attack factor 0 — the latter is an engine rule, not
     /// decoded). The loser is removed from `units` (indices after it
     /// shift); only the defender dies, its stack-mates survive (observed
@@ -526,7 +527,7 @@ impl crate::WorldState {
     /// tile and spends one movement point (oracle: moves spent 0 → 15).
     pub fn attack(&mut self, rules: &Rules, attacker_idx: usize, x: u16, y: u16) -> Option<Battle> {
         let att = self.units.get(attacker_idx)?.clone();
-        if att.moves_left == 0 {
+        if att.moves_left == 0 || !crate::movement::is_adjacent((att.x, att.y), (x, y)) {
             return None;
         }
         let at = att.type_id as usize;

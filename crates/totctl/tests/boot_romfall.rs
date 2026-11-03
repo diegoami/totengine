@@ -112,3 +112,29 @@ fn totctl_boot_cli_reports_stable_checksum() {
     assert_eq!(sum(&first), sum(&second), "checksum must be reproducible");
     assert!(first.contains("units / cities: 710 / 146"));
 }
+
+/// Reviewer finding #66: an explicit unreadable --rules fails loudly
+/// instead of silently running without simulation rules.
+#[test]
+fn run_with_unreadable_rules_is_an_error() {
+    let Some(p) = romfall() else {
+        eprintln!("skipping: CIVTOT_HOME not set");
+        return;
+    };
+    let out = Command::new(env!("CARGO_BIN_EXE_totctl"))
+        .args(["run"])
+        .arg(&p)
+        .args(["--turns", "1", "--rules", "/nonexistent/Rules.txt"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&out.stderr).contains("/nonexistent/Rules.txt"));
+    let ok = Command::new(env!("CARGO_BIN_EXE_totctl"))
+        .args(["run"])
+        .arg(&p)
+        .args(["--turns", "1", "--no-rules"])
+        .output()
+        .unwrap();
+    assert!(ok.status.success());
+    assert!(String::from_utf8_lossy(&ok.stdout).contains("rules no"));
+}

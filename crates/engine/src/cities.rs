@@ -12,9 +12,10 @@
 //!   and the box restarts at **this turn's surplus** — not the overflow
 //!   (Utica, turn 41: 28 + 1 = 29 at size 1 → size 2, box 1, where the
 //!   overflow would be 11).
-//! - The whole std1 lab series (`docs/evidence/t1-4-growth-series.tsv`,
-//!   read in the game's record framing, settlers counted from unit home
-//!   cities) replays with this model; see the tests.
+//! - The std1 lab series (`docs/evidence/t1-4-growth-series.tsv`, read in
+//!   the game's record framing, settlers counted from unit home cities)
+//!   replays with this model: 126 transitions checked, 125 exact (one
+//!   known mismatch, Ur); see the tests.
 //! - The shield box (`+= net shields`, reset on production completion)
 //!   lives in the save at u16@30 but production items/completions are
 //!   not modelled yet (item location open).
@@ -257,6 +258,9 @@ mod tests {
         // Ur, turn 40→41: predicted box 2, observed 1 (its F moved 4→5
         // across the growth; a worker change the saves cannot show).
         assert_eq!(mismatches, [(40, "Ur", (2, 2), (2, 1))], "{mismatches:?}");
+        // 126 checked transitions (10 of them growths); all but Ur match,
+        // so 125 exact, 9 of the growths exact (reviewer finding #68)
         assert_eq!((checked, grew), (126, 10));
+        assert_eq!(checked - mismatches.len(), 125);
     }
 }

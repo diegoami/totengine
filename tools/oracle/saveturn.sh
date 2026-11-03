@@ -5,6 +5,8 @@ set -u
 export WINEPREFIX="${WINEPREFIX:-$HOME/.wine_civ2tot}"
 export DISPLAY="${DISPLAY:-:99}"
 LABEL=${1:?digits-only label}
+# where the save lands: the scenario dir under the configured install
+SCENDIR="${SCENDIR:-${CIVTOT_HOME:?set CIVTOT_HOME}/Scenario/FallRome}"
 cd "$(dirname "$0")"
 
 for attempt in 1 2 3 4; do
@@ -34,7 +36,7 @@ for attempt in 1 2 3 4; do
   sleep 3
   # report what actually got saved (name + turn counter) so the caller can
   # verify the turn advanced
-  F=$(ls -t /mnt/d/games/CIVTOT/Scenario/FallRome/*.SAV /mnt/d/games/CIVTOT/Scenario/FallRome/*.sav 2>/dev/null | head -1)
+  F=$(ls -t "$SCENDIR"/*.SAV "$SCENDIR"/*.sav 2>/dev/null | head -1)
   python3 - "$F" << 'PYEOF'
 import struct, sys
 d = open(sys.argv[1], 'rb').read()

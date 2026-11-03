@@ -21,7 +21,9 @@ The new-game entropy source is not found yet; see evidence §RG-2.
   golden (`docs/evidence/fallrome-50turn.txt`), and a standard-game save
   (`standard_game_install.rs`).
 - **Movement** (T1-3): Rules columns oracle-proven; thirds, roads/rail,
-  ZOC, domains.
+  ZOC, domains. One step per request: the destination must be one of the
+  8 diamond-grid neighbours, for moves and attacks alike. East-west map
+  wrap is not modelled.
 - **Combat** (T1-6): the original's two generators, decoded and shipped:
   - the NR LCG `rand_int`, runtime-verified;
   - the MSVC CRT `rand()`, which drives combat.
@@ -34,8 +36,9 @@ The new-game entropy source is not found yet; see evidence §RG-2.
   against `Macro.txt`. Effects change the world (`engine::effects`):
   treasuries (oracle-proven field), units created. Kills fire UNITKILLED.
 - **Cities** (T1-4): economics fields oracle-verified. The growth model
-  replays the whole standard-game lab series: 126 transitions exact, 10 of
-  them growths.
+  replays the standard-game lab series: of 126 checked transitions (10 of
+  them growths), 125 match exactly, including 9 of the growths. The one
+  mismatch (Ur, turn 40→41) is listed.
 - **Research/wonders** (T1-5), **rules model** (T1-1), **world state +
   checksum** (T1-2).
 

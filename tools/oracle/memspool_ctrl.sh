@@ -11,6 +11,8 @@ stop() {
   sleep 1
 }
 start() {
+  # the daemon spawns the game from the configured install (no default)
+  : "${CIVTOT_HOME:?set CIVTOT_HOME to the original install}"
   (setsid nohup python3 memspool.py serve >/tmp/memspool.log 2>&1 < /dev/null &)
   sleep 1.5
   pgrep -f '[m]emspool.py' >/dev/null && echo "daemon up"

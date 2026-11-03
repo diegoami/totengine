@@ -238,8 +238,7 @@ def handle(req: dict) -> dict:
     if cmd == "restart":
         here = os.path.dirname(os.path.abspath(__file__))
         env = {**os.environ,
-               "CIVTOT_HOME": os.environ.get("CIVTOT_HOME",
-                                             "/mnt/d/games/CIVTOT"),
+               "CIVTOT_HOME": os.environ["CIVTOT_HOME"],
                "WINEPREFIX": os.environ.get("WINEPREFIX",
                                             os.path.expanduser("~/.wine_civ2tot")),
                "DISPLAY": ":99"}

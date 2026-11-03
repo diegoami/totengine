@@ -97,7 +97,7 @@ gross food u8@82, settlers). The engine test
 `cities::tests::std1_series_replays` steps the model across every save
 pair:
 
-- **126 transitions reproduce exactly, including 10 growth events**.
+- **126 transitions checked (10 of them growth events), 125 exact, including 9 of the growths**.
   Pairs where the settler count changes mid-span, or where growth
   re-assigns tiles before the last step, are skipped. One mismatch: Ur,
   turn 40→41, box 1 observed vs 2 predicted, while its F moved 4→5

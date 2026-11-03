@@ -81,7 +81,7 @@ pub struct City {
     /// Net science/taxes after the rate split and improvements.
     pub net_science: u16,
     pub net_taxes: u16,
-    /// Food/shield boxes (u16@86/@88 — AI-city evolution proven).
+    /// Food/shield boxes (record u16@28/@30; evidence §T1-4).
     pub food_box: u16,
     pub shield_box: u16,
 }
@@ -321,8 +321,15 @@ impl WorldState {
         let mut buf = String::new();
         let _ = write!(
             buf,
-            "v1|turn|{}|year|{}|diff|{}|riv|{}|seed|{}|rngseed|{}",
-            self.turn, self.year, self.difficulty, self.rivals, self.seed_word, self.rng_seed
+            "v2|turn|{}|year|{}|diff|{}|riv|{}|seed|{}|rngseed|{}|flags|{}|human|{}",
+            self.turn,
+            self.year,
+            self.difficulty,
+            self.rivals,
+            self.seed_word,
+            self.rng_seed,
+            self.game_flags,
+            self.human_mask
         );
         mix(&mut h, buf.as_bytes());
         buf.clear();
@@ -335,7 +342,7 @@ impl WorldState {
         mix(&mut h, buf.as_bytes());
         for c in &self.civs {
             buf.clear();
-            let _ = write!(buf, "civ|{}|{}|", c.id, c.names.join("\x1f"));
+            let _ = write!(buf, "civ|{}|{}|{}|", c.id, c.names.join("\x1f"), c.plural);
             mix(&mut h, buf.as_bytes());
             mix(&mut h, &c.unit_count.to_le_bytes());
         }
@@ -352,8 +359,18 @@ impl WorldState {
             buf.clear();
             let _ = write!(
                 buf,
-                "u|{}|{}|{}|{}|{}|",
-                u.type_id, u.owner, u.x, u.y, u.is_leader as u8
+                "u|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
+                u.type_id,
+                u.owner,
+                u.x,
+                u.y,
+                u.is_leader as u8,
+                u.moves_left,
+                u.veteran as u8,
+                u.damage,
+                u.orders,
+                u.stack_pos,
+                u.home
             );
             mix(&mut h, buf.as_bytes());
         }
@@ -361,8 +378,20 @@ impl WorldState {
             buf.clear();
             let _ = write!(
                 buf,
-                "city|{}|{}|{}|{}|{}|",
-                c.name, c.x, c.y, c.size, c.food_box
+                "city|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
+                c.name,
+                c.x,
+                c.y,
+                c.size,
+                c.owner,
+                c.city_id,
+                c.gross_food,
+                c.gross_shields,
+                c.gross_trade,
+                c.net_science,
+                c.net_taxes,
+                c.food_box,
+                c.shield_box
             );
             mix(&mut h, buf.as_bytes());
         }
@@ -420,6 +449,49 @@ mod tests {
         assert_eq!(total, owned);
         assert_eq!(w.units.len(), sav.units.len());
         assert_eq!(w.cities.len(), sav.cities.len());
+    }
+
+    /// Reviewer finding #63: every modelled gameplay field reaches the
+    /// fingerprint (mutate one field at a time, the checksum must move).
+    #[test]
+    fn checksum_covers_every_modelled_field() {
+        let w = boot(&synthetic_sav(), 1);
+        let base = w.checksum();
+        type Mutation = fn(&mut WorldState);
+        let muts: &[(&str, Mutation)] = &[
+            ("game_flags", |w| w.game_flags ^= 1),
+            ("human_mask", |w| w.human_mask ^= 1),
+            ("treasury", |w| w.treasury[1] += 1),
+            ("wonders", |w| w.wonders[0] = 3),
+            ("civ plural", |w| w.civs[0].plural.push('x')),
+            ("unit type", |w| w.units[0].type_id ^= 1),
+            ("unit owner", |w| w.units[0].owner ^= 1),
+            ("unit x", |w| w.units[0].x += 2),
+            ("unit leader", |w| w.units[0].is_leader ^= true),
+            ("unit moves", |w| w.units[0].moves_left += 1),
+            ("unit veteran", |w| w.units[0].veteran ^= true),
+            ("unit damage", |w| w.units[0].damage += 1),
+            ("unit orders", |w| w.units[0].orders ^= 1),
+            ("unit stack_pos", |w| w.units[0].stack_pos += 1),
+            ("unit home", |w| w.units[0].home ^= 1),
+            ("city size", |w| w.cities[0].size += 1),
+            ("city owner", |w| w.cities[0].owner ^= 1),
+            ("city id", |w| w.cities[0].city_id += 1),
+            ("city food", |w| w.cities[0].gross_food += 1),
+            ("city shields", |w| w.cities[0].gross_shields += 1),
+            ("city trade", |w| w.cities[0].gross_trade += 1),
+            ("city science", |w| w.cities[0].net_science += 1),
+            ("city taxes", |w| w.cities[0].net_taxes += 1),
+            ("city food box", |w| w.cities[0].food_box += 1),
+            ("city shield box", |w| w.cities[0].shield_box += 1),
+            ("terrain", |w| w.map.terrain[0] ^= 1),
+            ("turn", |w| w.turn += 1),
+        ];
+        for (name, m) in muts {
+            let mut c = w.clone();
+            m(&mut c);
+            assert_ne!(c.checksum(), base, "{name} is not fingerprinted");
+        }
     }
 }
 

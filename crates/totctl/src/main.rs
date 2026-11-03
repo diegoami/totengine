@@ -29,7 +29,7 @@ fn main() -> ExitCode {
                         {prog} boot <file.sav|scn> [--rules PATH] [--turns N] [--seed S]\n\
                         \x20                        — headless boot into engine state + checksum\n\
                         {prog} tech <Rules.txt>    — advance tree + wonders (reachability run)\n\
-                        {prog} run <file.sav|scn> --turns N [--seed S] [--rules P]\n\
+                        {prog} run <file.sav|scn> --turns N [--seed S] [--rules P | --no-rules]\n\
                         \x20                        — deterministic N-turn headless run (per-turn checksums)\n\
                         {prog} edit <in> <out> [--turn N] [--year N] [--difficulty N]\n\
                         \x20      [--rivals N] [--unit-pos IDX X Y] [--city-name IDX NAME]\n\
@@ -296,6 +296,7 @@ fn cmd_run(args: &[String]) -> ExitCode {
     let mut turns: usize = 50;
     let mut seed: u64 = 1;
     let mut rules_path: Option<String> = None;
+    let mut no_rules = false;
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
@@ -320,6 +321,7 @@ fn cmd_run(args: &[String]) -> ExitCode {
                     return ExitCode::from(2);
                 }
             },
+            "--no-rules" => no_rules = true,
             _ if path.is_none() => path = Some(a),
             _ => {
                 eprintln!("error: unexpected argument {a}");
@@ -328,7 +330,7 @@ fn cmd_run(args: &[String]) -> ExitCode {
         }
     }
     let Some(path) = path else {
-        eprintln!("usage: totctl run <file.sav|scn> --turns N [--seed S] [--rules P]");
+        eprintln!("usage: totctl run <file.sav|scn> --turns N [--seed S] [--rules P | --no-rules]");
         return ExitCode::from(2);
     };
     let bytes = match std::fs::read(path) {
@@ -351,14 +353,25 @@ fn cmd_run(args: &[String]) -> ExitCode {
             .ok()
             .map(|b| String::from_utf8_lossy(&b).into_owned())
     };
-    let rules_path = rules_path.map(std::path::PathBuf::from).or_else(|| {
-        let sib = std::path::Path::new(path).with_file_name("Rules.txt");
-        sib.exists().then_some(sib)
-    });
-    let rules = rules_path
-        .as_deref()
-        .and_then(read_lossy)
-        .map(|t| tot_kit::parse_rules(&t));
+    // Reviewer finding #66: an explicit --rules that cannot be read is an
+    // error; running without rules needs an explicit --no-rules.
+    let rules = if no_rules {
+        None
+    } else {
+        let rp = rules_path
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| std::path::Path::new(path).with_file_name("Rules.txt"));
+        match read_lossy(&rp) {
+            Some(t) => Some(tot_kit::parse_rules(&t)),
+            None => {
+                eprintln!(
+                    "error: cannot read rules {} (pass --rules PATH, or --no-rules to only advance the turn counter)",
+                    rp.display()
+                );
+                return ExitCode::from(1);
+            }
+        }
+    };
     let mut events = read_lossy(&std::path::Path::new(path).with_file_name("Events.txt"))
         .and_then(|t| tot_kit::parse_events(&t).ok())
         .map(engine::events::EventEngine::new);

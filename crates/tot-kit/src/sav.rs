@@ -119,11 +119,16 @@ impl MapHeader {
     pub fn blocks(&self) -> usize {
         (self.raw[3].max(1)) as usize
     }
-    /// The surface invariant — the test for a decodable embedded map.
+    /// The surface invariant — the test for a decodable embedded map —
+    /// plus sign checks on every field the parser sizes sections with
+    /// (reviewer finding #64: a negative `raw[5]` overflowed the blob size).
     pub fn decodable(&self) -> bool {
-        self.surface() > 0
-            && self.raw[0] > 0
+        self.raw[0] > 0
             && self.raw[1] > 0
+            && self.raw[2] > 0
+            && self.raw[3] >= 0
+            && self.raw[5] >= 0
+            && self.raw[6] >= 0
             && self.surface() == self.stored_w() * self.stored_h()
     }
     /// Logical (display) grid dims: `raw[0] × raw[1]` — the coordinate
@@ -524,8 +529,11 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
 
     // transporters: fixed 168 B, then u32 count, then count × 14 B (#49)
     let transporter_count = u32le(data, OFF_TRANSPORTERS + 168)?;
-    let mut pos = OFF_TRANSPORTERS + 172 + 14 * transporter_count as usize;
-    if data.len() < pos + 16 {
+    let mut pos = (transporter_count as usize)
+        .checked_mul(14)
+        .and_then(|n| n.checked_add(OFF_TRANSPORTERS + 172))
+        .ok_or(SavError::Truncated("transporters"))?;
+    if data.len() < pos.saturating_add(16) {
         return Err(SavError::Truncated("map header"));
     }
     let mut raw = [0i16; 8];
@@ -540,15 +548,20 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
 
     // map blocks: 13 B/tile + 2 per map (7 visibility + 6 tile fields),
     // then the 2*hdr5*hdr6 blob and the 10240-byte blob
+    // all sizes are checked: header fields are untrusted (#64)
     let surface = hdr.surface();
-    let per_map = 13 * surface + 2;
     let n_blocks = hdr.blocks();
-    let blob = 2 * hdr.raw[5] as usize * hdr.raw[6] as usize;
-    let map_end = pos + n_blocks * per_map + blob;
-    let blob10240_end = map_end + 10240;
-    if data.len() < blob10240_end {
-        return Err(SavError::Truncated("map section"));
-    }
+    let per_map = surface.checked_mul(13).and_then(|n| n.checked_add(2));
+    let blob = (hdr.raw[5] as usize)
+        .checked_mul(hdr.raw[6] as usize)
+        .and_then(|n| n.checked_mul(2));
+    let blob10240_end = per_map
+        .and_then(|p| p.checked_mul(n_blocks))
+        .zip(blob)
+        .and_then(|(m, b)| pos.checked_add(m)?.checked_add(b)?.checked_add(10240))
+        .filter(|&end| end <= data.len())
+        .ok_or(SavError::Truncated("map section"))?;
+    let per_map = per_map.unwrap_or(0);
     let mut maps = Vec::with_capacity(n_blocks);
     for m in 0..n_blocks {
         let base = pos + m * per_map + 2;
@@ -753,11 +766,31 @@ impl SavEditor {
         if bytes.len() > 15 {
             return Err(SavError::BadEdit("city name longer than 15 bytes"));
         }
+        // Reviewer finding #65: only names the city locator can read back
+        // (the parser's scan: 2..15 bytes, printable ASCII or 0xA0..0xFF).
+        if bytes.len() < 2 {
+            return Err(SavError::BadEdit("city name shorter than 2 bytes"));
+        }
+        if !bytes
+            .iter()
+            .all(|&c| (32..127).contains(&c) || (0xA0..=0xFF).contains(&c))
+        {
+            return Err(SavError::BadEdit("city name has non-printable bytes"));
+        }
         let base = self.city_base + 92 * idx + 34;
+        let old: [u8; 16] = self.buf[base..base + 16].try_into().unwrap();
         for b in &mut self.buf[base..base + 16] {
             *b = 0;
         }
         self.buf[base..base + bytes.len()].copy_from_slice(bytes);
+        // belt and braces: the edited file must still parse to the same
+        // layout, or the edit is rolled back
+        let same = parse_sav(&self.buf)
+            .is_ok_and(|s| s.cities.len() == self.n_cities && s.city_offset == self.city_base);
+        if !same {
+            self.buf[base..base + 16].copy_from_slice(&old);
+            return Err(SavError::BadEdit("rename would break the city layout"));
+        }
         Ok(())
     }
 
@@ -919,6 +952,35 @@ mod tests {
         match parse_sav(&d) {
             Err(SavError::UnitRegionArithmetic { .. }) => {}
             other => panic!("expected arithmetic gate, got {other:?}"),
+        }
+    }
+
+    /// Reviewer finding #64: untrusted header fields and truncation give
+    /// errors, never a panic.
+    #[test]
+    fn malformed_headers_and_truncation_never_panic() {
+        let good = synthetic();
+        let hdr = OFF_TRANSPORTERS + 172; // transporter count is 0
+        for field in 0..8 {
+            for v in [-1i16, i16::MIN, i16::MAX, 0] {
+                let mut d = good.clone();
+                d[hdr + 2 * field..hdr + 2 * field + 2].copy_from_slice(&v.to_le_bytes());
+                let r = std::panic::catch_unwind(|| parse_sav(&d));
+                assert!(r.is_ok(), "panic: header field {field} = {v}");
+            }
+        }
+        // the exact reviewer reproduction: raw[5] = -1 is refused
+        let mut d = good.clone();
+        d[hdr + 10..hdr + 12].copy_from_slice(&(-1i16).to_le_bytes());
+        assert_eq!(parse_sav(&d), Err(SavError::NoMap));
+        // a huge transporter count
+        let mut d = good.clone();
+        d[OFF_TRANSPORTERS + 168..OFF_TRANSPORTERS + 172].copy_from_slice(&u32::MAX.to_le_bytes());
+        assert!(parse_sav(&d).is_err());
+        // every truncation length
+        for n in 0..good.len() {
+            let r = std::panic::catch_unwind(|| parse_sav(&good[..n]));
+            assert!(r.is_ok(), "panic at length {n}");
         }
     }
 }

@@ -464,6 +464,28 @@ snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
    where turn/year live. This is the oracle methodology of docs/plan.md working
    end-to-end on day one.
 
+### T1-6 PRNG identified statically: Numerical-Recipes LCG at RVA 0x554a4f (2026-11-03 late)
+
+- The exe contains **`state = state * 1664525 + 1013904223`** (Numerical
+  Recipes constants, adjacent at file offsets 0x153e4f/0x153e56, RVA
+  0x554a4f) operating on the global at **0x5dd53c**; the post-step value
+  is used as a **float in [0,1)** (`fild; mov [ebp-0x1c],0x4f000000`
+  trick at RVA 0x554a64-0x554a94).
+- **0x5dd53c is a swap slot, not the turn RNG**: callers follow a
+  save/swap/roll/restore pattern — save [0x5dd53c] to a local, load a
+  per-context state from **[ctx+0x100]** into the global, roll, restore
+  (RVA 0x5602ea load / 0x560cc2 restore). Only 9 references to
+  0x5dd53c exist in .text.
+- Runtime: writing state=1 into 0x5dd53c survived a full turn end
+  unchanged, and no LCG^n(1) (n ≤ 200) appeared anywhere in low RAM —
+  turn processing does not roll through the global; the live states are
+  the per-context [ctx+0x100] fields. **Next hunt: identify the ctx
+  struct (likely per-unit or the combat context) and the new-game
+  seeding site; the save-serialized combat seed is one of those +0x100
+  fields.**
+- The setup seed (save 685-688) is constant across all 24 std-corpus
+  saves (f510f502) — confirmed NOT the evolving state.
+
 ## T0-6 findings (2026-11-01, second probe session)
 
 `totctl save` now walks deep into `0x32` saves. Verified on ROMFALL.scn, Va_Auto.SAV

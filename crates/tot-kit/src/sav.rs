@@ -200,6 +200,13 @@ impl MapBlock {
     }
 }
 
+/// Names in saves are Latin-1 bytes (evidence §T0-6; ROMFALL city 35 is
+/// "Arsinoë", byte 0xEB). Every byte maps to the code point of the same
+/// value, so decoding never loses text (reviewer finding #69).
+pub fn latin1(bytes: &[u8]) -> String {
+    bytes.iter().map(|&b| b as char).collect()
+}
+
 /// A 40-byte unit record in the **game's own framing** (evidence §T1-6
 /// combat, "record framing"): record `i` is the game's unit index `i` (the
 /// active-unit field @674 and the stack links use these indices). Until
@@ -297,7 +304,7 @@ impl CityRecord {
     pub fn name(&self) -> String {
         let n = &self.raw[34..50];
         let end = n.iter().position(|&b| b == 0).unwrap_or(16);
-        String::from_utf8_lossy(&n[..end]).into_owned()
+        latin1(&n[..end])
     }
     pub fn x(&self) -> u16 {
         u16::from_le_bytes([self.raw[0], self.raw[1]])
@@ -389,7 +396,7 @@ pub fn civ_names_from(block: &[u8]) -> CivNames {
     for &b in block {
         if b == 0 {
             if !cur.is_empty() {
-                let s = String::from_utf8_lossy(&cur).into_owned();
+                let s = latin1(&cur);
                 if !s.trim().is_empty() {
                     strings.push(s);
                 }
@@ -407,7 +414,7 @@ pub fn civ_names_from(block: &[u8]) -> CivNames {
     let slot = |o: usize| -> String {
         let b = block.get(o..(o + 24).min(block.len())).unwrap_or(&[]);
         let end = b.iter().position(|&c| c == 0).unwrap_or(b.len());
-        String::from_utf8_lossy(&b[..end]).into_owned()
+        latin1(&b[..end])
     };
     CivNames {
         strings,
@@ -762,7 +769,16 @@ impl SavEditor {
         if idx >= self.n_cities {
             return Err(SavError::BadEdit("city index out of range"));
         }
-        let bytes = name.as_bytes();
+        // encode as Latin-1, the file's encoding (#69): chars above U+00FF
+        // have no byte to go to
+        let Some(bytes) = name
+            .chars()
+            .map(|c| u8::try_from(c as u32).ok())
+            .collect::<Option<Vec<u8>>>()
+        else {
+            return Err(SavError::BadEdit("city name is not Latin-1"));
+        };
+        let bytes = &bytes[..];
         if bytes.len() > 15 {
             return Err(SavError::BadEdit("city name longer than 15 bytes"));
         }
@@ -982,5 +998,21 @@ mod tests {
             let r = std::panic::catch_unwind(|| parse_sav(&good[..n]));
             assert!(r.is_ok(), "panic at length {n}");
         }
+    }
+
+    /// Reviewer finding #69: names are Latin-1 both ways.
+    #[test]
+    fn city_names_are_latin1() {
+        let mut d = synthetic();
+        let ed_probe = SavEditor::new(&d).unwrap();
+        let base = ed_probe.city_base + 34;
+        d[base..base + 8].copy_from_slice(b"Arsino\xeb\0");
+        let sav = parse_sav(&d).unwrap();
+        assert_eq!(sav.cities[0].name(), "Arsinoë");
+        let mut ed = SavEditor::new(&d).unwrap();
+        ed.set_city_name(1, "Lutèce").unwrap();
+        assert_eq!(&ed.bytes()[base + 92..base + 92 + 7], b"Lut\xe8ce\0");
+        assert_eq!(parse_sav(ed.bytes()).unwrap().cities[1].name(), "Lutèce");
+        assert!(ed.set_city_name(1, "Αθήνα").is_err(), "not Latin-1");
     }
 }

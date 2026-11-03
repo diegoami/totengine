@@ -73,3 +73,20 @@ fn romfall_cities_and_first_unit_in_true_framing() {
     assert!(d.is_veteran());
     assert_eq!(d.stack_prev(), 689);
 }
+
+/// Reviewer finding #69 on the real file: the Latin-1 name survives.
+#[test]
+fn accented_city_names_decode() {
+    let Some(sav) = romfall() else {
+        eprintln!("skipping: install not present");
+        return;
+    };
+    assert_eq!(sav.cities[35].name(), "Arsinoë");
+    // Rust and the Python probe (latin-1) agree on every name
+    let replaced = sav
+        .cities
+        .iter()
+        .filter(|c| c.name().contains('\u{fffd}'))
+        .count();
+    assert_eq!(replaced, 0);
+}

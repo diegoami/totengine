@@ -347,12 +347,8 @@ fn cmd_run(args: &[String]) -> ExitCode {
             return ExitCode::from(1);
         }
     };
-    // Scenario files are not strictly UTF-8 (FallRome): read lossily.
-    let read_lossy = |p: &std::path::Path| {
-        std::fs::read(p)
-            .ok()
-            .map(|b| String::from_utf8_lossy(&b).into_owned())
-    };
+    // Scenario files are Latin-1 (FallRome is not valid UTF-8).
+    let read_lossy = |p: &std::path::Path| std::fs::read(p).ok().map(|b| tot_kit::latin1(&b));
     // Reviewer finding #66: an explicit --rules that cannot be read is an
     // error; running without rules needs an explicit --no-rules.
     let rules = if no_rules {
@@ -505,7 +501,7 @@ fn cmd_rules(args: &[String]) -> ExitCode {
             return ExitCode::from(1);
         }
     };
-    let text = String::from_utf8_lossy(&bytes).into_owned();
+    let text = tot_kit::latin1(&bytes);
     let rules = tot_kit::parse_rules(&text);
     println!("sections      : {}", rules.section_order().join(","));
     println!("row counts    : {}", {

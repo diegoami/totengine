@@ -13,11 +13,25 @@
 //! - **Completion:** the box drops by the cost, then the unit is created
 //!   in the city (homed there) or the improvement is set.
 //!
+//! - **Obsolete units** (#77, `0x4c63b0`..`0x4c6532`): when the civ knows
+//!   the advance in the unit's "until" field, the build switches to the
+//!   first unit whose prerequisite is that advance and whose role is the
+//!   same. The original also tests a type-table byte at +0x14, not mapped
+//!   to Rules yet; the engine treats every candidate as available.
+//! - **Veterans** (#78, `0x4c6728`..`0x4c68aa`): the new unit is veteran
+//!   (unit attr `0x2000`) when:
+//!   - a land unit (or any unit while game option `0x10` is off) of role
+//!     ≤ 5 comes from a city with Barracks (2), or its civ holds wonder 7;
+//!   - a sea unit (option `0x10` on) comes from a city with a Port
+//!     Facility (34), or its civ holds wonder 3;
+//!   - an air unit (option `0x10` on) comes from a city with an Airport
+//!     (32).
+//!
+//!   A type-table flag (`+5 & 0x10`) exempts units; it is not mapped to
+//!   Rules yet and the engine treats it as clear.
+//!
 //! Not modelled yet:
-//! - the build switching to a newer unit once the civ knows the obsoleting
-//!   advance;
 //! - wonders (ids ≥ 40) and their box reset;
-//! - veteran units from Barracks;
 //! - the late-game AI rows adjustment (turn > 200);
 //! - the Settlers-at-size-1 case at Chieftain (and the population cost:
 //!   the engine's rule is in `founding.rs`);
@@ -55,6 +69,60 @@ impl WorldState {
         rows
     }
 
+    fn civ_holds_wonder(&self, civ: u8, wonder: usize) -> bool {
+        self.wonders.get(wonder).is_some_and(|&c| {
+            c >= 0
+                && self
+                    .cities
+                    .get(c as usize)
+                    .is_some_and(|k| (k.owner & 0x0F) as u8 == civ)
+        })
+    }
+
+    /// The decoded veteran rule (`0x4c6728`): see the module docs.
+    fn made_veteran(&self, rules: &Rules, idx: usize, civ: u8, t: usize) -> bool {
+        let Some(c) = self.cities.get(idx) else {
+            return false;
+        };
+        let domain = rules.unit_domain(t).unwrap_or(0);
+        let option = self.game_flags & 0x10 != 0;
+        if domain == 0 || !option {
+            (c.has_building(2) || self.civ_holds_wonder(civ, 7))
+                && rules.unit_role(t).unwrap_or(0) <= 5
+        } else if domain == 2 {
+            c.has_building(34) || self.civ_holds_wonder(civ, 3)
+        } else {
+            c.has_building(32)
+        }
+    }
+
+    /// The decoded obsolete-unit switch (`0x4c63b0`): see the module docs.
+    pub fn upgraded_build(&self, rules: &Rules, civ: u8, t: usize) -> usize {
+        let Some(until) = rules
+            .unit_until_raw(t)
+            .filter(|u| *u != "nil" && *u != "no")
+        else {
+            return t;
+        };
+        let tree = crate::research::TechTree::from_rules(rules);
+        let Some(k) = tree.by_abbrev(until) else {
+            return t;
+        };
+        let known = self
+            .techs
+            .get(civ as usize)
+            .and_then(|b| b.get(k >> 3))
+            .is_some_and(|b| b >> (k & 7) & 1 != 0);
+        if !known {
+            return t;
+        }
+        (0..rules.unit_names().len().min(80))
+            .find(|&n| {
+                rules.unit_prereq_raw(n) == Some(until) && rules.unit_role(n) == rules.unit_role(t)
+            })
+            .unwrap_or(t)
+    }
+
     /// One turn of production in city `idx` (`0x4c6210`).
     pub fn production_step(&mut self, rules: &Rules, idx: usize) -> Option<Built> {
         let c = self.cities.get(idx)?;
@@ -67,6 +135,14 @@ impl WorldState {
             (self.city_output(rules, idx).shields - self.unit_support(rules, idx)).max(0)
         };
         let rows = self.shield_rows(rules, civ);
+        let item = if item >= 0 {
+            self.upgraded_build(rules, civ, item as usize) as i8
+        } else {
+            item
+        };
+        if let Some(c) = self.cities.get_mut(idx) {
+            c.building = item;
+        }
         let c = &mut self.cities[idx];
         if item != CAPITALIZATION {
             c.shield_box = (c.shield_box as i32 + net).clamp(0, u16::MAX as i32) as u16;
@@ -97,6 +173,7 @@ impl WorldState {
                 .map(|u| u.stack_pos + 1)
                 .max()
                 .unwrap_or(0);
+            let veteran = self.made_veteran(rules, idx, civ, t);
             self.units.push(Unit {
                 type_id: t as u8,
                 owner: civ,
@@ -104,7 +181,7 @@ impl WorldState {
                 y,
                 is_leader: false,
                 moves_left: rules.unit_move(t).unwrap_or(0) * 3,
-                veteran: false,
+                veteran,
                 damage: 0,
                 orders: 0xff,
                 stack_pos,
@@ -196,5 +273,54 @@ Warriors, nil, 0, 1., 0, 1a, 1d, 1h, 1f, 1, 0, 1, nil, 000000000000000\n\
             })
             .collect();
         assert_eq!(rows, vec![16, 14, 12, 10, 10, 8]);
+    }
+}
+
+#[cfg(test)]
+mod upgrade_veteran_tests {
+    use super::*;
+    use crate::tests_support::synthetic_save;
+
+    const RULES: &str = "@COSMIC\n3 ; road\n2 ; trireme\n2 ; food\n10 ; food rows\n\
+10 ; shield rows\n@CIVILIZE\nAlphabet, 5, 1, nil, nil, 0, 3 ; Alp\n\
+Feudalism, 5, 1, nil, nil, 0, 3 ; Feu\n\
+@UNITS\nSettlers, nil, 0, 1., 0, 0a, 1d, 1h, 1f, 3, 0, 5, nil, 000000000000000\n\
+Phalanx, Feu, 0, 1., 0, 1a, 2d, 1h, 1f, 2, 0, 1, nil, 000000000000000\n\
+Pikemen, nil, 0, 1., 0, 1a, 2d, 1h, 1f, 2, 0, 1, Feu, 000000000000000\n\
+Archers, nil, 0, 1., 0, 3a, 2d, 1h, 1f, 3, 0, 0, Feu, 000000000000000\n\
+@IMPROVE\nNothing, 0, 0, nil\nPalace, 10, 0, nil\nBarracks, 4, 1, nil\n";
+
+    /// #77: once the civ knows Feudalism, a Phalanx build becomes the
+    /// first same-role unit that needs Feudalism (Pikemen, not Archers).
+    #[test]
+    fn obsolete_build_switches_to_the_same_role_successor() {
+        let rules = tot_kit::parse_rules(RULES);
+        let mut w = crate::boot(&synthetic_save(), 1);
+        assert_eq!(w.upgraded_build(&rules, 1, 1), 1, "Feudalism unknown");
+        w.techs[1][0] |= 1 << 1; // Feudalism = advance 1
+        assert_eq!(w.upgraded_build(&rules, 1, 1), 2);
+        assert_eq!(w.upgraded_build(&rules, 1, 3), 3, "Archers have no until");
+    }
+
+    /// #78: a unit from a city with Barracks is veteran, without it not.
+    #[test]
+    fn barracks_make_veterans() {
+        let rules = tot_kit::parse_rules(RULES);
+        let mut w = crate::boot(&synthetic_save(), 1);
+        w.human_mask = 0xFF;
+        w.wonders = [-1; 28]; // no wonder 7 either
+        w.cities[1].building = 1;
+        w.cities[1].flags = 0;
+        w.cities[1].shield_box = 20;
+        let Some(Built::Unit(u)) = w.production_step(&rules, 1) else {
+            panic!("a Phalanx completes")
+        };
+        assert!(!w.units[u].veteran);
+        w.cities[1].buildings[0] |= 1 << 2; // Barracks
+        w.cities[1].shield_box = 20;
+        let Some(Built::Unit(u)) = w.production_step(&rules, 1) else {
+            panic!("a second Phalanx completes")
+        };
+        assert!(w.units[u].veteran);
     }
 }

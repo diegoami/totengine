@@ -7,6 +7,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ### Engine (v0.6.0, AI v0)
 
+- **Obsolete units** (#77) and **veterans** (#78), decoded from the
+  production step (`0x4c63b0`, `0x4c6728`):
+  - a unit build switches to the same-role successor once the civ knows
+    the obsoleting advance;
+  - new units are veteran from Barracks (or wonder 7) on land, from a
+    Port Facility (or wonder 3) at sea, and from an Airport in the air.
+
 - **AI v0** (`engine::ai::AiV0`, #75/#76):
   - a deterministic engine-designed player: it explores, founds cities,
     garrisons them, and builds defenders and Settlers;

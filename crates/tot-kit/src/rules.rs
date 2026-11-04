@@ -352,6 +352,15 @@ impl Rules {
             .map(|f| f.trim())
     }
 
+    /// Unit "until" field (row field 1) as written: the advance that makes
+    /// the unit obsolete, or `nil`.
+    pub fn unit_until_raw(&self, id: usize) -> Option<&str> {
+        self.section("UNITS")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(1))
+            .map(|f| f.trim())
+    }
+
     /// Improvement prerequisite field (`@IMPROVE` row `id`, field 3) as
     /// written: `nil`, `no` or an advance abbreviation.
     pub fn improvement_prereq_raw(&self, id: usize) -> Option<&str> {

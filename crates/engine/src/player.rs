@@ -509,6 +509,20 @@ impl Game {
         events: Option<EventEngine>,
         log: &str,
     ) -> Result<Game, String> {
+        Self::replay_observed(save_name, save, rules, events, log, |_| {})
+    }
+
+    /// Replay with a read-only callback at boot and after each verified
+    /// complete turn. A failed replay may have emitted a valid prefix;
+    /// callers must discard it if this method returns an error.
+    pub fn replay_observed(
+        save_name: &str,
+        save: &[u8],
+        rules: Rules,
+        events: Option<EventEngine>,
+        log: &str,
+        mut observer: impl FnMut(&Game),
+    ) -> Result<Game, String> {
         let mut lines = log.lines().enumerate();
         let hdr: Vec<&str> = (&mut lines).take(3).map(|(_, l)| l).collect();
         if hdr.first() != Some(&"totengine-orderlog 1") {
@@ -523,6 +537,7 @@ impl Game {
         if g.log.lines().nth(2) != hdr.get(2).copied() {
             return Err("line 3: the save differs from the logged one".into());
         }
+        observer(&g);
         for (n, line) in lines {
             let at = n + 1;
             if let Some(rest) = line.strip_prefix("R ") {
@@ -532,6 +547,10 @@ impl Game {
                 if want != got {
                     return Err(format!("line {at}: checksum {got}, log says {want}"));
                 }
+                if g.log.lines().next_back() != Some(line) {
+                    return Err(format!("line {at}: turn record differs"));
+                }
+                observer(&g);
                 continue;
             }
             let (head, want) = line
@@ -548,6 +567,9 @@ impl Game {
             let got = g.submit(civ, order).to_string();
             if got != want {
                 return Err(format!("line {at}: result {got}, log says {want}"));
+            }
+            if g.log.lines().next_back() != Some(line) {
+                return Err(format!("line {at}: order record differs"));
             }
         }
         Ok(g)
@@ -686,6 +708,29 @@ Knights, nil, 0, 2., 0, 4a, 2d, 1h, 1f, 4, 0, 1, Chv, 000000000000000\n\
         let mut other = synthetic_save_bytes();
         *other.last_mut().unwrap() ^= 1;
         assert!(Game::replay("synthetic.sav", &other, rules(), None, &log).is_err());
+        // Turn labels are part of the canonical record, even when the
+        // order result and checksum happen to be unchanged.
+        let bad_turn = log.replacen("T 1 C ", "T 999 C ", 1);
+        assert_ne!(bad_turn, log);
+        assert!(Game::replay(
+            "synthetic.sav",
+            &synthetic_save_bytes(),
+            rules(),
+            None,
+            &bad_turn
+        )
+        .is_err());
+        let record = log.lines().find(|l| l.starts_with("R ")).unwrap();
+        let checksum = record.split_whitespace().nth(2).unwrap();
+        let bad_turn = log.replacen(record, &format!("R 999 {checksum}"), 1);
+        assert!(Game::replay(
+            "synthetic.sav",
+            &synthetic_save_bytes(),
+            rules(),
+            None,
+            &bad_turn
+        )
+        .is_err());
     }
 
     /// Orders are validated: foreign units and cities, non-neighbours and

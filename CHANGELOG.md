@@ -3,6 +3,31 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
+## [0.7.0] — Browser observer
+
+- **Observation stream (#80):** read-only boot/per-turn snapshots with
+  spectator and per-civ fog views, canonical orders/results and checksums;
+  verified order-log replay emits the same frames.
+- **Browser observer (#81):** `totctl observe` serves a local viewer with
+  original geometric tiles, units, cities, turn stepping, play/pause,
+  timeline, fog selection, and portable NDJSON replay download/import.
+  A new seek or restart cancels pending generation after the current turn;
+  malformed archives leave the current replay intact.
+  `--replay` watches a verified order log; `--stream` exports offline.
+- Synthetic and real-save 100-turn stream/replay equality checks;
+  optional Playwright control/render smoke test. See
+  [browser observer](docs/browser-observer.md).
+
+### Known limits
+
+- Surface map only, with the existing engine fog rules.
+- Events in frames are canonical orders/results and turn records, not an
+  exhaustive list of internal simulation effects.
+- The local server and browser cache history in memory; very long games
+  and large maps can use substantial memory.
+- Replay from an order log needs the same save, rules, events and build;
+  portable archives contain every fog view and the full map by design.
+
 ## [0.6.0] — AI v0
 
 An all-AI game now runs headless. AI v0 (an engine-designed player)

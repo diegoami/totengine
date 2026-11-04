@@ -18,6 +18,7 @@ fn main() -> ExitCode {
         Some("run") => cmd_run(&args[2..]),
         Some("play") => cmd_play(&args[2..]),
         Some("replay") => cmd_replay(&args[2..]),
+        Some("observe") => cmd_observe(&args[2..]),
         Some("edit") => cmd_edit(&args[2..]),
         Some("events") => cmd_events(&args[2..]),
         Some("--version") | Some("-V") => {
@@ -32,6 +33,8 @@ fn main() -> ExitCode {
                         \x20                        — random players (RG-8) or AI v0 (--ai); writes the order log\n\
                         {prog} replay <file.sav|scn> <order.log>\n\
                         \x20                        — re-drive a game from its log; exit 1 at the first divergence\n\
+                        {prog} observe <file.sav|scn> [--turns N] [--seed S] [--port P] [--replay LOG] [--stream OUT] [--log OUT]\n\
+                        \x20                        — watch all-AI play or verified replay in a local browser\n\
                         {prog} boot <file.sav|scn> [--rules PATH] [--turns N] [--seed S]\n\
                         \x20                        — headless boot into engine state + checksum\n\
                         {prog} tech <Rules.txt>    — advance tree + wonders (reachability run)\n\
@@ -750,6 +753,103 @@ fn cmd_replay(args: &[String]) -> ExitCode {
         Err(e) => {
             eprintln!("replay FAILED: {e}");
             ExitCode::from(1)
+        }
+    }
+}
+
+/// Browser observer: live AI by default, or frames reconstructed from a
+/// verified order log. --stream exports without starting an HTTP server.
+fn cmd_observe(args: &[String]) -> ExitCode {
+    let run = || -> Result<(), String> {
+        let mut path = None;
+        let (mut turns, mut seed, mut port) = (100usize, 1u64, 8000u16);
+        let (mut replay, mut stream, mut log) = (None, None, None);
+        let mut it = args.iter();
+        while let Some(a) = it.next() {
+            match a.as_str() {
+                "--turns" => {
+                    turns = it
+                        .next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--turns needs a nonnegative integer")?
+                }
+                "--seed" => {
+                    seed = it
+                        .next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--seed needs a nonnegative integer")?
+                }
+                "--port" => {
+                    port = it
+                        .next()
+                        .and_then(|v| v.parse().ok())
+                        .ok_or("--port needs an integer 0..65535")?
+                }
+                "--replay" => replay = Some(it.next().ok_or("--replay needs a path")?),
+                "--stream" => stream = Some(it.next().ok_or("--stream needs a path")?),
+                "--log" => log = Some(it.next().ok_or("--log needs a path")?),
+                _ if !a.starts_with('-') && path.is_none() => path = Some(a),
+                _ => return Err(format!("unexpected argument {a}")),
+            }
+        }
+        let path = path.ok_or("usage: totctl observe <save> [--turns N] [--seed S] [--port P] [--replay LOG] [--stream OUT] [--log OUT]")?;
+        if log.is_some() && stream.is_none() {
+            return Err(
+                "--log requires --stream; the live viewer offers an order-log download".into(),
+            );
+        }
+        let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
+        let (rules, events) = sibling_rules_events(path)?;
+        let name = std::path::Path::new(path)
+            .file_name()
+            .unwrap_or_default()
+            .to_string_lossy();
+        let mut observer = if let Some(replay) = replay {
+            let text =
+                std::fs::read_to_string(replay).map_err(|e| format!("read {replay}: {e}"))?;
+            totui::Observer::replay(&name, &bytes, rules, events, &text)?
+        } else {
+            let mut game = engine::player::Game::new(&name, &bytes, seed, rules, events)?;
+            for civ in 1..8 {
+                game.players[civ] = Some(Box::new(engine::ai::AiV0::new(
+                    &game.rules,
+                    seed,
+                    civ as u8,
+                )));
+            }
+            totui::Observer::live(game, turns)
+        };
+        if let Some(path) = stream {
+            // Refuse accidental overwrites, including the user's input save.
+            let file = std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(path)
+                .map_err(|e| format!("create {path}: {e}"))?;
+            let mut out = std::io::BufWriter::new(file);
+            observer.export(&mut out).map_err(|e| e.to_string())?;
+            use std::io::Write as _;
+            out.flush().map_err(|e| e.to_string())?;
+            if let Some(path) = log {
+                let mut file = std::fs::OpenOptions::new()
+                    .write(true)
+                    .create_new(true)
+                    .open(path)
+                    .map_err(|e| format!("create {path}: {e}"))?;
+                file.write_all(observer.log().as_bytes())
+                    .map_err(|e| e.to_string())?;
+            }
+            eprintln!("wrote {path}");
+        } else {
+            observer.serve(port).map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    };
+    match run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("error: {e}");
+            ExitCode::FAILURE
         }
     }
 }

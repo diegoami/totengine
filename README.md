@@ -26,7 +26,7 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-The version on `main` is **v0.6.0 "AI v0"**. A version counts as
+The version on `main` is **v0.7.0 "browser observer"**. A version counts as
 released once its `vX.Y.Z` tag exists
 ([tags](https://github.com/diegoami/totengine/tags); see
 [CHANGELOG.md](CHANGELOG.md); the queue is the GitHub
@@ -45,7 +45,9 @@ What runs today, headless, against your own ToT install:
   (`totctl play` / `totctl replay`; decision 0003).
 - **AI:** an all-AI game runs headless; AI v0 explores, founds cities and
   builds (`totctl play --ai`).
-- **Next:** v0.7.0, a browser observer to watch it (decision 0002).
+- **Browser observer:** watch live AI turns or
+  replay a finished game, with full-map/per-civ fog views and turn controls
+  (`totctl observe`; [usage and stream format](docs/browser-observer.md)).
 
 ```bash
 # Rust CLI (successor of the Python probe)

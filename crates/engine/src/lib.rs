@@ -15,6 +15,7 @@ pub mod events;
 pub mod founding;
 pub mod huts;
 pub mod movement;
+pub mod observer;
 pub mod placement;
 pub mod player;
 pub mod production;

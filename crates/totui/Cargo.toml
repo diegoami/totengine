@@ -3,5 +3,7 @@ name = "totui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "placeholder — see docs/plan.md"
+description = "Local browser observer for ToTEngine"
 [dependencies]
+engine = { path = "../engine" }
+tot-kit = { path = "../tot-kit" }

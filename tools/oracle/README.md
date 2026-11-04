@@ -25,6 +25,8 @@ Headless Wine + Xvfb harness that drives the original game and harvests saves.
 | `seeded_start.sh` | **Reproducible new game** (RG-2): runs the wizard, then while City Style is open pins NR, CRT, the 5 world parameters (`0x5ceaa8`) and the map seed (patch at `0x56fa6c`). The same `NR`/`CRT`/`PARAMS`/`MAPSEED` give the same turn-1 autosave. Harvests every save newer than a run-start marker, plus `placement.txt`. It leaves the install as found: backs up every `*.SAV` first, restores them on exit, and removes saves the run created. |
 | `randhook.py` | Call-site logger for CRT `rand` (cave in the dead startup function `0x41562b`, buffer above `0x607c50`). Two runs diffed give the first divergent draw. |
 | `launcher_pick.py` | Select a launcher game-type item by reading the red radio button (the list remembers the last choice and wraps). Used by `seeded_start.sh`, `newgame.sh` and `lab_std.sh` via `GAME` (default 0 = Original). |
+| `load_save.sh` | Start the game under memspool and load a save by its install-relative path (`load_save.sh original/ph_auto2.sav`): picks "Load a Saved Game", clicks the filename field, types `d:\…`. |
+| `corrhook.py` | `on`/`off`/`dump`: log calls of the corruption function `0x4c35a2` (city, amount, waste flag, capital distance). Same cave as randhook — use one at a time. |
 
 ## Navigation: what works and what does not (2026-11-03)
 

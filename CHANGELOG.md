@@ -9,8 +9,8 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   rounding, improvement/wonder multipliers, Fundamentalism and
   Capitalization; city science/tax outputs refresh each turn. Every
   FallRome science/tax record (146 cities) and the current standard save
-  (10 cities) match from stored trade/shields. Trade routes, maintenance
-  and per-civ research accounting remain separate work.
+  (10 cities) match from stored trade/shields. Trade routes and maintenance
+  remain separate work.
 - **Per-civ research (#82 dependency):** decoded research targets,
   progress, cost counters and cost calculation; `SetResearch` orders,
   discoveries from city science, and shared hut advance bookkeeping.
@@ -21,6 +21,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   14 advances and replays identically; full AI v1 remains in progress.
   Saved comparison rankings, late spaceship bonuses, discovery rewards/
   hooks and ToTPP scenario-tail research are not yet implemented.
+- **Capital connections (#84):** road/rail paths and airport fallback now
+  scale shield waste. The decoded land-path calculation matches original
+  x86 execution on 123 saved city/capital pairs and 12 invented cases.
+  FallRome shield totals improve from 143/146 to 145/146 exact; Aventicum
+  remains one shield low. Non-surface paths and scenarios replacing the
+  hard-coded land pathfinding unit type remain open.
 - **Review follow-up #105:** replace the stale autosave diff reproduction
   with the existing T4PAIR inputs and remove its dead golden mapping.
 

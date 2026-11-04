@@ -17,14 +17,15 @@ barbarian arrivals must not be invented to make a campaign appear complete.
 - A pure `WorldState::split_city_trade` accepts trade after corruption/routes
   and net shields for Capitalization, and returns luxuries/science/taxes.
   This boundary lets finance be checked against the game's stored trade
-  independently of the still-open trade routes (#85) and road waste (#84).
+  independently of trade routes (#85) and road waste (#84).
 - `city_finance` obtains inputs from the current engine city output. The
   turn loop refreshes city science/tax before production completion; newly
   finished improvements affect the next evaluation. Overall turn-phase
   order remains engine-chosen, as documented in the existing turn loop.
 - City taxes are not yet treasury income: maintenance and per-civ research
   accounting need their own implementation/evidence. Existing treasury
-  effects and production remain intact.
+  effects and production remain intact. Research accounting subsequently
+  landed in the research slice below; treasury/maintenance remains open.
 - Preserve deterministic replay and include rates/specialists in world
   fingerprints. Regenerate the run50 fingerprints intentionally; neither
   asset files nor opaque executable dumps belong in evidence.
@@ -60,11 +61,29 @@ than default costs. Diplomacy/technology rewards, event hooks and the late
 spaceship-related science bonus remain separate work. See the evidence
 section for the supported source fields and exact checks.
 
+## Capital connections (#84)
+
+`engine::connections` supplies the original's road/rail factor for city
+waste. Decode the shared `0x471a13` routine once, preserving its shortest
+land-path selection, tie-breaking, diplomatic checks, early termination at
+an own city, and map-seam bounds. A road-only flood fill would give a
+different result. Keep tile landmass IDs, city map IDs and saved diplomatic
+words in the world fingerprint. Airports provide the decoded fallback
+across landmasses; a Palace has its direct 1/2 factor with Railroad.
+
+The current implementation covers surface-map land unit type 2 (the
+original hard-codes that type for this search). Sea/air replacements and
+other maps remain unsupported. The original-x86 probe and Rust tests
+compare 123 saved city/capital pairs. FallRome shields now match 145/146
+stored records; Aventicum's remaining one-shield difference is unresolved.
+Trade-route values (#85) will reuse this helper but are not yet added.
+
 ## Remaining milestone work
 
 AI v1 still needs economy/unit/war refinements and the acceptance stated
 in #82 (deterministic 50-turn autoplay plus justified oracle comparisons).
-#83/#79 require oracle arrival/outcome evidence; #84–#86/#88/#89 require
-finishing their decodes and checks. Do not close those on the strength of
+#83/#79 require oracle arrival/outcome evidence; #85/#86/#88/#89 require
+finishing their decodes and checks. #84 retains the map/type limits above.
+Do not close those on the strength of
 #87. In particular, #89's late-game condition reads leader and wonder state,
 not simply `(turn > 200 && difficulty > 1)`.

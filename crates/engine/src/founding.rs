@@ -162,6 +162,7 @@ impl WorldState {
         let city_id = self.cities.iter().map(|c| c.city_id).max().unwrap_or(0) + 1;
         let building = self.initial_build(rules, civ);
         self.cities.push(City {
+            map_id: 0,
             name: format!("{plural} {n}"),
             x,
             y,

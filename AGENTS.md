@@ -80,6 +80,8 @@ records exact from stored trade/shields), city finance refreshes in
 Per-civ research is implemented (`engine::research`, `SetResearch`,
 `--ai-v1` first research-capable AI increment): 1,014 costs match original
 x86 execution; a 50-turn standard-save run gains 14 advances and replays.
+Capital road/rail connections now scale waste (`engine::connections`,
+#84; 123 saved pairs match original x86, FallRome shields 145/146 exact).
 AI v1 economy/war work, trade routes and maintenance remain open.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md

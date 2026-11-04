@@ -10,6 +10,7 @@
 pub mod ai;
 pub mod cities;
 pub mod combat;
+pub mod connections;
 pub mod effects;
 pub mod events;
 pub mod finance;
@@ -79,6 +80,7 @@ pub struct Unit {
 /// fields (§T1-4). `size` is the record's u8@11.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct City {
+    pub map_id: u16,
     pub name: String,
     pub x: u16,
     pub y: u16,
@@ -125,6 +127,8 @@ pub struct MapState {
     pub stored_h: usize,
     /// One entry per stored tile: terrain id (`& 0x0F`, tile byte +0).
     pub terrain: Vec<u8>,
+    /// Tile byte +3, used by the original connection routine.
+    pub landmass: Vec<u8>,
     pub special: Vec<bool>,
     pub river: Vec<bool>,
     pub road: Vec<bool>,
@@ -201,6 +205,7 @@ pub struct WorldState {
     /// Science and tax rates in tenths (civ block @27/@28).
     pub science_rates: [u8; 8],
     pub tax_rates: [u8; 8],
+    pub diplomacy: [[u32; 8]; 8],
     pub research: [tot_kit::ResearchState; 8],
     pub research_settings: tot_kit::ResearchSettings,
     /// Known advances per civ (civ block @96 bitfield).
@@ -274,6 +279,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         governments: sav.governments,
         science_rates: sav.science_rates,
         tax_rates: sav.tax_rates,
+        diplomacy: sav.diplomacy,
         research: sav.research,
         research_settings: sav.research_settings,
         techs: sav.techs,
@@ -284,6 +290,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             stored_w: sav.map_header.stored_w(),
             stored_h: sav.map_header.stored_h(),
             terrain,
+            landmass: (0..surface).map(|t| m.landmass(t)).collect(),
             special,
             river,
             road,
@@ -342,6 +349,7 @@ fn unit_from(r: &UnitRecord) -> Unit {
 
 fn city_from(r: &CityRecord) -> City {
     City {
+        map_id: r.map_id(),
         name: r.name(),
         x: r.x(),
         y: r.y(),
@@ -433,6 +441,11 @@ impl WorldState {
         mix(&mut h, &self.governments);
         mix(&mut h, &self.science_rates);
         mix(&mut h, &self.tax_rates);
+        for row in self.diplomacy {
+            for flags in row {
+                mix(&mut h, &flags.to_le_bytes());
+            }
+        }
         let settings = self.research_settings;
         mix(&mut h, &settings.flags.to_le_bytes());
         mix(&mut h, &settings.advance_count.to_le_bytes());
@@ -468,6 +481,7 @@ impl WorldState {
         mix(&mut h, &self.map.stored_w.to_le_bytes());
         mix(&mut h, &self.map.stored_h.to_le_bytes());
         mix(&mut h, &self.map.resource_seed.to_le_bytes());
+        mix(&mut h, &self.map.landmass);
         for t in 0..self.map.terrain.len() {
             let flags = (self.map.special[t] as u8)
                 | ((self.map.river[t] as u8) << 1)
@@ -496,6 +510,7 @@ impl WorldState {
             mix(&mut h, buf.as_bytes());
         }
         for c in &self.cities {
+            mix(&mut h, &c.map_id.to_le_bytes());
             buf.clear();
             let _ = write!(
                 buf,
@@ -591,6 +606,9 @@ mod tests {
             ("government", |w| w.governments[1] ^= 1),
             ("science rate", |w| w.science_rates[1] ^= 1),
             ("tax rate", |w| w.tax_rates[1] ^= 1),
+            ("connection diplomacy", |w| w.diplomacy[1][2] ^= 8),
+            ("tile landmass", |w| w.map.landmass[0] ^= 1),
+            ("city map", |w| w.cities[0].map_id ^= 1),
             ("research progress", |w| w.research[1].progress ^= 1),
             ("research target", |w| w.research[1].target ^= 1),
             ("research count", |w| w.research[1].acquired ^= 1),

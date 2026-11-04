@@ -38,7 +38,7 @@ True layouts (the classic Civ2 records shifted by two bytes):
 
 | Unit (40 B) | | City (92 B) | |
 |---|---|---|---|
-| x u16@0, y u16@2, z @4 | | x u16@0, y u16@2 | |
+| x u16@0, y u16@2, z @4 | | x u16@0, y u16@2, map i16@4 | |
 | attr u16@6 (0x2000 veteran) | | owner u8@10, size u8@11, original owner u8@12 | |
 | type u8@8, owner u8@9 | | food box u16@28, shield box u16@30, u16@32 open | |
 | moves spent @10, visibility @11 | | name 16 B @34 | |
@@ -644,14 +644,82 @@ needs corruption 1; the decode without `· 3` gives 0. With it:
 - Fundamentalism exempts unit types with type-table flag `0x08` (not yet
   mapped to Rules).
 
-With support, shields replay **143/146** (ROMFALL) and 10/10. Each of
-the 3 remaining cities has the model one waste high where the record
-shows 0, which a road connection to the capital (`conn` ≥ 1) would
-explain.
+At the initial support decode, shields replayed **143/146** (ROMFALL)
+and 10/10. The subsequent connection decode below improves this to
+145/146; Aventicum remains one shield low. The initial hypothesis that
+connections alone explained all three differences was not borne out.
 
 Engine: `WorldState::city_output`, `corruption`, `capital_distance`,
 `unit_support`. Tests: `crates/engine/tests/yields_install.rs`. Trade
-routes and the connection test (`0x471a13`) are open.
+routes remain open; the connection test follows.
+
+### Capital road/rail connections DECODED (#84, 2026-11-04)
+
+Source: unpatched `civ2.bak`, connection `0x471a13`, path search
+`0x48c9c5`, capital wrapper `0x4c1736..0x4c18aa`. Artifact:
+`connections.json`; derived Rust cases: `connection-vectors.txt`.
+Re-derive with:
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn python3 tools/connections_check.py \
+  --emulate --vectors /tmp/connection-vectors.txt > /tmp/connections.json
+CIVTOT_HOME=... cargo test -p engine --test connections_install --test yields_install
+```
+
+The probe loads original PE sections, runs the connection and all its
+callees from their original bytes, bounds execution at 20 million
+instructions and requires return to a sentinel. There are no call stubs
+and no new Wine run. Inputs come from surface tiles, saved diplomatic
+words and Rules, with type 2's land domain asserted. The passability
+input is normalized to its effective blocked-terrain set; other unit
+properties do not affect this uniform-cost search. **123 saved pairs**
+(5 standard, 118 FallRome) and **12 invented cases** match the decoded
+Python implementation. Rust independently matches every saved-pair vector.
+
+Newly retained fields: city i16@4 is its map ID (loads `0x4c1444`,
+`0x4c1824`, comparison `0x4c1857`); civ u32@40+4*other holds the word
+whose bit `0x08` permits crossing another civ's occupied tile (RAM
+`0x5f68c8`, tests `0x471bc8`, `0x471c20`). No broader diplomatic meaning
+is assigned here. Tile +3 was already proven as landmass (`0x5701d1`);
+it now survives engine boot. All three join the world fingerprint.
+
+The live engine uses its current city/unit objects for occupied-tile
+checks: movement and deaths must not leave a route blocked by the boot
+save's unit-presence bit. A regression moves and removes a blocker without
+altering the boot tile flags. This is the engine state representation of
+occupancy, rather than an additional original-game rule.
+
+The helper returns 0/1/2 for none/road/rail. It first requires matching
+landmass IDs (ocean is -1) and wrapped `(abs(dx)+abs(dy))/2 < 23`.
+It searches backwards from the destination over passable land with
+uniform edge costs, in the 48-by-48 diamond work area, then chooses a
+decreasing-cost neighbour, breaking ties by smaller geometric distance
+and then direction order. Road flags do **not** guide this search. The
+chosen path is then checked for roads, rails and occupied-tile permission.
+An own intermediate city immediately succeeds. Endpoints and that city
+need no road and do not downgrade rail. The original selector checks its
+raw neighbour bounds before wrapping; a synthetic map-seam route is
+therefore rejected even when a road exists. The probe preserves this.
+
+Rules loader `0x4141f4` writes terrain field 15 to terrain-record +22;
+the terrain token decoder `0x4904f4` maps `no` to -1, `yes` to -2.
+`0x57073a` excludes -2 unless unit advanced field 6 bit `0x10` is set
+(loader `0x413a52..5d`). FallRome marks terrain 9 impassable. The engine
+tests exclusion and the unit override without game assets.
+
+Capital wrapper: Palace factor is 1, plus 1 with Railroad advance 67.
+Otherwise it uses the nearest alive own Palace. Two Airports (32) give
+factor 1 across differing landmasses; on the same landmass the road test
+replaces that factor. `city_output` now uses this factor in
+`waste * (3 - connection) / 3`. FallRome shield totals improve to **145/146**;
+Aventicum remains engine 5 versus stored 6, cause unproven. Standard save
+totals retain the existing exact comparisons. Scope: surface map and land
+type 2; sea/air type replacements and non-surface paths remain open.
+
+`make evidence-regen` intentionally refreshes `fallrome-50turn.txt`:
+all fingerprints include the new state, and 13 per-turn build-count rows
+shift because reduced waste changes production timing. Total completed
+items, growth counts and event counts over that run are unchanged.
 
 ### Science and tax split DECODED (#87, 2026-11-04)
 

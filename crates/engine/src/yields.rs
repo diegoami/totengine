@@ -9,8 +9,8 @@
 //! - ROMFALL: food exact in 144/146.
 //!
 //! The record's shields and trade are stored *after* waste, corruption and
-//! building multipliers. Those are not decoded yet, so trade in the record
-//! is never above the tile sum, and shields go both ways.
+//! building multipliers. `city_output` applies those decoded stages,
+//! including capital connections; trade-route arrows remain separate work.
 //!
 //! Not modelled: the network-game doubling branch (`0x607652`/`0x6031bc`,
 //! off in single-player games), and AI side effects the function triggers
@@ -229,7 +229,12 @@ impl WorldState {
             .filter(|o| o.owner == c.owner && o.has_building(PALACE))
             .map(|o| {
                 crate::placement::diamond_distance(
-                    w2, false, c.x as i32, c.y as i32, o.x as i32, o.y as i32,
+                    w2,
+                    self.game_flags & 0x8000 != 0,
+                    c.x as i32,
+                    c.y as i32,
+                    o.x as i32,
+                    o.y as i32,
                 )
             })
             .fold(32, i32::min)
@@ -318,12 +323,8 @@ impl WorldState {
     /// Oracle-checked against game-written records:
     /// - trade after corruption: exact in 145/145 ROMFALL cities without
     ///   trade routes and 10/10 standard-game cities;
-    /// - shields after multipliers, unit support and waste: 143/146 and
+    /// - shields after multipliers, unit support and waste: 145/146 and
     ///   10/10.
-    ///
-    /// Not modelled yet (the 3 shield misses): the road/rail connection to
-    /// the capital, which scales waste (`0x471a13`). Treated as connected
-    /// only in the capital (+1 with Railroad).
     ///
     /// Trade routes are not modelled either.
     pub fn city_output(&self, rules: &Rules, idx: usize) -> CityOutput {
@@ -352,18 +353,16 @@ impl WorldState {
         let mut shields = tile_shields + tile_shields * p / 4 + tile_shields * q / 4;
         // waste
         let support = self.unit_support(rules, idx);
-        let capital = self.capital_distance(idx) == 0;
-        let conn = if capital {
-            1 + self.civ_has_tech(civ, RAILROAD_TECH) as i32
-        } else {
+        let mut waste = if civ == 0 || gov == FUNDAMENTALISM || gov == DEMOCRACY {
             0
+        } else {
+            self.corruption(rules, idx, shields - support, true)
         };
-        let mut waste = self.corruption(rules, idx, shields - support, true);
-        waste = waste * (3 - conn) / 3;
-        waste /= (gov as i32 >> 1) + 1;
-        waste = waste.clamp(0, shields);
-        if civ == 0 || gov == FUNDAMENTALISM || gov == DEMOCRACY {
-            waste = 0;
+        if waste > 0 {
+            let conn = self.capital_connection(rules, idx);
+            waste = waste * (3 - conn) / 3;
+            waste /= (gov as i32 >> 1) + 1;
+            waste = waste.clamp(0, shields);
         }
         shields -= waste;
         CityOutput {

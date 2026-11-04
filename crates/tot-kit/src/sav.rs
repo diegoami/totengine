@@ -350,6 +350,10 @@ pub struct CityRecord {
 }
 
 impl CityRecord {
+    /// Map index, i16@4, tested by the capital connection code at 0x4c1857.
+    pub fn map_id(&self) -> u16 {
+        u16::from_le_bytes([self.raw[4], self.raw[5]])
+    }
     pub fn name(&self) -> String {
         let n = &self.raw[34..50];
         let end = n.iter().position(|&b| b == 0).unwrap_or(16);
@@ -597,6 +601,9 @@ pub struct SaveFile {
     /// (`0x4c3f0c`); luxuries use the remainder out of ten.
     pub science_rates: [u8; 8],
     pub tax_rates: [u8; 8],
+    /// Civ-properties u32@40+4*other; connection code tests bit 0x08
+    /// before crossing another civ's city or unit (`0x471a13`).
+    pub diplomacy: [[u32; 8]; 8],
     pub research: [ResearchState; 8],
     pub research_settings: ResearchSettings,
     /// Known advances per civ: the bitfield @96 of each civ block (RAM
@@ -676,6 +683,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     let mut governments = [0u8; 8];
     let mut science_rates = [0u8; 8];
     let mut tax_rates = [0u8; 8];
+    let mut diplomacy = [[0u32; 8]; 8];
     let mut techs = [[0u8; 13]; 8];
     let mut research = [ResearchState::default(); 8];
     for c in 0..8 {
@@ -686,6 +694,9 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         governments[c] = block[29];
         science_rates[c] = block[27];
         tax_rates[c] = block[28];
+        for (other, flags) in diplomacy[c].iter_mut().enumerate() {
+            *flags = u32le(block, 40 + 4 * other)?;
+        }
         research[c] = ResearchState {
             progress: i16::from_le_bytes([block[16], block[17]]),
             target: i16::from_le_bytes([block[18], block[19]]),
@@ -846,6 +857,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         governments,
         science_rates,
         tax_rates,
+        diplomacy,
         research,
         research_settings,
         techs,

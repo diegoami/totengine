@@ -56,7 +56,10 @@ python3 tools/totctl.py save $CIVTOT_HOME/FallRome/ROMFALL.scn -o /tmp/walk.json
 v0.1.0 (Tier 0) and **v0.2.0 "headless game loop"** are released (v0.2.0:
 2 review rounds, AGREE on #61; RG-2 moved to v0.3.0). Next: v0.3.0
 (RG-2/3/4/5/7). RG-2's oracle half is done: `tools/oracle/seeded_start.sh`
-makes new games reproducible (evidence §RG-2 reproducible starts). Story state:
+makes new games reproducible (evidence §RG-2 reproducible starts).
+Roadmap (decision 0002): v0.3.0 = all-AI headless campaign behind a
+player interface (RG-8); v0.4.0 = browser observer + pluggable AIs (Epic
+OB); T2 (SDL2 playable client) after that. Story state:
 T1-1/2/3/5/8/9 and RG-1 are done; `engine::turn::run_turn` is the loop. T1-6's randomness half is **done**
 (the original LCG and its `rand_int` are decoded, runtime-verified and
 shipped in `engine::rng`). Its combat-round half is decoded and shipped

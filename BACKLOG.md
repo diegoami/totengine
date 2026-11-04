@@ -44,7 +44,8 @@ SHA. The process: [docs/milestone-review.md](docs/milestone-review.md). Themes:
 `v0.2.0` = headless game loop — T1 core + **RG-1** so scenarios *and*
 standard games boot and run headless (**RG-2 moved to v0.3.0**, owner
 decision 2026-11-03: the new-game entropy source is not found yet),
-`v0.3.0` = generated-world campaign (RG-2/3/4/5/7).
+`v0.3.0` = generated-world campaign, every civ an AI (RG-2/3/4/5/7 + RG-8),
+`v0.4.0` = observer UI + pluggable AIs (Epic OB; decision 0002).
 
 ## Epic T0 — Format toolchain & reconnaissance (current)
 
@@ -90,7 +91,8 @@ opponent AI. These stories reuse the T1 core; the new-game *UI* lands with T2.
 | RG-1 | ~~Game-setup state model: new-game parameters + its save encoding~~ | P1 | M | H | done | Byte-map on a vision-verified variant family: 684=difficulty, 689=rivals, dims@29900, RNG mirror@685-688; wizard reference documented (evidence §RG-1) |
 | RG-2 | Starting placement: civ starts, goody huts, barbarian seeding from the game seed | P1 | L | H | in progress | Same-seed oracle starts reproduce identical placement. **Done (2026-11-04):** oracle side (`seeded_start.sh`: NR, CRT, world params, map seed) and civ start placement (`engine::placement`, 3 oracle worlds replay draw for draw, evidence §RG-2 start placement). **Open:** goody huts as objects (the hut formula is decoded, not oracle-checked), barbarian seeding |
 | RG-3 | Random world generator (seeded; `.MP`-shaped output; original's exact algorithm unknown → our own, flagged) | P2 | L | H | todo | Statistical parity vs original maps (land%/biome spread); renders sanity-checked |
-| RG-4 | Opponent AI v1 headless: expansion, economy, research, unit handling; deterministic | P2 | L | H | todo | 50-turn autoplay stable + deterministic; plausible power curves vs oracle games |
+| RG-8 | Player interface: per-civ observation (fog-limited), order set, validation, order log; all-AI default (decision 0002) | P1 | M | H | todo | A game replays bit-exact from seed + order log; every RG-4 decision goes through it |
+| RG-4 | Opponent AI v1 headless, as an RG-8 player: expansion, economy, research, unit handling; deterministic | P2 | L | H | todo | 50-turn autoplay stable + deterministic; plausible power curves vs oracle games |
 | RG-5 | Diplomacy model: contacts, embassies, treaties, tribute, AI stances; save encoding | P2 | M | H | todo | Diplomacy state round-trips; oracle-save contacts match |
 | RG-6 | Victory & scoring: spaceship chain, conquest, score/time; end-game state | P2 | M | H | todo | Victory conditions trigger identically on scripted oracle campaigns |
 | RG-7 | Headless campaign loop: new game → autoplay N turns → outcome; CI golden run | P2 | M | H | todo | Nightly autoplay green; determinism (same seed+build ⇒ identical saves) |
@@ -98,10 +100,20 @@ opponent AI. These stories reuse the T1 core; the new-game *UI* lands with T2.
 ToT's four built-in campaigns (Original/Extended Original, Fantasy, Sci-Fi
 quest modes) finish in T4 on top of RG + multi-map (see plan.md §5).
 
-## Epic T2 — Graphical classic client (planned; stories drafted on entry)
+## Epic OB — Observer UI + pluggable AIs (v0.4.0; decision 0002)
 
- SDL2 client, city screen, orders/menus, original art & sound pipeline,
- plausible AI v1, human-playable FallRome end-to-end. Break down when T1 lands.
+| ID | Story | Pri | Est | Diff | Status | Acceptance |
+|---|---|---|---|---|---|---|
+| OB-1 | Observation/replay stream: per-turn snapshots + events, full-map and per-civ fog views | P1 | M | M | todo | A finished RG-7 game streams and replays identically |
+| OB-2 | Browser observer: map, units, cities, turn stepping, play/pause, fog toggle, replay | P1 | L | M | todo | A 100-turn all-AI game can be watched live and replayed |
+| OB-3 | Out-of-process AI protocol (JSON over stdio/socket) + a reference client | P1 | M | M | todo | An external AI plays a full game; protocol documented and versioned |
+| OB-4 | Tournament runner: N AIs × M seeds headless, results table | P2 | M | M | todo | Deterministic results; same inputs ⇒ same table |
+
+## Epic T2 — Graphical classic client (after OB; stories drafted on entry)
+
+ SDL2 native client (Windows 10/11, Linux, macOS), city screen, orders/menus,
+ original art & sound read from the user's install, human player as an RG-8
+ player implementation, human-playable FallRome end-to-end. Reuses OB's map model.
 
 ## Epic T3 — ToTPP layer (planned)
 

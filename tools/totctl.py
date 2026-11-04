@@ -657,27 +657,24 @@ def walk_save(path: str) -> dict:
             "blob_10240": {"offset": map_end, "size": 10240,
                            "note": "mostly zeros in ROMFALL"},
         }
-        # ---- embedded map decode (proven on ROMFALL, 2026-11-01/02) ----
-        # Per map: a 7 B/tile visibility block, then 6 B-stride tile fields.
-        # Measured byte positions (ROMFALL 2026-11-02, re-verified against
-        # the section's known histograms): terrain|river|special byte at
-        # mp0+6t+4 (terrain = &0x3F: ids 0-10; 0x40 = special resource,
-        # 0x80 = river); road/rail bits at mp0+6t+14 (0x40 road, 0x80
-        # railroad — 3,497 road / 413 rail / 128 both on ROMFALL, matching
-        # the original spatial verification). The exact interleaving of the
-        # 6-B-stride fields inside the section remains open.
+        # ---- embedded map decode (game framing, evidence §Map tile framing,
+        # 2026-11-04: the live tile array equals the save block) ----
+        # Per map: a 7 B/tile block, the 6-B tile records, a 2-B trailer
+        # (resource-seed copy). Record: +0 terrain (&0x0F) | 0x40 special |
+        # 0x80 river; +1 0x01 unit, 0x02 city, 0x10 road, 0x20 rail
+        # (unverified); +3 landmass; +4 per-civ visibility; +5 fertility |
+        # owner<<4. Tile (x, y) -> index y*w + x//2.
         if has_map:
             stored_w, stored_h = hdr[0] // 2, hdr[1]
             out["map_decode"] = {"stored_dims": [stored_w, stored_h],
                                  "display_dims": [hdr[0], hdr[1]],
                                  "dense": stored_w * stored_h == surface,
-                                 "logical_to_stored": "sx = (x - (y&1))//2 - 1, sy = y",
+                                 "logical_to_stored": "index = y * w + x // 2",
                                  "geometry_note": ("logical grid (unit/city coords) "
                                                    "is hdr0 x hdr1; the terrain "
                                                    "grid is hdr0/2 x hdr1 dense "
                                                    "(diamond tiles: 2 logical "
-                                                   "columns per stored column, 2 "
-                                                   "border columns west; "
+                                                   "columns per stored column; "
                                                    "per-file support numbers "
                                                    "measured in "
                                                    "garrisons_measured / "
@@ -685,21 +682,21 @@ def walk_save(path: str) -> dict:
                                                    "below)"),
                                  "per_map": []}
             for m in range(n_map_blocks):
-                base = pos + m * map_data + 2
+                base = pos + m * map_data
                 imp0 = base
                 mp0 = base + 7 * surface
                 terr_hist: dict[int, int] = {}
                 river = road = rail = special = both = 0
                 vis_nz = [0] * 7
                 for t in range(surface):
-                    t6 = data[mp0 + 6 * t + 4]
-                    imp6 = data[mp0 + 6 * t + 14]
-                    terr_hist[t6 & 0x3F] = terr_hist.get(t6 & 0x3F, 0) + 1
+                    t6 = data[mp0 + 6 * t]
+                    imp6 = data[mp0 + 6 * t + 1]
+                    terr_hist[t6 & 0x0F] = terr_hist.get(t6 & 0x0F, 0) + 1
                     if t6 & 0x80:
                         river += 1
                     if t6 & 0x40:
                         special += 1
-                    r6, l6 = imp6 & 0x40, imp6 & 0x80
+                    r6, l6 = imp6 & 0x10, imp6 & 0x20
                     if r6:
                         road += 1
                     if l6:
@@ -719,15 +716,10 @@ def walk_save(path: str) -> dict:
                     "railroad_tiles": rail, "special_tiles": special,
                     "road_and_rail_tiles": both,
                     "visibility_nonzero_per_civ": vis_nz,
-                    "note": ("terrain byte mp0+6t+4: terrain=&0x3F (ids 0-10), "
-                             "0x40=special resource (70 ocean specials on "
-                             "ROMFALL), 0x80=river; road/rail bits at "
-                             "mp0+6t+14: 0x40 road / 0x80 rail (ROMFALL "
-                             "3497/413, 128 both — matches the original "
-                             "spatial verification); the 6-B-stride field "
-                             "interleave is open; visibility bytes' "
-                             "near-identical distribution suggests per-civ "
-                             "fog, unproven"),
+                    "note": ("tile record mp0+6t: +0 terrain=&0x0F, "
+                             "0x40=special flag, 0x80=river; +1 road=0x10, "
+                             "rail=0x20 (unverified); the 7 B/tile block "
+                             "before the records is unidentified"),
                 })
             out["map_decode"]["resource_seed_offset"] = pos + maps * map_data - 2
         if ver == 0x0033 and has_map:
@@ -921,15 +913,14 @@ def walk_save(path: str) -> dict:
                         f"/{len(homed)} homed units on a city tile are homed "
                         "there (measured on this file; the framing proof)")
                     stored_w2, stored_h2 = hdr[0] // 2, hdr[1]
-                    base = pos + 2 + 7 * surface
+                    base = pos + 7 * surface
                     on_ocean = on_land = outside = 0
                     for c in coords:
                         x, y = c["x"], c["y"]
-                        sx = (x - (y & 1)) // 2 - 1
-                        if not (0 <= sx < stored_w2 and 0 <= y < stored_h2):
+                        if not (0 <= x < 2 * stored_w2 and 0 <= y < stored_h2):
                             outside += 1
                             continue
-                        t = data[base + 6 * (y * stored_w2 + sx) + 4] & 0x3F
+                        t = data[base + 6 * (y * stored_w2 + x // 2)] & 0x0F
                         if t == 10:
                             on_ocean += 1
                         else:
@@ -951,12 +942,9 @@ def walk_save(path: str) -> dict:
 def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
     """Render the surface map embedded in a .SCN/.SAV.
 
-    Uses the measured tile-field positions (ROMFALL 2026-11-02): terrain
-    from the byte at mp0+6t+4 (terrain = &0x3F, 0x40 = special resource,
-    river = 0x80 — special-ocean tiles render as ocean), road/railroad
-    bits from the byte at mp0+6t+14 (0x40 / 0x80). Verified on ROMFALL:
-    3,497 road / 413 rail / 128 both tiles, matching the original spatial
-    verification of the networks.
+    Tile records in the game's framing (evidence §Map tile framing):
+    terrain = +0 & 0x0F (0x40 special renders as its terrain, 0x80 river),
+    road/railroad = +1 & 0x10 / 0x20 (railroad unverified).
     """
     walk = walk_save(path)
     md = walk.get("map_decode")
@@ -966,21 +954,21 @@ def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
     data = open(path, "rb").read()
     w, h = md["stored_dims"]
     surface = walk["map_header"]["values"][2]
-    mp0 = walk["sections_derived"]["map_data"]["offset"] + 2 + 7 * surface
+    mp0 = walk["sections_derived"]["map_data"]["offset"] + 7 * surface
     rows = []
     stats = {"river": 0, "road": 0, "rail": 0, "special": 0, "terrain": {}}
     for y in range(h):
         row = bytearray()
         for x in range(w):
             i = y * w + x
-            t6 = data[mp0 + 6 * i + 4]
-            imp6 = data[mp0 + 6 * i + 14]
-            terr = t6 & 0x3F
+            t6 = data[mp0 + 6 * i]
+            imp6 = data[mp0 + 6 * i + 1]
+            terr = t6 & 0x0F
             stats["terrain"][terr] = stats["terrain"].get(terr, 0) + 1
-            if imp6 & 0x80:
+            if imp6 & 0x20:
                 rgb = (35, 35, 35)            # railroad
                 stats["rail"] += 1
-            elif imp6 & 0x40:
+            elif imp6 & 0x10:
                 rgb = (139, 105, 50)          # road
                 stats["road"] += 1
             elif t6 & 0x80:
@@ -996,9 +984,9 @@ def render_scnmap(path: str, out_png: str, names, scale=4) -> dict:
     return {"png": os.path.abspath(out_png), "stored_dims": [w, h],
             "display_dims": md["display_dims"],
             "overlay_counts": stats,
-            "decode": ("terrain byte mp0+6t+4: terrain=&0x3F, 0x40=special "
-                       "(rendered as its terrain), 0x80=river; road/rail "
-                       "bits at mp0+6t+14: 0x40/0x80 — ROMFALL 2026-11-02")}
+            "decode": ("tile record mp0+6t: +0 terrain=&0x0F, 0x40=special "
+                       "(rendered as its terrain), 0x80=river; +1 road=0x10, "
+                       "rail=0x20 (unverified) — game framing 2026-11-04")}
 
 
 

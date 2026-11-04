@@ -91,10 +91,12 @@ fn u32le(d: &[u8], off: usize) -> Result<u32, SavError> {
 
 /// Map header: 8 × i16 at the map section start.
 ///
-/// Proven reading (`walk_save`, §T0-6; dims three-size-confirmed §RG-1):
-/// `raw[0] = 2*height` (logical/display height × 2), `raw[1] = width`,
-/// `raw[2] = area = height*width` (the *stored* tile count: the terrain
-/// grid is `raw[0]/2 × raw[1]` dense diamond tiles), `raw[3]` is NOT the
+/// Proven reading (`walk_save`, §T0-6; dims three-size-confirmed §RG-1;
+/// RAM mirror at `0x6705a0`, evidence §Map tile framing):
+/// `raw[0]` = the logical x range (2 × stored width: diamond x is doubled),
+/// `raw[1]` = height, `raw[2] = area` = the *stored* tile count
+/// (`raw[0]/2 × raw[1]` dense tiles), `raw[4]` = the resource seed
+/// (u16 `0x6705a8`; huts and resources derive from it), `raw[3]` is NOT the
 /// map count (a `0` file can still carry its surface map — issue #58):
 /// block count = `max(raw[3], 1)`. `raw[5]*raw[6]` sizes a following blob.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -136,24 +138,40 @@ impl MapHeader {
     pub fn logical_dims(&self) -> (usize, usize) {
         (self.raw[0] as usize, self.raw[1] as usize)
     }
-    /// Logical (x, y) → stored terrain index. Proven mapping
-    /// (`walk_save` geometry note; per-file city-terrain support
-    /// measured in the Python walker): `sx = (x - (y&1))/2 - 1, sy = y`.
-    /// Returns None for logical tiles outside the stored grid.
+    /// Logical (x, y) → stored tile index: `y * stored_w + x / 2`, the
+    /// game's own tile accessor (`0x56fff0`: `base + 6*(w*y) + 6*(x>>1)`;
+    /// in-bounds test `0x4030f0`: `0 <= x < raw[0]`, `0 <= y < raw[1]`).
+    /// Evidence §Map tile framing: 146/146 ROMFALL cities sit on their
+    /// city-flag tile. (The earlier `(x - (y&1))/2 - 1` mapping was
+    /// measured against the wrong terrain byte.)
     pub fn stored_index(&self, x: usize, y: usize) -> Option<usize> {
-        let sx = (x as isize - (y as isize & 1)) / 2 - 1;
-        if sx < 0 || y >= self.stored_h() || sx as usize >= self.stored_w() {
+        if x >= self.raw[0].max(0) as usize || y >= self.stored_h() {
             return None;
         }
-        Some(y * self.stored_w() + sx as usize)
+        Some(y * self.stored_w() + x / 2)
     }
 }
 
-/// One decoded map block: per-tile visibility (7 B/tile, near-identical
-/// per-civ distribution — per-civ fog, unproven) and the 6-B-stride tile
-/// fields. Only the empirically pinned byte positions are exposed
-/// (`+4` terrain/special/river, `+14` road/rail); the rest of the stride
-/// interleave is open.
+/// One decoded map block: a 7 B/tile block (unidentified; not the
+/// per-civ fog, which is tile byte +4) and the 6-B tile records. The
+/// block starts right after the 16-B map header; a 2-B trailer (a copy of
+/// the resource seed) follows the records. An earlier framing put those
+/// 2 bytes in front, which shifted every record by 2: terrain still came
+/// out right through `6t+4` plus a `-1` in the index, but the "road/rail"
+/// bits it read at `6t+14` were the next tile's visibility byte.
+///
+/// Tile record, in the game's framing (evidence §Map tile framing: the
+/// live tile array at `[0x5deaa8]` equals this block byte for byte, and
+/// the accessors below are the game's own):
+///
+/// | byte | content | evidence |
+/// |---|---|---|
+/// | +0 | terrain `& 0x0F`; `0x40` special flag; `0x80` river | `0x5700ff`; ROMFALL: every city on land |
+/// | +1 | `0x01` unit, `0x02` city, `0x10` road, `0x20` railroad; others improvements | ROMFALL: 423/423 unit tiles, 146/146 city tiles; road/rail by network shape |
+/// | +2 | top 3 bits: a site value read by start placement (`0x57024c`) | meaning open |
+/// | +3 | landmass id (index into the 10240-B landmass table) | `0x5701d1` |
+/// | +4 | per-civ visibility bits | `0x489b66` tests it against the human mask |
+/// | +5 | fertility `& 0x0F`; owner `>> 4` (`0xF` = none) | `0x570390`, `0x570169`; 146/146 city tiles carry the city's owner |
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MapBlock {
     pub visibility: Vec<u8>,
@@ -162,33 +180,69 @@ pub struct MapBlock {
 }
 
 impl MapBlock {
-    /// Terrain id (`& 0x3F`, 0–10 → Rules.txt @TERRAIN1..3 ids) of stored
-    /// tile `t`.
+    fn byte(&self, t: usize, k: usize) -> u8 {
+        self.tile_fields[6 * t + k]
+    }
+    /// Terrain id (`& 0x0F`, 0–10 → Rules.txt @TERRAIN ids; 10 = ocean).
     pub fn terrain(&self, t: usize) -> u8 {
-        self.tile_fields[6 * t + 4] & 0x3F
+        self.byte(t, 0) & 0x0F
     }
-    /// Special resource flag (bit 0x40 of the terrain byte).
+    /// Bit `0x40` of the terrain byte: the same flag the `.MP` format
+    /// carries as "special" (70 tiles on ROMFALL). Its game meaning is
+    /// not oracle-checked.
     pub fn is_special(&self, t: usize) -> bool {
-        self.tile_fields[6 * t + 4] & 0x40 != 0
+        self.byte(t, 0) & 0x40 != 0
     }
-    /// River flag (bit 0x80 of the terrain byte).
+    /// River flag (bit `0x80` of the terrain byte).
     pub fn is_river(&self, t: usize) -> bool {
-        self.tile_fields[6 * t + 4] & 0x80 != 0
+        self.byte(t, 0) & 0x80 != 0
     }
-    /// Road flag (bit 0x40 at `+14` — ROMFALL spatial verification).
-    /// Note: `6t+14` exceeds the 6·surface tile-field block for the last
-    /// two tiles of each map — the Python walker silently reads past
-    /// into the next section there; we bounds-check and report `false`.
+    /// The occupancy/improvement byte (+1), raw.
+    pub fn improvements(&self, t: usize) -> u8 {
+        self.byte(t, 1)
+    }
+    /// A unit stands on the tile (`+1 & 0x01`).
+    pub fn has_unit(&self, t: usize) -> bool {
+        self.byte(t, 1) & 0x01 != 0
+    }
+    /// A city stands on the tile (`+1 & 0x02`).
+    pub fn has_city(&self, t: usize) -> bool {
+        self.byte(t, 1) & 0x02 != 0
+    }
+    /// Road (`+1 & 0x10`): on ROMFALL 84 % of these tiles have one or two
+    /// road neighbours (a network of lines), unlike the clustered
+    /// `0x04`/`0x08` bits.
     pub fn has_road(&self, t: usize) -> bool {
-        self.tile_fields
-            .get(6 * t + 14)
-            .is_some_and(|&b| b & 0x40 != 0)
+        self.byte(t, 1) & 0x10 != 0
     }
-    /// Railroad flag (bit 0x80 at `+14`), same bounds note as `has_road`.
+    /// Railroad (`+1 & 0x20`): on Warring States all 297 such tiles also
+    /// carry the road bit and 99 % have one or two rail neighbours (lines).
+    /// Not oracle-checked.
     pub fn has_rail(&self, t: usize) -> bool {
-        self.tile_fields
-            .get(6 * t + 14)
-            .is_some_and(|&b| b & 0x80 != 0)
+        self.byte(t, 1) & 0x20 != 0
+    }
+    /// Top three bits of byte +2 (read by start placement, `0x57024c`).
+    pub fn site_bits(&self, t: usize) -> u8 {
+        self.byte(t, 2) >> 5
+    }
+    /// Landmass id (byte +3).
+    pub fn landmass(&self, t: usize) -> u8 {
+        self.byte(t, 3)
+    }
+    /// Per-civ visibility bits (byte +4, bit n = civ n).
+    pub fn visible_to(&self, t: usize) -> u8 {
+        self.byte(t, 4)
+    }
+    /// Fertility (byte +5 `& 0x0F`).
+    pub fn fertility(&self, t: usize) -> u8 {
+        self.byte(t, 5) & 0x0F
+    }
+    /// Owning civ (byte +5 `>> 4`; `0xF` = none).
+    pub fn owner(&self, t: usize) -> Option<u8> {
+        match self.byte(t, 5) >> 4 {
+            0xF => None,
+            o => Some(o),
+        }
     }
     /// Histogram of terrain ids (index = id).
     pub fn terrain_histogram(&self) -> [usize; 64] {
@@ -553,7 +607,9 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         return Err(SavError::NoMap);
     }
 
-    // map blocks: 13 B/tile + 2 per map (7 visibility + 6 tile fields),
+    // map blocks: 13 B/tile + 2 per map (a 7 B/tile block, the 6-B tile
+    // records, then a 2-B trailer = a copy of the resource seed;
+    // evidence §Map tile framing),
     // then the 2*hdr5*hdr6 blob and the 10240-byte blob
     // all sizes are checked: header fields are untrusted (#64)
     let surface = hdr.surface();
@@ -571,7 +627,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     let per_map = per_map.unwrap_or(0);
     let mut maps = Vec::with_capacity(n_blocks);
     for m in 0..n_blocks {
-        let base = pos + m * per_map + 2;
+        let base = pos + m * per_map;
         let vis = data[base..base + 7 * surface].to_vec();
         let tiles = data[base + 7 * surface..base + 13 * surface].to_vec();
         maps.push(MapBlock {
@@ -883,15 +939,17 @@ mod tests {
         for v in hdr {
             out.extend_from_slice(&v.to_le_bytes());
         }
-        // one map block: 2 + 7*surface + 6*surface
-        out.extend_from_slice(&[0, 0]); // +2 prefix
-        out.extend(std::iter::repeat_n(0u8, 7 * surface)); // visibility
+        // one map block: 7*surface + 6*surface + 2-B trailer
+        out.extend(std::iter::repeat_n(0u8, 7 * surface)); // 7 B/tile block
         for t in 0..surface {
-            // tile fields: 6 B; terrain byte at +4 (grasslands=1, river on t=2)
+            // tile record: terrain byte at +0 (grasslands=1, river on t=2),
+            // no owner (+5 high nibble 0xF)
             let mut f = [0u8; 6];
-            f[4] = if t == 2 { 1 | 0x80 } else { 1 };
+            f[0] = if t == 2 { 1 | 0x80 } else { 1 };
+            f[5] = 0xF0;
             out.extend_from_slice(&f);
         }
+        out.extend_from_slice(&[0, 0]); // trailer (resource-seed copy)
         out.extend(std::iter::repeat_n(0u8, 10240)); // blob 10240
                                                      // units: 2 × 40 B
         let unit_specs: [(u16, u16, u8, u8); 2] = [(3, 4, 0, 1), (5, 6, 1, 2)];
@@ -943,9 +1001,12 @@ mod tests {
         assert_eq!(m.terrain_histogram()[1], 16);
         assert!(m.is_river(2));
         assert!(!m.is_special(2));
-        // logical→stored mapping sanity
-        assert!(sav.map_header.stored_index(0, 0).is_none()); // border col
-        assert!(sav.map_header.stored_index(4, 1).is_some());
+        assert_eq!(m.owner(2), None);
+        // logical→stored mapping: y*w + x/2, x < raw[0]
+        let h = &sav.map_header;
+        assert_eq!(h.stored_index(0, 0), Some(0));
+        assert_eq!(h.stored_index(3, 1), Some(h.stored_w() + 1));
+        assert!(h.stored_index(h.raw[0] as usize, 0).is_none());
     }
 
     #[test]

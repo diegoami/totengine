@@ -92,7 +92,7 @@ pub struct City {
 pub struct MapState {
     pub stored_w: usize,
     pub stored_h: usize,
-    /// One entry per stored tile: terrain id (& 0x3F).
+    /// One entry per stored tile: terrain id (`& 0x0F`, tile byte +0).
     pub terrain: Vec<u8>,
     pub special: Vec<bool>,
     pub river: Vec<bool>,
@@ -101,16 +101,15 @@ pub struct MapState {
 }
 
 impl MapState {
-    /// Logical (x, y) → stored index (`sx = (x - (y&1))/2 - 1, sy = y`;
-    /// outside-the-grid logical tiles map to None — the 2 western border
-    /// columns are not stored).
+    /// Logical (x, y) → stored index `y * stored_w + x / 2`: the game's
+    /// own accessor (`0x56fff0`), with `x < 2 * stored_w`, `y < stored_h`
+    /// (`0x4030f0`). Evidence §Map tile framing.
     pub fn stored_index(&self, x: u16, y: u16) -> Option<usize> {
-        let (w, h) = (self.stored_w as isize, self.stored_h as isize);
-        let sx = (x as isize - (y as isize & 1)) / 2 - 1;
-        if sx < 0 || y as isize >= h || sx >= w {
+        let (x, y) = (x as usize, y as usize);
+        if x >= 2 * self.stored_w || y >= self.stored_h {
             return None;
         }
-        Some(y as usize * self.stored_w + sx as usize)
+        Some(y * self.stored_w + x / 2)
     }
     pub fn terrain_at(&self, x: u16, y: u16) -> Option<u8> {
         self.stored_index(x, y).map(|i| self.terrain[i])
@@ -530,13 +529,14 @@ pub mod tests_support {
         for v in hdr {
             out.extend_from_slice(&v.to_le_bytes());
         }
-        out.extend_from_slice(&[0, 0]);
         out.extend(std::iter::repeat_n(0u8, 7 * surface));
         for t in 0..surface {
             let mut f = [0u8; 6];
-            f[4] = if t == 2 { 1 | 0x80 } else { 1 };
+            f[0] = if t == 2 { 1 | 0x80 } else { 1 };
+            f[5] = 0xF0;
             out.extend_from_slice(&f);
         }
+        out.extend_from_slice(&[0, 0]); // trailer
         out.extend(std::iter::repeat_n(0u8, 10240));
         // units, game framing: (x, y, type, owner, home city)
         let unit_specs: [(u16, u16, u8, u8, u8); 2] = [(3, 4, 0, 1, 0), (5, 6, 1, 2, 0xff)];

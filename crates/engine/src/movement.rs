@@ -174,14 +174,14 @@ mod tests {
     }
 
     fn world_with_map() -> WorldState {
-        // 4x4 stored grid. Logical coordinates (x + y even) map as
-        // sx = (x - (y&1))/2 - 1, sy = y (proven diamond mapping).
-        //   tile (2,0) [stored 0]  = ocean
+        // 4x4 stored grid. Logical (x, y) maps to stored y*4 + x/2 (the
+        // game's accessor, evidence §Map tile framing).
+        //   tile (2,0) [stored 1]  = ocean
         //   stored row 2           = road strip (logical y=2)
         let surface = 16usize;
         let mut terrain = vec![1u8; surface];
         let mut road = vec![false; surface];
-        terrain[0] = OCEAN_TERRAIN;
+        terrain[1] = OCEAN_TERRAIN;
         for r in road.iter_mut().take(12).skip(8) {
             *r = true;
         }

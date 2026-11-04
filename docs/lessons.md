@@ -171,3 +171,11 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   copied yesterday's autosave three times while the real saves went to
   another game folder. Harvest with `find -newer <marker touched at run
   start>` and fail when nothing is fresh.
+- **Two framing errors can cancel for one field and hide the bug for the
+  rest.** The save's tile records were read 2 bytes late, and an index
+  `−1` plus a `+4` byte offset brought terrain back onto the right byte,
+  so every terrain check passed. The road/rail bits read through the
+  same frame were another tile's fog, and a fog layer around an empire
+  looks like a road network. Prove a record layout against the game's
+  own accessor or a cross-table invariant (city flag ⇔ city record),
+  never by "the picture looks right".

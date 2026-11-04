@@ -481,6 +481,53 @@ all rotating slots AND byte-compare against the previous baseline
 NOT reproducible from wizard settings alone; the T1-6 RNG-state hunt (RAM,
 via `memspool.py`) is the path to reproducibility.
 
+### Map tile framing FIXED (2026-11-04): the game's own tile record
+
+The 6-B tile records start right after the 7 B/tile block, at
+`map_data + 7·area`. The 2 bytes Mercator lists after the maps are a
+trailer, a copy of the resource seed (ROMFALL: `0c42` at both places).
+This is Mercator's order. The 2026-11-02 "phase correction" put the 2
+bytes first, so every record was read 2 bytes late.
+
+Proof:
+- In a live standard game (RG-2 pl1), the tile array at `[0x5deaa8]`
+  equals the save's block at `map_data + 7·area` byte for byte (12,000 B).
+- The accessors are read from the binary:
+  - tile pointer `0x56fff0`: `base + 6·(w·y) + 6·(x>>1)`, so the index
+    is `y·w + x/2`;
+  - bounds `0x4030f0`: `x < raw[0]`, `y < raw[1]`.
+
+| byte | content | evidence |
+|---|---|---|
+| +0 | terrain `& 0x0F`, `0x40` special flag, `0x80` river | `0x5700ff` (`== 10` is ocean, `0x57012c`); ROMFALL 146/146 cities on land |
+| +1 | `0x01` unit, `0x02` city, `0x10` road, `0x20` railroad; `0x04`/`0x08`/`0x40` other improvements | ROMFALL: `0x01` on exactly the 423 unit tiles, `0x02` on exactly the 146 city tiles |
+| +2 | top 3 bits: a site value (`0x57024c`, start placement) | meaning open |
+| +3 | landmass id; the 10240-B blob is the landmass table (256 × 40 B, RAM `0x61bca8`) | `0x5701d1`; RAM table = save blob |
+| +4 | per-civ visibility bits | `0x489b66` tests it against the human mask |
+| +5 | fertility `& 0x0F`, owner `>> 4` (`0xF` = none) | `0x570390`/`0x570169`; ROMFALL 146/146 city tiles carry the city's owner |
+
+How the road and rail bits were identified:
+- Road `0x10` and railroad `0x20` were identified by network shape.
+- **Road (ROMFALL):** 84 % of `0x10` tiles have one or two `0x10`
+  neighbours. The `0x04`/`0x08` bits cluster instead.
+- **Railroad (Warring States):** all 297 `0x20` tiles also carry `0x10`,
+  and 99 % have one or two rail neighbours.
+- Neither bit is oracle-checked.
+
+What the old framing got right and wrong:
+- **Terrain, river and special were right.** The 2-byte shift and the old
+  `6t+4` + index `−1` cancel out: the old terrain equals byte +0 of the
+  true tile on 8,880/8,880 ROMFALL tiles.
+- **Road and rail were wrong.** The old "road/rail" byte at `6t+14` is the
+  *next tile's visibility byte* (8,880/8,880). So the "3,497-tile road
+  network" was the fog of civs 6 and 7. Real ROMFALL roads: 461; railroads: 0.
+
+Consequences:
+- The engine's road and rail flags change (FallRome 50-turn fingerprints
+  regenerated; only the checksums moved).
+- All six oracle battles still pass. Battle 2's defender stands on
+  Grassland + river; the old decode said Forest, and both give ×1.5.
+
 ### RG-2 reproducible new-game starts: the four entropy inputs (2026-11-04)
 
 **A new standard game is fully determined by four values, all writable
@@ -1044,7 +1091,10 @@ and the ROMFALL_{ERE,HUN,VIS} variants:
    America (Mississippi system), clusters across Africa and Australia (Murray),
    one chain wrapping the x=0/x=149 seam. Special resources are **not stored in
    `.MP` at all** — they are RNG-placed per game (map tail likely holds seeds).
-2. **The embedded SCN/SAV map section is decoded (ROMFALL, `0x32`).** Per Mercator's
+2. *(Framing and items 4–5 SUPERSEDED 2026-11-04, §Map tile framing FIXED:
+   records start at `map_data + 7·area`, terrain is byte +0, road/rail are
+   byte +1 `0x10`/`0x20`; the `6t+14` "road" bits were the next tile's
+   visibility.)* **The embedded SCN/SAV map section is decoded (ROMFALL, `0x32`).** Per Mercator's
    ToC the per-map block is Visible Improvements (7 B/tile) + Map (6 B/tile) + 2.
    The stored grid is **dense**: `width = hdr0/2 × hdr1 = surface` tiles
    (ROMFALL 75×120 = 9,000; `hdr0` = 150 is the *display* width — ToT tiles

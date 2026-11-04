@@ -9,12 +9,12 @@
     120
   ],
   "overlay_counts": {
-    "river": 224,
-    "road": 3369,
-    "rail": 413,
-    "special": 43,
+    "river": 472,
+    "road": 461,
+    "rail": 0,
+    "special": 70,
     "terrain": {
-      "10": 2838,
+      "10": 2839,
       "2": 1050,
       "3": 1448,
       "4": 870,
@@ -24,9 +24,8 @@
       "5": 70,
       "8": 57,
       "9": 65,
-      "0": 800,
-      "12": 1
+      "0": 800
     }
   },
-  "decode": "terrain byte mp0+6t+4: terrain=&0x3F, 0x40=special (rendered as its terrain), 0x80=river; road/rail bits at mp0+6t+14: 0x40/0x80 \u2014 ROMFALL 2026-11-02"
+  "decode": "tile record mp0+6t: +0 terrain=&0x0F, 0x40=special (rendered as its terrain), 0x80=river; +1 road=0x10, rail=0x20 (unverified) \u2014 game framing 2026-11-04"
 }

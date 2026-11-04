@@ -422,6 +422,12 @@ impl CityRecord {
     pub fn worked(&self) -> u32 {
         u32::from_le_bytes([self.raw[50], self.raw[51], self.raw[52], self.raw[53]])
     }
+    /// Current build item i8@59 (RAM `0x5fd18b`): a unit type when ≥ 0,
+    /// improvement `-v` when negative (−39 = Capitalization, which adds
+    /// nothing to the box); evidence §T1-4 production.
+    pub fn build_item(&self) -> i8 {
+        self.raw[59] as i8
+    }
     /// City improvements bitfield @54 (bit n = improvement n; `0x43002e`).
     pub fn buildings(&self) -> [u8; 5] {
         [

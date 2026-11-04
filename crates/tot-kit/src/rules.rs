@@ -240,6 +240,16 @@ impl Rules {
             .unwrap_or(2)
     }
 
+    /// Cost of improvement or wonder `id` (`@IMPROVE` row `id`, field 1),
+    /// in shield-box rows: the original multiplies it by the civ's rows
+    /// (RAM table `0x5f6684`, 8-B rows; evidence §T1-4 production).
+    pub fn improvement_cost(&self, id: usize) -> Option<u32> {
+        self.section("IMPROVE")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(1))
+            .and_then(|f| f.trim().parse().ok())
+    }
+
     /// `@COSMIC` row `idx` (0-based), the value field. The original keeps
     /// these as bytes from RAM `0x5f5eb8` (row 0 = road multiplier, 3 =
     /// food box rows, 4 = shield box rows, 13–15 = free units under

@@ -13,6 +13,7 @@ pub mod effects;
 pub mod events;
 pub mod movement;
 pub mod placement;
+pub mod production;
 pub mod research;
 pub mod rng;
 pub mod turn;
@@ -92,8 +93,11 @@ pub struct City {
     pub worked: u32,
     /// Improvements bitfield (record @54; bit n = improvement n).
     pub buildings: [u8; 5],
-    /// City flags (record u32@6; `0x2` = celebrating).
+    /// City flags (record u32@6; `0x2` = celebrating, `0x1` = disorder:
+    /// the production step adds nothing).
     pub flags: u32,
+    /// Build item (record i8@59): unit type ≥ 0, improvement `-v` < 0.
+    pub building: i8,
 }
 
 impl City {
@@ -330,6 +334,7 @@ fn city_from(r: &CityRecord) -> City {
         worked: r.worked(),
         buildings: r.buildings(),
         flags: r.flags(),
+        building: r.build_item(),
     }
 }
 
@@ -468,6 +473,7 @@ impl WorldState {
             mix(&mut h, &c.worked.to_le_bytes());
             mix(&mut h, &c.buildings);
             mix(&mut h, &c.flags.to_le_bytes());
+            mix(&mut h, &[c.building as u8]);
         }
         h
     }
@@ -543,6 +549,7 @@ mod tests {
             ("city worked", |w| w.cities[0].worked ^= 1),
             ("city buildings", |w| w.cities[0].buildings[0] ^= 1),
             ("city flags", |w| w.cities[0].flags ^= 2),
+            ("city build item", |w| w.cities[0].building ^= 1),
             ("wonders", |w| w.wonders[0] = 3),
             ("civ plural", |w| w.civs[0].plural.push('x')),
             ("unit type", |w| w.units[0].type_id ^= 1),

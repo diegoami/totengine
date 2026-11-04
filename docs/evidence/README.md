@@ -481,6 +481,42 @@ all rotating slots AND byte-compare against the previous baseline
 NOT reproducible from wizard settings alone; the T1-6 RNG-state hunt (RAM,
 via `memspool.py`) is the path to reproducibility.
 
+### T1-4 production DECODED (2026-11-04): shield box, rows, completion
+
+Source: `civ2.bak`. The production step is `0x4c6210`; shield rows come
+from `0x4c1bdf`. Engine: `engine::production` (`production_step`,
+`shield_rows`), wired into `run_turn` after growth.
+
+**The step:**
+- **Net shields** = the city's shields (after multipliers and waste) −
+  unit support. 0 while flag `0x1` (disorder) is set; never negative.
+- **Box:** grows by net, except when the build item (record i8@59) is −39
+  (Capitalization).
+- **Cost:** Rules cost × rows.
+  - Units: @UNITS field 9; improvements: @IMPROVE field 1.
+  - **Human rows:** @COSMIC row 4.
+  - **AI rows:** `13 − d`, +1 if d < 3, +1 if d = 0; then × cosmic/10,
+    rounded up to even.
+  - **Runtime check:** the live global `0x6537fc` reads 10 at
+    difficulty 4.
+- **Completion:** `box ≥ cost` → the box drops by the cost; the unit is
+  created (homed in the city), or the improvement bit set (`0x4300af`).
+- **Not modelled:**
+  - obsolete-unit switching (the build moves to the newer unit once the
+    civ knows its advance);
+  - wonders (ids ≥ 40; one path resets the box to 0);
+  - veteran units;
+  - the AI rows adjustment after turn 200;
+  - the Settlers-at-size-1 case at Chieftain;
+  - AI build choice.
+
+**Replay** on the std-lab series, the one-turn pairs only (turn t → t+1,
+using t's stored shields and computed support): **53/70** boxes exact.
+The misses are explained by shields that the original recomputes at
+processing time, after growth: the stored @83 of turn t is the previous
+evaluation. They all fit rows = 10 with a net 1–2 higher. Exact
+turn-pair parity is T1-10.
+
 ### T1-4 city totals: decoded structure, inputs still open (2026-11-04)
 
 Static decode from `civ2.bak`. The city-totals function `0x4c45ff`

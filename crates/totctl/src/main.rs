@@ -388,7 +388,12 @@ fn cmd_run(args: &[String]) -> ExitCode {
             match &rules {
                 Some(r) => {
                     let s = world.run_turn(r, events.as_mut());
-                    println!("{line} grew {} events {}", s.grew.len(), s.events.len());
+                    println!(
+                        "{line} grew {} built {} events {}",
+                        s.grew.len(),
+                        s.built.len(),
+                        s.events.len()
+                    );
                 }
                 None => {
                     world.advance_turn();

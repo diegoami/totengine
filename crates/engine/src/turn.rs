@@ -8,11 +8,14 @@
 //!    yet. Settlers are the role-5 ("settle") units homed in the city.
 //!    Cities with gross food 0 are skipped: the original leaves young cities
 //!    half-initialised until their first processing (evidence §T1-4).
-//! 2. **Turn events**: TURN, TURNINTERVAL and RANDOMTURN fire against the
+//! 2. **Production** ([`WorldState::production_step`]): shields fill
+//!    the box; units and improvements complete (evidence §T1-4
+//!    production).
+//! 3. **Turn events**: TURN, TURNINTERVAL and RANDOMTURN fire against the
 //!    new turn number, and their effects are applied. RANDOMTURN rolls
 //!    `next_below(n) == 0` on the kernel's generator, once per event in file
 //!    order.
-//! 3. The turn counter advances and movement resets for every unit.
+//! 4. The turn counter advances and movement resets for every unit.
 //!
 //! **The order of these steps, and which generator draws the RANDOMTURN
 //! rolls, are the engine's choice, not decoded from the original.** The
@@ -37,6 +40,8 @@ pub struct TurnSummary {
     pub famined: Vec<usize>,
     /// Turn events fired, with what applying them did.
     pub events: Vec<(Effect, Applied)>,
+    /// What city production completed: (city index, item).
+    pub built: Vec<(usize, crate::production::Built)>,
 }
 
 /// AI role 5 = settle (Rules @UNITS field 11).
@@ -73,6 +78,16 @@ impl WorldState {
             }
             if t.famined {
                 sum.famined.push(k);
+            }
+        }
+        // production (evidence §T1-4 production); cities with no food
+        // are the half-initialised young cities the growth step skips too
+        for k in 0..self.cities.len() {
+            if self.cities[k].gross_food == 0 {
+                continue;
+            }
+            if let Some(b) = self.production_step(rules, k) {
+                sum.built.push((k, b));
             }
         }
 

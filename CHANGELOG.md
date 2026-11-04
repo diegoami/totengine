@@ -22,7 +22,16 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   - Shields, after unit support (`unit_support`: free units by
     government from @COSMIC): 143/146 and 10/10. The road connection to
     the capital and trade routes are still open.
-- `City` gains worked tiles, buildings and flags. The world gains
+- **Production** (`engine::production`, in `run_turn`):
+  - net shields fill the box; units and improvements complete at
+    `cost × rows`;
+  - human rows come from @COSMIC; AI rows from difficulty
+    (runtime-confirmed);
+  - the std-lab one-turn box transitions match 53/70 (the misses are
+    stale stored shields, see T1-10);
+  - `totctl run` prints a `built` count; FallRome 50-turn golden
+    regenerated.
+- `City` gains worked tiles, buildings, flags and the build item. The world gains
   per-civ government and advances, and the raw tile improvement byte (all
   in the checksum).
 

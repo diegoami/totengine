@@ -4,22 +4,22 @@ version = 4
 
 [[package]]
 name = "engine"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "tot-kit",
 ]
 
 [[package]]
 name = "lua-host"
-version = "0.5.0"
+version = "0.6.0"
 
 [[package]]
 name = "tot-kit"
-version = "0.5.0"
+version = "0.6.0"
 
 [[package]]
 name = "totctl"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "engine",
  "tot-kit",
@@ -27,4 +27,4 @@ dependencies = [
 
 [[package]]
 name = "totui"
-version = "0.5.0"
+version = "0.6.0"

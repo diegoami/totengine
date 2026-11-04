@@ -3,9 +3,14 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
-## [Unreleased]
+## [0.6.0] — AI v0
 
-### Engine (v0.6.0, AI v0)
+An all-AI game now runs headless. AI v0 (an engine-designed player)
+explores, founds cities and builds; production switches obsolete units
+and makes veterans; goody huts pay out. A 100-turn all-AI game on a
+standard save grows 10 cities to 50, and replays bit-exact from its log.
+
+### Engine
 
 - **Goody-hut outcomes** (#79, `engine::huts`), decoded in part from
   `hut_outcome` (`0x54ab80`):
@@ -37,6 +42,18 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
     the first build (the best defender per cost);
   - engine rules, flagged: the name, the first worked tile, founding
     validity and the Settlers population cost.
+
+### Known open
+
+- **Hut outcomes (#79), partly:** tribe city size/buildings, the
+  mercenary unit, case 3 (barbarians vs nothing), the landmass-claim
+  forcing and the site-value redirect. Barbarians go with RG-9 (#83).
+- **City founding:** the name lists, the first worked tile, founding
+  validity and the Settlers population cost are engine rules.
+- **Type-table bytes not yet mapped to Rules:** +0x14 (availability) and
+  +5 & 0x10 (veteran exemption).
+- **AI v0:** simple by design. Research choice waits for per-civ
+  research progress (v0.8.0).
 
 ## [0.5.0] — Player interface
 

@@ -4,8 +4,14 @@
 //!
 //! **Decoded from `0x432810`** (record offsets = RAM city table offsets):
 //! - x/y @0/@2, owner @10 and original owner @12 = the founder;
-//! - size 1, flags `0x20000`; flag `0x80` when a neighbour is ocean
-//!   (`0x4332e0`);
+//! - size 1, flags = [`CITY_REFRESH`] (`0x20000`), a transient
+//!   "refresh pending" bit: the city-totals pass (`0x4c45ff` → `0x430232`)
+//!   clears it, so no saved city carries it; the engine clears it in the
+//!   turn's production step;
+//! - flag `0x80` when a neighbour is ocean (`0x4332e0`). The original also
+//!   sets `0x200000` when a neighbouring water body is larger than one tile
+//!   (`0x4332c8`, via the landmass table); **not modelled** (the engine map
+//!   keeps no landmass table);
 //! - city id = the next free id; boxes and worked tiles start at 0;
 //!   improvements cleared;
 //! - **the civ's first city gets the Palace** (`0x4300af(city, 1)`);
@@ -36,6 +42,11 @@ use crate::{City, WorldState};
 pub const ROLE_SETTLE: u8 = 5;
 const ROLE_DEFEND: u8 = 1;
 const PALACE: usize = 1;
+/// City flag bit 17: set by `create_city` (and two unidentified writers,
+/// `0x433503`/`0x433570`), cleared by the city-totals refresh `0x430232`
+/// (which otherwise runs every 16th turn per city). Never present in a
+/// saved city (evidence §City founding).
+pub const CITY_REFRESH: u32 = 0x20000;
 
 impl WorldState {
     /// Why `unit` cannot found a city here, if it cannot.
@@ -166,7 +177,7 @@ impl WorldState {
             shield_box: 0,
             worked: 1 << CENTRE,
             buildings,
-            flags: 0x20000 | if coastal { 0x80 } else { 0 },
+            flags: CITY_REFRESH | if coastal { 0x80 } else { 0 },
             building,
         });
         let idx = self.cities.len() - 1;
@@ -275,6 +286,13 @@ Pikemen, nil, 0, 1., 0, 1a, 2d, 1h, 1f, 2, 0, 1, Feu, 000000000000000\n\
             assert!(city.has_building(PALACE), "first city gets the Palace");
             let i = w.map.stored_index(6, 0).unwrap();
             assert!(w.map.improvements[i] & 0x02 != 0);
+            assert!(
+                city.flags & CITY_REFRESH != 0,
+                "created with refresh pending"
+            );
+            // the turn's totals pass clears it, as 0x430232 does
+            w.run_turn(&rules, None);
+            assert_eq!(w.cities[c].flags & CITY_REFRESH, 0, "cleared by the turn");
         }
     }
 }

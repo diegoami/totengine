@@ -86,6 +86,9 @@ impl WorldState {
             if self.cities[k].gross_food == 0 {
                 continue;
             }
+            // the totals pass (0x4c45ff -> 0x430232) clears create_city's
+            // refresh-pending bit (evidence §City founding)
+            self.cities[k].flags &= !crate::founding::CITY_REFRESH;
             if let Some(b) = self.production_step(rules, k) {
                 sum.built.push((k, b));
             }

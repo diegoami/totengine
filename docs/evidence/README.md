@@ -492,7 +492,16 @@ callers. Engine: `engine::founding`.
 - **Record:**
   - x@0, y@2, map@4, owner@10, original owner@12;
   - city id @86 from a global counter (`0x5d1504`);
-  - flags @6 = `0x20000`;
+  - flags @6 = `0x20000` (`mov` at `0x432b2f`), a **transient
+    refresh-pending bit**. The city-totals function `0x4c45ff` calls
+    `0x430232` (`0x4c46b7`), which runs its body when that bit is set
+    (`test byte @8, 0x2` at `0x43024b`), when the global `0x607657` is set,
+    or every 16th turn per city (`(turn + city) & 0xF == 0`). It clears the
+    bit first (`and …, 0xfffdffff` at `0x43028c`). Two other writers set
+    it too (`0x433503`, `0x433570`; not identified). So the bit never
+    survives to a save: 0 of 1,480 city records in 51 saves carry it, including six cities
+    saved 0–2 turns after founding (review #102). The engine sets it in
+    `found_city` and clears it in the turn's production step;
   - size @11 = 1;
   - boxes @28/@30, u16@32, worked tiles u32@50 = 0;
   - improvements @54 cleared.
@@ -503,8 +512,12 @@ callers. Engine: `engine::founding`.
 - **Build item @59:** the buildable unit of role 1 (defend) with the best
   defence / cost, ties to the later unit (`0x432d47`..`0x432e02`). The
   tribe's default unit is overridden whenever any defender is buildable.
-- **Flags:** `0x80` when a neighbour is ocean, plus `0x200000` for a
-  larger body of water.
+- **Flags:** `0x80` when a neighbour is ocean, plus `0x200000`
+  (`0x4332c8`) when a neighbouring water tile's body has more than one
+  tile in the landmass table (`0x61bcac`). The std1 data confirms both on
+  all five coastal foundings (review #102). **The engine does not set
+  `0x200000` yet**: its map keeps no landmass table. Nothing in the engine
+  reads it.
 
 **Not decoded, and the engine's rules instead** (flagged in
 `founding.rs`):

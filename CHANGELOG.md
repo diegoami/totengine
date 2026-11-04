@@ -39,7 +39,9 @@ standard save grows 10 cities to 50, and replays bit-exact from its log.
 - **`FoundCity` order** (`engine::founding`), decoded in part from
   `create_city` (`0x432810`):
   - decoded: the record's initial values, the first city's Palace, and
-    the first build (the best defender per cost);
+    the first build (the best defender per cost). Flag `0x20000` is a
+    transient refresh-pending bit: the city-totals pass clears it, so the
+    engine clears it in the turn's production step (review #102);
   - engine rules, flagged: the name, the first worked tile, founding
     validity and the Settlers population cost.
 
@@ -49,7 +51,9 @@ standard save grows 10 cities to 50, and replays bit-exact from its log.
   mercenary unit, case 3 (barbarians vs nothing), the landmass-claim
   forcing and the site-value redirect. Barbarians go with RG-9 (#83).
 - **City founding:** the name lists, the first worked tile, founding
-  validity and the Settlers population cost are engine rules.
+  validity and the Settlers population cost are engine rules. The
+  large-water flag `0x200000` is not set (the engine map has no landmass
+  table).
 - **Type-table bytes not yet mapped to Rules:** +0x14 (availability) and
   +5 & 0x10 (veteran exemption).
 - **AI v0:** simple by design. Research choice waits for per-civ

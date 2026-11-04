@@ -26,7 +26,9 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-**v0.6.0 "AI v0"** is the latest release (see
+The version on `main` is **v0.6.0 "AI v0"**. A version counts as
+released once its `vX.Y.Z` tag exists
+([tags](https://github.com/diegoami/totengine/tags); see
 [CHANGELOG.md](CHANGELOG.md); the queue is the GitHub
 [milestones](https://github.com/diegoami/totengine/milestones)).
 

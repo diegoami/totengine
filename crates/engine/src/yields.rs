@@ -224,19 +224,14 @@ impl WorldState {
             return 0;
         }
         let w2 = 2 * self.map.stored_w as i32;
-        let flat = crate::placement::StartMap {
-            w2,
-            h: self.map.stored_h as i32,
-            seed: 0,
-            flat: false,
-            huts: false,
-            tiles: vec![],
-            landmass_value: vec![],
-        };
         self.cities
             .iter()
             .filter(|o| o.owner == c.owner && o.has_building(PALACE))
-            .map(|o| flat.distance(c.x as i32, c.y as i32, o.x as i32, o.y as i32))
+            .map(|o| {
+                crate::placement::diamond_distance(
+                    w2, false, c.x as i32, c.y as i32, o.x as i32, o.y as i32,
+                )
+            })
             .fold(32, i32::min)
     }
 

@@ -16,6 +16,8 @@ fn main() -> ExitCode {
         Some("boot") => cmd_boot(&args[2..]),
         Some("tech") => cmd_tech(&args[2..]),
         Some("run") => cmd_run(&args[2..]),
+        Some("play") => cmd_play(&args[2..]),
+        Some("replay") => cmd_replay(&args[2..]),
         Some("edit") => cmd_edit(&args[2..]),
         Some("events") => cmd_events(&args[2..]),
         Some("--version") | Some("-V") => {
@@ -26,6 +28,10 @@ fn main() -> ExitCode {
             eprintln!(
                 "usage: {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
+                        {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT]\n\
+                        \x20                        — all-random players (RG-8); writes the order log\n\
+                        {prog} replay <file.sav|scn> <order.log>\n\
+                        \x20                        — re-drive a game from its log; exit 1 at the first divergence\n\
                         {prog} boot <file.sav|scn> [--rules PATH] [--turns N] [--seed S]\n\
                         \x20                        — headless boot into engine state + checksum\n\
                         {prog} tech <Rules.txt>    — advance tree + wonders (reachability run)\n\
@@ -625,4 +631,117 @@ fn cmd_events(args: &[String]) -> ExitCode {
         println!("  {k:<18} {n}");
     }
     ExitCode::SUCCESS
+}
+
+/// Rules (required) and Events (optional) next to a save, read as Latin-1.
+fn sibling_rules_events(
+    path: &str,
+) -> Result<(tot_kit::Rules, Option<engine::events::EventEngine>), String> {
+    let p = std::path::Path::new(path);
+    let read = |n: &str| {
+        std::fs::read(p.with_file_name(n))
+            .ok()
+            .map(|b| tot_kit::latin1(&b))
+    };
+    let rules = read("Rules.txt")
+        .map(|t| tot_kit::parse_rules(&t))
+        .ok_or_else(|| format!("cannot read {}", p.with_file_name("Rules.txt").display()))?;
+    let events = read("Events.txt")
+        .and_then(|t| tot_kit::parse_events(&t).ok())
+        .map(engine::events::EventEngine::new);
+    Ok((rules, events))
+}
+
+/// `totctl play`: every civ is a RandomPlayer (decision 0003); prints one
+/// line per turn and writes the order log.
+fn cmd_play(args: &[String]) -> ExitCode {
+    let (mut path, mut turns, mut seed, mut out) = (None, 10usize, 1u64, None);
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--turns" => turns = it.next().and_then(|v| v.parse().ok()).unwrap_or(turns),
+            "--seed" => seed = it.next().and_then(|v| v.parse().ok()).unwrap_or(seed),
+            "--log" => out = it.next().cloned(),
+            _ if path.is_none() => path = Some(a.clone()),
+            _ => {
+                eprintln!("error: unexpected argument {a}");
+                return ExitCode::from(2);
+            }
+        }
+    }
+    let Some(path) = path else {
+        eprintln!("usage: totctl play <file.sav|scn> [--turns N] [--seed S] [--log OUT]");
+        return ExitCode::from(2);
+    };
+    let run = || -> Result<engine::player::Game, String> {
+        let bytes = std::fs::read(&path).map_err(|e| format!("read {path}: {e}"))?;
+        let (rules, events) = sibling_rules_events(&path)?;
+        let name = std::path::Path::new(&path)
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let mut g = engine::player::Game::new(&name, &bytes, seed, rules, events)?;
+        for civ in 1..8 {
+            g.players[civ] = Some(Box::new(engine::player::RandomPlayer::new(seed, civ as u8)));
+        }
+        for _ in 0..turns {
+            g.play_turn();
+            println!(
+                "turn {:>4} units {:>4} cities {:>3} checksum {:016x}",
+                g.world.turn,
+                g.world.units.iter().filter(|u| u.id != 0).count(),
+                g.world.cities.len(),
+                g.world.checksum()
+            );
+        }
+        Ok(g)
+    };
+    match run() {
+        Ok(g) => {
+            if let Some(o) = out {
+                if let Err(e) = std::fs::write(&o, g.log()) {
+                    eprintln!("error: write {o}: {e}");
+                    return ExitCode::from(1);
+                }
+                eprintln!("wrote {o}");
+            }
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("error: {e}");
+            ExitCode::from(1)
+        }
+    }
+}
+
+/// `totctl replay`: re-drive a game from its order log.
+fn cmd_replay(args: &[String]) -> ExitCode {
+    let [path, log] = args else {
+        eprintln!("usage: totctl replay <file.sav|scn> <order.log>");
+        return ExitCode::from(2);
+    };
+    let run = || -> Result<engine::player::Game, String> {
+        let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
+        let text = std::fs::read_to_string(log).map_err(|e| format!("read {log}: {e}"))?;
+        let (rules, events) = sibling_rules_events(path)?;
+        let name = std::path::Path::new(path)
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        engine::player::Game::replay(&name, &bytes, rules, events, &text)
+    };
+    match run() {
+        Ok(g) => {
+            println!(
+                "replay ok: turn {} checksum {:016x}",
+                g.world.turn,
+                g.world.checksum()
+            );
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("replay FAILED: {e}");
+            ExitCode::from(1)
+        }
+    }
 }

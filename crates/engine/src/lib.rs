@@ -13,6 +13,7 @@ pub mod effects;
 pub mod events;
 pub mod movement;
 pub mod placement;
+pub mod player;
 pub mod production;
 pub mod research;
 pub mod rng;
@@ -125,6 +126,10 @@ pub struct MapState {
     /// `0x08` mine (`0x0C` farmland), `0x10` road, `0x20` railroad, `0x80`
     /// pollution (as the tile-yield code `0x4c22a7` tests it).
     pub improvements: Vec<u8>,
+    /// Per-civ visibility bits (tile byte +4; bit c = civ c has seen the
+    /// tile). The player interface reveals tiles around units and cities
+    /// (decision 0003; the original's reveal rules are not decoded).
+    pub visible: Vec<u8>,
     /// Tile owner nibble (tile byte +5 `>> 4`; `0xF` = none). Any unit
     /// entering a tile makes its civ the owner, and the tile stays owned
     /// after the unit leaves (oracle, evidence §RG-2 goody huts).
@@ -218,6 +223,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
     let mut rail = Vec::with_capacity(surface);
     let mut owner = Vec::with_capacity(surface);
     let mut improvements = Vec::with_capacity(surface);
+    let mut visible = Vec::with_capacity(surface);
     for t in 0..surface {
         owner.push(m.owner(t).unwrap_or(0xF));
         terrain.push(m.terrain(t));
@@ -225,6 +231,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         river.push(m.is_river(t));
         road.push(m.has_road(t));
         improvements.push(m.improvements(t));
+        visible.push(m.visible_to(t));
         rail.push(m.has_rail(t));
     }
     let civs = sav
@@ -266,6 +273,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             road,
             rail,
             improvements,
+            visible,
             owner,
             resource_seed: sav.map_header.raw[4] as u16,
             huts_enabled: true,
@@ -410,6 +418,7 @@ impl WorldState {
             mix(&mut h, t);
         }
         mix(&mut h, &self.map.improvements);
+        mix(&mut h, &self.map.visible);
         for t in self.treasury {
             let _ = write!(buf, "${t},");
         }
@@ -545,6 +554,7 @@ mod tests {
             ("government", |w| w.governments[1] ^= 1),
             ("techs", |w| w.techs[1][0] ^= 1),
             ("tile improvements", |w| w.map.improvements[0] ^= 4),
+            ("tile visibility", |w| w.map.visible[0] ^= 2),
             ("unit id", |w| w.units[0].id ^= 1),
             ("city worked", |w| w.cities[0].worked ^= 1),
             ("city buildings", |w| w.cities[0].buildings[0] ^= 1),
@@ -587,11 +597,15 @@ mod tests {
 
 /// Test fixtures shared with the doc tests (not public API).
 pub mod tests_support {
-    use tot_kit::parse_sav;
 
     /// A minimal decodable 0x32 file (mirrors tot-kit's unit test fixture
     /// recipe): 4×4 stored map, 2 units, 8-slot city grid.
     pub fn synthetic_save() -> tot_kit::SaveFile {
+        tot_kit::parse_sav(&synthetic_save_bytes()).expect("synthetic fixture parses")
+    }
+
+    /// The bytes of [`synthetic_save`].
+    pub fn synthetic_save_bytes() -> Vec<u8> {
         let stored_w = 4usize;
         let stored_h = 4usize;
         let surface = stored_w * stored_h;
@@ -659,6 +673,6 @@ pub mod tests_support {
             r[82] = 4;
             out.extend_from_slice(&r);
         }
-        parse_sav(&out).expect("synthetic fixture parses")
+        out
     }
 }

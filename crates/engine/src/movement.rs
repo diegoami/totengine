@@ -262,6 +262,7 @@ mod tests {
                 road,
                 rail: vec![false; surface],
                 improvements,
+                visible: vec![0; surface],
                 owner: vec![0xF; surface],
                 resource_seed: 0,
                 huts_enabled: false,

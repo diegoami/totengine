@@ -343,6 +343,24 @@ impl Rules {
         self.unit_num(id, 4)
     }
 
+    /// Unit prerequisite field (row field 12) as written: `nil` (none),
+    /// `no` (never buildable) or an advance abbreviation.
+    pub fn unit_prereq_raw(&self, id: usize) -> Option<&str> {
+        self.section("UNITS")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(12))
+            .map(|f| f.trim())
+    }
+
+    /// Improvement prerequisite field (`@IMPROVE` row `id`, field 3) as
+    /// written: `nil`, `no` or an advance abbreviation.
+    pub fn improvement_prereq_raw(&self, id: usize) -> Option<&str> {
+        self.section("IMPROVE")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(3))
+            .map(|f| f.trim())
+    }
+
     /// Unit prerequisite advance abbreviation (row field 12), if any.
     pub fn unit_prereq_abbrev(&self, id: usize) -> Option<&str> {
         self.section("UNITS")

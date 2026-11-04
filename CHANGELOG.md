@@ -3,6 +3,27 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
+## [Unreleased]
+
+### Engine (v0.5.0, player interface: RG-8, #74, decision 0003)
+
+- **`engine::player`:** every civ is driven by a `Player`.
+  - **Observation:** own units and cities (with output), what the civ
+    sees (per-civ visibility, tile byte +4), and foreign units in sight.
+  - **Orders:** `Move` (or attack), `SetProduction` and `EndTurn`, each
+    validated; a rejected order changes nothing.
+  - **`Game`:** drives turns and writes a text order log (orders, results,
+    per-turn checksums). `Game::replay` re-drives a game from the save,
+    seed and log, and stops at the first divergent line.
+- **`RandomPlayer`:** random orders, legal and not; its own generator,
+  so it cannot change the world's dice.
+- **Replay tests:** all-random play replays bit-exact on the synthetic
+  save (CI), FallRome with events, and a standard-game save.
+- **`totctl play` / `totctl replay`.**
+- Fog is the engine's rule, not decoded: a civ sees distance 1 around its
+  units and the city radius, and seen tiles stay seen. Visibility is in
+  the checksum (run50 regenerated, checksums only).
+
 ## [0.4.0] — Minimal production
 
 Cities now produce headless: tiles yield food, shields and trade as the

@@ -64,6 +64,23 @@ pub fn hut_hash(seed: u16, x: i32, y: i32) -> bool {
     (a & 3) + 4 * (b & 3) == v & 31
 }
 
+/// `0x566dad`: distance on the doubled-x diamond grid (`w2` = the logical
+/// x range), wrapping east-west unless the world is flat. Neighbours are at
+/// distance 1.
+pub fn diamond_distance(w2: i32, flat: bool, x1: i32, y1: i32, x2: i32, y2: i32) -> i32 {
+    let mut dx = (x1 - x2).abs();
+    if !flat && w2 / 2 < dx {
+        dx = w2 - dx;
+    }
+    let (dx, dy) = (dx.abs(), (y1 - y2).abs());
+    let m = (dx + dy) >> 1;
+    if dy >= dx {
+        dy - ((m - dx + 1) >> 1)
+    } else {
+        dx - ((m - dy + 1) >> 1)
+    }
+}
+
 /// One placed civ.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Start {
@@ -155,20 +172,9 @@ impl StartMap {
         ((f & 0xC2) == 2 || f & 1 != 0) && self.owner(x, y).is_some()
     }
 
-    /// `0x566dad`: distance on the doubled-x diamond grid, wrapping east-west
-    /// unless the world is flat.
+    /// `0x566dad`: see [`diamond_distance`].
     pub fn distance(&self, x1: i32, y1: i32, x2: i32, y2: i32) -> i32 {
-        let mut dx = (x1 - x2).abs();
-        if !self.flat && self.w2 / 2 < dx {
-            dx = self.w2 - dx;
-        }
-        let (dx, dy) = (dx.abs(), (y1 - y2).abs());
-        let m = (dx + dy) >> 1;
-        if dy >= dx {
-            dy - ((m - dx + 1) >> 1)
-        } else {
-            dx - ((m - dy + 1) >> 1)
-        }
+        diamond_distance(self.w2, self.flat, x1, y1, x2, y2)
     }
 
     /// The acceptance test of try number `n` (1-based), in the original's

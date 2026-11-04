@@ -107,7 +107,7 @@ oracle/          Wine automation: launch, key macros (xdotool), save capture
 - Per-civ observation/order interface (RG-8) underneath every player
 - Browser observer: watch all-AI games live, replay them, toggle fog
 - Out-of-process AI protocol (JSON) and a tournament runner follow the
-  v0.11.0 playable client; their release version is unassigned
+  playable client; their release version is unassigned
 - **Accept:** a 100-turn all-AI game is watchable live and replayable; an
   external AI plays a full game through the protocol.
 
@@ -119,7 +119,13 @@ oracle/          Wine automation: launch, key macros (xdotool), save capture
   by recorded oracle comparisons and a documented list of remaining differences;
   deterministic autoplay alone is insufficient. Full AI parity requires evidence.
 
-### Phase 2 — Graphical classic client (T2) · +6–12 months (after the browser observer; SDL2 native: Windows 10/11, Linux, macOS; minimal playable T2-1 = v0.11.0)
+### Phase 2 — Graphical classic client (T2) · multiple milestones; v0.11.0 starts discovery/design (decision 0005)
+- Inspect the original screens, dialogs, keyboard shortcuts and workflows,
+  including scenario-specific behavior; no validated client specification exists yet
+- Produce layouts and interaction walkthroughs for owner review before
+  substantial implementation, then define successive implementation milestones
+- The first implementation deliverable, later versions, milestone count and
+  delivery schedule remain unassigned until that discovery/design work is done
 - SDL2 client: isometric map from `Terrain1/2` sheets, units, fog, minimap
 - City screen, unit orders/shortcuts (from `@ORDERS`), menus, dialogs per
   `Menu.txt`/`Labels.txt`; WAV sound; civilopedia from `Pedia.txt`/`Describe.txt`

@@ -23,7 +23,7 @@ The plan had the first UI arrive with T2:
    - The built-in AI (RG-4) is the first implementation.
    - "All players AI" is the default setup.
    - A human player in T2 is one more implementation.
-2. **Pluggable AIs** (after the v0.11.0 playable client; version unassigned):
+2. **Pluggable AIs** (after the playable client; version unassigned):
    - in-process Rust players behind a trait;
    - an **out-of-process protocol** (JSON over stdio or a socket), so AIs
      can be written in any language, LLM agents included;
@@ -43,11 +43,14 @@ The plan had the first UI arrive with T2:
    not a ranking.
    - The SDL2 native client (Windows 10/11, Linux, macOS; original art
      read from the user's install at runtime) is where humans play.
-   - Its first release is minimal (T2-1): map, units, basic orders, end
-     turn, simple city view, observer mode.
+   - Client work spans multiple milestones. v0.11.0 starts UI discovery,
+     concrete designs for owner review, and milestone decomposition
+     (decision 0005). There is no validated client specification yet;
+     implementation scope and later release versions remain unassigned.
    - The full classic client (city screen, menus, sound) follows.
    - Order: browser observer (v0.7.0), original-like built-in AI
-     (v0.10.0), SDL2 client (v0.11.0), then pluggable AIs.
+     (v0.10.0), client discovery/design (v0.11.0), successive client
+     implementation milestones, then pluggable AIs.
    - Owner amendment (2026-11-04): by v0.10.0, the built-in opponent
      should resemble the original game's AI. The v0.8.0 AI v1 is a
      foundation; deterministic autoplay alone does not meet that target.

@@ -9,8 +9,9 @@ Decision 0002 puts every civ behind a player. Several things will plug in:
 - AI v0 (v0.6.0) and AI v1;
 - the browser observer (v0.7.0);
 - an original-like built-in AI (v0.10.0);
-- external AIs over JSON (after the v0.11.0 playable client; version unassigned);
-- a human in the SDL2 client (v0.11.0).
+- external AIs over JSON (after the playable client; version unassigned);
+- a human in the SDL2 client (multiple milestones: v0.11.0 starts UI
+  discovery/design and planning; later versions are unassigned, decision 0005).
 
 The engine already has the state transitions: `move_unit` (moves and
 attacks), `production_step`, and `run_turn`. What it lacks is a boundary:

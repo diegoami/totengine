@@ -90,10 +90,14 @@ decision 0002; observing and playing are the two main goals): v0.3.0
 reproducible new game → v0.4.0 minimal production → v0.5.0 player
 interface (headless API) → v0.6.0 AI v0 (all-AI game runs) → v0.7.0
 browser observer → v0.8.0 AI v1 + economy depth → v0.9.0 generated-world
-campaign → v0.10.0 original-like built-in AI → v0.11.0 minimal SDL2 playable
+campaign → v0.10.0 original-like built-in AI → v0.11.0 UI discovery/design
+and client milestone planning → playable client across subsequent milestones
 → pluggable AIs after the playable client (version unassigned). The v0.10
 target is recognizable original-game AI behavior, supported by oracle
-comparisons; AI v1 in v0.8 is only the foundation. Story state:
+comparisons; AI v1 in v0.8 is only the foundation. Client screen/workflow
+specification and owner-reviewed design are still missing: decision 0005
+requires them before substantial UI implementation; later versions and
+milestone count are unassigned. Story state:
 T1-1/2/3/5/8/9 and RG-1 are done; `engine::turn::run_turn` is the loop. T1-6's randomness half is **done**
 (the original LCG and its `rand_int` are decoded, runtime-verified and
 shipped in `engine::rng`). Its combat-round half is decoded and shipped

@@ -4,9 +4,13 @@
 - **Releases** are [milestones](https://github.com/diegoami/totengine/milestones):
   v0.5.0 player interface → v0.6.0 AI v0 → v0.7.0 browser observer →
   v0.8.0 AI v1 + economy depth → v0.9.0 generated-world campaign →
-  v0.10.0 original-like built-in AI → v0.11.0 minimal SDL2 client →
+  v0.10.0 original-like built-in AI → v0.11.0 UI discovery, reviewed design
+  and client milestone planning → playable client across later milestones →
   pluggable AIs (later, version unassigned). Each has one theme
   and a few stories, so every review stays one round (decision 0002).
+  Client scope, subsequent milestone count and versions are not yet known;
+  [decision 0005](docs/decisions/0005-playable-client-planning.md) requires
+  inspecting the original UI and reviewing concrete designs first.
 - **Stories** are [issues](https://github.com/diegoami/totengine/issues). The
   story ID (`T1-4`, `RG-8`, `OB-2`, …) is in the title; the body holds the
   acceptance criteria. Issues without a milestone are "later".

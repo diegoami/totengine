@@ -7,7 +7,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 - **Roadmap amendment:** v0.10.0 targets a built-in AI resembling the
   original game's behavior. External AI protocols and tournaments move
-  after the v0.11.0 playable client; their version is unassigned.
+  after the playable client; their version is unassigned. v0.11.0 begins
+  UI discovery, owner-reviewed design and milestone decomposition; client
+  implementation spans later milestones whose count/versions remain open.
 - **Science and tax split (#87):** decoded city rates, specialist slots,
   rounding, improvement/wonder multipliers, Fundamentalism and
   Capitalization; city science/tax outputs refresh each turn. Every

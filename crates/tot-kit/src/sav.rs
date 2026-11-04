@@ -531,7 +531,9 @@ pub struct SaveFile {
     pub civs_mask: u8,
     /// Game block @689 — rivals count (§RG-1).
     pub rivals: u8,
-    /// 28 wonders: −1 unbuilt, −2 destroyed, else the building civ.
+    /// 28 wonders: −1 unbuilt, −2 destroyed, else the **city index** that
+    /// holds it (ROMFALL: 33 = Memphis, 0 = Roma; evidence §T1-6; the
+    /// combat and tile-yield code index cities with it).
     pub wonders: [i16; 28],
     /// 7 name blocks (players are `owner 1..7`; block n-1 matches).
     pub civ_names: Vec<CivNames>,

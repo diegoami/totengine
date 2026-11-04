@@ -481,7 +481,70 @@ all rotating slots AND byte-compare against the previous baseline
 NOT reproducible from wizard settings alone; the T1-6 RNG-state hunt (RAM,
 via `memspool.py`) is the path to reproducibility.
 
-### RG-2 new-game seeding: what reseeds, and a negative experiment (2026-11-03)
+### RG-2 reproducible new-game starts: the four entropy inputs (2026-11-04)
+
+**A new standard game is fully determined by four values, all writable
+while the City Style dialog is open.** Two runs with the same four values
+give the same turn-1 autosave; changing one changes the world. Run record:
+`docs/evidence/rg2-seeded-start.txt`. Tool: `tools/oracle/seeded_start.sh`.
+
+| Input | Where | Why it varied |
+|---|---|---|
+| NR LCG state | `0x5dd53c` | startup `exchange_state(GetTickCount())` |
+| CRT `rand()` state | `0x5e2590` | startup `srand(GetTickCount())` |
+| 5 world parameters | 5 × i32 at `0x5ceaa8` (each −1/0/1) | drawn `rand()%3 − 1` at `0x41223f`, **before** City Style, from the tick-seeded CRT |
+| Map resource seed | u16 `0x6705a8` (save 29914) | `0x56fa66`: `GetTickCount() & 0x7fff`, during generation |
+
+The map seed cannot be written in advance (generation overwrites it), so
+the tool patches the 5-byte `call 0x41aee0` at `0x56fa6c` into
+`mov eax, MAPSEED`.
+
+Results:
+- **Original Game:** o1 and o2 match in the front section, the map, and
+  the cities/units block. They differ only in 15 tail bytes, which are
+  serialized heap pointers (`0x02fbxxxx` vs `0x02f9xxxx`).
+- **Fantasy Game:** pa1, pa2 and ss1 (ss1 made by the committed tool) are
+  byte-identical, 192,851 B.
+- **Controls:**
+  - a different CRT value gives a different world and different starts;
+  - a different MAPSEED changes the map and derived bytes, not the starts.
+- The pre-pin parameters differed on every run (e.g. `(0,0,1,0,−1)` vs
+  `(0,0,−1,1,0)`). That is why pinning NR and CRT alone failed on
+  2026-11-03.
+
+How it was found:
+- `tools/oracle/randhook.py` hooks CRT `rand` and logs each draw's call
+  site.
+- Two runs with only NR and CRT pinned agree for 40 draws. At draw 40 one
+  run makes an extra `rand()` at `0x405164`, guarded by
+  `[0x5ceaac] + 1 > 0`, which is world parameter 2.
+- Who draws during setup (`0x415b74`, the new-game function, and its
+  callees), all from the CRT `rand`:
+  - rivals: `rand()%5 + 2` when random;
+  - barbarian level (`0x607659`): `rand()%2`/`%3` + difficulty-dependent
+    offset;
+  - the **civs-in-play mask** (`0x60765a` = human mask | 1, then one
+    `rand()%8` bit per rival, retrying taken bits);
+  - the map generator (`0x403xxx`–`0x409xxx`, called from `0x4174dd`);
+  - start placement (`0x488499` per civ: `rand()%width`, `rand()%height`
+    until valid).
+- While a wizard dialog sits idle, neither generator moves (sampled at
+  0.5 s for 10 s). Draw counts are not timing-driven.
+
+**Correction to §RNG / seed state below:** save 684–689 =
+`difficulty | barbarian level | civs-in-play mask | human mask | mask copy
+(set at 0x48c65e) | rivals`. The "seed word" was the mask: `0x3f` = civs
+0–5 for 4 rivals + human civ 4 (`0x10`), and S2f's `0xdb` decodes the
+same way. It is not a seed.
+
+Still open for RG-2 (engine side):
+- reproduce the placement algorithm (`0x488499`: validity test, the
+  retry branch at `0x4888f7`) from the seed in `engine`;
+- the map generator itself is RG-3 (our own generator, flagged);
+- why the Original tail holds heap pointers (not game state; the T1-8
+  writer should treat them as opaque).
+
+### RG-2 new-game seeding: what reseeds, and a negative experiment (2026-11-03) — EXPLAINED 2026-11-04 (above)
 
 Static (live `.text`, ToTPP build):
 - **`0x41562b` seeds both generators from the clock**:
@@ -510,7 +573,7 @@ determine the new game: entropy enters elsewhere (earlier wizard steps,
 another tick read, or timing). RG-2 "same-seed oracle starts" needs that
 source found first.
 
-### RNG / seed state (T1-6 notes, 2026-11-02 night)
+### RNG / seed state (T1-6 notes, 2026-11-02 night) — "seed word" CORRECTED 2026-11-04 (§RG-2 reproducible starts: it is the civs-in-play mask)
 
 - **Save 684–689 is a byte-for-byte copy of a RAM globals block at
   `0x607658`**: `difficulty | 0x02 | seed-word | seed-word | rivals`

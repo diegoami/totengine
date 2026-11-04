@@ -153,3 +153,21 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   explaining a check failure away, and gate commits on fmt + clippy +
   `make test` together (a `&&` chain that skips the test result commits
   red code).
+- **A "flaky" wizard can be a deterministic cycle.** The game-type list
+  remembers its last choice, and Up/Down wrap around its 8 items. A fixed
+  `Up×4` therefore flips between two items on alternate runs:
+  - Original ↔ Midgard: every other run never saw "Select Size of World";
+  - Fantasy ↔ Load a Saved Game: the "Select Game To Load" failure.
+
+  Retries hid it, and the first seeded "standard game" runs of 2026-11-04
+  were Fantasy games. Select list items by reading the state
+  (`launcher_pick.py`), never by relative key counts.
+- **Put probe buffers where the game does not write, and check that the
+  counter only grows.** The first `rand` call-site log sat in a zero
+  region the civ-placement setup clears (`0x6077a0..0x607c50`). The log
+  silently restarted mid-run, and the map-generator draws went missing
+  from the capture.
+- **"The newest save" is not "this run's save".** `ls -t | head -1`
+  copied yesterday's autosave three times while the real saves went to
+  another game folder. Harvest with `find -newer <marker touched at run
+  start>` and fail when nothing is fresh.

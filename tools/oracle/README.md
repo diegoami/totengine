@@ -22,6 +22,9 @@ Headless Wine + Xvfb harness that drives the original game and harvests saves.
 | `lab_std.sh` | Fresh standard game under the memspool daemon (wizard flow from newgame.sh, RAM access for snapshots). |
 | `rngslot.py` | `get` / `set <v>` the live RNG state at VA `0x5dd53c` (memspool-backed). Seeding it to 1 and reading `0x0438e694` later is the T1-6 runtime proof. **`--crt`** addresses the MSVC `rand()` state at `0x5e2590` instead. **Combat rolls come from that one**, so seed `--crt` to force a known battle. |
 | `unitram.py` | RAM-level unit driver: `bases`, `unit <idx>`, `near x y [r]`, `state` (cursor/active/both RNGs), `ready`/`select <idx>` (make a unit active without clicking), `frame ax ay dx dy` (poll live combat A/D/rolls). Bases are read from the live `.text` immediates (ToTPP relocates the tables). |
+| `seeded_start.sh` | **Reproducible new game** (RG-2): runs the wizard, then while City Style is open pins NR, CRT, the 5 world parameters (`0x5ceaa8`) and the map seed (patch at `0x56fa6c`). The same `NR`/`CRT`/`PARAMS`/`MAPSEED` give the same turn-1 autosave. Harvests every save newer than a run-start marker, plus `placement.txt`. It leaves the install as found: backs up every `*.SAV` first, restores them on exit, and removes saves the run created. |
+| `randhook.py` | Call-site logger for CRT `rand` (cave in the dead startup function `0x41562b`, buffer above `0x607c50`). Two runs diffed give the first divergent draw. |
+| `launcher_pick.py` | Select a launcher game-type item by reading the red radio button (the list remembers the last choice and wraps). Used by `seeded_start.sh`, `newgame.sh` and `lab_std.sh` via `GAME` (default 0 = Original). |
 
 ## Navigation: what works and what does not (2026-11-03)
 

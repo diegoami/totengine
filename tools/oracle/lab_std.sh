@@ -44,7 +44,9 @@ wait_title "The Test of Time" 40 || { echo "launcher never appeared"; exit 1; }
 sleep 2
 focus_titled "The Test of Time" && timeout 8 "$XT" key Return
 sleep 3
-for i in 1 2 3 4; do timeout 8 "$XT" key Up; sleep 0.5; done
+# game-type list: it remembers the last choice and Up/Down wrap, so pick
+# by reading the selected radio (GAME: 0 = Original, 2 = Fantasy, ...)
+python3 launcher_pick.py "${GAME:-0}" || exit 1
 timeout 8 "$XT" key Return
 sleep 3
 timeout 8 "$XT" key Return

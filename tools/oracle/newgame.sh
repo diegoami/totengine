@@ -56,9 +56,9 @@ sleep 2
 # launcher (first list): Return opens the game-type list
 focus_titled "The Test of Time" && timeout 8 "$XT" key Return
 sleep 3
-# game-type list: Up x4 -> "Original game" (the remembered selection is the
-# 5th item, "Begin the Midgard Scenario")
-for i in 1 2 3 4; do timeout 8 "$XT" key Up; sleep 0.5; done
+# game-type list: it remembers the last choice and Up/Down wrap, so pick
+# by reading the selected radio (GAME: 0 = Original, 2 = Fantasy, ...)
+python3 launcher_pick.py "${GAME:-0}" || exit 1
 timeout 8 "$XT" key Return
 sleep 3
 # small untitled pre-dialog -> accept

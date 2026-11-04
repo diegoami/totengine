@@ -1,0 +1,44 @@
+# RG-2 reproducible new-game starts — run record (2026-11-04)
+# Derived data only: hashes, sizes, coordinates. No save bytes.
+# Tool: tools/oracle/seeded_start.sh (wizard defaults: Small world, Emperor,
+# competition/barbarians/rules/gender/tribe/name defaults, game type GAME).
+# Pins written while "Select Your City Style" is open:
+#   NR 0x5dd53c, CRT 0x5e2590, world params 5×i32 @0x5ceaa8, and the map-seed
+#   instruction at 0x56fa6c (`call 0x41aee0` -> `mov eax, MAPSEED`).
+# "params before" = what the game had drawn for the world parameters before
+# the pin (rand()%3-1 from the startup tick seed): different on every run.
+
+## Original Game (GAME=0), turn-1 autosave Original/Ph_Auto.SAV, 70,271 B
+# section md5 (first 10 hex): front = 0..29900, map = 29900..56438,
+# mid = 56438..67422 (blob_10240 + cities + units), tail = 67422..end
+run  NR      CRT     params     MAPSEED  params-before     front       map         mid         tail
+o1   0x1234  0x5678  0,0,0,0,0  0x1357   (0,0,1,0,-1)      2f6b8928bc  a53de5c5f3  14a8bb6b3e  d1ef7ab811
+o2   0x1234  0x5678  0,0,0,0,0  0x1357   (0,0,-1,1,0)      2f6b8928bc  a53de5c5f3  14a8bb6b3e  1960c124a6
+o3   0x1234  0x5678  0,0,0,0,0  0x0abc   (1,0,0,-1,-1)     2f6b8928bc  e821e88a40  60f5bc5254  1960c124a6
+# o4 (10:31, the committed tool with install backup/restore): bytes 0..67422
+#   identical to o1 (front + map + mid); the install's saves had the same md5
+#   before and after the run.
+# o1 vs o2: 15 differing bytes, all in the tail at 69029..69413, every one
+#   0xFB vs 0xF9 = the third byte of 4-byte-aligned heap pointers
+#   (0x02fbxxxx vs 0x02f9xxxx). Process addresses, not game state.
+# o1 vs o3: 200 differing bytes: the resource seed (29914) and map/derived
+#   bytes. Start placement identical (below): the map seed does not move
+#   the starts.
+# live unit table after "In the Beginning" (o1 = o2 = o3):
+#   settlers at (45,9) civ 3, (62,26) civ 4, (30,24) civ 5; civ 1/2 slots
+#   at the -200/-300 placeholders. settings block 0x607658 = 04023f103f04.
+
+## Fantasy Game (GAME=2), turn-1 autosave Fantasy/Ya_Auto.SAV
+run  NR      CRT     params     MAPSEED  params-before     size     md5 (16 hex)
+pa2  0x1234  0x5678  0,0,0,0,0  0x1357   (1,0,1,0,1)       192851   2d2e44c22724304d
+pa1  0x1234  0x5678  0,0,0,0,0  0x1357   (-1,0,1,0,-1)     192851   2d2e44c22724304d
+ss1  0x1234  0x5678  0,0,0,0,0  0x1357   (1,0,1,1,0)       192851   2d2e44c22724304d
+pa3  0x1234  0x9999  0,0,0,0,0  0x1357   (-1,-1,-1,1,1)    192627   29a98e189b024cdf
+# pa1 = pa2 = ss1 byte-identical (ss1 by the committed tool, 8 min later).
+# pa3 (CRT only changed): a different world, 30,801 differing bytes, and
+#   different start placement.
+
+## First-divergence trace that found the parameters (tools/oracle/randhook.py)
+# Two runs with only NR and CRT pinned: draws 0..39 identical; at draw 40
+# one run makes an extra rand() at 0x405164, guarded by `[0x5ceaac] + 1 > 0`
+# (world parameter 2). The parameters were already different at the pin.

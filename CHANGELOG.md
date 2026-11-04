@@ -3,6 +3,32 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
+## [Unreleased]
+
+### Oracle / RG-2
+
+- **Reproducible new-game starts.** A new standard game depends on four
+  inputs:
+  - the NR state;
+  - the CRT state;
+  - the five world parameters (drawn before City Style);
+  - the map resource seed (`GetTickCount() & 0x7fff`).
+
+  `tools/oracle/seeded_start.sh` pins all four, so the same pins give the
+  same turn-1 autosave (evidence §RG-2 reproducible starts). The
+  "seed word" at save 686/688 is the civs-in-play mask.
+- `tools/oracle/randhook.py`: call-site logger for the CRT `rand`.
+- `tools/oracle/launcher_pick.py`: picks the launcher's game type from the
+  screen. Replaces the `Up×4` key count, which flipped between two game
+  types on alternate runs.
+
+### Formats / engine
+
+- City and civ names decode as Latin-1, and the save editor encodes renames
+  as Latin-1 (#69).
+- `engine` example `headless_demo`: boots FallRome, fights one battle and
+  narrates N turns.
+
 ## [0.2.0] — Headless game loop
 
 ToTEngine boots the original's scenarios **and standard-game saves** into a

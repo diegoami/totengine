@@ -3,7 +3,18 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
-## [Unreleased]
+## [0.3.0] — Reproducible new game
+
+A new standard game in the original is now reproducible, and the engine
+reproduces its start:
+- the oracle pins the four entropy inputs;
+- `engine::placement` places every civ draw for draw like the original;
+- goody huts come from the map seed;
+- tile records and the unit/city tables are read in the game's own
+  framing.
+
+Two decoder errors from v0.2.0 are fixed: the road/rail bits (they were
+fog bits) and city-chain framing on fresh games.
 
 ### Oracle / RG-2
 
@@ -48,6 +59,33 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   as Latin-1 (#69).
 - `engine` example `headless_demo`: boots FallRome, fights one battle and
   narrates N turns.
+
+### Planning
+
+- Decision 0002: every civ is driven by a player behind an interface; an
+  all-AI game is the default. Observing and playing are the two main
+  goals.
+- Release ladder (BACKLOG.md): small releases, one theme each:
+  - v0.4.0 minimal production;
+  - v0.5.0 player interface;
+  - v0.6.0 AI v0;
+  - v0.7.0 browser observer;
+  - … v0.11.0 minimal SDL2 playable client.
+- `civ2.bak` in the install is the original unpatched executable
+  (`docs/environment.md`).
+
+### Known open
+
+- Goody-hut outcomes (RG-11): the engine reports a hut entry and applies
+  no effect.
+- Barbarians (RG-9). The per-map huts-enabled bit (RAM `0x5f5ed6`) is not
+  located in saves; the engine assumes huts on.
+- Multi-map files (Midgard) still do not frame units and cities.
+- Placement branches decoded but not oracle-exercised: hut and occupancy
+  rejections, the 2000-try relaxations, the flat-world margin, and preset
+  Earth starts (not modelled).
+- Carried from v0.2.0: tile yields and production, per-civ techs, special
+  combat cases, east-west wrap in movement, T1-10 parity.
 
 ## [0.2.0] — Headless game loop
 

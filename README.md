@@ -26,7 +26,7 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-**v0.4.0 "minimal production"** is the latest release (see
+**v0.5.0 "player interface"** is the latest release (see
 [CHANGELOG.md](CHANGELOG.md); the queue is the GitHub
 [milestones](https://github.com/diegoami/totengine/milestones)).
 
@@ -38,8 +38,11 @@ What runs today, headless, against your own ToT install:
   replayed against its saves.
 - **New games:** start placement reproduces the original's new games
   draw for draw, goody huts included.
-- **Next:** v0.5.0, a headless player interface; then AI players, and a
-  browser observer to watch them (decision 0002).
+- **Players:** every civ is driven by a player behind a headless
+  interface, and games replay bit-exact from their order logs
+  (`totctl play` / `totctl replay`; decision 0003).
+- **Next:** v0.6.0, AI v0, so that an all-AI game runs; then a browser
+  observer to watch it (decision 0002).
 
 ```bash
 # Rust CLI (successor of the Python probe)

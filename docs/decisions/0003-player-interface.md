@@ -24,8 +24,9 @@ New module `engine::player`.
 **1. Observation**: what civ `c` sees, rebuilt on demand from the world:
 - its own: units, cities (with their output and build item), treasury,
   government, advances;
-- the map tiles it has seen (terrain, river, special, road/rail; tile
-  byte +4 bit `c`, the per-civ visibility decoded in §Map tile framing);
+- the map tiles it has seen (`Observation::seen`: terrain, river, the
+  special-suppression bit, road, rail; tile byte +4 bit `c`, the per-civ
+  visibility decoded in §Map tile framing);
 - foreign units and cities standing on tiles it currently sees.
 
 Fog is engine-chosen for now (flagged; the original's reveal rules are

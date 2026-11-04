@@ -118,6 +118,18 @@ pub struct CityView {
     pub output: Option<CityOutput>,
 }
 
+/// One seen tile (decision 0003): terrain and its static features.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TileView {
+    pub terrain: u8,
+    pub river: bool,
+    /// The special-suppression bit (tile byte +0 `0x40`); see
+    /// [`crate::yields::special`] for the resource itself.
+    pub special: bool,
+    pub road: bool,
+    pub rail: bool,
+}
+
 /// What civ `civ` knows at the moment of the call.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Observation {
@@ -129,8 +141,9 @@ pub struct Observation {
     /// Logical x range and height of the map.
     pub w2: u16,
     pub h: u16,
-    /// Per stored tile: `Some(terrain)` where the civ has seen it.
-    pub seen_terrain: Vec<Option<u8>>,
+    /// Per stored tile (index `y * w2/2 + x/2`): what the civ knows of it,
+    /// `None` where it has never seen it.
+    pub seen: Vec<Option<TileView>>,
     pub units: Vec<UnitView>,
     pub cities: Vec<CityView>,
     /// The result of this player's previous order this turn, if any.
@@ -244,12 +257,16 @@ impl WorldState {
             techs: self.techs.get(c).copied().unwrap_or([0; 13]),
             w2: (2 * self.map.stored_w) as u16,
             h: self.map.stored_h as u16,
-            seen_terrain: self
-                .map
-                .terrain
-                .iter()
-                .zip(&self.map.visible)
-                .map(|(&t, &v)| (v & bit != 0).then_some(t))
+            seen: (0..self.map.terrain.len())
+                .map(|i| {
+                    (self.map.visible[i] & bit != 0).then(|| TileView {
+                        terrain: self.map.terrain[i],
+                        river: self.map.river[i],
+                        special: self.map.special[i],
+                        road: self.map.road[i],
+                        rail: self.map.rail[i],
+                    })
+                })
                 .collect(),
             units,
             cities,
@@ -708,7 +725,25 @@ Knights, nil, 0, 2., 0, 4a, 2d, 1h, 1f, 4, 0, 1, Chv, 000000000000000\n\
             .iter()
             .filter(|u| u.owner != 1)
             .all(|u| u.moves_left == 0));
-        assert!(obs.seen_terrain.iter().any(Option::is_some));
+        let i = obs
+            .seen
+            .iter()
+            .position(Option::is_some)
+            .expect("some seen tile");
+        let t = obs.seen[i].unwrap();
+        assert_eq!(
+            (t.terrain, t.river, t.road),
+            (
+                g.world.map.terrain[i],
+                g.world.map.river[i],
+                g.world.map.road[i]
+            )
+        );
+        assert_eq!(
+            obs.seen.iter().filter(|v| v.is_some()).count(),
+            g.world.map.visible.iter().filter(|&&v| v & 2 != 0).count(),
+            "exactly the tiles with civ 1's visibility bit"
+        );
         assert!(obs
             .cities
             .iter()

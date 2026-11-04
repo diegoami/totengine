@@ -123,7 +123,7 @@ opponent AI. These stories reuse the T1 core; the new-game *UI* lands with T2.
 ToT's four built-in campaigns (Original/Extended Original, Fantasy, Sci-Fi
 quest modes) finish in T4 on top of RG + multi-map (see plan.md §5).
 
-## Epic OB — Observer UI + pluggable AIs (v0.4.0; decision 0002)
+## Epic OB — Observer UI (v0.7.0) + pluggable AIs (v0.10.0); decision 0002
 
 | ID | Story | Pri | Est | Diff | Status | Acceptance |
 |---|---|---|---|---|---|---|

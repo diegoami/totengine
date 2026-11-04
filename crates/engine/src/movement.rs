@@ -194,6 +194,7 @@ mod tests {
         for r in road.iter_mut().take(12).skip(8) {
             *r = true;
         }
+        let improvements = road.iter().map(|&r| if r { 0x10 } else { 0 }).collect();
         WorldState {
             turn: 1,
             year: -4000,
@@ -204,6 +205,8 @@ mod tests {
             human_mask: 0x02,
             wonders: [-1; 28],
             treasury: [0; 8],
+            governments: [0; 8],
+            techs: [[0; 13]; 8],
             civs: vec![],
             units: vec![
                 Unit {
@@ -255,6 +258,7 @@ mod tests {
                 river: vec![false; surface],
                 road,
                 rail: vec![false; surface],
+                improvements,
                 owner: vec![0xF; surface],
                 resource_seed: 0,
                 huts_enabled: false,

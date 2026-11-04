@@ -220,7 +220,7 @@ full 383 MB address space — `tools/oracle/ramdump.py`):
   true position, then map record↔live (slot permutation? second table?)
   and decode the worked-tile set per city.
 
-### T1-4 tile yields: first fits + open geometry (2026-11-03 night)
+### T1-4 tile yields: first fits + open geometry (2026-11-03 night) — SUPERSEDED by §T1-4 tile yields DECODED
 
 - **@TERRAIN fields 3/4/5 = food/shields/trade** (classic layout,
   Original/Rules.txt); special resources are further rows of the same
@@ -480,6 +480,69 @@ all rotating slots AND byte-compare against the previous baseline
 (`docs/lessons.md`). Consequence for planning: RG-2 starting placement is
 NOT reproducible from wizard settings alone; the T1-6 RNG-state hunt (RAM,
 via `memspool.py`) is the path to reproducibility.
+
+### T1-4 tile yields DECODED (2026-11-04): the original's tile-yield function
+
+Source: the unpatched `civ2.bak`, function `0x4c22a7(city, radius index k,
+kind)` (0 food, 1 shields, 2 trade), with its helpers. Engine:
+`engine::yields` (`WorldState::tile_yield`, `worked_yield`).
+
+**City side** (the RAM city table `0x5fd150` uses the save's 92-B record
+layout):
+- worked tiles: u32@50, bit k = radius tile k;
+- the radius offset tables: `0x5d1620` (dx) / `0x5d1650` (dy), 21 entries,
+  index 20 = the centre;
+- improvements: bitfield @54 (`0x43002e`);
+- flags: u32@6, bit `0x2` = celebrating.
+
+**Civ side** (civ block, RAM `0x5f68a0` + civ·3348):
+- government: byte @29;
+- advances: bitfield @96 (`0x49c820`).
+
+**The yield:**
+- **Base:** `Rules @TERRAIN[special·11 + terrain]` fields 3/4/5 (RAM
+  table `0x5d11f2`, 24-B rows).
+- **Special** (`0x5707a6`): none if tile byte +0 has `0x40` (so `0x40`
+  is a *suppression* flag) or the tile is grassland. Otherwise, with
+  `a=(x+y)>>1`, `b=x−a`: special iff
+  `(a&3) + 4(b&3) == (seed + 11(a>>2) + 13(b>>2)) & 15`. Its kind is 2 if
+  `a&k == b&k` with `k = 1 << ((seed>>4)&3)`, else 1.
+- **Ocean:** +1 food with Harbour (`0x1e`), +1 shield with Offshore
+  Platform (`0x1f`), +1 trade with Colossus (wonder 2) in this city.
+- **Food:** irrigated (`+1 & 0x04`) or the centre adds the terrain's
+  irrigation bonus (field 7). Supermarket (`0x18`) then adds +50% on
+  farmland (`0x08` too) or the centre.
+- **Shields:**
+  - mine only (`& 0x0C == 0x08`), or the centre on a terrain with no
+    irrigation bonus, adds the mine bonus (field 11);
+  - grassland keeps its shield only where `(-x - a) & 2 == 0`
+    (`0x4095b0`);
+  - the centre makes at least 1.
+- **Trade:** +1 river; +1 road or centre where the terrain is desert,
+  plains or grassland or the tile already yields trade; +1 Colossus where
+  there is trade.
+- **Then, in order:**
+  - +1 shield with King Richard's (wonder 8);
+  - shields +50% on railroad, or on the centre once the civ knows
+    Railroad (advance `0x43`);
+  - −1 on any yield above 2 under anarchy/despotism (government ≤ 1)
+    unless celebrating;
+  - +1 trade where government ≥ 5, or ≥ 2 while celebrating;
+  - trade +50% on road or centre with Superhighways (`0x19`);
+  - pollution (`+1 & 0x82 == 0x80`) halves, rounding up; floor 0.
+
+**Replay against game-written city records** (sum over worked tiles vs
+record food u8@82, shields u8@83, trade u16@80):
+- **Standard-game lab** (std1 turn 26, `Original/Ph_Auto2.SAV`): 9/10
+  cities exact in all three; Utica's trade is 1 lower in the record.
+- **ROMFALL:** food exact in 144/146. Trade is below the tile sum in 100
+  cities and never above. Shields differ both ways (21 above, 11 below).
+- Reading: the record holds shields and trade **after** waste,
+  corruption and the production multipliers. Those are the next decode.
+
+Tests: `crates/engine/tests/yields_install.rs`. The irrigation and mine
+bonuses are read from Rules as written; zeroing them for "no" terrains
+changes no match.
 
 ### Map tile framing FIXED (2026-11-04): the game's own tile record
 

@@ -16,6 +16,7 @@ pub mod placement;
 pub mod research;
 pub mod rng;
 pub mod turn;
+pub mod yields;
 
 use std::fmt::Write as _;
 
@@ -85,6 +86,21 @@ pub struct City {
     /// Food/shield boxes (record u16@28/@30; evidence §T1-4).
     pub food_box: u16,
     pub shield_box: u16,
+    /// Worked tiles (record u32@50; bit k = radius tile k, bit 20 = centre).
+    pub worked: u32,
+    /// Improvements bitfield (record @54; bit n = improvement n).
+    pub buildings: [u8; 5],
+    /// City flags (record u32@6; `0x2` = celebrating).
+    pub flags: u32,
+}
+
+impl City {
+    /// The city has improvement `n` (`0x43002e`).
+    pub fn has_building(&self, n: usize) -> bool {
+        self.buildings
+            .get(n >> 3)
+            .is_some_and(|b| b >> (n & 7) & 1 != 0)
+    }
 }
 
 /// Terrain grid state: the decoded surface map block in stored order,
@@ -99,6 +115,10 @@ pub struct MapState {
     pub river: Vec<bool>,
     pub road: Vec<bool>,
     pub rail: Vec<bool>,
+    /// Tile byte +1, raw: `0x01` unit, `0x02` city, `0x04` irrigation,
+    /// `0x08` mine (`0x0C` farmland), `0x10` road, `0x20` railroad, `0x80`
+    /// pollution (as the tile-yield code `0x4c22a7` tests it).
+    pub improvements: Vec<u8>,
     /// Tile owner nibble (tile byte +5 `>> 4`; `0xF` = none). Any unit
     /// entering a tile makes its civ the owner, and the tile stays owned
     /// after the unit leaves (oracle, evidence §RG-2 goody huts).
@@ -158,6 +178,10 @@ pub struct WorldState {
     /// Treasury per civ, index = owner (0 = barbarians); save i32@10 of
     /// each civ-properties block (oracle-proven, evidence §T1-7 treasury).
     pub treasury: [i32; 8],
+    /// Government per civ (civ block @29; 0 anarchy, 1 despotism, …).
+    pub governments: [u8; 8],
+    /// Known advances per civ (civ block @96 bitfield).
+    pub techs: [[u8; 13]; 8],
     pub civs: Vec<Civ>,
     pub units: Vec<Unit>,
     pub cities: Vec<City>,
@@ -187,12 +211,14 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
     let mut road = Vec::with_capacity(surface);
     let mut rail = Vec::with_capacity(surface);
     let mut owner = Vec::with_capacity(surface);
+    let mut improvements = Vec::with_capacity(surface);
     for t in 0..surface {
         owner.push(m.owner(t).unwrap_or(0xF));
         terrain.push(m.terrain(t));
         special.push(m.is_special(t));
         river.push(m.is_river(t));
         road.push(m.has_road(t));
+        improvements.push(m.improvements(t));
         rail.push(m.has_rail(t));
     }
     let civs = sav
@@ -220,6 +246,8 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         human_mask: sav.human_mask,
         wonders: sav.wonders,
         treasury: sav.treasury,
+        governments: sav.governments,
+        techs: sav.techs,
         civs,
         units: units_from(&sav.units),
         cities: sav.cities.iter().map(city_from).collect(),
@@ -231,6 +259,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             river,
             road,
             rail,
+            improvements,
             owner,
             resource_seed: sav.map_header.raw[4] as u16,
             huts_enabled: true,
@@ -295,6 +324,9 @@ fn city_from(r: &CityRecord) -> City {
         net_taxes: r.net_taxes(),
         food_box: r.food_box(),
         shield_box: r.shield_box(),
+        worked: r.worked(),
+        buildings: r.buildings(),
+        flags: r.flags(),
     }
 }
 
@@ -365,6 +397,11 @@ impl WorldState {
         for w in self.wonders {
             let _ = write!(buf, "{w},");
         }
+        mix(&mut h, &self.governments);
+        for t in &self.techs {
+            mix(&mut h, t);
+        }
+        mix(&mut h, &self.map.improvements);
         for t in self.treasury {
             let _ = write!(buf, "${t},");
         }
@@ -424,6 +461,9 @@ impl WorldState {
                 c.shield_box
             );
             mix(&mut h, buf.as_bytes());
+            mix(&mut h, &c.worked.to_le_bytes());
+            mix(&mut h, &c.buildings);
+            mix(&mut h, &c.flags.to_le_bytes());
         }
         h
     }
@@ -492,6 +532,12 @@ mod tests {
             ("game_flags", |w| w.game_flags ^= 1),
             ("human_mask", |w| w.human_mask ^= 1),
             ("treasury", |w| w.treasury[1] += 1),
+            ("government", |w| w.governments[1] ^= 1),
+            ("techs", |w| w.techs[1][0] ^= 1),
+            ("tile improvements", |w| w.map.improvements[0] ^= 4),
+            ("city worked", |w| w.cities[0].worked ^= 1),
+            ("city buildings", |w| w.cities[0].buildings[0] ^= 1),
+            ("city flags", |w| w.cities[0].flags ^= 2),
             ("wonders", |w| w.wonders[0] = 3),
             ("civ plural", |w| w.civs[0].plural.push('x')),
             ("unit type", |w| w.units[0].type_id ^= 1),

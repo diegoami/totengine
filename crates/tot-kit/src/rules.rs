@@ -276,6 +276,35 @@ impl Rules {
             .and_then(|f| f.trim().parse().ok())
     }
 
+    /// Food/shields/trade (`kind` 0/1/2) of @TERRAIN row `row` (fields
+    /// 3/4/5). Rows 0–10 are the base terrains, 11–21 their first special
+    /// resource and 22–32 their second: the game indexes the table as
+    /// `special * 11 + terrain` (`0x4c22a7`, evidence §T1-4 tile yields).
+    pub fn terrain_yield(&self, row: usize, kind: usize) -> Option<i32> {
+        self.section("TERRAIN")
+            .and_then(|s| s.rows.get(row))
+            .and_then(|r| r.get(3 + kind.min(2)))
+            .and_then(|f| f.trim().parse().ok())
+    }
+
+    /// Irrigation food bonus of base terrain `id` (field 7). Read as written:
+    /// the replay matches the city records without zeroing it for "no"
+    /// terrains (evidence §T1-4 tile yields).
+    pub fn irrigation_bonus(&self, id: usize) -> Option<i32> {
+        self.section("TERRAIN")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(7))
+            .and_then(|f| f.trim().parse().ok())
+    }
+
+    /// Mining shield bonus of base terrain `id` (field 11).
+    pub fn mine_bonus(&self, id: usize) -> Option<i32> {
+        self.section("TERRAIN")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.get(11))
+            .and_then(|f| f.trim().parse().ok())
+    }
+
     /// `@COSMIC` road movement multiplier (comment-keyed row; the global
     /// value is 3 — three road tiles per movement point).
     pub fn road_multiplier(&self) -> Option<u32> {

@@ -411,6 +411,27 @@ impl CityRecord {
     pub fn shield_box(&self) -> u16 {
         u16::from_le_bytes([self.raw[30], self.raw[31]])
     }
+    /// City flags u32@6 (RAM city table `0x5fd156`); bit `0x2` = the city
+    /// celebrates (the tile-yield code skips the despotism penalty).
+    pub fn flags(&self) -> u32 {
+        u32::from_le_bytes([self.raw[6], self.raw[7], self.raw[8], self.raw[9]])
+    }
+    /// Worked tiles u32@50: bit k = radius tile k (offset tables `0x5d1620`
+    /// / `0x5d1650`; bit 20 = the centre). `popcount = size + 1` in
+    /// 144/146 ROMFALL cities (the rest have specialists, bits 26+).
+    pub fn worked(&self) -> u32 {
+        u32::from_le_bytes([self.raw[50], self.raw[51], self.raw[52], self.raw[53]])
+    }
+    /// City improvements bitfield @54 (bit n = improvement n; `0x43002e`).
+    pub fn buildings(&self) -> [u8; 5] {
+        [
+            self.raw[54],
+            self.raw[55],
+            self.raw[56],
+            self.raw[57],
+            self.raw[58],
+        ]
+    }
     /// u16@32 (the old "tail90"): semantics open.
     pub fn field32(&self) -> u16 {
         u16::from_le_bytes([self.raw[32], self.raw[33]])
@@ -514,6 +535,12 @@ pub struct SaveFile {
     /// VA 0x5F68A0 (same stride), WRE 9919 → patched 12345 → the status
     /// panel read "12345 Gold" (evidence §T1-7 treasury).
     pub treasury: [i32; 8],
+    /// Government per civ: byte @29 of each civ-properties block (RAM
+    /// `0x5f68bd`; 0 anarchy, 1 despotism, … as `0x4c22a7` compares).
+    pub governments: [u8; 8],
+    /// Known advances per civ: the bitfield @96 of each civ block (RAM
+    /// `0x5f6900`, `0x49c820`), bit n = advance n.
+    pub techs: [[u8; 13]; 8],
     pub transporter_count: u32,
     pub map_header: MapHeader,
     pub maps: Vec<MapBlock>,
@@ -585,6 +612,16 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         civ_names.push(civ_names_from(block));
     }
 
+    let mut governments = [0u8; 8];
+    let mut techs = [[0u8; 13]; 8];
+    for c in 0..8 {
+        let b = OFF_CIV_PROPS + CIV_PROPS_STRIDE * c;
+        let block = data
+            .get(b..b + 109)
+            .ok_or(SavError::Truncated("civ properties"))?;
+        governments[c] = block[29];
+        techs[c].copy_from_slice(&block[96..109]);
+    }
     let mut treasury = [0i32; 8];
     for (c, t) in treasury.iter_mut().enumerate() {
         let o = OFF_CIV_PROPS + CIV_PROPS_STRIDE * c + 10;
@@ -706,6 +743,8 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         wonders,
         civ_names,
         treasury,
+        governments,
+        techs,
         transporter_count,
         map_header: hdr,
         maps,

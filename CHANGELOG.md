@@ -3,6 +3,21 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
+## [Unreleased]
+
+### Engine (v0.4.0, minimal production)
+
+- **Tile yields** (`engine::yields`), decoded from the original's tile
+  yield function (`civ2.bak 0x4c22a7`):
+  - the inputs: special resources, the grassland shield, irrigation,
+    mines, roads, rivers, railroads, pollution, and the buildings,
+    wonders, government and despotism penalty that apply;
+  - a city's worked-tile sum matches the game-written records: 9/10
+    standard-game cities exact, ROMFALL food 144/146.
+- `City` gains worked tiles, buildings and flags. The world gains
+  per-civ government and advances, and the raw tile improvement byte (all
+  in the checksum).
+
 ## [0.3.0] — Reproducible new game
 
 A new standard game in the original is now reproducible, and the engine

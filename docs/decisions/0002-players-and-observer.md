@@ -23,13 +23,13 @@ The plan had the first UI arrive with T2:
    - The built-in AI (RG-4) is the first implementation.
    - "All players AI" is the default setup.
    - A human player in T2 is one more implementation.
-2. **Pluggable AIs** (v0.9.0):
+2. **Pluggable AIs** (v0.10.0):
    - in-process Rust players behind a trait;
    - an **out-of-process protocol** (JSON over stdio or a socket), so AIs
      can be written in any language, LLM agents included;
    - a headless tournament runner (AI vs AI, many seeds), built on the
      engine's determinism.
-3. **The observer is the first UI** (v0.6.0), because watching needs
+3. **The observer is the first UI** (v0.7.0), because watching needs
    less UI than playing:
    - **browser-based**, fed by the observation/replay stream;
    - spectator view with the full map or one civ's fog;
@@ -46,20 +46,21 @@ The plan had the first UI arrive with T2:
    - Its first release is minimal (T2-1): map, units, basic orders, end
      turn, simple city view, observer mode.
    - The full classic client (city screen, menus, sound) follows.
-   - Order: browser observer (v0.6.0), pluggable AIs (v0.9.0), the
-     SDL2 client (v0.10.0). The client can move earlier on the owner's
+   - Order: browser observer (v0.7.0), pluggable AIs (v0.10.0), the
+     SDL2 client (v0.11.0). The client can move earlier on the owner's
      call.
 
 ## Consequences
 
 - Every AI (RG-10 v0, RG-4 v1) is built against the player interface,
   not wired into the turn loop.
-- The interface (RG-8) is new work, shipped with AI v0 in v0.5.0:
-  observation, order set, validation, order log.
+- The interface (RG-8) is headless new work in v0.5.0 (observation,
+  order set, validation, order log), tested with a random-but-legal
+  player; AI v0 (RG-10) follows in v0.6.0.
 - BACKLOG gains Epic OB (observer + pluggable AIs) and T2-1. The
   release ladder there spreads the work over small releases (v0.3.0 …
-  v0.10.0) so that each review stays one round.
-- The headless all-AI campaign (RG-7, v0.8.0) has a golden run made of
+  v0.11.0) so that each review stays one round.
+- The headless all-AI campaign (RG-7, v0.9.0) has a golden run made of
   an order log plus fingerprints.
 - The original game's GUI, for reference: Win32
   (`USER32`/`GDI32`/`COMCTL32`/`comdlg32`) plus DirectDraw (`DDRAW`), with

@@ -54,17 +54,18 @@ regularly. Each release keeps everything before it green.
 |---|---|---|
 | `v0.3.0` | Reproducible new game | RG-2 (start placement ✓, goody huts as objects); landed: map tile framing fix, Latin-1 names, headless demo |
 | `v0.4.0` | Minimal production | T1-4 slice: tile yields, production queue (units, improvements) — cities build things headless |
-| `v0.5.0` | Player interface + AI v0 | RG-8 (observation, orders, validation, order log); RG-10 AI v0 (explore, found cities, build settlers and defenders) — **a full all-AI game runs headless** |
-| `v0.6.0` | Browser observer | OB-1 stream/replay; OB-2 browser observer (watch live, replay, fog toggle) — **watch the AIs play** |
-| `v0.7.0` | AI v1 + economy depth | RG-4 AI v1 (research, attack, defence); RG-9 barbarians; T1-4 rest (unrest, specialists, trade); per-civ techs (GIVETECHNOLOGY applies) |
-| `v0.8.0` | Generated-world campaign | RG-3 world generator; RG-7 new game → N all-AI turns → outcome, nightly golden |
-| `v0.9.0` | Pluggable AIs | OB-3 JSON protocol + reference client; OB-4 tournament runner |
-| `v0.10.0` | Playable client, minimal | T2-1 SDL2 native: map, units, move/attack/found city/end turn, simple city view; human = RG-8 player; observer mode; Windows build in CI |
+| `v0.5.0` | Player interface | RG-8 (headless API: observation, orders, validation, order log), tested with a random-but-legal player — games replay exactly from seed + order log |
+| `v0.6.0` | AI v0 | RG-10 AI v0 (explore, found cities, build settlers and defenders) — **a full all-AI game runs headless** |
+| `v0.7.0` | Browser observer | OB-1 stream/replay; OB-2 browser observer (watch live, replay, fog toggle) — **watch the AIs play** |
+| `v0.8.0` | AI v1 + economy depth | RG-4 AI v1 (research, attack, defence); RG-9 barbarians; T1-4 rest (unrest, specialists, trade); per-civ techs (GIVETECHNOLOGY applies) |
+| `v0.9.0` | Generated-world campaign | RG-3 world generator; RG-7 new game → N all-AI turns → outcome, nightly golden |
+| `v0.10.0` | Pluggable AIs | OB-3 JSON protocol + reference client; OB-4 tournament runner |
+| `v0.11.0` | Playable client, minimal | T2-1 SDL2 native: map, units, move/attack/found city/end turn, simple city view; human = RG-8 player; observer mode; Windows build in CI |
 | later | — | full T2 (city screen, menus, sound), RG-5 diplomacy, RG-6 victory, T1-10 parity, T3 Lua |
 
 **Observing and playing are the two main goals** (decision 0002). The
-ladder reaches a watchable all-AI game first (v0.6.0), because it needs
-less UI than playing; the playable client (v0.10.0) can move earlier on
+ladder reaches a watchable all-AI game first (v0.7.0), because it needs
+less UI than playing; the playable client (v0.11.0) can move earlier on
 the owner's call.
 
 ## Epic T0 — Format toolchain & reconnaissance (current)

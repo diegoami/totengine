@@ -44,8 +44,26 @@ SHA. The process: [docs/milestone-review.md](docs/milestone-review.md). Themes:
 `v0.2.0` = headless game loop — T1 core + **RG-1** so scenarios *and*
 standard games boot and run headless (**RG-2 moved to v0.3.0**, owner
 decision 2026-11-03: the new-game entropy source is not found yet),
-`v0.3.0` = generated-world campaign, every civ an AI (RG-2/3/4/5/7 + RG-8),
-`v0.4.0` = observer UI + pluggable AIs (Epic OB; decision 0002).
+then the ladder below.
+
+**Release ladder (owner retriage 2026-11-04):** one theme and 2–4 stories
+per release, so that every review stays a single round and reviews come
+regularly. Each release keeps everything before it green.
+
+| Release | Theme | Stories |
+|---|---|---|
+| `v0.3.0` | Reproducible new game | RG-2 (start placement ✓, goody huts as objects); landed: map tile framing fix, Latin-1 names, headless demo |
+| `v0.4.0` | Player interface | RG-8 (observation, orders, validation, order log) + a baseline random-legal player; a game replays from seed + order log |
+| `v0.5.0` | City economy | T1-4 rest: tile yields, production queue (units, improvements); per-civ techs (GIVETECHNOLOGY applies) |
+| `v0.6.0` | AI v1 | RG-4 as an RG-8 player; RG-9 barbarians; 50-turn all-AI autoplay on standard saves |
+| `v0.7.0` | Generated-world campaign | RG-3 world generator; RG-7 new game → N all-AI turns → outcome, nightly golden |
+| `v0.8.0` | Browser observer | OB-1 stream/replay; OB-2 browser observer (watch live, replay, fog toggle) |
+| `v0.9.0` | Pluggable AIs | OB-3 JSON protocol + reference client; OB-4 tournament runner |
+| `v0.10.0` | Playable client, minimal | T2-1 SDL2 native: map, units, move/attack/found city/end turn, simple city view; human = RG-8 player; observer mode; Windows build in CI |
+| later | — | full T2 (city screen, menus, sound), RG-5 diplomacy, RG-6 victory, T1-10 parity, T3 Lua |
+
+The order of v0.8–v0.10 is the owner's choice (browser observer first,
+then SDL2 for play) and can swap if play is wanted sooner.
 
 ## Epic T0 — Format toolchain & reconnaissance (current)
 
@@ -89,9 +107,10 @@ opponent AI. These stories reuse the T1 core; the new-game *UI* lands with T2.
 | ID | Story | Pri | Est | Diff | Status | Acceptance |
 |----|-------|-----|-----|------|--------|------------|
 | RG-1 | ~~Game-setup state model: new-game parameters + its save encoding~~ | P1 | M | H | done | Byte-map on a vision-verified variant family: 684=difficulty, 689=rivals, dims@29900, RNG mirror@685-688; wizard reference documented (evidence §RG-1) |
-| RG-2 | Starting placement: civ starts, goody huts, barbarian seeding from the game seed | P1 | L | H | in progress | Same-seed oracle starts reproduce identical placement. **Done (2026-11-04):** oracle side (`seeded_start.sh`: NR, CRT, world params, map seed) and civ start placement (`engine::placement`, 3 oracle worlds replay draw for draw, evidence §RG-2 start placement). **Open:** goody huts as objects (the hut formula is decoded, not oracle-checked), barbarian seeding |
+| RG-2 | Starting placement: civ starts and goody huts from the game seed (barbarians → RG-9) | P1 | L | H | in progress | Same-seed oracle starts reproduce identical placement. **Done (2026-11-04):** oracle side (`seeded_start.sh`: NR, CRT, world params, map seed) and civ start placement (`engine::placement`, 3 oracle worlds replay draw for draw, evidence §RG-2 start placement). **Open:** goody huts as objects (the hut formula is decoded, not oracle-checked) |
 | RG-3 | Random world generator (seeded; `.MP`-shaped output; original's exact algorithm unknown → our own, flagged) | P2 | L | H | todo | Statistical parity vs original maps (land%/biome spread); renders sanity-checked |
 | RG-8 | Player interface: per-civ observation (fog-limited), order set, validation, order log; all-AI default (decision 0002) | P1 | M | H | todo | A game replays bit-exact from seed + order log; every RG-4 decision goes through it |
+| RG-9 | Barbarians: when and where they appear (turn-time activity per barbarian level), decoded against the oracle | P2 | M | H | todo | Same-seed oracle game shows the same barbarian arrivals for N turns |
 | RG-4 | Opponent AI v1 headless, as an RG-8 player: expansion, economy, research, unit handling; deterministic | P2 | L | H | todo | 50-turn autoplay stable + deterministic; plausible power curves vs oracle games |
 | RG-5 | Diplomacy model: contacts, embassies, treaties, tribute, AI stances; save encoding | P2 | M | H | todo | Diplomacy state round-trips; oracle-save contacts match |
 | RG-6 | Victory & scoring: spaceship chain, conquest, score/time; end-game state | P2 | M | H | todo | Victory conditions trigger identically on scripted oracle campaigns |
@@ -110,6 +129,10 @@ quest modes) finish in T4 on top of RG + multi-map (see plan.md §5).
 | OB-4 | Tournament runner: N AIs × M seeds headless, results table | P2 | M | M | todo | Deterministic results; same inputs ⇒ same table |
 
 ## Epic T2 — Graphical classic client (after OB; stories drafted on entry)
+
+| ID | Story | Pri | Est | Diff | Status | Acceptance |
+|---|---|---|---|---|---|---|
+| T2-1 | Minimal playable SDL2 client: map from the install's art, units, move/attack/found city/end turn, simple city view, observer mode; human as an RG-8 player | P1 | L | M | todo | A human plays 20 turns of a standard game vs AIs on Windows 10/11 and Linux |
 
  SDL2 native client (Windows 10/11, Linux, macOS), city screen, orders/menus,
  original art & sound read from the user's install, human player as an RG-8

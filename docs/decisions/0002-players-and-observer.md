@@ -1,6 +1,6 @@
 # Decision 0002 — players behind an interface; an observer before the playable client
 
-*Status: accepted (owner decision, 2026-11-04).*
+*Status: accepted (owner decision, 2026-11-04; amended the same day: observing is a supplemental mode, humans must be able to play; release ladder in BACKLOG.md).*
 
 ## Context
 
@@ -38,9 +38,15 @@ The plan had the first UI arrive with T2:
 
    It cannot ship the original art, so it uses our own simple tiles unless
    it loads them from the user's install locally.
-4. **T2 stays the full playable classic client**, SDL2 native: Windows
-   10/11, Linux and macOS, with the original art read from the user's
-   install at runtime. It reuses the observer's map model.
+4. **Playing is the primary use; observing is supplemental.**
+   - The SDL2 native client (Windows 10/11, Linux, macOS; original art
+     read from the user's install at runtime) is where humans play.
+   - Its first release is minimal (T2-1): map, units, basic orders, end
+     turn, simple city view, observer mode.
+   - The full classic client (city screen, menus, sound) follows.
+   - The owner's order: browser observer (v0.8.0), then pluggable AIs
+     (v0.9.0), then the SDL2 client (v0.10.0). This can swap if play is
+     wanted sooner.
 
 ## Consequences
 
@@ -48,8 +54,9 @@ The plan had the first UI arrive with T2:
   loop.
 - The interface is new work, scheduled before RG-4: observation, order
   set, validation, order log.
-- BACKLOG gains Epic OB (observer + pluggable AIs) for v0.4.0. T2 moves
-  after it.
+- BACKLOG gains Epic OB (observer + pluggable AIs) and T2-1. The
+  release ladder there spreads the work over small releases (v0.3.0 …
+  v0.10.0) so that each review stays one round.
 - v0.3.0 still ends with a headless all-AI campaign (RG-7). Its golden
   run is an order log plus fingerprints.
 - The original game's GUI, for reference: Win32

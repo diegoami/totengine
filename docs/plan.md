@@ -103,14 +103,14 @@ oracle/          Wine automation: launch, key macros (xdotool), save capture
 - **Accept:** scripted 50-turn FallRome run: cities grow by Rules.txt math, events
   fire, produced save loads in Wine original; CI runs it against golden saves.
 
-### Phase OB — Observer UI + pluggable AIs (v0.4.0) · decision 0002
+### Phase OB — Observer UI + pluggable AIs (v0.8.0–v0.9.0) · decision 0002; release ladder in BACKLOG.md
 - Per-civ observation/order interface (RG-8) underneath every player
 - Browser observer: watch all-AI games live, replay them, toggle fog
 - Out-of-process AI protocol (JSON) and a tournament runner
 - **Accept:** a 100-turn all-AI game is watchable live and replayable; an
   external AI plays a full game through the protocol.
 
-### Phase 2 — Graphical classic client (T2) · +6–12 months (after OB; SDL2 native: Windows 10/11, Linux, macOS)
+### Phase 2 — Graphical classic client (T2) · +6–12 months (after OB; SDL2 native: Windows 10/11, Linux, macOS; minimal playable T2-1 = v0.10.0)
 - SDL2 client: isometric map from `Terrain1/2` sheets, units, fog, minimap
 - City screen, unit orders/shortcuts (from `@ORDERS`), menus, dialogs per
   `Menu.txt`/`Labels.txt`; WAV sound; civilopedia from `Pedia.txt`/`Describe.txt`

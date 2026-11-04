@@ -3,9 +3,15 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
-## [Unreleased]
+## [0.5.0] — Player interface
 
-### Engine (v0.5.0, player interface: RG-8, #74, decision 0003)
+Every civ is now driven by a player behind a headless interface. A player
+gets an observation of what its civ sees and returns validated orders; a
+game is recorded as an order log and replays bit-exact from save + seed +
+log (decision 0003, story #74). This is the boundary that AI v0, the
+browser observer, external AIs and the SDL2 client plug into.
+
+### Engine
 
 - **`engine::player`:** every civ is driven by a `Player`.
   - **Observation:** own units and cities (with output), what the civ
@@ -23,6 +29,15 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 - Fog is the engine's rule, not decoded: a civ sees distance 1 around its
   units and the city radius, and seen tiles stay seen. Visibility is in
   the checksum (run50 regenerated, checksums only).
+
+### Known open
+
+- **Orders not yet available:** `FoundCity` and `SetResearch` come with
+  AI v0 (#75). Founding a city needs a city-creation decode.
+- **Fog:** the engine's own rule, not the original's reveal rules.
+- **Turn order:** civs act in index order, an engine choice.
+- **Logs:** the order log is text; the JSON protocol is #92.
+- Carried from v0.4.0: see the issues on milestones v0.6.0 and v0.8.0.
 
 ## [0.4.0] — Minimal production
 

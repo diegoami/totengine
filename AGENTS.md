@@ -62,9 +62,10 @@ released (v0.3.0: AGREE on #70, 1 round; RG-2 done: `seeded_start.sh`,
 `engine::placement`, goody huts; map tile framing and record counts
 fixed) and **v0.4.0 "minimal production"** (AGREE on #72, 1 round: tile
 yields, corruption, waste, unit support in `engine::yields`; production
-queue in `engine::production`; decoded from `civ2.bak`). Current: v0.5.0,
-RG-8 player interface (#74, decision 0003): `engine::player` (Observation,
-Order, Game with order log + replay, RandomPlayer), `totctl play/replay`.
+queue in `engine::production`; decoded from `civ2.bak`). **v0.5.0 "player
+interface"** is the current candidate (RG-8, #74, decision 0003):
+`engine::player` (Observation, Order, Game with order log + replay,
+RandomPlayer), `totctl play/replay`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;
 decision 0002; observing and playing are the two main goals): v0.3.0

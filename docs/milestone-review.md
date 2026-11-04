@@ -69,6 +69,12 @@ malpaco's `docs/milestone-review.md`, which adapted it from Geoclick2027's relea
    AGREE the owner decides.
 7. AGREE: the main session tags **exactly the reviewed SHA** and publishes the release
    (GitHub release with notes; artifacts only once there are artifacts worth attaching).
+   In practice: notes = the CHANGELOG `[X.Y.Z]` section,
+   `gh release create vX.Y.Z --target <reviewed SHA> --title "vX.Y.Z — <theme>" --notes-file <notes>`
+   (GitHub creates the tag; verify with `git fetch --tags && git rev-parse vX.Y.Z^{commit}`),
+   then close the milestone issue, the shipped story issues and the GitHub milestone, and
+   move unfinished stories to a later milestone. README §Status is tag-neutral, so it needs
+   no edit at the tag; AGENTS.md's status shorthand does.
    The owner may also tag without a review; the issue says so.
 
 ## Instructions for the reviewer

@@ -63,9 +63,29 @@ Pre-created and approved for external access; **not part of the repo**. Ours:
   classic exe's cdaudio check; kept as evidence, see oracle README)
 - `oracle-runs/` — harvested oracle saves (ephemeral; reproduce with
   `turnloop.sh`)
+- `t14/bak.asm` — the full Intel-syntax disassembly of `civ2.bak` that
+  the static decodes (yields, corruption, production, `create_city`,
+  huts) are read from; regenerate with
+  `objdump -d -M intel $CIVTOT_HOME/civ2.bak > bak.asm`. Grep it by
+  address (`^  432810:`); city-table fields appear as
+  `[eax*4+0x5fd150+off]` after the `·23·4 = ·92` index arithmetic. The
+  same directory holds the milestone drafts (`milestone-v0X0.md`) and
+  release notes (`v0X0.md`).
 
 The directory is **shared with unrelated projects** (hundreds of `harness-*` /
 `guard-*` entries) — never wipe it blindly.
+
+## GitHub access from agent sessions
+
+- **Push:** the SSH agent is often unreachable from the session's shell, and
+  plain pushes intermittently fail; push with
+  `GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" git push origin main`
+  in a short retry loop.
+- **Permissions:** on the reference box the owner allowed `gh issue
+  comment/create/close` and `gh release create` for agent sessions
+  (`.claude/settings.local.json`, untracked via `.git/info/exclude`;
+  granted 2026-11-04). Tag pushes are not allowed: tags are made by
+  `gh release create … --target <sha>` (see `docs/milestone-review.md`).
 
 ## Binaries that are NOT in git (rebuild after cloning)
 

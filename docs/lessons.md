@@ -34,6 +34,15 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   2026-11-02, see `docs/milestone-review.md` + AGENTS.md hard rules) — print
   the template and stop.
 
+- **A static decode of "initial values" is a claim about saved records
+  too — check it against saves before shipping.** v0.6.0 claimed
+  `create_city` sets flags `0x20000` (true at `0x432b2f`), and the engine
+  wrote it permanently; the reviewer found it in 0 of 1,480 saved cities
+  (#102). The bit is a transient refresh marker cleared by the next totals
+  pass. Before claiming any record value, grep the saves (the std1 series
+  has freshly founded cities) and grep the disassembly for every
+  `and`/`or`/`mov` on the same field, not just the writer you read.
+
 ## Wizard & navigation (oracle)
 
 - **Vision-verify every selection before Return.** Screenshots →

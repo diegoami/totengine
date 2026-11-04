@@ -13,6 +13,7 @@ pub mod combat;
 pub mod effects;
 pub mod events;
 pub mod founding;
+pub mod huts;
 pub mod movement;
 pub mod placement;
 pub mod player;

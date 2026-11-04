@@ -7,6 +7,16 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ### Engine (v0.6.0, AI v0)
 
+- **Goody-hut outcomes** (#79, `engine::huts`), decoded in part from
+  `hut_outcome` (`0x54ab80`):
+  - **decoded and implemented:** the CRT draws, `rand()%5` with the
+    human `rand()%3`, the case dispatch and its redirects, metals (25/50/
+    100 by difficulty) and scrolls (`rand()%100`, then a scan for a
+    researchable advance);
+  - **simplified, flagged:** tribe (a size-1 city), mercenaries (the best
+    defender), nomads (Settlers), barbarians/nothing (nothing);
+  - entering a hut applies the outcome (`MoveOutcome::hut_outcome`).
+
 - **Obsolete units** (#77) and **veterans** (#78), decoded from the
   production step (`0x4c63b0`, `0x4c6728`):
   - a unit build switches to the same-role successor once the civ knows

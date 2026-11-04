@@ -31,9 +31,10 @@ pub struct MoveOutcome {
     /// attack (T1-6, [`WorldState::attack`]); the unit did not move.
     pub battle: Option<crate::combat::Battle>,
     /// The unit entered a goody hut ([`crate::MapState::hut_at`]). The hut
-    /// is gone: the tile is now owned. Its outcome (gold, tech, units,
-    /// barbarians) is not decoded yet and is not applied.
+    /// is gone: the tile is now owned.
     pub hut: bool,
+    /// What the hut gave ([`WorldState::enter_hut`]; partly decoded, #79).
+    pub hut_outcome: Option<crate::huts::HutOutcome>,
 }
 
 /// Ocean terrain id in every Rules.txt observed (id 10 — the #44 lesson:
@@ -70,6 +71,7 @@ impl WorldState {
             zoc_ended: false,
             battle: None,
             hut: false,
+            hut_outcome: None,
         };
         let Some(unit) = self.units.get(unit_idx) else {
             return none;
@@ -138,12 +140,14 @@ impl WorldState {
         };
         let hut = self.map.hut_at(x, y);
         self.map.owner[dest_idx] = civ & 0x0F;
+        let hut_outcome = hut.then(|| self.enter_hut(rules, unit_idx));
         MoveOutcome {
             moved: true,
             cost_thirds: charge,
             zoc_ended,
             battle: None,
             hut,
+            hut_outcome,
         }
     }
 

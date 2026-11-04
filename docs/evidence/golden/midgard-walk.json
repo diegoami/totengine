@@ -237,7 +237,6 @@
     "resource_seed_offset": 30082
   },
   "units": {
-    "note": "unit-region arithmetic did not validate (region 390817 = 40x9770+17, expected remainder 34) \u2014 layout not located (multi-map files are known-open)",
-    "chain_name_candidates_seen": 8
+    "note": "the unit/city counts (@698/@700) do not frame valid city records \u2014 classic unit/city layout not located"
   }
 }

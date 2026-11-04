@@ -50,6 +50,20 @@ pub struct StartMap {
     pub landmass_value: Vec<i16>,
 }
 
+/// The seed hash of `0x57093f` that selects goody-hut tiles (the land and
+/// ownership tests are the caller's). With `a = (x+y)>>1` and `b = x − a`,
+/// a tile is selected iff
+/// `(a&3) + 4(b&3) == (seed + 13(b>>2) + 11(a>>2) + 8) & 31`: exactly one
+/// of the 32 positions in each 4 × 4 (a, b) block, so about 1 tile in 32.
+/// Oracle: entering the predicted hut next to a pinned start paid 100 gold;
+/// a predicted hut-free neighbour gave nothing (evidence §RG-2 goody huts).
+pub fn hut_hash(seed: u16, x: i32, y: i32) -> bool {
+    let a = (x + y) >> 1;
+    let b = x - a;
+    let v = seed as i32 + 13 * (b >> 2) + 11 * (a >> 2) + 8;
+    (a & 3) + 4 * (b & 3) == v & 31
+}
+
 /// One placed civ.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Start {
@@ -128,19 +142,10 @@ impl StartMap {
         self.landmass_value.get(id).copied().unwrap_or(0) as i32
     }
 
-    /// `0x57093f`: a hut, derived from the resource seed. On land, unowned,
-    /// with huts enabled. The tile hashes as `a = (x+y)>>1`, `b = x − a`,
-    /// and holds a hut iff
-    /// `(a&3) + 4(b&3) == (seed + 13(b>>2) + 11(a>>2) + 8) & 31`.
-    /// Decoded statically; no oracle try landed on a hut.
+    /// `0x57093f`: a hut — land, unowned, huts enabled, and
+    /// [`hut_hash`]. No placement try in the oracle runs landed on one.
     pub fn hut(&self, x: i32, y: i32) -> bool {
-        if !self.huts || self.ocean(x, y) || self.owner(x, y).is_some() {
-            return false;
-        }
-        let a = (x + y) >> 1;
-        let b = x - a;
-        let v = self.seed as i32 + 13 * (b >> 2) + 11 * (a >> 2) + 8;
-        (a & 3) + 4 * (b & 3) == v & 31
+        self.huts && !self.ocean(x, y) && self.owner(x, y).is_none() && hut_hash(self.seed, x, y)
     }
 
     /// `0x570599`: a city (`+1 & 0xC2 == 2`) or a unit (`+1 & 1`) with an

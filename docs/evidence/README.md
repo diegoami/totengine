@@ -528,6 +528,63 @@ Consequences:
 - All six oracle battles still pass. Battle 2's defender stands on
   Grassland + river; the old decode said Forest, and both give ×1.5.
 
+### RG-2 goody huts, oracle-checked (2026-11-04)
+
+Huts are not stored; the seed and the tile decide them (`0x57093f`). A
+tile holds a hut iff all of these hold:
+- it is land;
+- it is unowned (tile byte +5 `>> 4 == 0xF`);
+- huts are enabled on its map (RAM `0x5f5ed6` bit; save location not
+  found);
+- with `a = (x+y)>>1` and `b = x − a`:
+  `(a&3) + 4(b&3) == (seed + 13(b>>2) + 11(a>>2) + 8) & 31`.
+
+The hash selects one of the 32 (a, b) positions in each 4 × 4 block, so
+about 1 tile in 32. The pinned default world (seed `0x1357`) has 31 huts
+on 975 land tiles.
+
+**Oracle check** (pinned default world, human civ 4, settlers at (62,26)):
+- The formula predicts exactly one hut visible to civ 4, at (63,25).
+- Moving a settler there (RAM select + numpad-9) opened the "Village"
+  dialog: *"You have discovered valuable metal deposits worth 100 gold."*
+  The treasury went from 0 to 100.
+- Moving the other settler to (61,25), predicted hut-free, gave no dialog
+  and no gold.
+
+**How a hut is taken:**
+- *Any* unit entering a tile sets the tile's owner nibble to its civ:
+  (61,25) `f0` → `40`.
+- The owner stays after the unit leaves: (62,26) keeps owner 4.
+- So a hut is gone once any civ's unit has stepped on it. There is no
+  separate "taken" flag.
+
+Engine (`MapState::hut_at`, `MoveOutcome::hut`) follows this.
+
+**Not decoded:** the hut *outcome* (gold / tech / units / barbarians /
+nothing) and its random draws. The engine reports the entry and applies
+no effect (RG-11).
+
+### Record counts: i16@698 = units, i16@700 = cities (2026-11-04)
+
+The game block carries the table sizes:
+- i16@698 = unit count: RAM `0x607666`, the loop bound of start placement
+  and of the unit loops.
+- i16@700 = city count.
+
+Evidence:
+- Both equal the counts the old name-chain scan derived, on every save it
+  could frame: ROMFALL 710/146, the std-lab series 10/4, Ph_Auto2 38/10.
+- They also frame a fresh turn-1 game with 7 units and 4 cities (Moscow,
+  Kyoto, Beijing, Paris), which the chain scan could not anchor on. Those
+  cities stand exactly on the placed starts (§RG-2 start placement).
+
+Both decoders now frame units (`40·N` after the 10240 blob) and cities
+(`92·M` after the units) from these counts. Every city slot must hold a
+NUL-padded name at +34 (the #49/#58 anti-fabrication gate).
+
+Multi-map files (Midgard) still do not frame: their blob end is not
+located yet.
+
 ### RG-2 start placement DECODED, oracle-exact (2026-11-04)
 
 `engine::placement::place_starts` reproduces the original's start
@@ -591,9 +648,8 @@ Two decodes from the same work:
   margin branch both test it.
 - The tile record framing: see §Map tile framing FIXED.
 
-Still open for RG-2:
-- goody huts as objects;
-- barbarian seeding;
+Still open for RG-2 (2026-11-04 later: huts done, §RG-2 goody huts;
+barbarians moved to RG-9):
 - what the AI civs do on turn 1 (cities on their starts).
 
 ### RG-2 reproducible new-game starts: the four entropy inputs (2026-11-04)

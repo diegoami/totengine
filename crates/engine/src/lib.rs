@@ -99,9 +99,33 @@ pub struct MapState {
     pub river: Vec<bool>,
     pub road: Vec<bool>,
     pub rail: Vec<bool>,
+    /// Tile owner nibble (tile byte +5 `>> 4`; `0xF` = none). Any unit
+    /// entering a tile makes its civ the owner, and the tile stays owned
+    /// after the unit leaves (oracle, evidence §RG-2 goody huts).
+    pub owner: Vec<u8>,
+    /// The map's resource seed (header `raw[4]`); huts derive from it.
+    pub resource_seed: u16,
+    /// Huts on this map. The original keeps a per-map enable bit at RAM
+    /// `0x5f5ed6` whose save location is not found yet; the engine
+    /// assumes enabled.
+    pub huts_enabled: bool,
 }
 
 impl MapState {
+    /// A goody hut stands on (x, y): land, unowned, and selected by the
+    /// seed hash ([`crate::placement::hut_hash`]). Taking a hut is just the
+    /// tile becoming owned. Oracle: the one predicted hut in view of a
+    /// pinned start paid 100 gold when entered; a predicted hut-free
+    /// neighbour gave nothing (evidence §RG-2 goody huts).
+    pub fn hut_at(&self, x: u16, y: u16) -> bool {
+        let Some(i) = self.stored_index(x, y) else {
+            return false;
+        };
+        self.huts_enabled
+            && self.terrain[i] != crate::movement::OCEAN_TERRAIN
+            && self.owner[i] == 0xF
+            && crate::placement::hut_hash(self.resource_seed, x as i32, y as i32)
+    }
     /// Logical (x, y) → stored index `y * stored_w + x / 2`: the game's
     /// own accessor (`0x56fff0`), with `x < 2 * stored_w`, `y < stored_h`
     /// (`0x4030f0`). Evidence §Map tile framing.
@@ -162,7 +186,9 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
     let mut river = Vec::with_capacity(surface);
     let mut road = Vec::with_capacity(surface);
     let mut rail = Vec::with_capacity(surface);
+    let mut owner = Vec::with_capacity(surface);
     for t in 0..surface {
+        owner.push(m.owner(t).unwrap_or(0xF));
         terrain.push(m.terrain(t));
         special.push(m.is_special(t));
         river.push(m.is_river(t));
@@ -205,6 +231,9 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             river,
             road,
             rail,
+            owner,
+            resource_seed: sav.map_header.raw[4] as u16,
+            huts_enabled: true,
         },
         rng: Lcg64::new(rng_seed as u32),
         combat_rng: combat::CrtRand::new(rng_seed as u32),
@@ -348,12 +377,13 @@ impl WorldState {
         }
         mix(&mut h, &self.map.stored_w.to_le_bytes());
         mix(&mut h, &self.map.stored_h.to_le_bytes());
+        mix(&mut h, &self.map.resource_seed.to_le_bytes());
         for t in 0..self.map.terrain.len() {
             let flags = (self.map.special[t] as u8)
                 | ((self.map.river[t] as u8) << 1)
                 | ((self.map.road[t] as u8) << 2)
                 | ((self.map.rail[t] as u8) << 3);
-            mix(&mut h, &[self.map.terrain[t], flags]);
+            mix(&mut h, &[self.map.terrain[t], flags, self.map.owner[t]]);
         }
         for u in &self.units {
             buf.clear();
@@ -485,6 +515,8 @@ mod tests {
             ("city food box", |w| w.cities[0].food_box += 1),
             ("city shield box", |w| w.cities[0].shield_box += 1),
             ("terrain", |w| w.map.terrain[0] ^= 1),
+            ("tile owner", |w| w.map.owner[0] ^= 1),
+            ("resource seed", |w| w.map.resource_seed ^= 1),
             ("turn", |w| w.turn += 1),
         ];
         for (name, m) in muts {
@@ -513,7 +545,9 @@ pub mod tests_support {
         d[684] = 4;
         d[685..689].copy_from_slice(&[0xdb, 0x02, 0xdb, 0x02]);
         d[689] = 4;
-        // civ 1's plural ("Testers") in its name block's fixed slot @26
+        d[698..700].copy_from_slice(&2u16.to_le_bytes()); // unit count
+        d[700..702].copy_from_slice(&8u16.to_le_bytes()); // city count
+                                                          // civ 1's plural ("Testers") in its name block's fixed slot @26
         let b1 = tot_kit::OFF_CIV_NAMES + 26;
         d[b1..b1 + 7].copy_from_slice(b"Testers");
         let hdr: [i16; 8] = [

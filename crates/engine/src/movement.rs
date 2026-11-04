@@ -30,6 +30,10 @@ pub struct MoveOutcome {
     /// The destination held another civ's units: the move became an
     /// attack (T1-6, [`WorldState::attack`]); the unit did not move.
     pub battle: Option<crate::combat::Battle>,
+    /// The unit entered a goody hut ([`crate::MapState::hut_at`]). The hut
+    /// is gone: the tile is now owned. Its outcome (gold, tech, units,
+    /// barbarians) is not decoded yet and is not applied.
+    pub hut: bool,
 }
 
 /// Ocean terrain id in every Rules.txt observed (id 10 — the #44 lesson:
@@ -65,6 +69,7 @@ impl WorldState {
             cost_thirds: 0,
             zoc_ended: false,
             battle: None,
+            hut: false,
         };
         let Some(unit) = self.units.get(unit_idx) else {
             return none;
@@ -125,16 +130,20 @@ impl WorldState {
         };
         unit.x = x;
         unit.y = y;
+        let civ = unit.owner;
         unit.moves_left = if zoc_ended {
             0
         } else {
             unit.moves_left.saturating_sub(charge)
         };
+        let hut = self.map.hut_at(x, y);
+        self.map.owner[dest_idx] = civ & 0x0F;
         MoveOutcome {
             moved: true,
             cost_thirds: charge,
             zoc_ended,
             battle: None,
+            hut,
         }
     }
 
@@ -246,6 +255,9 @@ mod tests {
                 river: vec![false; surface],
                 road,
                 rail: vec![false; surface],
+                owner: vec![0xF; surface],
+                resource_seed: 0,
+                huts_enabled: false,
             },
             rng: Lcg64::new(1),
             combat_rng: crate::combat::CrtRand::new(1),
@@ -295,6 +307,28 @@ mod tests {
         assert!(out.moved);
         assert_eq!(out.cost_thirds, 6);
         assert_eq!(w.units[0].moves_left, 0);
+    }
+
+    #[test]
+    fn entering_a_hut_takes_it() {
+        let rules = tot_kit::parse_rules(rules_text());
+        let mut w = world_with_map();
+        w.start_turn(&rules);
+        w.map.huts_enabled = true;
+        // pick the first seed that puts a hut on (6,0), NE of the knight
+        w.map.resource_seed = (0..u16::MAX)
+            .find(|&s| crate::placement::hut_hash(s, 6, 0))
+            .unwrap();
+        assert!(w.map.hut_at(6, 0));
+        let out = w.move_unit(&rules, 0, 6, 0);
+        assert!(out.moved && out.hut);
+        let i = w.map.stored_index(6, 0).unwrap();
+        assert_eq!(w.map.owner[i], 1, "entering makes the tile the civ's");
+        assert!(!w.map.hut_at(6, 0), "an owned tile holds no hut");
+        // back and forth: the hut does not come back
+        w.units[0].moves_left = 6;
+        assert!(!w.move_unit(&rules, 0, 5, 1).hut);
+        assert!(!w.move_unit(&rules, 0, 6, 0).hut);
     }
 
     #[test]

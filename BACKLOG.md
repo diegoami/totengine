@@ -55,7 +55,7 @@ regularly. Each release keeps everything before it green.
 | `v0.3.0` | Reproducible new game | RG-2 (start placement ✓, goody huts as objects); landed: map tile framing fix, Latin-1 names, headless demo |
 | `v0.4.0` | Minimal production | T1-4 slice: tile yields, production queue (units, improvements) — cities build things headless |
 | `v0.5.0` | Player interface | RG-8 (headless API: observation, orders, validation, order log), tested with a random-but-legal player — games replay exactly from seed + order log |
-| `v0.6.0` | AI v0 | RG-10 AI v0 (explore, found cities, build settlers and defenders) — **a full all-AI game runs headless** |
+| `v0.6.0` | AI v0 | RG-11 hut outcomes; RG-10 AI v0 (explore, found cities, build settlers and defenders) — **a full all-AI game runs headless** |
 | `v0.7.0` | Browser observer | OB-1 stream/replay; OB-2 browser observer (watch live, replay, fog toggle) — **watch the AIs play** |
 | `v0.8.0` | AI v1 + economy depth | RG-4 AI v1 (research, attack, defence); RG-9 barbarians; T1-4 rest (unrest, specialists, trade); per-civ techs (GIVETECHNOLOGY applies) |
 | `v0.9.0` | Generated-world campaign | RG-3 world generator; RG-7 new game → N all-AI turns → outcome, nightly golden |
@@ -110,10 +110,11 @@ opponent AI. These stories reuse the T1 core; the new-game *UI* lands with T2.
 | ID | Story | Pri | Est | Diff | Status | Acceptance |
 |----|-------|-----|-----|------|--------|------------|
 | RG-1 | ~~Game-setup state model: new-game parameters + its save encoding~~ | P1 | M | H | done | Byte-map on a vision-verified variant family: 684=difficulty, 689=rivals, dims@29900, RNG mirror@685-688; wizard reference documented (evidence §RG-1) |
-| RG-2 | Starting placement: civ starts and goody huts from the game seed (barbarians → RG-9) | P1 | L | H | in progress | Same-seed oracle starts reproduce identical placement. **Done (2026-11-04):** oracle side (`seeded_start.sh`: NR, CRT, world params, map seed) and civ start placement (`engine::placement`, 3 oracle worlds replay draw for draw, evidence §RG-2 start placement). **Open:** goody huts as objects (the hut formula is decoded, not oracle-checked) |
+| RG-2 | ~~Starting placement: civ starts and goody huts from the game seed~~ (barbarians → RG-9) | P1 | L | H | done | Same-seed oracle starts reproduce identical placement: `seeded_start.sh` (NR, CRT, world params, map seed); `engine::placement` replays 3 oracle worlds draw for draw; huts from the seed hash, oracle-checked (predicted hut paid 100 gold, predicted non-hut nothing), taken = tile owned (evidence §RG-2) |
 | RG-3 | Random world generator (seeded; `.MP`-shaped output; original's exact algorithm unknown → our own, flagged) | P2 | L | H | todo | Statistical parity vs original maps (land%/biome spread); renders sanity-checked |
 | RG-8 | Player interface: per-civ observation (fog-limited), order set, validation, order log; all-AI default (decision 0002) | P1 | M | H | todo | A game replays bit-exact from seed + order log; every RG-4 decision goes through it |
 | RG-10 | AI v0, as an RG-8 player: explore, found cities, build settlers and defenders; deterministic | P1 | M | M | todo | 100-turn all-AI game on a standard save: every civ founds cities and grows; replays from seed + order log |
+| RG-11 | Goody-hut outcomes: what entering a hut gives (gold, tech, units, barbarians, nothing) and its draws, decoded against the oracle | P2 | M | H | todo | Same-seed oracle hut entries give the same outcomes |
 | RG-9 | Barbarians: when and where they appear (turn-time activity per barbarian level), decoded against the oracle | P2 | M | H | todo | Same-seed oracle game shows the same barbarian arrivals for N turns |
 | RG-4 | Opponent AI v1 headless, as an RG-8 player: expansion, economy, research, unit handling; deterministic | P2 | L | H | todo | 50-turn autoplay stable + deterministic; plausible power curves vs oracle games |
 | RG-5 | Diplomacy model: contacts, embassies, treaties, tribute, AI stances; save encoding | P2 | M | H | todo | Diplomacy state round-trips; oracle-save contacts match |

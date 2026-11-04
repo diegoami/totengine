@@ -171,6 +171,11 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   copied yesterday's autosave three times while the real saves went to
   another game folder. Harvest with `find -newer <marker touched at run
   start>` and fail when nothing is fresh.
+- **Restoring files under a still-running game does not stick.** The
+  oracle restored the install's autosaves on exit, then the game it left
+  running autosaved over them. Stop the process that writes before
+  restoring what it writes (`seeded_start.sh` now does; `KEEP_GAME=1`
+  opts out).
 - **Two framing errors can cancel for one field and hide the bug for the
   rest.** The save's tile records were read 2 bytes late, and an index
   `−1` plus a `+4` byte offset brought terrain back onto the right byte,

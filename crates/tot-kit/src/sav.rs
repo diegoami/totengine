@@ -41,11 +41,8 @@ pub enum SavError {
     Truncated(&'static str),
     /// map header invariant failed: no decodable embedded map
     NoMap,
-    /// unit region did not satisfy `34 + 40*N` (#49/#58 gate)
-    UnitRegionArithmetic {
-        region: usize,
-        rem: usize,
-    },
+    /// a city slot framed by the @698/@700 counts holds no valid name at
+    /// +34 (#49/#58 anti-fabrication gate)
     NoCityChain,
     /// writer edit rejected (out-of-range index, oversize string, …)
     BadEdit(&'static str),
@@ -58,12 +55,10 @@ impl fmt::Display for SavError {
             SavError::UnknownVersion(v) => write!(f, "unknown save version 0x{v:04x}"),
             SavError::Truncated(what) => write!(f, "truncated file while reading {what}"),
             SavError::NoMap => write!(f, "surface invariant failed; no decodable map"),
-            SavError::UnitRegionArithmetic { region, rem } => {
-                write!(f, "unit region {region} bytes is not 34 + 40*N (rem {rem})")
-            }
-            SavError::NoCityChain => {
-                write!(f, "no 92-B city name-chain located after the map blob")
-            }
+            SavError::NoCityChain => write!(
+                f,
+                "the unit/city counts (@698/@700) do not frame valid city records"
+            ),
             SavError::BadEdit(why) => write!(f, "bad save edit: {why}"),
         }
     }
@@ -649,63 +644,31 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         });
     }
 
-    // cities: 92-B name-chain scan (anti-fabrication #49/#58) after the
-    // 10240 blob. Mirrors the Python walker byte-for-byte: a candidate is
-    // a 2..15-byte printable run whose 16-byte slot NUL-pads to +15, and
-    // the scan jumps past a found name (interior starts are not examined).
-    let mut cands: Vec<usize> = Vec::new();
-    let mut i = blob10240_end;
-    while i + 16 <= data.len() {
-        let j = data[i..i + 16].iter().position(|&b| b == 0).unwrap_or(16);
-        // 2..15: two-letter city names are real ("Ur" in a standard-game
-        // corpus broke the chain at exactly this bound, hiding later
-        // cities — T1-4 2026-11-03)
-        if (2..16).contains(&j) {
-            let nm = &data[i..i + j];
-            let printable = nm
-                .iter()
-                .all(|&c| (32..127).contains(&c) || (0xA0..=0xFF).contains(&c));
-            if printable && data[i + 15] == 0 {
-                cands.push(i);
-                i += j + 1;
-                continue;
-            }
-        }
-        i += 1;
+    // units and cities: the game block's own counts frame them. i16@698 =
+    // unit count (RAM 0x607666, the loop bound of start placement and the
+    // unit loops), i16@700 = city count; both match every save whose
+    // tables were located by the old name-chain scan (ROMFALL 710/146,
+    // the std-lab series), and they also frame fresh games with fewer
+    // cities than the chain scan could anchor on (evidence §Record counts).
+    // Units are 40 B each from the end of the 10240 blob, then 92-B cities.
+    // Anti-fabrication (#49/#58): every city slot must hold a 2..15-byte
+    // printable name, NUL-padded to +15, at +34.
+    let unit_count = u16le(data, 698)? as usize;
+    let n_cities = u16le(data, 700)? as usize;
+    let city_offset = blob10240_end + 40 * unit_count;
+    let tables_end = city_offset + 92 * n_cities;
+    if tables_end > data.len() {
+        return Err(SavError::Truncated("unit/city tables"));
     }
-    let cand_set: std::collections::HashSet<usize> = cands.iter().copied().collect();
-    let mut best_chain: Vec<usize> = Vec::new();
-    for &s in &cands {
-        if !best_chain.is_empty() && s <= best_chain[0] + 92 * (best_chain.len() - 1) {
-            continue; // inside an existing chain
+    for c in 0..n_cities {
+        let name = &data[city_offset + 92 * c + 34..city_offset + 92 * c + 50];
+        let j = name.iter().position(|&b| b == 0).unwrap_or(16);
+        let printable = name[..j]
+            .iter()
+            .all(|&ch| (32..127).contains(&ch) || (0xA0..=0xFF).contains(&ch));
+        if !(2..16).contains(&j) || !printable || name[15] != 0 {
+            return Err(SavError::NoCityChain);
         }
-        let mut chain = vec![s];
-        while let Some(&next) = cand_set.get(&(chain.last().unwrap() + 92)) {
-            chain.push(next);
-        }
-        if chain.len() > best_chain.len() {
-            best_chain = chain;
-        }
-    }
-    if best_chain.len() < 2 {
-        // >= 2, not >= 8 (T1-4, 2026-11-03): standard-game early saves
-        // hold only the AI capitals (orig-A turn02 = 6 cities, region
-        // arithmetic 11514 = 40x287+34 validates). The anti-fabrication
-        // authority stays the 34+40*N unit-region gate below; chain
-        // length only locates the grid.
-        return Err(SavError::NoCityChain);
-    }
-    let first_name = best_chain[0];
-    let n_cities = (best_chain.last().unwrap() - first_name) / 92 + 1;
-
-    // units: the region between the 10240 blob and the first city NAME
-    // must be 40*N + 34 (proven on ROMFALL/Va_Auto; #49/#58 gate). The
-    // 34 is the head of city record 0 (names sit at +34 of each record),
-    // so the unit records are exactly 40*N from the blob end.
-    let region = first_name - blob10240_end;
-    let (unit_count, rem) = (region / 40, region % 40);
-    if rem != 34 {
-        return Err(SavError::UnitRegionArithmetic { region, rem });
     }
     let mut units = Vec::with_capacity(unit_count);
     let city_offset = blob10240_end + 40 * unit_count;
@@ -928,6 +891,8 @@ mod tests {
         d[685..687].copy_from_slice(&0x02dbu16.to_le_bytes()); // seed ×2
         d[687..689].copy_from_slice(&0x02dbu16.to_le_bytes());
         d[689] = 4; // rivals
+        d[698..700].copy_from_slice(&2u16.to_le_bytes()); // unit count
+        d[700..702].copy_from_slice(&8u16.to_le_bytes()); // city count
         let mut wonders = [-1i16; 28];
         wonders[3] = 2;
         for (w, v) in d[OFF_WONDERS..OFF_WONDERS + 56].chunks_mut(2).zip(wonders) {
@@ -1037,15 +1002,16 @@ mod tests {
     #[test]
     fn rejects_unit_region_misalignment() {
         let mut d = synthetic();
-        // corrupt the gate: insert one extra byte before the unit preamble
-        // (inside the 10240 blob tail) and drop one byte from the city grid
+        // shift the city grid by one byte: the count-framed name slots no
+        // longer hold names
         let end = d.len();
         d.insert(end - 8 * 92, 0);
         d.pop();
-        match parse_sav(&d) {
-            Err(SavError::UnitRegionArithmetic { .. }) => {}
-            other => panic!("expected arithmetic gate, got {other:?}"),
-        }
+        assert_eq!(parse_sav(&d), Err(SavError::NoCityChain));
+        // a unit count that runs past the file is truncation, not a panic
+        let mut d = synthetic();
+        d[698..700].copy_from_slice(&0x7fffu16.to_le_bytes());
+        assert!(matches!(parse_sav(&d), Err(SavError::Truncated(_))));
     }
 
     /// Reviewer finding #64: untrusted header fields and truncation give

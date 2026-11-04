@@ -775,36 +775,24 @@ def walk_save(path: str) -> dict:
                                      "invariant failed); classic unit/city "
                                      "scan not applicable")}
         else:
-            cands = set()
-            i = blob10240_end
-            while i < len(data) - 16:
-                j = data.find(b"\x00", i, i + 16)
-                if 2 <= j - i <= 15:
-                    nm = data[i:j]
-                    if all(32 <= c < 127 or 0xA0 <= c <= 0xFF for c in nm) and data[i + 15] == 0:
-                        # require the previous record position to exist: the slot
-                        # before a real grid is data, not another name
-                        cands.add(i)
-                        i = j
-                i += 1
-            best_chain = []
-            for s in sorted(cands):
-                if best_chain and s <= best_chain[0] + 92 * (len(best_chain) - 1):
-                    continue  # inside an existing chain
-                chain = [s]
-                while chain[-1] + 92 in cands:
-                    chain.append(chain[-1] + 92)
-                if len(chain) > len(best_chain):
-                    best_chain = chain
-            if len(best_chain) >= 2:
-                # >= 2, not >= 8 (T1-4, 2026-11-03): standard-game early
-                # saves hold only the AI capitals (orig-A turn02 = 6 cities,
-                # region arithmetic 11514 = 40x287+34 validates). The
-                # anti-fabrication authority stays the 34+40*N unit-region
-                # gate + coordinate sanity below; chain length only locates
-                # the grid.
-                probe = best_chain[0]
-                n = (best_chain[-1] - probe) // 92 + 1
+            # unit/city framing from the game block's own counts (evidence
+            # §Record counts, 2026-11-04): i16@698 = units, i16@700 = cities;
+            # cities follow 40*units after the blob. Anti-fabrication
+            # (#49/#58): every city slot must hold a NUL-padded printable
+            # name at +34. (Replaces the name-chain scan, which could not
+            # anchor on fresh games with few cities.)
+            n_units, n_cities = struct.unpack_from("<HH", data, 698)
+            probe = blob10240_end + 40 * n_units + 34
+            names_ok = probe - 34 + 92 * n_cities <= len(data)
+            for k in range(n_cities if names_ok else 0):
+                slot = data[probe + 92 * k: probe + 92 * k + 16]
+                j = slot.find(b"\x00")
+                if not (2 <= j <= 15 and slot[15] == 0
+                        and all(32 <= c < 127 or 0xA0 <= c <= 0xFF for c in slot[:j])):
+                    names_ok = False
+            best_chain = [probe + 92 * k for k in range(n_cities)] if names_ok else []
+            if names_ok:
+                n = n_cities
                 u_end_pre = probe
                 region_pre = u_end_pre - blob10240_end
                 uc, rem_pre = divmod(region_pre, 40)
@@ -930,9 +918,9 @@ def walk_save(path: str) -> dict:
                         f"ocean, {outside} outside the stored grid (measured on "
                         "this file)")
             elif "units" not in out:
-                out["units"] = {"note": ("no 92-B name-chain of >=8 slots "
-                                         "found after the map blob — classic "
-                                         "unit/city layout not present/located")}
+                out["units"] = {"note": ("the unit/city counts (@698/@700) do "
+                                         "not frame valid city records — "
+                                         "classic unit/city layout not located")}
     return out
 
 

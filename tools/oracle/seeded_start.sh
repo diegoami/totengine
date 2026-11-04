@@ -21,7 +21,9 @@
 # named <folder>_<file>), plus placement.txt (live unit table).
 # The install is left as found: existing saves are backed up first and
 # restored after the harvest, and saves this run created are removed
-# (other tests read e.g. Original/Ph_Auto.SAV, the std-lab autosave).
+# (other tests read e.g. Original/Ph_Auto.SAV, the std-lab autosave). The
+# game is stopped before the restore; KEEP_GAME=1 leaves it running for a
+# follow-up probe, and then its later autosaves land in the install.
 set -u
 OUT=${1:?outdir}
 SIZE_D=${2:-0}
@@ -37,6 +39,14 @@ BK="$OUT/.install_backup"
 rm -rf "$BK"; mkdir -p "$BK"
 (cd "${CIVTOT_HOME:?}" && find . -iname "*.sav" -exec cp -p --parents {} "$BK" \;)
 restore_install() {
+    # the running game autosaves later (seen 2026-11-04: Ph_Auto.SAV
+    # rewritten after an exit-time restore), so stop it first unless the
+    # caller keeps it for a follow-up probe (then the install may change)
+    if [ -n "${KEEP_GAME:-}" ]; then
+        echo "KEEP_GAME: game left running; restoring now, but later autosaves will overwrite the install's saves"
+    else
+        ./stop_game.sh >/dev/null 2>&1
+    fi
     (cd "$BK" && find . -iname "*.sav" -exec cp -p --parents {} "$CIVTOT_HOME" \;)
     find "$CIVTOT_HOME" -iname "*.sav" -newer "$OUT/.marker" | while read -r f; do
         [ -e "$BK/${f#"$CIVTOT_HOME"/}" ] || rm -f "$f"

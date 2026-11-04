@@ -36,6 +36,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 - **`engine::placement`** (RG-2): civ start placement, decoded from the
   original. Three oracle worlds replay draw for draw (568 CRT draws,
   15 starts).
+- **Goody huts** (RG-2): derived from the map seed (oracle-checked). Any
+  unit entering a tile makes its civ the tile owner, which takes the hut;
+  `MoveOutcome::hut` reports entries (outcomes not decoded yet, RG-11).
+  The engine tracks tile owners and the resource seed (in the checksum).
+- **Units and cities are framed by the save's own counts** (i16@698 /
+  @700), in tot-kit and the Python walker. Fresh games with few cities now
+  parse.
 
 - City and civ names decode as Latin-1, and the save editor encodes renames
   as Latin-1 (#69).

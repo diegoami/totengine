@@ -481,6 +481,68 @@ all rotating slots AND byte-compare against the previous baseline
 NOT reproducible from wizard settings alone; the T1-6 RNG-state hunt (RAM,
 via `memspool.py`) is the path to reproducibility.
 
+### T1-4 city totals: decoded structure, inputs still open (2026-11-04)
+
+Static decode from `civ2.bak`. The city-totals function `0x4c45ff`
+stores the record fields:
+
+| Record field | Holds | Source |
+|---|---|---|
+| @80 | trade after routes and corruption | — |
+| @82 | food | global `0x653848` |
+| @83 | shields | global `0x65384c` |
+| @76 | science | `0x6537f8` |
+| @78 | taxes | `0x6537d4` |
+| @84 | happy count | `0x6537d0` |
+| @85 | unhappy count | `0x653828` |
+| u16@32 | trade − corruption, before trade routes | — |
+
+The globals `0x653848/4c/50` are the food/shield/trade sums of the tile
+loop (`0x4c2b81`).
+
+**Corruption / waste** (`0x4c35a2(city, amount, waste?, mode)`):
+- `amount ≤ 0` gives 0.
+- **Non-communist:** `amount · d / (f · 20)`, where:
+  - `d` = the distance (`0x566dad`) to the nearest same-civ city with a
+    Palace (improvement 1); 0 in the capital, 32 with no capital
+    (`0x4c13fe`);
+  - for waste `d` is capped at 16;
+  - under anarchy/despotism, a human civ uses
+    `d = clamp(difficulty + d, 0, 32)`;
+  - `f = 4 + (g≥1) + (g≥2) + (g≥3) + (g≥5)` (`0x4c3551`), where g is the
+    government, +1 while celebrating.
+- **Communism** (g = 3): `rate · amount · 3 / (f · 20)`, with the rate
+  byte at RAM `0x5f5ec8`.
+- Clamped to [0, amount], then halved by a Courthouse (7) or Palace (1).
+- Trade corruption is zeroed under Fundamentalism (4) and Democracy (6).
+
+**Shields** (`0x4c3919`):
+- **Multipliers:** with `q` = 2 per Factory (15) and Manufacturing Plant
+  (16), and `p` = 2 with any power plant (19/20/21/29) or Hoover Dam
+  (wonder 22) but capped at `q`:
+  `shields += shields·p/4 + shields·q/4`.
+- **Waste:** `w = corruption(shields − support, waste)` (support =
+  `0x6537e8`, a unit-support count from a separate function), then:
+  - `w = w · (3 − conn) / 3`;
+  - `w = w / ((g>>1) + 1)`;
+  - capped at the shields;
+  - zero for barbarians, Democracy or Fundamentalism.
+
+  `conn` (`0x6537f4`) is 1 in the capital (+1 with Railroad), 1 when both
+  cities have improvement 32, else the road/rail route test `0x471a13` to
+  the capital.
+
+**Replay status:** trade = tile trade − corruption, on cities without
+trade routes:
+- 9/10 standard-game cities exact;
+- only 45/145 in ROMFALL.
+
+Every miss takes *more* corruption than the model, and no single
+constant fits all ROMFALL misses. So the open input is the distance /
+capital lookup (or the base amount), not the formula's shape. Next step:
+read `d` and `0x653880` (the capital index) from RAM for known cities in
+a live game.
+
 ### T1-4 tile yields DECODED (2026-11-04): the original's tile-yield function
 
 Source: the unpatched `civ2.bak`, function `0x4c22a7(city, radius index k,

@@ -220,7 +220,7 @@ full 383 MB address space — `tools/oracle/ramdump.py`):
   true position, then map record↔live (slot permutation? second table?)
   and decode the worked-tile set per city.
 
-### T1-4 tile yields: first fits + open geometry (2026-11-03 night) — SUPERSEDED by §T1-4 tile yields DECODED
+### T1-4 tile yields: first fits + open geometry (2026-11-03 night) — SUPERSEDED by §T1-4 tile yields DECODED (2026-11-04)
 
 - **@TERRAIN fields 3/4/5 = food/shields/trade** (classic layout,
   Original/Rules.txt); special resources are further rows of the same
@@ -517,7 +517,7 @@ processing time, after growth: the stored @83 of turn t is the previous
 evaluation. They all fit rows = 10 with a net 1–2 higher. Exact
 turn-pair parity is T1-10.
 
-### T1-4 city totals: decoded structure, inputs still open (2026-11-04)
+### T1-4 city totals DECODED (2026-11-04): corruption, waste, multipliers, unit support
 
 Static decode from `civ2.bak`. The city-totals function `0x4c45ff`
 stores the record fields:

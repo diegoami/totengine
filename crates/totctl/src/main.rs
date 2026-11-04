@@ -28,8 +28,8 @@ fn main() -> ExitCode {
             eprintln!(
                 "usage: {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
-                        {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT]\n\
-                        \x20                        — all-random players (RG-8); writes the order log\n\
+                        {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai]\n\
+                        \x20                        — random players (RG-8) or AI v0 (--ai); writes the order log\n\
                         {prog} replay <file.sav|scn> <order.log>\n\
                         \x20                        — re-drive a game from its log; exit 1 at the first divergence\n\
                         {prog} boot <file.sav|scn> [--rules PATH] [--turns N] [--seed S]\n\
@@ -655,13 +655,14 @@ fn sibling_rules_events(
 /// `totctl play`: every civ is a RandomPlayer (decision 0003); prints one
 /// line per turn and writes the order log.
 fn cmd_play(args: &[String]) -> ExitCode {
-    let (mut path, mut turns, mut seed, mut out) = (None, 10usize, 1u64, None);
+    let (mut path, mut turns, mut seed, mut out, mut ai) = (None, 10usize, 1u64, None, false);
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
             "--turns" => turns = it.next().and_then(|v| v.parse().ok()).unwrap_or(turns),
             "--seed" => seed = it.next().and_then(|v| v.parse().ok()).unwrap_or(seed),
             "--log" => out = it.next().cloned(),
+            "--ai" => ai = true,
             _ if path.is_none() => path = Some(a.clone()),
             _ => {
                 eprintln!("error: unexpected argument {a}");
@@ -670,7 +671,7 @@ fn cmd_play(args: &[String]) -> ExitCode {
         }
     }
     let Some(path) = path else {
-        eprintln!("usage: totctl play <file.sav|scn> [--turns N] [--seed S] [--log OUT]");
+        eprintln!("usage: totctl play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai]");
         return ExitCode::from(2);
     };
     let run = || -> Result<engine::player::Game, String> {
@@ -680,9 +681,16 @@ fn cmd_play(args: &[String]) -> ExitCode {
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default();
+        let ais: Vec<engine::ai::AiV0> = (1..8u8)
+            .map(|c| engine::ai::AiV0::new(&rules, seed, c))
+            .collect();
         let mut g = engine::player::Game::new(&name, &bytes, seed, rules, events)?;
-        for civ in 1..8 {
-            g.players[civ] = Some(Box::new(engine::player::RandomPlayer::new(seed, civ as u8)));
+        for (civ, a) in (1..8).zip(ais) {
+            g.players[civ] = if ai {
+                Some(Box::new(a))
+            } else {
+                Some(Box::new(engine::player::RandomPlayer::new(seed, civ as u8)))
+            };
         }
         for _ in 0..turns {
             g.play_turn();

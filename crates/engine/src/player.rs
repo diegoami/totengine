@@ -21,8 +21,8 @@ use crate::rng::{GameRng, Lcg64};
 use crate::yields::{CityOutput, RADIUS_DX, RADIUS_DY};
 use crate::WorldState;
 
-/// Orders a player may give (decision 0003). `FoundCity` and
-/// `SetResearch` come with AI v0 (#75).
+/// Orders a player may give (decision 0003). `FoundCity` came with AI v0
+/// (#75); `SetResearch` waits for per-civ research progress.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Order {
     /// Move unit `unit` (index in [`WorldState::units`]) to a diamond
@@ -30,6 +30,9 @@ pub enum Order {
     Move { unit: usize, to: (u16, u16) },
     /// Set city `city`'s build item: unit type ≥ 0, improvement `-id` < 0.
     SetProduction { city: usize, item: i8 },
+    /// Found a city with settler `unit` on its tile
+    /// ([`WorldState::found_city`]).
+    FoundCity { unit: usize },
     /// End this civ's turn.
     EndTurn,
 }
@@ -43,6 +46,8 @@ pub enum OrderResult {
         won: bool,
     },
     ProductionSet,
+    /// A city was founded; its index.
+    Founded(usize),
     TurnEnded,
     /// Nothing changed; the reason says why.
     Rejected(&'static str),
@@ -53,6 +58,7 @@ impl fmt::Display for Order {
         match self {
             Order::Move { unit, to } => write!(f, "move {unit} {} {}", to.0, to.1),
             Order::SetProduction { city, item } => write!(f, "prod {city} {item}"),
+            Order::FoundCity { unit } => write!(f, "found {unit}"),
             Order::EndTurn => write!(f, "end"),
         }
     }
@@ -66,6 +72,7 @@ impl fmt::Display for OrderResult {
                 write!(f, "attack {}", if *won { "won" } else { "lost" })
             }
             OrderResult::ProductionSet => write!(f, "prod-set"),
+            OrderResult::Founded(c) => write!(f, "founded {c}"),
             OrderResult::TurnEnded => write!(f, "ended"),
             OrderResult::Rejected(why) => write!(f, "rejected {}", why.replace(' ', "_")),
         }
@@ -83,6 +90,9 @@ impl Order {
             ["prod", c, i] => Some(Order::SetProduction {
                 city: c.parse().ok()?,
                 item: i.parse().ok()?,
+            }),
+            ["found", u] => Some(Order::FoundCity {
+                unit: u.parse().ok()?,
             }),
             ["end"] => Some(Order::EndTurn),
             _ => None,
@@ -300,6 +310,22 @@ impl WorldState {
     ) -> OrderResult {
         match order {
             Order::EndTurn => OrderResult::TurnEnded,
+            Order::FoundCity { unit } => {
+                if self
+                    .units
+                    .get(unit)
+                    .is_none_or(|u| u.id == 0 || u.owner != civ)
+                {
+                    return OrderResult::Rejected("not your unit");
+                }
+                match self.found_city(rules, unit) {
+                    Ok(c) => {
+                        self.reveal(civ);
+                        OrderResult::Founded(c)
+                    }
+                    Err(why) => OrderResult::Rejected(why),
+                }
+            }
             Order::SetProduction { city, item } => {
                 let Some(c) = self.cities.get(city) else {
                     return OrderResult::Rejected("no such city");

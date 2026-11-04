@@ -3,6 +3,24 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
+## [Unreleased]
+
+### Engine (v0.6.0, AI v0)
+
+- **AI v0** (`engine::ai::AiV0`, #75/#76):
+  - a deterministic engine-designed player: it explores, founds cities,
+    garrisons them, and builds defenders and Settlers;
+  - a 100-turn all-AI game on the standard save takes 10 cities to 50,
+    every civ founds cities, and the game replays bit-exact
+    (`crates/engine/tests/ai_install.rs`);
+  - `totctl play --ai`.
+- **`FoundCity` order** (`engine::founding`), decoded in part from
+  `create_city` (`0x432810`):
+  - decoded: the record's initial values, the first city's Palace, and
+    the first build (the best defender per cost);
+  - engine rules, flagged: the name, the first worked tile, founding
+    validity and the Settlers population cost.
+
 ## [0.5.0] — Player interface
 
 Every civ is now driven by a player behind a headless interface. A player

@@ -19,7 +19,8 @@
 //! - wonders (ids ≥ 40) and their box reset;
 //! - veteran units from Barracks;
 //! - the late-game AI rows adjustment (turn > 200);
-//! - the Settlers-at-size-1 case at Chieftain;
+//! - the Settlers-at-size-1 case at Chieftain (and the population cost:
+//!   the engine's rule is in `founding.rs`);
 //! - what an AI chooses next (the item stays).
 
 use tot_kit::Rules;
@@ -76,6 +77,15 @@ impl WorldState {
             let cost = rules.unit_cost(t)? as i32 * rows;
             if box_now < cost {
                 return None;
+            }
+            // engine rule (founding.rs): settlers cost one population; a
+            // size-1 city keeps the box until it grows
+            let settler = rules.unit_role(t) == Some(crate::founding::ROLE_SETTLE);
+            if settler && c.size <= 1 {
+                return None;
+            }
+            if settler {
+                c.size -= 1;
             }
             c.shield_box = (box_now - cost) as u16;
             let (x, y) = (c.x, c.y);

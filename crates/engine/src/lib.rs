@@ -7,10 +7,12 @@
 //! sequencing plus a seeded [`GameRng`], with per-phase work landing in
 //! T1-3..T1-7.
 
+pub mod ai;
 pub mod cities;
 pub mod combat;
 pub mod effects;
 pub mod events;
+pub mod founding;
 pub mod movement;
 pub mod placement;
 pub mod player;

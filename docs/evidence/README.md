@@ -481,6 +481,40 @@ all rotating slots AND byte-compare against the previous baseline
 NOT reproducible from wizard settings alone; the T1-6 RNG-state hunt (RAM,
 via `memspool.py`) is the path to reproducibility.
 
+### City founding: `create_city` decoded in part (2026-11-04, v0.6.0)
+
+Source: `civ2.bak` `0x432810` = `create_city(x, y, civ, map)`, 6
+callers. Engine: `engine::founding`.
+
+**Decoded:**
+- **Slot:** a free slot (city id @86 = 0) is reused, else the city count
+  (RAM `0x607668` = save @700) grows, up to 255.
+- **Record:**
+  - x@0, y@2, map@4, owner@10, original owner@12;
+  - city id @86 from a global counter (`0x5d1504`);
+  - flags @6 = `0x20000`;
+  - size @11 = 1;
+  - boxes @28/@30, u16@32, worked tiles u32@50 = 0;
+  - improvements @54 cleared.
+- **Civ:** the civ's city count (civ block u16@112) increments, and the
+  founding turn is stored at civ @22.
+- **Tile:** gets the city bit (byte +1 `0x02`).
+- **First city:** the civ's first city gets the Palace (`0x4300af`).
+- **Build item @59:** the buildable unit of role 1 (defend) with the best
+  defence / cost, ties to the later unit (`0x432d47`..`0x432e02`). The
+  tribe's default unit is overridden whenever any defender is buildable.
+- **Flags:** `0x80` when a neighbour is ocean, plus `0x200000` for a
+  larger body of water.
+
+**Not decoded, and the engine's rules instead** (flagged in
+`founding.rs`):
+- the name (`0x4323af` uses per-tribe lists);
+- the first worked tile (the original reassigns workers later);
+- founding validity (land, no city within distance 1);
+- the population cost of Settlers: no size write was found in the
+  production step, so it is in the unit-creation path or elsewhere. The
+  engine uses the classic one population, and a size-1 city waits.
+
 ### T1-4 production DECODED (2026-11-04): shield box, rows, completion
 
 Source: `civ2.bak`. The production step is `0x4c6210`; shield rows come

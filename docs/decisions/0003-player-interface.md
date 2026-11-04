@@ -42,10 +42,10 @@ applies.
 |---|---|---|
 | `Move { unit, to }` | the unit is the civ's, alive, has moves, `to` is a diamond neighbour | `move_unit` (a move, or an attack on foreign units) |
 | `SetProduction { city, item }` | the city is the civ's; a unit type whose prerequisite advance the civ knows, or an improvement it can build and lacks | sets the build item (the box carries over) |
+| `FoundCity { unit }` | added in v0.6.0: a settler of the civ, on land, no city within distance 1 | creates the city (`engine::founding`; evidence §City founding) |
 | `EndTurn` | always | ends the civ's turn |
 
-Founding cities and choosing research come with AI v0 (v0.6.0, #75):
-founding needs a city-creation decode that v0.5.0 does not have.
+Choosing research waits for per-civ research progress.
 
 A rejected order changes nothing and returns the reason. Players see
 every result.

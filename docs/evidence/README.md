@@ -575,8 +575,16 @@ Evidence:
 - Both equal the counts the old name-chain scan derived, on every save it
   could frame: ROMFALL 710/146, the std-lab series 10/4, Ph_Auto2 38/10.
 - They also frame a fresh turn-1 game with 7 units and 4 cities (Moscow,
-  Kyoto, Beijing, Paris), which the chain scan could not anchor on. Those
-  cities stand exactly on the placed starts (§RG-2 start placement).
+  Kyoto, Beijing, Paris), which the chain scan could not anchor on. The
+  cities match the starts of the same pins (fixture world pl2) as
+  follows:
+  - Moscow (43,41), Kyoto (2,12) and Beijing (30,24) stand exactly on the
+    starts of civs 1, 2 and 5.
+  - Paris (45,9) is one diamond step from civ 3's start (46,8); civ 3's
+    settler had moved there before founding it (run record o1 lists it at
+    (45,9)).
+  - That save's own draw log is not committed; the match rests on the
+    pl2 fixture, which uses the same pins (reviewer finding #71).
 
 Both decoders now frame units (`40·N` after the 10240 blob) and cities
 (`92·M` after the units) from these counts. Every city slot must hold a

@@ -70,10 +70,11 @@ RandomPlayer; `totctl play/replay`). **v0.6.0 "AI v0"** is released too
 transient refresh bit): `engine::ai::AiV0`, `engine::founding` (FoundCity, create_city
 partly decoded), obsolete units + veterans, goody-hut outcomes in part
 (`engine::huts`; the rest is #79, moved to v0.8.0).
-v0.7.0 "browser observer" is implemented on main (candidate; independent
-review/tag pending): `engine::observer` per-turn snapshots, `totctl observe`,
+**v0.7.0 "browser observer"** is released too (AGREE on #104, 1 round):
+`engine::observer` per-turn snapshots, `totctl observe`,
 local browser UI in `totui`; #80/#81, usage in `docs/browser-observer.md`.
-Next after release: v0.8.0 AI v1 + economy depth.
+Next: v0.8.0 AI v1 + economy depth. Review follow-up #105 tracks stale
+evidence-documentation references (pre-existing, not release-blocking).
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;
 decision 0002; observing and playing are the two main goals): v0.3.0

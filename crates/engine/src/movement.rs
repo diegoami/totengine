@@ -212,6 +212,8 @@ mod tests {
             governments: [0; 8],
             science_rates: [0; 8],
             tax_rates: [0; 8],
+            research: [tot_kit::ResearchState::default(); 8],
+            research_settings: tot_kit::ResearchSettings::default(),
             techs: [[0; 13]; 8],
             civs: vec![],
             units: vec![

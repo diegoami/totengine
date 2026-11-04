@@ -195,13 +195,7 @@ impl WorldState {
                     }
                     match found {
                         Some(t) => {
-                            if let Some(b) = self
-                                .techs
-                                .get_mut(civ as usize)
-                                .and_then(|b| b.get_mut(t >> 3))
-                            {
-                                *b |= 1 << (t & 7);
-                            }
+                            self.grant_advance(civ, t);
                             return HutOutcome::Advance(t);
                         }
                         None => {

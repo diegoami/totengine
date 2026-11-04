@@ -505,6 +505,48 @@ pub fn civ_names_from(block: &[u8]) -> CivNames {
     }
 }
 
+/// Per-civ research bookkeeping in the existing properties block.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ResearchState {
+    /// Civ word @16, signed accumulator (`0x4a1ebf`).
+    pub progress: i16,
+    /// Civ word @18: -1 = no target, 89 = repeatable future technology.
+    pub target: i16,
+    /// Civ bytes @24/@25/@26. Costs use @24 + @26; @25 counts future techs.
+    pub acquired: u8,
+    pub future: u8,
+    /// Preserved cost adjustment; its wider scenario meaning is not decoded.
+    pub adjustment: u8,
+}
+
+impl Default for ResearchState {
+    fn default() -> Self {
+        Self {
+            progress: 0,
+            target: -1,
+            acquired: 0,
+            future: 0,
+            adjustment: 0,
+        }
+    }
+}
+
+/// Inputs of the original's research-cost routine `0x4a1ae0`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct ResearchSettings {
+    /// Raw game word @660; cost uses bits 0x80, 0x04 and 0x08.
+    pub flags: u16,
+    /// Enabled advance count, game word @702 (Rules loader 0x412f84/0x4132a3);
+    /// cost scales by 67/value when value > 67.
+    pub advance_count: i16,
+    /// Raw game byte @964, used as the cost comparison civ slot.
+    pub reference_civ: u8,
+    /// Scenario parameters (paradigm, skip catch-up adjustment), or None
+    /// when the scenario tail has not been proven/does not fit the file.
+    /// Non-scenario games ignore this and use @COSMIC row 11.
+    pub scenario: Option<(i16, i16)>,
+}
+
 /// A parsed `0x32` (or `0x33`-front) save/scenario. See the module docs
 /// for the layout and the evidence trail.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -555,6 +597,8 @@ pub struct SaveFile {
     /// (`0x4c3f0c`); luxuries use the remainder out of ten.
     pub science_rates: [u8; 8],
     pub tax_rates: [u8; 8],
+    pub research: [ResearchState; 8],
+    pub research_settings: ResearchSettings,
     /// Known advances per civ: the bitfield @96 of each civ block (RAM
     /// `0x5f6900`, `0x49c820`), bit n = advance n.
     pub techs: [[u8; 13]; 8],
@@ -633,6 +677,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     let mut science_rates = [0u8; 8];
     let mut tax_rates = [0u8; 8];
     let mut techs = [[0u8; 13]; 8];
+    let mut research = [ResearchState::default(); 8];
     for c in 0..8 {
         let b = OFF_CIV_PROPS + CIV_PROPS_STRIDE * c;
         let block = data
@@ -641,6 +686,13 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         governments[c] = block[29];
         science_rates[c] = block[27];
         tax_rates[c] = block[28];
+        research[c] = ResearchState {
+            progress: i16::from_le_bytes([block[16], block[17]]),
+            target: i16::from_le_bytes([block[18], block[19]]),
+            acquired: block[24],
+            future: block[25],
+            adjustment: block[26],
+        };
         techs[c].copy_from_slice(&block[96..109]);
     }
     let mut treasury = [0i32; 8];
@@ -750,6 +802,33 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         cities.push(CityRecord { raw });
     }
 
+    let flags = u16le(data, 660)?;
+    // Original writer 0x4600ba..0x46053a: 21*3 terrain bytes,
+    // cursor 4 B, 60 B per human leader (one in single-player), 1200 B,
+    // 106 B, 8*10 B, then the scenario's 100-B parameters block.
+    // Do not guess a 0x33 scenario tail from the classic layout.
+    let scenario = if flags & 0x80 != 0 && version == 0x32 {
+        let leaders = if data[678] == 0 {
+            1
+        } else {
+            human_mask.count_ones() as usize
+        };
+        let pos = tables_end + 1453 + 60 * leaders;
+        data.get(pos..pos + 100).map(|b| {
+            (
+                i16::from_le_bytes([b[82], b[83]]),
+                i16::from_le_bytes([b[84], b[85]]),
+            )
+        })
+    } else {
+        None
+    };
+    let research_settings = ResearchSettings {
+        flags,
+        advance_count: i16le(data, 702)?,
+        reference_civ: data[964],
+        scenario,
+    };
     Ok(SaveFile {
         version,
         turn,
@@ -767,6 +846,8 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         governments,
         science_rates,
         tax_rates,
+        research,
+        research_settings,
         techs,
         transporter_count,
         map_header: hdr,

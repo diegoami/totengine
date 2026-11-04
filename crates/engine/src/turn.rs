@@ -42,6 +42,8 @@ pub struct TurnSummary {
     pub events: Vec<(Effect, Applied)>,
     /// What city production completed: (city index, item).
     pub built: Vec<(usize, crate::production::Built)>,
+    /// (civ, advance) discoveries from this turn's city science.
+    pub discoveries: Vec<(u8, usize)>,
 }
 
 /// AI role 5 = settle (Rules @UNITS field 11).
@@ -93,6 +95,29 @@ impl WorldState {
             let finance = self.city_finance(rules, k);
             self.cities[k].net_science = finance.science.clamp(0, u16::MAX as i32) as u16;
             self.cities[k].net_taxes = finance.taxes.clamp(0, u16::MAX as i32) as u16;
+            let civ = (self.cities[k].owner & 15) as u8;
+            // 0x4ca000: anarchy contributes no research. The tutorial's
+            // Chieftain human bonus doubles science toward an advance
+            // already discovered by another player. The late spaceship-
+            // related AI doubling branch is not modelled yet.
+            if self.governments.get(civ as usize).is_some_and(|&g| g != 0) {
+                let mut science = finance.science;
+                let target = self.research[civ as usize].target;
+                if self.difficulty == 0
+                    && self.human_mask & (1 << civ) != 0
+                    && (0..100).contains(&target)
+                    && target != 89
+                    && self
+                        .techs
+                        .iter()
+                        .any(|b| b[target as usize / 8] & (1 << (target as usize % 8)) != 0)
+                {
+                    science *= 2;
+                }
+                if let Some(advance) = self.add_research(rules, civ, science) {
+                    sum.discoveries.push((civ, advance));
+                }
+            }
             // the totals pass (0x4c45ff -> 0x430232) clears create_city's
             // refresh-pending bit (evidence §City founding)
             self.cities[k].flags &= !crate::founding::CITY_REFRESH;

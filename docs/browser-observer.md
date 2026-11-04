@@ -1,6 +1,7 @@
 # Browser observer (#80 / #81)
 
-The browser watches AI v0 using the existing player API (decision 0002).
+The browser watches AI v0 by default using the existing player API (decision 0002).
+Add `--ai-v1` for the first research-capable AI v1 increment.
 It renders the surface map, living units and cities with original geometric
 tiles. It needs no JavaScript build, CDN, original artwork or npm packages.
 The CLI still requires your own save and its sibling `Rules.txt`; a sibling
@@ -80,7 +81,7 @@ shows only the engine's surface map.
 `cargo test --workspace` includes a synthetic 100-turn AI stream/replay
 comparison, existing fog-boundary comparisons, and cached-frame checks.
 With `CIVTOT_HOME` set, `crates/totctl/tests/observer_install.rs` additionally
-exports 100 turns on `Original/Ph_Auto2.SAV`, reconstructs the stream from
+exports 100 turns with `--ai-v1` on `Original/Ph_Auto2.SAV`, reconstructs the stream from
 its order log, compares every byte of all 101 frames, and checks overwrite
 refusal. `make test fmt clippy` also checks the existing golden corpus.
 

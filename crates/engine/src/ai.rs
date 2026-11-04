@@ -253,6 +253,49 @@ impl Player for AiV0 {
     }
 }
 
+/// First AI v1 increment (#82): AI v0's expansion/unit handling plus
+/// research choices. Chooses the prerequisite-valid advance with the
+/// highest Rules AI value, breaking ties by lowest ID. This is an engine
+/// policy, not a recreation of the original AI; economy/war refinements
+/// and comparative power curves remain work under #82.
+pub struct AiV1 {
+    base: AiV0,
+    research_values: Vec<i32>,
+}
+
+impl AiV1 {
+    pub fn new(rules: &Rules, seed: u64, civ: u8) -> Self {
+        Self {
+            base: AiV0::new(rules, seed, civ),
+            research_values: rules
+                .tech_defs()
+                .iter()
+                .map(|t| t.ai_value.unwrap_or(0))
+                .collect(),
+        }
+    }
+}
+
+impl Player for AiV1 {
+    fn act(&mut self, obs: &Observation) -> Order {
+        if obs
+            .research
+            .target
+            .is_none_or(|t| !obs.research.available.contains(&t))
+        {
+            if let Some(&advance) = obs.research.available.iter().max_by_key(|&&t| {
+                (
+                    self.research_values.get(t).copied().unwrap_or(0),
+                    std::cmp::Reverse(t),
+                )
+            }) {
+                return Order::SetResearch { advance };
+            }
+        }
+        self.base.act(obs)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::player::{Game, Player};

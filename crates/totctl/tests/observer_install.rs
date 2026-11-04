@@ -21,7 +21,7 @@ fn hundred_turn_observer_cli_replays_identically() {
     let result = Command::new(env!("CARGO_BIN_EXE_totctl"))
         .arg("observe")
         .arg(&save)
-        .args(["--turns", "100", "--seed", "3", "--stream"])
+        .args(["--turns", "100", "--seed", "3", "--ai-v1", "--stream"])
         .arg(&live)
         .arg("--log")
         .arg(&log)

@@ -713,6 +713,120 @@ actual treasury income are not supplied by this slice. New rates and
 specialists join the checksum; run50 fingerprints are intentionally
 regenerated, with all non-checksum columns unchanged.
 
+### Per-civ research DECODED (v0.8.0, #82 dependency)
+
+Source: unpatched `civ2.bak`: cost `0x4a1ae0`, accumulation `0x4a1ebf`,
+completion `0x4a145e`, advance grant `0x49dedf`, city science `0x4ca000`.
+Derived artifacts: `research.json`, `research-cost-vectors.txt`.
+
+**Saved inputs:** per-civ properties (same @2944 + civ*3348 framing):
+
+| Offset | Meaning | Original access |
+|---|---|---|
+| i16@16 | science progress | `0x4a1eee`/`0x4a1f09` |
+| i16@18 | target (-1 none; 89 repeatable future tech) | `0x4a1f21` |
+| u8@24 | acquired-advance cost counter | `0x4a1afb` |
+| u8@25 | future-tech counter | `0x49e0db` |
+| u8@26 | additional cost counter, wider meaning open | `0x4a1b14` |
+
+The acquired counter is persisted, not inferred from known-tech bit count:
+starting grants at turn zero do not increment it (`0x49e0e2`–`0x49e137`).
+A normal grant sets the known bit; a future grant increments @25 instead;
+post-turn-zero grants increment @24, and a matching target is cleared.
+
+Game word **@660** is the raw flags word read at `0x607640` (research uses
+0x80/0x04/0x08); word **@702** is the enabled-advance count
+(`0x60766a`), and byte **@964** is the comparison slot (`0x607770`). The
+advance loader zeros the count at `0x412f84` and increments it for enabled
+advance rows at `0x4132a3`; it is **89 in Original and 52 in ROMFALL**.
+It is not a map dimension. The cost routine uses the saved comparison slot
+as a civ index; its broader ranking policy is not implemented by the engine.
+
+For classic 0x32 scenarios, writer `0x4600ba`–`0x46053a` places a 100-byte
+scenario block after the cities and: 21*3 terrain bytes, 4 cursor bytes,
+60 bytes per human leader (one when game byte @678 is zero), 1200 bytes,
+106 bytes and 8*10 bytes. Thus the block starts at
+`city_end + 1453 + 60*leaders`. Research uses its i16@82 paradigm and
+i16@84 skip-adjustment setting (RAM `0x5f5ea2/a4`). ROMFALL reads
+**(100, -5)**. The parser requires the whole block to fit, and does not
+apply the classic tail formula to 0x33 scenarios. Unknown scenario cost
+settings yield `None` and disable research accounting/orders for that
+scenario, rather than using fabricated defaults. Non-scenario games use
+@COSMIC row 11 and need no scenario tail.
+
+**Cost arithmetic**, in original order (each division truncates toward zero):
+
+1. `raw = counter24 + counter26`, `n = max(raw, 1)`,
+   `d = min(difficulty, 4)`. Base factor is `2*d + 6` for a human slot,
+   otherwise `14 - d` (`0x4a1b34`–`0x4a1b7c`).
+2. Unless scenario flag 0x80 and its skip-adjustment setting are both set:
+   compare the saved comparison civ's raw counters with n. If ahead,
+   subtract 1 except on difficulty 0; subtract a second 1 on difficulty 5
+   when ahead by more than 4 and turn > 150. Otherwise add `(n-ref)/3`.
+   For n >= 20 additionally add `clamp(n-turn/8, 0, 6)`.
+3. Multiply factor by the applicable paradigm / 10. Add a bonus of
+   `(factor*3)>>2`, scaled by `raw/20` while raw < 20, with division only
+   after multiplying (`0x4a1d54`–`0x4a1de2`).
+4. When enabled-advance count > 67, scale by 67/count. Flags 0x04 and
+   0x08 scale by 5/4 and 4/5 respectively, sequentially. For humans clamp
+   factor upward to `11-n`.
+5. Cost = factor*n; results outside 1..32000 become 32000, including
+   zero/negative results (`0x4a1e8a`–`0x4a1eb2`).
+
+**Accumulation/completion:** positive city science is added to the signed
+16-bit progress word (`0x4a1ef6`, low-word store). With a selected target,
+progress >= cost triggers completion. Completion writes progress = 0 and
+target = -1 (`0x4a154b`/`0x4a1565`): excess science is discarded. An
+external grant (e.g. hut scroll) clears a matching target but preserves
+progress. The city helper skips anarchy and doubles Chieftain human
+science toward an already globally discovered non-future advance. The
+late spaceship-related AI doubling path is not implemented.
+
+**Checks:**
+
+- `tools/research_check.py --emulate` loads the user's original PE into
+  Unicorn and executes the actual cost routine and its original clamp
+  callee, with a verified return and bounded instruction count. The decoded
+  formula matches **1,014 cases** (14 civ/save input sets and 1,000 seeded
+  generated cases across difficulty, counters, flags, paradigm and scaling
+  boundaries). This is original-code emulation, not a new Wine run.
+- 128 derived cases are committed as text for asset-free Rust regression
+  checks. The source executable's SHA-256 is in `research.json`; no
+  executable bytes are committed.
+- Existing `std1` saves contribute **20** exact one-turn progress additions
+  with stable positive city science and **four** discovery/reset boundaries.
+  One is 33+3 science against cost 35, then progress 0: overflow is lost.
+  The artifact records the selected transitions and selection method;
+  this is not a claim to replay the whole original turn loop.
+- Engine integration: a 50-turn AI v1 increment on the current standard
+  save discovers **14** additional advances and replays the complete world
+  and research state identically. Install tests:
+  `crates/engine/tests/research_accounting_install.rs`.
+
+Re-derive (Unicorn is optional development tooling, not a runtime dependency):
+
+```sh
+uv --cache-dir /tmp/research-uv-cache pip install --target /tmp/research-deps unicorn
+CIVTOT_HOME=... PYTHONPATH=/tmp/research-deps python3 tools/research_check.py \
+  --emulate --vectors /tmp/research-cost-vectors.txt --series /path/to/std1
+cmp docs/evidence/research-cost-vectors.txt /tmp/research-cost-vectors.txt
+```
+
+Without `--series`, only cost checks run. Without `--emulate`, the script
+reports decoded costs without claiming execution parity. The archived
+std1 series is local oracle data, not distributed assets.
+
+Engine policy boundaries: `SetResearch` accepts prerequisite-valid choices
+and preserves progress on a change; the original rotating UI subset and
+ToTPP tech groups are not recreated. A discovered target stays unset until
+the next player order phase; intervening science is banked. The saved
+comparison slot is preserved rather than recomputing original rankings.
+Diplomacy rewards, first-discovery rewards and technology-event hooks are
+not implemented by the shared grant helper. AI v1's initial research policy
+uses Rules AI value with lowest-ID tie breaks; it is our policy, not a
+claim of original-AI parity. Run50 goldens were regenerated intentionally:
+only checksum columns changed in this run.
+
 ### T1-4 tile yields DECODED (2026-11-04): the original's tile-yield function
 
 Source: the unpatched `civ2.bak`, function `0x4c22a7(city, radius index k,
@@ -1151,6 +1265,7 @@ snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
 | `romfall-walk.json` | `totctl save ROMFALL.scn` | Structural walk of a classic scenario (ToT 1.1, `0x0032`) |
 | `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked: `ext033` units/cities/structural checks (this pristine scenario has no `LUAE` — the Lua tail framing appears in the deiYan/deiQin ladder rows) |
 | `golden/warring-auto-walk.json`, `golden/warring-yan-walk.json`, `golden/warring-qin-walk.json` | `totctl save` on the 0x33 ladder | regression-protected turns 1/2/11 walks (T0-7) |
+| `research.json` / `research-cost-vectors.txt` | `tools/research_check.py --emulate` | Per-civ research: original-x86 costs, existing saved increments/discoveries, asset-free cost vectors |
 | `t1-4-finance.json` | `tools/finance_check.py` | Science/tax record replay: 146/146 FallRome, 10/10 standard cities; static original-binary operand checks |
 | `crosscheck-mp.json` | `tools/crosscheck_mp.py` (runs both decoders) | Rust `tot-kit` vs Python probe: layout/dims/top-6 histogram must match |
 

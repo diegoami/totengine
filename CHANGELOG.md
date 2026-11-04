@@ -11,6 +11,16 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   FallRome science/tax record (146 cities) and the current standard save
   (10 cities) match from stored trade/shields. Trade routes, maintenance
   and per-civ research accounting remain separate work.
+- **Per-civ research (#82 dependency):** decoded research targets,
+  progress, cost counters and cost calculation; `SetResearch` orders,
+  discoveries from city science, and shared hut advance bookkeeping.
+  The cost formula matches the original x86 routine on 1,014 cases;
+  recorded saves check 20 increments and four discovery resets.
+- **AI v1, first increment:** `totctl play/observe --ai-v1` adds
+  deterministic research choices to AI v0. A 50-turn real-save run gains
+  14 advances and replays identically; full AI v1 remains in progress.
+  Saved comparison rankings, late spaceship bonuses, discovery rewards/
+  hooks and ToTPP scenario-tail research are not yet implemented.
 - **Review follow-up #105:** replace the stale autosave diff reproduction
   with the existing T4PAIR inputs and remove its dead golden mapping.
 

@@ -148,6 +148,183 @@ impl WonderTable {
     }
 }
 
+/// The player's own research state and prerequisite-valid choices. The
+/// engine exposes every such choice; the original UI's rotating subset
+/// and ToTPP technology groups are not modelled.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResearchView {
+    pub target: Option<usize>,
+    pub progress: i16,
+    /// None when the source scenario's cost settings are unsupported.
+    pub cost: Option<i32>,
+    pub available: Vec<usize>,
+}
+
+impl crate::WorldState {
+    /// Original cost routine `civ2.bak 0x4a1ae0`, including integer truncation
+    /// at each stage. See evidence §Per-civ research. The comparison slot
+    /// is the saved @964 value; the engine does not yet update rankings.
+    pub fn research_cost(&self, rules: &Rules, civ: u8) -> Option<i32> {
+        let civ = civ as usize;
+        if !(1..8).contains(&civ) {
+            return None;
+        }
+        let settings = self.research_settings;
+        let count = |c: usize| {
+            self.research
+                .get(c)
+                .map(|r| r.acquired as i32 + r.adjustment as i32)
+        };
+        let raw = count(civ)?;
+        let n = raw.max(1);
+        let d = (self.difficulty as i32).min(4);
+        let human = self.human_mask & (1 << civ) != 0;
+        let mut factor = if human { 2 * d + 6 } else { 14 - d };
+        let scenario = settings.flags & 0x80 != 0;
+        let (paradigm, skip) = if scenario {
+            let (p, s) = settings.scenario?;
+            (p as i32, s != 0)
+        } else {
+            (rules.cosmic_row(11).unwrap_or(10) as i32, false)
+        };
+        if !skip {
+            let reference = count(settings.reference_civ as usize)?;
+            if reference > n {
+                if self.difficulty != 0 {
+                    factor -= 1;
+                }
+                if self.difficulty == 5 && reference > n + 4 && self.turn > 150 {
+                    factor -= 1;
+                }
+            } else {
+                factor += (n - reference) / 3;
+            }
+            if n >= 20 {
+                factor += (n - self.turn as i32 / 8).clamp(0, 6);
+            }
+        }
+        factor = factor * paradigm / 10;
+        let mut bonus = (factor * 3) >> 2;
+        if raw < 20 {
+            bonus = bonus * raw / 20;
+        }
+        factor += bonus;
+        if settings.advance_count > 67 {
+            factor = factor * 67 / settings.advance_count as i32;
+        }
+        if settings.flags & 4 != 0 {
+            factor = factor * 5 / 4;
+        }
+        if settings.flags & 8 != 0 {
+            factor = factor * 4 / 5;
+        }
+        if human {
+            factor = factor.max(11 - n);
+        }
+        let cost = factor * n;
+        Some(if (1..=32000).contains(&cost) {
+            cost
+        } else {
+            32000
+        })
+    }
+
+    pub fn observe_research(&self, rules: &Rules, civ: u8) -> ResearchView {
+        let Some(state) = self.research.get(civ as usize) else {
+            return ResearchView {
+                target: None,
+                progress: 0,
+                cost: None,
+                available: Vec::new(),
+            };
+        };
+        let tree = TechTree::from_rules(rules);
+        let known: Vec<bool> = (0..tree.techs.len())
+            .map(|t| {
+                self.techs[civ as usize]
+                    .get(t / 8)
+                    .is_some_and(|b| b & (1 << (t % 8)) != 0)
+            })
+            .collect();
+        let available = if self.research_cost(rules, civ).is_some() {
+            (0..tree.techs.len().min(100))
+                .filter(|&id| {
+                    let t = &tree.techs[id];
+                    // Keep the historical structural-tree walk separate from
+                    // runtime legality: a 'no' prerequisite disables research.
+                    let disabled = rules
+                        .section("CIVILIZE")
+                        .and_then(|s| s.rows.get(id))
+                        .is_some_and(|r| {
+                            r.get(3).is_some_and(|p| p == "no")
+                                || r.get(4).is_some_and(|p| p == "no")
+                        });
+                    !disabled
+                        && !t.defective
+                        && (id == 89 || !known[id])
+                        && t.prereqs
+                            .iter()
+                            .all(|p| p.is_none_or(|k| known.get(k).copied().unwrap_or(false)))
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+        ResearchView {
+            target: usize::try_from(state.target).ok(),
+            progress: state.progress,
+            cost: self.research_cost(rules, civ),
+            available,
+        }
+    }
+
+    /// Shared normal/future advance grant, including hut scrolls. Mirrors
+    /// `0x49dedf`'s bit/count/target bookkeeping; its UI, diplomacy, first-
+    /// discovery rewards and automatic follow-on effects remain separate.
+    pub fn grant_advance(&mut self, civ: u8, advance: usize) -> bool {
+        let c = civ as usize;
+        if !(1..8).contains(&c) || advance >= 100 {
+            return false;
+        }
+        if advance != 89 {
+            let bit = 1 << (advance % 8);
+            if self.techs[c][advance / 8] & bit != 0 {
+                return false;
+            }
+            self.techs[c][advance / 8] |= bit;
+        } else {
+            self.research[c].future = self.research[c].future.wrapping_add(1);
+        }
+        if self.turn != 0 {
+            self.research[c].acquired = self.research[c].acquired.wrapping_add(1);
+        }
+        if self.research[c].target == advance as i16 {
+            self.research[c].target = -1;
+        }
+        true
+    }
+
+    /// Add positive science (`0x4a1ebf`) using the signed 16-bit saved
+    /// accumulator. A completed target discards overflow and clears the
+    /// target (`0x4a154b`/`0x4a1565`). The player chooses its next target
+    /// during its next order phase; science received meanwhile is banked.
+    pub fn add_research(&mut self, rules: &Rules, civ: u8, science: i32) -> Option<usize> {
+        if science <= 0 {
+            return None;
+        }
+        let cost = self.research_cost(rules, civ)?;
+        let c = civ as usize;
+        self.research[c].progress = self.research[c].progress.wrapping_add(science as i16);
+        let target = usize::try_from(self.research[c].target).ok()?;
+        if target >= rules.tech_defs().len().min(100) || (self.research[c].progress as i32) < cost {
+            return None;
+        }
+        self.research[c].progress = 0;
+        self.research[c].target = -1;
+        self.grant_advance(civ, target).then_some(target)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -192,5 +369,177 @@ E1,         ; Hanging Gardens\r\n\
         assert_eq!(w.wonders[0].name, "Pyramids");
         assert_eq!(w.wonders[0].prereq, None); // "Mas" not in the fixture
         assert_eq!(w.wonders[1].obsolete_by, None); // "E1" not in the fixture
+    }
+}
+
+#[cfg(test)]
+mod accounting_tests {
+    use crate::player::{Game, Order, OrderResult};
+
+    const RULES: &str = "@CIVILIZE\nAlphabet, 8, 1, nil, nil, 0, 3 ; Alp\nBronze, 6, 1, nil, nil, 0, 0 ; Bro\nWriting, 7, 1, Alp, nil, 0, 3 ; Wri\nDisabled, 99, 1, no, nil, 0, 0 ; Dis\n";
+    fn game() -> Game {
+        Game::new(
+            "test.sav",
+            &crate::tests_support::synthetic_save_bytes(),
+            3,
+            tot_kit::parse_rules(RULES),
+            None,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn costs_match_128_cases_executed_from_original_x86() {
+        let mut world = game().world;
+        let vectors = include_str!("../../../docs/evidence/research-cost-vectors.txt");
+        let mut count = 0;
+        for line in vectors
+            .lines()
+            .filter(|l| !l.starts_with('#') && !l.is_empty())
+        {
+            let v: Vec<i32> = line
+                .split_whitespace()
+                .map(|x| x.parse().unwrap())
+                .collect();
+            assert_eq!(v.len(), 11);
+            world.difficulty = v[0] as u8;
+            world.human_mask = 2 * v[1] as u8;
+            world.research[1].acquired = v[2] as u8;
+            world.research[1].adjustment = v[3] as u8;
+            world.research[2].acquired = v[4] as u8;
+            world.research[2].adjustment = 0;
+            world.turn = v[5] as i16;
+            world.research_settings = tot_kit::ResearchSettings {
+                advance_count: v[6] as i16,
+                flags: v[7] as u16,
+                reference_civ: 2,
+                scenario: Some((v[8] as i16, v[9] as i16)),
+            };
+            let cosmic = (0..12)
+                .map(|i| format!("{}\n", if i == 11 { v[8] } else { 10 }))
+                .collect::<String>();
+            let rules = tot_kit::parse_rules(&format!("@COSMIC\n{cosmic}"));
+            assert_eq!(world.research_cost(&rules, 1), Some(v[10]), "{line}");
+            count += 1;
+        }
+        assert_eq!(count, 128);
+    }
+
+    #[test]
+    fn research_orders_validate_and_discovery_resets_overflow() {
+        let mut g = game();
+        g.world.research[1].target = -1;
+        let before = g.world.checksum();
+        for (civ, advance) in [(0, 0), (8, 0), (1, 2), (1, 3), (1, usize::MAX)] {
+            assert_eq!(
+                g.world
+                    .apply_order(&g.rules, None, civ, Order::SetResearch { advance }),
+                OrderResult::Rejected("cannot research")
+            );
+            assert_eq!(g.world.checksum(), before);
+        }
+        assert_eq!(
+            g.world
+                .apply_order(&g.rules, None, 1, Order::SetResearch { advance: 0 }),
+            OrderResult::ResearchSet
+        );
+        let cost = g.world.research_cost(&g.rules, 1).unwrap();
+        assert_eq!(g.world.add_research(&g.rules, 1, cost - 1), None);
+        assert_eq!(g.world.add_research(&g.rules, 1, 10), Some(0));
+        assert_eq!(g.world.research[1].progress, 0, "overflow is discarded");
+        assert_eq!(g.world.research[1].target, -1);
+        assert_eq!(g.world.research[1].acquired, 1);
+        assert!(g.world.techs[1][0] & 1 != 0);
+        let view = g.world.observe(&g.rules, 1, None);
+        assert!(!view.research.available.contains(&0));
+        assert!(view.research.available.contains(&2), "Writing unlocked");
+        assert_eq!(g.world.add_research(&g.rules, 1, 3), None);
+        assert_eq!(
+            g.world.research[1].progress, 3,
+            "science is banked pending a new order"
+        );
+    }
+
+    #[test]
+    fn grants_keep_hut_and_future_bookkeeping_consistent() {
+        let mut g = game();
+        g.world.research[1].target = 0;
+        g.world.research[1].progress = 4;
+        assert!(g.world.grant_advance(1, 0));
+        assert_eq!(
+            g.world.research[1].progress, 4,
+            "external grant preserves progress"
+        );
+        assert_eq!(g.world.research[1].target, -1);
+        assert!(!g.world.grant_advance(1, 0));
+        assert_eq!(g.world.research[1].acquired, 1);
+        assert!(g.world.grant_advance(1, 89));
+        assert!(g.world.grant_advance(1, 89));
+        assert_eq!(g.world.research[1].future, 2);
+        assert_eq!(g.world.research[1].acquired, 3);
+        assert_eq!(g.world.techs[1][89 / 8] & (1 << (89 % 8)), 0);
+    }
+
+    #[test]
+    fn unknown_scenario_cost_never_uses_a_fabricated_default() {
+        let mut g = game();
+        g.world.research_settings.flags = 0x80;
+        g.world.research_settings.scenario = None;
+        let before = g.world.checksum();
+        assert_eq!(g.world.research_cost(&g.rules, 1), None);
+        assert!(g.world.observe_research(&g.rules, 1).available.is_empty());
+        assert_eq!(g.world.add_research(&g.rules, 1, 100), None);
+        assert_eq!(g.world.checksum(), before);
+    }
+
+    #[test]
+    fn research_ai_logs_orders_and_replays_discoveries() {
+        let save = crate::tests_support::synthetic_save_bytes();
+        let rules_text = format!("{RULES}@TERRAIN\nDesert, 1, 1, 0, 0, 1\nPlains, 1, 1, 1, 1, 1\nGrassland, 1, 1, 2, 1, 1\n");
+        // Seed the fixture with an actual research-producing civ, so this
+        // exercises discoveries through Game, not direct world edits that
+        // would disappear from canonical replay.
+        let mut save = save;
+        let fixture = tot_kit::parse_sav(&save).unwrap();
+        for city in 0..fixture.cities.len() {
+            let b = fixture.city_offset + city * 92;
+            save[b + 24..b + 28].copy_from_slice(&3u32.to_le_bytes());
+            save[b + 82] = 2;
+        }
+        for civ in 1..8 {
+            let b = tot_kit::OFF_CIV_PROPS + 3348 * civ;
+            save[b + 18..b + 20].copy_from_slice(&(-1i16).to_le_bytes());
+            save[b + 27] = 10;
+            save[b + 28] = 0;
+            save[b + 29] = 1;
+        }
+        let mut g = Game::new(
+            "test.sav",
+            &save,
+            3,
+            tot_kit::parse_rules(&rules_text),
+            None,
+        )
+        .unwrap();
+        let start = g.world.techs;
+        for civ in 1..8 {
+            g.players[civ] = Some(Box::new(crate::ai::AiV1::new(&g.rules, 3, civ as u8)));
+        }
+        for _ in 0..50 {
+            g.play_turn();
+        }
+        assert!(g.log().contains(" research "));
+        assert!(g.log().contains("= research-set"));
+        assert_ne!(g.world.techs, start, "city science caused discoveries");
+        let replay = Game::replay(
+            "test.sav",
+            &save,
+            tot_kit::parse_rules(&rules_text),
+            None,
+            g.log(),
+        )
+        .unwrap();
+        assert_eq!(replay.world.checksum(), g.world.checksum());
+        assert_eq!(replay.world.research, g.world.research);
     }
 }

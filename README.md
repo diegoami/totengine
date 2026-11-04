@@ -51,8 +51,9 @@ What runs today, headless, against your own ToT install:
 
 v0.8.0 work is underway: the science/tax split (#87) now refreshes city
 outputs each turn, with record comparisons in
-[the finance evidence](docs/evidence/t1-4-finance.json). Research accounting
-and the remaining AI/economy stories are still open.
+[the finance evidence](docs/evidence/t1-4-finance.json). Per-civ research now works too: `totctl play --ai-v1` and
+`totctl observe --ai-v1` select the first research-capable AI v1 increment.
+The remaining AI/economy stories are still open.
 
 ```bash
 # Rust CLI (successor of the Python probe)

@@ -22,17 +22,28 @@ use crate::yields::{CityOutput, RADIUS_DX, RADIUS_DY};
 use crate::WorldState;
 
 /// Orders a player may give (decision 0003). `FoundCity` came with AI v0
-/// (#75); `SetResearch` waits for per-civ research progress.
+/// (#75); `SetResearch` uses the per-civ research accounting (#82).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Order {
     /// Move unit `unit` (index in [`WorldState::units`]) to a diamond
     /// neighbour; onto foreign units this is an attack.
-    Move { unit: usize, to: (u16, u16) },
+    Move {
+        unit: usize,
+        to: (u16, u16),
+    },
     /// Set city `city`'s build item: unit type ≥ 0, improvement `-id` < 0.
-    SetProduction { city: usize, item: i8 },
+    SetProduction {
+        city: usize,
+        item: i8,
+    },
+    SetResearch {
+        advance: usize,
+    },
     /// Found a city with settler `unit` on its tile
     /// ([`WorldState::found_city`]).
-    FoundCity { unit: usize },
+    FoundCity {
+        unit: usize,
+    },
     /// End this civ's turn.
     EndTurn,
 }
@@ -46,6 +57,7 @@ pub enum OrderResult {
         won: bool,
     },
     ProductionSet,
+    ResearchSet,
     /// A city was founded; its index.
     Founded(usize),
     TurnEnded,
@@ -58,6 +70,7 @@ impl fmt::Display for Order {
         match self {
             Order::Move { unit, to } => write!(f, "move {unit} {} {}", to.0, to.1),
             Order::SetProduction { city, item } => write!(f, "prod {city} {item}"),
+            Order::SetResearch { advance } => write!(f, "research {advance}"),
             Order::FoundCity { unit } => write!(f, "found {unit}"),
             Order::EndTurn => write!(f, "end"),
         }
@@ -72,6 +85,7 @@ impl fmt::Display for OrderResult {
                 write!(f, "attack {}", if *won { "won" } else { "lost" })
             }
             OrderResult::ProductionSet => write!(f, "prod-set"),
+            OrderResult::ResearchSet => write!(f, "research-set"),
             OrderResult::Founded(c) => write!(f, "founded {c}"),
             OrderResult::TurnEnded => write!(f, "ended"),
             OrderResult::Rejected(why) => write!(f, "rejected {}", why.replace(' ', "_")),
@@ -90,6 +104,9 @@ impl Order {
             ["prod", c, i] => Some(Order::SetProduction {
                 city: c.parse().ok()?,
                 item: i.parse().ok()?,
+            }),
+            ["research", a] => Some(Order::SetResearch {
+                advance: a.parse().ok()?,
             }),
             ["found", u] => Some(Order::FoundCity {
                 unit: u.parse().ok()?,
@@ -148,6 +165,7 @@ pub struct Observation {
     pub treasury: i32,
     pub government: u8,
     pub techs: [u8; 13],
+    pub research: crate::research::ResearchView,
     /// Logical x range and height of the map.
     pub w2: u16,
     pub h: u16,
@@ -265,6 +283,7 @@ impl WorldState {
             treasury: self.treasury.get(c).copied().unwrap_or(0),
             government: self.governments.get(c).copied().unwrap_or(0),
             techs: self.techs.get(c).copied().unwrap_or([0; 13]),
+            research: self.observe_research(rules, civ),
             w2: (2 * self.map.stored_w) as u16,
             h: self.map.stored_h as u16,
             seen: (0..self.map.terrain.len())
@@ -310,6 +329,17 @@ impl WorldState {
     ) -> OrderResult {
         match order {
             Order::EndTurn => OrderResult::TurnEnded,
+            Order::SetResearch { advance } => {
+                if !self
+                    .observe_research(rules, civ)
+                    .available
+                    .contains(&advance)
+                {
+                    return OrderResult::Rejected("cannot research");
+                }
+                self.research[civ as usize].target = advance as i16;
+                OrderResult::ResearchSet
+            }
             Order::FoundCity { unit } => {
                 if self
                     .units

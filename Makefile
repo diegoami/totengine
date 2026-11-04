@@ -15,7 +15,7 @@ clippy:
 # Full local test suite: Rust + Python probe compile + golden corpus.
 # The golden part self-skips when CIVTOT_HOME is unset (e.g. CI).
 test: rust
-	python3 -m py_compile tools/totctl.py tools/growth_series.py tools/finance_check.py
+	python3 -m py_compile tools/totctl.py tools/growth_series.py tools/finance_check.py tools/research_check.py
 	bash tools/golden.sh check
 
 evidence-regen:

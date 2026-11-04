@@ -201,6 +201,8 @@ pub struct WorldState {
     /// Science and tax rates in tenths (civ block @27/@28).
     pub science_rates: [u8; 8],
     pub tax_rates: [u8; 8],
+    pub research: [tot_kit::ResearchState; 8],
+    pub research_settings: tot_kit::ResearchSettings,
     /// Known advances per civ (civ block @96 bitfield).
     pub techs: [[u8; 13]; 8],
     pub civs: Vec<Civ>,
@@ -272,6 +274,8 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         governments: sav.governments,
         science_rates: sav.science_rates,
         tax_rates: sav.tax_rates,
+        research: sav.research,
+        research_settings: sav.research_settings,
         techs: sav.techs,
         civs,
         units: units_from(&sav.units),
@@ -429,6 +433,23 @@ impl WorldState {
         mix(&mut h, &self.governments);
         mix(&mut h, &self.science_rates);
         mix(&mut h, &self.tax_rates);
+        let settings = self.research_settings;
+        mix(&mut h, &settings.flags.to_le_bytes());
+        mix(&mut h, &settings.advance_count.to_le_bytes());
+        mix(&mut h, &[settings.reference_civ]);
+        match settings.scenario {
+            Some((p, s)) => {
+                mix(&mut h, &[1]);
+                mix(&mut h, &p.to_le_bytes());
+                mix(&mut h, &s.to_le_bytes());
+            }
+            None => mix(&mut h, &[0]),
+        }
+        for r in &self.research {
+            mix(&mut h, &r.progress.to_le_bytes());
+            mix(&mut h, &r.target.to_le_bytes());
+            mix(&mut h, &[r.acquired, r.future, r.adjustment]);
+        }
         for t in &self.techs {
             mix(&mut h, t);
         }
@@ -570,6 +591,21 @@ mod tests {
             ("government", |w| w.governments[1] ^= 1),
             ("science rate", |w| w.science_rates[1] ^= 1),
             ("tax rate", |w| w.tax_rates[1] ^= 1),
+            ("research progress", |w| w.research[1].progress ^= 1),
+            ("research target", |w| w.research[1].target ^= 1),
+            ("research count", |w| w.research[1].acquired ^= 1),
+            ("future tech count", |w| w.research[1].future ^= 1),
+            ("research adjustment", |w| w.research[1].adjustment ^= 1),
+            ("research flags", |w| w.research_settings.flags ^= 1),
+            ("enabled advance count", |w| {
+                w.research_settings.advance_count ^= 1
+            }),
+            ("research reference", |w| {
+                w.research_settings.reference_civ ^= 1
+            }),
+            ("research scenario", |w| {
+                w.research_settings.scenario = Some((10, 0))
+            }),
             ("specialists", |w| w.cities[0].specialists ^= 1),
             ("techs", |w| w.techs[1][0] ^= 1),
             ("tile improvements", |w| w.map.improvements[0] ^= 4),

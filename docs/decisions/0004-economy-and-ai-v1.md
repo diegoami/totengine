@@ -34,9 +34,35 @@ barbarian arrivals must not be invented to make a campaign appear complete.
   rounding, specialists, multipliers, wonder obsolescence, Fundamentalism,
   Capitalization and turn refresh without original assets.
 
+## Research accounting (#82 dependency)
+
+The original `0x4a1ae0` supplies costs; `0x4a1ebf` accumulates city science,
+and `0x4a145e` resets progress and clears a completed target. Their saved
+state joins the checksum. Cost vectors come from executing the original
+bytes in Unicorn, independently of the Rust implementation. Existing std1
+saves additionally check increments and discovery/reset boundaries.
+
+`SetResearch` is a player order, validated against prerequisite-valid
+choices, excluding `no` entries. Progress survives a target change. After a
+discovery, the engine leaves target selection to the next player order
+phase; subsequent science is banked. It does not silently pick an advance
+on behalf of a player mid-turn. The original UI's rotating subset of
+choices and ToTPP tech-group restrictions are not modelled.
+
+`AiV1` starts as a wrapper around AI v0: it chooses the available advance
+with highest Rules AI value (lowest ID wins ties), using only its own
+observation. `totctl play/observe --ai-v1` opts into this increment. This is
+an engine policy, not original-AI parity. Existing AI v0 remains selectable.
+
+Costs preserve the saved comparison slot; updating its ranking is future
+work. Unknown scenario tails yield no cost and no research choices, rather
+than default costs. Diplomacy/technology rewards, event hooks and the late
+spaceship-related science bonus remain separate work. See the evidence
+section for the supported source fields and exact checks.
+
 ## Remaining milestone work
 
-AI v1 still needs its research and economy inputs and the acceptance stated
+AI v1 still needs economy/unit/war refinements and the acceptance stated
 in #82 (deterministic 50-turn autoplay plus justified oracle comparisons).
 #83/#79 require oracle arrival/outcome evidence; #84–#86/#88/#89 require
 finishing their decodes and checks. Do not close those on the strength of

@@ -45,7 +45,10 @@ applies.
 | `FoundCity { unit }` | added in v0.6.0: a settler of the civ, on land, no city within distance 1 | creates the city (`engine::founding`; evidence §City founding) |
 | `EndTurn` | always | ends the civ's turn |
 
-Choosing research waits for per-civ research progress.
+`SetResearch { advance }` is added during v0.8.0: accepts an available,
+prerequisite-valid advance and sets the civ target without discarding
+progress. Own research target/progress/cost/choices are in `Observation`;
+accounting and current limits are documented in decision 0004.
 
 A rejected order changes nothing and returns the reason. Players see
 every result.
@@ -93,7 +96,7 @@ neighbour, sometimes changes a city's production, and ends its turn after
 - **Observation fog:** the engine starts tracking per-civ visibility
   (tile byte +4); it joins the checksum.
 - **AI v0 (#75):**
-  - adds `FoundCity` and `SetResearch` orders;
+  - adds `FoundCity`; `SetResearch` followed with v0.8.0 research accounting;
   - plugs in as one more `Player`.
 - **JSON protocol (#92):** serialises `Observation` and `Order`. The text
   log stays the canonical record.

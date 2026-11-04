@@ -77,7 +77,10 @@ v0.8.0 AI v1 + economy depth is in progress: #87 science/tax split is
 implemented in `engine::finance` (146/146 FallRome + 10/10 standard-city
 records exact from stored trade/shields), city finance refreshes in
 `run_turn`; civ rates and specialists are decoded and fingerprinted.
-Trade routes, maintenance and per-civ research accumulation remain open.
+Per-civ research is implemented (`engine::research`, `SetResearch`,
+`--ai-v1` first research-capable AI increment): 1,014 costs match original
+x86 execution; a 50-turn standard-save run gains 14 advances and replays.
+AI v1 economy/war work, trade routes and maintenance remain open.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

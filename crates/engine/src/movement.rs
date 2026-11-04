@@ -210,6 +210,8 @@ mod tests {
             wonders: [-1; 28],
             treasury: [0; 8],
             governments: [0; 8],
+            science_rates: [0; 8],
+            tax_rates: [0; 8],
             techs: [[0; 13]; 8],
             civs: vec![],
             units: vec![

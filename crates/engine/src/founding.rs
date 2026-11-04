@@ -173,6 +173,7 @@ impl WorldState {
             gross_trade: 0,
             net_science: 0,
             net_taxes: 0,
+            specialists: 0,
             food_box: 0,
             shield_box: 0,
             worked: 1 << CENTRE,

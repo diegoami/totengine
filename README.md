@@ -49,6 +49,11 @@ What runs today, headless, against your own ToT install:
   replay a finished game, with full-map/per-civ fog views and turn controls
   (`totctl observe`; [usage and stream format](docs/browser-observer.md)).
 
+v0.8.0 work is underway: the science/tax split (#87) now refreshes city
+outputs each turn, with record comparisons in
+[the finance evidence](docs/evidence/t1-4-finance.json). Research accounting
+and the remaining AI/economy stories are still open.
+
 ```bash
 # Rust CLI (successor of the Python probe)
 cargo run -- mp /mnt/d/games/CIVTOT/World.mp

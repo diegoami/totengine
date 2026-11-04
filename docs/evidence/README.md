@@ -653,6 +653,66 @@ Engine: `WorldState::city_output`, `corruption`, `capital_distance`,
 `unit_support`. Tests: `crates/engine/tests/yields_install.rs`. Trade
 routes and the connection test (`0x471a13`) are open.
 
+### Science and tax split DECODED (#87, 2026-11-04)
+
+Source: unpatched `civ2.bak`, `0x4c3f0c` (normal totals mode 0).
+Artifact: `t1-4-finance.json`. Re-derive with
+`CIVTOT_HOME=... python3 tools/finance_check.py`; Rust record comparisons:
+`CIVTOT_HOME=... cargo test -p engine --test finance_install`.
+This is a static decode checked against game-written records, not a new
+live oracle run.
+
+**Fields:** civ byte @27 = science rate, @28 = tax rate, in tenths
+(RAM `0x5f68bb/bc`, loads at `0x4c3f8a`/`0x4c3fa3`). Government
+remains @29. City u32@24 is sixteen two-bit specialist slots
+(`0x4c1002`, load `0x4c102f` from `0x5fd168`): 0 unused, 1 entertainer,
+2 tax collector, 3 scientist. Records remain in the already proven framing.
+
+**Calculation** (`T` = trade after routes/corruption):
+
+- Luxuries = `clamp((T * (10 - science_rate - tax_rate) + 4) / 10, 0, T)`.
+- Under Fundamentalism, cap the science rate at @COSMIC row 21, after
+  computing luxuries. Science =
+  `clamp((T * science_rate + 4) / 10, 0, T - luxuries)`.
+- Taxes receive the remainder `T - science - luxuries`. Thus the half-way
+  case rounds down: one arrow at 50% science gives zero science, one tax.
+  The +4 rounding instructions are `0x4c401b` and `0x4c4047`.
+- A Fundamentalist AI transfers allocated luxuries to science first.
+  Specialists then add 2 luxuries / 3 taxes / 3 science per matching slot.
+  Fundamentalism subtracts `science * @COSMIC[17] / 100`, including
+  specialists (`0x4c41dc` onward).
+- Fundamentalist tithes (`0x4c4208`–`0x4c4371`): Temple adds the number of
+  known advances 56/9, doubled by active wonder 5; Cathedral adds 3,
+  +1 with advance 24; advance 55 plus a Colosseum or active wonder 10
+  adds `2 + knows(15) + knows(82)`; active wonder 15 adds 2.
+- Marketplace/Bank/Stock Exchange (5/10/22) add
+  `base * count / 2` to taxes and luxuries, including specialists/tithes
+  (`0x4c43c9`–`0x4c43e7`). Science improvements 6/12 and either 26 or
+  active wonder 26 give the same additive half-base bonus. In the city
+  with active wonder 16, that improvement bonus uses the full base
+  (`0x4c44b0`), not half. Active wonder 11 doubles the resulting science.
+- Capitalization (build item -39) adds positive shields after unit support
+  to taxes **after** multipliers in normal mode 0 (`0x4c4513`). Alternate
+  UI preview modes and network-game bookkeeping are outside this API.
+- Active-wonder lookup (`0x444a28`/`0x4449b0`): negative city slots have
+  no effect; any player's discovery of the @ENDWONDER advance obsoletes
+  the wonder. Read physical row IDs, retaining repeated scenario labels.
+
+**Record replay:** exact science and taxes in **146/146** ROMFALL cities
+(including 14 with specialists and 2 building Capitalization), and **10/10**
+current `Original/Ph_Auto2.SAV` cities. Inputs are their stored trade and
+shields; this isolates finance from still-open trade-route/waste inputs.
+Fundamentalism and the science-wonder ordering additionally have synthetic
+arithmetic tests backed by the static decode; no claim of live runtime
+coverage for those branches is made.
+
+Engine: `engine::finance`. `run_turn` refreshes the city science/tax fields
+before production completion using the current engine's computed trade.
+Trade routes remain #85; per-civ research accumulation, maintenance and
+actual treasury income are not supplied by this slice. New rates and
+specialists join the checksum; run50 fingerprints are intentionally
+regenerated, with all non-checksum columns unchanged.
+
 ### T1-4 tile yields DECODED (2026-11-04): the original's tile-yield function
 
 Source: the unpatched `civ2.bak`, function `0x4c22a7(city, radius index k,
@@ -1091,6 +1151,7 @@ snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
 | `romfall-walk.json` | `totctl save ROMFALL.scn` | Structural walk of a classic scenario (ToT 1.1, `0x0032`) |
 | `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked: `ext033` units/cities/structural checks (this pristine scenario has no `LUAE` — the Lua tail framing appears in the deiYan/deiQin ladder rows) |
 | `golden/warring-auto-walk.json`, `golden/warring-yan-walk.json`, `golden/warring-qin-walk.json` | `totctl save` on the 0x33 ladder | regression-protected turns 1/2/11 walks (T0-7) |
+| `t1-4-finance.json` | `tools/finance_check.py` | Science/tax record replay: 146/146 FallRome, 10/10 standard cities; static original-binary operand checks |
 | `crosscheck-mp.json` | `tools/crosscheck_mp.py` (runs both decoders) | Rust `tot-kit` vs Python probe: layout/dims/top-6 histogram must match |
 
 ## Findings (verified)

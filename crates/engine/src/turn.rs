@@ -86,6 +86,13 @@ impl WorldState {
             if self.cities[k].gross_food == 0 {
                 continue;
             }
+            // City finance (#87): evaluate before this turn's build is
+            // completed, so a new Library affects the next totals pass.
+            // Route-inclusive trade remains #85; do not turn these city
+            // taxes into treasury income without maintenance accounting.
+            let finance = self.city_finance(rules, k);
+            self.cities[k].net_science = finance.science.clamp(0, u16::MAX as i32) as u16;
+            self.cities[k].net_taxes = finance.taxes.clamp(0, u16::MAX as i32) as u16;
             // the totals pass (0x4c45ff -> 0x430232) clears create_city's
             // refresh-pending bit (evidence §City founding)
             self.cities[k].flags &= !crate::founding::CITY_REFRESH;

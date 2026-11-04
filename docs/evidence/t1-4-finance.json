@@ -1,0 +1,23 @@
+{
+  "checks": [
+    {
+      "capitalization_cities": 2,
+      "cities": 146,
+      "cities_with_specialists": 14,
+      "exact_science_and_taxes": 146,
+      "rules": "FallRome/Rules.txt",
+      "save": "FallRome/ROMFALL.scn"
+    },
+    {
+      "capitalization_cities": 0,
+      "cities": 10,
+      "cities_with_specialists": 0,
+      "exact_science_and_taxes": 10,
+      "rules": "Original/Rules.txt",
+      "save": "Original/Ph_Auto2.SAV"
+    }
+  ],
+  "method": "static decode and replay of game-written records; no new live oracle run",
+  "source": "civ2.bak, function 0x4c3f0c; specialist accessor 0x4c1002",
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14"
+}

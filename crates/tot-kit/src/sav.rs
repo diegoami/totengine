@@ -438,6 +438,11 @@ impl CityRecord {
             self.raw[58],
         ]
     }
+    /// Sixteen two-bit specialist slots: 0 unused, 1 entertainer,
+    /// 2 tax collector, 3 scientist (u32@24; accessor `0x4c1002`).
+    pub fn specialists(&self) -> u32 {
+        u32::from_le_bytes(self.raw[24..28].try_into().unwrap())
+    }
     /// u16@32 (the old "tail90"): semantics open.
     pub fn field32(&self) -> u16 {
         u16::from_le_bytes([self.raw[32], self.raw[33]])
@@ -546,6 +551,10 @@ pub struct SaveFile {
     /// Government per civ: byte @29 of each civ-properties block (RAM
     /// `0x5f68bd`; 0 anarchy, 1 despotism, … as `0x4c22a7` compares).
     pub governments: [u8; 8],
+    /// Civ-properties bytes @27/@28: science and tax rates in tenths
+    /// (`0x4c3f0c`); luxuries use the remainder out of ten.
+    pub science_rates: [u8; 8],
+    pub tax_rates: [u8; 8],
     /// Known advances per civ: the bitfield @96 of each civ block (RAM
     /// `0x5f6900`, `0x49c820`), bit n = advance n.
     pub techs: [[u8; 13]; 8],
@@ -621,6 +630,8 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     }
 
     let mut governments = [0u8; 8];
+    let mut science_rates = [0u8; 8];
+    let mut tax_rates = [0u8; 8];
     let mut techs = [[0u8; 13]; 8];
     for c in 0..8 {
         let b = OFF_CIV_PROPS + CIV_PROPS_STRIDE * c;
@@ -628,6 +639,8 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
             .get(b..b + 109)
             .ok_or(SavError::Truncated("civ properties"))?;
         governments[c] = block[29];
+        science_rates[c] = block[27];
+        tax_rates[c] = block[28];
         techs[c].copy_from_slice(&block[96..109]);
     }
     let mut treasury = [0i32; 8];
@@ -752,6 +765,8 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         civ_names,
         treasury,
         governments,
+        science_rates,
+        tax_rates,
         techs,
         transporter_count,
         map_header: hdr,

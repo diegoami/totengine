@@ -12,6 +12,7 @@ pub mod cities;
 pub mod combat;
 pub mod effects;
 pub mod events;
+pub mod finance;
 pub mod founding;
 pub mod huts;
 pub mod movement;
@@ -91,6 +92,8 @@ pub struct City {
     /// Net science/taxes after the rate split and improvements.
     pub net_science: u16,
     pub net_taxes: u16,
+    /// Sixteen two-bit specialist slots (record u32@24).
+    pub specialists: u32,
     /// Food/shield boxes (record u16@28/@30; evidence §T1-4).
     pub food_box: u16,
     pub shield_box: u16,
@@ -195,6 +198,9 @@ pub struct WorldState {
     pub treasury: [i32; 8],
     /// Government per civ (civ block @29; 0 anarchy, 1 despotism, …).
     pub governments: [u8; 8],
+    /// Science and tax rates in tenths (civ block @27/@28).
+    pub science_rates: [u8; 8],
+    pub tax_rates: [u8; 8],
     /// Known advances per civ (civ block @96 bitfield).
     pub techs: [[u8; 13]; 8],
     pub civs: Vec<Civ>,
@@ -264,6 +270,8 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         wonders: sav.wonders,
         treasury: sav.treasury,
         governments: sav.governments,
+        science_rates: sav.science_rates,
+        tax_rates: sav.tax_rates,
         techs: sav.techs,
         civs,
         units: units_from(&sav.units),
@@ -341,6 +349,7 @@ fn city_from(r: &CityRecord) -> City {
         gross_trade: r.gross_trade(),
         net_science: r.net_science(),
         net_taxes: r.net_taxes(),
+        specialists: r.specialists(),
         food_box: r.food_box(),
         shield_box: r.shield_box(),
         worked: r.worked(),
@@ -418,6 +427,8 @@ impl WorldState {
             let _ = write!(buf, "{w},");
         }
         mix(&mut h, &self.governments);
+        mix(&mut h, &self.science_rates);
+        mix(&mut h, &self.tax_rates);
         for t in &self.techs {
             mix(&mut h, t);
         }
@@ -484,6 +495,7 @@ impl WorldState {
             );
             mix(&mut h, buf.as_bytes());
             mix(&mut h, &c.worked.to_le_bytes());
+            mix(&mut h, &c.specialists.to_le_bytes());
             mix(&mut h, &c.buildings);
             mix(&mut h, &c.flags.to_le_bytes());
             mix(&mut h, &[c.building as u8]);
@@ -556,6 +568,9 @@ mod tests {
             ("human_mask", |w| w.human_mask ^= 1),
             ("treasury", |w| w.treasury[1] += 1),
             ("government", |w| w.governments[1] ^= 1),
+            ("science rate", |w| w.science_rates[1] ^= 1),
+            ("tax rate", |w| w.tax_rates[1] ^= 1),
+            ("specialists", |w| w.cities[0].specialists ^= 1),
             ("techs", |w| w.techs[1][0] ^= 1),
             ("tile improvements", |w| w.map.improvements[0] ^= 4),
             ("tile visibility", |w| w.map.visible[0] ^= 2),

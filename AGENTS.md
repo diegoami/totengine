@@ -73,7 +73,12 @@ partly decoded), obsolete units + veterans, goody-hut outcomes in part
 **v0.7.0 "browser observer"** is released too (AGREE on #104, 1 round):
 `engine::observer` per-turn snapshots, `totctl observe`,
 local browser UI in `totui`; #80/#81, usage in `docs/browser-observer.md`.
-Next: v0.8.0 AI v1 + economy depth.
+v0.8.0 AI v1 + economy depth is in progress: #87 science/tax split is
+implemented in `engine::finance` (146/146 FallRome + 10/10 standard-city
+records exact from stored trade/shields), city finance refreshes in
+`run_turn`; civ rates and specialists are decoded and fingerprinted.
+Trade routes, maintenance and per-civ research accumulation remain open.
+Plan: `docs/decisions/0004-economy-and-ai-v1.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;
 decision 0002; observing and playing are the two main goals): v0.3.0

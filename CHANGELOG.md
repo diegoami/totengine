@@ -3,6 +3,17 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
+## [Unreleased] — AI v1 + economy depth (v0.8.0)
+
+- **Science and tax split (#87):** decoded city rates, specialist slots,
+  rounding, improvement/wonder multipliers, Fundamentalism and
+  Capitalization; city science/tax outputs refresh each turn. Every
+  FallRome science/tax record (146 cities) and the current standard save
+  (10 cities) match from stored trade/shields. Trade routes, maintenance
+  and per-civ research accounting remain separate work.
+- **Review follow-up #105:** replace the stale autosave diff reproduction
+  with the existing T4PAIR inputs and remove its dead golden mapping.
+
 ## [0.7.0] — Browser observer
 
 - **Observation stream (#80):** read-only boot/per-turn snapshots with

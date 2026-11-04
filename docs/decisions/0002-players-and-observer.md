@@ -30,7 +30,7 @@ The plan had the first UI arrive with T2:
    - a headless tournament runner (AI vs AI, many seeds), built on the
      engine's determinism.
 3. **An observer UI comes before the playable client** as its own
-   milestone (v0.4.0):
+   milestone (v0.8.0):
    - **browser-based**, fed by the observation/replay stream;
    - spectator view with the full map or one civ's fog;
    - turn stepping, play/pause, and replay of a finished game;
@@ -57,8 +57,8 @@ The plan had the first UI arrive with T2:
 - BACKLOG gains Epic OB (observer + pluggable AIs) and T2-1. The
   release ladder there spreads the work over small releases (v0.3.0 …
   v0.10.0) so that each review stays one round.
-- v0.3.0 still ends with a headless all-AI campaign (RG-7). Its golden
-  run is an order log plus fingerprints.
+- The headless all-AI campaign (RG-7, v0.7.0) has a golden run made of
+  an order log plus fingerprints.
 - The original game's GUI, for reference: Win32
   (`user32`/`GDI32`/`COMCTL32`/`comdlg32`) plus DirectDraw (`DDRAW`), with
   `WINMM` audio and AVI video. The art sits in resource DLLs (`Tiles.dll`,

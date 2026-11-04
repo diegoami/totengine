@@ -65,10 +65,12 @@ yields, corruption, waste, unit support in `engine::yields`; production
 queue in `engine::production`; decoded from `civ2.bak`). **v0.5.0 "player
 interface"** is released too (AGREE on #98, 1 round; RG-8, decision 0003:
 `engine::player` with Observation, Order, Game + order log + replay,
-RandomPlayer; `totctl play/replay`). **v0.6.0 "AI v0"** is the current
-candidate: `engine::ai::AiV0`, `engine::founding` (FoundCity, create_city
+RandomPlayer; `totctl play/replay`). **v0.6.0 "AI v0"** is released too
+(AGREE on #101, 2 rounds; #102 found create_city's `0x20000` is a
+transient refresh bit): `engine::ai::AiV0`, `engine::founding` (FoundCity, create_city
 partly decoded), obsolete units + veterans, goody-hut outcomes in part
-(`engine::huts`).
+(`engine::huts`; the rest is #79, moved to v0.8.0). Next: v0.7.0
+browser observer (#80, #81).
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;
 decision 0002; observing and playing are the two main goals): v0.3.0

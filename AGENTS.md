@@ -30,6 +30,9 @@ python3 tools/totctl.py save $CIVTOT_HOME/FallRome/ROMFALL.scn -o /tmp/walk.json
 
 `CIVTOT_HOME` points at the original install (reference box:
 `/mnt/d/games/CIVTOT` — provisioning on a new machine: `docs/environment.md`).
+In its root, **`civ2.bak` is the original unpatched executable** (no ToTPP;
+use it for "what does the original do/import") and `civ2.exe` is the
+ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Hard rules
 

@@ -12,6 +12,18 @@ it is ever committed (see `docs/feasibility.md` evidence rules).
 
 - **Install**: Civilization II: Test of Time 1.1 + **ToTPP** at
   `/mnt/d/games/CIVTOT` (a mounted NTFS data drive on the reference box).
+- **Two executables in the install root:**
+  - **`civ2.bak` = the original, unpatched ToT 1.1 executable** (no ToTPP;
+    2,119,680 B, dated 1999-09-21). Use it for any question about what the
+    *original* code does or imports. Its PE import table parses cleanly:
+    ADVAPI32, AVIFIL32, COMCTL32, comdlg32, DDRAW, GDI32, KERNEL32,
+    MSVFW32, USER32, WINMM, XDaemon.
+  - **`civ2.exe` = the ToTPP-patched executable** (2,120,192 B). It is
+    what the oracle rig runs: `civ2.bak` cannot run headless (CD-audio
+    check, `docs/lessons.md`). Its import table does not parse under
+    objdump, and its live `.text` carries ToTPP hooks into `TOTPP.dll`
+    (`call 0x76c2xxxx` sites). Every VA in `docs/evidence/` is from this
+    exe unless stated otherwise.
 - **Wine prefix**: `~/.wine_civ2tot` (Wine 10.0 verified), with drive
   `d:` → `/mnt/d/games/CIVTOT`, i.e. the game sees itself as `D:\`.
 - **Materials used by probes/tests** (all under the install):

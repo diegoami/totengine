@@ -60,8 +60,11 @@ The plan had the first UI arrive with T2:
 - The headless all-AI campaign (RG-7, v0.7.0) has a golden run made of
   an order log plus fingerprints.
 - The original game's GUI, for reference: Win32
-  (`user32`/`GDI32`/`COMCTL32`/`comdlg32`) plus DirectDraw (`DDRAW`), with
-  `WINMM` audio and AVI video. The art sits in resource DLLs (`Tiles.dll`,
-  `Civ2Art.dll`, …) and the rule folders' `.bmp`/`.spr` sheets. This comes
-  from a string scan of `civ2.exe` (its import table did not parse under
-  objdump).
+  (`USER32`/`GDI32`/`COMCTL32`/`comdlg32`) plus DirectDraw (`DDRAW`), with
+  `WINMM` audio and AVI video (`AVIFIL32`, `MSVFW32`).
+  - Source: the import table of the unpatched `civ2.bak`, which also
+    imports `ADVAPI32`, `KERNEL32` and `XDaemon`.
+  - `TILES`, `cv`, `pv`, `ss`, `mk` and `timerdll` appear only as strings,
+    so they are loaded at runtime.
+  - The art sits in resource DLLs (`Tiles.dll`, `Civ2Art.dll`, …) and the
+    rule folders' `.bmp`/`.spr` sheets.

@@ -103,7 +103,7 @@ oracle/          Wine automation: launch, key macros (xdotool), save capture
 - **Accept:** scripted 50-turn FallRome run: cities grow by Rules.txt math, events
   fire, produced save loads in Wine original; CI runs it against golden saves.
 
-### Phase OB — Observer UI + pluggable AIs (v0.8.0–v0.9.0) · decision 0002; release ladder in BACKLOG.md
+### Phase OB — Observer UI (v0.6.0) + pluggable AIs (v0.9.0) · decision 0002; release ladder in BACKLOG.md
 - Per-civ observation/order interface (RG-8) underneath every player
 - Browser observer: watch all-AI games live, replay them, toggle fog
 - Out-of-process AI protocol (JSON) and a tournament runner

@@ -61,9 +61,11 @@ v0.1.0 (Tier 0) and **v0.2.0 "headless game loop"** are released (v0.2.0:
 (RG-2/3/4/5/7). RG-2's oracle half is done: `tools/oracle/seeded_start.sh`
 makes new games reproducible (evidence §RG-2 reproducible starts).
 Roadmap: small releases, one theme each (release ladder in BACKLOG.md,
-decision 0002): v0.3.0 reproducible new game → v0.4.0 player interface →
-v0.5.0 economy → v0.6.0 AI v1 → v0.7.0 generated-world campaign → v0.8.0
-browser observer → v0.9.0 pluggable AIs → v0.10.0 minimal SDL2 playable. Story state:
+decision 0002; observing and playing are the two main goals): v0.3.0
+reproducible new game → v0.4.0 minimal production → v0.5.0 player
+interface + AI v0 (all-AI game runs) → v0.6.0 browser observer → v0.7.0 AI
+v1 + economy depth → v0.8.0 generated-world campaign → v0.9.0 pluggable
+AIs → v0.10.0 minimal SDL2 playable. Story state:
 T1-1/2/3/5/8/9 and RG-1 are done; `engine::turn::run_turn` is the loop. T1-6's randomness half is **done**
 (the original LCG and its `rand_int` are decoded, runtime-verified and
 shipped in `engine::rng`). Its combat-round half is decoded and shipped

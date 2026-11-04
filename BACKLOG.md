@@ -53,17 +53,19 @@ regularly. Each release keeps everything before it green.
 | Release | Theme | Stories |
 |---|---|---|
 | `v0.3.0` | Reproducible new game | RG-2 (start placement ✓, goody huts as objects); landed: map tile framing fix, Latin-1 names, headless demo |
-| `v0.4.0` | Player interface | RG-8 (observation, orders, validation, order log) + a baseline random-legal player; a game replays from seed + order log |
-| `v0.5.0` | City economy | T1-4 rest: tile yields, production queue (units, improvements); per-civ techs (GIVETECHNOLOGY applies) |
-| `v0.6.0` | AI v1 | RG-4 as an RG-8 player; RG-9 barbarians; 50-turn all-AI autoplay on standard saves |
-| `v0.7.0` | Generated-world campaign | RG-3 world generator; RG-7 new game → N all-AI turns → outcome, nightly golden |
-| `v0.8.0` | Browser observer | OB-1 stream/replay; OB-2 browser observer (watch live, replay, fog toggle) |
+| `v0.4.0` | Minimal production | T1-4 slice: tile yields, production queue (units, improvements) — cities build things headless |
+| `v0.5.0` | Player interface + AI v0 | RG-8 (observation, orders, validation, order log); RG-10 AI v0 (explore, found cities, build settlers and defenders) — **a full all-AI game runs headless** |
+| `v0.6.0` | Browser observer | OB-1 stream/replay; OB-2 browser observer (watch live, replay, fog toggle) — **watch the AIs play** |
+| `v0.7.0` | AI v1 + economy depth | RG-4 AI v1 (research, attack, defence); RG-9 barbarians; T1-4 rest (unrest, specialists, trade); per-civ techs (GIVETECHNOLOGY applies) |
+| `v0.8.0` | Generated-world campaign | RG-3 world generator; RG-7 new game → N all-AI turns → outcome, nightly golden |
 | `v0.9.0` | Pluggable AIs | OB-3 JSON protocol + reference client; OB-4 tournament runner |
 | `v0.10.0` | Playable client, minimal | T2-1 SDL2 native: map, units, move/attack/found city/end turn, simple city view; human = RG-8 player; observer mode; Windows build in CI |
 | later | — | full T2 (city screen, menus, sound), RG-5 diplomacy, RG-6 victory, T1-10 parity, T3 Lua |
 
-The order of v0.8–v0.10 is the owner's choice (browser observer first,
-then SDL2 for play) and can swap if play is wanted sooner.
+**Observing and playing are the two main goals** (decision 0002). The
+ladder reaches a watchable all-AI game first (v0.6.0), because it needs
+less UI than playing; the playable client (v0.10.0) can move earlier on
+the owner's call.
 
 ## Epic T0 — Format toolchain & reconnaissance (current)
 
@@ -110,6 +112,7 @@ opponent AI. These stories reuse the T1 core; the new-game *UI* lands with T2.
 | RG-2 | Starting placement: civ starts and goody huts from the game seed (barbarians → RG-9) | P1 | L | H | in progress | Same-seed oracle starts reproduce identical placement. **Done (2026-11-04):** oracle side (`seeded_start.sh`: NR, CRT, world params, map seed) and civ start placement (`engine::placement`, 3 oracle worlds replay draw for draw, evidence §RG-2 start placement). **Open:** goody huts as objects (the hut formula is decoded, not oracle-checked) |
 | RG-3 | Random world generator (seeded; `.MP`-shaped output; original's exact algorithm unknown → our own, flagged) | P2 | L | H | todo | Statistical parity vs original maps (land%/biome spread); renders sanity-checked |
 | RG-8 | Player interface: per-civ observation (fog-limited), order set, validation, order log; all-AI default (decision 0002) | P1 | M | H | todo | A game replays bit-exact from seed + order log; every RG-4 decision goes through it |
+| RG-10 | AI v0, as an RG-8 player: explore, found cities, build settlers and defenders; deterministic | P1 | M | M | todo | 100-turn all-AI game on a standard save: every civ founds cities and grows; replays from seed + order log |
 | RG-9 | Barbarians: when and where they appear (turn-time activity per barbarian level), decoded against the oracle | P2 | M | H | todo | Same-seed oracle game shows the same barbarian arrivals for N turns |
 | RG-4 | Opponent AI v1 headless, as an RG-8 player: expansion, economy, research, unit handling; deterministic | P2 | L | H | todo | 50-turn autoplay stable + deterministic; plausible power curves vs oracle games |
 | RG-5 | Diplomacy model: contacts, embassies, treaties, tribute, AI stances; save encoding | P2 | M | H | todo | Diplomacy state round-trips; oracle-save contacts match |

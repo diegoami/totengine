@@ -188,3 +188,162 @@ impl WorldState {
             .fold([0; 3], |a, y| [a[0] + y[0], a[1] + y[1], a[2] + y[2]])
     }
 }
+
+/// A city's output after the city-totals stage (`0x4c45ff`), as far as
+/// it is decoded. Evidence §T1-4 city totals.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct CityOutput {
+    pub food: i32,
+    /// Shields after the production multipliers and waste.
+    pub shields: i32,
+    /// Trade after corruption (trade routes are not modelled yet).
+    pub trade: i32,
+    pub corruption: i32,
+    pub waste: i32,
+}
+
+const PALACE: usize = 1;
+const COURTHOUSE: usize = 7;
+const FACTORY: usize = 15;
+const MFG_PLANT: usize = 16;
+const POWER_PLANTS: [usize; 4] = [19, 20, 21, 29];
+const HOOVER_DAM: usize = 22;
+const COMMUNISM: u8 = 3;
+const FUNDAMENTALISM: u8 = 4;
+const DEMOCRACY: u8 = 6;
+
+impl WorldState {
+    /// Distance from city `idx` to its civ's capital (`0x4c13fe`): 0 in the
+    /// city with the Palace, else the nearest same-civ Palace city, 32
+    /// with none. Uses the placement distance metric (`0x566dad`).
+    pub fn capital_distance(&self, idx: usize) -> i32 {
+        let Some(c) = self.cities.get(idx) else {
+            return 32;
+        };
+        if c.has_building(PALACE) {
+            return 0;
+        }
+        let w2 = 2 * self.map.stored_w as i32;
+        let flat = crate::placement::StartMap {
+            w2,
+            h: self.map.stored_h as i32,
+            seed: 0,
+            flat: false,
+            huts: false,
+            tiles: vec![],
+            landmass_value: vec![],
+        };
+        self.cities
+            .iter()
+            .filter(|o| o.owner == c.owner && o.has_building(PALACE))
+            .map(|o| flat.distance(c.x as i32, c.y as i32, o.x as i32, o.y as i32))
+            .fold(32, i32::min)
+    }
+
+    /// `0x4c35a2`: corruption (`waste == false`) or the waste base of
+    /// `amount`. Non-communist: `amount·d·3 / (f·20)` with `d` the capital
+    /// distance (capped at 16 for waste; under anarchy/despotism a human
+    /// civ adds its difficulty level, clamped to 32) and
+    /// `f = 4 + (g≥1)+(g≥2)+(g≥3)+(g≥5)` (`0x4c3551`, g = government +1
+    /// while celebrating). Communism uses the @COSMIC "palace distance"
+    /// value instead of `d` (not oracle-checked: no communist city in the
+    /// corpus). Clamped to [0, amount]; a Courthouse or the Palace halves.
+    pub fn corruption(&self, rules: &Rules, idx: usize, amount: i32, waste: bool) -> i32 {
+        let Some(c) = self.cities.get(idx) else {
+            return 0;
+        };
+        if amount <= 0 {
+            return 0;
+        }
+        let civ = (c.owner & 0x0F) as usize;
+        let gov = self.governments.get(civ).copied().unwrap_or(0);
+        let g = gov as i32 + (c.flags & 2 != 0) as i32;
+        let f = 4 + (g >= 1) as i32 + (g >= 2) as i32 + (g >= 3) as i32 + (g >= 5) as i32;
+        let d = if gov == COMMUNISM {
+            rules
+                .cosmic()
+                .into_iter()
+                .find(|(k, _)| k.starts_with("Communism is equivalent"))
+                .and_then(|(_, v)| v.trim().parse().ok())
+                .unwrap_or(0)
+        } else {
+            let mut d = self.capital_distance(idx);
+            if waste {
+                d = d.min(16);
+            }
+            if g <= 1 && d != 0 && self.human_mask >> civ & 1 != 0 {
+                d = (self.difficulty as i32 + d).clamp(0, 32);
+            }
+            d
+        };
+        let mut v = (amount * d * 3 / (f * 20)).clamp(0, amount);
+        if c.has_building(COURTHOUSE) || c.has_building(PALACE) {
+            v >>= 1;
+        }
+        v
+    }
+
+    /// Food, shields and trade of city `idx` after the decoded city-totals
+    /// stages.
+    ///
+    /// Oracle-checked against game-written records:
+    /// - trade after corruption: exact in 145/145 ROMFALL cities without
+    ///   trade routes and 10/10 standard-game cities;
+    /// - shields after multipliers and waste: 141/146 and 10/10.
+    ///
+    /// Not modelled yet (the shield misses):
+    /// - unit support, which lowers the waste base (`0x6537e8`);
+    /// - the road/rail connection to the capital, which scales waste
+    ///   (`0x471a13`). Treated as connected only in the capital (+1 with
+    ///   Railroad).
+    ///
+    /// Trade routes are not modelled either.
+    pub fn city_output(&self, rules: &Rules, idx: usize) -> CityOutput {
+        let Some(c) = self.cities.get(idx) else {
+            return CityOutput::default();
+        };
+        let [food, tile_shields, trade] = self.worked_yield(rules, idx);
+        let civ = (c.owner & 0x0F) as u8;
+        let gov = self.governments.get(civ as usize).copied().unwrap_or(0);
+        let corruption = if gov == FUNDAMENTALISM || gov == DEMOCRACY {
+            0
+        } else {
+            self.corruption(rules, idx, trade, false)
+        };
+        // production multipliers (0x4c3919)
+        let q = 2 * c.has_building(FACTORY) as i32 + 2 * c.has_building(MFG_PLANT) as i32;
+        let powered = POWER_PLANTS.iter().any(|&b| c.has_building(b))
+            || self.wonders.get(HOOVER_DAM).is_some_and(|&w| {
+                w >= 0
+                    && self
+                        .cities
+                        .get(w as usize)
+                        .is_some_and(|o| o.owner == c.owner)
+            });
+        let p = if powered { 2.min(q) } else { 0 };
+        let mut shields = tile_shields + tile_shields * p / 4 + tile_shields * q / 4;
+        // waste
+        let support = 0;
+        let capital = self.capital_distance(idx) == 0;
+        let conn = if capital {
+            1 + self.civ_has_tech(civ, RAILROAD_TECH) as i32
+        } else {
+            0
+        };
+        let mut waste = self.corruption(rules, idx, shields - support, true);
+        waste = waste * (3 - conn) / 3;
+        waste /= (gov as i32 >> 1) + 1;
+        waste = waste.clamp(0, shields);
+        if civ == 0 || gov == FUNDAMENTALISM || gov == DEMOCRACY {
+            waste = 0;
+        }
+        shields -= waste;
+        CityOutput {
+            food,
+            shields,
+            trade: trade - corruption,
+            corruption,
+            waste,
+        }
+    }
+}

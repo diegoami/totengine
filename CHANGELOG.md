@@ -14,6 +14,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
     wonders, government and despotism penalty that apply;
   - a city's worked-tile sum matches the game-written records: 9/10
     standard-game cities exact, ROMFALL food 144/146.
+- **City totals** (`WorldState::city_output`): corruption (`0x4c35a2`:
+  capital distance, government factor, difficulty for human despots,
+  Courthouse/Palace), production multipliers and waste (`0x4c3919`).
+  - Trade after corruption is exact in 145/145 ROMFALL cities without
+    routes and 10/10 standard-game cities.
+  - Shields: 141/146 and 10/10. Unit support, the road connection to the
+    capital, and trade routes are still open.
 - `City` gains worked tiles, buildings and flags. The world gains
   per-civ government and advances, and the raw tile improvement byte (all
   in the checksum).

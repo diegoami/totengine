@@ -176,6 +176,12 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   running autosaved over them. Stop the process that writes before
   restoring what it writes (`seeded_start.sh` now does; `KEEP_GAME=1`
   opts out).
+- **Never read decoded arithmetic through a noise filter.** Hiding
+  `lea eax,[eax+eax*2]` / `shl eax,3` lines made the record-address
+  arithmetic readable, but it also hid a real `· 3` in the corruption
+  formula, and the replay failed for a "wrong input" that was never wrong.
+  Filter for reading, then re-read every formula unfiltered before
+  trusting it.
 - **Two framing errors can cancel for one field and hide the bug for the
   rest.** The save's tile records were read 2 bytes late, and an index
   `−1` plus a `+4` byte offset brought terrain back onto the right byte,

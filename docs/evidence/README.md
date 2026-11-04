@@ -502,7 +502,7 @@ loop (`0x4c2b81`).
 
 **Corruption / waste** (`0x4c35a2(city, amount, waste?, mode)`):
 - `amount ≤ 0` gives 0.
-- **Non-communist:** `amount · d / (f · 20)`, where:
+- **Non-communist:** `amount · d · 3 / (f · 20)`, where:
   - `d` = the distance (`0x566dad`) to the nearest same-civ city with a
     Palace (improvement 1); 0 in the capital, 32 with no capital
     (`0x4c13fe`);
@@ -532,16 +532,26 @@ loop (`0x4c2b81`).
   cities have improvement 32, else the road/rail route test `0x471a13` to
   the capital.
 
-**Replay status:** trade = tile trade − corruption, on cities without
-trade routes:
-- 9/10 standard-game cities exact;
-- only 45/145 in ROMFALL.
+**Replay status (2026-11-04, after an oracle hook):** the formula is
+`amount · d · 3 / (f · 20)`.
 
-Every miss takes *more* corruption than the model, and no single
-constant fits all ROMFALL misses. So the open input is the distance /
-capital lookup (or the base amount), not the formula's shape. Next step:
-read `d` and `0x653880` (the capital index) from RAM for known cities in
-a live game.
+The `· 3` (`lea eax,[eax+eax*2]` at `0x4c36c3`) had been dropped by a
+disassembly filter. A hook on `0x4c35a2` in the live game (lab save
+loaded, one turn ended) logged Utica's call as amount 4, d 10, which
+needs corruption 1; the decode without `· 3` gives 0. With it:
+
+- **Trade after corruption:** exact in **145/145** ROMFALL cities without
+  trade routes and **10/10** standard-game cities.
+- **Shields after multipliers and waste:** exact in **141/146** ROMFALL
+  and **10/10** standard, with unit support taken as 0 and the road
+  connection as capital-only. Each of the 5 misses is the model one
+  shield low (waste too high), the direction support and connection
+  would correct. "Homed units minus N free" fits no better than 143/146,
+  so support needs its own decode.
+
+Engine: `WorldState::city_output`, `corruption`, `capital_distance`.
+Tests: `crates/engine/tests/yields_install.rs`. Trade routes, unit
+support and the connection test (`0x471a13`) are open.
 
 ### T1-4 tile yields DECODED (2026-11-04): the original's tile-yield function
 

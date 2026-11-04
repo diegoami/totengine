@@ -63,9 +63,10 @@ released (v0.3.0: AGREE on #70, 1 round; RG-2 done: `seeded_start.sh`,
 fixed) and **v0.4.0 "minimal production"** (AGREE on #72, 1 round: tile
 yields, corruption, waste, unit support in `engine::yields`; production
 queue in `engine::production`; decoded from `civ2.bak`). **v0.5.0 "player
-interface"** is the current candidate (RG-8, #74, decision 0003):
-`engine::player` (Observation, Order, Game with order log + replay,
-RandomPlayer), `totctl play/replay`.
+interface"** is released too (AGREE on #98, 1 round; RG-8, decision 0003:
+`engine::player` with Observation, Order, Game + order log + replay,
+RandomPlayer; `totctl play/replay`). Current: v0.6.0 AI v0 (milestone
+issues #75–#79); first step: a FoundCity order (city creation decode).
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;
 decision 0002; observing and playing are the two main goals): v0.3.0

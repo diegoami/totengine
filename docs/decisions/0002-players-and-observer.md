@@ -1,6 +1,6 @@
 # Decision 0002 — players behind an interface; observing and playing as the two main goals
 
-*Status: accepted (owner decision, 2026-11-04; amended the same day: observing and playing are both main goals — observation is one of the main reasons the project exists; release ladder in BACKLOG.md).*
+*Status: accepted (owner decision, 2026-11-04; amended the same day: observing and playing are both main goals — observation is one of the main reasons the project exists; release ladder: GitHub milestones v0.5.0–v0.11.0).*
 
 ## Context
 
@@ -57,7 +57,8 @@ The plan had the first UI arrive with T2:
 - The interface (RG-8) is headless new work in v0.5.0 (observation,
   order set, validation, order log), tested with a random-but-legal
   player; AI v0 (RG-10) follows in v0.6.0.
-- BACKLOG gains Epic OB (observer + pluggable AIs) and T2-1. The
+- The backlog gains Epic OB (observer + pluggable AIs) and T2-1, now
+  GitHub milestones and issues (#74–#97). The
   release ladder there spreads the work over small releases (v0.3.0 …
   v0.11.0) so that each review stays one round.
 - The headless all-AI campaign (RG-7, v0.9.0) has a golden run made of

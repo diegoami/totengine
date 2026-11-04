@@ -28,7 +28,7 @@ phase ships a standalone, useful artifact — the project produces value long be
 | **T0** | Format toolchain | `totctl` dumps/converts Rules/MP/SAV/SCN; save-diff harness works |
 | **T1** | Headless classic-scenario engine | FallRome `.scn` loads, turns resolve, macro events fire, `.sav` round-trips into the original |
 | **T2** | Graphical play (classic) | FallRome playable end-to-end with original art, sound, city screen, orders; new-game setup UI (RG-1) included |
-| **RG** | Regular-game track (enters after T1 core) | New game → generated world → AI opponents → victory, headless first; see BACKLOG.md Epic RG |
+| **RG** | Regular-game track (enters after T1 core) | New game → generated world → AI opponents → victory, headless first; see GitHub epic #23 and the release milestones |
 | **T3** | ToTPP layer | Lua 5.3 embedded; `0x33` saves; *Warring States* loads, its Lua runs, dialogs show |
 | **T4** | Full ToT + polish | Midgard/Sci-Fi 4-map modes, editor, packaging, performance |
 
@@ -103,7 +103,7 @@ oracle/          Wine automation: launch, key macros (xdotool), save capture
 - **Accept:** scripted 50-turn FallRome run: cities grow by Rules.txt math, events
   fire, produced save loads in Wine original; CI runs it against golden saves.
 
-### Phase OB — Observer UI (v0.7.0) + pluggable AIs (v0.10.0) · decision 0002; release ladder in BACKLOG.md
+### Phase OB — Observer UI (v0.7.0) + pluggable AIs (v0.10.0) · decision 0002; release ladder = GitHub milestones
 - Per-civ observation/order interface (RG-8) underneath every player
 - Browser observer: watch all-AI games live, replay them, toggle fog
 - Out-of-process AI protocol (JSON) and a tournament runner
@@ -118,7 +118,7 @@ oracle/          Wine automation: launch, key macros (xdotool), save capture
 - **Accept:** a human completes FallRome start-to-end without the original running;
   playtesters report no rule discrepancies beyond the published known-differences list.
 
-### Phase RG — Regular game (parallel with T2; core is headless) · see BACKLOG.md Epic RG
+### Phase RG — Regular game (parallel with T2; core is headless) · see GitHub epic #23
 - Game-setup state (new-game parameters) + starting placement, oracle-diffed
 - Seeded random world generator (own algorithm, flagged — original's exact
   generator is unknown; statistical parity targets)

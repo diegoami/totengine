@@ -9,7 +9,7 @@ installation and reads its data files directly.
 
 | Document | Purpose |
 |---|---|
-| [BACKLOG.md](BACKLOG.md) | Working queue: epics, stories, difficulty, acceptance criteria |
+| [BACKLOG.md](BACKLOG.md) | Working conventions (difficulty, releases); the queue itself is GitHub [milestones](https://github.com/diegoami/totengine/milestones) and issues |
 | [docs/milestone-review.md](docs/milestone-review.md) | Release process: independent milestone review, AGREE/BLOCK verdict, tag-on-reviewed-SHA |
 | [docs/feasibility.md](docs/feasibility.md) | Evidence-based feasibility evaluation: formats, prior art, risks, effort, value assessment, verdict |
 | [docs/plan.md](docs/plan.md) | Phased implementation plan: architecture, milestones, testing strategy |
@@ -26,15 +26,20 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-**Tier 0 complete** — v0.1.0 candidate (see [CHANGELOG.md](CHANGELOG.md) and
-[BACKLOG.md](BACKLOG.md)):
+**v0.4.0 "minimal production"** is the latest release (see
+[CHANGELOG.md](CHANGELOG.md); the queue is the GitHub
+[milestones](https://github.com/diegoami/totengine/milestones)).
 
-- Engine language decided: **Rust** ([decision 0001](docs/decisions/0001-language.md));
-  workspace scaffolded (`crates/tot-kit|engine|lua-host|totctl|totui`), CI on
-  fmt + clippy + tests
-- `.MP` decoder ported to Rust, cross-validated against the Python probe
-- ToTPP Lua API contract collected offline ([docs/refs/](docs/refs/))
-- SAV/SCN walker: front sections + city blocks + unit-count arithmetic proven
+What runs today, headless, against your own ToT install:
+- **Boot:** scenarios and standard-game saves boot into a world state.
+- **Units and cities:** movement; combat replaying the original's battles
+  exactly; macro events; city growth; tile yields, corruption, waste and
+  the production queue, each decoded from the original executable and
+  replayed against its saves.
+- **New games:** start placement reproduces the original's new games
+  draw for draw, goody huts included.
+- **Next:** v0.5.0, a headless player interface; then AI players, and a
+  browser observer to watch them (decision 0002).
 
 ```bash
 # Rust CLI (successor of the Python probe)

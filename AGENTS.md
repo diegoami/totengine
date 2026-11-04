@@ -60,10 +60,12 @@ v0.1.0 (Tier 0) and **v0.2.0 "headless game loop"** are released (v0.2.0:
 2 review rounds, AGREE on #61) and **v0.3.0 "reproducible new game"** are
 released (v0.3.0: AGREE on #70, 1 round; RG-2 done: `seeded_start.sh`,
 `engine::placement`, goody huts; map tile framing and record counts
-fixed). **v0.4.0 "minimal production"** is the current candidate: tile
-yields, corruption, waste, unit support (`engine::yields`) and the
-production queue (`engine::production`), decoded from `civ2.bak`.
-Roadmap: small releases, one theme each (release ladder in BACKLOG.md,
+fixed) and **v0.4.0 "minimal production"** (AGREE on #72, 1 round: tile
+yields, corruption, waste, unit support in `engine::yields`; production
+queue in `engine::production`; decoded from `civ2.bak`). Current: v0.5.0,
+RG-8 player interface (#74).
+Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
+holds conventions only;
 decision 0002; observing and playing are the two main goals): v0.3.0
 reproducible new game → v0.4.0 minimal production → v0.5.0 player
 interface (headless API) → v0.6.0 AI v0 (all-AI game runs) → v0.7.0
@@ -81,7 +83,7 @@ Units are driven in the oracle through RAM (`tools/oracle/unitram.py`),
 not by map navigation. T1-4 (cities) and
 T1-7 (events) are partially landed (T1-7 effects now change the world:
 treasury, CREATEUNIT). Unit and city records are read in the game's own
-framing since 2026-11-03 (evidence §Record framing FIXED). `BACKLOG.md` is the live queue,
+framing since 2026-11-03 (evidence §Record framing FIXED). GitHub issues/milestones are the live queue,
 `docs/evidence/README.md` carries every proven finding (and, for T1-6,
 an explicit list of what has been ruled out), and `docs/lessons.md` the
 rig/process traps.

@@ -528,6 +528,74 @@ Consequences:
 - All six oracle battles still pass. Battle 2's defender stands on
   Grassland + river; the old decode said Forest, and both give ×1.5.
 
+### RG-2 start placement DECODED, oracle-exact (2026-11-04)
+
+`engine::placement::place_starts` reproduces the original's start
+placement draw for draw. Every CRT draw, call site and state, matches the
+`randhook.py` log of three pinned worlds:
+
+| world | CRT pin | draws | civs placed (tries) |
+|---|---|---|---|
+| pl2 | 0x5678 | 218 | 1 (6), 2 (10), 3 (1), 4 (53), 5 (8) |
+| pl3 | 0x9999 | 214 | 3 (4), 4 (28), 5 (2), 6 (30), 7 (12) |
+| pl4 | 0x2468 | 136 | 1 (13), 3 (8), 4 (4), 5 (7), 7 (5) |
+
+Fixture: `docs/evidence/rg2-placement-fixture.txt`, derived by
+`tools/oracle/placement_fixture.py`. It holds the setup, the CRT states,
+the starts, and the 190 sampled tiles (not a map).
+
+How the fixture was captured:
+- `seeded_start.sh` with `DUMP_INTRO=1` dumps the tiles from RAM at
+  "In the Beginning": after placement, before any AI move.
+- The turn-1 save is not a pre-placement map. AI civs found cities on
+  turn 1, which rewrites fertility and site bits around them.
+
+The algorithm:
+- **Civ loop** (`0x48c5ce`): one `rand() % 50`, then `0x488499(civ)` for
+  civ 0..7. Civ 0 (barbarians) draws nothing.
+- **Per civ 1..7** (`0x488499`):
+  - 7 attitude draws, one per civ 1..7 (`rand()%80 + 10`, or toward a
+    human civ `clamp(rand()%80 + 5·difficulty + 10, 10, 75)`);
+  - for an AI civ, a tribe pick (`rand() % candidates`) and a `rand() % 3`;
+  - for a civ in the civs-in-play mask (save @686), location tries.
+- **A try:** `x = rand() % w2`, `y = rand() % h`; if x is odd, x −= 1; if
+  y is odd, x += 1. With n = the try number, a try is rejected when:
+  - the tile is ocean;
+  - `site < 12 − n/32`, where site (`0x5703be`) = `+2 >> 5` if set, else
+    `max(fertility, 8)` if fertility > 0, else 0;
+  - `near < 16 − n/128`, where near = distance to the nearest placed
+    settler (30 when none); also `near < 2` while n ≤ 2000, or `near < 1`;
+  - `landmass[+2] < 32 − turn/16 − n/64`;
+  - a hut (`0x57093f`) while n ≤ 2000;
+  - the tile is occupied (`0x570599`).
+- **After 2000 tries** an AI civ accepts any tile.
+- **Distance** (`0x566dad`): with dx wrapped unless flat, `m = (dx+dy)>>1`;
+  then `dy − ((m−dx+1)>>1)` if dy ≥ dx, else `dx − ((m−dy+1)>>1)`.
+- **Huts** derive from the resource seed: `a=(x+y)>>1`, `b=x−a`; hut iff
+  `(a&3) + 4(b&3) == (seed + 13(b>>2) + 11(a>>2) + 8) & 31`.
+
+What the data checks:
+- The oracle tries exercised the ocean, site, distance and landmass tests.
+- Mutating the distance threshold, the `rand()%3` draw or the parity fix
+  breaks the replay.
+- The site and landmass constants (`0xc`, `0x20`) are binary constants
+  the samples do not bracket: no try had site 9–11.
+- The hut, occupancy and 2000-try branches, and the flat-world margin
+  (`rand()%(w2−16)+8` when bit `0x8000` of `0x607638` is set and w2 > 80),
+  are decoded but not exercised.
+- Preset (Earth-map) starts are not modelled; their tables are −1 on
+  random maps.
+
+Two decodes from the same work:
+- `0x607638 & 0x8000` = flat world. The distance wrap (`0x566b9e`) and the
+  margin branch both test it.
+- The tile record framing: see §Map tile framing FIXED.
+
+Still open for RG-2:
+- goody huts as objects;
+- barbarian seeding;
+- what the AI civs do on turn 1 (cities on their starts).
+
 ### RG-2 reproducible new-game starts: the four entropy inputs (2026-11-04)
 
 **A new standard game is fully determined by four values, all writable
@@ -585,8 +653,7 @@ How it was found:
 same way. It is not a seed.
 
 Still open for RG-2 (engine side):
-- reproduce the placement algorithm (`0x488499`: validity test, the
-  retry branch at `0x4888f7`) from the seed in `engine`;
+- ~~reproduce the placement algorithm~~ done: §RG-2 start placement;
 - the map generator itself is RG-3 (our own generator, flagged);
 - why the Original tail holds heap pointers (not game state; the T1-8
   writer should treat them as opaque).

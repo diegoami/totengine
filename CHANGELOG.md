@@ -24,6 +24,19 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ### Formats / engine
 
+- **Map tile records are read in the game's framing.**
+  - Records start right after the 7 B/tile block; the 2 bytes after the
+    maps are a trailer.
+  - Index = `y·w + x/2`.
+  - Terrain, river and special were already right.
+  - Road and rail were not: the old bits were the next tile's fog
+    (ROMFALL roads 461, not 3,497).
+  - New tile accessors: unit, city, landmass, visibility, fertility, owner.
+  - `SaveFile` gains `barbarian_level`, `civs_mask` and `landmass_table`.
+- **`engine::placement`** (RG-2): civ start placement, decoded from the
+  original. Three oracle worlds replay draw for draw (568 CRT draws,
+  15 starts).
+
 - City and civ names decode as Latin-1, and the save editor encodes renames
   as Latin-1 (#69).
 - `engine` example `headless_demo`: boots FallRome, fights one battle and

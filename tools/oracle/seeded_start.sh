@@ -13,7 +13,9 @@
 #                                                           default 0x1357
 # Same four values ⇒ byte-identical turn-1 autosave.
 # HOOK_OUT=<file> [HOOK_SECS] [HOOK_ARGS="--skip 0x403000:0x40a000 --state"]
-# logs the CRT rand() draws after the City Style answer (randhook.py). The wizard answers
+# logs the CRT rand() draws after the City Style answer (randhook.py).
+# DUMP_INTRO=1 dumps tiles/landmass table/map header/unit table from RAM
+# while "In the Beginning" is open (after placement, before AI moves). The wizard answers
 # are newgame.sh's defaults (Downs via $2/$3 like lab_std.sh).
 # Output: every *.sav the run wrote under $CIVTOT_HOME (fresh by mtime,
 # named <folder>_<file>), plus placement.txt (live unit table).
@@ -126,6 +128,25 @@ else
     send_downs_then_return 0
 fi
 sleep 2.5
+if [ -n "${DUMP_INTRO:-}" ]; then
+    # post-placement, pre-AI-move world: dump it from RAM while the intro
+    # dialog holds the game (evidence §RG-2 placement)
+    wait_title "In the Beginning" 15 || { echo "no intro"; exit 1; }
+    python3 - "$OUT" <<'PY' || exit 1
+import sys, struct
+sys.path.insert(0, '.')
+import unitram as u
+out = sys.argv[1]
+w2, h = struct.unpack('<hh', u.read(0x6705a0, 4))
+area = (w2 // 2) * h
+open(out + '/intro_tiles.bin', 'wb').write(u.read(u.u32(0x5deaa8), 6 * area))
+open(out + '/intro_landmass.bin', 'wb').write(u.read(0x61bca8, 10240))
+open(out + '/intro_maphdr.bin', 'wb').write(u.read(0x6705a0, 16))
+units, _ = u.bases()
+open(out + '/intro_units.bin', 'wb').write(u.read(units, 40 * 64))
+print(f"intro dump: {w2}x{h}, {area} tiles")
+PY
+fi
 step "In the Beginning" 0
 sleep 4
 python3 - "$OUT" <<'PY'

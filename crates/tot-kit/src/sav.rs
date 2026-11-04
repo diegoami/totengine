@@ -498,9 +498,15 @@ pub struct SaveFile {
     pub human_mask: u8,
     /// Game block @684 — §RG-1 (0 = Chieftain … 5 = Deity).
     pub difficulty: u8,
-    /// Duplicated word @685..688 (`0x02XX`) — the combat/event-replay
-    /// seed mirror, NOT the world-gen state (T1-6 notes).
+    /// u16 @685: barbarian level | civs-in-play mask << 8. Historically
+    /// read as a "seed word"; it is two settings bytes (evidence §RG-2
+    /// reproducible starts). Kept because the engine checksum covers it.
     pub seed_word: u16,
+    /// Game block @685: barbarian activity level (RAM `0x607659`).
+    pub barbarian_level: u8,
+    /// Game block @686: civs in play, bit n = civ n (RAM `0x60765a`; bit 0
+    /// = barbarians). Start placement places exactly these civs.
+    pub civs_mask: u8,
     /// Game block @689 — rivals count (§RG-1).
     pub rivals: u8,
     /// 28 wonders: −1 unbuilt, −2 destroyed, else the building civ.
@@ -516,6 +522,11 @@ pub struct SaveFile {
     pub transporter_count: u32,
     pub map_header: MapHeader,
     pub maps: Vec<MapBlock>,
+    /// The 10240-B block after the maps: the landmass table, 256 × 40 B
+    /// indexed by tile byte +3 (RAM `0x61bca8`; evidence §Map tile
+    /// framing). Entry +0 = the landmass's tile count; start placement
+    /// reads the i16 at +2.
+    pub landmass_table: Vec<u8>,
     pub units: Vec<UnitRecord>,
     pub cities: Vec<CityRecord>,
     /// Byte range of the unit records (40*N; ends where city record 0
@@ -562,6 +573,8 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     let human_mask = data[687];
     let difficulty = data[684];
     let seed_word = u16le(data, 685)?;
+    let barbarian_level = data[685];
+    let civs_mask = data[686];
     let rivals = data[689];
 
     let mut wonders = [0i16; 28];
@@ -722,6 +735,8 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         year,
         game_flags,
         human_mask,
+        barbarian_level,
+        civs_mask,
         difficulty,
         seed_word,
         rivals,
@@ -731,6 +746,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         transporter_count,
         map_header: hdr,
         maps,
+        landmass_table: data[blob10240_end - 10240..blob10240_end].to_vec(),
         units,
         cities,
         unit_region: (blob10240_end, city_offset),

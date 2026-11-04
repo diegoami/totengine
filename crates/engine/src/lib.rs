@@ -12,6 +12,7 @@ pub mod combat;
 pub mod effects;
 pub mod events;
 pub mod movement;
+pub mod placement;
 pub mod research;
 pub mod rng;
 pub mod turn;

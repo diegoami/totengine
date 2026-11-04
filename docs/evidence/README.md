@@ -1092,7 +1092,6 @@ snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
 | `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked: `ext033` units/cities/structural checks (this pristine scenario has no `LUAE` — the Lua tail framing appears in the deiYan/deiQin ladder rows) |
 | `golden/warring-auto-walk.json`, `golden/warring-yan-walk.json`, `golden/warring-qin-walk.json` | `totctl save` on the 0x33 ladder | regression-protected turns 1/2/11 walks (T0-7) |
 | `crosscheck-mp.json` | `tools/crosscheck_mp.py` (runs both decoders) | Rust `tot-kit` vs Python probe: layout/dims/top-6 histogram must match |
-| `va-autosave-diff.json` | `totctl diff Va_Auto2.SAV Va_Auto.SAV` | Annotated diff of two real autosaves (oracle-methodology demo) |
 
 ## Findings (verified)
 
@@ -1667,6 +1666,6 @@ python3 tools/totctl.py rules  $G/Rules.txt -o /tmp/rules.json
 python3 tools/totctl.py map    $G/World.mp --rules $G/Rules.txt \
         -o /tmp/world.png --json /tmp/world.json
 python3 tools/totctl.py save   $G/FallRome/ROMFALL.scn -o /tmp/walk.json
-python3 tools/totctl.py diff   $G/Scenario/FallRome/Va_Auto2.SAV \
-                                $G/Scenario/FallRome/Va_Auto.SAV -o /tmp/diff.json
+python3 tools/totctl.py diff   $G/Scenario/FallRome/T4PAIR_A.SAV \
+                                $G/Scenario/FallRome/T4PAIR_B.SAV -o /tmp/diff.json
 ```

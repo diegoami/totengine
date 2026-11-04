@@ -66,7 +66,6 @@ artifacts_for() {
     romfall-walk)      echo "romfall-walk.json:json" ;;
     va-auto-walk)      echo "va-auto-walk.json:json" ;;
     warring-walk)      echo "warring-states-walk.json:json" ;;
-    va-autosave-diff)  echo "va-autosave-diff.json:json" ;;
     romfall-scnmap)    echo "romfall-scnmap.png:png" ;;
     anticchina-map)    echo "anticchina-map.png:png" ;;
   esac

@@ -73,8 +73,7 @@ partly decoded), obsolete units + veterans, goody-hut outcomes in part
 **v0.7.0 "browser observer"** is released too (AGREE on #104, 1 round):
 `engine::observer` per-turn snapshots, `totctl observe`,
 local browser UI in `totui`; #80/#81, usage in `docs/browser-observer.md`.
-Next: v0.8.0 AI v1 + economy depth. Review follow-up #105 tracks stale
-evidence-documentation references (pre-existing, not release-blocking).
+Next: v0.8.0 AI v1 + economy depth.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;
 decision 0002; observing and playing are the two main goals): v0.3.0

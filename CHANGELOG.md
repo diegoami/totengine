@@ -3,9 +3,15 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
-## [Unreleased]
+## [0.4.0] — Minimal production
 
-### Engine (v0.4.0, minimal production)
+Cities now produce headless: tiles yield food, shields and trade as the
+original computes them, corruption, waste and unit support are applied,
+and shields fill the box until units and improvements complete. Every
+formula is decoded from the unpatched `civ2.bak` and replayed against
+game-written city records (evidence §T1-4).
+
+### Engine
 
 - **Tile yields** (`engine::yields`), decoded from the original's tile
   yield function (`civ2.bak 0x4c22a7`):
@@ -34,6 +40,27 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 - `City` gains worked tiles, buildings, flags and the build item. The world gains
   per-civ government and advances, and the raw tile improvement byte (all
   in the checksum).
+
+### Oracle
+
+- `tools/oracle/load_save.sh`: load a save through the launcher.
+- `tools/oracle/corrhook.py`: log calls of the corruption function.
+
+### Known open
+
+- **Road connection to the capital** (`0x471a13`): it scales waste.
+  ROMFALL shields replay 143/146 without it.
+- **Trade routes.**
+- **Fundamentalism's free-unit flag.**
+- **Production gaps:**
+  - obsolete-unit switching;
+  - wonders (ids ≥ 40);
+  - veteran units;
+  - the AI rows adjustment after turn 200;
+  - AI build choice: an item, once chosen, repeats.
+- **Turn order:** the original recomputes shields at processing time,
+  after growth; exact turn-pair parity is T1-10.
+- **Not modelled yet:** happiness/disorder, science and tax.
 
 ## [0.3.0] — Reproducible new game
 

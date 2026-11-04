@@ -60,8 +60,9 @@ v0.1.0 (Tier 0) and **v0.2.0 "headless game loop"** are released (v0.2.0:
 2 review rounds, AGREE on #61) and **v0.3.0 "reproducible new game"** are
 released (v0.3.0: AGREE on #70, 1 round; RG-2 done: `seeded_start.sh`,
 `engine::placement`, goody huts; map tile framing and record counts
-fixed). Current: v0.4.0 minimal production — tile yields decoded
-(`engine::yields`); next corruption/waste/multipliers, production queue.
+fixed). **v0.4.0 "minimal production"** is the current candidate: tile
+yields, corruption, waste, unit support (`engine::yields`) and the
+production queue (`engine::production`), decoded from `civ2.bak`.
 Roadmap: small releases, one theme each (release ladder in BACKLOG.md,
 decision 0002; observing and playing are the two main goals): v0.3.0
 reproducible new game → v0.4.0 minimal production → v0.5.0 player

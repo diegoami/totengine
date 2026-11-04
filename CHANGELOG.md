@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- **Roadmap amendment:** v0.10.0 targets a built-in AI resembling the
+  original game's behavior. External AI protocols and tournaments move
+  after the v0.11.0 playable client; their version is unassigned.
 - **Science and tax split (#87):** decoded city rates, specialist slots,
   rounding, improvement/wonder multipliers, Fundamentalism and
   Capitalization; city science/tax outputs refresh each turn. Every

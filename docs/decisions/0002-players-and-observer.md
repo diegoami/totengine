@@ -23,7 +23,7 @@ The plan had the first UI arrive with T2:
    - The built-in AI (RG-4) is the first implementation.
    - "All players AI" is the default setup.
    - A human player in T2 is one more implementation.
-2. **Pluggable AIs** (v0.10.0):
+2. **Pluggable AIs** (after the v0.11.0 playable client; version unassigned):
    - in-process Rust players behind a trait;
    - an **out-of-process protocol** (JSON over stdio or a socket), so AIs
      can be written in any language, LLM agents included;
@@ -46,9 +46,16 @@ The plan had the first UI arrive with T2:
    - Its first release is minimal (T2-1): map, units, basic orders, end
      turn, simple city view, observer mode.
    - The full classic client (city screen, menus, sound) follows.
-   - Order: browser observer (v0.7.0), pluggable AIs (v0.10.0), the
-     SDL2 client (v0.11.0). The client can move earlier on the owner's
-     call.
+   - Order: browser observer (v0.7.0), original-like built-in AI
+     (v0.10.0), SDL2 client (v0.11.0), then pluggable AIs.
+   - Owner amendment (2026-11-04): by v0.10.0, the built-in opponent
+     should resemble the original game's AI. The v0.8.0 AI v1 is a
+     foundation; deterministic autoplay alone does not meet that target.
+     Compare expansion, city/economy decisions, research and military
+     behavior against the original on controlled positions. Document
+     supported behavior and remaining differences; full decision-for-decision
+     parity is not claimed without evidence. External AI protocols and
+     tournaments must not delay the playable client.
 
 ## Consequences
 
@@ -59,8 +66,9 @@ The plan had the first UI arrive with T2:
   player; AI v0 (RG-10) follows in v0.6.0.
 - The backlog gains Epic OB (observer + pluggable AIs) and T2-1, now
   GitHub milestones and issues (#74–#97). The
-  release ladder there spreads the work over small releases (v0.3.0 …
-  v0.11.0) so that each review stays one round.
+  release ladder there spreads the work over small releases. OB-3/OB-4
+  follow the playable client; v0.10.0 now targets the built-in AI's
+  resemblance to the original, rather than the external-AI infrastructure.
 - The headless all-AI campaign (RG-7, v0.9.0) has a golden run made of
   an order log plus fingerprints.
 - The original game's GUI, for reference: Win32

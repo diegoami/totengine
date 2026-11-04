@@ -8,7 +8,8 @@ Story #74.*
 Decision 0002 puts every civ behind a player. Several things will plug in:
 - AI v0 (v0.6.0) and AI v1;
 - the browser observer (v0.7.0);
-- external AIs over JSON (v0.10.0);
+- an original-like built-in AI (v0.10.0);
+- external AIs over JSON (after the v0.11.0 playable client; version unassigned);
 - a human in the SDL2 client (v0.11.0).
 
 The engine already has the state transitions: `move_unit` (moves and

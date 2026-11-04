@@ -11,7 +11,9 @@
 #   MAPSEED the map's resource seed: the instruction at 0x56fa6c
 #           (`call GetTickCount-wrapper`) is patched to `mov eax, MAPSEED`
 #                                                           default 0x1357
-# Same four values ⇒ byte-identical turn-1 autosave. The wizard answers
+# Same four values ⇒ byte-identical turn-1 autosave.
+# HOOK_OUT=<file> [HOOK_SECS] [HOOK_ARGS="--skip 0x403000:0x40a000 --state"]
+# logs the CRT rand() draws after the City Style answer (randhook.py). The wizard answers
 # are newgame.sh's defaults (Downs via $2/$3 like lab_std.sh).
 # Output: every *.sav the run wrote under $CIVTOT_HOME (fresh by mtime,
 # named <folder>_<file>), plus placement.txt (live unit table).
@@ -115,7 +117,15 @@ u.write(0x5ceaa8, struct.pack('<5i', *params))
 u.write(0x56fa6c, b'\xb8' + struct.pack('<I', ms))
 print(f"pinned NR={nr:#x} CRT={crt:#x} params={params} mapseed={ms:#x}")
 PY
-focus_titled "Select Your City Style"; send_downs_then_return 0; sleep 2.5
+focus_titled "Select Your City Style"
+if [ -n "${HOOK_OUT:-}" ]; then
+    # log the CRT draws this answer triggers (randhook.py presses Return)
+    # shellcheck disable=SC2086
+    python3 randhook.py "${HOOK_SECS:-25}" "$HOOK_OUT" --return ${HOOK_ARGS:-} || exit 1
+else
+    send_downs_then_return 0
+fi
+sleep 2.5
 step "In the Beginning" 0
 sleep 4
 python3 - "$OUT" <<'PY'

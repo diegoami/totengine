@@ -153,6 +153,7 @@ impl WorldState {
                         orders: 0xff,
                         stack_pos: top + k as u16,
                         home: 0xff,
+                        id: 1,
                     });
                 }
                 Applied::Created {

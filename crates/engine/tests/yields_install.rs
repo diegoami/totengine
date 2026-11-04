@@ -76,7 +76,7 @@ fn standard_game_tile_sums_match_records() {
 
 /// City totals after corruption, multipliers and waste (evidence §T1-4
 /// city totals): ROMFALL trade exact in every city without trade routes,
-/// shields in at least 141/146 (unit support and road connection open).
+/// shields in at least 143/146 (the road connection to the capital is open).
 #[test]
 fn romfall_city_totals_after_corruption_and_waste() {
     let Some((w, rules)) = load("FallRome/ROMFALL.scn", "FallRome/Rules.txt") else {
@@ -96,5 +96,5 @@ fn romfall_city_totals_after_corruption_and_waste() {
         shields_ok += (o.shields == c.gross_shields as i32) as usize;
     }
     assert_eq!(trade_ok, trade_n, "trade after corruption");
-    assert!(shields_ok >= 141, "shields {shields_ok}/146");
+    assert!(shields_ok >= 143, "shields {shields_ok}/146");
 }

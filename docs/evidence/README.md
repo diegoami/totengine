@@ -549,9 +549,26 @@ needs corruption 1; the decode without `· 3` gives 0. With it:
   would correct. "Homed units minus N free" fits no better than 143/146,
   so support needs its own decode.
 
-Engine: `WorldState::city_output`, `corruption`, `capital_distance`.
-Tests: `crates/engine/tests/yields_install.rs`. Trade routes, unit
-support and the connection test (`0x471a13`) are open.
+**Unit support** (`0x4c19e0` loop + `0x4c18af`):
+- A unit counts when it is alive (id ≠ 0), owned by the city's civ,
+  homed in the city, and of Rules role < 6.
+- The n-th counted unit costs a shield when n exceeds the free
+  allowance:
+  - anarchy/despotism: the city size;
+  - monarchy/communism/fundamentalism: @COSMIC rows 13/14/15 (0-based;
+    RAM `0x5f5ec5..c7`; rows start at `0x5f5eb8`);
+  - republic/democracy: none.
+- Fundamentalism exempts unit types with type-table flag `0x08` (not yet
+  mapped to Rules).
+
+With support, shields replay **143/146** (ROMFALL) and 10/10. Each of
+the 3 remaining cities has the model one waste high where the record
+shows 0, which a road connection to the capital (`conn` ≥ 1) would
+explain.
+
+Engine: `WorldState::city_output`, `corruption`, `capital_distance`,
+`unit_support`. Tests: `crates/engine/tests/yields_install.rs`. Trade
+routes and the connection test (`0x471a13`) are open.
 
 ### T1-4 tile yields DECODED (2026-11-04): the original's tile-yield function
 

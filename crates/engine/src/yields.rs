@@ -260,12 +260,7 @@ impl WorldState {
         let g = gov as i32 + (c.flags & 2 != 0) as i32;
         let f = 4 + (g >= 1) as i32 + (g >= 2) as i32 + (g >= 3) as i32 + (g >= 5) as i32;
         let d = if gov == COMMUNISM {
-            rules
-                .cosmic()
-                .into_iter()
-                .find(|(k, _)| k.starts_with("Communism is equivalent"))
-                .and_then(|(_, v)| v.trim().parse().ok())
-                .unwrap_or(0)
+            rules.cosmic_row(16).unwrap_or(0) as i32
         } else {
             let mut d = self.capital_distance(idx);
             if waste {
@@ -283,19 +278,57 @@ impl WorldState {
         v
     }
 
+    /// Shields city `idx` pays for its units (`0x4c19e0` / `0x4c18af`).
+    /// Units count when alive, owned by the city's civ, homed here, and
+    /// of a Rules role below 6 (diplomacy/trade units are free). The n-th
+    /// counted unit costs a shield once n exceeds the government's free
+    /// allowance:
+    /// - anarchy, despotism: the city size;
+    /// - monarchy, communism, fundamentalism: @COSMIC rows 13/14/15;
+    /// - republic, democracy: none.
+    ///
+    /// Not modelled: fundamentalism exempts unit types with flag `0x08`
+    /// of the type table (not mapped to a Rules field yet).
+    pub fn unit_support(&self, rules: &Rules, idx: usize) -> i32 {
+        let Some(c) = self.cities.get(idx) else {
+            return 0;
+        };
+        let civ = (c.owner & 0x0F) as u8;
+        let gov = self.governments.get(civ as usize).copied().unwrap_or(0);
+        let free = match gov {
+            0 | 1 => Some(c.size as i32),
+            2..=4 => rules.cosmic_row(11 + gov as usize).map(|v| v as i32),
+            _ => None,
+        };
+        let mut n = 0;
+        let mut support = 0;
+        for u in &self.units {
+            if u.id == 0 || u.owner != civ || u.home as usize != idx {
+                continue;
+            }
+            if rules.unit_role(u.type_id as usize).unwrap_or(0) >= 6 {
+                continue;
+            }
+            n += 1;
+            if free.is_none_or(|f| n > f) {
+                support += 1;
+            }
+        }
+        support
+    }
+
     /// Food, shields and trade of city `idx` after the decoded city-totals
     /// stages.
     ///
     /// Oracle-checked against game-written records:
     /// - trade after corruption: exact in 145/145 ROMFALL cities without
     ///   trade routes and 10/10 standard-game cities;
-    /// - shields after multipliers and waste: 141/146 and 10/10.
+    /// - shields after multipliers, unit support and waste: 143/146 and
+    ///   10/10.
     ///
-    /// Not modelled yet (the shield misses):
-    /// - unit support, which lowers the waste base (`0x6537e8`);
-    /// - the road/rail connection to the capital, which scales waste
-    ///   (`0x471a13`). Treated as connected only in the capital (+1 with
-    ///   Railroad).
+    /// Not modelled yet (the 3 shield misses): the road/rail connection to
+    /// the capital, which scales waste (`0x471a13`). Treated as connected
+    /// only in the capital (+1 with Railroad).
     ///
     /// Trade routes are not modelled either.
     pub fn city_output(&self, rules: &Rules, idx: usize) -> CityOutput {
@@ -323,7 +356,7 @@ impl WorldState {
         let p = if powered { 2.min(q) } else { 0 };
         let mut shields = tile_shields + tile_shields * p / 4 + tile_shields * q / 4;
         // waste
-        let support = 0;
+        let support = self.unit_support(rules, idx);
         let capital = self.capital_distance(idx) == 0;
         let conn = if capital {
             1 + self.civ_has_tech(civ, RAILROAD_TECH) as i32

@@ -240,7 +240,12 @@ impl Rules {
             .unwrap_or(2)
     }
 
-    fn cosmic_row(&self, idx: usize) -> Option<u32> {
+    /// `@COSMIC` row `idx` (0-based), the value field. The original keeps
+    /// these as bytes from RAM `0x5f5eb8` (row 0 = road multiplier, 3 =
+    /// food box rows, 4 = shield box rows, 13–15 = free units under
+    /// monarchy / communism / fundamentalism, 16 = communism's palace
+    /// distance; evidence §T1-4 city totals).
+    pub fn cosmic_row(&self, idx: usize) -> Option<u32> {
         self.section("COSMIC")
             .and_then(|s| s.rows.get(idx))
             .and_then(|r| r.first())

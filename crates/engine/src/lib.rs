@@ -64,6 +64,8 @@ pub struct Unit {
     /// Home city index (record u8@18; 0xff = none). Supported settlers eat
     /// from their home city (evidence §T1-4 growth replay).
     pub home: u8,
+    /// Unit id (record u16@30); 0 = a deleted slot (counts in nothing).
+    pub id: u16,
 }
 
 /// Engine-side city: identity, coordinates and the proven economics
@@ -306,6 +308,7 @@ fn unit_from(r: &UnitRecord) -> Unit {
         orders: r.orders(),
         stack_pos: 0,
         home: r.home(),
+        id: r.id(),
     }
 }
 
@@ -426,7 +429,7 @@ impl WorldState {
             buf.clear();
             let _ = write!(
                 buf,
-                "u|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
+                "u|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|",
                 u.type_id,
                 u.owner,
                 u.x,
@@ -437,7 +440,8 @@ impl WorldState {
                 u.damage,
                 u.orders,
                 u.stack_pos,
-                u.home
+                u.home,
+                u.id
             );
             mix(&mut h, buf.as_bytes());
         }
@@ -535,6 +539,7 @@ mod tests {
             ("government", |w| w.governments[1] ^= 1),
             ("techs", |w| w.techs[1][0] ^= 1),
             ("tile improvements", |w| w.map.improvements[0] ^= 4),
+            ("unit id", |w| w.units[0].id ^= 1),
             ("city worked", |w| w.cities[0].worked ^= 1),
             ("city buildings", |w| w.cities[0].buildings[0] ^= 1),
             ("city flags", |w| w.cities[0].flags ^= 2),

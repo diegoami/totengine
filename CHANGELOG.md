@@ -19,8 +19,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   Courthouse/Palace), production multipliers and waste (`0x4c3919`).
   - Trade after corruption is exact in 145/145 ROMFALL cities without
     routes and 10/10 standard-game cities.
-  - Shields: 141/146 and 10/10. Unit support, the road connection to the
-    capital, and trade routes are still open.
+  - Shields, after unit support (`unit_support`: free units by
+    government from @COSMIC): 143/146 and 10/10. The road connection to
+    the capital and trade routes are still open.
 - `City` gains worked tiles, buildings and flags. The world gains
   per-civ government and advances, and the raw tile improvement byte (all
   in the checksum).

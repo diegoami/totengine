@@ -567,6 +567,29 @@ pub struct ResearchSettings {
     pub scenario: Option<(i16, i16)>,
 }
 
+/// Saved inputs used by hut dispatch and the original AI statistics pass.
+/// Landmass flag meanings beyond the hut's low-seven-bit test remain open.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SavedAiState {
+    pub city_landmasses: [[u8; 256]; 8],
+    pub landmass_flags: [[u8; 256]; 8],
+    pub leader_ids: [i16; 8],
+    pub power_ranks: [u8; 8],
+    pub power_reference: u8,
+}
+
+impl Default for SavedAiState {
+    fn default() -> Self {
+        Self {
+            city_landmasses: [[0; 256]; 8],
+            landmass_flags: [[0; 256]; 8],
+            leader_ids: [0; 8],
+            power_ranks: [0; 8],
+            power_reference: 0,
+        }
+    }
+}
+
 /// A parsed `0x32` (or `0x33`-front) save/scenario. See the module docs
 /// for the layout and the evidence trail.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -590,6 +613,7 @@ pub struct SaveFile {
     pub power_order: [u8; 8],
     /// Game family (save @982, RAM 0x607782): 0 original/extended, 1 sci-fi, 2 fantasy.
     pub game_mode: u8,
+    pub ai_state: SavedAiState,
     /// Saved civ city counts (i16@112, RAM 0x5f6910). Founding increments
     /// this field at 0x4329ee; city removal decrements it at 0x434750.
     pub city_counts: [i16; 8],
@@ -706,6 +730,11 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         civ_names.push(civ_names_from(block));
     }
 
+    let mut ai_state = SavedAiState {
+        power_ranks: data[966..974].try_into().unwrap(),
+        power_reference: data[965],
+        ..SavedAiState::default()
+    };
     let mut governments = [0u8; 8];
     let mut city_counts = [0i16; 8];
     let mut science_rates = [0u8; 8];
@@ -716,8 +745,11 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     for c in 0..8 {
         let b = OFF_CIV_PROPS + CIV_PROPS_STRIDE * c;
         let block = data
-            .get(b..b + 114)
+            .get(b..b + CIV_PROPS_STRIDE)
             .ok_or(SavError::Truncated("civ properties"))?;
+        ai_state.leader_ids[c] = i16::from_le_bytes([block[14], block[15]]);
+        ai_state.city_landmasses[c].copy_from_slice(&block[0x5d0..0x6d0]);
+        ai_state.landmass_flags[c].copy_from_slice(&block[0x8d0..0x9d0]);
         governments[c] = block[29];
         city_counts[c] = i16::from_le_bytes([block[112], block[113]]);
         science_rates[c] = block[27];
@@ -876,6 +908,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         human_mask,
         power_order,
         game_mode,
+        ai_state,
         city_counts,
         barbarian_level,
         civs_mask,

@@ -2152,9 +2152,75 @@ CIVTOT_HOME=... PYTHONPATH=/tmp/totengine-research-deps \
   python3 tools/huts_check.py --vectors /tmp/hut-vectors.txt
 ```
 
-This is **not** a full hut-entry parity claim: selection landmass caches,
-nomad types, barbarian spawning and the complete same-seed branch series
-remain open in #79/#83.
+### Hut dispatch, nomads and barbarian ring (#79/#83)
+
+The same probe now additionally executes 1,000 contexts each for selection
+`54acbf..54adb7`, nomad redirects `54b09b..54b1ac`, barbarian gates
+`54b520..54b704` and ring placement/type selection `54b704..54babd`.
+Rust compares 256 selection, 128 nomad, 256 barbarian gate and 128 ring
+vectors: [dispatch](hut-dispatch-vectors.txt),
+[nomads](hut-nomad-vectors.txt), [gates](hut-barbarian-gate-vectors.txt),
+[ring](hut-barbarian-vectors.txt). Selection and gate vectors compare the
+next CRT state, including the conditional AI-assistance and turn-30/50/75
+draws. Ring vectors compare every spawn request in order on invented
+maps with blocked, rough, water and impassable neighbours, edge clipping
+and east-west wrapping. The ring probe **records** `56a1c0` creation
+requests assuming success and **skips** `467d19` redraw; other placement
+and type helpers execute original bytes. It does not assert original
+unit-record mutation or allocation-cap parity.
+
+Selection keeps the original `%5` draw and human `%3` draw, then forces
+tribe when the saved city count is nonzero, the landmass city cache is
+zero and either the low-seven-bit flag test is zero or nearest-city
+distance is >12. These caches are retained, not inferred from ownership:
+
+| Saved field | Civ-block/file location | Original use/writer |
+|---|---|---|
+| leader-table index | civ i16 +14 | `54b1df` indexes a 60-byte leader row |
+| landmass city-count bytes | civ +0x5d0, 256 bytes | `54ad4b`; statistics pass clears at `507437`, increments own land-city count at `5078e1` |
+| landmass flags | civ +0x8d0, 256 bytes | `54ad6f` tests `&127`; bit meanings/update policy still being audited |
+| power-reference byte | file @965 / RAM `607771` | barbarian assistance at `54b584` |
+| per-civ power ranks | file @966..974 / RAM `607772` | rank comparison at `54b58b..54b59e` |
+
+`SavedAiState` preserves and fingerprints all of these fields. They do
+not yet refresh through a full original AI statistics pass; that is an
+open sustained-play gate, alongside power refresh in #89.
+
+Nomads redirect to gold when any civ owns advance 28; otherwise they
+redirect to scrolls when unhomed settler-role units exceed saved city
+count >>3. Surface nomad type is `INITIAL_SETTINGS[leader][1]`, loaded to
+`606f81 +60*leader` by `413b95`, selected by `54b1df..54b1f6`. Without
+that section the original initializes it to 0 (`413b02`). Scrolls now
+exclude disabled advances and apply `4a2098`'s `CIVILIZE2`/`LEADERS2`
+group restriction: group -1 passes, otherwise the leader's group byte
+must be zero. Loader paths `415192` and `41526a` establish these inputs.
+The integrated regression checks leader-dependent nomads and a disabled
+scroll candidate. Original new-unit movement-spent byte is zero
+(`56a594`), hence hut units receive their full Rules movement allowance.
+
+Barbarian huts redirect to mercenaries near any city (<4), or before turn
+50 with no city. For AI civs, a stronger referenced power rank can replace
+the result with a tribe on `rand()%8 < difficulty`. Below barbarian level
+3, nearby own-city/landmass checks can suppress the encounter in early
+turns. Early surviving encounters spawn one unit; later rings step by
+`clamp(4-city_count,1,4)`, starting at turn%8. Rough terrain (>2 movement)
+chooses infantry; other valid land chooses cavalry. Types use global
+advances 51/34 and the **Rules prerequisite of unit 22** (read via
+`5f4a83`), with fantasy surface variants. The ring excludes occupied,
+water, impassable and out-of-map tiles.
+
+Reproduce all retained vectors:
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/huts_check.py --vectors /tmp/hut-outcomes.txt \
+  --dispatch-vectors /tmp/hut-dispatch.txt --nomad-vectors /tmp/hut-nomads.txt \
+  --ring-vectors /tmp/hut-ring.txt --barbarian-gate-vectors /tmp/hut-gates.txt
+```
+
+Still open: complete same-seed hut-entry/state comparisons, runtime cache
+refresh, non-surface scenario cases and turn-time barbarian arrivals
+(#83). These checks do not close either issue by themselves.
 
 ## Reproduce
 

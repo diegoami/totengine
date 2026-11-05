@@ -212,6 +212,7 @@ pub struct WorldState {
     pub human_mask: u8,
     pub power_order: [u8; 8],
     pub game_mode: u8,
+    pub ai_state: tot_kit::SavedAiState,
     pub city_counts: [i16; 8],
     pub wonders: [i16; 28],
     /// Treasury per civ, index = owner (0 = barbarians); save i32@10 of
@@ -296,6 +297,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         human_mask: sav.human_mask,
         power_order: sav.power_order,
         game_mode: sav.game_mode,
+        ai_state: sav.ai_state.clone(),
         city_counts: sav.city_counts,
         wonders: sav.wonders,
         treasury: sav.treasury,
@@ -499,7 +501,13 @@ impl WorldState {
             mix(&mut h, t);
         }
         mix(&mut h, &self.power_order);
-        mix(&mut h, &[self.game_mode]);
+        mix(&mut h, &[self.game_mode, self.ai_state.power_reference]);
+        mix(&mut h, &self.ai_state.power_ranks);
+        for civ in 0..8 {
+            mix(&mut h, &self.ai_state.leader_ids[civ].to_le_bytes());
+            mix(&mut h, &self.ai_state.city_landmasses[civ]);
+            mix(&mut h, &self.ai_state.landmass_flags[civ]);
+        }
         mix(&mut h, &self.free_research);
         for count in self.city_counts {
             mix(&mut h, &count.to_le_bytes());
@@ -678,6 +686,13 @@ mod tests {
             ("route partner", |w| w.cities[0].route_partners[0] ^= 1),
             ("power order", |w| w.power_order[7] ^= 1),
             ("game mode", |w| w.game_mode ^= 1),
+            ("leader id", |w| w.ai_state.leader_ids[1] ^= 1),
+            ("landmass city count", |w| {
+                w.ai_state.city_landmasses[1][2] ^= 1
+            }),
+            ("landmass flags", |w| w.ai_state.landmass_flags[1][2] ^= 1),
+            ("power rank", |w| w.ai_state.power_ranks[1] ^= 1),
+            ("power reference", |w| w.ai_state.power_reference ^= 1),
             ("site bits", |w| w.map.site_bits[0] ^= 1),
             ("fertility", |w| w.map.fertility[0] ^= 1),
             ("free research", |w| w.free_research[1] ^= 1),

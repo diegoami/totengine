@@ -8,6 +8,11 @@
     "tribe": 1000
   },
   "site_value_cases": 128,
+  "selection_cases": 1000,
+  "nomad_redirect_cases": 1000,
+  "barbarian_ring_cases": 1000,
+  "barbarian_gate_cases": 1000,
+  "barbarian_ring_scope": "0x54b704..0x54babd; original placement/type decisions; 0x56a1c0 records successful creation requests, 0x467d19 redraw skipped; not full unit mutation parity",
   "game_family": {
     "save_byte": 982,
     "ram": "0x607782",

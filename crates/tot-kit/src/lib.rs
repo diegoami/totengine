@@ -17,7 +17,7 @@ pub use mp::{parse_mp, parse_mp_file, MpFormat, MpMap};
 pub use rules::{emit_rules, parse_rules, Rules, Section, TechDef, WonderDef};
 pub use sav::{
     civ_names_from, emit_sav, latin1, parse_sav, parse_sav_file, CityRecord, CivNames, MapBlock,
-    MapHeader, ResearchSettings, ResearchState, SavEditor, SavError, SaveFile, UnitRecord, MAGIC,
-    OFF_CIV_NAMES, OFF_CIV_PROPS, OFF_GAME, OFF_MENU, OFF_TECH, OFF_TRANSPORTERS,
-    OFF_TRANSPORT_REL, OFF_UNKNOWN_288, OFF_WONDERS,
+    MapHeader, ResearchSettings, ResearchState, SavEditor, SavError, SaveFile, SavedAiState,
+    UnitRecord, MAGIC, OFF_CIV_NAMES, OFF_CIV_PROPS, OFF_GAME, OFF_MENU, OFF_TECH,
+    OFF_TRANSPORTERS, OFF_TRANSPORT_REL, OFF_UNKNOWN_288, OFF_WONDERS,
 };

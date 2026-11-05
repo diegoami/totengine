@@ -7,9 +7,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 - **Hut outcomes (#79, in progress):** original global-tech mercenary
   choices, late-year gold doubling, tribe site gates and late tribe
-  population/buildings; 896 native vectors also check the next CRT state.
-  Tribe city creation preserves the exploring unit without a temporary
-  settler. Dispatch caches, nomad choices and barbarians remain open.
+  population/buildings, saved landmass dispatch, leader-specific nomads,
+  scroll legality and surface barbarian rings. 1,664 native vectors cover
+  outcomes, conditional CRT draws and spawn requests. Tribe creation
+  preserves the explorer without a temporary settler; new hut units get
+  full movement. Full entry/state parity and runtime AI-cache refresh
+  remain open.
 
 - **Treasury and upkeep:** city taxes now credit the civ treasury outside
   anarchy/disorder; original human-mask upkeep, Barracks adjustments,

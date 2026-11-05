@@ -5,6 +5,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Add the original research selection kernel, including CRT consumption and
+  human recommendation filtering, checked against 512 isolated native contexts.
+  Full advance valuation and campaign AI integration remain pending (#106).
+
 - Remove the stale "comparison pending" label from `totctl worldgen`
   (non-blocking v0.9 review follow-up #111); retain its engine-designed caveat.
 

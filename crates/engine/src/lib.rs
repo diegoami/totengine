@@ -8,6 +8,7 @@
 //! T1-3..T1-7.
 
 pub mod ai;
+pub mod ai_research;
 mod allocation;
 pub mod barbarians;
 pub mod calendar;

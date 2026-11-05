@@ -3467,3 +3467,33 @@ python3 tools/worldgen_compare.py docs/evidence/worldgen-v2-expanded-metrics.tsv
   > /tmp/worldgen-v2-expanded.json
 cmp /tmp/worldgen-v2-expanded.json docs/evidence/worldgen-v2-expanded.json
 ```
+
+## Original research selection (v0.10, #106)
+
+`ai-research-choice.json` records 512 executions of the original selector
+`0x49f98b` and CRT `0x5b11d0`. Winner, final CRT state and draw count agree
+with the decoded implementation. The probe supplies availability (`0x49ecb6`),
+group permission (`0x4a2098`) and context-dependent advance value (`0x49c95d`);
+these are explicit replaced decision boundaries, not a full original AI check.
+The native two-`no` prerequisite rejection executes unchanged.
+
+AI selection assigns each admitted advance `rand() % value` for value > 1,
+otherwise zero without drawing; the earliest maximal score wins. The human
+advisor branch adds `rand() % 3 - 1` and above Chieftain omits later admitted
+IDs congruent to the acquired count modulo three. All six difficulties, empty,
+singleton, zero/tied candidates, mixed gates and signed arithmetic boundaries
+are checked. `crates/engine/tests/fixtures/ai-research-choice.txt` retains 128
+native outputs; the asset-free Rust test compares winner and randomness.
+`engine::ai_research` is not yet wired into campaigns: full native advance
+valuation remains the next step (decision 0007).
+
+Reproduce with Unicorn installed outside the repository:
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+  python3 tools/ai_research_choice_check.py --vectors /tmp/ai-research-choice.txt \
+  > /tmp/ai-research-choice.json
+cmp /tmp/ai-research-choice.json docs/evidence/ai-research-choice.json
+cmp /tmp/ai-research-choice.txt crates/engine/tests/fixtures/ai-research-choice.txt
+cargo test -p engine --test ai_research_choice
+```

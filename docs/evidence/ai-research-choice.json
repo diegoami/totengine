@@ -1,0 +1,17 @@
+{
+  "source": "civ2.bak 0x49f98b research selector and 0x5b11d0 CRT",
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "original_x86_contexts": 512,
+  "committed_vectors": 128,
+  "compared": [
+    "selected advance",
+    "final CRT state",
+    "CRT draw count"
+  ],
+  "replacement_callees": {
+    "0x49ecb6": "supplied availability",
+    "0x4a2098": "supplied group permission",
+    "0x49c95d": "supplied context-dependent advance value"
+  },
+  "scope": "selection kernel only; full native values and campaign decisions pending"
+}

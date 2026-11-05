@@ -1,6 +1,6 @@
 //! Derived terrain/river statistics for generated worlds and original saves.
-//! Usage: worldgen_metrics [label=path.sav ...]; no original records emitted.
-use engine::worldgen::{generate, WorldConfig};
+//! Usage: worldgen_metrics [--seeds N] [label=path.sav ...]; numeric data only.
+use engine::worldgen::{generate, WorldConfig, ALGORITHM_VERSION};
 
 fn report(label: &str, width: usize, height: usize, terrain: &[u8], rivers: usize) {
     let mut hist = [0usize; 11];
@@ -16,7 +16,14 @@ fn report(label: &str, width: usize, height: usize, terrain: &[u8], rivers: usiz
 
 fn main() {
     println!("source\tlogical_width\theight\ttiles\trivers\tdesert\tplains\tgrassland\tforest\thills\tmountains\ttundra\tglacier\tswamp\tjungle\tocean");
-    for arg in std::env::args().skip(1) {
+    let mut args = std::env::args().skip(1);
+    let mut seeds = 16;
+    while let Some(arg) = args.next() {
+        if arg == "--seeds" {
+            seeds = args.next().expect("--seeds N").parse::<u32>().unwrap();
+            assert!((1..=10000).contains(&seeds));
+            continue;
+        }
         let (label, path) = arg.split_once('=').expect("expected label=path.sav");
         let save = tot_kit::parse_sav_file(std::path::Path::new(path)).unwrap();
         let map = &save.maps[0];
@@ -33,14 +40,14 @@ fn main() {
                 .count(),
         );
     }
-    for seed in 0..16 {
+    for seed in 0..seeds {
         let config = WorldConfig {
             seed,
             ..WorldConfig::default()
         };
         let w = generate(config).unwrap();
         report(
-            &format!("engine-v1-{seed}"),
+            &format!("engine-v{ALGORITHM_VERSION}-{seed}"),
             config.width as usize,
             config.height as usize,
             &w.terrain,

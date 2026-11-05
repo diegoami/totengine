@@ -592,7 +592,10 @@ fn cmd_worldgen(args: &[String]) -> ExitCode {
             .map_err(|e| format!("create {path}: {e}"))?;
         file.write_all(&world.mp_bytes())
             .map_err(|e| format!("write {path}: {e}"))?;
-        println!("generator     : engine-designed v1 (original statistical comparison pending)");
+        println!(
+            "generator     : engine-designed v{} (original statistical comparison pending)",
+            engine::worldgen::ALGORITHM_VERSION
+        );
         println!("seed          : {}", config.seed);
         println!(
             "dimensions    : {} x {} logical",

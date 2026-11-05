@@ -3253,7 +3253,7 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
 
 `engine::worldgen` is **our algorithm**, not a decoded original generator.
 It uses integer smoothed fields and ranked sea level, latitude/moisture
-biomes and strictly downhill drainage; east/west neighbors wrap. `totctl
+biomes and sea-rooted drainage; east/west neighbors wrap. `totctl
 worldgen` exports the proven stock `.MP` slot shape for the existing Rust and
 Python decoders. No unknown original metadata or game assets are copied.
 Successful decoder round trips do not claim original-game import.
@@ -3289,4 +3289,69 @@ cargo run -q -p engine --example worldgen_metrics -- \
   "pl2=$RG2_RUNS/pl2/Original_Ph_Auto.SAV" \
   "pl3=$RG2_RUNS/pl3/Original_Ph_Auto.SAV" \
   "pl4=$RG2_RUNS/pl4/Original_Ph_Auto.SAV"
+```
+
+#### Algorithm v2: climate and basin drainage
+
+The v1 artifacts above are historical measurements of commit `245d70f`.
+Current exports identify algorithm **v2**, whose deterministic bytes differ.
+V2 narrows polar bands and adjusts moisture/relief thresholds. It floods
+outward from every ocean tile, assigning each discovered land tile an
+already visited downstream parent at its lowest spill height. Reverse
+traversal accumulates integer rain (1 + moisture/250); flow of at least 12
+marks a river. Parent order prevents drainage cycles, and increasing flow
+keeps marked channels continuous to the sea. These are engine policies.
+
+[V2 numeric counts](worldgen-v2-metrics.tsv) contain the same three retained
+original worlds, 16 calibration seeds (0–15), and 64 fresh engine seeds
+(16–79). Original source hashes were rechecked against
+[the v1 manifest](worldgen-v1.json); no new Wine run was performed.
+[The reproducible report](worldgen-v2.json) separates the cohorts, keeps pl4
+as a changed-settings control, and records means, sample standard deviations,
+ranges and mean differences. Percentages use all 2,000 real tiles as the
+denominator and give each map equal weight.
+
+| Measure | Original pl2/pl3 mean | V2 calibration mean | V2 fresh-seed mean |
+| --- | ---: | ---: | ---: |
+| Land | 47.225% | 47.000% | 47.000% |
+| Plains | 8.750% | 8.3688% | 7.8742% |
+| Hills | 9.625% | 8.950% | 9.350% |
+| Mountains | 4.050% | 4.350% | 4.4102% |
+| Tundra | 2.800% | 2.8875% | 2.7617% |
+| Glacier | 3.225% | 3.0812% | 2.7797% |
+| Rivers | 4.025% | 3.7625% | 3.4312% |
+
+The remaining biome means are in the report; all fresh-seed biome means
+are within 0.9 percentage points of the small original reference. Individual
+maps vary substantially (e.g. seed 79 has 8.55% jungle), so matching means
+alone does not establish statistical parity. **#90 acceptance remains open:**
+the two original maps are still insufficient, and spatial coherence has not
+yet been measured against a broader matched-settings original cohort.
+
+Inspected renders: [seed 7](worldgen-v2-seed7.png),
+[fresh seed 31](worldgen-v2-seed31.png), and
+[fresh seed 79](worldgen-v2-seed79.png). All show separated land regions and
+climate/relief patches; seed 79 is visibly wetter with more tropical terrain.
+The decoder's alternating padding slots remain visible in these diagnostic
+renders. Regression checks independently flood river cells from the ocean
+to reject isolated inland networks, including an artificial depression with
+a flat rim and generated maps up to 256×256 logical dimensions at 80% land.
+
+```sh
+cargo run -q -p engine --example worldgen_metrics -- --seeds 80 \
+  "pl2=$RG2_RUNS/pl2/Original_Ph_Auto.SAV" \
+  "pl3=$RG2_RUNS/pl3/Original_Ph_Auto.SAV" \
+  "pl4=$RG2_RUNS/pl4/Original_Ph_Auto.SAV" \
+  > /tmp/worldgen-v2-metrics.tsv
+cmp /tmp/worldgen-v2-metrics.tsv docs/evidence/worldgen-v2-metrics.tsv
+python3 tools/worldgen_compare.py docs/evidence/worldgen-v2-metrics.tsv \
+  --reference pl2 --reference pl3 > /tmp/worldgen-v2.json
+cmp /tmp/worldgen-v2.json docs/evidence/worldgen-v2.json
+python3 -m unittest discover -s tools -p 'test_worldgen_compare.py'
+# Render each of 7, 31, 79 with the command above and these Rules:
+# Original/Rules.txt SHA256 640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef
+# Generated MP SHA256s:
+# 7: ff08e7103e805883c0897141f293f5fbf1f78c8391a65b619acea7d1617c12bf
+# 31: 1dff44f6c2d4cb2653e65359acf5c8e0880d093fbfb34090fc81723c090b8ebb
+# 79: 0577a847e24bb982db3a02b58fa2531b8c5857660200655baf2b4d46dced342f
 ```

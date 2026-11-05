@@ -117,8 +117,10 @@ artifacts; #109's non-blocking documentation follow-up is fixed after the tag.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.
 v0.9 work has started (#90/#91): `engine::worldgen` and `totctl worldgen`
 provide deterministic engine-designed MP export. First measured baseline and
-render are in `docs/evidence/worldgen-v1.json`; excess polar terrain and sparse
-rivers/relief still need calibration. No fresh campaign initialization yet.
+render are in `docs/evidence/worldgen-v1.json`. Algorithm v2 corrects polar
+bands/relief and drains inland basins to the sea; 16 calibration and 64 fresh
+engine seeds are measured in `worldgen-v2.json`. Broader original sampling and
+spatial comparison remain open. No fresh campaign initialization yet.
 Next plan: `docs/decisions/0006-generated-world-campaign.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

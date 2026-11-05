@@ -13,7 +13,7 @@ milestones and pluggable AI after the playable client.
    explicitly engine-designed algorithm, rather than a claimed original port.
    Settings/seed determine output independently of gameplay RNG. Integer
    smoothed elevation/moisture/relief fields, ranked sea level, latitude
-   biomes and downhill river paths produce a dense surface map. `totctl
+   biomes and sea-rooted basin drainage produce a dense surface map. `totctl
    worldgen` exports stock `.MP`-shaped bytes for existing decoders/renderers.
    Export round trips do not establish original-game map import.
 2. **Statistical calibration.** Compare controlled original generated maps
@@ -56,3 +56,34 @@ matched-settings comparison, before campaign initialization.
 
 Validation: all 116 engine unit tests, the asset-free CLI integration test,
 workspace formatting and all-target Clippy with warnings denied passed.
+
+## Biome/drainage correction (2026-11-05)
+
+Algorithm v2 narrows the polar bands, adjusts moisture/relief thresholds and
+replaces sparse strictly downhill river attempts with a flood outward from
+the sea. Each land tile receives a previously visited downstream parent;
+integer rain accumulation marks continuous rivers, including outlets across
+inland sinks. Heap ties use tile index. These are explicit engine design
+choices, not claims about original map generation.
+
+The 16 tuning seeds are now separate from 64 fresh engine seeds (16–79).
+`tools/worldgen_compare.py` checks the numeric corpus and produces means,
+ranges, sample deviations and differences from the reference. V2 evidence
+and three inspected renders are in `docs/evidence/worldgen-v2.json` and the
+evidence README. Holdout biome means differ from the two original reference
+maps by less than 0.9 percentage points each; river coverage is 3.4312%
+versus 4.025%. This is a calibration result, not a statistical acceptance
+gate: broader matched-settings original sampling and spatial comparison
+remain required. The original samples are unchanged, with hashes rechecked;
+no new live oracle run is claimed.
+
+Regressions check sea-connected river components, a synthetic inland basin
+with a flat spillway, and the smallest/largest supported dimensions and land
+targets. Neither #90 nor #91 is complete; fresh campaign initialization is
+still pending.
+
+Validation: `CIVTOT_HOME=/mnt/d/games/CIVTOT make test` passed all 186 Rust
+tests across 36 test binaries, the three Python report checks and the full
+golden corpus (including the 50-turn fingerprint run and Rust/Python format
+crosschecks). Workspace formatting and all-target Clippy with warnings
+denied passed; the report re-derived byte-identically from its retained TSV.

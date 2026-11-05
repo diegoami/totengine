@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Calibrate generated biomes and replace sparse downhill river attempts with
+  sea-rooted basin drainage (#90, algorithm v2). Retain numeric comparisons for
+  16 calibration and 64 fresh engine seeds, three inspected renders and basin/
+  maximum-size drainage regressions. Original statistical acceptance remains open.
+
 - Start v0.9 generated-world work (#90): engine-designed seeded surface maps,
   `totctl worldgen` MP export, decoder/CLI regressions and a measured original
   baseline. Biome/drainage calibration and fresh campaign initialization remain

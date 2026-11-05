@@ -402,7 +402,12 @@ impl WorldState {
                         o = 5;
                         continue;
                     }
-                    let c = self.create_city(rules, civ, u.x, u.y);
+                    // The original caller does not check create_city's -1
+                    // result before writing tribe bonuses. Avoid its invalid
+                    // record write when the classic city table is full.
+                    let Some(c) = self.create_city(rules, civ, u.x, u.y) else {
+                        return HutOutcome::Nothing;
+                    };
                     let (size, buildings) = tribe(&mut self.combat_rng, self.year);
                     self.cities[c].size = size as u16;
                     for (a, b) in self.cities[c].buildings.iter_mut().zip(buildings) {

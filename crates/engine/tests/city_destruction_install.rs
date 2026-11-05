@@ -52,7 +52,19 @@ fn original_city_destruction_state() {
                 _ => panic!("unexpected tile field {field}"),
             }
         }
+        let mut dead_record = w.cities[target].clone();
+        dead_record.city_id = 0;
+        let old_count = w.cities.len();
         assert!(w.destroy_surface_city(&rules, target));
+        assert_eq!(
+            w.cities.len(),
+            old_count - usize::from(target + 1 == old_count)
+        );
+        // The original probe also captures inactive table storage beyond the
+        // reduced extent. Include that record only for the storage comparison.
+        if target == w.cities.len() {
+            w.cities.push(dead_record);
+        }
         assert_eq!(
             w.map.improvements, map.improvements,
             "unit/city markers, humans {} city {target}",

@@ -2713,10 +2713,10 @@ routes, wonder slots, counts and all surface improvement/site/fertility/owner
 arrays match. The map artifact records changed numeric fields, not map assets.
 The original 45-offset neighborhood is retained as derived coordinates.
 
-The function retains dead city slots for stable engine indices. Native raw
-array truncation, non-surface refresh, sea-transport cargo, unit-known-by fields,
-caller civilization elimination and full turn integration are outside this
-comparison. These fixtures do not close #13's live-save acceptance gate.
+Interior dead city slots remain available for reuse. Last-slot extent
+reduction is checked separately below. Non-surface refresh, sea-transport cargo,
+unit-known-by fields and caller civilization elimination are outside this
+comparison. The surface removal is now integrated into the city phase. These fixtures do not close #13's live-save acceptance gate.
 
 The original caller `0x470aa5..0x470b69` visits a civ's cities in **descending**
 city-index order for each map, unlike the older engine's ascending global loop.
@@ -2887,9 +2887,8 @@ updates them, and the subsequent city's starvation branch reads those prior
 inputs, as native `0x4c596b` does. This initialization, civ scheduling after
 all player orders and turn-event dispatch remain headless engine policy.
 Pollution/settler-job planning and their CRT draws, original AI build selection,
-non-surface cities and sea cargo are not ported by this change. Native city-slot
-reuse/truncation and dynamic landmass strategy flags still need their lifecycle
-audit. These scoped checks are not a live Wine/autosave comparison, complete
+non-surface cities and sea cargo are not ported by this change. Dynamic landmass strategy flags still need their lifecycle audit. City-slot
+reuse/truncation is checked below. These scoped checks are not a live Wine/autosave comparison, complete
 original-round RNG replay, or completion of #13's live-save gate.
 
 ```sh
@@ -2899,4 +2898,43 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
 cmp docs/evidence/city-round.json /tmp/city-round.json
 cmp docs/evidence/city-round-vectors.txt /tmp/city-round-vectors.txt
 CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test city_phase_install
+```
+
+
+### City-slot allocation and deletion extent (v0.8.0)
+
+`tools/city_allocation_check.py` executes the original allocation fragment
+`0x432927..0x4329de`, stopping before city initialization or capacity UI.
+[city-allocation.json](city-allocation.json) and
+[city-allocation-vectors.txt](city-allocation-vectors.txt) contain 46 allocation
+cases: reuse the first dead slot regardless of current extent, otherwise append
+only below 255 slots. Human-mask selection changes notification, not admission.
+Cases include imported extents above the classic limit; an existing dead slot
+can still be reused. Patched ToTPP capacity is outside this proof.
+
+Fifteen original `0x4348d7..0x4348ef` cases show that destruction reduces the
+extent by exactly one if the deleted city was last. It does not trim earlier
+dead records. The engine's city vector now follows that extent, preserving
+interior indices; barbarian city-slot sampling therefore uses the reduced count.
+The older full destruction fixture captures inactive storage too, which its
+comparison reconstructs outside the active extent.
+
+Four `0x432ad7..0x432af6` cases confirm full-width identity writes and increments
+including 65,536 and 4,294,967,294. As for unit identities, the engine retains
+imported IDs and initializes its creation counter above their maximum, rather
+than emulating loader renumbering. That counter survives deletion and is part
+of the deterministic fingerprint.
+
+Capacity failure leaves a founding settler intact. The native hut caller at
+`0x54af7b` stores the allocation result and proceeds directly to record writes
+without checking for -1 (`0x54afa5..0x54afb2` in the later-year branch). The
+engine returns `HutOutcome::Nothing` instead of writing outside the city table;
+this deliberate safety behavior is not claimed as native outcome parity.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/city_allocation_check.py --gold /tmp/city-allocation.json \
+  --vectors /tmp/city-allocation-vectors.txt
+cmp docs/evidence/city-allocation.json /tmp/city-allocation.json
+cmp docs/evidence/city-allocation-vectors.txt /tmp/city-allocation-vectors.txt
 ```

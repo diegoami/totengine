@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- Reuse deleted city slots, apply the original 255-slot append limit and
+  last-slot deletion extent; retain city identity counters across removal.
+  Native checks cover 46 allocations, 15 deletions and four identity writes.
 - Replace the old city-growth approximation with the decoded surface city phase:
   signed food debt/growth, workers, collection, support/disbands, post-production
   totals, unrest/celebration and forced human anarchy. The actual round loop

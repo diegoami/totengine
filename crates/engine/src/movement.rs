@@ -207,6 +207,7 @@ mod tests {
             free_research: [0; 8],
             city_counts: [0; 8],
             next_unit_id: 2,
+            next_city_id: 1,
             turn: 1,
             year: -4000,
             difficulty: 4,

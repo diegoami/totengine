@@ -64,7 +64,8 @@ impl WorldState {
     }
 
     /// Surface city record, homed units, incoming routes, wonders and nearby
-    /// fertility/site invalidation. Dead city slots remain stable engine IDs.
+    /// fertility/site invalidation. Interior dead slots remain available for
+    /// reuse; deleting the last slot reduces the native extent by exactly one.
     pub fn destroy_surface_city(&mut self, rules: &Rules, index: usize) -> bool {
         let Some(city) = self
             .cities
@@ -147,6 +148,9 @@ impl WorldState {
             if k < 21 && self.map.site_bits[i] == owner {
                 self.map.site_bits[i] = 0;
             }
+        }
+        if index + 1 == self.cities.len() {
+            self.cities.pop();
         }
         true
     }

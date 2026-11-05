@@ -74,6 +74,9 @@ impl WorldState {
         if too_close {
             return Some("too close to a city");
         }
+        if self.available_city_slot().is_none() {
+            return Some("city capacity reached");
+        }
         None
     }
 
@@ -127,7 +130,9 @@ impl WorldState {
             let u = &self.units[unit];
             (u.x, u.y, u.owner)
         };
-        let idx = self.create_city(rules, civ, x, y);
+        let idx = self
+            .create_city(rules, civ, x, y)
+            .ok_or("city capacity reached")?;
         self.units[unit].id = 0;
         self.units[unit].x = 0xFFFF;
         self.units[unit].y = 0xFFFF;
@@ -136,7 +141,15 @@ impl WorldState {
 
     /// Shared city creation for settlers and hut tribes. Creating a city
     /// does not itself consume a unit (`0x54af76` calls `0x432810`).
-    pub(crate) fn create_city(&mut self, rules: &Rules, civ: u8, x: u16, y: u16) -> usize {
+    pub(crate) fn available_city_slot(&self) -> Option<usize> {
+        self.cities
+            .iter()
+            .position(|c| c.city_id == 0)
+            .or_else(|| (self.cities.len() < 255).then_some(self.cities.len()))
+    }
+
+    pub(crate) fn create_city(&mut self, rules: &Rules, civ: u8, x: u16, y: u16) -> Option<usize> {
+        let idx = self.available_city_slot()?;
         let first = !self
             .cities
             .iter()
@@ -144,7 +157,7 @@ impl WorldState {
         let n = self
             .cities
             .iter()
-            .filter(|c| (c.owner & 0x0F) as u8 == civ)
+            .filter(|c| c.city_id != 0 && (c.owner & 0x0F) as u8 == civ)
             .count()
             + 1;
         let plural = self
@@ -172,9 +185,14 @@ impl WorldState {
         if first {
             buildings[PALACE >> 3] |= 1 << (PALACE & 7);
         }
-        let city_id = self.cities.iter().map(|c| c.city_id).max().unwrap_or(0) + 1;
+        // Imported identities are preserved; retain the creation counter when
+        // the city carrying the highest identity is destroyed.
+        let max = self.cities.iter().map(|c| c.city_id).max().unwrap_or(0);
+        self.next_city_id = self.next_city_id.max(max.wrapping_add(1));
+        let city_id = self.next_city_id;
+        self.next_city_id = self.next_city_id.wrapping_add(1);
         let building = self.initial_build(rules, civ);
-        self.cities.push(City {
+        let city = City {
             map_id: 0,
             name: format!("{plural} {n}"),
             x,
@@ -205,8 +223,12 @@ impl WorldState {
             buildings,
             flags: CITY_REFRESH | if coastal { 0x80 } else { 0 },
             building,
-        });
-        let idx = self.cities.len() - 1;
+        };
+        if idx == self.cities.len() {
+            self.cities.push(city);
+        } else {
+            self.cities[idx] = city;
+        }
         self.city_counts[civ as usize] = self.city_counts[civ as usize].wrapping_add(1);
         // first worked tile (engine rule): most food, then shields, trade
         let best = (0..CENTRE)
@@ -214,7 +236,7 @@ impl WorldState {
                 let ty = y as i32 + RADIUS_DY[k];
                 ty >= 0
                     && (ty as usize) < self.map.stored_h
-                    && self.cities.iter().all(|c| {
+                    && self.cities.iter().filter(|c| c.city_id != 0).all(|c| {
                         !(c.x as i32 == (x as i32 + RADIUS_DX[k]).rem_euclid(w2.max(1))
                             && c.y as i32 == ty)
                     })
@@ -236,7 +258,7 @@ impl WorldState {
         c.gross_food = out.food.clamp(0, 255) as u8;
         c.gross_shields = out.shields.clamp(0, 255) as u8;
         c.gross_trade = out.trade.clamp(0, u16::MAX as i32) as u16;
-        idx
+        Some(idx)
     }
 }
 
@@ -253,6 +275,65 @@ Phalanx, nil, 0, 1., 0, 1a, 2d, 1h, 1f, 2, 0, 1, nil, 000000000000000\n\
 Pikemen, nil, 0, 1., 0, 1a, 2d, 1h, 1f, 2, 0, 1, Feu, 000000000000000\n\
 @IMPROVE\nNothing, 0, 0, nil\nPalace, 10, 0, nil\n\
 @TERRAIN\nDesert, 1, 2, 0, 1, 0\nPlains, 1, 2, 1, 1, 0\nGrassland, 1, 2, 2, 0, 0\n";
+
+    #[test]
+    fn native_city_slot_vectors() {
+        let rules = tot_kit::parse_rules(RULES);
+        for line in include_str!("../../../docs/evidence/city-allocation-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let mut fields = line.split_whitespace();
+            let kind = fields.next().unwrap();
+            let v: Vec<i64> = fields.map(|x| x.parse().unwrap()).collect();
+            let mut w = crate::boot(&synthetic_save(), 1);
+            if kind == "I" {
+                w.cities.clear();
+                w.next_city_id = v[0] as u32;
+                let slot = w.create_city(&rules, 1, 6, 0).unwrap();
+                assert_eq!(w.cities[slot].city_id as i64, v[1], "{line}");
+                assert_eq!(w.next_city_id as i64, v[2], "{line}");
+                assert!(w.destroy_surface_city(&rules, slot));
+                let slot = w.create_city(&rules, 1, 6, 0).unwrap();
+                assert_eq!(
+                    w.cities[slot].city_id as i64, v[2],
+                    "counter survives deletion"
+                );
+                continue;
+            }
+            let template = w.cities[0].clone();
+            w.cities.resize(v[0] as usize, template);
+            w.cities.truncate(v[0] as usize);
+            for (k, c) in w.cities.iter_mut().enumerate() {
+                c.city_id = 0x10000 + k as u32;
+            }
+            if kind == "A" {
+                w.human_mask = if v[1] != 0 { 2 } else { 0 };
+                if v[2] >= 0 {
+                    w.cities[v[2] as usize].city_id = 0;
+                }
+                assert_eq!(
+                    w.available_city_slot().map_or(-1, |i| i as i64),
+                    v[3],
+                    "{line}"
+                );
+                let result = w.create_city(&rules, 1, 6, 0);
+                assert_eq!(result.map_or(-1, |i| i as i64), v[3], "{line}");
+                assert_eq!(w.cities.len() as i64, v[4], "{line}");
+            } else {
+                // Leave another trailing dead record: native deletion removes
+                // exactly the selected last slot, without trimming earlier ones.
+                if w.cities.len() > 1 {
+                    let n = w.cities.len();
+                    w.cities[n - 2].city_id = 0;
+                }
+                w.cities[v[1] as usize].city_id = 1;
+                w.cities[v[1] as usize].map_id = 0;
+                assert!(w.destroy_surface_city(&rules, v[1] as usize));
+                assert_eq!(w.cities.len() as i64, v[2], "{line}");
+            }
+        }
+    }
 
     /// The decoded first build: best defence/cost among buildable role-1
     /// units, ties to the later one (Warriors 1/1 = Phalanx 2/2 → Phalanx;

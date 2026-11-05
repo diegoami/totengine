@@ -255,6 +255,7 @@ pub struct WorldState {
     pub units: Vec<Unit>,
     pub(crate) next_unit_id: u32,
     pub cities: Vec<City>,
+    pub(crate) next_city_id: u32,
     pub map: MapState,
     pub rng: Lcg64,
     /// Combat's generator: the original's MSVC CRT `rand()`, which it seeds
@@ -341,6 +342,13 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             .unwrap_or(0)
             .wrapping_add(1),
         cities: sav.cities.iter().map(city_from).collect(),
+        next_city_id: sav
+            .cities
+            .iter()
+            .map(|c| c.city_id())
+            .max()
+            .unwrap_or(0)
+            .wrapping_add(1),
         map: MapState {
             stored_w: sav.map_header.stored_w(),
             stored_h: sav.map_header.stored_h(),
@@ -550,6 +558,7 @@ impl WorldState {
         }
         mix(&mut h, &self.power_order);
         mix(&mut h, &self.next_unit_id.to_le_bytes());
+        mix(&mut h, &self.next_city_id.to_le_bytes());
         mix(&mut h, &[self.game_mode, self.ai_state.power_reference]);
         mix(&mut h, &self.ai_state.power_ranks);
         mix(&mut h, &[self.ai_state.alive_mask]);
@@ -802,6 +811,7 @@ mod tests {
             ("tile visibility", |w| w.map.visible[0] ^= 2),
             ("unit id", |w| w.units[0].id ^= 1),
             ("next unit id", |w| w.next_unit_id ^= 1),
+            ("next city id", |w| w.next_city_id ^= 1),
             ("original city owner", |w| w.cities[0].original_owner ^= 1),
             ("city worked", |w| w.cities[0].worked ^= 1),
             ("city buildings", |w| w.cities[0].buildings[0] ^= 1),

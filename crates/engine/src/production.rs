@@ -31,7 +31,6 @@
 //!   Rules yet and the engine treats it as clear.
 //!
 //! Not modelled yet:
-//! - wonders (ids ≥ 40) and their box reset;
 //! - the Settlers-at-size-1 case at Chieftain (and the population cost:
 //!   the engine's rule is in `founding.rs`);
 //! - what an AI chooses next (the item stays).
@@ -47,6 +46,8 @@ pub enum Built {
     Unit(usize),
     /// An improvement id.
     Improvement(u8),
+    /// A wonder slot (improvement ID minus 40).
+    Wonder(u8),
 }
 
 const CAPITALIZATION: i8 = -39;
@@ -116,16 +117,6 @@ impl WorldState {
         )
     }
 
-    fn civ_holds_wonder(&self, civ: u8, wonder: usize) -> bool {
-        self.wonders.get(wonder).is_some_and(|&c| {
-            c >= 0
-                && self
-                    .cities
-                    .get(c as usize)
-                    .is_some_and(|k| (k.owner & 0x0F) as u8 == civ)
-        })
-    }
-
     /// The decoded veteran rule (`0x4c6728`): see the module docs.
     fn made_veteran(&self, rules: &Rules, idx: usize, civ: u8, t: usize) -> bool {
         let Some(c) = self.cities.get(idx) else {
@@ -134,10 +125,10 @@ impl WorldState {
         let domain = rules.unit_domain(t).unwrap_or(0);
         let option = self.game_flags & 0x10 != 0;
         if domain == 0 || !option {
-            (c.has_building(2) || self.civ_holds_wonder(civ, 7))
+            (c.has_building(2) || self.has_active_wonder(rules, civ, 7))
                 && rules.unit_role(t).unwrap_or(0) <= 5
         } else if domain == 2 {
-            c.has_building(34) || self.civ_holds_wonder(civ, 3)
+            c.has_building(34) || self.has_active_wonder(rules, civ, 3)
         } else {
             c.has_building(32)
         }
@@ -210,6 +201,7 @@ impl WorldState {
             if settler {
                 c.size -= 1;
             }
+            c.flags &= !0x100;
             c.shield_box = (box_now - cost) as u16;
             let (x, y) = (c.x, c.y);
             let id = self.units.iter().map(|u| u.id).max().unwrap_or(0) + 1;
@@ -238,14 +230,39 @@ impl WorldState {
             Some(Built::Unit(self.units.len() - 1))
         } else {
             let id = -(item as i32) as usize;
-            if id >= FIRST_WONDER || c.has_building(id) {
+            if id >= FIRST_WONDER {
+                let wonder = id - FIRST_WONDER;
+                if self.wonders.get(wonder) != Some(&-1) {
+                    return None;
+                }
+                let cost = rules.improvement_cost(id)? as i32 * rows;
+                if box_now < cost {
+                    return None;
+                }
+                // 0x4c7916 and 0x4c7fa4: single-player registration and
+                // the reset discard all accumulated shield overflow.
+                self.wonders[wonder] = idx as i16;
+                c.flags |= 0x100;
+                c.shield_box = 0;
+                self.wonder_completed(civ, wonder);
+                return Some(Built::Wonder(wonder as u8));
+            }
+            if c.has_building(id) {
                 return None;
             }
             let cost = rules.improvement_cost(id)? as i32 * rows;
             if box_now < cost {
                 return None;
             }
-            c.shield_box = (box_now - cost) as u16;
+            // Human improvement completions pass through 0x4c7fa4;
+            // ordinary AI improvements branch to 0x4c7ff5 and retain
+            // their overflow. Wonders above always take the reset path.
+            c.shield_box = if self.human_mask & (1 << civ) != 0 {
+                0
+            } else {
+                (box_now - cost) as u16
+            };
+            c.flags &= !0x100;
             c.buildings[id >> 3] |= 1 << (id & 7);
             Some(Built::Improvement(id as u8))
         }

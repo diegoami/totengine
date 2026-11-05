@@ -15,6 +15,7 @@ pub mod effects;
 pub mod events;
 pub mod finance;
 pub mod founding;
+pub mod happiness;
 pub mod huts;
 pub mod movement;
 pub mod observer;
@@ -25,6 +26,7 @@ pub mod research;
 pub mod rng;
 pub mod trade_routes;
 pub mod turn;
+pub mod wonders;
 pub mod yields;
 
 use std::fmt::Write as _;
@@ -95,6 +97,9 @@ pub struct City {
     /// Net science/taxes after the rate split and improvements.
     pub net_science: u16,
     pub net_taxes: u16,
+    /// City record bytes @84/@85.
+    pub happy: u8,
+    pub unhappy: u8,
     /// Sixteen two-bit specialist slots (record u32@24).
     pub specialists: u32,
     /// Cached trade after corruption, before routes (record i16@32).
@@ -203,6 +208,7 @@ pub struct WorldState {
     /// Human-players bitmask (save @687; bit n = civ n).
     pub human_mask: u8,
     pub power_order: [u8; 8],
+    pub city_counts: [i16; 8],
     pub wonders: [i16; 28],
     /// Treasury per civ, index = owner (0 = barbarians); save i32@10 of
     /// each civ-properties block (oracle-proven, evidence §T1-7 treasury).
@@ -214,6 +220,9 @@ pub struct WorldState {
     pub tax_rates: [u8; 8],
     pub diplomacy: [[u32; 8]; 8],
     pub research: [tot_kit::ResearchState; 8],
+    /// Unspent wonder-granted advances awaiting player research choices.
+    /// This is engine interaction state, not a new save-format field.
+    pub free_research: [u8; 8],
     pub research_settings: tot_kit::ResearchSettings,
     /// Known advances per civ (civ block @96 bitfield).
     pub techs: [[u8; 13]; 8],
@@ -282,6 +291,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         game_flags: sav.game_flags,
         human_mask: sav.human_mask,
         power_order: sav.power_order,
+        city_counts: sav.city_counts,
         wonders: sav.wonders,
         treasury: sav.treasury,
         governments: sav.governments,
@@ -289,6 +299,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         tax_rates: sav.tax_rates,
         diplomacy: sav.diplomacy,
         research: sav.research,
+        free_research: [0; 8],
         research_settings: sav.research_settings,
         techs: sav.techs,
         civs,
@@ -369,6 +380,8 @@ fn city_from(r: &CityRecord) -> City {
         gross_trade: r.gross_trade(),
         net_science: r.net_science(),
         net_taxes: r.net_taxes(),
+        happy: r.raw[84],
+        unhappy: r.raw[85],
         specialists: r.specialists(),
         route_trade: r.route_trade(),
         route_count: r.route_count(),
@@ -479,6 +492,10 @@ impl WorldState {
             mix(&mut h, t);
         }
         mix(&mut h, &self.power_order);
+        mix(&mut h, &self.free_research);
+        for count in self.city_counts {
+            mix(&mut h, &count.to_le_bytes());
+        }
         mix(&mut h, &self.map.improvements);
         mix(&mut h, &self.map.visible);
         for t in self.treasury {
@@ -524,6 +541,7 @@ impl WorldState {
         }
         for c in &self.cities {
             mix(&mut h, &c.map_id.to_le_bytes());
+            mix(&mut h, &[c.happy, c.unhappy]);
             buf.clear();
             let _ = write!(
                 buf,
@@ -649,6 +667,10 @@ mod tests {
             ("route commodity", |w| w.cities[0].route_commodities[0] ^= 1),
             ("route partner", |w| w.cities[0].route_partners[0] ^= 1),
             ("power order", |w| w.power_order[7] ^= 1),
+            ("free research", |w| w.free_research[1] ^= 1),
+            ("city count", |w| w.city_counts[1] ^= 1),
+            ("city happy", |w| w.cities[0].happy ^= 1),
+            ("city unhappy", |w| w.cities[0].unhappy ^= 1),
             ("techs", |w| w.techs[1][0] ^= 1),
             ("tile improvements", |w| w.map.improvements[0] ^= 4),
             ("tile visibility", |w| w.map.visible[0] ^= 2),

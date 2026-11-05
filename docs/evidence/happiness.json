@@ -1,0 +1,259 @@
+{
+  "source": "civ2.bak 0x4c4925..0x4c4fa9; synthetic inputs exclude garrison lookup, saved cases execute it",
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "scope": "happiness arithmetic; luxury/garrison/unit unrest inputs supplied; active-wonder input; no full-turn claim",
+  "original_x86_cases": 1000,
+  "rust_vectors": 128,
+  "military_input_cases": [
+    {
+      "case": "home",
+      "unit_unrest": 0,
+      "home_armed": 1
+    },
+    {
+      "case": "own-city",
+      "unit_unrest": 0,
+      "home_armed": 0
+    },
+    {
+      "case": "foreign-city",
+      "unit_unrest": 0,
+      "home_armed": 0
+    },
+    {
+      "case": "open",
+      "unit_unrest": 1,
+      "home_armed": 0
+    },
+    {
+      "case": "near-fortress",
+      "unit_unrest": 0,
+      "home_armed": 0
+    },
+    {
+      "case": "far-fortress",
+      "unit_unrest": 1,
+      "home_armed": 0
+    },
+    {
+      "case": "foreign-fortress",
+      "unit_unrest": 1,
+      "home_armed": 0
+    },
+    {
+      "case": "air-home",
+      "unit_unrest": 1,
+      "home_armed": 1
+    },
+    {
+      "case": "air-role3-home",
+      "unit_unrest": 0,
+      "home_armed": 1
+    },
+    {
+      "case": "air-role3-away",
+      "unit_unrest": 0,
+      "home_armed": 0
+    }
+  ],
+  "saved_inputs": [
+    {
+      "save": "Original/Ph_Auto2.SAV",
+      "original_x86_cities": 10,
+      "stored_happiness_exact": 10,
+      "stored_discrepancies": [],
+      "saved_city_counts": [
+        0,
+        0,
+        2,
+        0,
+        1,
+        2,
+        3,
+        2
+      ]
+    },
+    {
+      "save": "FallRome/ROMFALL.scn",
+      "original_x86_cities": 146,
+      "stored_happiness_exact": 131,
+      "stored_discrepancies": [
+        {
+          "city_index": 14,
+          "stored": [
+            1,
+            1
+          ],
+          "original_recomputed": [
+            1,
+            0
+          ]
+        },
+        {
+          "city_index": 19,
+          "stored": [
+            1,
+            1
+          ],
+          "original_recomputed": [
+            1,
+            0
+          ]
+        },
+        {
+          "city_index": 53,
+          "stored": [
+            1,
+            0
+          ],
+          "original_recomputed": [
+            1,
+            1
+          ]
+        },
+        {
+          "city_index": 59,
+          "stored": [
+            1,
+            0
+          ],
+          "original_recomputed": [
+            2,
+            0
+          ]
+        },
+        {
+          "city_index": 62,
+          "stored": [
+            1,
+            1
+          ],
+          "original_recomputed": [
+            2,
+            0
+          ]
+        },
+        {
+          "city_index": 63,
+          "stored": [
+            2,
+            2
+          ],
+          "original_recomputed": [
+            3,
+            1
+          ]
+        },
+        {
+          "city_index": 84,
+          "stored": [
+            1,
+            0
+          ],
+          "original_recomputed": [
+            2,
+            0
+          ]
+        },
+        {
+          "city_index": 115,
+          "stored": [
+            1,
+            1
+          ],
+          "original_recomputed": [
+            1,
+            0
+          ]
+        },
+        {
+          "city_index": 121,
+          "stored": [
+            1,
+            1
+          ],
+          "original_recomputed": [
+            1,
+            0
+          ]
+        },
+        {
+          "city_index": 122,
+          "stored": [
+            2,
+            2
+          ],
+          "original_recomputed": [
+            3,
+            1
+          ]
+        },
+        {
+          "city_index": 123,
+          "stored": [
+            1,
+            1
+          ],
+          "original_recomputed": [
+            2,
+            0
+          ]
+        },
+        {
+          "city_index": 127,
+          "stored": [
+            1,
+            0
+          ],
+          "original_recomputed": [
+            2,
+            0
+          ]
+        },
+        {
+          "city_index": 128,
+          "stored": [
+            1,
+            0
+          ],
+          "original_recomputed": [
+            2,
+            0
+          ]
+        },
+        {
+          "city_index": 129,
+          "stored": [
+            1,
+            0
+          ],
+          "original_recomputed": [
+            2,
+            0
+          ]
+        },
+        {
+          "city_index": 130,
+          "stored": [
+            1,
+            0
+          ],
+          "original_recomputed": [
+            2,
+            0
+          ]
+        }
+      ],
+      "saved_city_counts": [
+        19,
+        43,
+        6,
+        10,
+        15,
+        6,
+        48,
+        10
+      ]
+    }
+  ]
+}

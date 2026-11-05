@@ -94,6 +94,22 @@ in a live campaign. Rust additionally checks multiple slots, mutual partners,
 cache changes and route-inclusive finance. Route creation, delivery rewards,
 supply/demand refresh and non-surface routes remain open; #85 stays open.
 
+## Happiness and wonder work
+
+Keep happiness arithmetic separate from its luxury, specialist and military
+inputs. A native executable check on saved inputs must distinguish fresh
+calculation from stored prior totals; do not call either a full-turn replay.
+The same 15 FallRome happiness discrepancies occur under native original
+recomputation. The engine matches those recomputations; #13 still needs its
+separate sustained city-turn parity evidence.
+
+Wonder registration uses city indices and discards overflow; destroyed
+wonders remain unavailable. Pending Darwin choices are engine interaction
+state, fingerprinted and replayed, not a newly invented save field. Original
+completion calls discovery twice; grant an already selected target, then
+leave subsequent selections to player orders. Other completion dispatch
+effects must be checked before considering #88 complete.
+
 ## Remaining milestone work
 
 The owner requested completion of the entire v0.8 queue and then a milestone

@@ -86,6 +86,14 @@ Recurring route arrows are implemented (`engine::trade_routes`, #85 slice;
 288 arithmetic cases match original x86). Partner trade caches refresh
 before finance. Creation/delivery rewards and supply/demand refresh remain
 open, as do AI v1 economy/war work and maintenance.
+Happiness/disorder stages now refresh before production (#86; 1,000
+synthetic x86 cases and 156/156 original recomputations from saved inputs;
+15 FallRome stored values differ under original recomputation too).
+Wonder lifecycle and Darwin choices are implemented; remaining one-off
+effects are still #88. #89's late AI shield-row adjustment is implemented
+and default AI row rounding corrected (1,108 original-x86 cases).
+Owner requested all v0.8 tasks then the owner-run milestone review;
+`docs/v0.8.0-readiness.md` tracks the outstanding acceptance gates.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

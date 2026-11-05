@@ -94,6 +94,14 @@ impl WorldState {
             // read it; city iteration order remains engine-chosen.
             // Treasury income still requires maintenance accounting.
             self.cities[k].route_trade = self.pre_route_trade(rules, k);
+            let mood = self.city_happiness(rules, k);
+            self.cities[k].happy = mood.happy as u8;
+            self.cities[k].unhappy = mood.unhappy as u8;
+            if mood.unhappy > mood.happy {
+                self.cities[k].flags |= 1;
+            } else {
+                self.cities[k].flags &= !1;
+            }
             let finance = self.city_finance(rules, k);
             self.cities[k].net_science = finance.science.clamp(0, u16::MAX as i32) as u16;
             self.cities[k].net_taxes = finance.taxes.clamp(0, u16::MAX as i32) as u16;

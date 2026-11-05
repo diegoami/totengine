@@ -153,6 +153,7 @@ impl WonderTable {
 /// and ToTPP technology groups are not modelled.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResearchView {
+    pub free_advances: u8,
     pub target: Option<usize>,
     pub progress: i16,
     /// None when the source scenario's cost settings are unsupported.
@@ -232,6 +233,7 @@ impl crate::WorldState {
     pub fn observe_research(&self, rules: &Rules, civ: u8) -> ResearchView {
         let Some(state) = self.research.get(civ as usize) else {
             return ResearchView {
+                free_advances: 0,
                 target: None,
                 progress: 0,
                 cost: None,
@@ -271,6 +273,7 @@ impl crate::WorldState {
             Vec::new()
         };
         ResearchView {
+            free_advances: self.free_research[civ as usize],
             target: usize::try_from(state.target).ok(),
             progress: state.progress,
             cost: self.research_cost(rules, civ),

@@ -588,6 +588,9 @@ pub struct SaveFile {
     /// Saved power ranking, weakest to strongest (bytes @974..982;
     /// RAM 0x60777a). The shield-row adjustment reads the final slot.
     pub power_order: [u8; 8],
+    /// Saved civ city counts (i16@112, RAM 0x5f6910). Founding increments
+    /// this field at 0x4329ee; city removal decrements it at 0x434750.
+    pub city_counts: [i16; 8],
     /// Game block @684 — §RG-1 (0 = Chieftain … 5 = Deity).
     pub difficulty: u8,
     /// u16 @685: barbarian level | civs-in-play mask << 8. Historically
@@ -701,6 +704,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     }
 
     let mut governments = [0u8; 8];
+    let mut city_counts = [0i16; 8];
     let mut science_rates = [0u8; 8];
     let mut tax_rates = [0u8; 8];
     let mut diplomacy = [[0u32; 8]; 8];
@@ -709,9 +713,10 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     for c in 0..8 {
         let b = OFF_CIV_PROPS + CIV_PROPS_STRIDE * c;
         let block = data
-            .get(b..b + 109)
+            .get(b..b + 114)
             .ok_or(SavError::Truncated("civ properties"))?;
         governments[c] = block[29];
+        city_counts[c] = i16::from_le_bytes([block[112], block[113]]);
         science_rates[c] = block[27];
         tax_rates[c] = block[28];
         for (other, flags) in diplomacy[c].iter_mut().enumerate() {
@@ -867,6 +872,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         game_flags,
         human_mask,
         power_order,
+        city_counts,
         barbarian_level,
         civs_mask,
         difficulty,

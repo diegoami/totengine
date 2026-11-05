@@ -338,6 +338,11 @@ impl WorldState {
                     return OrderResult::Rejected("cannot research");
                 }
                 self.research[civ as usize].target = advance as i16;
+                if self.free_research[civ as usize] > 0 {
+                    self.free_research[civ as usize] -= 1;
+                    self.research[civ as usize].progress = 0;
+                    self.grant_advance(civ, advance);
+                }
                 OrderResult::ResearchSet
             }
             Order::FoundCity { unit } => {
@@ -368,9 +373,13 @@ impl WorldState {
                     t < rules.unit_names().len() && self.knows(rules, civ, rules.unit_prereq_raw(t))
                 } else {
                     let id = -(item as i32) as usize;
-                    (1..40).contains(&id)
+                    (1..68).contains(&id)
                         && rules.improvement_cost(id).is_some()
-                        && !c.has_building(id)
+                        && if id < 40 {
+                            !c.has_building(id)
+                        } else {
+                            self.wonders[id - 40] == -1
+                        }
                         && self.knows(rules, civ, rules.improvement_prereq_raw(id))
                 };
                 if !ok {

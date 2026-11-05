@@ -174,6 +174,8 @@ impl WorldState {
             gross_trade: 0,
             net_science: 0,
             net_taxes: 0,
+            happy: 0,
+            unhappy: 0,
             specialists: 0,
             route_trade: 0,
             route_count: 0,
@@ -187,6 +189,7 @@ impl WorldState {
             building,
         });
         let idx = self.cities.len() - 1;
+        self.city_counts[civ as usize] = self.city_counts[civ as usize].wrapping_add(1);
         // first worked tile (engine rule): most food, then shields, trade
         let best = (0..CENTRE)
             .filter(|&k| {

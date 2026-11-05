@@ -589,6 +589,95 @@ bitfield union in the standard and FallRome saves. The engine derives
 these masks from live knowledge and retains the saved power order in its
 checksum. Updating the power ranking itself remains separate work.
 
+### Happiness and disorder (#86, 2026-11-05)
+
+Sources: `civ2.bak 0x4c4925..0x4c4fa9`, normalization `0x4c3d3b`,
+unit unrest `0x4c1bdf`, disorder `0x4c999a` (happy minus unhappy < 0).
+`happiness.json`, `happiness-vectors.txt` and `happiness-saved-vectors.txt`
+are derived artifacts. Reproduce with optional external Unicorn:
+
+```
+CIVTOT_HOME=... PYTHONPATH=... python3 tools/happiness_check.py --vectors /tmp/happiness.txt --saved-vectors /tmp/happiness-saved.txt
+```
+
+The 1,000 invented cases execute original happiness/normalization/building/
+wonder callees, supplying luxury arrows, military unrest and garrison
+counts. The garrison lookup is explicitly excluded in those cases. The
+156 saved-input checks additionally execute original unit support, unrest,
+finance and the actual garrison lookup, with original saved records and
+decoded Rules type fields. They cover governments 0/1/2 on the surface map;
+fundamentalist type flags and scenario-specific air exceptions are excluded.
+Tile trade and shield totals are supplied from stored records, and specialist
+counts from the packed specialist slots. This is not a complete-turn claim.
+
+- Human initial unhappiness is `size + 1 - (cosmic[7] - difficulty)`.
+  A Palace with no military unrest or home military count floors the
+  content term to 2 when it would be lower. Empire factor is
+  `max(1, (cosmic[8] - 2*difficulty + (game_flags[660]&4 ? 2 : 0)) *
+  ((government>>1)+2) / 2)`. Except under Communism, add
+  `(saved_civ_city_count - factor + city_index % factor) / factor`, with
+  signed truncation. AI initial unhappiness is `size + 4 - cosmic[7]`.
+- Track overflow unhappiness separately as angry citizens. Normalize
+  before and after each effect group, including the specialist population
+  cap, cancellation between happy/unhappy and angry-citizen conversion.
+  Luxury happiness starts at `luxury_arrows >> 1`.
+- Colosseum (14) removes `3 + knows(24)` unhappiness. With advance 55,
+  Cathedral (11) or wonder 10 removes `3 - knows(15) + knows(82)`.
+  Temple (4) removes `knows(56)+knows(9)`, doubled by wonder 5.
+  A Courthouse or Palace adds one happy citizen under Democracy.
+- Fundamentalism clears unhappiness/anger. Governments below Republic
+  use martial law: up to 3 armed garrison units, or twice their number up
+  to 6 under Communism. Republic exempts its first unrest unit; Democracy
+  doubles unrest. Police Station (33) or wonder 21 subtracts one from that
+  multiplier. Aircraft/away units and nearby fortresses enter through
+  the separate unrest computation; fortress distance is the original
+  wrapped Manhattan sum / 2 (`0x566c40`).
+- Wonder 1 adds one happy citizen throughout the owner's cities and two
+  more locally; wonder 27 adds one; local wonder 13 clears unhappiness;
+  wonder 15 removes two unhappy citizens. All use active-wonder lookup.
+
+The engine matches native recomputation on **156/156** inputs. Stored
+happiness matches **10/10 standard** and **131/146 FallRome**. Original
+bytes reproduce the same 15 FallRome stored discrepancies, listed in the
+artifact; their historical cause is unresolved. Do not relabel this as
+exact save/turn parity. `run_turn` writes happy/unhappy bytes and updates
+disorder before production; an install test proves production stops and
+can resume when the mood changes.
+
+Civ i16@112 (RAM `0x5f6910`, stride 3348) is the saved city count used
+for empire unhappiness: founding increments it at `0x4329ee`, removal
+decrements it at `0x434750`. Retain it in the world/checksum and increment
+on founding. Some FallRome saved counters differ from the current record
+owner count, so silently replacing them with a recount loses source state.
+Military input checks beyond the saved governments, celebration/turn-order
+effects and the independent #13 city-turn gate remain outstanding.
+Ten additional invented military cases execute full original `0x4c1bdf`
+under Democracy: home/own/foreign cities, open ground, near/far/foreign
+fortresses and aircraft roles. Rust world-level cases match those results.
+The scenario-specific air exception and non-surface cases remain unmodelled.
+
+### Wonder completion (#88 in progress, 2026-11-05)
+
+`wonder-completion.json` is re-derived by `tools/wonders_check.py` using
+original registration `0x4c7910..0x4c7936` and box reset
+`0x4c7f97..0x4c7fae`, across all 28 slots. It checks these isolated writes,
+not the UI or entire completion dispatch. Table entries are city indices,
+-1 unbuilt and -2 destroyed; only -1 can be built. The successful
+single-player path sets city flag 0x100 and resets the entire box, losing
+overflow. Subsequent successful unit/improvement production clears 0x100
+(`0x4c6575` / `0x4c7777`). Human ordinary improvements also take the box
+reset path; ordinary AI improvements branch to `0x4c7ff5`, preserving
+overflow. The engine formerly preserved human improvement overflow too.
+
+Completion dispatch `0x4c8f7d..0x4c8fa3` calls `0x4a145e(civ,0)` twice
+for wonder slot 18 (Darwin). The engine grants the selected target, clears
+progress, and keeps the remaining choice pending for `SetResearch`; with
+no target both choices are pending. This interaction state is engine-owned,
+checksummed and visible through `ResearchView.free_advances`. Existing
+active-wonder consumers provide yield, finance, veteran and happiness
+effects when the table changes. Other one-off completion effects remain
+open: do not close #88 on this lifecycle slice.
+
 ### T1-4 city totals DECODED (2026-11-04): corruption, waste, multipliers, unit support
 
 Static decode from `civ2.bak`. The city-totals function `0x4c45ff`

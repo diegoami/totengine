@@ -1,0 +1,175 @@
+{
+  "source": "civ2.bak 0x4c7910..0x4c7936 and 0x4c7f97..0x4c7fae",
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "scope": "single-player registration/box reset only; no UI or effect dispatch",
+  "original_x86_cases": [
+    {
+      "wonder": 0,
+      "city_index": 1,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 1,
+      "city_index": 2,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 2,
+      "city_index": 3,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 3,
+      "city_index": 4,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 4,
+      "city_index": 5,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 5,
+      "city_index": 6,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 6,
+      "city_index": 7,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 7,
+      "city_index": 8,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 8,
+      "city_index": 9,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 9,
+      "city_index": 10,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 10,
+      "city_index": 11,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 11,
+      "city_index": 12,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 12,
+      "city_index": 13,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 13,
+      "city_index": 14,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 14,
+      "city_index": 15,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 15,
+      "city_index": 16,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 16,
+      "city_index": 17,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 17,
+      "city_index": 18,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 18,
+      "city_index": 19,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 19,
+      "city_index": 20,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 20,
+      "city_index": 21,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 21,
+      "city_index": 22,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 22,
+      "city_index": 23,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 23,
+      "city_index": 24,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 24,
+      "city_index": 25,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 25,
+      "city_index": 26,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 26,
+      "city_index": 27,
+      "flags_after": 386,
+      "box_after": 0
+    },
+    {
+      "wonder": 27,
+      "city_index": 28,
+      "flags_after": 386,
+      "box_after": 0
+    }
+  ]
+}

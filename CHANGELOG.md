@@ -5,6 +5,17 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- **Happiness and disorder (#86):** decoded happiness stages, luxury and
+  specialist balancing, improvements/wonders and military inputs; city
+  happiness now refreshes before production and can stop or resume it.
+  The arithmetic matches 1,000 original-x86 cases and native recomputation
+  on 156 saved city inputs. Fifteen FallRome stored values also differ
+  when original bytes recompute them; full-turn parity remains open.
+- **Wonder lifecycle (#88, in progress):** player orders can select unbuilt
+  wonders; completion registers the city, discards overflow and prevents
+  duplicate or destroyed wonders from being rebuilt. Darwin grants two
+  discoveries with subsequent choices left to the player. Human ordinary
+  improvement completion now also discards overflow, as the original does.
 - **AI production rows (#89):** corrected default difficulty rows and
   decoded the turn-200 adjustment using the saved power leader, wonder
   state and live knowledge masks. All 1,108 arithmetic cases match the

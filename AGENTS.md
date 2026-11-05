@@ -115,7 +115,8 @@ The owner-run v0.8 review passed all 181 tests and reproduced 85/85 native
 artifacts; #109's non-blocking documentation follow-up is fixed after the tag.
 `docs/v0.8.0-readiness.md` records acceptance gates and explicit context limits.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.
-v0.9 work has started (#90/#91): `engine::worldgen` and `totctl worldgen`
+**v0.9.0 "generated-world campaigns"** is released (AGREE on #110,
+GLM-5.3, one round; tag 17c1d25). `engine::worldgen` and `totctl worldgen`
 provide deterministic engine-designed MP export. First measured baseline and
 render are in `docs/evidence/worldgen-v1.json`. Algorithm v2 corrects polar
 bands/relief and drains inland basins to the sea; 16 calibration and 64 fresh
@@ -127,10 +128,11 @@ games without a save; `engine::campaign` and `totctl campaign` provide AI v1
 autoplay, order replay and versioned replay checkpoints (not native SAV).
 The 100-round authored golden and 32-seed continuation/replay suite pass;
 Original Rules seed 7 reaches 16 cities/53 units/35 advances and resumes.
-GitHub CI and scheduled autoplay pass on 3a1b622. v0.9.0 candidate is prepared:
-194 install-backed Rust tests, five Python evidence tests, golden/fmt/clippy
-and the 32-seed nightly suite pass. Independent owner-run review remains;
-`docs/v0.9.0-readiness.md` records gates and material geography limits.
+The independent reviewer reproduced all retained comparisons/trajectories
+byte-identically, passed 194 install-backed Rust tests, five Python evidence
+tests, golden/fmt/clippy and the 32-seed nightly suite. No MUST-FIX findings;
+#111's stale CLI status is corrected after the tag. `docs/v0.9.0-readiness.md`
+records gates and material geography limits. Next: v0.10 original-like AI.
 Next plan: `docs/decisions/0006-generated-world-campaign.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

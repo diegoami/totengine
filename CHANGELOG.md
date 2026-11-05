@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Remove the stale "comparison pending" label from `totctl worldgen`
+  (non-blocking v0.9 review follow-up #111); retain its engine-designed caveat.
+
 ## [0.9.0] — generated-world campaigns
 
 - Add deterministic engine-designed surface worlds and `totctl worldgen` MP

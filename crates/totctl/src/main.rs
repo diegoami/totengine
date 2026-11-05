@@ -708,7 +708,7 @@ fn cmd_worldgen(args: &[String]) -> ExitCode {
         file.write_all(&world.mp_bytes())
             .map_err(|e| format!("write {path}: {e}"))?;
         println!(
-            "generator     : engine-designed v{} (original statistical comparison pending)",
+            "generator     : engine-designed v{} (not an original-algorithm port)",
             engine::worldgen::ALGORITHM_VERSION
         );
         println!("seed          : {}", config.seed);

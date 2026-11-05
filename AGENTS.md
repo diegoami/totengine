@@ -104,8 +104,10 @@ x86 comparisons); population and city-landmass caches refresh too (128 cases).
 The decoded surface city phase now runs in `run_turn` (signed growth/debt,
 workers, support/disbands, post-production mood/finance and forced human anarchy).
 Actual round processing matches 500 controlled native city transitions over
-50 rounds; this is not Wine/autosave acceptance. City-slot reuse, classic capacity and deletion extent now match native checks.
-Live-save parity, landmass strategy flags and unsupported-context audits remain open.
+50 rounds. A controlled live Wine sequence now also passes: 500 economic
+transitions and civ treasuries from 50 original-written saves match run_turn. City-slot reuse, classic capacity and deletion extent now match native checks.
+Landmass strategy flags and unsupported-context audits remain open; the live
+city fixture isolates economics rather than full original-AI round parity.
 Owner requested all v0.8 tasks then the owner-run milestone review;
 `docs/v0.8.0-readiness.md` tracks the outstanding acceptance gates.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.

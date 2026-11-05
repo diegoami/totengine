@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- Verify the surface turn loop against 50 original-written Wine saves: 500
+  controlled city transitions and civ treasuries match exactly. Numeric evidence
+  retains source/save hashes; raw saves stay outside the repository.
 - Extend AI v1 with food/support-aware expansion, economic investments,
   upkeep budgeting, stable garrisons and cautious visible-target unit handling.
   Own-city economic observations respect privacy; production honors unit civ

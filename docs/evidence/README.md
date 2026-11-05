@@ -2975,3 +2975,52 @@ that observation leaves fingerprints unchanged and foreign private building
 and finance caches cannot alter the own-city economic view. Normal unit
 production now applies the already decoded @UNITS_ADVANCED civilization mask,
 as obsolete production and Leonardo upgrades already do.
+
+
+### Live city-save comparison (#13)
+
+The earlier native-only city fixtures are now accompanied by
+[city-live.json](city-live.json) and [city-live-vectors.txt](city-live-vectors.txt):
+50 consecutive controlled surface city rounds in the owned Wine game, with
+all ten reference cities retained between rounds. The game itself writes each
+save through its ordinary save dialog; derived vectors are decoded from those
+files, rather than copied directly from live RAM. The report records every
+save's SHA-256, the untouched reference save and runtime executable hashes.
+Raw saves stay under `review-tmp/oracle-runs/v08-city-series`, outside Git.
+
+`full_round_city_math_matches_fifty_live_original_saves` compares actual
+`run_turn` output against all 500 saved city transitions: population, signed
+food/shield boxes, workers/specialists, flags (apart from the documented
+planner bit 0x80000), route cache, science/taxes/trade, food/shields, mood,
+and each civ's final treasury. All match. This supplies the controlled
+50-save city-math gate; independent growth/debt, support, mood and production
+fixtures cover additional branches not exercised by this quiet campaign.
+
+Fixture inputs match `city_phase_check.py --round-order`: existing standard
+terrain/positions/governments, all-human mechanics mask, Chieftain, size-one
+zero-box start, center workers, saved Palaces only, Capitalization, 100% tax,
+and unhomed units. Process civs in order and city slots descending. Only
+`0x411c50` (open city-window query) and `0x467c89` (map redraw) are replaced
+while calling the live city routine; original gameplay callees run. The helper
+suspends the GUI thread during each isolated call and restores code/control
+inputs before saving. No original AI policy, pollution, ordinary unit builds,
+calendar advancement or complete round RNG sequence is being compared here.
+The saved turn counter advances once per controlled city round.
+
+```sh
+# Owned, backed-up rig only; read tools/oracle/README.md and docs/lessons.md.
+/home/diego/review-tmp/llvm-mingw/bin/clang --target=x86_64-pc-windows-gnu \
+  -O2 -o /tmp/totengine-call-game.exe tools/oracle/call_game.c -luser32
+CIVTOT_HOME=/mnt/d/games/CIVTOT DISPLAY=:99 \
+  WINEPREFIX=/home/diego/.wine_civ2tot tools/oracle/load_save.sh original/ph_auto2.sav
+CIVTOT_HOME=/mnt/d/games/CIVTOT DISPLAY=:99 \
+  WINEPREFIX=/home/diego/.wine_civ2tot python3 tools/oracle/city_series.py \
+  --helper /tmp/totengine-call-game.exe \
+  --output /home/diego/review-tmp/oracle-runs/v08-city-series \
+  --gold /tmp/city-live.json --vectors /tmp/city-live-vectors.txt
+```
+
+The tool reserves numeric save labels 8701 onward, refuses occupied labels,
+and removes only its just-created install-side numeric save after copying it
+outside the install. Stop the owned rig and restore its initial SAV/INI backup
+after experiments, as the launcher itself can update INI state.

@@ -1,5 +1,6 @@
 //! Controlled native city-phase and full headless-round economic comparisons.
-//! No Wine saves, research, ordinary builds or AI campaign acceptance claim.
+//! Native and live Wine-save fixtures isolate city economics; research,
+//! ordinary builds and complete AI campaigns have separate acceptance checks.
 #[test]
 fn controlled_fifty_turn_city_sequence() {
     let Some(home) = std::env::var_os("CIVTOT_HOME").map(std::path::PathBuf::from) else {
@@ -91,6 +92,17 @@ fn controlled_fifty_turn_city_sequence() {
 
 #[test]
 fn full_round_loop_matches_controlled_native_city_economics_for_fifty_turns() {
+    compare_full_rounds(include_str!(
+        "../../../docs/evidence/city-round-vectors.txt"
+    ));
+}
+
+#[test]
+fn full_round_city_math_matches_fifty_live_original_saves() {
+    compare_full_rounds(include_str!("../../../docs/evidence/city-live-vectors.txt"));
+}
+
+fn compare_full_rounds(data: &str) {
     let Some(home) = std::env::var_os("CIVTOT_HOME").map(std::path::PathBuf::from) else {
         return;
     };
@@ -116,7 +128,7 @@ fn full_round_loop_matches_controlled_native_city_economics_for_fifty_turns() {
     for u in &mut w.units {
         u.home = 255;
     }
-    let rows: Vec<Vec<i64>> = include_str!("../../../docs/evidence/city-round-vectors.txt")
+    let rows: Vec<Vec<i64>> = data
         .lines()
         .filter(|l| !l.starts_with('#'))
         .map(|l| l.split_whitespace().map(|x| x.parse().unwrap()).collect())

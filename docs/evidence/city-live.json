@@ -1,0 +1,264 @@
+{
+  "turns": 50,
+  "cities": 10,
+  "cases": 500,
+  "saves": [
+    {
+      "round": 1,
+      "turn": 44,
+      "sha256": "7c448368e98c8f4296f32712d6d33d2a8c5af1c2d941cb9919a6e846399de085"
+    },
+    {
+      "round": 2,
+      "turn": 45,
+      "sha256": "f269a36270096a0b4dd2465528cf903492febc483c4aae49ad1e455596c7aabe"
+    },
+    {
+      "round": 3,
+      "turn": 46,
+      "sha256": "d195633f0f487852914df5fbb77788c7178dd3961bc703992da15f9adec6a868"
+    },
+    {
+      "round": 4,
+      "turn": 47,
+      "sha256": "0f7865e1d1a5faefa97ff71875fe92728dcd0709619df104dfd4f9a798c74cdf"
+    },
+    {
+      "round": 5,
+      "turn": 48,
+      "sha256": "c82ab405f8cb9fcbd8b368dcca8d901c007edb6ac3296f5f68b9617483272192"
+    },
+    {
+      "round": 6,
+      "turn": 49,
+      "sha256": "58c1e7be10a4bee945cab879150065b96c1eef337b6521aff4f4681c62c46dda"
+    },
+    {
+      "round": 7,
+      "turn": 50,
+      "sha256": "70c96d4bcf5537b576c3196c9ff1be66d0b16e5d3086eebcf3d4d47214ce3003"
+    },
+    {
+      "round": 8,
+      "turn": 51,
+      "sha256": "b1366a9941d6fb6c9f0b834e7fd37f1e76e34f57e6dfb72e32e7e6dbdc0d784b"
+    },
+    {
+      "round": 9,
+      "turn": 52,
+      "sha256": "64c5477d9059395716b37c080fdd73a66bd65b516c200942440c29e0c4bbceba"
+    },
+    {
+      "round": 10,
+      "turn": 53,
+      "sha256": "c66579e5844ba59eb6d71c303385c0295d63ada7fa93c0b3dfa1d43ea14bef1d"
+    },
+    {
+      "round": 11,
+      "turn": 54,
+      "sha256": "0053b868a9c3cfb009ce7af72fe1e79f8669d208995b3630ba0ddcd0474af084"
+    },
+    {
+      "round": 12,
+      "turn": 55,
+      "sha256": "c0b25e4982bfbb14b22e886bfd6ad7a084b24dbaa7d9d8cb844a8f4c2fc558c5"
+    },
+    {
+      "round": 13,
+      "turn": 56,
+      "sha256": "2a411b65541d8d1f4b7c6c8295c70c76466c4d600c1046bf4e801cbead2c2712"
+    },
+    {
+      "round": 14,
+      "turn": 57,
+      "sha256": "75100bb277d6ad2bf443e0e94d6a7ee57b73d5c6697351b2d6e4480eed4f3054"
+    },
+    {
+      "round": 15,
+      "turn": 58,
+      "sha256": "be60ac3707d4edb515e0bee94e52470855ab4f8ace5f30f83c4d418db68e8f31"
+    },
+    {
+      "round": 16,
+      "turn": 59,
+      "sha256": "319375177235ef841747f410f0a96ca345f19c0146bfc25e1d6fa916261e9157"
+    },
+    {
+      "round": 17,
+      "turn": 60,
+      "sha256": "61305660c82c36190c7d1b0711f3f98467e52d4bfa35803c08d23290e257a6ef"
+    },
+    {
+      "round": 18,
+      "turn": 61,
+      "sha256": "6f1550ba721cc7541f92091d230353921df02e9c774a646dfcb00ad53d47c091"
+    },
+    {
+      "round": 19,
+      "turn": 62,
+      "sha256": "36f0980474eb0cefa5c9a1fce0913d858043d1dfd62905d83998bba436528f04"
+    },
+    {
+      "round": 20,
+      "turn": 63,
+      "sha256": "7675a55d67e5f012d341b8b27d268faf07ab93431a89aa5ecb8c0b08d61e9884"
+    },
+    {
+      "round": 21,
+      "turn": 64,
+      "sha256": "01e911087d50c6d26e622bf661e862d330c5e917263ec18db0251a0c4ff87123"
+    },
+    {
+      "round": 22,
+      "turn": 65,
+      "sha256": "59d7cbb8d232087edc30bf2e70e67fbf96273548f0238ccb30924a6103cced56"
+    },
+    {
+      "round": 23,
+      "turn": 66,
+      "sha256": "5f789c1327c8bdefc3c86ef1291058f8ca73418a71faaadccb1f00ffc4778b37"
+    },
+    {
+      "round": 24,
+      "turn": 67,
+      "sha256": "388ce147670cba6e5199bd4baf5d1286a0adf30e19ada19f28b285f3d5a42228"
+    },
+    {
+      "round": 25,
+      "turn": 68,
+      "sha256": "2ef55870b30bf564a308408f2560f660f3d55856db0767eecd27b0ad38bf3683"
+    },
+    {
+      "round": 26,
+      "turn": 69,
+      "sha256": "09085e9c957e8cac73d0dcb3ec20da260924987062b5ac16a3b1e5893adf6e35"
+    },
+    {
+      "round": 27,
+      "turn": 70,
+      "sha256": "9d70bb9f0ddee37e1529f7779721340b03aaa5e73dbfc520f07eb8c5b611dbb8"
+    },
+    {
+      "round": 28,
+      "turn": 71,
+      "sha256": "faf57139b0a4c27943ff2fec953b7e55d10c007a3420ed823cb3dc565a20bbe8"
+    },
+    {
+      "round": 29,
+      "turn": 72,
+      "sha256": "16a8764aa40e0f23518017dc0db4a7d7f21cabb884f33b4bd2b02f4d11a0e71c"
+    },
+    {
+      "round": 30,
+      "turn": 73,
+      "sha256": "9ec65452adb28f6448b22e51e672239ce073ce23e662bf121b51c3c254ec13fa"
+    },
+    {
+      "round": 31,
+      "turn": 74,
+      "sha256": "969faebc100d23ebb861e096f611f4729084739e9f56f2715bc6463e6b718de9"
+    },
+    {
+      "round": 32,
+      "turn": 75,
+      "sha256": "3990499ecbf9f8a612d4263a5a48195c223f54aa97d4d9b293adc2bb88f0f921"
+    },
+    {
+      "round": 33,
+      "turn": 76,
+      "sha256": "bc62dc4f625f18261b33e492e5e26befe6be75442dbbad26cf6cbb482220b693"
+    },
+    {
+      "round": 34,
+      "turn": 77,
+      "sha256": "39bb26e8a30b5a86aeb2e90239a99bb943ec5d9c011d1d258172ff466c0cc474"
+    },
+    {
+      "round": 35,
+      "turn": 78,
+      "sha256": "4fe6e39d807ea77e7202a6439063be015dcc4f8b378a1704de5f8d1a86d7910b"
+    },
+    {
+      "round": 36,
+      "turn": 79,
+      "sha256": "3215b34325d26ac65ff94cb206b04c9ba7cb0585b79973a8ce754e4ff039232f"
+    },
+    {
+      "round": 37,
+      "turn": 80,
+      "sha256": "3908c5dc0916195e66a3d8c77e2efdf53b24037a154fa4aa7b28dd3509f076ba"
+    },
+    {
+      "round": 38,
+      "turn": 81,
+      "sha256": "25d0aa650b48b9e5b7502e8879cea16f3153f3487a9e14c8803a9a0ebfc22bcf"
+    },
+    {
+      "round": 39,
+      "turn": 82,
+      "sha256": "173193713bedee36a8f32455d14659a2049cb3164ee357c8115c47d23ccf46df"
+    },
+    {
+      "round": 40,
+      "turn": 83,
+      "sha256": "905b31859d745ce930d8885ed8ff9c81ea041752ff20681472e59fc2dee2f391"
+    },
+    {
+      "round": 41,
+      "turn": 84,
+      "sha256": "5107b41ecbfb42f92b98a208e7cc2ddb47b96f896429fcfdce6c15fdb5e7a70c"
+    },
+    {
+      "round": 42,
+      "turn": 85,
+      "sha256": "78c44560012cc407c36cd58be2bb42f2571c1dcbc1544497326da4359133e4fa"
+    },
+    {
+      "round": 43,
+      "turn": 86,
+      "sha256": "e443066cd0a242e7832b4b590c381377644c5fbd99afae5a86f9dca3f5b66991"
+    },
+    {
+      "round": 44,
+      "turn": 87,
+      "sha256": "3a503962638a25209b84f421e521d3cb826124228e98514a30006a8d7b134dec"
+    },
+    {
+      "round": 45,
+      "turn": 88,
+      "sha256": "e1bb4e035abbb77ef2b62a104b225577461003a2b9f5a20ac2a226b8aa81bd25"
+    },
+    {
+      "round": 46,
+      "turn": 89,
+      "sha256": "4608e3607269c98fa6d09f20ed3bb77b90bf70daf51e2d119c342a650fee526f"
+    },
+    {
+      "round": 47,
+      "turn": 90,
+      "sha256": "b584cc2585d46628f5d80cf0082f5b9311e283cd18fc0571b306ae5725f98e31"
+    },
+    {
+      "round": 48,
+      "turn": 91,
+      "sha256": "ee5825c2256b94d76fde74168d4b1eee1de6bebb772b7b3d0618b231f7b348b7"
+    },
+    {
+      "round": 49,
+      "turn": 92,
+      "sha256": "63717f30b4cf59a71af3447542c9b697703ce9f69015f72249cf7622591bbf52"
+    },
+    {
+      "round": 50,
+      "turn": 93,
+      "sha256": "34337344dcdc663d4f75b5fd944e34b9f3af785efc9c7b319787205a3b3dfd66"
+    }
+  ],
+  "reference_save_sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef",
+  "runtime_executable_sha256": "dbbd24d8b72fd1ac56d81adf3a16273affc6ae3294dd5ad4a2c59d4d781c00b4",
+  "presentation_boundaries": [
+    "0x411c50",
+    "0x467c89"
+  ],
+  "scope": "Controlled live city rounds, harvested through the game's save dialog.\n\nLoad Original/Ph_Auto2.SAV in the owned oracle first. Fixture matches\ncity_phase_check.py --round-order. Execute only city phases, not AI turns,\npollution, calendar or barbarian arrivals. Presentation queries/redraws are\nreplaced during each call; the game GUI thread is suspended by call_game.c.\nRaw saves stay in --output (outside the repo); report/vectors are numeric.\nThe original install must have been backed up before running this tool."
+}

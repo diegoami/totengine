@@ -1,0 +1,9 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routines": [
+    "0x4c109f",
+    "0x4c13fe..0x4c1710"
+  ],
+  "cases": 156,
+  "scope": "Saved-input city worker radius flags, original map, visibility, stacks and city-overlap helpers; no replacements; no full city-turn claim."
+}

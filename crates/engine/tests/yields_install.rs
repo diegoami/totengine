@@ -104,3 +104,34 @@ fn romfall_city_totals_after_corruption_and_waste() {
     assert_eq!(trade_ok, trade_n, "trade after corruption");
     assert_eq!(shields_ok, 145, "shields {shields_ok}/146");
 }
+
+/// Compare each radius yield directly to original x86 recomputation, so
+/// stale city totals cannot conceal a tile-formula mismatch.
+#[test]
+fn native_radius_yields_match_reference_inputs() {
+    if std::env::var_os("CIVTOT_HOME").is_none() {
+        eprintln!("skipping: CIVTOT_HOME not set");
+        return;
+    }
+    let mut cases = 0;
+    for (name, rules_name) in [
+        ("Original/Ph_Auto2.SAV", "Original/Rules.txt"),
+        ("FallRome/ROMFALL.scn", "FallRome/Rules.txt"),
+    ] {
+        let (w, rules) =
+            load(name, rules_name).expect("configured reference save and rules must load");
+        for line in include_str!("../../../docs/evidence/tile-yield-vectors.txt")
+            .lines()
+            .filter(|l| l.starts_with(name))
+        {
+            let mut fields = line.split_whitespace();
+            fields.next();
+            let city: usize = fields.next().unwrap().parse().unwrap();
+            let k: usize = fields.next().unwrap().parse().unwrap();
+            let expected: Vec<i32> = fields.map(|s| s.parse().unwrap()).collect();
+            assert_eq!(w.tile_yield(&rules, city, k), expected[..], "{line}");
+            cases += 1;
+        }
+    }
+    assert_eq!(cases, 3276);
+}

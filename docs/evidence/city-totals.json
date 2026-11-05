@@ -1,0 +1,37 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routines": [
+    "0x4c109f",
+    "0x4c13fe",
+    "0x4c1bdf",
+    "0x4c521c"
+  ],
+  "cases": 312,
+  "saved": [
+    {
+      "save": "Original/Ph_Auto2.SAV",
+      "mode": "fixed",
+      "cities": 10,
+      "changed_from_saved": 0
+    },
+    {
+      "save": "Original/Ph_Auto2.SAV",
+      "mode": "auto",
+      "cities": 10,
+      "changed_from_saved": 0
+    },
+    {
+      "save": "FallRome/ROMFALL.scn",
+      "mode": "fixed",
+      "cities": 146,
+      "changed_from_saved": 16
+    },
+    {
+      "save": "FallRome/ROMFALL.scn",
+      "mode": "auto",
+      "cities": 146,
+      "changed_from_saved": 43
+    }
+  ],
+  "scope": "Original sequential city-total recomputation, fixed/auto worker modes, no replacement callees; excludes growth, box collection, production, treasury and turn events."
+}

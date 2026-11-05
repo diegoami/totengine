@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- Decode original worker allocation and radius availability; check 1,024
+  synthetic allocations, 156 saved radii and 3,276 tile yields. Combined
+  city totals match 312 native executions with fixed/automatic workers.
+  These helpers await city-phase integration. Food transfers now affect
+  city food totals; stored caches are distinguished from native recomputation.
 - Implement Leonardo's last-candidate upgrades (clearing veteran), Statue's
   diplomatic changes, Manhattan's reputation adjustment and Apollo's surface
   map/city knowledge refresh. Native comparisons cover 256 Leonardo cases,

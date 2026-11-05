@@ -332,6 +332,7 @@ impl WorldState {
             return CityOutput::default();
         };
         let [food, tile_shields, trade] = self.worked_yield(rules, idx);
+        let food = food + self.food_route_balance(idx);
         let civ = (c.owner & 0x0F) as u8;
         let gov = self.governments.get(civ as usize).copied().unwrap_or(0);
         let route_arrows = if c.route_count > 0 {

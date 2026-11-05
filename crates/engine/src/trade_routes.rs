@@ -61,6 +61,34 @@ impl WorldState {
         })
     }
 
+    /// Original recurring food routes (`0x4c506e`). Negative commodity
+    /// slots ship one food each; every live surface partner slot pointing
+    /// here delivers one. Creation/delivery selection is a separate path.
+    pub fn food_route_balance(&self, idx: usize) -> i32 {
+        let Some(city) = self.cities.get(idx) else {
+            return 0;
+        };
+        let outgoing = city
+            .route_commodities
+            .iter()
+            .take(city.route_count.clamp(0, 3) as usize)
+            .filter(|&&v| v < 0)
+            .count() as i32;
+        let incoming: usize = self
+            .cities
+            .iter()
+            .filter(|c| c.city_id != 0 && c.map_id == 0)
+            .map(|c| {
+                (0..c.route_count.clamp(0, 3) as usize)
+                    .filter(|&k| {
+                        c.route_commodities[k] < 0 && c.route_partners[k] as i32 == idx as i32
+                    })
+                    .count()
+            })
+            .sum();
+        incoming as i32 - outgoing
+    }
+
     /// First corruption pass, cached in the original city record at +32.
     pub fn pre_route_trade(&self, rules: &Rules, idx: usize) -> i16 {
         let Some(c) = self.cities.get(idx) else {

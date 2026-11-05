@@ -2559,3 +2559,54 @@ cmp docs/evidence/food-row-vectors.txt /tmp/food-row-vectors.txt
 cmp docs/evidence/city-growth-vectors.txt /tmp/city-growth-vectors.txt
 cargo test -p engine --lib growth::tests
 ```
+
+
+### Native workers and combined city totals (#13/#84/#85/#86)
+
+`engine::workers` implements original allocation `0x4c2c14`, with unavailable
+radius slots supplied separately. [workers.json](workers.json) and
+[worker-vectors.txt](worker-vectors.txt) cover 1,024 native executions: worker
+preservation/reselection, food preference, weighted remaining choices, surplus
+citizens, flags and signed food-debt normalization. Only `0x4c22a7` tile-yield
+calls are replaced with supplied synthetic triples. Scoring divides by current
+city totals before multiplying candidate yields. The center is not collected
+twice when it was preserved; the original temporary array aliases its center
+marker. Packed specialist normalization (`0x4c34b6`) preserves existing types,
+fills free zero-type slots with entertainers and clears unused trailing slots.
+
+[worker-availability.json](worker-availability.json) and its
+[vectors](worker-availability-vectors.txt) cover all 156 saved cities using
+original radius/overlap routines `0x4c109f` and `0x4c13fe..0x4c1710`, with no
+replacement callees. Visibility, hostile stacks, city markers and neighboring
+cities' worked tiles all affect availability. [tile-yields.json](tile-yields.json)
+and [tile-yield-vectors.txt](tile-yield-vectors.txt) cover 3,276 original per-radius
+food/shield/trade triples, all matching `WorldState::tile_yield`. The original
+also disagrees with two stored FallRome food values; saved caches alone do not
+prove an arithmetic bug.
+
+[city-totals.json](city-totals.json) and
+[city-total-vectors.txt](city-total-vectors.txt) execute radius, capital,
+support, allocation (auto mode), food routes, specialists, trade, finance and
+happiness in native city-index order. All callees execute original bytes.
+Rust matches all 14 fields for 312 recomputations: 156 fixed workers and 156
+automatically assigned workers, across standard and FallRome inputs. This
+includes all 156 fixed-worker shield totals: Aventicum recomputes to 5 shields
+in both implementations, while its stored cache is 6. Two food differences
+required the native `0x4c506e` transfers: each outgoing negative-commodity route
+costs one food; each incoming one adds one food, independently of ownership.
+No claim is made for growth, collection into boxes, production, treasury,
+full-turn ordering or 50-turn parity. Worker helpers are not yet called by
+`run_turn`.
+
+```sh
+# The external Unicorn dependency is documented above; original bytes remain local.
+export CIVTOT_HOME=/mnt/d/games/CIVTOT
+export PYTHONPATH=/tmp/totengine-research-deps
+python3 tools/workers_check.py --gold /tmp/workers.json --vectors /tmp/worker-vectors.txt
+python3 tools/availability_check.py --gold /tmp/worker-availability.json --vectors /tmp/worker-availability-vectors.txt
+python3 tools/yields_check.py --gold /tmp/tile-yields.json --vectors /tmp/tile-yield-vectors.txt
+python3 tools/city_totals_check.py --gold /tmp/city-totals.json --vectors /tmp/city-total-vectors.txt
+# Compare each report/vector pair with its corresponding docs/evidence artifact.
+cargo test -p engine --lib workers::tests
+cargo test -p engine --test workers_install --test yields_install --test city_totals_install
+```

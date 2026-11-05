@@ -656,6 +656,48 @@ under Democracy: home/own/foreign cities, open ground, near/far/foreign
 fortresses and aircraft roles. Rust world-level cases match those results.
 The scenario-specific air exception and non-surface cases remain unmodelled.
 
+### Treasury and maintenance (2026-11-05)
+
+Sources: income `0x4c9d58..0x4c9d95`, upkeep `0x4ca5ae`, payment loop
+`0x4ca6e0`, caller `0x4cb6b7..0x4cb6e5`. The caller charges upkeep
+only to civs in the saved human mask. Income is skipped under anarchy or
+negative happy-minus-unhappy. Assigning an engine AI player leaves this
+mechanics mask unchanged.
+
+`maintenance.json`, `maintenance-vectors.txt` and
+`maintenance-saved-vectors.txt` are derived by:
+
+```
+CIVTOT_HOME=... PYTHONPATH=... python3 tools/maintenance_check.py --vectors /tmp/maintenance.txt --saved-vectors /tmp/maintenance-saved.txt
+```
+
+@IMPROVE field 2 supplies table byte `0x5f6685 + 8*id` (loader
+`0x4133d5`). Barracks (2) subtracts one at difficulty < 2 if its base is
+nonzero, adds one for advance 35, and another for the enabled advance 53.
+The original follows a disabled advance's first prerequisite before the
+knowledge check; `no` (-2) returns false. The Rules loader sets availability
+from the first prerequisite at `0x413146..0x413170`. The current Rules
+fixtures exercise both ordinary and disabled slots. Other costs are direct.
+An active wonder 17 makes an adjusted cost of exactly 1 free. Under
+Fundamentalism, Temple (4), Cathedral (11) and Colosseum (14) are free.
+
+Payment skips anarchy, visits improvements 1..39 in ascending order (the
+original building accessor rejects 36+), and subtracts each applicable fee.
+If the balance becomes negative, it is reset to 0, that improvement is
+removed, and its full Rules cost times shield rows is credited. This can
+pay for subsequent improvements in the same pass. The executable check
+starts at 0 with Barracks/Granary/Temple charging one each: Barracks is
+removed, its 40-shield cost credited, the later two fees paid, leaving 38.
+It sets original global `0x6031b8=1` to suppress notifications; monetary
+and building mutations execute from original bytes without call stubs.
+
+All **1,000 invented fees** and **490 saved Rules/civ fees** match the
+original. Rust also checks AI/anarchy gates, bankruptcy order and two
+successive tax/upkeep turns. Current turn integration credits the existing
+pre-production finance result, then charges upkeep after production.
+Original overall phase order and exact city-turn parity remain #13;
+these fee checks do not establish either.
+
 ### Wonder completion (#88 in progress, 2026-11-05)
 
 `wonder-completion.json` is re-derived by `tools/wonders_check.py` using

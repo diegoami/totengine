@@ -25,6 +25,7 @@ pub mod production;
 pub mod research;
 pub mod rng;
 pub mod trade_routes;
+pub mod treasury;
 pub mod turn;
 pub mod wonders;
 pub mod yields;

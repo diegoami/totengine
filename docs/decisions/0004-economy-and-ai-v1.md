@@ -110,6 +110,20 @@ completion calls discovery twice; grant an already selected target, then
 leave subsequent selections to player orders. Other completion dispatch
 effects must be checked before considering #88 complete.
 
+## Treasury and maintenance
+
+Use original `0x4ca5ae` for per-improvement fees and `0x4ca6e0` for the
+payment/bankruptcy loop. Preserve the original city-turn caller's human-mask
+gate: assigning an engine AI player does not alter the save's mechanics
+mask. Income requires non-anarchy and nonnegative happy-minus-unhappy;
+maintenance is skipped during anarchy and charged only to human-mask civs.
+Bankruptcy must remove/refund buildings in ascending ID order, rather than
+letting the treasury go negative or silently clamping the total upkeep.
+
+The current engine credits the pre-production finance result and charges
+upkeep after production; phase-order parity remains #13. Formula, saved-cost
+and isolated bankruptcy checks are not a claim of whole-turn parity.
+
 ## Remaining milestone work
 
 The owner requested completion of the entire v0.8 queue and then a milestone

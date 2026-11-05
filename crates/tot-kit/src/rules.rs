@@ -250,6 +250,17 @@ impl Rules {
             .and_then(|f| f.trim().parse().ok())
     }
 
+    /// Improvement upkeep, @IMPROVE field 2 (original table byte +5).
+    pub fn improvement_upkeep(&self, id: usize) -> Option<u32> {
+        self.section("IMPROVE")?
+            .rows
+            .get(id)?
+            .get(2)?
+            .trim()
+            .parse()
+            .ok()
+    }
+
     /// `@COSMIC` row `idx` (0-based), the value field. The original keeps
     /// these as bytes from RAM `0x5f5eb8` (row 0 = road multiplier, 3 =
     /// food box rows, 4 = shield box rows, 13–15 = free units under

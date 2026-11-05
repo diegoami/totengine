@@ -44,6 +44,7 @@ pub struct TurnSummary {
     pub built: Vec<(usize, crate::production::Built)>,
     /// (civ, advance) discoveries from this turn's city science.
     pub discoveries: Vec<(u8, usize)>,
+    pub city_accounts: Vec<(usize, crate::treasury::CityAccount)>,
 }
 
 /// AI role 5 = settle (Rules @UNITS field 11).
@@ -92,7 +93,6 @@ impl WorldState {
             // completed, so a new Library affects the next totals pass.
             // Refresh this city's pre-route trade cache before partners
             // read it; city iteration order remains engine-chosen.
-            // Treasury income still requires maintenance accounting.
             self.cities[k].route_trade = self.pre_route_trade(rules, k);
             let mood = self.city_happiness(rules, k);
             self.cities[k].happy = mood.happy as u8;
@@ -134,6 +134,8 @@ impl WorldState {
             if let Some(b) = self.production_step(rules, k) {
                 sum.built.push((k, b));
             }
+            let account = self.process_city_treasury(rules, k, finance.taxes);
+            sum.city_accounts.push((k, account));
         }
 
         self.advance_turn();

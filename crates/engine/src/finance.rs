@@ -1,7 +1,6 @@
 //! Science/tax split (#87), decoded from unpatched civ2.bak `0x4c3f0c`.
 //! Evidence: docs/evidence/README.md §Science and tax split. These are
-//! city outputs; civ research accumulation and maintenance payments are
-//! separate work. No treasury income is invented here.
+//! city outputs; treasury credit and maintenance are in `crate::treasury`.
 use tot_kit::Rules;
 
 use crate::{research::TechTree, WorldState};
@@ -277,7 +276,7 @@ mod tests {
         assert_eq!(w.cities[1].net_science, 4);
         assert_eq!(
             w.treasury, treasury,
-            "maintenance/income accounting remains separate"
+            "this fixture has zero taxes and free improvements"
         );
     }
 }

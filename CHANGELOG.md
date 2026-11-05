@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- **Treasury and upkeep:** city taxes now credit the civ treasury outside
+  anarchy/disorder; original human-mask upkeep, Barracks adjustments,
+  Fundamentalism/Adam Smith exemptions and bankruptcy building sales are
+  implemented. Formula checks cover 1,000 synthetic and 490 saved-input
+  original-x86 cases, plus the original bankruptcy mutation path.
 - **Happiness and disorder (#86):** decoded happiness stages, luxury and
   specialist balancing, improvements/wonders and military inputs; city
   happiness now refreshes before production and can stop or resume it.

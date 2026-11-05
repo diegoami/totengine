@@ -85,7 +85,9 @@ Capital road/rail connections now scale waste (`engine::connections`,
 Recurring route arrows are implemented (`engine::trade_routes`, #85 slice;
 288 arithmetic cases match original x86). Partner trade caches refresh
 before finance. Creation/delivery rewards and supply/demand refresh remain
-open, as do AI v1 economy/war work and maintenance.
+open, as does AI v1 economy/war work. Treasury accounting now credits city
+taxes and charges original human-mask upkeep, including exemptions and
+bankruptcy sales (1,000 synthetic and 490 saved-input x86 cost checks).
 Happiness/disorder stages now refresh before production (#86; 1,000
 synthetic x86 cases and 156/156 original recomputations from saved inputs;
 15 FallRome stored values differ under original recomputation too).

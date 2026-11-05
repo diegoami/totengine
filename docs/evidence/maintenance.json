@@ -1,0 +1,20 @@
+{
+  "source": "civ2.bak 0x4ca5ae, 0x4ca6e0",
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "original_x86_cases": 1000,
+  "rust_vectors": 128,
+  "bankruptcy": {
+    "treasury_before": 0,
+    "treasury_after": 38,
+    "sold": [
+      2
+    ],
+    "remaining_buildings": [
+      3,
+      4
+    ],
+    "notification_global": 1
+  },
+  "saved_input_costs": 490,
+  "scope": "pure upkeep, saved Rules/civ inputs and one bankruptcy case; no full-turn parity claim"
+}

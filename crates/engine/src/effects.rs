@@ -132,34 +132,36 @@ impl WorldState {
                 }) else {
                     return Applied::Skipped("no valid location".into());
                 };
-                let first = self.units.len();
-                let top = self
-                    .units
-                    .iter()
-                    .filter(|u| (u.x, u.y) == at)
-                    .map(|u| u.stack_pos + 1)
-                    .max()
-                    .unwrap_or(0);
-                for k in 0..*count {
-                    self.units.push(Unit {
-                        type_id: type_id as u8,
-                        owner: civ,
-                        x: at.0,
-                        y: at.1,
-                        is_leader: false,
-                        moves_left: rules.unit_move(type_id).unwrap_or(0) * 3,
-                        veteran: *veteran,
-                        damage: 0,
-                        orders: 0xff,
-                        stack_pos: top + k as u16,
-                        home: 0xff,
-                        id: 1,
-                    });
+                let mut created = Vec::new();
+                for _ in 0..*count {
+                    if let Some(index) = self.allocate_unit(
+                        rules,
+                        Unit {
+                            type_id: type_id as u8,
+                            owner: civ,
+                            x: at.0,
+                            y: at.1,
+                            is_leader: false,
+                            moves_left: rules.unit_move(type_id).unwrap_or(0) * 3,
+                            veteran: *veteran,
+                            damage: 0,
+                            orders: 0xff,
+                            stack_pos: 0,
+                            home: 0xff,
+                            id: 0,
+                        },
+                    ) {
+                        created.push(index);
+                    }
                 }
-                Applied::Created {
-                    first,
-                    count: *count,
-                    at,
+                if let Some(first) = created.first().copied() {
+                    Applied::Created {
+                        first,
+                        count: created.len() as u32,
+                        at,
+                    }
+                } else {
+                    Applied::Skipped("unit capacity exhausted".into())
                 }
             }
             Effect::GiveTechnology { .. } => {

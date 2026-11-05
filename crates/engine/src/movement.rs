@@ -206,6 +206,7 @@ mod tests {
             calendar: Some(tot_kit::CalendarSettings::default()),
             free_research: [0; 8],
             city_counts: [0; 8],
+            next_unit_id: 2,
             turn: 1,
             year: -4000,
             difficulty: 4,

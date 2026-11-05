@@ -277,7 +277,7 @@ mod tests {
                 c.x = cx;
                 c.y = cy;
                 c.owner = owner;
-                c.city_id = i as u16 + 1;
+                c.city_id = i as u32 + 1;
                 c.size = 6;
                 c.flags = 0;
                 c.buildings = [0; 5];

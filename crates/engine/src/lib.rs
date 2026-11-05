@@ -8,6 +8,7 @@
 //! T1-3..T1-7.
 
 pub mod ai;
+mod allocation;
 pub mod calendar;
 pub mod cities;
 pub mod combat;
@@ -77,8 +78,8 @@ pub struct Unit {
     /// Home city index (record u8@18; 0xff = none). Supported settlers eat
     /// from their home city (evidence §T1-4 growth replay).
     pub home: u8,
-    /// Unit id (record u16@30); 0 = a deleted slot (counts in nothing).
-    pub id: u16,
+    /// Transient unit identity (record u32@30); 0 = a deleted slot.
+    pub id: u32,
 }
 
 /// Engine-side city: identity, coordinates and the proven economics
@@ -91,7 +92,8 @@ pub struct City {
     pub y: u16,
     pub size: u16,
     pub owner: u16,
-    pub city_id: u16,
+    pub city_id: u32,
+    pub original_owner: u8,
     /// Gross food/shields/trade (the City Status report's columns).
     pub gross_food: u8,
     pub gross_shields: u8,
@@ -235,6 +237,7 @@ pub struct WorldState {
     pub techs: [[u8; 13]; 8],
     pub civs: Vec<Civ>,
     pub units: Vec<Unit>,
+    pub(crate) next_unit_id: u32,
     pub cities: Vec<City>,
     pub map: MapState,
     pub rng: Lcg64,
@@ -314,6 +317,13 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         techs: sav.techs,
         civs,
         units: units_from(&sav.units),
+        next_unit_id: sav
+            .units
+            .iter()
+            .map(UnitRecord::id)
+            .max()
+            .unwrap_or(0)
+            .wrapping_add(1),
         cities: sav.cities.iter().map(city_from).collect(),
         map: MapState {
             stored_w: sav.map_header.stored_w(),
@@ -387,6 +397,7 @@ fn city_from(r: &CityRecord) -> City {
         size: r.size(),
         owner: r.owner(),
         city_id: r.city_id(),
+        original_owner: r.original_owner(),
         gross_food: r.gross_food(),
         gross_shields: r.gross_shields(),
         gross_trade: r.gross_trade(),
@@ -510,6 +521,7 @@ impl WorldState {
             mix(&mut h, t);
         }
         mix(&mut h, &self.power_order);
+        mix(&mut h, &self.next_unit_id.to_le_bytes());
         mix(&mut h, &[self.game_mode, self.ai_state.power_reference]);
         mix(&mut h, &self.ai_state.power_ranks);
         if let Some(calendar) = self.calendar {
@@ -576,6 +588,7 @@ impl WorldState {
         }
         for c in &self.cities {
             mix(&mut h, &c.map_id.to_le_bytes());
+            mix(&mut h, &[c.original_owner]);
             mix(&mut h, &[c.happy, c.unhappy]);
             buf.clear();
             let _ = write!(
@@ -730,6 +743,8 @@ mod tests {
             ("tile improvements", |w| w.map.improvements[0] ^= 4),
             ("tile visibility", |w| w.map.visible[0] ^= 2),
             ("unit id", |w| w.units[0].id ^= 1),
+            ("next unit id", |w| w.next_unit_id ^= 1),
+            ("original city owner", |w| w.cities[0].original_owner ^= 1),
             ("city worked", |w| w.cities[0].worked ^= 1),
             ("city buildings", |w| w.cities[0].buildings[0] ^= 1),
             ("city flags", |w| w.cities[0].flags ^= 2),

@@ -181,6 +181,11 @@ impl WorldState {
         if let Some(c) = self.cities.get_mut(idx) {
             c.building = item;
         }
+        let unit_slot = if item >= 0 {
+            self.available_unit_slot(rules, civ, item as usize)
+        } else {
+            None
+        };
         let c = &mut self.cities[idx];
         if item != CAPITALIZATION {
             c.shield_box = (c.shield_box as i32 + net).clamp(0, u16::MAX as i32) as u16;
@@ -192,6 +197,8 @@ impl WorldState {
             if box_now < cost {
                 return None;
             }
+            // A blocked allocation retains the completed box and population.
+            unit_slot?;
             // engine rule (founding.rs): settlers cost one population; a
             // size-1 city keeps the box until it grows
             let settler = rules.unit_role(t) == Some(crate::founding::ROLE_SETTLE);
@@ -204,30 +211,25 @@ impl WorldState {
             c.flags &= !0x100;
             c.shield_box = (box_now - cost) as u16;
             let (x, y) = (c.x, c.y);
-            let id = self.units.iter().map(|u| u.id).max().unwrap_or(0) + 1;
-            let stack_pos = self
-                .units
-                .iter()
-                .filter(|u| (u.x, u.y) == (x, y) && u.id != 0)
-                .map(|u| u.stack_pos + 1)
-                .max()
-                .unwrap_or(0);
             let veteran = self.made_veteran(rules, idx, civ, t);
-            self.units.push(Unit {
-                type_id: t as u8,
-                owner: civ,
-                x,
-                y,
-                is_leader: false,
-                moves_left: rules.unit_move(t).unwrap_or(0) * 3,
-                veteran,
-                damage: 0,
-                orders: 0xff,
-                stack_pos,
-                home: idx as u8,
-                id,
-            });
-            Some(Built::Unit(self.units.len() - 1))
+            let created = self.allocate_unit(
+                rules,
+                Unit {
+                    type_id: t as u8,
+                    owner: civ,
+                    x,
+                    y,
+                    is_leader: false,
+                    moves_left: rules.unit_move(t).unwrap_or(0) * 3,
+                    veteran,
+                    damage: 0,
+                    orders: 0xff,
+                    stack_pos: 0,
+                    home: idx as u8,
+                    id: 0,
+                },
+            )?;
+            Some(Built::Unit(created))
         } else {
             let id = -(item as i32) as usize;
             if id >= FIRST_WONDER {

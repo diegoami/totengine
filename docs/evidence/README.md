@@ -2265,6 +2265,59 @@ CIVTOT_HOME=... PYTHONPATH=/tmp/totengine-research-deps \
   python3 tools/tech_groups_check.py --vectors /tmp/tech-groups.txt
 ```
 
+## Live hut-entry parity and unit allocation (#79, v0.8)
+
+[Eight controlled live entries](huts-live.json) compare the actual engine
+WorldState dispatcher with the running ToTPP oracle: gold 50, mercenary
+Horsemen, advance 65, a late size-3 tribe with Temple/Granary, Settlers
+nomads, a barbarian Horseman, an empty encounter, and a landmass-forced
+size-1 tribe. Every gameplay CRT draw count/state matches, as do the
+resulting treasury/knowledge and created-unit slot/type/location/home/
+veteran/movement and tribe population/improvements. The retained
+[plain vectors](huts-live-vectors.txt) run in `huts_install.rs` against
+the user's reference save/Rules. Each case reloads that save before the
+listed RAM-controlled inputs; executable/save/Rules hashes are retained.
+
+The live probe `tools/oracle/hut_entry.py` pins CRT at hut entry and
+records callers/pre-draw states through exit. It separates three
+**presentation** callers (`55852f`, `581d96`, `582b9b`) into their own CRT
+state while executing the original rand routine. The first two render
+reward windows; `582b72..582bbc` generates a nonzero UI object token at
+object+0x408. A gold entry otherwise consumes 176 additional presentation
+draws. This controlled stream is necessary for a reproducible headless
+comparison; there is no claim of matching the UI's random progression.
+All hooks/cave bytes are restored in finally. The oracle README gives
+entry/collection commands and the explicit patch controls.
+
+The captures also establish creation details missed by the earlier port:
+new units reuse deleted **slots**, appear at the stack **head** (mercenary
+slot 34: prev=-1/next=9; explorer 9: prev=34/next=-1), and start with zero
+movement spent. The human mercenary inherits nearest city 5 as home;
+nomads explicitly clear home. Constructor `56a51d..56a579` uses the nearest
+city (of any civ) and retains it only if owned by the recipient. The hut's
+AI/non-displayed path clears home at `54bd93`; the headless engine uses
+the preserved human mechanics mask for this distinction.
+
+`tools/allocation_check.py` executes the original first-free/capacity
+fragment in 124 contexts, including 2,040/2,048 slot limits and the 1,948
+military-count boundary. It stops before allocation UI/initialization.
+[unit-slot-vectors.txt](unit-slot-vectors.txt) compare those decisions;
+alive identities in the probe exceed 16 bits. Original `56a45c` and load
+writer `45f0d7` store **dwords** at unit+30 and city+86; four retained
+[identity write cases](unit-allocation.json), including 65,536 and
+0xfffffffe, correct the old u16 accessor claims. The loader (`45f03b..e4`)
+renumbers alive identities on each load. The engine preserves imported
+identities and uses a fingerprinted monotonic counter for its own units;
+it does not compare those transient numeric IDs across oracle loads.
+Production/events/huts share slot allocation. Blocked engine production
+retains its completed box/population; full original capacity-failure city
+behavior is not established by the allocation-only fragment.
+
+Still open for sustained campaigns: updating the saved AI statistics/
+landmass caches, turn-time barbarian arrivals (#83), and broader city-turn
+parity (#13). The live surface entry checks do not assert non-surface
+scenario behavior.
+
 ## Reproduce
 
 ```bash

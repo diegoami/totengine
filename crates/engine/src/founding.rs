@@ -179,6 +179,7 @@ impl WorldState {
             size: 1,
             owner: civ as u16,
             city_id,
+            original_owner: civ,
             gross_food: 0,
             gross_shields: 0,
             gross_trade: 0,

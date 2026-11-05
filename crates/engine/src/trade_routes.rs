@@ -116,7 +116,7 @@ mod tests {
             c.y = 8;
             c.owner = 1;
             c.map_id = 0;
-            c.city_id = k as u16 + 1;
+            c.city_id = k as u32 + 1;
             c.worked = 0;
             c.buildings = [0; 5];
             c.specialists = 0;

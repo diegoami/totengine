@@ -265,7 +265,7 @@ pub fn latin1(bytes: &[u8]) -> String {
 /// u16@6, type u8@8 (Rules @UNITS index), owner u8@9 (0 = barbarians,
 /// 1..7 = players, bit 0x10 = leader unit), moves spent @10, visibility
 /// @11, damage @12, last direction @13, orders @17, home city @18, stack
-/// links i16@26/@28, id u16@30 (re-assigned on every save).
+/// links i16@26/@28, id u32@30 (re-assigned at load).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnitRecord {
     pub raw: [u8; 40],
@@ -288,8 +288,10 @@ impl UnitRecord {
     pub fn is_leader(&self) -> bool {
         self.raw[9] & 0x10 != 0
     }
-    pub fn id(&self) -> u16 {
-        u16::from_le_bytes([self.raw[30], self.raw[31]])
+    /// Transient u32 identity at +30. The load loop reassigns alive IDs
+    /// (`0x45f06e`); creation stores a full dword (`0x56a45c`).
+    pub fn id(&self) -> u32 {
+        u32::from_le_bytes(self.raw[30..34].try_into().unwrap())
     }
     /// Attribute word u16@6: bit `0x2000` = veteran (read by the
     /// attack/defence strength functions, set by promotion; oracle battle
@@ -341,7 +343,7 @@ impl UnitRecord {
 /// two bytes: x u16@0 / y u16@2 (logical grid), owner u8@10, size u8@11,
 /// original owner u8@12, food box u16@28, shield box u16@30, name 16 B
 /// @34, net science u16@76, net taxes u16@78, gross trade u16@80, gross
-/// food u8@82, gross shields u8@83, city id u16@86. Proof: units standing
+/// food u8@82, gross shields u8@83, city id u32@86. Proof: units standing
 /// on a city tile are homed there 349/349 (ROMFALL) and their owner equals
 /// u8@10 116/116; sizes @11 equal the City Status report.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -400,9 +402,9 @@ impl CityRecord {
     pub fn original_owner(&self) -> u8 {
         self.raw[12]
     }
-    /// Sequential city id (u16@86).
-    pub fn city_id(&self) -> u16 {
-        u16::from_le_bytes([self.raw[86], self.raw[87]])
+    /// Transient city identity, u32@86 (`0x45f0d7` reassigns it at load).
+    pub fn city_id(&self) -> u32 {
+        u32::from_le_bytes(self.raw[86..90].try_into().unwrap())
     }
     /// Food storage box (u16@28): ticks by food surplus each turn,
     /// consumed by growth (evidence §T1-4; the per-city sample citations

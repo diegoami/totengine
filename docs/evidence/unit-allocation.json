@@ -1,0 +1,28 @@
+{
+  "source": "civ2.bak 0x56a2d9..0x56a3de (failure boundary 0x56a386); identity writes 0x56a451 and 0x45f0c5",
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "slot_cases": 124,
+  "scope": "original slot and capacity decision; no allocation UI; alive IDs exceed 16 bits",
+  "identity_writes": [
+    {
+      "counter": 1,
+      "unit_u32_at_30": 1,
+      "city_u32_at_86": 1
+    },
+    {
+      "counter": 65535,
+      "unit_u32_at_30": 65535,
+      "city_u32_at_86": 65535
+    },
+    {
+      "counter": 65536,
+      "unit_u32_at_30": 65536,
+      "city_u32_at_86": 65536
+    },
+    {
+      "counter": 4294967294,
+      "unit_u32_at_30": 4294967294,
+      "city_u32_at_86": 4294967294
+    }
+  ]
+}

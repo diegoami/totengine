@@ -199,3 +199,17 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   looks like a road network. Prove a record layout against the game's
   own accessor or a cross-table invariant (city flag ⇔ city record),
   never by "the picture looks right".
+
+
+- **Live ToTPP knowledge can bypass the old packed civ bytes.** The
+  `49c820` entry still looks original, but middle-of-function jumps call
+  ToTPP. After a hut grant the original `5f6900+civ*3348` compatibility
+  bytes stayed unchanged; the relocated tech-owner masks changed. Derive
+  their base from `54bb88`'s patched immediate (subtract tech index 55).
+  `hut_entry.py` does this; see the live hut evidence.
+- **Reward windows consume the same CRT generator as hut logic.** A gold
+  entry has three gameplay draws plus 176 presentation draws in the
+  observed UI. Controlled headless comparisons isolate the identified
+  presentation call sites into a separate CRT state, record all remaining
+  callers, and restore the hooks. Document that isolation explicitly;
+  comparing only the final global state without call sites is misleading.

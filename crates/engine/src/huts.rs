@@ -6,8 +6,8 @@
 //! Mercenary selection, metals, tribe size/buildings and site-value gates
 //! execute against original-x86 vectors in `tools/huts_check.py`.
 //! Landmass-cache selection, nomad leader types, scroll redirects and
-//! surface barbarian spawning are implemented; full entry parity and
-//! cache refresh are still being checked (see the v0.8 readiness record).
+//! surface barbarian spawning match eight controlled live entry fixtures.
+//! Runtime cache refresh is still open (see the v0.8 readiness record).
 
 use tot_kit::Rules;
 
@@ -197,42 +197,58 @@ pub enum HutOutcome {
 }
 
 impl WorldState {
-    fn nearest_city_distance(&self, x: u16, y: u16) -> i32 {
+    fn nearest_city(&self, x: u16, y: u16) -> Option<(usize, i32)> {
         let w2 = 2 * self.map.stored_w as i32;
         self.cities
             .iter()
-            .filter(|c| c.city_id != 0 && c.map_id == 0)
-            .map(|c| {
-                crate::placement::diamond_distance(
-                    w2,
-                    self.game_flags & 0x8000 != 0,
-                    c.x as i32,
-                    c.y as i32,
-                    x as i32,
-                    y as i32,
+            .enumerate()
+            .filter(|(_, c)| c.city_id != 0 && c.map_id == 0)
+            .map(|(i, c)| {
+                (
+                    i,
+                    crate::placement::diamond_distance(
+                        w2,
+                        self.game_flags & 0x8000 != 0,
+                        c.x as i32,
+                        c.y as i32,
+                        x as i32,
+                        y as i32,
+                    ),
                 )
             })
-            .min()
-            .unwrap_or(99)
+            .min_by_key(|&(i, distance)| (distance, std::cmp::Reverse(i)))
     }
 
-    fn spawn_unit(&mut self, rules: &Rules, t: usize, civ: u8, x: u16, y: u16) -> usize {
-        let id = self.units.iter().map(|u| u.id).max().unwrap_or(0) + 1;
-        self.units.push(Unit {
-            type_id: t as u8,
-            owner: civ,
-            x,
-            y,
-            is_leader: false,
-            moves_left: rules.unit_move(t).unwrap_or(0) * 3,
-            veteran: false,
-            damage: 0,
-            orders: 0xff,
-            stack_pos: 0,
-            home: 0xff,
-            id,
-        });
-        self.units.len() - 1
+    fn nearest_city_distance(&self, x: u16, y: u16) -> i32 {
+        self.nearest_city(x, y)
+            .map_or(9999, |(_, distance)| distance)
+    }
+
+    pub(crate) fn spawn_unit(
+        &mut self,
+        rules: &Rules,
+        t: usize,
+        civ: u8,
+        x: u16,
+        y: u16,
+    ) -> Option<usize> {
+        self.allocate_unit(
+            rules,
+            Unit {
+                type_id: t as u8,
+                owner: civ,
+                x,
+                y,
+                is_leader: false,
+                moves_left: rules.unit_move(t).unwrap_or(0) * 3,
+                veteran: false,
+                damage: 0,
+                orders: 0xff,
+                stack_pos: 0,
+                home: 0xff,
+                id: 0,
+            },
+        )
     }
 
     /// Scrolls use the original tech-group gate (`0x4a2098`) in addition
@@ -328,7 +344,10 @@ impl WorldState {
             if t >= rules.unit_names().len() {
                 continue;
             }
-            spawned.push(self.spawn_unit(rules, t, 0, nx, ny));
+            let Some(unit) = self.spawn_unit(rules, t, 0, nx, ny) else {
+                continue;
+            };
+            spawned.push(unit);
             if single {
                 break;
             }
@@ -396,10 +415,19 @@ impl WorldState {
                         self.techs.iter().any(|b| b[t / 8] & (1 << (t % 8)) != 0)
                     });
                     let t = mercenary(&mut self.combat_rng, &known, self.game_mode, 0);
-                    return if t < rules.unit_names().len() {
-                        HutOutcome::Unit(self.spawn_unit(rules, t, civ, u.x, u.y))
+                    let home = if self.human_mask & (1 << civ) != 0 {
+                        self.nearest_city(u.x, u.y)
+                            .map(|(i, _)| i)
+                            .filter(|&i| self.cities[i].owner & 15 == civ as u16)
                     } else {
-                        HutOutcome::Nothing
+                        None
+                    };
+                    return match self.spawn_unit(rules, t, civ, u.x, u.y) {
+                        Some(i) => {
+                            self.units[i].home = home.map_or(255, |i| i as u8);
+                            HutOutcome::Unit(i)
+                        }
+                        None => HutOutcome::Nothing,
                     };
                 }
                 2 => {
@@ -513,7 +541,8 @@ impl WorldState {
                         .and_then(|v| v.parse::<usize>().ok())
                         .unwrap_or(0);
                     return if t < rules.unit_names().len() {
-                        HutOutcome::Unit(self.spawn_unit(rules, t, civ, u.x, u.y))
+                        self.spawn_unit(rules, t, civ, u.x, u.y)
+                            .map_or(HutOutcome::Nothing, HutOutcome::Unit)
                     } else {
                         HutOutcome::Nothing
                     };
@@ -726,7 +755,7 @@ Warriors, nil, 0, 1., 0, 1a, 1d, 1h, 1f, 1, 0, 1, nil, 000000000000000\n\
                 if v[5] & bit != 0 {
                     blocker.x = nx as u16;
                     blocker.y = ny as u16;
-                    blocker.id = k as u16 + 1;
+                    blocker.id = k as u32 + 1;
                     w.units.push(blocker.clone());
                 }
             }

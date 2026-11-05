@@ -26,6 +26,7 @@ Headless Wine + Xvfb harness that drives the original game and harvests saves.
 | `randhook.py` | Call-site logger for CRT `rand` (cave in the dead startup function `0x41562b`, buffer above `0x607c50`). Two runs diffed give the first divergent draw. |
 | `launcher_pick.py` | Select a launcher game-type item by reading the red radio button (the list remembers the last choice and wraps). Used by `seeded_start.sh`, `newgame.sh` and `lab_std.sh` via `GAME` (default 0 = Original). |
 | `load_save.sh` | Start the game under memspool and load a save by its install-relative path (`load_save.sh original/ph_auto2.sav`): picks "Load a Saved Game", clicks the filename field, types `d:\…`. |
+| `hut_entry.py` | Controlled hut entry: pins CRT at entry, separates the three identified presentation callers, captures outcome/RNG/mutations and restores hooks. Fresh load per case; command examples below. |
 | `corrhook.py` | `on`/`off`/`dump`: log calls of the corruption function `0x4c35a2` (city, amount, waste flag, capital distance). Same cave as randhook — use one at a time. |
 
 ## Navigation: what works and what does not (2026-11-03)
@@ -149,3 +150,49 @@ are needed.
 (Midgard's events founded a city between turns), 64,202 merged-region span
 / 52,073 exactly-changed bytes in
 1,873 regions — the fog-of-war map block dominates, as expected.
+
+
+## Controlled hut-entry parity (#79)
+
+`hut_entry.py` operates on the live game owned by the current session.
+Back up install saves/configuration before starting the session, confirm
+there is no other Wine/Xvfb rig, and use a fresh reference load per entry.
+It changes RAM and temporarily patches the dead startup cave plus hut/RNG
+instructions; `finally` restores every hook. No save/map/sprite bytes are
+emitted. Stop the game before restoring install backups.
+
+```sh
+./load_save.sh Original/Ph_Auto2.SAV
+python3 hut_entry.py --seed 1 --output /tmp/mercenary-final.json
+./load_save.sh Original/Ph_Auto2.SAV
+python3 hut_entry.py --seed 2 --far --fertility 12 --year 1000 \
+  --output /tmp/tribe-final.json
+```
+
+`--far` moves the selected unstacked land unit (default index 9) to an
+empty source south of which a distant hut is selected by the original
+hash. `--home-settlers` assigns existing homeless settlers to an owned
+city to exercise the nomad branch; `--near-own --level 0 --turn 10`
+exercises an empty encounter on a landmass with an own city. These are
+explicit controlled inputs, not natural-play observations. Derived cases
+and the complete input values are in `docs/evidence/huts-live.json`.
+
+The original reward/dialog code consumes CRT draws too. Call sites
+`55852f`/`581d96` (rendering) and `582b9b` (UI object token) use a separate
+CRT state in this fixture; the original rand routine still executes.
+All other calls keep the pinned gameplay stream, and are recorded by
+call site/pre-draw state. Without separation, even a gold dialog adds
+176 presentation draws after the three gameplay draws. Do not claim that
+these fixtures reproduce presentation-dependent CRT progression.
+
+ToTPP relocates the global tech-owner masks and updates them on grants;
+its old per-civ packed compatibility bytes can remain stale. The probe
+reads the mask base from the patched immediate at `54bb88`, then derives
+classic knowledge for the civ. Hut selection bounds at `54b357` and
+`54b3dc` remain 100 in the reference patched build.
+
+`tools/hut_fixture.py` combines captures into small JSON evidence and
+plain engine-test vectors. The install-backed `huts_install.rs` runs the
+actual WorldState dispatcher against those inputs and compares every
+outcome, gameplay draw count/state, treasury/advance mutation, created
+unit slot/type/home/movement and tribe size/improvements.

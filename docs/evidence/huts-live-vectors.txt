@@ -1,0 +1,35 @@
+# Derived from controlled live hut entries. See huts-live.json for protocol and scope.
+case gold 12 9 61 7 0 0 43 -1900 2
+result gold 50 408447505 75 3 0 1 0 0 0 0 0 0 0 0 0 0 0
+end
+case mercenary 1 9 61 7 0 0 43 -1900 2
+result unit 34 3884216597 25 4 0 1 0 0 0 0 0 0 0 0 0 0 0
+unit 34 15 4 61 7 5 0
+end
+case scroll 5 9 61 7 0 0 43 -1900 2
+result advance 65 803157710 25 3 0 1 0 0 0 0 0 0 2 0 0 0 0
+explorer-home 255
+end
+case late-tribe 2 9 79 11 12 0 43 1000 2
+result city 10 1287834384 25 6 0 1 0 0 0 0 0 0 0 0 0 0 0
+city 10 3 4 24 0 0 0 0
+end
+case nomad 2 9 79 11 0 0 43 -1900 2
+home 6 5
+result unit 34 1914723980 25 2 0 1 0 0 0 0 0 0 0 0 0 0 0
+unit 34 0 4 79 11 255 0
+explorer-home 255
+end
+case barbarians 3 9 79 11 12 0 43 -1900 3
+result barbarians 1 471647893 25 2 0 1 0 0 0 0 0 0 0 0 0 0 0
+unit 34 15 0 79 13 255 0
+explorer-home 255
+end
+case nothing 3 9 34 26 12 0 10 -1900 0
+result nothing 0 471647893 25 2 0 1 0 0 0 0 0 0 0 0 0 0 0
+explorer-home 255
+end
+case forced-tribe 0 9 79 11 12 0 43 -1900 3
+result city 10 505908858 25 2 0 1 0 0 0 0 0 0 0 0 0 0 0
+city 10 1 4 0 0 0 0 0
+end

@@ -1,0 +1,789 @@
+{
+  "source": "live Wine + ToTPP oracle; Original/Ph_Auto2.SAV freshly loaded per case",
+  "source_sha256": {
+    "civ2.exe": "dbbd24d8b72fd1ac56d81adf3a16273affc6ae3294dd5ad4a2c59d4d781c00b4",
+    "civ2.bak": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+    "Original/Ph_Auto2.SAV": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef",
+    "Original/Rules.txt": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "protocol": "CRT pinned at 0x54ab80 entry; actual original rand executes; presentation call sites 0x55852f, 0x581d96 and 0x582b9b use a separate CRT state; entry/exit/RNG/cave patches restored after each case",
+  "scope": "surface land huts; controlled location, fertility, date, barb level and settler homes where listed; compares gameplay outcomes/CRT, unit slots/types/home/stack and tribe population/buildings; no presentation RNG parity claim",
+  "cases": [
+    {
+      "case": "gold",
+      "setup": {
+        "unit": 9,
+        "source": [
+          61,
+          5
+        ],
+        "original_source": [
+          61,
+          5
+        ],
+        "target": [
+          61,
+          7
+        ],
+        "type": 4,
+        "civ": 4,
+        "seed": 12,
+        "turn": 43,
+        "year": -1900,
+        "difficulty": 4,
+        "level": 2,
+        "fertility": 0,
+        "site_bits": 0,
+        "landmass": 2,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "units": 38,
+        "cities": 10
+      },
+      "outcome": {
+        "kind": "gold",
+        "value": 50,
+        "crt_after": 408447505,
+        "gameplay_draws": [
+          [
+            "0x54acc4",
+            12
+          ],
+          [
+            "0x54aced",
+            5099167
+          ],
+          [
+            "0x54b45f",
+            368864998
+          ]
+        ],
+        "presentation_draws": 176,
+        "treasury": 75,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "new_units": []
+      }
+    },
+    {
+      "case": "mercenary",
+      "setup": {
+        "unit": 9,
+        "source": [
+          61,
+          5
+        ],
+        "original_source": [
+          61,
+          5
+        ],
+        "target": [
+          61,
+          7
+        ],
+        "type": 4,
+        "civ": 4,
+        "seed": 1,
+        "homed_settlers": [],
+        "turn": 43,
+        "year": -1900,
+        "difficulty": 4,
+        "level": 2,
+        "fertility": 0,
+        "site_bits": 0,
+        "landmass": 2,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "units": 38,
+        "cities": 10
+      },
+      "outcome": {
+        "kind": "unit",
+        "value": 34,
+        "crt_after": 3884216597,
+        "gameplay_draws": [
+          [
+            "0x54acc4",
+            1
+          ],
+          [
+            "0x54aced",
+            2745024
+          ],
+          [
+            "0x54bb00",
+            3357800067
+          ],
+          [
+            "0x54bcef",
+            415139642
+          ]
+        ],
+        "presentation_draws": 176,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "new_units": [
+          {
+            "index": 34,
+            "type": 15,
+            "owner": 4,
+            "x": 61,
+            "y": 7,
+            "moves_spent": 0,
+            "home": 5,
+            "stack_links": [
+              -1,
+              9
+            ],
+            "veteran": false
+          }
+        ],
+        "explorer_stack_links": [
+          34,
+          -1
+        ]
+      }
+    },
+    {
+      "case": "scroll",
+      "setup": {
+        "unit": 9,
+        "source": [
+          61,
+          5
+        ],
+        "original_source": [
+          61,
+          5
+        ],
+        "target": [
+          61,
+          7
+        ],
+        "type": 4,
+        "civ": 4,
+        "seed": 5,
+        "homed_settlers": [],
+        "turn": 43,
+        "year": -1900,
+        "difficulty": 4,
+        "level": 2,
+        "fertility": 0,
+        "site_bits": 0,
+        "landmass": 2,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "units": 38,
+        "cities": 10
+      },
+      "outcome": {
+        "kind": "advance",
+        "value": 65,
+        "crt_after": 803157710,
+        "gameplay_draws": [
+          [
+            "0x54acc4",
+            5
+          ],
+          [
+            "0x54aced",
+            3601076
+          ],
+          [
+            "0x54b357",
+            1880463015
+          ]
+        ],
+        "presentation_draws": 152,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0
+        ],
+        "new_units": [],
+        "explorer_home": 255,
+        "explorer_stack_links": [
+          -1,
+          -1
+        ]
+      }
+    },
+    {
+      "case": "late-tribe",
+      "setup": {
+        "unit": 9,
+        "source": [
+          79,
+          9
+        ],
+        "original_source": [
+          61,
+          5
+        ],
+        "target": [
+          79,
+          11
+        ],
+        "type": 4,
+        "civ": 4,
+        "seed": 2,
+        "homed_settlers": [],
+        "turn": 43,
+        "year": 1000,
+        "difficulty": 4,
+        "level": 2,
+        "fertility": 12,
+        "site_bits": 0,
+        "landmass": 3,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "units": 38,
+        "cities": 10
+      },
+      "outcome": {
+        "kind": "city",
+        "value": 10,
+        "crt_after": 1287834384,
+        "gameplay_draws": [
+          [
+            "0x54acc4",
+            2
+          ],
+          [
+            "0x54aced",
+            2959037
+          ],
+          [
+            "0x54af98",
+            1914723980
+          ],
+          [
+            "0x54afce",
+            1585885983
+          ],
+          [
+            "0x54aff5",
+            3313746278
+          ],
+          [
+            "0x54b01a",
+            4079776401
+          ]
+        ],
+        "presentation_draws": 318,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "new_units": [],
+        "new_city": {
+          "index": 10,
+          "size": 3,
+          "owner": 4,
+          "buildings": [
+            24,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "explorer_stack_links": [
+          -1,
+          -1
+        ]
+      }
+    },
+    {
+      "case": "nomad",
+      "setup": {
+        "unit": 9,
+        "source": [
+          79,
+          9
+        ],
+        "original_source": [
+          61,
+          5
+        ],
+        "target": [
+          79,
+          11
+        ],
+        "type": 4,
+        "civ": 4,
+        "seed": 2,
+        "homed_settlers": [
+          [
+            6,
+            5
+          ]
+        ],
+        "turn": 43,
+        "year": -1900,
+        "difficulty": 4,
+        "level": 2,
+        "fertility": 0,
+        "site_bits": 0,
+        "landmass": 3,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "units": 38,
+        "cities": 10
+      },
+      "outcome": {
+        "kind": "unit",
+        "value": 34,
+        "crt_after": 1914723980,
+        "gameplay_draws": [
+          [
+            "0x54acc4",
+            2
+          ],
+          [
+            "0x54aced",
+            2959037
+          ]
+        ],
+        "presentation_draws": 176,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "new_units": [
+          {
+            "index": 34,
+            "type": 0,
+            "owner": 4,
+            "x": 79,
+            "y": 11,
+            "moves_spent": 0,
+            "home": 255,
+            "stack_links": [
+              -1,
+              9
+            ],
+            "veteran": false
+          }
+        ],
+        "explorer_home": 255,
+        "explorer_stack_links": [
+          34,
+          -1
+        ]
+      }
+    },
+    {
+      "case": "barbarians",
+      "setup": {
+        "unit": 9,
+        "source": [
+          79,
+          9
+        ],
+        "original_source": [
+          61,
+          5
+        ],
+        "target": [
+          79,
+          11
+        ],
+        "type": 4,
+        "civ": 4,
+        "seed": 3,
+        "homed_settlers": [],
+        "turn": 43,
+        "year": -1900,
+        "difficulty": 4,
+        "level": 3,
+        "fertility": 12,
+        "site_bits": 0,
+        "landmass": 3,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "units": 38,
+        "cities": 10
+      },
+      "outcome": {
+        "kind": "barbarians",
+        "value": 1,
+        "crt_after": 471647893,
+        "gameplay_draws": [
+          [
+            "0x54acc4",
+            3
+          ],
+          [
+            "0x54aced",
+            3173050
+          ]
+        ],
+        "presentation_draws": 176,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "new_units": [
+          {
+            "index": 34,
+            "type": 15,
+            "owner": 0,
+            "x": 79,
+            "y": 13,
+            "moves_spent": 0,
+            "home": 255,
+            "stack_links": [
+              -1,
+              -1
+            ],
+            "veteran": false
+          }
+        ],
+        "explorer_home": 255,
+        "explorer_stack_links": [
+          -1,
+          -1
+        ]
+      }
+    },
+    {
+      "case": "nothing",
+      "setup": {
+        "unit": 9,
+        "source": [
+          34,
+          24
+        ],
+        "original_source": [
+          61,
+          5
+        ],
+        "target": [
+          34,
+          26
+        ],
+        "type": 4,
+        "civ": 4,
+        "seed": 3,
+        "homed_settlers": [],
+        "turn": 10,
+        "year": -1900,
+        "difficulty": 4,
+        "level": 0,
+        "fertility": 12,
+        "site_bits": 0,
+        "landmass": 2,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "units": 38,
+        "cities": 10
+      },
+      "outcome": {
+        "kind": "nothing",
+        "value": 0,
+        "crt_after": 471647893,
+        "gameplay_draws": [
+          [
+            "0x54acc4",
+            3
+          ],
+          [
+            "0x54aced",
+            3173050
+          ]
+        ],
+        "presentation_draws": 182,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "new_units": [],
+        "explorer_home": 255,
+        "explorer_stack_links": [
+          -1,
+          -1
+        ]
+      }
+    },
+    {
+      "case": "forced-tribe",
+      "setup": {
+        "unit": 9,
+        "source": [
+          79,
+          9
+        ],
+        "original_source": [
+          61,
+          5
+        ],
+        "target": [
+          79,
+          11
+        ],
+        "type": 4,
+        "civ": 4,
+        "seed": 0,
+        "turn": 43,
+        "year": -1900,
+        "difficulty": 4,
+        "level": 3,
+        "fertility": 12,
+        "site_bits": 0,
+        "landmass": 3,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "units": 38,
+        "cities": 10
+      },
+      "outcome": {
+        "kind": "city",
+        "value": 10,
+        "crt_after": 505908858,
+        "gameplay_draws": [
+          [
+            "0x54acc4",
+            0
+          ],
+          [
+            "0x54aced",
+            2531011
+          ]
+        ],
+        "presentation_draws": 318,
+        "treasury": 25,
+        "techs": [
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "new_units": [],
+        "new_city": {
+          "index": 10,
+          "size": 1,
+          "owner": 4,
+          "buildings": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "explorer_stack_links": [
+          -1,
+          -1
+        ]
+      }
+    }
+  ]
+}

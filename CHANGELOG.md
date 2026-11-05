@@ -17,8 +17,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   scroll legality and surface barbarian rings. 1,664 native vectors cover
   outcomes, conditional CRT draws and spawn requests. Tribe creation
   preserves the explorer without a temporary settler; new hut units get
-  full movement. Full entry/state parity and runtime AI-cache refresh
-  remain open.
+  full movement. Eight controlled live entries now match outcomes, gameplay
+  CRT and mutations; runtime AI-cache refresh remains open.
+- **Unit creation:** reuse deleted slots and apply original capacity
+  reservations (124 native cases), insert at the stack head and retain
+  human mercenaries' nearby home city. Unit/city identities are full
+  32-bit fields; engine-issued identities remain unique after deletions.
 
 - **Treasury and upkeep:** city taxes now credit the civ treasury outside
   anarchy/disorder; original human-mask upkeep, Barracks adjustments,

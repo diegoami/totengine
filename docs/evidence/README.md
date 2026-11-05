@@ -2610,3 +2610,39 @@ python3 tools/city_totals_check.py --gold /tmp/city-totals.json --vectors /tmp/c
 cargo test -p engine --lib workers::tests
 cargo test -p engine --test workers_install --test yields_install --test city_totals_install
 ```
+
+
+### Native starvation decisions (#13, integration pending)
+
+[city-starvation.json](city-starvation.json) and
+[city-starvation-vectors.txt](city-starvation-vectors.txt) retain 1,024 executions
+of the negative-box branch `0x4c59b9..0x4c5c97`. The first live role-5 unit
+homed in the city is selected in slot order, without an additional owner check.
+If the outgoing-food count is positive, the city cancels every negative-commodity
+route to the selected partner instead of losing a settler or population.
+The selected partner is the last outgoing-food partner from `0x4c506e`.
+Route deletion `0x433444` executes unchanged, compacts live slots without
+clearing the tail and sets the refresh marker `0x20000`.
+
+Otherwise, a homed settler is removed if the city belongs to a human-mask civ
+or its known-to mask intersects that mask. An AI city unknown to humans retains
+the settler and population. With no homed settler, population decreases by one
+and zero requests city destruction. Non-destroyed cities reset food storage to
+zero. The vectors cover 127 unit-removal requests and nine destruction requests.
+`engine::growth` matches these decisions and route compaction.
+
+The check skips notification-string setup, records the unit-removal helper
+boundary without executing it and stops before city destruction. It supplies
+the preceding totals pass's outgoing-food globals, including deliberately
+inconsistent combinations to distinguish the branch inputs. It does not prove
+unit/city destruction side effects, full turns or live-game parity. The turn
+loop still uses the old city approximation pending phase integration.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/starvation_check.py --gold /tmp/city-starvation.json \
+  --vectors /tmp/city-starvation-vectors.txt
+cmp docs/evidence/city-starvation.json /tmp/city-starvation.json
+cmp docs/evidence/city-starvation-vectors.txt /tmp/city-starvation-vectors.txt
+cargo test -p engine --lib growth::tests
+```

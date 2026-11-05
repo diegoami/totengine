@@ -79,9 +79,122 @@ pub fn prepare_growth(c: GrowthContext) -> GrowthResult {
     result
 }
 
+/// Negative-box branch (`0x4c59b9..0x4c5c97`), before destructive helpers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FamineAction {
+    /// Cancel all negative-commodity routes to the selected food partner.
+    CancelFoodRoutes(i16),
+    /// Remove the first live homed settler through the unit-removal helper.
+    RemoveSettler(usize),
+    /// An AI city unknown to a human retains its homed settler and size.
+    RetainSettler,
+    /// No homed settler: decrement population, destroying the city at zero.
+    LosePopulation,
+}
+
+pub fn famine_action(
+    humans: u8,
+    owner: u8,
+    known_to: u8,
+    outgoing: i32,
+    food_partner: i16,
+    first_settler: Option<usize>,
+) -> FamineAction {
+    if outgoing > 0 {
+        FamineAction::CancelFoodRoutes(food_partner)
+    } else if let Some(unit) = first_settler {
+        if humans as u32 & (1 << (owner & 31)) != 0 || known_to as i8 as i32 & humans as i32 != 0 {
+            FamineAction::RemoveSettler(unit)
+        } else {
+            FamineAction::RetainSettler
+        }
+    } else {
+        FamineAction::LosePopulation
+    }
+}
+
+/// Original route deletion (`0x433444`) compacts live slots without clearing
+/// the unused tail, and marks city totals for refresh.
+pub fn cancel_food_routes(
+    count: &mut i8,
+    commodities: &mut [i8; 3],
+    partners: &mut [i16; 3],
+    partner: i16,
+) -> bool {
+    let mut changed = false;
+    for k in (0..(*count).clamp(0, 3) as usize).rev() {
+        if commodities[k] >= 0 || partners[k] != partner {
+            continue;
+        }
+        for n in k..(*count as usize - 1) {
+            partners[n] = partners[n + 1];
+            commodities[n] = commodities[n + 1];
+        }
+        *count -= 1;
+        changed = true;
+    }
+    changed
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn original_starvation_decisions_and_route_compaction() {
+        let mut cases = 0;
+        for line in include_str!("../../../docs/evidence/city-starvation-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let (input, output) = line.split_once('|').unwrap();
+            let v: Vec<i32> = input
+                .split_whitespace()
+                .map(|s| s.parse().unwrap())
+                .collect();
+            let expected: Vec<i32> = output
+                .split_whitespace()
+                .map(|s| s.parse().unwrap())
+                .collect();
+            let first =
+                (0..4).find(|&k| v[12 + 3 * k] != 0 && v[13 + 3 * k] == 5 && v[14 + 3 * k] == 0);
+            let action = famine_action(v[1] as u8, 1, v[2] as u8, v[4], v[5] as i16, first);
+            let mut size = v[0] as u8;
+            let mut count = v[3] as i8;
+            let mut commodities = std::array::from_fn(|k| v[6 + k] as i8);
+            let mut partners = std::array::from_fn(|k| v[9 + k] as i16);
+            let mut flags = 0;
+            let mut killed = -1;
+            match action {
+                FamineAction::CancelFoodRoutes(partner) => {
+                    if cancel_food_routes(&mut count, &mut commodities, &mut partners, partner) {
+                        flags |= crate::founding::CITY_REFRESH as i32;
+                    }
+                }
+                FamineAction::RemoveSettler(k) => killed = k as i32,
+                FamineAction::RetainSettler => (),
+                FamineAction::LosePopulation => size = size.wrapping_sub(1),
+            }
+            let destroyed = size as i8 <= 0;
+            let actual = [
+                size as i32,
+                if destroyed { -1 } else { 0 },
+                count as i32,
+                flags,
+                killed,
+                i32::from(destroyed),
+                commodities[0] as i32,
+                commodities[1] as i32,
+                commodities[2] as i32,
+                partners[0] as i32,
+                partners[1] as i32,
+                partners[2] as i32,
+            ];
+            assert_eq!(actual, expected[..], "{line}");
+            cases += 1;
+        }
+        assert_eq!(cases, 1024);
+    }
+
     #[test]
     fn original_food_rows() {
         let mut cases = 0;

@@ -15,7 +15,7 @@ clippy:
 # Full local test suite: Rust + Python probe compile + golden corpus.
 # The golden part self-skips when CIVTOT_HOME is unset (e.g. CI).
 test: rust
-	python3 -m py_compile tools/totctl.py tools/growth_series.py tools/finance_check.py tools/research_check.py tools/connections_check.py tools/trade_routes_check.py tools/production_check.py tools/wonders_check.py tools/happiness_check.py tools/maintenance_check.py tools/huts_check.py tools/calendar_check.py tools/tech_groups_check.py tools/allocation_check.py tools/hut_fixture.py tools/barbarians_check.py tools/power_check.py tools/statistics_check.py tools/leonardo_check.py tools/diplomatic_wonders_check.py tools/apollo_check.py tools/growth_check.py tools/workers_check.py tools/availability_check.py tools/yields_check.py tools/city_totals_check.py
+	python3 -m py_compile tools/totctl.py tools/growth_series.py tools/finance_check.py tools/research_check.py tools/connections_check.py tools/trade_routes_check.py tools/production_check.py tools/wonders_check.py tools/happiness_check.py tools/maintenance_check.py tools/huts_check.py tools/calendar_check.py tools/tech_groups_check.py tools/allocation_check.py tools/hut_fixture.py tools/barbarians_check.py tools/power_check.py tools/statistics_check.py tools/leonardo_check.py tools/diplomatic_wonders_check.py tools/apollo_check.py tools/growth_check.py tools/workers_check.py tools/availability_check.py tools/yields_check.py tools/city_totals_check.py tools/starvation_check.py
 	bash tools/golden.sh check
 
 evidence-regen:

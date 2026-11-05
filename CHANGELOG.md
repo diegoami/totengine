@@ -7,6 +7,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [0.9.0] — generated-world campaigns
 
+- Add deterministic engine-designed surface worlds and `totctl worldgen` MP
+  export, with calibrated climate/relief and sea-connected basin drainage.
+  Decoder round trips do not claim original-game MP import.
+
 - Complete the controlled generator coverage comparison (#90): ten original
   worlds versus 64 engine holdout seeds pass the frozen land/biome/river mean
   budgets. Record source/RAM checks, native region inputs, inspected renders
@@ -18,16 +22,6 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   Retain an authored-rules 100-round checkpoint golden and numeric trajectories
   using authored and user-supplied Original Rules. No native SAV compatibility
   or original new-game/AI parity is claimed.
-
-- Calibrate generated biomes and replace sparse downhill river attempts with
-  sea-rooted basin drainage (#90, algorithm v2). Retain numeric comparisons for
-  16 calibration and 64 fresh engine seeds, three inspected renders and basin/
-  maximum-size drainage regressions. Original statistical acceptance remains open.
-
-- Start v0.9 generated-world work (#90): engine-designed seeded surface maps,
-  `totctl worldgen` MP export, decoder/CLI regressions and a measured original
-  baseline. Biome/drainage calibration and fresh campaign initialization remain
-  open; statistical parity is not claimed.
 
 - Correct the historical framing table to show native-verified u32 unit/city
   identities and point to the superseding evidence (review follow-up #109).

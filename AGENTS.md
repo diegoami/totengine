@@ -82,7 +82,10 @@ Per-civ research is implemented (`engine::research`, `SetResearch`,
 x86 execution; a 50-turn standard-save run gains 14 advances and replays.
 Capital road/rail connections now scale waste (`engine::connections`,
 #84; 123 saved pairs match original x86, FallRome shields 145/146 exact).
-AI v1 economy/war work, trade routes and maintenance remain open.
+Recurring route arrows are implemented (`engine::trade_routes`, #85 slice;
+288 arithmetic cases match original x86). Partner trade caches refresh
+before finance. Creation/delivery rewards and supply/demand refresh remain
+open, as do AI v1 economy/war work and maintenance.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

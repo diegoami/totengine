@@ -76,7 +76,23 @@ original hard-codes that type for this search). Sea/air replacements and
 other maps remain unsupported. The original-x86 probe and Rust tests
 compare 123 saved city/capital pairs. FallRome shields now match 145/146
 stored records; Aventicum's remaining one-shield difference is unresolved.
-Trade-route values (#85) will reuse this helper but are not yet added.
+Trade-route values (#85) reuse this helper in the following slice.
+
+## Recurring route income (#85 slice)
+
+Decode the original route loop independently of supply/demand refresh and
+delivery rewards. Preserve signed commodity IDs, partner indices, and the
+partner city's cached pre-route trade. Recomputing partner totals recursively
+would both lose the original cache semantics and loop on mutual routes.
+`run_turn` refreshes each city's cache before its finance evaluation, in the
+existing engine city order. The overall turn order is still engine-chosen.
+
+The original loop and its building/connection callees execute without stubs
+for 288 invented arithmetic cases and the saved FallRome route. That route
+has commodity -1 and contributes zero: it does not validate positive income
+in a live campaign. Rust additionally checks multiple slots, mutual partners,
+cache changes and route-inclusive finance. Route creation, delivery rewards,
+supply/demand refresh and non-surface routes remain open; #85 stays open.
 
 ## Remaining milestone work
 

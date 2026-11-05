@@ -10,7 +10,7 @@
 //!
 //! The record's shields and trade are stored *after* waste, corruption and
 //! building multipliers. `city_output` applies those decoded stages,
-//! including capital connections; trade-route arrows remain separate work.
+//! including capital connections and recurring trade-route arrows.
 //!
 //! Not modelled: the network-game doubling branch (`0x607652`/`0x6031bc`,
 //! off in single-player games), and AI side effects the function triggers
@@ -196,7 +196,7 @@ pub struct CityOutput {
     pub food: i32,
     /// Shields after the production multipliers and waste.
     pub shields: i32,
-    /// Trade after corruption (trade routes are not modelled yet).
+    /// Trade including recurring route arrows, after final corruption.
     pub trade: i32,
     pub corruption: i32,
     pub waste: i32,
@@ -326,7 +326,7 @@ impl WorldState {
     /// - shields after multipliers, unit support and waste: 145/146 and
     ///   10/10.
     ///
-    /// Trade routes are not modelled either.
+    /// Recurring routes use partner cities' cached pre-route trade.
     pub fn city_output(&self, rules: &Rules, idx: usize) -> CityOutput {
         let Some(c) = self.cities.get(idx) else {
             return CityOutput::default();
@@ -334,6 +334,14 @@ impl WorldState {
         let [food, tile_shields, trade] = self.worked_yield(rules, idx);
         let civ = (c.owner & 0x0F) as u8;
         let gov = self.governments.get(civ as usize).copied().unwrap_or(0);
+        let route_arrows = if c.route_count > 0 {
+            self.trade_route_income(rules, idx, self.pre_route_trade(rules, idx))
+                .iter()
+                .sum::<i32>()
+        } else {
+            0
+        };
+        let trade = trade + route_arrows;
         let corruption = if gov == FUNDAMENTALISM || gov == DEMOCRACY {
             0
         } else {

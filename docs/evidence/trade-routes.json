@@ -1,0 +1,32 @@
+{
+  "source": "civ2.bak route loop 0x4c46bf..0x4c4890",
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "scope": "route income only; refresh/final corruption excluded; surface map",
+  "original_x86_checked": true,
+  "synthetic_cases": 288,
+  "saves": [
+    {
+      "save": "Original/Ph_Auto2.SAV",
+      "cities": 10,
+      "routes": []
+    },
+    {
+      "save": "FallRome/ROMFALL.scn",
+      "cities": 146,
+      "routes": [
+        {
+          "city_index": 16,
+          "slots": [
+            {
+              "partner_index": 14,
+              "commodity": -1,
+              "source_cache": 7,
+              "partner_cache": 12,
+              "income": 0
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -23,6 +23,7 @@ pub mod player;
 pub mod production;
 pub mod research;
 pub mod rng;
+pub mod trade_routes;
 pub mod turn;
 pub mod yields;
 
@@ -96,6 +97,11 @@ pub struct City {
     pub net_taxes: u16,
     /// Sixteen two-bit specialist slots (record u32@24).
     pub specialists: u32,
+    /// Cached trade after corruption, before routes (record i16@32).
+    pub route_trade: i16,
+    pub route_count: i8,
+    pub route_commodities: [i8; 3],
+    pub route_partners: [i16; 3],
     /// Food/shield boxes (record u16@28/@30; evidence §T1-4).
     pub food_box: u16,
     pub shield_box: u16,
@@ -362,6 +368,10 @@ fn city_from(r: &CityRecord) -> City {
         net_science: r.net_science(),
         net_taxes: r.net_taxes(),
         specialists: r.specialists(),
+        route_trade: r.route_trade(),
+        route_count: r.route_count(),
+        route_commodities: r.route_commodities(),
+        route_partners: r.route_partners(),
         food_box: r.food_box(),
         shield_box: r.shield_box(),
         worked: r.worked(),
@@ -532,6 +542,12 @@ impl WorldState {
             mix(&mut h, buf.as_bytes());
             mix(&mut h, &c.worked.to_le_bytes());
             mix(&mut h, &c.specialists.to_le_bytes());
+            mix(&mut h, &c.route_trade.to_le_bytes());
+            mix(&mut h, &[c.route_count as u8]);
+            mix(&mut h, &c.route_commodities.map(|v| v as u8));
+            for partner in c.route_partners {
+                mix(&mut h, &partner.to_le_bytes());
+            }
             mix(&mut h, &c.buildings);
             mix(&mut h, &c.flags.to_le_bytes());
             mix(&mut h, &[c.building as u8]);
@@ -625,6 +641,10 @@ mod tests {
                 w.research_settings.scenario = Some((10, 0))
             }),
             ("specialists", |w| w.cities[0].specialists ^= 1),
+            ("route trade", |w| w.cities[0].route_trade ^= 1),
+            ("route count", |w| w.cities[0].route_count ^= 1),
+            ("route commodity", |w| w.cities[0].route_commodities[0] ^= 1),
+            ("route partner", |w| w.cities[0].route_partners[0] ^= 1),
             ("techs", |w| w.techs[1][0] ^= 1),
             ("tile improvements", |w| w.map.improvements[0] ^= 4),
             ("tile visibility", |w| w.map.visible[0] ^= 2),

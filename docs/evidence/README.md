@@ -650,8 +650,57 @@ and 10/10. The subsequent connection decode below improves this to
 connections alone explained all three differences was not borne out.
 
 Engine: `WorldState::city_output`, `corruption`, `capital_distance`,
-`unit_support`. Tests: `crates/engine/tests/yields_install.rs`. Trade
-routes remain open; the connection test follows.
+`unit_support`. Tests: `crates/engine/tests/yields_install.rs`. Recurring
+route arrows were subsequently decoded below; the connection test follows.
+
+### Recurring trade-route arrows DECODED (#85 slice, 2026-11-05)
+
+Sources: original `civ2.bak` city totals `0x4c45ff`, route loop
+`0x4c46bf..0x4c4890`. Derived artifacts: `trade-routes.json` and
+`trade-route-vectors.txt`; reproduction:
+
+```
+CIVTOT_HOME=... PYTHONPATH=... python3 tools/trade_routes_check.py --emulate --vectors /tmp/route-vectors.txt
+```
+
+Unicorn is an optional development dependency outside the workspace. This
+probe executes the original loop with its real building/connection callees;
+it starts after city refresh and stops before final corruption. It therefore
+checks route arithmetic, not a complete original-game turn.
+
+- City record i16@32 (RAM `0x5fd170`, stride 92) is tile trade minus the
+  first corruption pass (`0x4c46ab`). Source trade is refreshed before the
+  loop; partner trade is read from that partner's cached record.
+- i8@60 (`0x5fd18c`) is the route count; three i8 commodity slots start at
+  @67 (`0x5fd193`), parallel to three i16 partner city indices at @70
+  (`0x5fd196`). These indices are city array slots, not city IDs.
+- Base arrows: `(source_cache + partner_cache + 4) >> 3`, using signed
+  values. Connection factor starts at `0x471a13` (0/1/2). If both cities
+  have Airport (32), it is at least 1; source Superhighways (25) adds 1.
+  Add `(base * factor) >> 1`. A negative commodity makes the result zero;
+  a same-owner partner halves the result afterward with arithmetic shift.
+- Arrows are added to **raw tile trade**, not to the already corrupted
+  source cache. Final corruption then runs on the combined trade at
+  `0x4c489e` (mode 1). With the network-bookkeeping global disabled, the
+  mode changes no returned corruption arithmetic; Fundamentalism and
+  Democracy explicitly zero it afterward. Network statistics are unmodelled.
+
+All **288 synthetic cases** match original execution, covering three
+connection factors, airports, Superhighways, domestic/foreign ownership,
+negative/zero/positive commodity IDs and rounding boundaries. The current
+standard save has no routes. FallRome city slot 16 has one route to slot
+14, commodity -1, cached trade 7/12, and zero arrows; original execution
+agrees. This saved route supplies no positive-income campaign validation.
+
+`engine::trade_routes` retains these fields in the checksum and uses cached
+partners without recursive city evaluation. `run_turn` refreshes the source
+cache before finance, following the existing engine city order. Tests cover
+mutual routes, multiple slots, cache changes, invalid/dead partners,
+route-inclusive science/tax and install-gated cache refresh. The run50
+fingerprints change intentionally with the new state; its gameplay rows are
+otherwise unchanged. Source supply/demand refresh (`0x430232`), creation,
+delivery rewards, non-surface routes and original turn-order parity remain
+open. Do not close #85 based on this isolated income slice.
 
 ### Capital road/rail connections DECODED (#84, 2026-11-04)
 

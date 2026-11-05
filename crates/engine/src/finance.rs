@@ -137,8 +137,7 @@ impl WorldState {
     }
 
     /// Finance from the current worked tiles, building multipliers,
-    /// corruption and unit support. Trade routes remain #85, so callers
-    /// with route-inclusive totals should use `split_city_trade` instead.
+    /// recurring routes, corruption and unit support.
     pub fn city_finance(&self, rules: &Rules, idx: usize) -> CityFinance {
         let output = self.city_output(rules, idx);
         self.split_city_trade(

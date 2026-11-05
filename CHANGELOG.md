@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- **Recurring trade-route income (#85 slice):** decoded partner trade caches,
+  commodity/partner slots, domestic rounding and connection/building bonuses;
+  route arrows now enter city trade and finance. The original x86 loop agrees
+  on 288 synthetic cases. Route creation, delivery rewards, supply/demand
+  refresh and non-surface routes remain open.
 - **Roadmap amendment:** v0.10.0 targets a built-in AI resembling the
   original game's behavior. External AI protocols and tournaments move
   after the playable client; their version is unassigned. v0.11.0 begins

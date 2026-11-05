@@ -447,9 +447,25 @@ impl CityRecord {
     pub fn specialists(&self) -> u32 {
         u32::from_le_bytes(self.raw[24..28].try_into().unwrap())
     }
-    /// u16@32 (the old "tail90"): semantics open.
+    /// Trade after corruption, before routes (i16@32, `0x4c46ab`).
     pub fn field32(&self) -> u16 {
         u16::from_le_bytes([self.raw[32], self.raw[33]])
+    }
+    /// Cached pre-route trade read by partner cities (`0x4c472b`).
+    pub fn route_trade(&self) -> i16 {
+        self.field32() as i16
+    }
+    /// Route count (signed byte @60); at most three slots are supported.
+    pub fn route_count(&self) -> i8 {
+        self.raw[60] as i8
+    }
+    /// Route commodity IDs (i8@67); negative entries contribute no arrows.
+    pub fn route_commodities(&self) -> [i8; 3] {
+        [self.raw[67] as i8, self.raw[68] as i8, self.raw[69] as i8]
+    }
+    /// Partner city indices (i16@70), parallel to the commodity slots.
+    pub fn route_partners(&self) -> [i16; 3] {
+        std::array::from_fn(|k| i16::from_le_bytes([self.raw[70 + 2 * k], self.raw[71 + 2 * k]]))
     }
 }
 

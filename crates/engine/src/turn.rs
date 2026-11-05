@@ -90,8 +90,10 @@ impl WorldState {
             }
             // City finance (#87): evaluate before this turn's build is
             // completed, so a new Library affects the next totals pass.
-            // Route-inclusive trade remains #85; do not turn these city
-            // taxes into treasury income without maintenance accounting.
+            // Refresh this city's pre-route trade cache before partners
+            // read it; city iteration order remains engine-chosen.
+            // Treasury income still requires maintenance accounting.
+            self.cities[k].route_trade = self.pre_route_trade(rules, k);
             let finance = self.city_finance(rules, k);
             self.cities[k].net_science = finance.science.clamp(0, u16::MAX as i32) as u16;
             self.cities[k].net_taxes = finance.taxes.clamp(0, u16::MAX as i32) as u16;

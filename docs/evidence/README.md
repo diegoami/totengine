@@ -2646,3 +2646,44 @@ cmp docs/evidence/city-starvation.json /tmp/city-starvation.json
 cmp docs/evidence/city-starvation-vectors.txt /tmp/city-starvation-vectors.txt
 cargo test -p engine --lib growth::tests
 ```
+
+
+### Controlled 50-turn city-phase sequence (#13, integration pending)
+
+`tools/city_phase_check.py` executes the full original `0x4cb01d` city routine
+for 50 consecutive city rounds, retaining its gameplay callees. It starts from
+the standard reference world's terrain, city positions and governments, with
+explicit controls: human mask 255, difficulty 0, all cities reset to size one,
+empty food boxes, only their saved Palace retained, center-only workers,
+Capitalization, 100% taxes and all units unhomed. The original produces 500
+city transitions, retained in [city-phase.json](city-phase.json) and
+[city-phase-vectors.txt](city-phase-vectors.txt). Only the open-city-window query
+`0x411c50` and map redraw `0x467c89` boundaries were reached/replaced; the
+notification boundaries listed in the script were not reached.
+
+An install-backed Rust comparison using `city_growth_context`, native growth
+preparation, `refresh_city_totals`, food collection, existing production,
+post-production totals and treasury matches all economic fields for all 500
+transitions: size, signed boxes, workers, specialists, pre-route trade,
+science/taxes/trade, food/shields, happiness and treasury. It also compares city
+flags except `0x80000`: the original's end-of-city settler-job planner
+`0x4cad56` sets that flag and its work-request state, which are not ported.
+The original flag remains in the artifact. Balanced cities set `0x4000` when
+net shields are positive and the collected food surplus is nonnegative
+(`0x4c9c2d..0x4c9c8c`).
+
+This verifies the positive-growth/two-totals-pass sequence in a controlled
+setting; **the test does not call `run_turn`, which still uses the old
+approximation**. It is not a Wine/autosave comparison, ordinary unit/building
+production sequence, starvation/destruction or disorder/celebration replay,
+research campaign, or complete original turn/PRNG parity. Those remain part
+of the outstanding #13 integration and live acceptance work.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/city_phase_check.py --gold /tmp/city-phase.json \
+  --vectors /tmp/city-phase-vectors.txt
+cmp docs/evidence/city-phase.json /tmp/city-phase.json
+cmp docs/evidence/city-phase-vectors.txt /tmp/city-phase-vectors.txt
+CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test city_phase_install --test city_totals_install
+```

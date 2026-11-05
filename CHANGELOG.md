@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- Decode growth/starvation preparation and expose city-total refresh helpers.
+  A controlled 50-turn sequence matches 500 native economic transitions;
+  runtime integration and live-save parity remain open.
 - Decode original worker allocation and radius availability; check 1,024
   synthetic allocations, 156 saved radii and 3,276 tile yields. Combined
   city totals match 312 native executions with fixed/automatic workers.

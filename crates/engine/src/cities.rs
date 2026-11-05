@@ -1,24 +1,12 @@
-//! City-turn economics (T1-4): food storage, growth, production.
+//! Legacy observed-series approximation used by the current turn loop.
 //!
-//! Model proven against oracle saves (a peaceful standard game driven
-//! turn-by-turn through the original; evidence §T1-4):
-//!
-//! - Each turn a city collects gross food F (from worked tiles — given
-//!   here as an input; tile-yield computation is a later layer).
-//! - Citizens eat `food_per_citizen × size` (standard Rules 2, FallRome 3
-//!   via `@COSMIC`); each supported settler adds its own food cost.
-//! - `food_box += surplus`; when the box exceeds the growth capacity
-//!   `(rows − 1) × (size + 1)` (18 at size 1, 27 at size 2) the city grows
-//!   and the box restarts at **this turn's surplus** — not the overflow
-//!   (Utica, turn 41: 28 + 1 = 29 at size 1 → size 2, box 1, where the
-//!   overflow would be 11).
-//! - The std1 lab series (`docs/evidence/t1-4-growth-series.tsv`, read in
-//!   the game's record framing, settlers counted from unit home cities)
-//!   replays with this model: 126 transitions checked, 125 exact (one
-//!   known mismatch, Ur); see the tests.
-//! - The shield box (`+= net shields`, reset on production completion)
-//!   lives in the save at u16@30 but production items/completions are
-//!   not modelled yet (item location open).
+//! The original algorithm is now independently decoded in `crate::growth`
+//! and `crate::workers`, with total refresh in `crate::city_phase`. It prepares
+//! growth from the starting signed food box before collecting current yields.
+//! This older model adds food first and compares against `(rows-1)*(size+1)`;
+//! it matched selected early samples but is not the native growth rule.
+//! Retained until the complete city phase, including destruction and unrest,
+//! replaces it in `run_turn`. Its tests describe the approximation only.
 
 use tot_kit::Rules;
 
@@ -42,19 +30,13 @@ impl CityRules {
         }
     }
 
-    /// Food-box capacity at a given size. The `@COSMIC` comment
-    /// ("rows * city_size+1 = box") is garbled; the measured rule across
-    /// seven growth events (standard game, three cities, turn-by-turn
-    /// samples) is **(rows − 1) × (size + 1)** — 18 at size 1, 27 at
-    /// size 2 — with growth strictly *above* the capacity (a box sitting
-    /// exactly at 18/27 persists; several such samples exist).
-    /// Size ≥ 3 is extrapolation pending samples.
+    /// Historical approximation threshold, not original food-box capacity.
     pub fn growth_cap(&self, size: u16) -> u32 {
         (self.food_box_rows.saturating_sub(1)) * (size as u32 + 1)
     }
 }
 
-/// The mutable per-city economic state (what the save's u16@86/@88 hold).
+/// Historical economic model state; its food box cannot represent native debt.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CityEcon {
     pub size: u16,

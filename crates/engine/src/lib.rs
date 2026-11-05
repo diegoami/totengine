@@ -12,6 +12,7 @@ mod allocation;
 pub mod barbarians;
 pub mod calendar;
 pub mod cities;
+pub mod city_phase;
 pub mod combat;
 pub mod connections;
 pub mod effects;
@@ -119,7 +120,8 @@ pub struct City {
     pub route_count: i8,
     pub route_commodities: [i8; 3],
     pub route_partners: [i16; 3],
-    /// Food/shield boxes (record u16@28/@30; evidence §T1-4).
+    /// Raw food/shield box words (record +28/+30). Native food arithmetic
+    /// interprets its word as signed i16, including next-turn starvation debt.
     pub food_box: u16,
     pub shield_box: u16,
     /// Worked tiles (record u32@50; bit k = radius tile k, bit 20 = centre).

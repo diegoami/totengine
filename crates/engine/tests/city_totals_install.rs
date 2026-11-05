@@ -30,39 +30,7 @@ fn original_city_totals() {
                 let city: usize = fields.next().unwrap().parse().unwrap();
                 let expected: Vec<i64> = fields.map(|s| s.parse().unwrap()).collect();
                 if mode == "auto" {
-                    let c = &w.cities[city];
-                    let owner = (c.owner & 15) as u8;
-                    let settlers = w
-                        .units
-                        .iter()
-                        .filter(|u| {
-                            u.id != 0
-                                && u.owner == owner
-                                && u.home as usize == city
-                                && rules.unit_role(u.type_id as usize) == Some(5)
-                        })
-                        .count() as i32;
-                    let context = engine::workers::WorkerContext {
-                        size: c.size as u8,
-                        worked: c.worked,
-                        flags: c.flags,
-                        human: w.human_mask & (1 << owner) != 0,
-                        phase_turn: w.turn as i32 + city as i32,
-                        processing: false,
-                        food_each: rules.cosmic_food_per_citizen() as i32,
-                        settlers,
-                        settler_food: rules.cosmic_settler_food(w.governments[owner as usize] > 2)
-                            as i32,
-                        support: w.unit_support(&rules, city),
-                        food_box: c.food_box as i16,
-                        unavailable: w.worker_availability(&rules, city),
-                        yields: std::array::from_fn(|k| w.tile_yield(&rules, city, k)),
-                    };
-                    let result = engine::workers::allocate(&context);
-                    let c = &mut w.cities[city];
-                    c.worked = result.worked;
-                    c.flags = result.flags;
-                    c.food_box = result.food_box as u16;
+                    w.refresh_city_totals(&rules, city, false).unwrap();
                 }
                 w.cities[city].specialists = engine::workers::normalize_specialists(
                     w.cities[city].specialists,

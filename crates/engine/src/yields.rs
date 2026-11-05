@@ -2,11 +2,11 @@
 //! decoded from the original's tile-yield function (`civ2.bak` `0x4c22a7`,
 //! `(city, radius index, kind)`); evidence §T1-4 tile yields.
 //!
-//! **Oracle check:** summed over each city's worked tiles, this reproduces
-//! the game-written city records:
-//! - the standard-game lab saves: 9/10 cities exact in food, shields and
-//!   trade (the tenth differs by one trade);
-//! - ROMFALL: food exact in 144/146.
+//! **Native check:** all 3,276 per-radius triples match original execution
+//! on standard and FallRome contexts; 312 fixed/auto-worker city-total
+//! recomputations match too (evidence §Native workers and combined city totals).
+//! Saved prior totals can be stale, including two FallRome food values and
+//! Aventicum's shield count.
 //!
 //! The record's shields and trade are stored *after* waste, corruption and
 //! building multipliers. `city_output` applies those decoded stages,

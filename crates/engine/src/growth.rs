@@ -79,6 +79,45 @@ pub fn prepare_growth(c: GrowthContext) -> GrowthResult {
     result
 }
 
+impl crate::WorldState {
+    /// Current civilization food rows and this city's positive growth inputs.
+    pub fn city_growth_context(
+        &self,
+        rules: &tot_kit::Rules,
+        index: usize,
+    ) -> Option<GrowthContext> {
+        let city = self.cities.get(index)?;
+        let civ = (city.owner & 15) as u8;
+        let mask = |t: usize| {
+            (1..8).fold(0u8, |m, c| {
+                m | (((self.techs[c][t / 8] >> (t % 8)) & 1) << c)
+            })
+        };
+        let cosmic_rows = rules.cosmic_food_box_rows() as u8;
+        Some(GrowthContext {
+            size: city.size as u8,
+            food_box: city.food_box as i16,
+            rows: food_rows(
+                cosmic_rows as i32,
+                self.difficulty,
+                self.human_mask,
+                civ,
+                self.turn,
+                self.power_order[7],
+                [self.wonders[23], self.wonders[25]],
+                [mask(73), mask(58), mask(76)],
+            ),
+            cosmic_rows,
+            granary: city.has_building(3),
+            pyramids: self.has_active_wonder(rules, civ, 0),
+            aqueduct: city.has_building(9),
+            sewer: city.has_building(23),
+            aqueduct_limit: rules.cosmic_row(9).unwrap_or(8) as u8,
+            sewer_limit: rules.cosmic_row(10).unwrap_or(12) as u8,
+        })
+    }
+}
+
 /// Negative-box branch (`0x4c59b9..0x4c5c97`), before destructive helpers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FamineAction {

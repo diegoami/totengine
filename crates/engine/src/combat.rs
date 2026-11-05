@@ -32,9 +32,10 @@
 //! the terrain and fortify/fortress/walls constants) and the **promotion
 //! roll**. Oracle-proven: six battles bit-exact, live-frame A/D read in
 //! battles 3–6, including a fortified defender (D 54 → 81) and a predicted
-//! promotion (battle 6). Not implemented: the sea/air and
-//! city-improvement special cases (coastal fortress, SAM, SDI, fighters vs
-//! air, pikemen) — see evidence §T1-6 combat.
+//! promotion (battle 6). Full defence strength now matches 1,536 original
+//! executions including walls, fortresses and air interception in cities.
+//! Later combat-only modifiers (coastal fortress, SAM/SDI, AEGIS
+//! round strength and naval firepower) still have explicit limits.
 
 /// The MSVC CRT `rand()` the original uses for combat (VA 0x5b11d0).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -198,6 +199,7 @@ impl Default for DefenseMultipliers {
 pub struct DefenseInput {
     /// Rules defence factor and domain of the defender's type.
     pub defense: u8,
+    pub flags: u32,
     pub domain: u8,
     pub veteran: bool,
     /// Rules @TERRAIN defence column of the tile (in halves: Grassland 2,
@@ -212,9 +214,9 @@ pub struct DefenseInput {
     /// its civ has wonder 6 (Great Wall acts as walls everywhere).
     pub in_city: bool,
     pub city_walls_or_great_wall: bool,
-    /// The attacker, if any: its domain and the "negates city walls" flag
-    /// (unit-type flags bit 6).
-    pub attacker: Option<(u8, bool)>,
+    /// The attacker, if any: its domain and full Rules flags (walls and
+    /// air-interception conditions).
+    pub attacker: Option<(u8, u32)>,
 }
 
 /// The original's defence strength (VA 0x53f67a + the ToTPP hooks it
@@ -250,8 +252,8 @@ pub fn defense_strength(d: &DefenseInput, m: &DefenseMultipliers) -> i32 {
     }
     let attacker_ok = |need_land: bool| match d.attacker {
         None => true,
-        Some((dom, negates)) => {
-            !negates
+        Some((dom, flags)) => {
+            flags & FLAG_NEGATES_WALLS == 0
                 && if need_land {
                     dom == DOMAIN_LAND
                 } else {
@@ -262,11 +264,27 @@ pub fn defense_strength(d: &DefenseInput, m: &DefenseMultipliers) -> i32 {
     if d.fortress && attacker_ok(false) {
         mult = m.fortress;
     }
-    if d.in_city && d.city_walls_or_great_wall && d.domain == DOMAIN_LAND && attacker_ok(true) {
-        mult = m.walls;
-    }
-    if d.domain != DOMAIN_LAND {
-        mult = 2;
+    let intercept = d.in_city
+        && d.domain == DOMAIN_AIR
+        && d.flags & FLAG_CAN_ATTACK_AIR != 0
+        && d.attacker
+            .is_some_and(|(domain, flags)| domain == DOMAIN_AIR && flags & FLAG_ONE_SHOT == 0);
+    if intercept {
+        mult *= if d
+            .attacker
+            .is_some_and(|(_, flags)| flags & FLAG_CAN_ATTACK_AIR != 0)
+        {
+            2
+        } else {
+            4
+        };
+    } else {
+        if d.in_city && d.city_walls_or_great_wall && d.domain == DOMAIN_LAND && attacker_ok(true) {
+            mult = m.walls;
+        }
+        if d.domain != DOMAIN_LAND {
+            mult = 2;
+        }
     }
     if mult != 2 {
         def = (def * mult) >> 1;
@@ -361,6 +379,33 @@ pub const FLAG_PIKEMEN: u32 = 1 << 10;
 pub const FLAG_ONE_SHOT: u32 = 1 << 12;
 pub const FLAG_AEGIS: u32 = 1 << 13;
 
+/// Inputs to the original pikemen and barbarian Archer/Legion branches.
+#[derive(Debug, Clone, Copy)]
+pub struct LandDefenseContext {
+    pub attacker_domain: u8,
+    pub attacker_move: u32,
+    pub attacker_max_hp: i32,
+    pub defender_flags: u32,
+    pub barbarian_type: Option<u8>,
+    pub humans_know_iron_working: bool,
+}
+
+pub fn land_defense_bonus(mut defense: i32, c: &LandDefenseContext) -> i32 {
+    if c.defender_flags & FLAG_PIKEMEN != 0
+        && c.attacker_domain == DOMAIN_LAND
+        && c.attacker_move == 2
+        && c.attacker_max_hp == 10
+    {
+        defense += defense >> 1;
+    }
+    if c.barbarian_type
+        .is_some_and(|t| t == 4 || (t == 5 && !c.humans_know_iron_working))
+    {
+        defense = (defense / 2).max(1);
+    }
+    defense
+}
+
 /// Game-flags bit: damage persists between battles (save @652).
 pub const GAME_FLAG_PERSISTENT_DAMAGE: u16 = 0x10;
 
@@ -403,10 +448,8 @@ impl Battle {
 }
 
 impl crate::WorldState {
-    /// Does `civ` own wonder `w` (VA 0x444a61 minus obsolescence)? The
-    /// original also returns false once ANY civ knows the obsoleting tech
-    /// (VA 0x4449b0); per-civ techs are not in the world state yet, so
-    /// obsolescence is not modelled.
+    /// Raw ownership only. Combat uses `has_active_wonder` with Rules so
+    /// globally obsolete or destroyed wonders do not grant bonuses.
     pub fn civ_has_wonder(&self, civ: u8, w: usize) -> bool {
         let Some(&city) = self.wonders.get(w) else {
             return false;
@@ -415,11 +458,13 @@ impl crate::WorldState {
             && self
                 .cities
                 .get(city as usize)
-                .is_some_and(|c| (c.owner & 0x0f) as u8 == civ)
+                .is_some_and(|c| c.city_id != 0 && (c.owner & 0x0f) as u8 == civ)
     }
 
     fn city_at(&self, x: u16, y: u16) -> Option<usize> {
-        self.cities.iter().position(|c| (c.x, c.y) == (x, y))
+        self.cities
+            .iter()
+            .position(|c| c.city_id != 0 && c.map_id == 0 && (c.x, c.y) == (x, y))
     }
 
     fn defense_of(&self, rules: &Rules, d: &crate::Unit, att: Option<&crate::Unit>) -> i32 {
@@ -432,21 +477,26 @@ impl crate::WorldState {
         let in_city = self.city_at(d.x, d.y).is_some();
         let input = DefenseInput {
             defense: rules.unit_defense(t).unwrap_or(0) as u8,
+            flags: rules.unit_flags(t).unwrap_or(0),
             domain: rules.unit_domain(t).unwrap_or(0),
             veteran: d.veteran,
             terrain_defense: rules.terrain_defense(terrain as usize).unwrap_or(2) as u8,
             river,
             fortified: d.orders == 2,
-            // Fortress / City Walls are tile/city improvements the world
-            // state does not carry yet; the Great Wall stands in for walls.
-            fortress: false,
+            fortress: self
+                .map
+                .stored_index(d.x, d.y)
+                .is_some_and(|i| self.map.improvements[i] & 0x42 == 0x40),
             in_city,
-            city_walls_or_great_wall: self.civ_has_wonder(d.owner, 6),
+            city_walls_or_great_wall: self.has_active_wonder(rules, d.owner, 6)
+                || self
+                    .city_at(d.x, d.y)
+                    .is_some_and(|i| self.cities[i].has_building(8)),
             attacker: att.map(|a| {
                 let at = a.type_id as usize;
                 (
                     rules.unit_domain(at).unwrap_or(0),
-                    rules.unit_flags(at).unwrap_or(0) & FLAG_NEGATES_WALLS != 0,
+                    rules.unit_flags(at).unwrap_or(0),
                 )
             }),
         };
@@ -471,7 +521,7 @@ impl crate::WorldState {
         let mut tile: Vec<usize> = (0..self.units.len())
             .filter(|&i| {
                 let u = &self.units[i];
-                (u.x, u.y) == (x, y) && u.owner != att.owner
+                u.id != 0 && (u.x, u.y) == (x, y) && u.owner != att.owner
             })
             .collect();
         tile.sort_by_key(|&i| self.units[i].stack_pos); // stable: index order within a position
@@ -501,9 +551,11 @@ impl crate::WorldState {
                 r <<= 1;
             }
             if domain == DOMAIN_SEA && in_city {
-                // ×2 vs air only without SDI (improvement 0x1b — not in
-                // the world state yet, so treated as absent); halved else.
-                r = if att_domain == DOMAIN_AIR {
+                r = if att_domain == DOMAIN_AIR
+                    && !self
+                        .city_at(x, y)
+                        .is_some_and(|i| self.cities[i].has_building(27))
+                {
                     r << 1
                 } else {
                     r / 2
@@ -521,13 +573,16 @@ impl crate::WorldState {
     /// Returns `None` when the tile is not adjacent, holds nothing to
     /// attack, or the unit cannot attack (no
     /// movement, attack factor 0 — the latter is an engine rule, not
-    /// decoded). The loser is removed from `units` (indices after it
-    /// shift); only the defender dies, its stack-mates survive (observed
+    /// decoded). The loser leaves a reusable dead slot; all other indices stay
+    /// stable; only the defender dies, its stack-mates survive (observed
     /// in all FallRome battles, open field). The attacker stays on its
     /// tile and spends one movement point (oracle: moves spent 0 → 15).
     pub fn attack(&mut self, rules: &Rules, attacker_idx: usize, x: u16, y: u16) -> Option<Battle> {
         let att = self.units.get(attacker_idx)?.clone();
-        if att.moves_left == 0 || !crate::movement::is_adjacent((att.x, att.y), (x, y)) {
+        if att.id == 0
+            || att.moves_left == 0
+            || !crate::movement::is_adjacent((att.x, att.y), (x, y))
+        {
             return None;
         }
         let at = att.type_id as usize;
@@ -547,31 +602,44 @@ impl crate::WorldState {
         let civ_cities = self
             .cities
             .iter()
-            .filter(|c| (c.owner & 0x0f) as u8 == def.owner)
+            .filter(|c| c.city_id != 0 && (c.owner & 0x0f) as u8 == def.owner)
             .count() as i32;
         let ctx = AttackContext {
             moves_left: att.moves_left as i32,
             move_unit: 3, // engine movement is in thirds (T1-3 caveat)
             attacker_barbarian: att.owner == 0,
             defender_barbarian: def.owner == 0,
-            attacker_great_wall: self.civ_has_wonder(att.owner, 6),
-            defender_great_wall: self.civ_has_wonder(def.owner, 6),
+            attacker_great_wall: self.has_active_wonder(rules, att.owner, 6),
+            defender_great_wall: self.has_active_wonder(rules, def.owner, 6),
             defender_human: self.human_mask & (1 << (def.owner & 7)) != 0,
             difficulty: self.difficulty as i32,
             defender_city_count: civ_cities,
-            // Improvements are not in the world state yet.
-            defender_city_has_palace: false,
+            defender_city_has_palace: self
+                .city_at(x, y)
+                .is_some_and(|i| self.cities[i].has_building(1)),
             defender_in_city: self.city_at(x, y).is_some(),
         };
         let attr = if att.veteran { ATTR_VETERAN } else { 0 };
         let (a, reroll) = attack_in_context(attack_strength(attack as u8, attr), &ctx);
-        let d = self.defense_of(rules, &def, Some(&att));
+        let d = land_defense_bonus(
+            self.defense_of(rules, &def, Some(&att)),
+            &LandDefenseContext {
+                attacker_domain: rules.unit_domain(at).unwrap_or(0),
+                attacker_move: rules.unit_move(at).unwrap_or(0),
+                attacker_max_hp: Self::hp_max(rules, &att),
+                defender_flags: rules.unit_flags(def.type_id as usize).unwrap_or(0),
+                barbarian_type: (def.owner == 0).then_some(def.type_id),
+                humans_know_iron_working: (1..8).any(|c| {
+                    self.human_mask & (1 << c) != 0 && self.techs[c][39 / 8] & (1 << (39 % 8)) != 0
+                }),
+            },
+        );
         let fighter = |u: &crate::Unit, strength: i32| Fighter {
             strength,
             hp: Self::hp_max(rules, u),
             firepower: rules.unit_firepower(u.type_id as usize).unwrap_or(1) as i32,
             damage: u.damage as i32,
-            wonder7: self.civ_has_wonder(u.owner, 7),
+            wonder7: self.has_active_wonder(rules, u.owner, 7),
         };
         let (fa, fd) = (fighter(&att, a), fighter(&def, d));
         let o = resolve(&mut self.combat_rng, fa, fd, reroll);
@@ -592,7 +660,15 @@ impl crate::WorldState {
         if o.winner_promoted && !one_shot(&self.units[winner]) {
             self.units[winner].veteran = true;
         }
-        let killed = self.units.remove(loser);
+        let killed = self.units[loser].clone();
+        self.remove_land_unit(loser);
+        let removed_coordinate = if loser == attacker_idx {
+            -200_i16
+        } else {
+            -100_i16
+        } as u16;
+        self.units[loser].x = removed_coordinate;
+        self.units[loser].y = removed_coordinate;
         Some(Battle {
             attacker: att,
             defender: def,
@@ -631,6 +707,149 @@ mod tests {
         assert_eq!(attack_strength(2, 0), 16);
     }
 
+    #[test]
+    fn original_land_defense_modifiers() {
+        for line in include_str!("../../../docs/evidence/combat-land-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let v: Vec<i32> = line
+                .split_whitespace()
+                .map(|x| x.parse().unwrap())
+                .collect();
+            let context = LandDefenseContext {
+                attacker_domain: v[1] as u8,
+                attacker_move: v[2] as u32,
+                attacker_max_hp: v[3],
+                defender_flags: v[4] as u32,
+                barbarian_type: (v[5] != 0).then_some(v[6] as u8),
+                humans_know_iron_working: v[7] != 0,
+            };
+            assert_eq!(land_defense_bonus(v[0], &context), v[8], "{line}");
+            if v[0] == 24 && v[1] == 0 && v[2] == 2 && v[3] == 10 && v[4] == 1024 {
+                let mut text = String::from(
+                    "@UNITS\nAttacker,nil,0,2.,0,2a,1d,1h,1f,1,0,0,nil,000000000000000\n",
+                );
+                for _ in 1..6 {
+                    text.push_str("Defender,nil,0,1.,0,1a,3d,1h,1f,1,0,1,nil,000010000000000\n");
+                }
+                text.push_str("@TERRAIN\nDesert,1,2,0,1,0\nPlains,1,2,1,1,0\n");
+                let rules = tot_kit::parse_rules(&text);
+                let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
+                w.cities.clear();
+                w.wonders = [-1; 28];
+                w.techs = [[0; 13]; 8];
+                w.human_mask = 2;
+                if v[7] != 0 {
+                    w.techs[1][39 / 8] |= 1 << (39 % 8);
+                }
+                let unit = w.units[0].clone();
+                w.units = vec![unit.clone(), unit];
+                for (i, u) in w.units.iter_mut().enumerate() {
+                    u.id = i as u32 + 1;
+                    u.x = 2 * i as u16;
+                    u.y = 0;
+                    u.type_id = if i == 0 { 0 } else { v[6] as u8 };
+                    u.owner = if i == 0 {
+                        1
+                    } else if v[5] != 0 {
+                        0
+                    } else {
+                        2
+                    };
+                    u.orders = 255;
+                    u.veteran = false;
+                    u.damage = 0;
+                    u.moves_left = 6;
+                    let tile = w.map.stored_index(u.x, u.y).unwrap();
+                    w.map.terrain[tile] = 1;
+                    w.map.river[tile] = false;
+                }
+                assert_eq!(
+                    w.attack(&rules, 0, 2, 0).unwrap().defense,
+                    v[8],
+                    "world modifier {line}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn original_full_defense_and_world_adapter_vectors() {
+        for line in include_str!("../../../docs/evidence/combat-defense-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let v: Vec<i32> = line
+                .split_whitespace()
+                .map(|x| x.parse().unwrap())
+                .collect();
+            let input = DefenseInput {
+                defense: v[1] as u8,
+                flags: v[11] as u32,
+                domain: v[0] as u8,
+                veteran: v[2] != 0,
+                terrain_defense: v[3] as u8,
+                river: v[4] != 0,
+                fortified: v[5] != 0,
+                fortress: v[6] != 0,
+                in_city: v[7] != 0,
+                city_walls_or_great_wall: v[8] != 0,
+                attacker: (v[9] >= 0).then_some((v[9] as u8, v[10] as u32)),
+            };
+            assert_eq!(
+                defense_strength(&input, &DefenseMultipliers::default()),
+                v[12],
+                "{line}"
+            );
+            let rules = tot_kit::parse_rules(&format!(
+                "@UNITS\nAttacker,nil,{},1.,0,2a,1d,1h,1f,1,0,0,nil,{:015b}\nDefender,nil,{},1.,0,1a,{}d,1h,1f,1,0,1,nil,{:015b}\n@TERRAIN\nDesert,1,2,0,1,0\nPlains,1,{},1,1,0\n",
+                v[9].max(0),v[10],v[0],v[1],v[11],v[3]));
+            let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
+            w.wonders = [-1; 28];
+            let mut city = w.cities[0].clone();
+            w.cities.clear();
+            if v[7] != 0 {
+                city.x = 2;
+                city.y = 0;
+                city.city_id = 1;
+                city.map_id = 0;
+                city.owner = 2;
+                city.buildings = [0; 5];
+                if v[8] != 0 {
+                    city.buildings[1] = 1;
+                }
+                w.cities.push(city);
+            }
+            let template = w.units[0].clone();
+            w.units = vec![template.clone(), template];
+            for (k, u) in w.units.iter_mut().enumerate() {
+                u.id = k as u32 + 1;
+                u.type_id = k as u8;
+                u.owner = k as u8 + 1;
+                u.x = 2 * k as u16;
+                u.y = 0;
+                u.veteran = k == 1 && v[2] != 0;
+                u.orders = if k == 1 && v[5] != 0 { 2 } else { 255 };
+            }
+            let tile = w.map.stored_index(2, 0).unwrap();
+            w.map.terrain[tile] = 1;
+            w.map.river[tile] = v[4] != 0;
+            w.map.improvements[tile] = if v[7] != 0 {
+                2
+            } else if v[6] != 0 {
+                64
+            } else {
+                0
+            };
+            assert_eq!(
+                w.defense_of(&rules, &w.units[1], (v[9] >= 0).then_some(&w.units[0])),
+                v[12],
+                "world adapter {line}"
+            );
+        }
+    }
+
     /// The oracle setting: WRE (owns wonder 6, Hadrianus' Wall) attacks
     /// barbarians, full movement (FallRome move unit 15).
     fn vs_barbarian() -> AttackContext {
@@ -653,6 +872,7 @@ mod tests {
     fn horsemen_input(fortified: bool) -> DefenseInput {
         DefenseInput {
             defense: 3,
+            flags: 0,
             domain: DOMAIN_LAND,
             veteran: true,
             terrain_defense: 2,
@@ -661,7 +881,7 @@ mod tests {
             fortress: false,
             in_city: false,
             city_walls_or_great_wall: false,
-            attacker: Some((DOMAIN_LAND, false)),
+            attacker: Some((DOMAIN_LAND, 0)),
         }
     }
     fn legion(damage: i32) -> Fighter {
@@ -712,7 +932,7 @@ mod tests {
         d.in_city = true;
         d.city_walls_or_great_wall = true;
         assert_eq!(defense_strength(&d, &m), 108);
-        d.attacker = Some((DOMAIN_LAND, true)); // negates walls (and fortress)
+        d.attacker = Some((DOMAIN_LAND, FLAG_NEGATES_WALLS)); // negates walls (and fortress)
         assert_eq!(defense_strength(&d, &m), 54); // only fortified remains
         d.domain = DOMAIN_SEA; // non-land: no multiplier at all
         assert_eq!(defense_strength(&d, &m), 36);

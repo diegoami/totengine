@@ -20,7 +20,7 @@ fn find(w: &engine::WorldState, x: u16, y: u16, owner: u8) -> Vec<usize> {
     (0..w.units.len())
         .filter(|&i| {
             let u = &w.units[i];
-            (u.x, u.y, u.owner) == (x, y, owner)
+            u.id != 0 && (u.x, u.y, u.owner) == (x, y, owner)
         })
         .collect()
 }
@@ -81,7 +81,9 @@ fn oracle_battle_2_through_move_unit() {
     assert_eq!(w.combat_rng.state(), 0xa925_748c, "oracle CRT end state");
     assert_eq!(b.killed, expected_defender_after(&expected_defender));
     // Only the defender dies; its stack-mate survives (oracle).
-    assert_eq!(w.units.len(), before - 1);
+    assert_eq!(w.units.len(), before, "casualties retain stable unit slots");
+    assert_eq!(w.units[510].id, 0);
+    assert_eq!(w.units[legion].id, b.attacker.id);
     assert_eq!(find(&w, 22, 30, 0).len(), 1);
     // The attacker keeps its tile, takes its damage, spends one point.
     let l = find(&w, 21, 31, 1)[0];

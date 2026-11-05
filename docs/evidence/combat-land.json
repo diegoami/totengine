@@ -1,0 +1,10 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routines": [
+    "0x5416fa..0x5417bc",
+    "0x541cf4..0x541d82"
+  ],
+  "cases": 1024,
+  "replacement_callees": [],
+  "scope": "Execute original pikemen and barbarian Archer/Legion defence modifiers.\n\nOriginal movement, hit-point and wonder callees execute. No replacements.\nOther combat modifiers are outside these two explicit fragment boundaries."
+}

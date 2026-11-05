@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- Integrate combat walls/fortresses, Palace protection and active wonders;
+  add native-checked air defence and land modifiers (1,536 + 1,024 contexts).
+  Casualties retain stable slots, and dead units no longer obstruct movement.
 - Verify the surface turn loop against 50 original-written Wine saves: 500
   controlled city transitions and civ treasuries match exactly. Numeric evidence
   retains source/save hashes; raw saves stay outside the repository.

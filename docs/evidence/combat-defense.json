@@ -1,0 +1,7 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routine": "0x53f67a",
+  "cases": 1536,
+  "replacement_callees": [],
+  "scope": "Execute full original defence strength, including walls and air-in-city.\n\nInvented unit/tile/city inputs on a loaded surface map. Original city lookup,\nbuilding and wonder callees execute; no replacements. Numeric vectors only."
+}

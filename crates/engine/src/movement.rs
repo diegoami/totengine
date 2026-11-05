@@ -85,7 +85,7 @@ impl WorldState {
         if self
             .units
             .iter()
-            .any(|u| (u.x, u.y) == (x, y) && u.owner != owner)
+            .any(|u| u.id != 0 && (u.x, u.y) == (x, y) && u.owner != owner)
         {
             return MoveOutcome {
                 battle: self.attack(rules, unit_idx, x, y),

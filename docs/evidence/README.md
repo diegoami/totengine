@@ -2959,7 +2959,7 @@ original/AI-v1 population is 21/24, units 37/25 and improvements 5/12. AI v1
 expands faster early and invests more in buildings, with fewer military units.
 This supports plausible campaign growth under #82; original human actions
 and policy differ, so neither score equality nor original-like AI is claimed.
-AI v1 reaches turn 54 with 12 cities, 28 population and power 336. The
+AI v1 reaches turn 54 with 11 cities, 27 population and power 328. The
 install-backed AI test independently runs 50 rounds twice, checks exact logs,
 replays them, and requires actual founding, investments and research gains.
 
@@ -3024,3 +3024,52 @@ The tool reserves numeric save labels 8701 onward, refuses occupied labels,
 and removes only its just-created install-side numeric save after copying it
 outside the install. Stop the owned rig and restore its initial SAV/INI backup
 after experiments, as the launcher itself can update INI state.
+
+
+### Combat defence context and stable casualty slots (v0.8.0)
+
+`tools/combat_defense_check.py` executes the complete original `0x53f67a`,
+including its original city, building and wonder lookups, without replaced
+callees. [combat-defense.json](combat-defense.json) and
+[combat-defense-vectors.txt](combat-defense-vectors.txt) retain 1,536 derived
+contexts across domains, terrain/river, veterans, fortification, fortress,
+City Walls and attacker wall-negation/interception/missile flags. The pure
+Rust strength calculation and its World/Rules adapter both match every case.
+In-city intercepting air defenders gain the original multiplier against air
+attackers, except one-shot missiles; fortified/fortress/walls precedence is
+retained. This supersedes the earlier claim that the city/air branch was absent.
+
+Combat now reads actual fortress and City Walls state and Palace protection,
+and uses globally active wonders rather than raw ownership. Dead cities are
+excluded from lookups and city counts. The ship-selection branch reads the
+actual building 27 (SAM Missile Battery; the earlier text called it SDI).
+The later combat-only SAM/SDI/coastal-fortress strength and naval-firepower
+branches remain outside this defence-helper proof.
+
+`tools/combat_land_check.py` executes `0x5416fa..0x5417bc` and
+`0x541cf4..0x541d82` with original movement, maximum-HP and wonder helpers,
+without replacements. [combat-land.json](combat-land.json) and
+[combat-land-vectors.txt](combat-land-vectors.txt) retain 1,024 cases.
+The pikemen flag adds half defence only against a land attacker with exactly
+two movement points **and 10 maximum HP**, before barbarian reductions.
+Barbarian type 4 always has halved defence (minimum 1); type 5 does too unless
+any human-mask civilization knows advance 39 (Iron Working). Synthetic World
+battles additionally check four dedicated native contexts through `attack`.
+
+Casualties now retain a dead unit slot instead of shifting later indices;
+existing native-checked land removal clears empty tile markers and compacts
+remaining stack positions. Removed coordinates use the documented -100/-200
+sentinels. The real FallRome battle-2 integration still matches A/D, rounds,
+damage and CRT end state, while checking that both the survivor and casualty
+keep their original slots. Movement and defender selection ignore dead units.
+The campaign curve was regenerated after this identity fix; its last turn
+has one fewer newly founded city, while the turn-43 comparison is unchanged.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/combat_defense_check.py --gold /tmp/combat-defense.json \
+  --vectors /tmp/combat-defense-vectors.txt
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/combat_land_check.py --gold /tmp/combat-land.json \
+  --vectors /tmp/combat-land-vectors.txt
+```

@@ -115,215 +115,6 @@
     }
   ],
   "totals": {
-    "oracle": {
-      "4": {
-        "cities": 4,
-        "population": 4,
-        "units": 7,
-        "advances": 5,
-        "treasury": 8,
-        "power": 47,
-        "improvements": 4
-      },
-      "5": {
-        "cities": 4,
-        "population": 4,
-        "units": 8,
-        "advances": 6,
-        "treasury": 16,
-        "power": 50,
-        "improvements": 4
-      },
-      "6": {
-        "cities": 4,
-        "population": 4,
-        "units": 8,
-        "advances": 6,
-        "treasury": 49,
-        "power": 50,
-        "improvements": 4
-      },
-      "8": {
-        "cities": 4,
-        "population": 4,
-        "units": 10,
-        "advances": 8,
-        "treasury": 65,
-        "power": 56,
-        "improvements": 4
-      },
-      "9": {
-        "cities": 4,
-        "population": 4,
-        "units": 11,
-        "advances": 9,
-        "treasury": 73,
-        "power": 59,
-        "improvements": 4
-      },
-      "12": {
-        "cities": 4,
-        "population": 6,
-        "units": 12,
-        "advances": 9,
-        "treasury": 99,
-        "power": 75,
-        "improvements": 4
-      },
-      "14": {
-        "cities": 4,
-        "population": 8,
-        "units": 14,
-        "advances": 9,
-        "treasury": 119,
-        "power": 92,
-        "improvements": 4
-      },
-      "16": {
-        "cities": 4,
-        "population": 8,
-        "units": 14,
-        "advances": 11,
-        "treasury": 139,
-        "power": 98,
-        "improvements": 4
-      },
-      "18": {
-        "cities": 5,
-        "population": 9,
-        "units": 14,
-        "advances": 12,
-        "treasury": 159,
-        "power": 109,
-        "improvements": 4
-      },
-      "20": {
-        "cities": 5,
-        "population": 8,
-        "units": 15,
-        "advances": 14,
-        "treasury": 176,
-        "power": 108,
-        "improvements": 4
-      },
-      "22": {
-        "cities": 5,
-        "population": 8,
-        "units": 18,
-        "advances": 16,
-        "treasury": 199,
-        "power": 117,
-        "improvements": 4
-      },
-      "27": {
-        "cities": 7,
-        "population": 11,
-        "units": 18,
-        "advances": 17,
-        "treasury": 259,
-        "power": 145,
-        "improvements": 5
-      },
-      "29": {
-        "cities": 8,
-        "population": 13,
-        "units": 22,
-        "advances": 18,
-        "treasury": 282,
-        "power": 164,
-        "improvements": 5
-      },
-      "31": {
-        "cities": 9,
-        "population": 14,
-        "units": 24,
-        "advances": 18,
-        "treasury": 306,
-        "power": 172,
-        "improvements": 5
-      },
-      "33": {
-        "cities": 9,
-        "population": 15,
-        "units": 26,
-        "advances": 20,
-        "treasury": 331,
-        "power": 187,
-        "improvements": 5
-      },
-      "34": {
-        "cities": 9,
-        "population": 15,
-        "units": 28,
-        "advances": 20,
-        "treasury": 446,
-        "power": 191,
-        "improvements": 5
-      },
-      "36": {
-        "cities": 9,
-        "population": 15,
-        "units": 30,
-        "advances": 20,
-        "treasury": 476,
-        "power": 192,
-        "improvements": 5
-      },
-      "38": {
-        "cities": 9,
-        "population": 16,
-        "units": 32,
-        "advances": 22,
-        "treasury": 506,
-        "power": 208,
-        "improvements": 5
-      },
-      "39": {
-        "cities": 10,
-        "population": 19,
-        "units": 32,
-        "advances": 24,
-        "treasury": 522,
-        "power": 238,
-        "improvements": 5
-      },
-      "40": {
-        "cities": 10,
-        "population": 19,
-        "units": 32,
-        "advances": 24,
-        "treasury": 531,
-        "power": 238,
-        "improvements": 5
-      },
-      "41": {
-        "cities": 10,
-        "population": 19,
-        "units": 36,
-        "advances": 25,
-        "treasury": 598,
-        "power": 244,
-        "improvements": 5
-      },
-      "42": {
-        "cities": 10,
-        "population": 21,
-        "units": 36,
-        "advances": 26,
-        "treasury": 615,
-        "power": 263,
-        "improvements": 5
-      },
-      "43": {
-        "cities": 10,
-        "population": 21,
-        "units": 37,
-        "advances": 27,
-        "treasury": 657,
-        "power": 267,
-        "improvements": 5
-      }
-    },
     "engine": {
       "4": {
         "cities": 4,
@@ -776,13 +567,222 @@
         "improvements": 17
       },
       "54": {
-        "cities": 12,
-        "population": 28,
+        "cities": 11,
+        "population": 27,
         "units": 29,
         "advances": 31,
         "treasury": 709,
-        "power": 336,
+        "power": 328,
         "improvements": 17
+      }
+    },
+    "oracle": {
+      "4": {
+        "cities": 4,
+        "population": 4,
+        "units": 7,
+        "advances": 5,
+        "treasury": 8,
+        "power": 47,
+        "improvements": 4
+      },
+      "5": {
+        "cities": 4,
+        "population": 4,
+        "units": 8,
+        "advances": 6,
+        "treasury": 16,
+        "power": 50,
+        "improvements": 4
+      },
+      "6": {
+        "cities": 4,
+        "population": 4,
+        "units": 8,
+        "advances": 6,
+        "treasury": 49,
+        "power": 50,
+        "improvements": 4
+      },
+      "8": {
+        "cities": 4,
+        "population": 4,
+        "units": 10,
+        "advances": 8,
+        "treasury": 65,
+        "power": 56,
+        "improvements": 4
+      },
+      "9": {
+        "cities": 4,
+        "population": 4,
+        "units": 11,
+        "advances": 9,
+        "treasury": 73,
+        "power": 59,
+        "improvements": 4
+      },
+      "12": {
+        "cities": 4,
+        "population": 6,
+        "units": 12,
+        "advances": 9,
+        "treasury": 99,
+        "power": 75,
+        "improvements": 4
+      },
+      "14": {
+        "cities": 4,
+        "population": 8,
+        "units": 14,
+        "advances": 9,
+        "treasury": 119,
+        "power": 92,
+        "improvements": 4
+      },
+      "16": {
+        "cities": 4,
+        "population": 8,
+        "units": 14,
+        "advances": 11,
+        "treasury": 139,
+        "power": 98,
+        "improvements": 4
+      },
+      "18": {
+        "cities": 5,
+        "population": 9,
+        "units": 14,
+        "advances": 12,
+        "treasury": 159,
+        "power": 109,
+        "improvements": 4
+      },
+      "20": {
+        "cities": 5,
+        "population": 8,
+        "units": 15,
+        "advances": 14,
+        "treasury": 176,
+        "power": 108,
+        "improvements": 4
+      },
+      "22": {
+        "cities": 5,
+        "population": 8,
+        "units": 18,
+        "advances": 16,
+        "treasury": 199,
+        "power": 117,
+        "improvements": 4
+      },
+      "27": {
+        "cities": 7,
+        "population": 11,
+        "units": 18,
+        "advances": 17,
+        "treasury": 259,
+        "power": 145,
+        "improvements": 5
+      },
+      "29": {
+        "cities": 8,
+        "population": 13,
+        "units": 22,
+        "advances": 18,
+        "treasury": 282,
+        "power": 164,
+        "improvements": 5
+      },
+      "31": {
+        "cities": 9,
+        "population": 14,
+        "units": 24,
+        "advances": 18,
+        "treasury": 306,
+        "power": 172,
+        "improvements": 5
+      },
+      "33": {
+        "cities": 9,
+        "population": 15,
+        "units": 26,
+        "advances": 20,
+        "treasury": 331,
+        "power": 187,
+        "improvements": 5
+      },
+      "34": {
+        "cities": 9,
+        "population": 15,
+        "units": 28,
+        "advances": 20,
+        "treasury": 446,
+        "power": 191,
+        "improvements": 5
+      },
+      "36": {
+        "cities": 9,
+        "population": 15,
+        "units": 30,
+        "advances": 20,
+        "treasury": 476,
+        "power": 192,
+        "improvements": 5
+      },
+      "38": {
+        "cities": 9,
+        "population": 16,
+        "units": 32,
+        "advances": 22,
+        "treasury": 506,
+        "power": 208,
+        "improvements": 5
+      },
+      "39": {
+        "cities": 10,
+        "population": 19,
+        "units": 32,
+        "advances": 24,
+        "treasury": 522,
+        "power": 238,
+        "improvements": 5
+      },
+      "40": {
+        "cities": 10,
+        "population": 19,
+        "units": 32,
+        "advances": 24,
+        "treasury": 531,
+        "power": 238,
+        "improvements": 5
+      },
+      "41": {
+        "cities": 10,
+        "population": 19,
+        "units": 36,
+        "advances": 25,
+        "treasury": 598,
+        "power": 244,
+        "improvements": 5
+      },
+      "42": {
+        "cities": 10,
+        "population": 21,
+        "units": 36,
+        "advances": 26,
+        "treasury": 615,
+        "power": 263,
+        "improvements": 5
+      },
+      "43": {
+        "cities": 10,
+        "population": 21,
+        "units": 37,
+        "advances": 27,
+        "treasury": 657,
+        "power": 267,
+        "improvements": 5
       }
     }
   },

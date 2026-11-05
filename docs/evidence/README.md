@@ -2107,6 +2107,55 @@ re-verify on a second 0x33 map before trusting it generally.
 
 
 
+## Hut mercenaries, metals and tribe additions (#79, partial)
+
+`tools/huts_check.py` loads the user's unpatched executable into Unicorn
+and executes three supplied-dispatch fragments, their original CRT calls
+and the original building-bit callee (no replacement callees):
+
+- `54bae5..54bd12`: mercenary candidates use **global** advance ownership
+  for 11/64/55/42/17 and 34/35/39. Random draws precede later candidate
+  overrides; preserving only the final unit would lose RNG parity.
+  Modes 0/1 use classic candidates; mode 2 uses fantasy candidates and
+  map-1/map-2 overrides. The engine currently runs the surface map only.
+- `54b453..54b4d1`: 25/50/100 gold by the decoded difficulty rolls; double
+  only when saved year >1000; the treasury addition wraps as original x86.
+- `54af81..54b03c`: at year **>=1000**, size `rand()%4+1`, Temple always,
+  Market/Granary/Library when subsequent `%2`/`%3`/`%4` is zero. Earlier
+  years retain size 1 and do not consume these four draws.
+
+The probe executes 1,000 contexts per fragment and commits 256 of each
+in [hut-outcome-vectors.txt](hut-outcome-vectors.txt), with the next CRT
+state. Rust compares every committed vector, including that state.
+[hut-outcomes.json](hut-outcomes.json) records executable hash and scope.
+
+The additional 128 cases execute complete `5703be` with real map-access
+callees on invented tiles. The site value is tile +2 >>5 if nonzero;
+otherwise fertility (+5 &15), raised to 8 when nonzero. A tribe needs
+value >=12 (`54af24..54af3c`). MapState now retains these proven tile
+fields and fingerprints them. Nearest-city lookup `435dd0` uses the
+existing `566dad` distance, respects flat-world wrapping and excludes
+empty city slots. Tribe creation calls `432810` directly (`54af76`):
+it does not create or consume an explorer/settler unit.
+
+The game-family byte is file @982 / RAM `607782`, following the saved
+power order. Original loader `41924f` sets 0 for Original, `4192bf` sets
+1 for SciFi, `41932f` sets 2 for Fantasy (the preceding path strings
+identify these families); both reference saves carry 0. It is retained
+and fingerprinted. Mode-specific non-surface outcomes are not exercised
+by the engine yet.
+
+Reproduce (optional Unicorn dependency installed outside the repo):
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/huts_check.py --vectors /tmp/hut-vectors.txt
+```
+
+This is **not** a full hut-entry parity claim: selection landmass caches,
+nomad types, barbarian spawning and the complete same-seed branch series
+remain open in #79/#83.
+
 ## Reproduce
 
 ```bash

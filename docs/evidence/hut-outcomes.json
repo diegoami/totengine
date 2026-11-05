@@ -1,0 +1,17 @@
+{
+  "source": "civ2.bak 0x54bae5..0x54bd12, 0x54b453..0x54b4d1, 0x54af81..0x54b03c; site helper 0x5703be",
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "scope": "supplied dispatch; mercenary type, metals payment, post-founding tribe size/buildings; real CRT and building callee; not full hut parity",
+  "original_x86_cases": {
+    "mercenary": 1000,
+    "metals": 1000,
+    "tribe": 1000
+  },
+  "site_value_cases": 128,
+  "game_family": {
+    "save_byte": 982,
+    "ram": "0x607782",
+    "loader": "0x41924f Original=0; 0x4192bf SciFi=1; 0x41932f Fantasy=2"
+  },
+  "committed_vectors": 896
+}

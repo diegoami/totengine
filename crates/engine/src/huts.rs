@@ -3,50 +3,120 @@
 //! pushed by its cases). All draws come from the CRT `rand()`, the
 //! engine's [`crate::combat::CrtRand`].
 //!
-//! **Decoded:**
-//! - **No outcome** for barbarian units, or for non-land units except a
-//!   scenario-specific air case (not modelled).
-//! - **Selection:** `o = rand() % 5`. For a human civ, `rand() % 3`; a
-//!   nonzero roll keeps `o`. Otherwise, and always for an AI civ, `o`
-//!   becomes 0 when the civ has cities but no claim on this landmass. That
-//!   test reads per-landmass civ bytes (civ +0x5D0/+0x8D0) that the engine
-//!   does not keep: **the engine draws the `% 3` but never forces 0.**
-//! - **Dispatch** (`0x54bdbf`), with redirects:
-//!
-//!   | o | Outcome |
-//!   |---|---|
-//!   | 0 | tribe → 1 if a city is within distance 4, or if the civ has no city before turn 50 and over one unhomed settler; → 5 if the site value < 12 (not modelled: no tile fertility in the engine map) |
-//!   | 1 | mercenaries |
-//!   | 2 | metals |
-//!   | 3 | barbarians or nothing |
-//!   | 4 | scrolls → 2 on turn 0 or once the civ knows advance 0x26 |
-//!   | 5 | nomads |
-//!
-//! - **Metals:** 50 gold. With `rand() % 3 == 0`, then
-//!   `r = rand() % 10`: 25 gold if `r − difficulty + 2 < 5`, else 100.
-//!   The amount doubles while the global `0x60764a` exceeds 1000 (not
-//!   modelled).
-//! - **Scrolls:**
-//!   - `t = rand() % 100`;
-//!   - scan up to 999 steps for the first advance the civ can research
-//!     (prerequisites known) and lacks;
-//!   - grant it, else re-dispatch (first to 0, then to 2).
-//!
-//! **Simplified, flagged** (the cases are long and only partly read):
-//! - tribe founds a size-1 city on the tile; the original also rolls
-//!   size and buildings when `0x60764a` ≥ 1000;
-//! - mercenaries give the civ's best defender;
-//! - nomads give the first settler-role unit;
-//! - case 3 gives nothing. Barbarian spawning goes with RG-9 (#83).
-//!
-//! Oracle check: one hut entry, metals 100 gold (evidence §RG-2 goody
-//! huts). A same-seed replay of several outcomes is still open.
+//! Mercenary selection, metals, tribe size/buildings and site-value gates
+//! execute against original-x86 vectors in `tools/huts_check.py`.
+//! Remaining open: landmass-cache selection, nomad leader types, scroll
+//! redirects and barbarian spawning (see the v0.8 readiness record).
 
 use tot_kit::Rules;
 
+use crate::combat::CrtRand;
 use crate::founding::ROLE_SETTLE;
 use crate::research::TechTree;
 use crate::{Unit, WorldState};
+
+/// Fixed mercenary candidates, based on global tech ownership rather than
+/// the entering civ's buildable units (`0x54bae5..0x54bd12`).
+fn mercenary(rng: &mut CrtRand, known: &[bool; 100], mode: u8, map: u8) -> usize {
+    let fantasy = mode == 2;
+    let mut a = 19;
+    if !known[11] {
+        a = if rng.rand().is_multiple_of(3) {
+            if fantasy {
+                4
+            } else {
+                16
+            }
+        } else if fantasy {
+            21
+        } else {
+            15
+        };
+        if known[64] && !rng.rand().is_multiple_of(2) {
+            a = 17;
+        }
+    }
+    if known[55] {
+        a = if fantasy { 16 } else { 18 };
+    }
+    if known[42] {
+        a = 20;
+    }
+    if known[17] {
+        a = if fantasy { 38 } else { 11 };
+    }
+    let mut b = 8;
+    if !known[34] {
+        b = if fantasy { 18 } else { 7 };
+    }
+    if !known[35] {
+        b = if fantasy { 14 } else { 5 };
+    }
+    if !known[39] {
+        b = if fantasy { 9 } else { 4 };
+    }
+    if fantasy {
+        match map {
+            1 => {
+                a = 49;
+                b = 3;
+            }
+            2 => {
+                a = 17;
+                b = 51;
+            }
+            _ => {}
+        }
+    }
+    if rng.rand().is_multiple_of(2) {
+        a
+    } else {
+        b
+    }
+}
+
+fn metals(rng: &mut CrtRand, difficulty: u8, year: i16) -> i32 {
+    let mut gold = 50;
+    if rng.rand().is_multiple_of(3) {
+        gold = if (rng.rand() % 10) as i32 - difficulty as i32 + 2 < 5 {
+            25
+        } else {
+            100
+        };
+    }
+    if year > 1000 {
+        gold *= 2;
+    }
+    gold
+}
+
+/// The post-founding tribe additions (`0x54af81..0x54b03c`).
+fn tribe(rng: &mut CrtRand, year: i16) -> (u8, [u8; 5]) {
+    let mut buildings = [0; 5];
+    let size = if year >= 1000 {
+        let size = (rng.rand() % 4 + 1) as u8;
+        buildings[0] |= 1 << 4;
+        for (building, divisor) in [(5, 2), (3, 3), (6, 4)] {
+            if rng.rand().is_multiple_of(divisor) {
+                buildings[0] |= 1 << building;
+            }
+        }
+        size
+    } else {
+        1
+    };
+    (size, buildings)
+}
+
+fn site_value(bits: u8, fertility: u8) -> u8 {
+    if bits != 0 {
+        bits
+    } else if fertility != 0 {
+        fertility.max(8)
+    } else {
+        0
+    }
+}
 
 /// What entering a hut gave.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,9 +135,15 @@ impl WorldState {
         let w2 = 2 * self.map.stored_w as i32;
         self.cities
             .iter()
+            .filter(|c| c.city_id != 0 && c.map_id == 0)
             .map(|c| {
                 crate::placement::diamond_distance(
-                    w2, false, c.x as i32, c.y as i32, x as i32, y as i32,
+                    w2,
+                    self.game_flags & 0x8000 != 0,
+                    c.x as i32,
+                    c.y as i32,
+                    x as i32,
+                    y as i32,
                 )
             })
             .min()
@@ -110,11 +186,7 @@ impl WorldState {
         if self.human_mask >> civ & 1 != 0 {
             let _ = self.combat_rng.rand();
         }
-        let own_cities = self
-            .cities
-            .iter()
-            .filter(|c| (c.owner & 0x0F) as u8 == civ)
-            .count();
+        let own_cities = self.city_counts[civ as usize];
         let mut first_scroll_miss = true;
         for _ in 0..16 {
             match o {
@@ -133,40 +205,35 @@ impl WorldState {
                         o = 1;
                         continue;
                     }
-                    // (the site-value < 12 → nomads redirect needs tile
-                    // fertility, not kept in MapState: not modelled)
-                    // the tribe city reuses founding with a temporary settler
-                    let settler = (0..rules.unit_names().len())
-                        .find(|&t| rules.unit_role(t) == Some(ROLE_SETTLE));
-                    if let Some(t) = settler {
-                        let s = self.spawn_unit(rules, t, civ, u.x, u.y);
-                        match self.found_city(rules, s) {
-                            Ok(c) => return HutOutcome::City(c),
-                            Err(_) => {
-                                self.units[s].id = 0;
-                                o = 5;
-                                continue;
-                            }
-                        }
+                    if self.map.stored_index(u.x, u.y).is_none_or(|i| {
+                        site_value(self.map.site_bits[i], self.map.fertility[i]) < 12
+                    }) {
+                        o = 5;
+                        continue;
                     }
-                    return HutOutcome::Nothing;
+                    let c = self.create_city(rules, civ, u.x, u.y);
+                    let (size, buildings) = tribe(&mut self.combat_rng, self.year);
+                    self.cities[c].size = size as u16;
+                    for (a, b) in self.cities[c].buildings.iter_mut().zip(buildings) {
+                        *a |= b;
+                    }
+                    return HutOutcome::City(c);
                 }
                 1 => {
-                    let t = self.initial_build(rules, civ) as usize;
-                    return HutOutcome::Unit(self.spawn_unit(rules, t, civ, u.x, u.y));
+                    let known = std::array::from_fn(|t| {
+                        self.techs.iter().any(|b| b[t / 8] & (1 << (t % 8)) != 0)
+                    });
+                    let t = mercenary(&mut self.combat_rng, &known, self.game_mode, 0);
+                    return if t < rules.unit_names().len() {
+                        HutOutcome::Unit(self.spawn_unit(rules, t, civ, u.x, u.y))
+                    } else {
+                        HutOutcome::Nothing
+                    };
                 }
                 2 => {
-                    let mut g = 50;
-                    if self.combat_rng.rand().is_multiple_of(3) {
-                        let r = (self.combat_rng.rand() % 10) as i32;
-                        if r - self.difficulty as i32 + 2 < 5 {
-                            g >>= 1;
-                        } else {
-                            g <<= 1;
-                        }
-                    }
+                    let g = metals(&mut self.combat_rng, self.difficulty, self.year);
                     let t = &mut self.treasury[civ as usize];
-                    *t = t.saturating_add(g);
+                    *t = t.wrapping_add(g);
                     return HutOutcome::Gold(g);
                 }
                 3 => return HutOutcome::Nothing,
@@ -242,6 +309,66 @@ Warriors, nil, 0, 1., 0, 1a, 1d, 1h, 1f, 1, 0, 1, nil, 000000000000000\n\
         let before = w.treasury[civ];
         let o = w.enter_hut(&rules, u);
         (o, w.treasury[civ] - before, w.techs[civ])
+    }
+
+    #[test]
+    fn original_outcome_vectors_and_rng_state() {
+        let mut count = 0;
+        for line in include_str!("../../../docs/evidence/hut-outcome-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let v: Vec<i64> = line
+                .split_whitespace()
+                .map(|s| s.parse().unwrap())
+                .collect();
+            let mut rng = CrtRand::new(v[1] as u32);
+            let (a, b) = match v[0] {
+                0 => {
+                    let mut known = [false; 100];
+                    for (i, t) in [11, 64, 55, 42, 17, 34, 35, 39].into_iter().enumerate() {
+                        known[t] = v[4] & (1 << i) != 0;
+                    }
+                    (
+                        mercenary(&mut rng, &known, v[2] as u8, v[3] as u8) as i64,
+                        0,
+                    )
+                }
+                1 => (metals(&mut rng, v[6] as u8, v[5] as i16) as i64, 0),
+                2 => {
+                    let (size, buildings) = tribe(&mut rng, v[5] as i16);
+                    (size as i64, buildings[0] as i64)
+                }
+                3 => (site_value(v[3] as u8, v[4] as u8) as i64, 0),
+                _ => panic!("unexpected case"),
+            };
+            assert_eq!((a, b, rng.state() as i64), (v[7], v[8], v[9]), "{line}");
+            count += 1;
+        }
+        assert_eq!(count, 896);
+    }
+
+    #[test]
+    fn tribe_creates_city_without_creating_or_consuming_explorer() {
+        let rules = tot_kit::parse_rules(RULES);
+        let mut w = crate::boot(&synthetic_save(), 1);
+        w.cities.clear();
+        w.city_counts = [0; 8];
+        w.map.fertility.fill(15);
+        w.map.site_bits.fill(0);
+        w.map.terrain.fill(1);
+        w.techs = [[0; 13]; 8];
+        w.human_mask = 0;
+        w.combat_rng = CrtRand::new(2); // first draw selects tribe
+        let u = w.units.iter().position(|u| u.owner != 0).unwrap();
+        w.units[u].x = 0;
+        w.units[u].y = 0;
+        let explorer = w.units[u].clone();
+        let units = w.units.len();
+        assert_eq!(w.enter_hut(&rules, u), HutOutcome::City(0));
+        assert_eq!(w.units.len(), units);
+        assert_eq!(w.units[u], explorer);
+        assert_eq!(w.city_counts[explorer.owner as usize], 1);
     }
 
     /// The same generator state gives the same outcome; metals pay 25, 50

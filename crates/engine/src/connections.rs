@@ -252,6 +252,8 @@ mod tests {
             stored_h: 16,
             terrain: vec![1; n],
             landmass: vec![1; n],
+            site_bits: vec![0; n],
+            fertility: vec![0; n],
             special: vec![false; n],
             river: vec![false; n],
             road: vec![true; n],

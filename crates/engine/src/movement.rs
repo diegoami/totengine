@@ -201,6 +201,7 @@ mod tests {
         let improvements = road.iter().map(|&r| if r { 0x10 } else { 0 }).collect();
         WorldState {
             power_order: [0; 8],
+            game_mode: 0,
             free_research: [0; 8],
             city_counts: [0; 8],
             turn: 1,
@@ -270,6 +271,8 @@ mod tests {
                 stored_h: 4,
                 terrain,
                 landmass: vec![1; surface],
+                site_bits: vec![0; surface],
+                fertility: vec![0; surface],
                 special: vec![false; surface],
                 river: vec![false; surface],
                 road,

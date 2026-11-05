@@ -588,6 +588,8 @@ pub struct SaveFile {
     /// Saved power ranking, weakest to strongest (bytes @974..982;
     /// RAM 0x60777a). The shield-row adjustment reads the final slot.
     pub power_order: [u8; 8],
+    /// Game family (save @982, RAM 0x607782): 0 original/extended, 1 sci-fi, 2 fantasy.
+    pub game_mode: u8,
     /// Saved civ city counts (i16@112, RAM 0x5f6910). Founding increments
     /// this field at 0x4329ee; city removal decrements it at 0x434750.
     pub city_counts: [i16; 8],
@@ -684,6 +686,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     let game_flags = u16le(data, 652)?;
     let human_mask = data[687];
     let power_order = data[974..982].try_into().unwrap();
+    let game_mode = data[982];
     let difficulty = data[684];
     let seed_word = u16le(data, 685)?;
     let barbarian_level = data[685];
@@ -872,6 +875,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         game_flags,
         human_mask,
         power_order,
+        game_mode,
         city_counts,
         barbarian_level,
         civs_mask,

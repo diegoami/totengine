@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- **Hut outcomes (#79, in progress):** original global-tech mercenary
+  choices, late-year gold doubling, tribe site gates and late tribe
+  population/buildings; 896 native vectors also check the next CRT state.
+  Tribe city creation preserves the exploring unit without a temporary
+  settler. Dispatch caches, nomad choices and barbarians remain open.
+
 - **Treasury and upkeep:** city taxes now credit the civ treasury outside
   anarchy/disorder; original human-mask upkeep, Barracks adjustments,
   Fundamentalism/Adam Smith exemptions and bankruptcy building sales are

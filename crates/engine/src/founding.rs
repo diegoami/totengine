@@ -127,6 +127,16 @@ impl WorldState {
             let u = &self.units[unit];
             (u.x, u.y, u.owner)
         };
+        let idx = self.create_city(rules, civ, x, y);
+        self.units[unit].id = 0;
+        self.units[unit].x = 0xFFFF;
+        self.units[unit].y = 0xFFFF;
+        Ok(idx)
+    }
+
+    /// Shared city creation for settlers and hut tribes. Creating a city
+    /// does not itself consume a unit (`0x54af76` calls `0x432810`).
+    pub(crate) fn create_city(&mut self, rules: &Rules, civ: u8, x: u16, y: u16) -> usize {
         let first = !self.cities.iter().any(|c| (c.owner & 0x0F) as u8 == civ);
         let n = self
             .cities
@@ -212,17 +222,13 @@ impl WorldState {
             self.map.improvements[i] |= 0x02;
             self.map.owner[i] = civ & 0x0F;
         }
-        // the settler is consumed
-        self.units[unit].id = 0;
-        self.units[unit].x = 0xFFFF;
-        self.units[unit].y = 0xFFFF;
         // yields so the turn loop does not skip the young city
         let out = self.city_output(rules, idx);
         let c = &mut self.cities[idx];
         c.gross_food = out.food.clamp(0, 255) as u8;
         c.gross_shields = out.shields.clamp(0, 255) as u8;
         c.gross_trade = out.trade.clamp(0, u16::MAX as i32) as u16;
-        Ok(idx)
+        idx
     }
 }
 

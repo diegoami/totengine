@@ -141,6 +141,8 @@ pub struct MapState {
     pub terrain: Vec<u8>,
     /// Tile byte +3, used by the original connection routine.
     pub landmass: Vec<u8>,
+    pub site_bits: Vec<u8>,
+    pub fertility: Vec<u8>,
     pub special: Vec<bool>,
     pub river: Vec<bool>,
     pub road: Vec<bool>,
@@ -209,6 +211,7 @@ pub struct WorldState {
     /// Human-players bitmask (save @687; bit n = civ n).
     pub human_mask: u8,
     pub power_order: [u8; 8],
+    pub game_mode: u8,
     pub city_counts: [i16; 8],
     pub wonders: [i16; 28],
     /// Treasury per civ, index = owner (0 = barbarians); save i32@10 of
@@ -292,6 +295,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         game_flags: sav.game_flags,
         human_mask: sav.human_mask,
         power_order: sav.power_order,
+        game_mode: sav.game_mode,
         city_counts: sav.city_counts,
         wonders: sav.wonders,
         treasury: sav.treasury,
@@ -311,6 +315,8 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             stored_h: sav.map_header.stored_h(),
             terrain,
             landmass: (0..surface).map(|t| m.landmass(t)).collect(),
+            site_bits: (0..surface).map(|t| m.site_bits(t)).collect(),
+            fertility: (0..surface).map(|t| m.fertility(t)).collect(),
             special,
             river,
             road,
@@ -493,6 +499,7 @@ impl WorldState {
             mix(&mut h, t);
         }
         mix(&mut h, &self.power_order);
+        mix(&mut h, &[self.game_mode]);
         mix(&mut h, &self.free_research);
         for count in self.city_counts {
             mix(&mut h, &count.to_le_bytes());
@@ -513,6 +520,8 @@ impl WorldState {
         mix(&mut h, &self.map.stored_h.to_le_bytes());
         mix(&mut h, &self.map.resource_seed.to_le_bytes());
         mix(&mut h, &self.map.landmass);
+        mix(&mut h, &self.map.site_bits);
+        mix(&mut h, &self.map.fertility);
         for t in 0..self.map.terrain.len() {
             let flags = (self.map.special[t] as u8)
                 | ((self.map.river[t] as u8) << 1)
@@ -668,6 +677,9 @@ mod tests {
             ("route commodity", |w| w.cities[0].route_commodities[0] ^= 1),
             ("route partner", |w| w.cities[0].route_partners[0] ^= 1),
             ("power order", |w| w.power_order[7] ^= 1),
+            ("game mode", |w| w.game_mode ^= 1),
+            ("site bits", |w| w.map.site_bits[0] ^= 1),
+            ("fertility", |w| w.map.fertility[0] ^= 1),
             ("free research", |w| w.free_research[1] ^= 1),
             ("city count", |w| w.city_counts[1] ^= 1),
             ("city happy", |w| w.cities[0].happy ^= 1),

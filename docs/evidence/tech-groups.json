@@ -1,0 +1,7 @@
+{
+  "source": "civ2.bak 0x4a2098 and 0x4a2111",
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "original_x86_contexts": 1000,
+  "committed_vectors": 128,
+  "scope": "original gates, supplied parsed tech group and leader flags; no replacement callees"
+}

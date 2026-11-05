@@ -203,6 +203,7 @@ mod tests {
             power_order: [0; 8],
             game_mode: 0,
             ai_state: tot_kit::SavedAiState::default(),
+            calendar: Some(tot_kit::CalendarSettings::default()),
             free_research: [0; 8],
             city_counts: [0; 8],
             turn: 1,

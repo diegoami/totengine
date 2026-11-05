@@ -8,6 +8,7 @@
 //! T1-3..T1-7.
 
 pub mod ai;
+pub mod calendar;
 pub mod cities;
 pub mod combat;
 pub mod connections;
@@ -213,6 +214,7 @@ pub struct WorldState {
     pub power_order: [u8; 8],
     pub game_mode: u8,
     pub ai_state: tot_kit::SavedAiState,
+    pub calendar: Option<tot_kit::CalendarSettings>,
     pub city_counts: [i16; 8],
     pub wonders: [i16; 28],
     /// Treasury per civ, index = owner (0 = barbarians); save i32@10 of
@@ -298,6 +300,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         power_order: sav.power_order,
         game_mode: sav.game_mode,
         ai_state: sav.ai_state.clone(),
+        calendar: sav.calendar,
         city_counts: sav.city_counts,
         wonders: sav.wonders,
         treasury: sav.treasury,
@@ -429,12 +432,18 @@ impl WorldState {
             .unwrap_or_default()
     }
 
-    /// Advance one turn. The year-advance schedule is deliberately NOT
-    /// implemented: no oracle-verified table exists yet (the -4000…
-    /// progression needs a turnloop experiment — folklore is banned by
-    /// the evidence rule). Year stays put until that lands (T1-3).
+    /// Advance the turn and apply the original calendar when its settings
+    /// are decoded. Unsupported 0x33 scenario calendars retain their year.
     pub fn advance_turn(&mut self) -> TurnReport {
-        self.turn += 1;
+        self.turn = self.turn.wrapping_add(1);
+        if let Some(settings) = self.calendar {
+            self.year = calendar::year(
+                self.turn,
+                self.difficulty,
+                self.research_settings.flags,
+                settings,
+            ) as i16;
+        }
         TurnReport {
             turn: self.turn,
             year: self.year,
@@ -503,6 +512,14 @@ impl WorldState {
         mix(&mut h, &self.power_order);
         mix(&mut h, &[self.game_mode, self.ai_state.power_reference]);
         mix(&mut h, &self.ai_state.power_ranks);
+        if let Some(calendar) = self.calendar {
+            mix(&mut h, &[1]);
+            for value in [calendar.turn_limit, calendar.increment, calendar.start_year] {
+                mix(&mut h, &value.to_le_bytes());
+            }
+        } else {
+            mix(&mut h, &[0]);
+        }
         for civ in 0..8 {
             mix(&mut h, &self.ai_state.leader_ids[civ].to_le_bytes());
             mix(&mut h, &self.ai_state.city_landmasses[civ]);
@@ -693,6 +710,16 @@ mod tests {
             ("landmass flags", |w| w.ai_state.landmass_flags[1][2] ^= 1),
             ("power rank", |w| w.ai_state.power_ranks[1] ^= 1),
             ("power reference", |w| w.ai_state.power_reference ^= 1),
+            ("calendar limit", |w| {
+                w.calendar.as_mut().unwrap().turn_limit ^= 1
+            }),
+            ("calendar increment", |w| {
+                w.calendar.as_mut().unwrap().increment ^= 1
+            }),
+            ("calendar start", |w| {
+                w.calendar.as_mut().unwrap().start_year ^= 1
+            }),
+            ("calendar presence", |w| w.calendar = None),
             ("site bits", |w| w.map.site_bits[0] ^= 1),
             ("fertility", |w| w.map.fertility[0] ^= 1),
             ("free research", |w| w.free_research[1] ^= 1),

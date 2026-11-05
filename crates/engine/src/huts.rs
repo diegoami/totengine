@@ -238,21 +238,7 @@ impl WorldState {
     /// Scrolls use the original tech-group gate (`0x4a2098`) in addition
     /// to prerequisites. Group-less advances and zero leader flags pass.
     fn hut_tech_group_allowed(&self, rules: &Rules, civ: u8, tech: usize) -> bool {
-        let group = rules
-            .section("CIVILIZE2")
-            .and_then(|s| s.rows.get(tech))
-            .and_then(|r| r.first())
-            .and_then(|v| v.parse::<usize>().ok());
-        let Some(group) = group.filter(|g| *g < 8) else {
-            return true;
-        };
-        let leader = self.ai_state.leader_ids[civ as usize];
-        usize::try_from(leader)
-            .ok()
-            .and_then(|i| rules.section("LEADERS2").and_then(|s| s.rows.get(i)))
-            .and_then(|r| r.first())
-            .and_then(|v| v.as_bytes().get(group))
-            .is_none_or(|b| *b == b'0')
+        self.tech_group_flag(rules, civ, tech) == 0
     }
 
     /// Barbarian ring (`0x54b704..0x54babd`). Directions begin at turn%8;

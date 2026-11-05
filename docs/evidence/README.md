@@ -2222,6 +2222,49 @@ Still open: complete same-seed hut-entry/state comparisons, runtime cache
 refresh, non-surface scenario cases and turn-time barbarian arrivals
 (#83). These checks do not close either issue by themselves.
 
+## Original calendar and leader technology groups (v0.8 integration)
+
+The round-close caller `470305..47034e` runs barbarian arrivals before
+incrementing the turn, then computes/stores the year with `46da89`.
+`tools/calendar_check.py` executes that complete routine and its real
+clamp; [calendar.json](calendar.json) records the four original six-stage
+tables at `5d4fa8`, executable hash, 2,068 executions and two saved-input
+comparisons. Both reference dates match exactly: Original turn 43,
+year -1900; FallRome turn 0, raw date 5159. The latter is a scenario date
+with increment -5/start 5160, rather than a conventional AD year integer.
+Rust compares all 324 retained [vectors](calendar-vectors.txt).
+
+Difficulty is adjusted by flags +660 bit4 (-1) and bit8 (+1), then
+`clamp(adjusted-1,0,3)` selects the table. Turn 0 and 1 both use the first
+date; standard calendars skip year zero. With scenario flag 0x80 and
+nonzero increment/start, the date is `turn*abs(increment)+start-1`.
+The signed word file @672 / RAM `60764c` bounds the calendar's effective
+turn when nonnegative; subsequent elapsed turns add one raw year each.
+Scenario increment/start are parameters i16@84/@86 (`5f5ea4`/`5f5ea6`).
+This also identifies the research-cost tuple's second word: the original
+cost routine uses calendar increment !=0 to skip catch-up adjustments.
+
+World turn advancement now updates the date using these inputs, including
+signed-word turn wrapping. Unlocated 0x33 scenario parameters are retained
+as an unknown calendar and keep their date; no custom-calendar bytes are
+guessed. This is a documented remaining decoder limit.
+
+`tools/tech_groups_check.py` executes both original group gates, 1,000
+contexts, with 128 retained [vectors](tech-group-vectors.txt) and provenance
+in [tech-groups.json](tech-groups.json). `4a2098` permits a hut advance
+only for group -1 or a zero leader-group flag; `4a2111` excludes research
+only when that flag is 2. Thus flag 1 blocks huts but permits research.
+The shared engine lookup reads `CIVILIZE2` and the saved leader's
+`LEADERS2` row; runtime research choices and hut scrolls apply their
+respective gates. No replacement callees are used in these probes.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/calendar_check.py --vectors /tmp/calendar.txt
+CIVTOT_HOME=... PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/tech_groups_check.py --vectors /tmp/tech-groups.txt
+```
+
 ## Reproduce
 
 ```bash

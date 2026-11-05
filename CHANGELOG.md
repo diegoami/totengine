@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- **Calendar:** turns now update the raw date using the original difficulty
+  tables and decoded scenario increments/start dates (324 native vectors,
+  both reference dates exact). Undecoded 0x33 scenario calendars retain
+  their date. Runtime research now respects leader-group restrictions,
+  checked against both original research/hut gates.
+
 - **Hut outcomes (#79, in progress):** original global-tech mercenary
   choices, late-year gold doubling, tribe site gates and late tribe
   population/buildings, saved landmass dispatch, leader-specific nomads,

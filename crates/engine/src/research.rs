@@ -230,6 +230,28 @@ impl crate::WorldState {
         })
     }
 
+    /// Original leader-group flag, loaded from CIVILIZE2/LEADERS2.
+    /// 0 permits hut scrolls/research; 1 blocks scrolls; 2 blocks research.
+    pub(crate) fn tech_group_flag(&self, rules: &Rules, civ: u8, tech: usize) -> u8 {
+        let group = rules
+            .section("CIVILIZE2")
+            .and_then(|s| s.rows.get(tech))
+            .and_then(|r| r.first())
+            .and_then(|v| v.parse::<usize>().ok());
+        let Some(group) = group.filter(|g| *g < 8) else {
+            return 0;
+        };
+        self.ai_state
+            .leader_ids
+            .get(civ as usize)
+            .and_then(|&id| usize::try_from(id).ok())
+            .and_then(|i| rules.section("LEADERS2").and_then(|s| s.rows.get(i)))
+            .and_then(|r| r.first())
+            .and_then(|v| v.chars().nth(group))
+            .and_then(|c| c.to_digit(10))
+            .unwrap_or(0) as u8
+    }
+
     pub fn observe_research(&self, rules: &Rules, civ: u8) -> ResearchView {
         let Some(state) = self.research.get(civ as usize) else {
             return ResearchView {
@@ -262,6 +284,7 @@ impl crate::WorldState {
                                 || r.get(4).is_some_and(|p| p == "no")
                         });
                     !disabled
+                        && self.tech_group_flag(rules, civ, id) != 2
                         && !t.defective
                         && (id == 89 || !known[id])
                         && t.prereqs
@@ -544,5 +567,31 @@ mod accounting_tests {
         .unwrap();
         assert_eq!(replay.world.checksum(), g.world.checksum());
         assert_eq!(replay.world.research, g.world.research);
+    }
+}
+
+#[cfg(test)]
+mod tech_group_tests {
+    #[test]
+    fn original_hut_and_research_group_vectors() {
+        let mut count = 0;
+        for line in include_str!("../../../docs/evidence/tech-group-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let v: Vec<&str> = line.split_whitespace().collect();
+            let rules = tot_kit::parse_rules(&format!("@CIVILIZE\nAdvance,5,1,nil,nil,0,0 ; Adv\n@CIVILIZE2\n{}\n@LEADERS2\n00000000\n00000000\n{}\n", v[0], v[1]));
+            let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
+            w.ai_state.leader_ids[1] = 2;
+            w.techs = [[0; 13]; 8];
+            assert_eq!(w.tech_group_flag(&rules, 1, 0) == 0, v[2] == "1", "{line}");
+            assert_eq!(
+                w.observe_research(&rules, 1).available.contains(&0),
+                v[3] == "1",
+                "{line}"
+            );
+            count += 1;
+        }
+        assert_eq!(count, 128);
     }
 }

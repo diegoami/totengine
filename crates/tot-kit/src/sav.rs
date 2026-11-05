@@ -561,10 +561,30 @@ pub struct ResearchSettings {
     pub advance_count: i16,
     /// Raw game byte @964, used as the cost comparison civ slot.
     pub reference_civ: u8,
-    /// Scenario parameters (paradigm, skip catch-up adjustment), or None
-    /// when the scenario tail has not been proven/does not fit the file.
+    /// Scenario parameters (paradigm, calendar increment), or None when
+    /// the tail has not been proven/does not fit the file. The cost routine
+    /// also uses increment !=0 to skip its catch-up adjustment.
     /// Non-scenario games ignore this and use @COSMIC row 11.
     pub scenario: Option<(i16, i16)>,
+}
+
+/// Original turn-to-year settings (`0x46da89`). Limit is file i16@672;
+/// scenario increment/start are i16@84/@86 of the scenario parameters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CalendarSettings {
+    pub turn_limit: i16,
+    pub increment: i16,
+    pub start_year: i16,
+}
+
+impl Default for CalendarSettings {
+    fn default() -> Self {
+        Self {
+            turn_limit: -1,
+            increment: 0,
+            start_year: 0,
+        }
+    }
 }
 
 /// Saved inputs used by hut dispatch and the original AI statistics pass.
@@ -614,6 +634,8 @@ pub struct SaveFile {
     /// Game family (save @982, RAM 0x607782): 0 original/extended, 1 sci-fi, 2 fantasy.
     pub game_mode: u8,
     pub ai_state: SavedAiState,
+    /// None when scenario calendar parameters cannot yet be located (0x33).
+    pub calendar: Option<CalendarSettings>,
     /// Saved civ city counts (i16@112, RAM 0x5f6910). Founding increments
     /// this field at 0x4329ee; city removal decrements it at 0x434750.
     pub city_counts: [i16; 8],
@@ -878,6 +900,10 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     // cursor 4 B, 60 B per human leader (one in single-player), 1200 B,
     // 106 B, 8*10 B, then the scenario's 100-B parameters block.
     // Do not guess a 0x33 scenario tail from the classic layout.
+    let mut calendar = Some(CalendarSettings {
+        turn_limit: i16le(data, 672)?,
+        ..CalendarSettings::default()
+    });
     let scenario = if flags & 0x80 != 0 && version == 0x32 {
         let leaders = if data[678] == 0 {
             1
@@ -885,13 +911,22 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
             human_mask.count_ones() as usize
         };
         let pos = tables_end + 1453 + 60 * leaders;
-        data.get(pos..pos + 100).map(|b| {
+        let parameters = data.get(pos..pos + 100);
+        calendar = parameters.map(|b| CalendarSettings {
+            turn_limit: i16::from_le_bytes([data[672], data[673]]),
+            increment: i16::from_le_bytes([b[84], b[85]]),
+            start_year: i16::from_le_bytes([b[86], b[87]]),
+        });
+        parameters.map(|b| {
             (
                 i16::from_le_bytes([b[82], b[83]]),
                 i16::from_le_bytes([b[84], b[85]]),
             )
         })
     } else {
+        if flags & 0x80 != 0 {
+            calendar = None;
+        }
         None
     };
     let research_settings = ResearchSettings {
@@ -909,6 +944,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         power_order,
         game_mode,
         ai_state,
+        calendar,
         city_counts,
         barbarian_level,
         civs_mask,

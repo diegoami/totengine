@@ -28,6 +28,7 @@ pub mod placement;
 pub mod player;
 pub mod power;
 pub mod production;
+pub mod removal;
 pub mod research;
 pub mod rng;
 pub mod statistics;

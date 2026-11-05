@@ -2687,3 +2687,49 @@ cmp docs/evidence/city-phase.json /tmp/city-phase.json
 cmp docs/evidence/city-phase-vectors.txt /tmp/city-phase-vectors.txt
 CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test city_phase_install --test city_totals_install
 ```
+
+
+### Surface city destruction (#13, phase integration pending)
+
+`engine::removal::destroy_surface_city` follows `0x43456d` for retained state:
+remove city identity, decrement its civ's city count, handle homed units in
+reverse slot order, compact incoming routes, mark hosted wonders destroyed
+(-2), clear the city's tile marker and invalidate nearby fertility/site caches.
+Type 9 becomes homeless instead of dying. A non-human unit in another live
+city can be rehomed there if it has role 1 and is the only role-1 unit in that
+stack; otherwise the other city gets flag `0x20` before removal. This test is
+about role-1 stack count, not total stack size. Human homed units are removed.
+
+[city-destruction.json](city-destruction.json),
+[city-destruction-vectors.txt](city-destruction-vectors.txt) and
+[city-destruction-map-vectors.txt](city-destruction-map-vectors.txt) cover
+30 native surface removals: all ten standard cities under human masks 0, 16
+and 255, with every saved unit homed to the target, the first unit changed to
+type 9, synthetic incoming routes and wonder table. Original unit removal,
+route compaction and map mutation helpers execute. Only map redraw/city-window
+callbacks are replaced; the engine's represented identity/home, city flags,
+routes, wonder slots, counts and all surface improvement/site/fertility/owner
+arrays match. The map artifact records changed numeric fields, not map assets.
+The original 45-offset neighborhood is retained as derived coordinates.
+
+The function retains dead city slots for stable engine indices. Native raw
+array truncation, non-surface refresh, sea-transport cargo, unit-known-by fields,
+caller civilization elimination and full turn integration are outside this
+comparison. These fixtures do not close #13's live-save acceptance gate.
+
+The original caller `0x470aa5..0x470b69` visits a civ's cities in **descending**
+city-index order for each map, unlike the older engine's ascending global loop.
+The negative-box branch also reads food-route globals from the preceding totals
+calculation; those transient inputs are explicit in the starvation vectors.
+The controlled 50-turn sequence above supplies a different, explicitly stated
+city schedule and does not claim original whole-round scheduling.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/city_destruction_check.py --gold /tmp/city-destruction.json \
+  --vectors /tmp/city-destruction-vectors.txt --map-vectors /tmp/city-destruction-map-vectors.txt
+cmp docs/evidence/city-destruction.json /tmp/city-destruction.json
+cmp docs/evidence/city-destruction-vectors.txt /tmp/city-destruction-vectors.txt
+cmp docs/evidence/city-destruction-map-vectors.txt /tmp/city-destruction-map-vectors.txt
+CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test city_destruction_install
+```

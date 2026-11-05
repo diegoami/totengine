@@ -1,0 +1,12 @@
+{
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routines": [
+    "0x49c95d advance valuation",
+    "0x49f98b complete selection"
+  ],
+  "contexts": 128,
+  "advance_values": 12800,
+  "complete_selections": 128,
+  "replacement_callees": [],
+  "scope": "authored acyclic Rules/cache inputs, all leader cases, human/AI, six selection difficulties; no live round or player adapter parity"
+}

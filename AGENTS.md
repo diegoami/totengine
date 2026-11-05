@@ -133,10 +133,12 @@ byte-identically, passed 194 install-backed Rust tests, five Python evidence
 tests, golden/fmt/clippy and the 32-seed nightly suite. No MUST-FIX findings;
 #111's stale CLI status is corrected after the tag. `docs/v0.9.0-readiness.md`
 records gates and material geography limits. Next: v0.10 original-like AI.
-v0.10 is in progress: the original research selection kernel is implemented
-in `engine::ai_research` (512 isolated native contexts, 128 retained vectors).
-Availability/group/value callees are supplied; full native advance valuation
-and campaign policy integration remain open. AI v1 campaigns are unchanged.
+v0.10 is in progress: `engine::ai_research` implements original research
+selection (512 isolated contexts) and full advance valuation (12,800 values
+and 128 complete selections, unmodified native callees). Numeric regression
+fixtures run without assets. Parsed Rules/world adapters, observation-safe
+policy integration and campaign policy identity remain open; AI v1 campaigns
+are unchanged.
 Next plan: `docs/decisions/0007-original-like-ai.md` (#106).
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

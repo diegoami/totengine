@@ -52,13 +52,64 @@ empty/singleton/zero/tied candidates, mixed gates and signed integer boundaries
 are covered; 128 native output vectors run without the install in Rust tests.
 This establishes only the selection kernel, not original research decisions.
 
-Next: decode 0x49c95d, including leader modifier, technology/wonder dependencies
-and campaign-state adjustments; establish which inputs belong in the player
-observation. Campaigns still use AI v1. Production, expansion, military,
-transport/diplomacy gap assessment and end-to-end acceptance remain open.
+At this point 0x49c95d and policy integration were still open; the following
+slice completes the valuation kernel. Campaigns still use AI v1. Production,
+expansion, military, transport/diplomacy gap assessment and end-to-end acceptance
+remain open.
 
 Validation: install-backed `make test` passed all 195 Rust tests (one nightly
 test intentionally ignored), the five Python report tests and full golden
 corpus, including the 50-turn fingerprint and decoder crosschecks. Workspace
 formatting and all-target Clippy with warnings denied passed. A second native
 probe run re-derived both retained artifacts byte-identically.
+
+## Complete research valuation kernel (2026-11-05)
+
+`ai_research::value` now ports the complete 0x49c95d routine from bounded
+classic Rules/cache inputs. It covers signed Rules value/modifier, effective
+leader preference, all 21 leader-specific bonus cases, technology dependency
+chains, military priorities, the naval-count bonus, city growth thresholds,
+active wonder/expiry handling, human nuclear/space technology ownership,
+discovery bonuses and known dependent advances. Final values clamp to one.
+Dependency traversal guards malformed cycles; native parity is tested on
+acyclic trees, not native stack-exhaustion behavior.
+
+`tools/ai_research_value_check.py` executes **12,800 valuations and 128 complete
+research selections with no replacement callees**. Availability, group checks,
+dependency traversal, knowledge, wonder ownership/expiry, scoring and CRT all
+execute original bytes. Retained authored numeric contexts/outputs exercise
+all leader cases, human/AI masks, signed modifiers, active/expired wonders,
+deleted cities, landmass boundary IDs and all six selection difficulties.
+The Rust test checks every advance value, selected advance and final CRT state.
+The full-choice test supplies the original eligibility outputs to the Rust
+selector; the engine's future eligibility adapter is not established by this.
+
+One unusual behavior is preserved: 0x49cc67 rereads the current civilization's
+landmass presence inside its loop over other civilizations. The enclosing
+own-presence guard therefore prevents its "isolated" branch from becoming
+true. This makes that military-value increment much simpler than an intended
+foreign-presence interpretation would suggest. The stronger-human adjustment
+earlier in the routine really does compare both civilizations' landmass counts.
+
+This API is a **mechanics context**, not a new player observation. It contains
+foreign knowledge masks, human acquired counts, reputation, treaties and shared
+landmasses. Decision 0003 forbids silently exposing hidden foreign state and
+requires players to use private RNGs. Native research uses the same global CRT
+as other mechanics; the engine cannot promise global draw-for-draw campaign
+parity merely by seeding a private player CRT with the same number.
+
+Next implementation steps:
+
+1. Add strict parsed Rules and world-cache adapters, with install-backed
+   comparisons; verify leader trait inputs rather than guessing defaults.
+2. Define the observation-safe research context and document any approximation
+   to original privileged information. Preserve decision 0003's boundary.
+3. Introduce an explicit new AI policy identity and checkpoint handling, wire
+   research through `SetResearch`, and verify continuation/order replay and
+   browser observation before changing the campaign default.
+
+Validation: all 196 install-backed Rust tests passed (one nightly test
+intentionally ignored), along with the five Python report tests, full golden
+corpus including run50 and decoder crosschecks, workspace formatting and
+all-target Clippy with warnings denied. Both native research regressions pass;
+a second valuation probe reproduced its report and numeric fixture byte-for-byte.

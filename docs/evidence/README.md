@@ -3497,3 +3497,55 @@ cmp /tmp/ai-research-choice.json docs/evidence/ai-research-choice.json
 cmp /tmp/ai-research-choice.txt crates/engine/tests/fixtures/ai-research-choice.txt
 cargo test -p engine --test ai_research_choice
 ```
+
+## Complete original research valuation (v0.10, #106)
+
+`ai-research-value.json` records **12,800 advance valuations and 128 complete
+research selections** from authored numeric Rules/cache contexts. The probe
+`tools/ai_research_value_check.py` executes 0x49c95d and 0x49f98b with **no
+replacement callees**. Native dependency traversal (0x49c8d4), packed knowledge
+(0x49c820), wonder expiry/ownership (0x4449b0/0x444a28/0x444a61), eligibility,
+group gates and CRT all execute original bytes. The retained numeric fixture
+`crates/engine/tests/fixtures/ai-research-value.txt` contains no original names,
+assets, executable bytes or saves. The asset-free Rust regression compares all
+values, complete-choice winners and final CRT states. Eligibility bits supplied
+to the Rust selector are native outputs; this does not prove a future adapter.
+
+The value routine uses signed byte Rules values and leader modifiers, including
+an effective-modifier reduction for stronger human civilizations with treaty
+bit 8192 and shared city landmasses. It adds priorities from prerequisite chains
+of unit types 32/33/35/43, the sea-unit count divided by four for improvement 34's
+advance, city growth limits for improvements 9/23, active wonder expiry and
+human ownership of nuclear/space technology. It applies 21 leader-specific
+cases, an unowned-advance bonus and penalties for known direct dependents, then
+clamps to at least one. Future Tech (89) never passes the native packed-knowledge
+helper, even if its bit is set. The supplied global owner-mask cache is kept
+consistent with packed knowledge; stale-cache divergence is outside this test.
+
+The signed sea-unit count is civ +114 (`0x5f6912 +3348*civ`): the statistics
+writer at 0x5072ba..0x5072f7 increments it for unit domain 2, whose Rules field
+mapping is separately checked by the existing availability/movement probes.
+The growth check ignores deleted city slots and uses signed city size.
+
+At 0x49cc67 the inner foreign-civ loop reads the **own** landmass byte again;
+the surrounding own-presence guard makes the "isolated" flag unreachable.
+The port retains this behavior. It does not substitute foreign presence based
+on an interpretation of the apparent intent. Dependency traversal is bounded
+for malformed cyclic Rules; comparisons use acyclic trees. All 21 leader cases,
+human/AI masks, signed modifiers, active/expired wonders, city deletion and
+landmass IDs 1/2/254/255 are exercised across 128 contexts. Selection contexts
+span all six difficulties; valuation itself does not read difficulty directly.
+
+The kernel is not yet a campaign policy. Its native context includes foreign
+information which cannot silently enter the fog-limited player observation;
+Rules/world adapters and the policy/checkpoint identity remain open (decision
+0007). No live original-AI round or whole-campaign parity is claimed.
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+  python3 tools/ai_research_value_check.py --vectors /tmp/ai-research-value.txt \
+  > /tmp/ai-research-value.json
+cmp /tmp/ai-research-value.json docs/evidence/ai-research-value.json
+cmp /tmp/ai-research-value.txt crates/engine/tests/fixtures/ai-research-value.txt
+cargo test -p engine --test ai_research_value
+```

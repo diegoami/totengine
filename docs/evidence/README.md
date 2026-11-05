@@ -2938,3 +2938,40 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
 cmp docs/evidence/city-allocation.json /tmp/city-allocation.json
 cmp docs/evidence/city-allocation-vectors.txt /tmp/city-allocation-vectors.txt
 ```
+
+
+### AI v1 campaign development (#82)
+
+`crates/engine/examples/ai_curve.rs` exports numeric metrics without original
+records or names. [ai-v1-engine-curve.tsv](ai-v1-engine-curve.tsv) covers 50
+rounds from the archived standard campaign's turn-4 `turn01.sav`, seed 3,
+with AI v1 controlling every living player. The original difficulty/mechanics
+mask are retained. [ai-v1-oracle-curve.tsv](ai-v1-oracle-curve.tsv) measures
+archived original saves by their decoded counters; harvest labels are not
+turn numbers. Repeated turn-4 labels and the final turn-43 save are deduplicated.
+[ai-v1-curves.json](ai-v1-curves.json) retains source hashes and aggregates;
+[ai-v1-power.svg](ai-v1-power.svg) plots the verified power formula over time.
+
+The common initial totals are 4 cities, 4 population, 7 units, 5 acquired
+advances and power 47. At turn 20, original/AI-v1 power is 108/179; at turn 43,
+267/287. At that final comparable turn both have 10 cities and 27 advances;
+original/AI-v1 population is 21/24, units 37/25 and improvements 5/12. AI v1
+expands faster early and invests more in buildings, with fewer military units.
+This supports plausible campaign growth under #82; original human actions
+and policy differ, so neither score equality nor original-like AI is claimed.
+AI v1 reaches turn 54 with 12 cities, 28 population and power 336. The
+install-backed AI test independently runs 50 rounds twice, checks exact logs,
+replays them, and requires actual founding, investments and research gains.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT cargo run -q -p engine --example ai_curve -- \
+  --saved /home/diego/review-tmp/oracle-runs/std1
+CIVTOT_HOME=/mnt/d/games/CIVTOT cargo run -q -p engine --example ai_curve -- \
+  /home/diego/review-tmp/oracle-runs/std1/turn01.sav 50 3
+```
+
+The economic view exposes only this civ's own cities. A regression checks
+that observation leaves fingerprints unchanged and foreign private building
+and finance caches cannot alter the own-city economic view. Normal unit
+production now applies the already decoded @UNITS_ADVANCED civilization mask,
+as obsolete production and Leonardo upgrades already do.

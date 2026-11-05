@@ -48,6 +48,9 @@ const NEIGHBOURS: [(i32, i32); 8] = [
 struct UnitInfo {
     role: u8,
     defense: i32,
+    attack: i32,
+    domain: u8,
+    civ_mask: u8,
     cost: i32,
     /// Advance index required, `None` = none, `Some(None)` = never.
     prereq: Option<Option<usize>>,
@@ -68,6 +71,9 @@ impl AiV0 {
             .map(|t| UnitInfo {
                 role: rules.unit_role(t).unwrap_or(0),
                 defense: rules.unit_defense(t).unwrap_or(0) as i32,
+                attack: rules.unit_attack(t).unwrap_or(0) as i32,
+                domain: rules.unit_domain(t).unwrap_or(0),
+                civ_mask: rules.unit_civ_mask(t),
                 cost: rules.unit_cost(t).unwrap_or(1).max(1) as i32,
                 prereq: match rules.unit_prereq_raw(t) {
                     None | Some("nil") => None,
@@ -86,6 +92,9 @@ impl AiV0 {
     }
 
     fn buildable(&self, obs: &Observation, t: usize) -> bool {
+        if self.units[t].civ_mask & (1 << obs.civ) == 0 {
+            return false;
+        }
         match self.units[t].prereq {
             None => true,
             Some(None) => false,
@@ -253,14 +262,17 @@ impl Player for AiV0 {
     }
 }
 
-/// First AI v1 increment (#82): AI v0's expansion/unit handling plus
-/// research choices. Chooses the prerequisite-valid advance with the
-/// highest Rules AI value, breaking ties by lowest ID. This is an engine
-/// policy, not a recreation of the original AI; economy/war refinements
-/// and comparative power curves remain work under #82.
+/// Economy-aware RG-8 player (#82). Policy is engine-designed: maintain a
+/// garrison, constrain settler support, invest in growth/science/tax buildings,
+/// and fight only favorable nearby visible targets. No hidden world inputs.
+/// Research uses Rules AI values, with lowest-ID ties. Original-like AI is
+/// the separate v0.10 target.
 pub struct AiV1 {
     base: AiV0,
     research_values: Vec<i32>,
+    terrain_food: Vec<i32>,
+    visited: HashSet<(usize, u16, u16)>,
+    pending_unit: Option<usize>,
 }
 
 impl AiV1 {
@@ -272,12 +284,274 @@ impl AiV1 {
                 .iter()
                 .map(|t| t.ai_value.unwrap_or(0))
                 .collect(),
+            terrain_food: (0..33)
+                .map(|t| rules.terrain_yield(t, 0).unwrap_or(0))
+                .collect(),
+            visited: HashSet::new(),
+            pending_unit: None,
         }
+    }
+
+    fn production(&mut self, obs: &Observation) -> Option<Order> {
+        let own: Vec<_> = obs.cities.iter().filter(|c| c.owner == obs.civ).collect();
+        let settlers = obs
+            .units
+            .iter()
+            .filter(|u| {
+                u.owner == obs.civ
+                    && self
+                        .base
+                        .units
+                        .get(u.type_id as usize)
+                        .is_some_and(|u| u.role == ROLE_SETTLE)
+            })
+            .count();
+        let budget: i32 = obs
+            .city_economy
+            .iter()
+            .map(|c| c.finance.taxes - c.upkeep)
+            .sum();
+        for c in &own {
+            let key = usize::MAX - c.index;
+            if self.base.done.contains(&key) {
+                continue;
+            }
+            self.base.done.insert(key);
+            let Some(e) = obs.city_economy.iter().find(|e| e.index == c.index) else {
+                continue;
+            };
+            let defended = obs.units.iter().any(|u| {
+                u.owner == obs.civ
+                    && (u.x, u.y) == (c.x, c.y)
+                    && self
+                        .base
+                        .units
+                        .get(u.type_id as usize)
+                        .is_some_and(|u| u.defense > 0 && u.role != ROLE_SETTLE)
+            });
+            let building = |id: u8| e.buildings[id as usize / 8] & (1 << (id % 8)) != 0;
+            let affordable = |id: u8| {
+                e.available_improvements.contains(&id)
+                    && (budget >= obs.improvement_upkeep[id as usize]
+                        || obs.treasury >= 20 + 10 * obs.improvement_upkeep[id as usize])
+            };
+            let mut want = None;
+            if !defended {
+                want = self.base.best_defender(obs).map(|t| t as i8);
+            }
+            if want.is_none() && e.unhappy > e.happy {
+                want = [4, 14, 11]
+                    .into_iter()
+                    .find(|&id| affordable(id))
+                    .map(|id| -(id as i8));
+            }
+            if want.is_none() && e.food_surplus > 0 {
+                want = e
+                    .growth_block
+                    .filter(|&id| affordable(id))
+                    .map(|id| -(id as i8));
+            }
+            let queued = own
+                .iter()
+                .filter(|v| {
+                    v.index != c.index
+                        && v.building.is_some_and(|t| {
+                            t >= 0
+                                && self
+                                    .base
+                                    .units
+                                    .get(t as usize)
+                                    .is_some_and(|u| u.role == ROLE_SETTLE)
+                        })
+                })
+                .count();
+            if want.is_none()
+                && own.len() < 24
+                && c.size >= 3
+                && e.food_surplus >= 2
+                && settlers + queued < own.len() / 3 + 1
+                && e.net_shields > 0
+            {
+                want = self.base.settler(obs).map(|t| t as i8);
+            }
+            // Continue an investment once started, after urgent safety/growth
+            // checks. Available excludes already completed improvements.
+            if want.is_none()
+                && c.building
+                    .is_some_and(|t| t < 0 && affordable((-i16::from(t)) as u8))
+            {
+                continue;
+            }
+            if want.is_none() {
+                let priorities = [
+                    (
+                        3,
+                        e.food_surplus > 0 && c.size < 7 && e.growth_block.is_none(),
+                    ),
+                    (4, c.size >= 3),
+                    (6, e.finance.science >= 2),
+                    (5, e.finance.taxes + e.finance.luxuries >= 2),
+                    (7, c.size >= 5),
+                    (12, building(6) && e.finance.science >= 4),
+                    (10, building(5) && e.finance.taxes >= 4),
+                    (15, e.net_shields >= 6),
+                    (2, true),
+                ];
+                want = priorities
+                    .into_iter()
+                    .find(|&(id, useful)| useful && affordable(id))
+                    .map(|(id, _)| -(id as i8));
+            }
+            if want.is_none() {
+                want = self.base.best_defender(obs).map(|t| t as i8);
+            }
+            if let Some(item) = want.filter(|&item| c.building != Some(item)) {
+                return Some(Order::SetProduction {
+                    city: c.index,
+                    item,
+                });
+            }
+        }
+        None
+    }
+
+    fn unit_order(&mut self, obs: &Observation) -> Option<Order> {
+        for u in obs
+            .units
+            .iter()
+            .filter(|u| u.owner == obs.civ && u.moves_left > 0)
+        {
+            if self.base.done.contains(&u.index) {
+                continue;
+            }
+            let Some(info) = self.base.units.get(u.type_id as usize) else {
+                continue;
+            };
+            let in_city = obs
+                .cities
+                .iter()
+                .any(|c| c.owner == obs.civ && (c.x, c.y) == (u.x, u.y));
+            // Select the strongest present defender from the full observation,
+            // including units that have already been visited by this player.
+            let garrison = obs
+                .units
+                .iter()
+                .filter(|v| v.owner == obs.civ && (v.x, v.y) == (u.x, u.y))
+                .filter_map(|v| {
+                    self.base
+                        .units
+                        .get(v.type_id as usize)
+                        .filter(|t| t.defense > 0 && t.role != ROLE_SETTLE)
+                        .map(|t| (t.defense, std::cmp::Reverse(v.index)))
+                })
+                .max()
+                .map(|(_, index)| index.0);
+            if in_city && garrison == Some(u.index) {
+                self.base.done.insert(u.index);
+                continue;
+            }
+            let (x, y) = (u.x as i32, u.y as i32);
+            let food = self.base.tile(obs, x, y).map_or(0, |t| {
+                self.terrain_food
+                    .get(t.terrain as usize)
+                    .copied()
+                    .unwrap_or(0)
+            });
+            if info.role == ROLE_SETTLE && food >= 1 && self.base.near_city(obs, x, y) > 2 {
+                self.base.done.insert(u.index);
+                return Some(Order::FoundCity { unit: u.index });
+            }
+            self.visited.insert((u.index, u.x, u.y));
+            let mut best = None;
+            for (dx, dy) in NEIGHBOURS {
+                let (nx, ny) = (x + dx, y + dy);
+                if nx < 0 || nx >= obs.w2 as i32 {
+                    continue;
+                } // movement kernel has no seam crossing yet
+                let Some(tile) = self.base.tile(obs, nx, ny) else {
+                    continue;
+                };
+                if (info.domain == 0 && tile.terrain == OCEAN_TERRAIN)
+                    || (info.domain == 2 && tile.terrain != OCEAN_TERRAIN)
+                    || self.visited.contains(&(u.index, nx as u16, ny as u16))
+                {
+                    continue;
+                }
+                let enemy = obs
+                    .units
+                    .iter()
+                    .filter(|v| v.owner != obs.civ && (v.x as i32, v.y as i32) == (nx, ny))
+                    .filter_map(|v| self.base.units.get(v.type_id as usize))
+                    .map(|v| v.defense)
+                    .max();
+                // Conservative visible-strength policy, not original combat AI.
+                // Noncombatants never deliberately enter hostile units/cities.
+                let foreign_city = obs
+                    .cities
+                    .iter()
+                    .any(|c| c.owner != obs.civ && (c.x as i32, c.y as i32) == (nx, ny));
+                if (enemy.is_some() || foreign_city)
+                    && (info.attack <= 0
+                        || info.role == ROLE_SETTLE
+                        || enemy.is_some_and(|d| info.attack < 2 * d.max(1)))
+                {
+                    continue;
+                }
+                let danger = obs.units.iter().filter(|v| v.owner != obs.civ).any(|v| {
+                    diamond_distance(obs.w2 as i32, false, v.x as i32, v.y as i32, nx, ny) <= 1
+                });
+                if info.role == ROLE_SETTLE && danger {
+                    continue;
+                }
+                let unseen = NEIGHBOURS
+                    .iter()
+                    .filter(|&&(ex, ey)| self.base.tile(obs, nx + ex, ny + ey).is_none())
+                    .count() as i32;
+                let score = if info.role == ROLE_SETTLE {
+                    let food = self
+                        .terrain_food
+                        .get(tile.terrain as usize)
+                        .copied()
+                        .unwrap_or(0);
+                    self.base.near_city(obs, nx, ny).min(6) * 10 + food * 3 + unseen
+                } else {
+                    unseen * 4 + if enemy.is_some() { 20 } else { 0 } - i32::from(danger) * 2
+                };
+                let key = (score, self.base.rng.next_u32());
+                if best.is_none_or(|(s, r, _, _)| key > (s, r)) {
+                    best = Some((key.0, key.1, nx as u16, ny as u16));
+                }
+            }
+            if let Some((_, _, nx, ny)) = best {
+                self.pending_unit = Some(u.index);
+                return Some(Order::Move {
+                    unit: u.index,
+                    to: (nx, ny),
+                });
+            }
+            self.base.done.insert(u.index);
+        }
+        None
     }
 }
 
 impl Player for AiV1 {
     fn act(&mut self, obs: &Observation) -> Order {
+        if self.base.turn != obs.turn {
+            self.base.turn = obs.turn;
+            self.base.done.clear();
+            self.base.production_done = false;
+            self.visited.clear();
+            self.pending_unit = None;
+        }
+        if let Some(unit) = self.pending_unit.take() {
+            if matches!(
+                obs.last_result,
+                Some(crate::player::OrderResult::Rejected(_))
+            ) {
+                self.base.done.insert(unit);
+            }
+        }
         if obs
             .research
             .target
@@ -292,7 +566,13 @@ impl Player for AiV1 {
                 return Order::SetResearch { advance };
             }
         }
-        self.base.act(obs)
+        if !self.base.production_done {
+            if let Some(order) = self.production(obs) {
+                return order;
+            }
+            self.base.production_done = true;
+        }
+        self.unit_order(obs).unwrap_or(Order::EndTurn)
     }
 }
 

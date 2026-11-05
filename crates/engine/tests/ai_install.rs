@@ -44,3 +44,59 @@ fn hundred_turn_all_ai_game_expands_and_replays() {
         Game::replay("Ph_Auto2.SAV", &save, rules(), None, &log).unwrap_or_else(|e| panic!("{e}"));
     assert_eq!(r.world.checksum(), g.world.checksum());
 }
+
+/// AI v1 must exercise its economy and expansion through the public player
+/// boundary, stay deterministic, and replay every order and round checksum.
+#[test]
+fn fifty_turn_ai_v1_economy_expands_invests_and_replays() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME").map(std::path::PathBuf::from) else {
+        return;
+    };
+    let save = std::fs::read(home.join("Original/Ph_Auto2.SAV")).unwrap();
+    let text = std::fs::read(home.join("Original/Rules.txt")).unwrap();
+    let rules = || tot_kit::parse_rules(&tot_kit::latin1(&text));
+    let run = || {
+        let mut g = Game::new("Ph_Auto2.SAV", &save, 3, rules(), None).unwrap();
+        for civ in 1..8 {
+            g.players[civ] = Some(Box::new(engine::ai::AiV1::new(&g.rules, 3, civ as u8)));
+        }
+        for _ in 0..50 {
+            g.play_turn();
+        }
+        g
+    };
+    let g = run();
+    let again = run();
+    assert_eq!(g.log(), again.log());
+    let replay = Game::replay("Ph_Auto2.SAV", &save, rules(), None, g.log()).unwrap();
+    assert_eq!(replay.world.checksum(), g.world.checksum());
+    assert!(
+        g.log().contains("= founded"),
+        "expands through player orders"
+    );
+    let initial = engine::boot(&tot_kit::parse_sav(&save).unwrap(), 3);
+    let improvements = |w: &engine::WorldState| {
+        w.cities
+            .iter()
+            .filter(|c| c.city_id != 0)
+            .map(|c| c.buildings.iter().map(|x| x.count_ones()).sum::<u32>())
+            .sum::<u32>()
+    };
+    assert!(
+        improvements(&g.world) > improvements(&initial),
+        "completes economic investments"
+    );
+    assert!(
+        g.world
+            .research
+            .iter()
+            .map(|r| r.acquired as u32)
+            .sum::<u32>()
+            > initial
+                .research
+                .iter()
+                .map(|r| r.acquired as u32)
+                .sum::<u32>(),
+        "research advances"
+    );
+}

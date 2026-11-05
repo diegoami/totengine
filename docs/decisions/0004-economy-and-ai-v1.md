@@ -166,3 +166,36 @@ landmass strategy refresh, pollution/settler-job state and sea/non-surface
 limits remain explicit in `docs/v0.8.0-readiness.md` and the evidence README.
 This does not alter the owner-approved v0.10 original-like AI target or the
 later client/design milestones.
+
+## AI v1 economy and unit policy
+
+The second #82 increment receives current own-city food/support, finance,
+upkeep, mood, buildings and prerequisite-valid improvement choices through
+`Observation::city_economy`. No foreign private economy records are exposed;
+observations do not refresh mutable caches. Normal production orders and AI
+unit choices now honor the decoded Rules civilization mask too.
+
+The policy prioritizes an undefended city's garrison, unrest relief and a
+blocked growth improvement. Size-three cities with positive shields and at
+least two surplus food may train settlers, bounded by existing settlers and
+other queued settlers. Otherwise it invests in useful Granaries, Temples,
+Libraries, Markets, Courthouses and later multipliers, preserving an ongoing
+investment after emergency checks. Maintenance must fit current civ income
+or a cash reserve. These are explicit engine choices, not decoded AI rules.
+
+Unit handling retains the strongest present defender as a stable garrison,
+uses remaining movement without revisiting a tile in the same round, and
+avoids visible threats for settlers. Domain checks and seam bounds follow the
+current movement kernel. Combat units deliberately attack only a favorable
+visible strength comparison. Rejected moves terminate that unit's actions;
+the policy does not infer unseen enemies or implement transport logistics.
+
+The install-backed 50-turn check runs AI v1 twice and replays every order and
+round checksum, requiring actual founding, completed improvements and advances.
+`engine/examples/ai_curve.rs` exports numeric metrics for engine campaigns and
+archived original saves. Evidence `ai-v1-curves.json` records source hashes,
+actual decoded turn counters and aggregates. Duplicate historical harvest
+labels at turn 4 are deduplicated; they are not treated as successive turns.
+At turn 43, original/AI-v1 totals are 10/10 cities, 21/24 population, 37/25
+units, 27/27 advances and 267/287 power. Early expansion is faster in AI v1;
+these are magnitude/development comparisons, not original-AI campaign parity.

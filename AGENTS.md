@@ -86,7 +86,10 @@ Aventicum's saved cache is stale).
 Recurring route arrows are implemented (`engine::trade_routes`, #85 slice;
 288 arithmetic cases match original x86). Partner trade caches refresh
 before finance. Creation/delivery rewards and supply/demand refresh remain
-open, as does AI v1 economy/war work. Treasury accounting now credits city
+open beyond #85's recurring-income scope. AI v1 now makes own-observation
+economic build choices, bounds settler support, keeps stable garrisons and
+handles visible threats; two 50-turn runs and replay agree. Archived original
+power curves are compared in `docs/evidence/ai-v1-curves.json`. Treasury accounting now credits city
 taxes and charges original human-mask upkeep, including exemptions and
 bankruptcy sales (1,000 synthetic and 490 saved-input x86 cost checks).
 Happiness/disorder stages now refresh after production (#86; 1,000
@@ -101,8 +104,8 @@ x86 comparisons); population and city-landmass caches refresh too (128 cases).
 The decoded surface city phase now runs in `run_turn` (signed growth/debt,
 workers, support/disbands, post-production mood/finance and forced human anarchy).
 Actual round processing matches 500 controlled native city transitions over
-50 rounds; this is not Wine/autosave acceptance. Live-save parity, city-slot
-lifecycle, landmass strategy flags and unsupported-context audits remain open.
+50 rounds; this is not Wine/autosave acceptance. City-slot reuse, classic capacity and deletion extent now match native checks.
+Live-save parity, landmass strategy flags and unsupported-context audits remain open.
 Owner requested all v0.8 tasks then the owner-run milestone review;
 `docs/v0.8.0-readiness.md` tracks the outstanding acceptance gates.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.

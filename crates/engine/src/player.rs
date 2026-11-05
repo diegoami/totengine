@@ -145,6 +145,21 @@ pub struct CityView {
     pub output: Option<CityOutput>,
 }
 
+/// Current economic inputs available only for this player's own cities.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CityEconomyView {
+    pub index: usize,
+    pub food_surplus: i32,
+    pub net_shields: i32,
+    pub finance: crate::finance::CityFinance,
+    pub happy: i32,
+    pub unhappy: i32,
+    pub upkeep: i32,
+    pub buildings: [u8; 5],
+    pub growth_block: Option<u8>,
+    pub available_improvements: Vec<u8>,
+}
+
 /// One seen tile (decision 0003): terrain and its static features.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TileView {
@@ -174,6 +189,10 @@ pub struct Observation {
     pub seen: Vec<Option<TileView>>,
     pub units: Vec<UnitView>,
     pub cities: Vec<CityView>,
+    pub city_economy: Vec<CityEconomyView>,
+    /// Effective maintenance fees for ordinary improvements under this civ's
+    /// mechanics mask, government and exemptions; indexed by improvement ID.
+    pub improvement_upkeep: [i32; 36],
     /// The result of this player's previous order this turn, if any.
     pub last_result: Option<OrderResult>,
 }
@@ -256,7 +275,7 @@ impl WorldState {
                 veteran: u.veteran,
             })
             .collect();
-        let cities = self
+        let cities: Vec<_> = self
             .cities
             .iter()
             .enumerate()
@@ -284,6 +303,61 @@ impl WorldState {
                 }
             })
             .collect();
+        let improvement_upkeep = std::array::from_fn(|id| {
+            if self.human_mask & bit != 0 && self.governments[c] != 0 {
+                self.improvement_upkeep(rules, civ, id)
+            } else {
+                0
+            }
+        });
+        let city_economy = cities
+            .iter()
+            .filter(|k| k.owner == civ)
+            .map(|k| {
+                let city = &self.cities[k.index];
+                let output = k.output.unwrap();
+                let net_shields = output.shields - self.unit_support(rules, k.index);
+                let finance =
+                    self.split_city_trade(rules, k.index, output.trade, net_shields.max(0));
+                let mood = self.city_happiness_with_luxuries(rules, k.index, finance.luxuries);
+                let settlers = self
+                    .units
+                    .iter()
+                    .filter(|u| {
+                        u.id != 0
+                            && u.owner == civ
+                            && u.home as usize == k.index
+                            && rules.unit_role(u.type_id as usize) == Some(5)
+                    })
+                    .count() as i32;
+                CityEconomyView {
+                    index: k.index,
+                    food_surplus: output.food
+                        - city.size as i32 * rules.cosmic_food_per_citizen() as i32
+                        - settlers * rules.cosmic_settler_food(self.governments[c] > 2) as i32,
+                    net_shields,
+                    finance,
+                    happy: mood.happy,
+                    unhappy: mood.unhappy,
+                    upkeep: (1..36)
+                        .filter(|&id| city.has_building(id))
+                        .map(|id| improvement_upkeep[id])
+                        .sum(),
+                    buildings: city.buildings,
+                    growth_block: self
+                        .city_growth_context(rules, k.index)
+                        .and_then(|v| v.blocking_improvement()),
+                    available_improvements: (2..36)
+                        .filter(|&id| {
+                            !city.has_building(id)
+                                && rules.improvement_cost(id).is_some()
+                                && self.knows(rules, civ, rules.improvement_prereq_raw(id))
+                        })
+                        .map(|id| id as u8)
+                        .collect(),
+                }
+            })
+            .collect();
         Observation {
             civ,
             turn: self.turn,
@@ -306,6 +380,8 @@ impl WorldState {
                 .collect(),
             units,
             cities,
+            city_economy,
+            improvement_upkeep,
             last_result: last,
         }
     }
@@ -380,7 +456,7 @@ impl WorldState {
                 }
                 let ok = if item >= 0 {
                     let t = item as usize;
-                    t < rules.unit_names().len() && self.knows(rules, civ, rules.unit_prereq_raw(t))
+                    self.can_build_unit(rules, civ, t)
                 } else {
                     let id = -(item as i32) as usize;
                     (1..68).contains(&id)
@@ -838,8 +914,36 @@ Knights, nil, 0, 2., 0, 4a, 2d, 1h, 1f, 4, 0, 1, Chv, 000000000000000\n\
     /// terrain.
     #[test]
     fn observation_respects_fog() {
-        let g = game(1);
+        let mut g = game(1);
+        for (i, c) in g.world.cities.iter_mut().enumerate() {
+            c.city_id = i as u32 + 1;
+        }
+        let before = g.world.checksum();
         let obs = g.world.observe(&g.rules, 1, None);
+        assert_eq!(
+            before,
+            g.world.checksum(),
+            "observation must not refresh mutable caches"
+        );
+        assert_eq!(
+            obs.city_economy.len(),
+            g.world.cities.iter().filter(|c| c.owner & 15 == 1).count()
+        );
+        assert!(!obs.city_economy.is_empty());
+        assert!(obs
+            .city_economy
+            .iter()
+            .all(|e| g.world.cities[e.index].owner & 15 == 1));
+        for c in g.world.cities.iter_mut().filter(|c| c.owner & 15 != 1) {
+            c.buildings = [255; 5];
+            c.net_taxes = 999;
+            c.net_science = 888;
+        }
+        assert_eq!(
+            obs.city_economy,
+            g.world.observe(&g.rules, 1, None).city_economy,
+            "foreign private building/cache fields must not leak into own economy"
+        );
         assert!(obs
             .units
             .iter()

@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- Extend AI v1 with food/support-aware expansion, economic investments,
+  upkeep budgeting, stable garrisons and cautious visible-target unit handling.
+  Own-city economic observations respect privacy; production honors unit civ
+  masks. Fifty-turn runs are deterministic and replay; derived original/engine
+  power curves document development and policy differences.
 - Reuse deleted city slots, apply the original 255-slot append limit and
   last-slot deletion extent; retain city identity counters across removal.
   Native checks cover 46 allocations, 15 deletions and four identity writes.

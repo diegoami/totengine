@@ -83,6 +83,9 @@ impl WorldState {
     /// Whether `civ` may build unit type `t` now (its Rules prerequisite is
     /// known, or none).
     pub fn can_build_unit(&self, rules: &Rules, civ: u8, t: usize) -> bool {
+        if civ >= 8 || t >= rules.unit_names().len() || rules.unit_civ_mask(t) & (1 << civ) == 0 {
+            return false;
+        }
         match rules.unit_prereq_raw(t) {
             None | Some("nil") => true,
             Some("no") => false,

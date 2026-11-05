@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 390" role="img" aria-label="Aggregate power score: archived original campaign and AI v1">
+<rect width="720" height="390" fill="white"/>
+<g font-family="sans-serif" font-size="13" fill="#222">
+<text x="60" y="25">Aggregate original power score (all civilizations)</text>
+<path d="M60 330.0H680" stroke="#ddd"/>
+<text x="20" y="334.0">0</text>
+<path d="M60 260.0H680" stroke="#ddd"/>
+<text x="20" y="264.0">100</text>
+<path d="M60 190.0H680" stroke="#ddd"/>
+<text x="20" y="194.0">200</text>
+<path d="M60 120.0H680" stroke="#ddd"/>
+<text x="20" y="124.0">300</text>
+<path d="M60 50.0H680" stroke="#ddd"/>
+<text x="20" y="54.0">400</text>
+<text x="60" y="350">0</text>
+<text x="160" y="350">10</text>
+<text x="260" y="350">20</text>
+<text x="360" y="350">30</text>
+<text x="460" y="350">40</text>
+<text x="560" y="350">50</text>
+<text x="660" y="350">60</text>
+<text x="335" y="375">Turn</text>
+<polyline points="100,297.1 110,295.0 120,295.0 140,290.8 150,288.7 180,277.5 200,265.6 220,261.4 240,253.7 260,254.4 280,248.10000000000002 330,228.5 350,215.2 370,209.60000000000002 390,199.1 400,196.3 420,195.60000000000002 440,184.4 450,163.4 460,163.4 470,159.20000000000002 480,145.9 490,143.10000000000002" fill="none" stroke="#aa510b" stroke-width="2.5"/>
+<circle cx="100" cy="297.1" r="2" fill="#aa510b"/>
+<circle cx="110" cy="295.0" r="2" fill="#aa510b"/>
+<circle cx="120" cy="295.0" r="2" fill="#aa510b"/>
+<circle cx="140" cy="290.8" r="2" fill="#aa510b"/>
+<circle cx="150" cy="288.7" r="2" fill="#aa510b"/>
+<circle cx="180" cy="277.5" r="2" fill="#aa510b"/>
+<circle cx="200" cy="265.6" r="2" fill="#aa510b"/>
+<circle cx="220" cy="261.4" r="2" fill="#aa510b"/>
+<circle cx="240" cy="253.7" r="2" fill="#aa510b"/>
+<circle cx="260" cy="254.4" r="2" fill="#aa510b"/>
+<circle cx="280" cy="248.10000000000002" r="2" fill="#aa510b"/>
+<circle cx="330" cy="228.5" r="2" fill="#aa510b"/>
+<circle cx="350" cy="215.2" r="2" fill="#aa510b"/>
+<circle cx="370" cy="209.60000000000002" r="2" fill="#aa510b"/>
+<circle cx="390" cy="199.1" r="2" fill="#aa510b"/>
+<circle cx="400" cy="196.3" r="2" fill="#aa510b"/>
+<circle cx="420" cy="195.60000000000002" r="2" fill="#aa510b"/>
+<circle cx="440" cy="184.4" r="2" fill="#aa510b"/>
+<circle cx="450" cy="163.4" r="2" fill="#aa510b"/>
+<circle cx="460" cy="163.4" r="2" fill="#aa510b"/>
+<circle cx="470" cy="159.20000000000002" r="2" fill="#aa510b"/>
+<circle cx="480" cy="145.9" r="2" fill="#aa510b"/>
+<circle cx="490" cy="143.10000000000002" r="2" fill="#aa510b"/>
+<text x="85" y="55" fill="#aa510b">Original campaign</text>
+<polyline points="100,297.1 110,289.4 120,289.4 130,285.2 140,268.4 150,260.7 160,260.7 170,258.6 180,245.3 190,240.4 200,229.2 210,222.9 220,222.9 230,213.10000000000002 240,207.5 250,205.4 260,204.7 270,204.0 280,201.9 290,201.9 300,201.9 310,199.8 320,182.3 330,171.8 340,160.60000000000002 350,158.5 360,152.20000000000002 370,150.10000000000002 380,152.9 390,152.9 400,152.20000000000002 410,152.20000000000002 420,143.8 430,143.10000000000002 440,143.10000000000002 450,138.20000000000002 460,143.8 470,136.10000000000002 480,129.10000000000002 490,129.10000000000002 500,123.5 510,117.9 520,117.9 530,117.20000000000002 540,116.5 550,117.9 560,115.10000000000002 570,114.4 580,111.60000000000002 590,100.4 600,94.80000000000001" fill="none" stroke="#1766ba" stroke-width="2.5"/>
+<circle cx="100" cy="297.1" r="2" fill="#1766ba"/>
+<circle cx="110" cy="289.4" r="2" fill="#1766ba"/>
+<circle cx="120" cy="289.4" r="2" fill="#1766ba"/>
+<circle cx="130" cy="285.2" r="2" fill="#1766ba"/>
+<circle cx="140" cy="268.4" r="2" fill="#1766ba"/>
+<circle cx="150" cy="260.7" r="2" fill="#1766ba"/>
+<circle cx="160" cy="260.7" r="2" fill="#1766ba"/>
+<circle cx="170" cy="258.6" r="2" fill="#1766ba"/>
+<circle cx="180" cy="245.3" r="2" fill="#1766ba"/>
+<circle cx="190" cy="240.4" r="2" fill="#1766ba"/>
+<circle cx="200" cy="229.2" r="2" fill="#1766ba"/>
+<circle cx="210" cy="222.9" r="2" fill="#1766ba"/>
+<circle cx="220" cy="222.9" r="2" fill="#1766ba"/>
+<circle cx="230" cy="213.10000000000002" r="2" fill="#1766ba"/>
+<circle cx="240" cy="207.5" r="2" fill="#1766ba"/>
+<circle cx="250" cy="205.4" r="2" fill="#1766ba"/>
+<circle cx="260" cy="204.7" r="2" fill="#1766ba"/>
+<circle cx="270" cy="204.0" r="2" fill="#1766ba"/>
+<circle cx="280" cy="201.9" r="2" fill="#1766ba"/>
+<circle cx="290" cy="201.9" r="2" fill="#1766ba"/>
+<circle cx="300" cy="201.9" r="2" fill="#1766ba"/>
+<circle cx="310" cy="199.8" r="2" fill="#1766ba"/>
+<circle cx="320" cy="182.3" r="2" fill="#1766ba"/>
+<circle cx="330" cy="171.8" r="2" fill="#1766ba"/>
+<circle cx="340" cy="160.60000000000002" r="2" fill="#1766ba"/>
+<circle cx="350" cy="158.5" r="2" fill="#1766ba"/>
+<circle cx="360" cy="152.20000000000002" r="2" fill="#1766ba"/>
+<circle cx="370" cy="150.10000000000002" r="2" fill="#1766ba"/>
+<circle cx="380" cy="152.9" r="2" fill="#1766ba"/>
+<circle cx="390" cy="152.9" r="2" fill="#1766ba"/>
+<circle cx="400" cy="152.20000000000002" r="2" fill="#1766ba"/>
+<circle cx="410" cy="152.20000000000002" r="2" fill="#1766ba"/>
+<circle cx="420" cy="143.8" r="2" fill="#1766ba"/>
+<circle cx="430" cy="143.10000000000002" r="2" fill="#1766ba"/>
+<circle cx="440" cy="143.10000000000002" r="2" fill="#1766ba"/>
+<circle cx="450" cy="138.20000000000002" r="2" fill="#1766ba"/>
+<circle cx="460" cy="143.8" r="2" fill="#1766ba"/>
+<circle cx="470" cy="136.10000000000002" r="2" fill="#1766ba"/>
+<circle cx="480" cy="129.10000000000002" r="2" fill="#1766ba"/>
+<circle cx="490" cy="129.10000000000002" r="2" fill="#1766ba"/>
+<circle cx="500" cy="123.5" r="2" fill="#1766ba"/>
+<circle cx="510" cy="117.9" r="2" fill="#1766ba"/>
+<circle cx="520" cy="117.9" r="2" fill="#1766ba"/>
+<circle cx="530" cy="117.20000000000002" r="2" fill="#1766ba"/>
+<circle cx="540" cy="116.5" r="2" fill="#1766ba"/>
+<circle cx="550" cy="117.9" r="2" fill="#1766ba"/>
+<circle cx="560" cy="115.10000000000002" r="2" fill="#1766ba"/>
+<circle cx="570" cy="114.4" r="2" fill="#1766ba"/>
+<circle cx="580" cy="111.60000000000002" r="2" fill="#1766ba"/>
+<circle cx="590" cy="100.4" r="2" fill="#1766ba"/>
+<circle cx="600" cy="94.80000000000001" r="2" fill="#1766ba"/>
+<text x="300" y="55" fill="#1766ba">Engine AI v1</text>
+</g></svg>

@@ -80,7 +80,11 @@ pub fn generate(config: NewGameConfig, rules: &Rules) -> Result<WorldState, Stri
     if !rules.terrain_semantic_ok() {
         return Err("generated surface games require the standard 11 base terrain IDs".into());
     }
-    if rules.unit_names().len() > 80
+    // The permissive Rules reader retains trailing annotation rows (including
+    // one after Original's 80 unit definitions). Only extra actual unit rows
+    // exceed our classic capacity; a text-only footer is not a unit type.
+    if (80..rules.unit_names().len())
+        .any(|t| rules.unit_domain(t).is_some() && rules.unit_role(t).is_some())
         || rules
             .section("CIVILIZE")
             .is_some_and(|s| s.rows.len() > 100)

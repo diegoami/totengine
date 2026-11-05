@@ -110,3 +110,17 @@ results and source identities: `docs/evidence/generated-campaign-v1.json`.
 
 The expanded original-map cohort is being captured under the predeclared
 `worldgen-comparison-protocol.json`; #90 and release validation remain open.
+
+## Expanded comparison completed
+
+All eight new captures plus retained pl2/pl3 pass source/settings checks;
+the new saves match their pre-AI RAM terrain/river cells. The 64 excluded
+engine seeds pass every frozen land/biome/rivers mean-coverage budget.
+The report separately exposes substantial spatial differences: coast
+transitions 27.5906% original versus 10.1172% engine; land components 7.2
+versus 3.4219. Coverage parity under this profile does not mean spatial or
+distribution identity. Native region inputs match across 89 occupied regions.
+All 25 install save/configuration hashes match the initial backup, with the
+game stopped. Source identities, full results and scope limits are retained
+in `worldgen-original-cohort.json`, `worldgen-v2-expanded.json`, the evidence
+README and `docs/v0.9.0-readiness.md` for independent review.

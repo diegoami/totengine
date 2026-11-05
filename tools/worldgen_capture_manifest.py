@@ -41,6 +41,8 @@ def main(root, legacy):
     protocol_path = HERE / "docs/evidence/worldgen-comparison-protocol.json"
     protocol = json.loads(protocol_path.read_text())
     rows = []
+    expected = dict(turn=1, year=-4000, difficulty=4, rivals=4,
+                    barbarian_level=2, family=0, resource_seed=0x1357, advance_count=89)
     for i, seed in enumerate(protocol["original_settings"]["new_crt_seeds"]):
         directory = root / ("original-0b" if i == 0 else f"original-{i}")
         log = directory.with_suffix(".log").read_text()
@@ -51,8 +53,7 @@ def main(root, legacy):
         assert candidates, directory
         source = candidates[0]
         fields, tiles = save_fields(source)
-        assert fields == dict(turn=1, year=-4000, difficulty=4, rivals=4,
-                              barbarian_level=2, family=0, resource_seed=0x1357, advance_count=89), fields
+        assert fields == expected, fields
         assert source.stat().st_mtime_ns >= (directory / ".marker").stat().st_mtime_ns
         intro = (directory / "intro_tiles.bin").read_bytes()
         assert len(intro) == len(tiles)
@@ -80,13 +81,20 @@ def main(root, legacy):
         source = legacy / record["label"] / record["file"]
         assert sha(source) == record["sha256"]
         fields, _ = save_fields(source)
+        assert fields == expected, fields
         rows.append(dict(label=record["label"], directory=record["label"], file=record["file"],
                          sha256=record["sha256"], crt=record["crt"], **fields))
     assert len({row["sha256"] for row in rows}) == len(rows), "duplicate original saves"
+    expected_install = json.loads((root / "install-hashes.json").read_text())
+    actual_install = {str(p.relative_to(home)): sha(p) for p in home.rglob("*")
+                      if p.is_file() and p.suffix.lower() in (".sav", ".ini")}
+    assert actual_install == expected_install, "restore install saves/configuration before reporting"
     print(json.dumps(dict(protocol_sha256=sha(protocol_path),
                           executable_sha256=sha(home / "civ2.exe"),
                           unpatched_executable_sha256=sha(home / "civ2.bak"),
                           rules_sha256=sha(home / "Original/Rules.txt"), sources=rows,
+                          install_restoration=dict(files=len(actual_install), all_hashes_match=True,
+                                                   backup_manifest_sha256=sha(root / "install-hashes.json")),
                           checks="Matched profile, fresh turn-1 saves; all new terrain/river cells equal pre-AI RAM capture; legacy hashes rechecked."), indent=2))
 
 

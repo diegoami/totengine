@@ -14,8 +14,8 @@
   },
   "golden": {
     "file": "generated-campaign-v1.ctc",
-    "sha256": "3b0d428fde8aec908a3df2f7efb300e214970c30836eb5bee91ebd74b50845b1",
-    "engine_version": "0.8.0",
+    "sha256": "4f42ba1d526fcdcfa28101b478e4f136f800c3af03eea323483bd1b14093cbdc",
+    "engine_version": "0.9.0",
     "kind": "engine replay checkpoint, not native SAV"
   },
   "authored_100_round_result": {

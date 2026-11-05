@@ -119,13 +119,18 @@ v0.9 work has started (#90/#91): `engine::worldgen` and `totctl worldgen`
 provide deterministic engine-designed MP export. First measured baseline and
 render are in `docs/evidence/worldgen-v1.json`. Algorithm v2 corrects polar
 bands/relief and drains inland basins to the sea; 16 calibration and 64 fresh
-engine seeds are measured in `worldgen-v2.json`. Broader original sampling and
-spatial comparison remain open. `engine::newgame` now constructs fresh surface
+engine seeds are measured in `worldgen-v2.json`. The expanded ten-original/
+64-engine-holdout comparison passes declared land/biome/rivers coverage budgets
+in `worldgen-v2-expanded.json`; coasts/biome patches remain smoother and spatial
+parity is not claimed. `engine::newgame` now constructs fresh surface
 games without a save; `engine::campaign` and `totctl campaign` provide AI v1
 autoplay, order replay and versioned replay checkpoints (not native SAV).
 The 100-round authored golden and 32-seed continuation/replay suite pass;
 Original Rules seed 7 reaches 16 cities/53 units/35 advances and resumes.
-Broader original-map capture and release validation are still in progress.
+GitHub CI and scheduled autoplay pass on 3a1b622. v0.9.0 candidate is prepared:
+194 install-backed Rust tests, five Python evidence tests, golden/fmt/clippy
+and the 32-seed nightly suite pass. Independent owner-run review remains;
+`docs/v0.9.0-readiness.md` records gates and material geography limits.
 Next plan: `docs/decisions/0006-generated-world-campaign.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

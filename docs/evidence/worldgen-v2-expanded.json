@@ -1,0 +1,553 @@
+{
+  "status": "comparison measurements; coverage gate and provenance/render checks are separate",
+  "algorithm": "engine-designed v2, not original generator",
+  "dimensions": {
+    "logical_width": 80,
+    "height": 50
+  },
+  "original_reference": {
+    "sources": [
+      "original-0",
+      "original-1",
+      "original-2",
+      "original-3",
+      "original-4",
+      "original-5",
+      "original-6",
+      "original-7",
+      "pl2",
+      "pl3"
+    ],
+    "maps": 10,
+    "percent_of_real_tiles": {
+      "land": {
+        "mean": 48.175,
+        "sample_sd": 1.8189,
+        "min": 45.7,
+        "max": 51.1
+      },
+      "desert": {
+        "mean": 1.4,
+        "sample_sd": 0.5769,
+        "min": 0.55,
+        "max": 2.7
+      },
+      "plains": {
+        "mean": 9.655,
+        "sample_sd": 1.4068,
+        "min": 7.15,
+        "max": 11.85
+      },
+      "grassland": {
+        "mean": 8.105,
+        "sample_sd": 0.9697,
+        "min": 6.85,
+        "max": 10.2
+      },
+      "forest": {
+        "mean": 6.645,
+        "sample_sd": 0.7808,
+        "min": 6.05,
+        "max": 8.45
+      },
+      "hills": {
+        "mean": 9.23,
+        "sample_sd": 1.4396,
+        "min": 7.25,
+        "max": 11.8
+      },
+      "mountains": {
+        "mean": 4.9,
+        "sample_sd": 0.6333,
+        "min": 3.95,
+        "max": 6.1
+      },
+      "tundra": {
+        "mean": 2.51,
+        "sample_sd": 0.3777,
+        "min": 2.0,
+        "max": 3.05
+      },
+      "glacier": {
+        "mean": 3.21,
+        "sample_sd": 0.122,
+        "min": 3.1,
+        "max": 3.5
+      },
+      "swamp": {
+        "mean": 0.695,
+        "sample_sd": 0.2852,
+        "min": 0.4,
+        "max": 1.3
+      },
+      "jungle": {
+        "mean": 1.825,
+        "sample_sd": 0.5366,
+        "min": 1.2,
+        "max": 2.65
+      },
+      "ocean": {
+        "mean": 51.825,
+        "sample_sd": 1.8189,
+        "min": 48.9,
+        "max": 54.3
+      },
+      "rivers": {
+        "mean": 3.635,
+        "sample_sd": 0.3056,
+        "min": 3.25,
+        "max": 4.2
+      }
+    },
+    "spatial": {
+      "coast_edges_percent": {
+        "mean": 27.5906,
+        "sample_sd": 1.4737,
+        "min": 24.6429,
+        "max": 30.0
+      },
+      "same_terrain_edges_percent": {
+        "mean": 50.6633,
+        "sample_sd": 1.9524,
+        "min": 47.5765,
+        "max": 53.8393
+      },
+      "largest_land_tiles_percent": {
+        "mean": 89.1324,
+        "sample_sd": 7.5009,
+        "min": 69.8462,
+        "max": 98.5641
+      },
+      "land_components_mean": 7.2
+    }
+  },
+  "engine_calibration": {
+    "sources": [
+      "engine-v2-0",
+      "engine-v2-1",
+      "engine-v2-2",
+      "engine-v2-3",
+      "engine-v2-4",
+      "engine-v2-5",
+      "engine-v2-6",
+      "engine-v2-7",
+      "engine-v2-8",
+      "engine-v2-9",
+      "engine-v2-10",
+      "engine-v2-11",
+      "engine-v2-12",
+      "engine-v2-13",
+      "engine-v2-14",
+      "engine-v2-15"
+    ],
+    "maps": 16,
+    "percent_of_real_tiles": {
+      "land": {
+        "mean": 47.0,
+        "sample_sd": 0.0,
+        "min": 47.0,
+        "max": 47.0
+      },
+      "desert": {
+        "mean": 1.7,
+        "sample_sd": 1.0893,
+        "min": 0.0,
+        "max": 4.65
+      },
+      "plains": {
+        "mean": 8.3688,
+        "sample_sd": 2.6456,
+        "min": 3.4,
+        "max": 12.1
+      },
+      "grassland": {
+        "mean": 8.05,
+        "sample_sd": 1.7115,
+        "min": 5.5,
+        "max": 11.4
+      },
+      "forest": {
+        "mean": 6.4938,
+        "sample_sd": 1.8386,
+        "min": 3.4,
+        "max": 9.65
+      },
+      "hills": {
+        "mean": 8.95,
+        "sample_sd": 1.8426,
+        "min": 3.85,
+        "max": 11.3
+      },
+      "mountains": {
+        "mean": 4.35,
+        "sample_sd": 1.9383,
+        "min": 1.6,
+        "max": 8.4
+      },
+      "tundra": {
+        "mean": 2.8875,
+        "sample_sd": 0.7117,
+        "min": 1.55,
+        "max": 4.25
+      },
+      "glacier": {
+        "mean": 3.0812,
+        "sample_sd": 0.6595,
+        "min": 1.8,
+        "max": 4.1
+      },
+      "swamp": {
+        "mean": 0.9781,
+        "sample_sd": 0.6537,
+        "min": 0.0,
+        "max": 2.2
+      },
+      "jungle": {
+        "mean": 2.1406,
+        "sample_sd": 2.1139,
+        "min": 0.5,
+        "max": 8.55
+      },
+      "ocean": {
+        "mean": 53.0,
+        "sample_sd": 0.0,
+        "min": 53.0,
+        "max": 53.0
+      },
+      "rivers": {
+        "mean": 3.7625,
+        "sample_sd": 1.1781,
+        "min": 2.05,
+        "max": 5.5
+      }
+    },
+    "spatial": {
+      "coast_edges_percent": {
+        "mean": 9.9689,
+        "sample_sd": 0.9524,
+        "min": 7.6913,
+        "max": 10.9056
+      },
+      "same_terrain_edges_percent": {
+        "mean": 69.3463,
+        "sample_sd": 1.038,
+        "min": 67.4872,
+        "max": 71.0077
+      },
+      "largest_land_tiles_percent": {
+        "mean": 71.9215,
+        "sample_sd": 17.4607,
+        "min": 38.4043,
+        "max": 95.8511
+      },
+      "land_components_mean": 4
+    },
+    "mean_delta_from_reference_percentage_points": {
+      "land": -1.175,
+      "desert": 0.3,
+      "plains": -1.2862,
+      "grassland": -0.055,
+      "forest": -0.1512,
+      "hills": -0.28,
+      "mountains": -0.55,
+      "tundra": 0.3775,
+      "glacier": -0.1288,
+      "swamp": 0.2831,
+      "jungle": 0.3156,
+      "ocean": 1.175,
+      "rivers": 0.1275
+    }
+  },
+  "engine_holdout": {
+    "sources": [
+      "engine-v2-16",
+      "engine-v2-17",
+      "engine-v2-18",
+      "engine-v2-19",
+      "engine-v2-20",
+      "engine-v2-21",
+      "engine-v2-22",
+      "engine-v2-23",
+      "engine-v2-24",
+      "engine-v2-25",
+      "engine-v2-26",
+      "engine-v2-27",
+      "engine-v2-28",
+      "engine-v2-29",
+      "engine-v2-30",
+      "engine-v2-31",
+      "engine-v2-32",
+      "engine-v2-33",
+      "engine-v2-34",
+      "engine-v2-35",
+      "engine-v2-36",
+      "engine-v2-37",
+      "engine-v2-38",
+      "engine-v2-39",
+      "engine-v2-40",
+      "engine-v2-41",
+      "engine-v2-42",
+      "engine-v2-43",
+      "engine-v2-44",
+      "engine-v2-45",
+      "engine-v2-46",
+      "engine-v2-47",
+      "engine-v2-48",
+      "engine-v2-49",
+      "engine-v2-50",
+      "engine-v2-51",
+      "engine-v2-52",
+      "engine-v2-53",
+      "engine-v2-54",
+      "engine-v2-55",
+      "engine-v2-56",
+      "engine-v2-57",
+      "engine-v2-58",
+      "engine-v2-59",
+      "engine-v2-60",
+      "engine-v2-61",
+      "engine-v2-62",
+      "engine-v2-63",
+      "engine-v2-64",
+      "engine-v2-65",
+      "engine-v2-66",
+      "engine-v2-67",
+      "engine-v2-68",
+      "engine-v2-69",
+      "engine-v2-70",
+      "engine-v2-71",
+      "engine-v2-72",
+      "engine-v2-73",
+      "engine-v2-74",
+      "engine-v2-75",
+      "engine-v2-76",
+      "engine-v2-77",
+      "engine-v2-78",
+      "engine-v2-79"
+    ],
+    "maps": 64,
+    "percent_of_real_tiles": {
+      "land": {
+        "mean": 47.0,
+        "sample_sd": 0.0,
+        "min": 47.0,
+        "max": 47.0
+      },
+      "desert": {
+        "mean": 2.1125,
+        "sample_sd": 1.5829,
+        "min": 0.0,
+        "max": 7.45
+      },
+      "plains": {
+        "mean": 7.8742,
+        "sample_sd": 2.8068,
+        "min": 1.5,
+        "max": 16.05
+      },
+      "grassland": {
+        "mean": 8.2711,
+        "sample_sd": 2.1197,
+        "min": 2.65,
+        "max": 13.3
+      },
+      "forest": {
+        "mean": 6.4102,
+        "sample_sd": 1.896,
+        "min": 2.55,
+        "max": 10.95
+      },
+      "hills": {
+        "mean": 9.35,
+        "sample_sd": 2.1763,
+        "min": 4.5,
+        "max": 14.75
+      },
+      "mountains": {
+        "mean": 4.4102,
+        "sample_sd": 2.0,
+        "min": 1.05,
+        "max": 11.55
+      },
+      "tundra": {
+        "mean": 2.7617,
+        "sample_sd": 0.7914,
+        "min": 0.85,
+        "max": 4.25
+      },
+      "glacier": {
+        "mean": 2.7797,
+        "sample_sd": 0.8584,
+        "min": 0.7,
+        "max": 5.0
+      },
+      "swamp": {
+        "mean": 0.9836,
+        "sample_sd": 0.851,
+        "min": 0.0,
+        "max": 3.8
+      },
+      "jungle": {
+        "mean": 2.0469,
+        "sample_sd": 1.6216,
+        "min": 0.05,
+        "max": 8.55
+      },
+      "ocean": {
+        "mean": 53.0,
+        "sample_sd": 0.0,
+        "min": 53.0,
+        "max": 53.0
+      },
+      "rivers": {
+        "mean": 3.4312,
+        "sample_sd": 1.0618,
+        "min": 1.7,
+        "max": 7.0
+      }
+    },
+    "spatial": {
+      "coast_edges_percent": {
+        "mean": 10.1172,
+        "sample_sd": 0.8454,
+        "min": 8.3929,
+        "max": 12.602
+      },
+      "same_terrain_edges_percent": {
+        "mean": 69.0932,
+        "sample_sd": 1.0914,
+        "min": 67.4362,
+        "max": 72.2959
+      },
+      "largest_land_tiles_percent": {
+        "mean": 80.891,
+        "sample_sd": 18.4454,
+        "min": 37.766,
+        "max": 100.0
+      },
+      "land_components_mean": 3.4219
+    },
+    "mean_delta_from_reference_percentage_points": {
+      "land": -1.175,
+      "desert": 0.7125,
+      "plains": -1.7808,
+      "grassland": 0.1661,
+      "forest": -0.2348,
+      "hills": 0.12,
+      "mountains": -0.4898,
+      "tundra": 0.2517,
+      "glacier": -0.4303,
+      "swamp": 0.2886,
+      "jungle": 0.2219,
+      "ocean": 1.175,
+      "rivers": -0.2038
+    }
+  },
+  "controls": [
+    {
+      "source": "pl4",
+      "logical_width": 80,
+      "height": 50,
+      "tiles": 2000,
+      "rivers": 75,
+      "desert": 23,
+      "plains": 191,
+      "grassland": 360,
+      "forest": 202,
+      "hills": 63,
+      "mountains": 11,
+      "tundra": 50,
+      "glacier": 62,
+      "swamp": 16,
+      "jungle": 45,
+      "ocean": 977,
+      "neighbor_edges": 15680,
+      "coast_edges": 4534,
+      "same_terrain_edges": 8282,
+      "largest_land_tiles": 754,
+      "land_components": 12,
+      "land": 1023
+    }
+  ],
+  "limits": [
+    "Reference settings and provenance must be checked in the source manifest.",
+    "Engine holdout seeds test robustness of calibration, not original-generator parity.",
+    "No statistical acceptance awarded; the report describes counts, not a release gate.",
+    "Biome counts do not measure spatial coherence or establish original-game MP import."
+  ],
+  "coverage_gate": {
+    "passed": true,
+    "checks": {
+      "original_sample_count": true,
+      "engine_sample_count": true,
+      "dimensions": true,
+      "declared_holdout": true,
+      "land_setting": true
+    },
+    "measurements": {
+      "land": {
+        "absolute_delta_pp": 1.175,
+        "budget_pp": 3.0,
+        "passed": true
+      },
+      "desert": {
+        "absolute_delta_pp": 0.7125,
+        "budget_pp": 0.75,
+        "passed": true
+      },
+      "plains": {
+        "absolute_delta_pp": 1.7808,
+        "budget_pp": 2.4137,
+        "passed": true
+      },
+      "grassland": {
+        "absolute_delta_pp": 0.1661,
+        "budget_pp": 2.0263,
+        "passed": true
+      },
+      "forest": {
+        "absolute_delta_pp": 0.2348,
+        "budget_pp": 1.6612,
+        "passed": true
+      },
+      "hills": {
+        "absolute_delta_pp": 0.12,
+        "budget_pp": 2.3075,
+        "passed": true
+      },
+      "mountains": {
+        "absolute_delta_pp": 0.4898,
+        "budget_pp": 1.225,
+        "passed": true
+      },
+      "tundra": {
+        "absolute_delta_pp": 0.2517,
+        "budget_pp": 0.75,
+        "passed": true
+      },
+      "glacier": {
+        "absolute_delta_pp": 0.4303,
+        "budget_pp": 0.8025,
+        "passed": true
+      },
+      "swamp": {
+        "absolute_delta_pp": 0.2886,
+        "budget_pp": 0.75,
+        "passed": true
+      },
+      "jungle": {
+        "absolute_delta_pp": 0.2219,
+        "budget_pp": 0.75,
+        "passed": true
+      },
+      "rivers": {
+        "absolute_delta_pp": 0.2038,
+        "budget_pp": 1.5,
+        "passed": true
+      }
+    },
+    "scope": "Declared mean-coverage budgets only; provenance and render checks are separate."
+  },
+  "protocol_sha256": "c907d5f2167d1269fa18220619816ab1fd4eaf1f43c29038de6343ee94207882",
+  "metrics_sha256": "7a58f233868661da9a002fe32ce9248fc12c2b763b75ab4cf08cf59e0eeec5a5"
+}

@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+## [0.9.0] — generated-world campaigns
+
+- Complete the controlled generator coverage comparison (#90): ten original
+  worlds versus 64 engine holdout seeds pass the frozen land/biome/river mean
+  budgets. Record source/RAM checks, native region inputs, inspected renders
+  and the substantial remaining coastline/patch-coherence differences.
+
 - Add fresh generated-world AI campaigns (#91): `totctl campaign`, explicit
   initialization policy, versioned engine replay checkpoints, strict Rules/setup
   identity, deterministic continuation and a scheduled 32-seed autoplay suite.

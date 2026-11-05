@@ -101,6 +101,17 @@ fn invalid_setup_and_missing_settlers_fail_before_boot() {
 }
 
 #[test]
+fn trailing_unit_annotation_does_not_exceed_classic_capacity() {
+    let annotated = RULES.replace("@IMPROVE", ": Authored trailing unit annotation\n@IMPROVE");
+    let rules = tot_kit::parse_rules(&annotated);
+    assert_eq!(rules.unit_names().len(), 81);
+    let annotated_world = engine::newgame::generate(configured(7), &rules).unwrap();
+    let ordinary_world =
+        engine::newgame::generate(configured(7), &tot_kit::parse_rules(RULES)).unwrap();
+    assert_eq!(annotated_world.checksum(), ordinary_world.checksum());
+}
+
+#[test]
 fn checkpoint_resume_restores_ai_state_and_rejects_tampering() {
     use engine::campaign::Campaign;
     let rules = || tot_kit::parse_rules(RULES);

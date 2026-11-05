@@ -1,0 +1,722 @@
+{
+  "protocol_sha256": "c907d5f2167d1269fa18220619816ab1fd4eaf1f43c29038de6343ee94207882",
+  "executable_sha256": "dbbd24d8b72fd1ac56d81adf3a16273affc6ae3294dd5ad4a2c59d4d781c00b4",
+  "unpatched_executable_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "rules_sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef",
+  "sources": [
+    {
+      "label": "original-0",
+      "directory": "original-0b",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "c53fecfa6dce0f7d85c9474e3123783bd51488760f36bca295db1a8a6d3f5a08",
+      "intro_tiles_sha256": "6c48182519dce381ab16296c8960047a6b9a72224d86eafbd9d83e048db87c4d",
+      "crt": "0x10203",
+      "regions": [
+        {
+          "id": 1,
+          "land": 932,
+          "plains_grassland": 394,
+          "water": 727
+        },
+        {
+          "id": 2,
+          "land": 2,
+          "plains_grassland": 1,
+          "water": 0
+        },
+        {
+          "id": 3,
+          "land": 22,
+          "plains_grassland": 7,
+          "water": 0
+        },
+        {
+          "id": 4,
+          "land": 8,
+          "plains_grassland": 4,
+          "water": 54
+        },
+        {
+          "id": 5,
+          "land": 10,
+          "plains_grassland": 4,
+          "water": 0
+        },
+        {
+          "id": 6,
+          "land": 48,
+          "plains_grassland": 0,
+          "water": 20
+        },
+        {
+          "id": 10,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 43
+        },
+        {
+          "id": 14,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 13
+        },
+        {
+          "id": 18,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 41
+        },
+        {
+          "id": 27,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 15
+        },
+        {
+          "id": 28,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 10
+        },
+        {
+          "id": 63,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 55
+        }
+      ],
+      "turn": 1,
+      "year": -4000,
+      "difficulty": 4,
+      "rivals": 4,
+      "barbarian_level": 2,
+      "family": 0,
+      "resource_seed": 4951,
+      "advance_count": 89
+    },
+    {
+      "label": "original-1",
+      "directory": "original-1",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "419689fc3ded81dca5f64d7684febbc8c019f12f88c6379a16e41319fee1fab4",
+      "intro_tiles_sha256": "a1a77c020cf3531b2fb8c8001eb09ddfa350030457dbc326942456ae92b2f530",
+      "crt": "0x314159",
+      "regions": [
+        {
+          "id": 1,
+          "land": 48,
+          "plains_grassland": 0,
+          "water": 742
+        },
+        {
+          "id": 2,
+          "land": 880,
+          "plains_grassland": 348,
+          "water": 0
+        },
+        {
+          "id": 3,
+          "land": 20,
+          "plains_grassland": 9,
+          "water": 0
+        },
+        {
+          "id": 4,
+          "land": 1,
+          "plains_grassland": 1,
+          "water": 0
+        },
+        {
+          "id": 5,
+          "land": 1,
+          "plains_grassland": 1,
+          "water": 0
+        },
+        {
+          "id": 6,
+          "land": 2,
+          "plains_grassland": 1,
+          "water": 80
+        },
+        {
+          "id": 7,
+          "land": 1,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 8,
+          "land": 10,
+          "plains_grassland": 3,
+          "water": 0
+        },
+        {
+          "id": 9,
+          "land": 1,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 10,
+          "land": 2,
+          "plains_grassland": 2,
+          "water": 0
+        },
+        {
+          "id": 12,
+          "land": 2,
+          "plains_grassland": 1,
+          "water": 0
+        },
+        {
+          "id": 27,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 130
+        },
+        {
+          "id": 43,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 14
+        },
+        {
+          "id": 63,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 66
+        }
+      ],
+      "turn": 1,
+      "year": -4000,
+      "difficulty": 4,
+      "rivals": 4,
+      "barbarian_level": 2,
+      "family": 0,
+      "resource_seed": 4951,
+      "advance_count": 89
+    },
+    {
+      "label": "original-2",
+      "directory": "original-2",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "9936fdb7a154fad5297d28406615d555724e8706e36c1a0c25364d55230f0e41",
+      "intro_tiles_sha256": "cb58cbcfb222f065e36e1e01065199559b234bbc593a35c64808d63626e75223",
+      "crt": "0x271828",
+      "regions": [
+        {
+          "id": 1,
+          "land": 49,
+          "plains_grassland": 0,
+          "water": 927
+        },
+        {
+          "id": 2,
+          "land": 867,
+          "plains_grassland": 310,
+          "water": 0
+        },
+        {
+          "id": 3,
+          "land": 2,
+          "plains_grassland": 2,
+          "water": 0
+        },
+        {
+          "id": 4,
+          "land": 1,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 5,
+          "land": 6,
+          "plains_grassland": 4,
+          "water": 0
+        },
+        {
+          "id": 7,
+          "land": 8,
+          "plains_grassland": 1,
+          "water": 0
+        },
+        {
+          "id": 9,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 14
+        },
+        {
+          "id": 10,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 25
+        },
+        {
+          "id": 23,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 52
+        },
+        {
+          "id": 63,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 49
+        }
+      ],
+      "turn": 1,
+      "year": -4000,
+      "difficulty": 4,
+      "rivals": 4,
+      "barbarian_level": 2,
+      "family": 0,
+      "resource_seed": 4951,
+      "advance_count": 89
+    },
+    {
+      "label": "original-3",
+      "directory": "original-3",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "5cb7706bcc6b748796ce0d5a5402ed7eb9626c03c67bd31a8e9ab647c019c7d1",
+      "intro_tiles_sha256": "bd9e87a56c798e8aba0a9cdcf91c9ff09b17e87f762f8cc6310dc36b21118e85",
+      "crt": "0xabcdef",
+      "regions": [
+        {
+          "id": 1,
+          "land": 48,
+          "plains_grassland": 0,
+          "water": 826
+        },
+        {
+          "id": 2,
+          "land": 876,
+          "plains_grassland": 387,
+          "water": 0
+        },
+        {
+          "id": 3,
+          "land": 20,
+          "plains_grassland": 10,
+          "water": 0
+        },
+        {
+          "id": 5,
+          "land": 3,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 6,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 26
+        },
+        {
+          "id": 7,
+          "land": 1,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 17,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 18
+        },
+        {
+          "id": 23,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 22
+        },
+        {
+          "id": 27,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 12
+        },
+        {
+          "id": 28,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 84
+        },
+        {
+          "id": 63,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 64
+        }
+      ],
+      "turn": 1,
+      "year": -4000,
+      "difficulty": 4,
+      "rivals": 4,
+      "barbarian_level": 2,
+      "family": 0,
+      "resource_seed": 4951,
+      "advance_count": 89
+    },
+    {
+      "label": "original-4",
+      "directory": "original-4",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "3ba55a97d6ac0e9cdf7c2eec6af4a330911dc2f4c181e0c090f12e6a647ec72e",
+      "intro_tiles_sha256": "4fc0479d228c685c2eb8de03259c88ac9579c38687f163fa2f61a01d133d6690",
+      "crt": "0x13579",
+      "regions": [
+        {
+          "id": 1,
+          "land": 865,
+          "plains_grassland": 338,
+          "water": 810
+        },
+        {
+          "id": 2,
+          "land": 51,
+          "plains_grassland": 15,
+          "water": 60
+        },
+        {
+          "id": 3,
+          "land": 4,
+          "plains_grassland": 2,
+          "water": 20
+        },
+        {
+          "id": 4,
+          "land": 3,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 5,
+          "land": 1,
+          "plains_grassland": 1,
+          "water": 0
+        },
+        {
+          "id": 6,
+          "land": 1,
+          "plains_grassland": 1,
+          "water": 0
+        },
+        {
+          "id": 7,
+          "land": 18,
+          "plains_grassland": 9,
+          "water": 0
+        },
+        {
+          "id": 8,
+          "land": 15,
+          "plains_grassland": 4,
+          "water": 0
+        },
+        {
+          "id": 9,
+          "land": 49,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 10,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 11
+        },
+        {
+          "id": 28,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 14
+        },
+        {
+          "id": 32,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 17
+        },
+        {
+          "id": 63,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 61
+        }
+      ],
+      "turn": 1,
+      "year": -4000,
+      "difficulty": 4,
+      "rivals": 4,
+      "barbarian_level": 2,
+      "family": 0,
+      "resource_seed": 4951,
+      "advance_count": 89
+    },
+    {
+      "label": "original-5",
+      "directory": "original-5",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "318fb509b06b82aec92665f3244bf3c420f216b5d8a42dce7a396862d7473144",
+      "intro_tiles_sha256": "7cb08a79e080207e9fa6c2c8bb91c48093ff004b0d3bbb2f4175663a95f0eef4",
+      "crt": "0x24680",
+      "regions": [
+        {
+          "id": 1,
+          "land": 820,
+          "plains_grassland": 295,
+          "water": 1044
+        },
+        {
+          "id": 2,
+          "land": 22,
+          "plains_grassland": 7,
+          "water": 0
+        },
+        {
+          "id": 3,
+          "land": 8,
+          "plains_grassland": 5,
+          "water": 9
+        },
+        {
+          "id": 4,
+          "land": 1,
+          "plains_grassland": 1,
+          "water": 0
+        },
+        {
+          "id": 5,
+          "land": 49,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 6,
+          "land": 6,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 7,
+          "land": 1,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 8,
+          "land": 7,
+          "plains_grassland": 5,
+          "water": 0
+        },
+        {
+          "id": 63,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 33
+        }
+      ],
+      "turn": 1,
+      "year": -4000,
+      "difficulty": 4,
+      "rivals": 4,
+      "barbarian_level": 2,
+      "family": 0,
+      "resource_seed": 4951,
+      "advance_count": 89
+    },
+    {
+      "label": "original-6",
+      "directory": "original-6",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "281d5268d6a3d8edba74ea36ecd7b10e004c5683b37dafb2a9b9970fa1a899aa",
+      "intro_tiles_sha256": "77d2927c6f837f11da66c14e566fc7c40dae4d53346fb4dfcd77491ba3b6df6e",
+      "crt": "0xdeadbeef",
+      "regions": [
+        {
+          "id": 1,
+          "land": 50,
+          "plains_grassland": 0,
+          "water": 925
+        },
+        {
+          "id": 2,
+          "land": 184,
+          "plains_grassland": 92,
+          "water": 0
+        },
+        {
+          "id": 3,
+          "land": 9,
+          "plains_grassland": 6,
+          "water": 0
+        },
+        {
+          "id": 4,
+          "land": 681,
+          "plains_grassland": 276,
+          "water": 0
+        },
+        {
+          "id": 7,
+          "land": 2,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 9,
+          "land": 42,
+          "plains_grassland": 15,
+          "water": 0
+        },
+        {
+          "id": 10,
+          "land": 6,
+          "plains_grassland": 4,
+          "water": 0
+        },
+        {
+          "id": 11,
+          "land": 1,
+          "plains_grassland": 1,
+          "water": 0
+        },
+        {
+          "id": 12,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 11
+        },
+        {
+          "id": 19,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 12
+        },
+        {
+          "id": 24,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 31
+        },
+        {
+          "id": 28,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 19
+        },
+        {
+          "id": 63,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 27
+        }
+      ],
+      "turn": 1,
+      "year": -4000,
+      "difficulty": 4,
+      "rivals": 4,
+      "barbarian_level": 2,
+      "family": 0,
+      "resource_seed": 4951,
+      "advance_count": 89
+    },
+    {
+      "label": "original-7",
+      "directory": "original-7",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "6f9f36726dd6cacee9497efde962f155340feda293149bb6d0891cfdab6aba8b",
+      "intro_tiles_sha256": "44e813f59ea3b3ef051c1ed1f45ef0e578e04ee5f3c78da95641d09f9ff83bf3",
+      "crt": "0x1029384",
+      "regions": [
+        {
+          "id": 1,
+          "land": 874,
+          "plains_grassland": 311,
+          "water": 820
+        },
+        {
+          "id": 2,
+          "land": 51,
+          "plains_grassland": 18,
+          "water": 0
+        },
+        {
+          "id": 3,
+          "land": 2,
+          "plains_grassland": 0,
+          "water": 18
+        },
+        {
+          "id": 4,
+          "land": 4,
+          "plains_grassland": 4,
+          "water": 0
+        },
+        {
+          "id": 5,
+          "land": 48,
+          "plains_grassland": 0,
+          "water": 0
+        },
+        {
+          "id": 11,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 108
+        },
+        {
+          "id": 63,
+          "land": 0,
+          "plains_grassland": 0,
+          "water": 75
+        }
+      ],
+      "turn": 1,
+      "year": -4000,
+      "difficulty": 4,
+      "rivals": 4,
+      "barbarian_level": 2,
+      "family": 0,
+      "resource_seed": 4951,
+      "advance_count": 89
+    },
+    {
+      "label": "pl2",
+      "directory": "pl2",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "53b0592d6a7c736afb0b660563bbb575fe594d6625f5388ad98471d8cba29601",
+      "crt": "0x5678",
+      "turn": 1,
+      "year": -4000,
+      "difficulty": 4,
+      "rivals": 4,
+      "barbarian_level": 2,
+      "family": 0,
+      "resource_seed": 4951,
+      "advance_count": 89
+    },
+    {
+      "label": "pl3",
+      "directory": "pl3",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "91e7db2ae5c064bfc74a95731f96f53d1ac18b223b4bc7bd403fe8fa35102194",
+      "crt": "0x9999",
+      "turn": 1,
+      "year": -4000,
+      "difficulty": 4,
+      "rivals": 4,
+      "barbarian_level": 2,
+      "family": 0,
+      "resource_seed": 4951,
+      "advance_count": 89
+    }
+  ],
+  "install_restoration": {
+    "files": 25,
+    "all_hashes_match": true,
+    "backup_manifest_sha256": "6d6129aebb04c65e5f6bb362b6089f5dbd474fcdf6802a212cfa524bc2657585"
+  },
+  "checks": "Matched profile, fresh turn-1 saves; all new terrain/river cells equal pre-AI RAM capture; legacy hashes rechecked."
+}

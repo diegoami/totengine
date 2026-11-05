@@ -3399,3 +3399,71 @@ cargo run -q -p engine --example generated_campaign_metrics -- \
 The generated checkpoint's engine package version is part of its identity.
 Intentional engine/version changes require regenerating the authored golden
 and its hash; the per-round fingerprints continue to verify mechanics state.
+
+#### Expanded original-map comparison and start inputs (#90)
+
+[The frozen protocol](worldgen-comparison-protocol.json) tests generator v2
+without further tuning: eight new original worlds (varying the declared CRT
+seeds, fixing NR/resource seed and five world parameters) plus retained pl2/pl3,
+versus the 64 engine seeds 16–79 excluded from tuning. All are the 80×50 logical
+Original profile. Pl4 remains an excluded changed-settings control.
+Live captures use the standard Wine/ToTPP oracle build; the manifest records
+both its executable hash and the unpatched executable's identity.
+[Source identities and native region counts](worldgen-original-cohort.json)
+record ten distinct source hashes, matching turn-1/difficulty/rival/barbarian/
+family/resource-seed/advance-count fields, and all new save terrain/river cells
+equal to their pre-AI RAM capture. The install's 25 save/configuration hashes
+match the pre-capture backup; the game was stopped before verification.
+Only numeric summaries/hashes and our renders are committed.
+
+[Expanded raw counts](worldgen-v2-expanded-metrics.tsv) and
+[the complete comparison](worldgen-v2-expanded.json) retain ranges, sample
+deviations, calibration/holdout separation and every coverage-budget check.
+**The predeclared mean-coverage gate passes.** Land means are original 48.175%
+versus engine 47.000%; river means 3.635% versus 3.4312%. All ten land biomes
+pass `max(0.75 percentage points, 25% of original mean)`. Land's absolute
+budget is 3 percentage points and rivers' 1.5 points. This is practical
+coverage parity under one controlled profile, not a claim of identical
+distributions or a recreation of the original algorithm. Renders inspected:
+engine seeds 7/31/79 above and original captures [0](worldgen-original-0.png)
+and [7](worldgen-original-7.png). The original diagnostic uses stored pixels;
+MP diagnostics include alternating padding slots, so pixel scales differ.
+
+**Spatial parity is not met or claimed.** Directed neighboring land/water
+transitions average 27.5906% in the original cohort versus 10.1172% for the
+engine holdout. Same-terrain edges are 50.6633% versus 69.0932%; largest land
+component shares are 89.1324% versus 80.8910%; component counts average 7.2
+versus 3.4219. Our coasts and biome patches are smoother, and the component
+distribution differs. These diagnostics were declared separately from #90's
+written land/biome-coverage acceptance. They are a material limit for review,
+not an additional passed claim. Other settings/sizes and original MP import
+remain outside the comparison.
+
+Across all **89 occupied native regions** in the eight new pre-AI captures,
+table words +0/+2/+4 equal respectively non-ocean count, plains-plus-grassland
+count, and ocean count of tiles carrying that region ID. Every comparison
+passes. Some native IDs associate land with coastal water. The fresh-game
+constructor uses the proven plains/grassland input meaning, with its own
+separate connected land/sea region policy. Original Rules have 100 advance
+rows but 89 enabled rows (neither prerequisite `no`); the saved count is 89
+in every cohort member. These are measured input meanings, not claims that
+the original region-assignment or fertility algorithms have been decoded.
+
+Reproduction (`CAPTURES` and `RG2_RUNS` point outside Git):
+
+```sh
+# Captures use seeded_start.sh + DUMP_INTRO=1, the protocol's seeds/settings,
+# and DIALOG_GUARD_DIR outside Git; stop the game and verify install restoration.
+python3 tools/worldgen_capture_manifest.py "$CAPTURES" "$RG2_RUNS" \
+  > /tmp/worldgen-original-cohort.json
+cmp /tmp/worldgen-original-cohort.json docs/evidence/worldgen-original-cohort.json
+# worldgen_metrics --spatial --seeds 80, with label=save arguments from the
+# manifest in source order, plus pl4 as a control, re-derives the retained TSV.
+python3 tools/worldgen_compare.py docs/evidence/worldgen-v2-expanded-metrics.tsv \
+  --reference original-0 --reference original-1 --reference original-2 \
+  --reference original-3 --reference original-4 --reference original-5 \
+  --reference original-6 --reference original-7 --reference pl2 --reference pl3 \
+  --protocol docs/evidence/worldgen-comparison-protocol.json \
+  > /tmp/worldgen-v2-expanded.json
+cmp /tmp/worldgen-v2-expanded.json docs/evidence/worldgen-v2-expanded.json
+```

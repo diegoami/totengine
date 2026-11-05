@@ -1,0 +1,41 @@
+{
+  "status": "predeclared before expanded original cohort capture",
+  "date": "2026-11-05",
+  "algorithm_under_test": "engine-designed v2, frozen at a79c975",
+  "algorithm_version": 2,
+  "original_settings": {
+    "family": "Original",
+    "logical_width": 80,
+    "height": 50,
+    "difficulty": 4,
+    "nr": "0x1234",
+    "map_seed": "0x1357",
+    "params": [0, 0, 0, 0, 0],
+    "new_crt_seeds": ["0x10203", "0x314159", "0x271828", "0xabcdef", "0x13579", "0x24680", "0xdeadbeef", "0x1029384"],
+    "retained_reference_labels": ["pl2", "pl3"],
+    "excluded_changed_setting_control": "pl4"
+  },
+  "engine_settings": {
+    "logical_width": 80,
+    "height": 50,
+    "land_percent": 47,
+    "calibration_seeds": [0, 15],
+    "holdout_seeds": [16, 79]
+  },
+  "gate": {
+    "minimum_original_maps": 10,
+    "minimum_engine_holdout_maps": 64,
+    "land_mean_absolute_tolerance_percentage_points": 3.0,
+    "each_biome_mean_absolute_tolerance": "max(0.75 percentage points, 25% of original cohort mean)",
+    "biome_minimum_absolute_tolerance_percentage_points": 0.75,
+    "biome_relative_tolerance": 0.25,
+    "river_mean_absolute_tolerance_percentage_points": 1.5,
+    "basis": "Cohort mean coverage, equal map weighting; explicit practical parity budget for our generator, not original-algorithm equivalence or distribution identity.",
+    "additional_requirements": ["source/settings/fresh-save validation", "inspect multiple engine renders", "report individual-map ranges and sample deviations", "spatial coherence diagnostics reported separately"]
+  },
+  "limits": [
+    "One matched standard world size/settings profile; no parity claim for other controls or map sizes.",
+    "Mean budgets do not prove identical distributions, geography or original-game MP import.",
+    "If v2 fails, retain the failure and require a new declared calibration/holdout split for later tuning."
+  ]
+}

@@ -12,6 +12,8 @@
 #           (`call GetTickCount-wrapper`) is patched to `mov eax, MAPSEED`
 #                                                           default 0x1357
 # Same four values ⇒ byte-identical turn-1 autosave.
+# DIALOG_GUARD_DIR=<outside-Git directory> gates wizard Returns on visually
+# approved screenshots (dialog_guard.py); changed dialog pixels pause again.
 # HOOK_OUT=<file> [HOOK_SECS] [HOOK_ARGS="--skip 0x403000:0x40a000 --state"]
 # logs the CRT rand() draws after the City Style answer (randhook.py).
 # DUMP_INTRO=1 dumps tiles/landmass table/map header/unit table from RAM
@@ -78,6 +80,9 @@ send_downs_then_return() {
         timeout 8 "$XT" key Down; sleep 0.5
     done
     sleep 0.3
+    if [ -n "${DIALOG_GUARD_DIR:-}" ]; then
+        python3 dialog_guard.py "$GUARD_TITLE" "$DIALOG_GUARD_DIR" || exit 1
+    fi
     timeout 8 "$XT" key Return
 }
 
@@ -99,6 +104,7 @@ step() {
     wait_title "$1" 15 || { echo "dialog never appeared: $1"; exit 1; }
     sleep 1
     focus_titled "$1"
+    GUARD_TITLE="$1"
     send_downs_then_return "$2"
     sleep 2.5
 }
@@ -112,6 +118,12 @@ step "Select Your Tribe" 0
 step "Please Enter Your Name" 0
 wait_title "Select Your City Style" 15 || { echo "no city style"; exit 1; }
 sleep 1
+# Inspect before pinning: a potentially long visual check must not introduce
+# a presentation-dependent interval between the pinned RNGs and generation.
+focus_titled "Select Your City Style"
+if [ -n "${DIALOG_GUARD_DIR:-}" ]; then
+    python3 dialog_guard.py "Select Your City Style" "$DIALOG_GUARD_DIR" || exit 1
+fi
 python3 - "$NR" "$CRT" "$PARAMS" "$MAPSEED" <<'PY' || exit 1
 import sys, struct
 sys.path.insert(0, '.')
@@ -135,7 +147,7 @@ if [ -n "${HOOK_OUT:-}" ]; then
     # shellcheck disable=SC2086
     python3 randhook.py "${HOOK_SECS:-25}" "$HOOK_OUT" --return ${HOOK_ARGS:-} || exit 1
 else
-    send_downs_then_return 0
+    timeout 8 "$XT" key Return
 fi
 sleep 2.5
 if [ -n "${DUMP_INTRO:-}" ]; then

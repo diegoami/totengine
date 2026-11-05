@@ -45,6 +45,13 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
 
 ## Wizard & navigation (oracle)
 
+- **Gate inspection before RNG pinning.** A manual screenshot check can take
+  minutes. `seeded_start.sh` checks City Style first, then pins the generators
+  immediately before Return. The intro title has a suffix (`In the Beginning …`);
+  matching it as an exact caption falsely rejects a valid generated map.
+  Stone textures also vary between launches: radio-list gates compare the
+  selected button center in a known title/geometry, rather than background pixels.
+
 - **Vision-verify every selection before Return.** Screenshots →
   `ppm2png.py` → a vision-capable subagent reads dialog items, selection
   state, and coordinates literally. This replaced ASCII squinting entirely

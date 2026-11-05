@@ -54,25 +54,32 @@ fn controlled_fifty_turn_city_sequence() {
         w.cities[k].food_box = (w.cities[k].food_box as i16 as i32 + surplus) as u16;
         assert!(w.production_step(&rules, k).is_none());
         let post = w.refresh_city_totals(&rules, k, true).unwrap();
-        // 0x4c9c2d: balanced cities with shield output and no food deficit
-        // preserve their specialists on the next AI processing pass.
-        if post.mood.happy == post.mood.unhappy
-            && post.output.shields - post.support > 0
-            && surplus >= 0
-        {
-            w.cities[k].flags |= 0x4000;
-        } else {
-            w.cities[k].flags &= !0x4000;
-        }
-        assert!(
-            post.mood.unhappy <= post.mood.happy,
-            "controlled case reached disorder"
-        );
-        assert!(
-            post.mood.happy < (w.cities[k].size as i32 + 1) / 2 || w.cities[k].size <= 2,
-            "controlled case reached celebration"
-        );
-        w.cities[k].flags &= !1;
+        let city = &w.cities[k];
+        let owner = (city.owner & 15) as usize;
+        let transition = engine::happiness::transition(&engine::happiness::MoodTransitionInput {
+            size: city.size as u8,
+            owner: owner as u8,
+            government: w.governments[owner],
+            human: true,
+            flags: city.flags,
+            happy: post.mood.happy,
+            unhappy: post.mood.unhappy,
+            food: post.output.food,
+            eaten: city.size as i32 * rules.cosmic_food_per_citizen() as i32,
+            net_shields: post.output.shields - post.support,
+            surplus,
+            taxes: post.finance.taxes,
+            scenario: false,
+            scenario_flags: 0,
+            growth_blocked: w
+                .city_growth_context(&rules, k)
+                .unwrap()
+                .blocking_improvement()
+                .is_some(),
+        });
+        assert!(!transition.revolution && !transition.choose_production);
+        w.cities[k].size = transition.size as u16;
+        w.cities[k].flags = transition.flags;
         w.process_city_treasury(&rules, k, post.finance.taxes);
         let c = &w.cities[k];
         let actual = [

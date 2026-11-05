@@ -49,6 +49,18 @@ pub struct GrowthResult {
     pub blocked_by: Option<u8>,
 }
 
+impl GrowthContext {
+    pub fn blocking_improvement(&self) -> Option<u8> {
+        if self.size as i8 as i32 >= self.aqueduct_limit as i32 && !self.aqueduct {
+            Some(9)
+        } else if self.size as i8 as i32 >= self.sewer_limit as i32 && !self.sewer {
+            Some(23)
+        } else {
+            None
+        }
+    }
+}
+
 /// `0x4c5cdb..0x4c5dd2` plus the blocked-growth size rollback at `0x4c5de9`.
 /// The caller must handle negative boxes through the starvation branch first.
 /// Food collection happens later in `0x4cb1da..0x4cb23d`.
@@ -61,13 +73,7 @@ pub fn prepare_growth(c: GrowthContext) -> GrowthResult {
     if c.food_box < 0 || (c.size as i8 as i32 + 1) * c.rows > c.food_box as i32 {
         return result;
     }
-    let blocked = if c.size as i8 as i32 >= c.aqueduct_limit as i32 && !c.aqueduct {
-        Some(9)
-    } else if c.size as i8 as i32 >= c.sewer_limit as i32 && !c.sewer {
-        Some(23)
-    } else {
-        None
-    };
+    let blocked = c.blocking_improvement();
     let next = c.size.wrapping_add(1);
     result.food_box = if c.granary || c.pyramids {
         ((next as i8 as i32 + 1) * (c.cosmic_rows as i32 / 2)) as i16

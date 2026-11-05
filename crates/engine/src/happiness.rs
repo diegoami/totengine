@@ -128,6 +128,87 @@ pub fn calculate_happiness(v: &HappinessInput) -> Happiness {
     h
 }
 
+/// End-of-city mood transition (`0x4c998e`), after production and final totals.
+pub struct MoodTransitionInput {
+    pub size: u8,
+    pub owner: u8,
+    pub government: u8,
+    pub human: bool,
+    pub flags: u32,
+    pub happy: i32,
+    pub unhappy: i32,
+    pub food: i32,
+    pub eaten: i32,
+    pub net_shields: i32,
+    pub surplus: i32,
+    pub taxes: i32,
+    pub scenario: bool,
+    pub scenario_flags: u16,
+    pub growth_blocked: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MoodTransition {
+    pub size: u8,
+    pub flags: u32,
+    pub income: i32,
+    pub choose_production: bool,
+    pub revolution: bool,
+}
+
+pub fn transition(v: &MoodTransitionInput) -> MoodTransition {
+    let mut out = MoodTransition {
+        size: v.size,
+        flags: v.flags,
+        income: 0,
+        choose_production: false,
+        revolution: false,
+    };
+    if v.owner == 0 {
+        return out;
+    }
+    if v.happy < v.unhappy {
+        out.choose_production = !v.human;
+        if out.flags & 1 == 0 {
+            out.flags |= 0x4001;
+        } else {
+            if out.flags & 0x2000 != 0 {
+                out.flags |= 0x100000;
+            }
+            out.flags |= 0x2000;
+            out.revolution =
+                v.human && v.government == 6 && !(v.scenario && v.scenario_flags & 16 != 0);
+        }
+    } else {
+        if v.happy == v.unhappy && v.net_shields > 0 && v.surplus >= 0 {
+            out.flags |= 0x4000;
+        } else {
+            out.flags &= !0x4000;
+        }
+        if out.flags & 1 != 0 {
+            out.flags &= !0x102001;
+            out.choose_production = !v.human;
+        }
+        if v.government != 0 {
+            out.income = v.taxes;
+        }
+    }
+    let celebrating = v.unhappy == 0
+        && v.size as i8 > 2
+        && v.happy >= (v.size as i8 as i32 + 1) / 2
+        && v.government != 0;
+    if celebrating {
+        if out.flags & 2 == 0 {
+            out.flags |= 2;
+        } else if v.government >= 5 && v.food > v.eaten && !v.growth_blocked {
+            out.size = out.size.wrapping_add(1);
+        }
+    } else {
+        out.flags &= !2;
+    }
+    out
+}
+
 impl WorldState {
     pub fn city_happiness(&self, rules: &Rules, idx: usize) -> Happiness {
         self.city_happiness_with_luxuries(rules, idx, self.city_finance(rules, idx).luxuries)
@@ -244,6 +325,48 @@ impl WorldState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn original_mood_transitions() {
+        let mut cases = 0;
+        for line in include_str!("../../../docs/evidence/mood-transition-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let v: Vec<i32> = line
+                .split_whitespace()
+                .map(|x| x.parse().unwrap())
+                .collect();
+            let result = transition(&MoodTransitionInput {
+                size: v[0] as u8,
+                owner: v[1] as u8,
+                government: v[2] as u8,
+                human: v[3] != 0,
+                flags: v[4] as u32,
+                happy: v[5],
+                unhappy: v[6],
+                food: v[7],
+                eaten: v[0] * v[8],
+                net_shields: v[9] - v[10],
+                surplus: v[11],
+                taxes: v[12],
+                scenario: v[13] != 0,
+                scenario_flags: v[14] as u16,
+                growth_blocked: (v[0] >= 8 && v[15] & 1 == 0) || (v[0] >= 12 && v[15] & 2 == 0),
+            });
+            let actual = [
+                result.size as i32,
+                result.flags as i32,
+                result.income,
+                i32::from(result.revolution),
+                i32::from(result.choose_production),
+                i32::from(result.revolution),
+            ];
+            assert_eq!(actual, v[16..], "{line}");
+            cases += 1;
+        }
+        assert_eq!(cases, 2048);
+    }
+
     #[test]
     fn unit_unrest_home_cities_aircraft_and_fortresses() {
         // The expected input cases execute the full original 0x4c1bdf

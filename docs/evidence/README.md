@@ -2733,3 +2733,43 @@ cmp docs/evidence/city-destruction-vectors.txt /tmp/city-destruction-vectors.txt
 cmp docs/evidence/city-destruction-map-vectors.txt /tmp/city-destruction-map-vectors.txt
 CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test city_destruction_install
 ```
+
+
+### End-of-city unrest and celebrations (#13/#86, integration pending)
+
+`engine::happiness::transition` now follows `0x4c998e`, which runs **after**
+production and a second city-total refresh. [mood-transitions.json](mood-transitions.json)
+and [mood-transition-vectors.txt](mood-transition-vectors.txt) retain 2,048
+native cases with supplied city totals, covering unrest escalation/clearance,
+income, celebration start/end, additional population and revolution requests.
+Original Aqueduct/Sewer checks execute unchanged. Presentation, original AI
+production selection and revolution dispatch are replaced at explicit call
+boundaries; the latter two requests are recorded and checked, not performed.
+
+The first unrest sets `0x4001`; continued unrest sets `0x2000`, and an already
+set `0x2000` also sets `0x100000`. Balance clearing unrest removes `0x102001`.
+A balanced city with positive net shields and nonnegative collected food
+surplus sets `0x4000`; other non-rioting cases clear it. Taxes credit the
+civ only outside anarchy and with nonnegative happy-minus-unhappy; barbarian
+owner zero returns without processing. Human Democracy with continued unrest
+requests revolution, except a scenario with parameter bit `0x10`; its civic
+flags end with bit 0 (`0x1`) set around dispatch. Original AI build selection is
+requested on new/continued unrest and when ending disorder.
+
+Celebration requires zero unhappy, size >2, happy >= `(size+1)/2`, and a
+non-anarchy government. The first qualifying turn sets flag `0x2`. On an
+already-celebrating turn, Republic/Democracy with food strictly above citizens
+and settlers' consumption gains an additional citizen if growth limits allow;
+this does not reset the food box. A lost celebration clears flag `0x2`.
+The controlled 500-transition city-sequence test uses this checked transition
+helper too. `run_turn` integration, actual revolution/government mutation,
+original AI production selection and live-save parity remain open.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/mood_transition_check.py --gold /tmp/mood-transitions.json \
+  --vectors /tmp/mood-transition-vectors.txt
+cmp docs/evidence/mood-transitions.json /tmp/mood-transitions.json
+cmp docs/evidence/mood-transition-vectors.txt /tmp/mood-transition-vectors.txt
+cargo test -p engine --lib original_mood_transitions
+```

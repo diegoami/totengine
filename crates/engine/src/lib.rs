@@ -9,6 +9,7 @@
 
 pub mod ai;
 mod allocation;
+pub mod barbarians;
 pub mod calendar;
 pub mod cities;
 pub mod combat;
@@ -144,6 +145,8 @@ pub struct MapState {
     pub terrain: Vec<u8>,
     /// Tile byte +3, used by the original connection routine.
     pub landmass: Vec<u8>,
+    /// Original per-landmass word +2 (sea arrival minimum size).
+    pub landmass_values: Vec<i16>,
     pub site_bits: Vec<u8>,
     pub fertility: Vec<u8>,
     pub special: Vec<bool>,
@@ -330,6 +333,13 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             stored_h: sav.map_header.stored_h(),
             terrain,
             landmass: (0..surface).map(|t| m.landmass(t)).collect(),
+            landmass_values: sav
+                .landmass_table
+                .as_chunks::<40>()
+                .0
+                .iter()
+                .map(|e| i16::from_le_bytes([e[2], e[3]]))
+                .collect(),
             site_bits: (0..surface).map(|t| m.site_bits(t)).collect(),
             fertility: (0..surface).map(|t| m.fertility(t)).collect(),
             special,
@@ -534,6 +544,7 @@ impl WorldState {
         }
         for civ in 0..8 {
             mix(&mut h, &self.ai_state.leader_ids[civ].to_le_bytes());
+            mix(&mut h, &self.ai_state.population[civ].to_le_bytes());
             mix(&mut h, &self.ai_state.city_landmasses[civ]);
             mix(&mut h, &self.ai_state.landmass_flags[civ]);
         }
@@ -557,6 +568,9 @@ impl WorldState {
         mix(&mut h, &self.map.stored_h.to_le_bytes());
         mix(&mut h, &self.map.resource_seed.to_le_bytes());
         mix(&mut h, &self.map.landmass);
+        for value in &self.map.landmass_values {
+            mix(&mut h, &value.to_le_bytes());
+        }
         mix(&mut h, &self.map.site_bits);
         mix(&mut h, &self.map.fertility);
         for t in 0..self.map.terrain.len() {

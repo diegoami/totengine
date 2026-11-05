@@ -197,7 +197,7 @@ pub enum HutOutcome {
 }
 
 impl WorldState {
-    fn nearest_city(&self, x: u16, y: u16) -> Option<(usize, i32)> {
+    pub(crate) fn nearest_city(&self, x: u16, y: u16) -> Option<(usize, i32)> {
         let w2 = 2 * self.map.stored_w as i32;
         self.cities
             .iter()
@@ -694,6 +694,7 @@ Warriors, nil, 0, 1., 0, 1a, 1d, 1h, 1f, 1, 0, 1, nil, 000000000000000\n\
                 stored_h: 16,
                 terrain: vec![1; 128],
                 landmass: vec![1; 128],
+                landmass_values: vec![100; 256],
                 site_bits: vec![0; 128],
                 fertility: vec![0; 128],
                 special: vec![false; 128],

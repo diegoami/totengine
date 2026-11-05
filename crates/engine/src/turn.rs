@@ -45,6 +45,8 @@ pub struct TurnSummary {
     /// (civ, advance) discoveries from this turn's city science.
     pub discoveries: Vec<(u8, usize)>,
     pub city_accounts: Vec<(usize, crate::treasury::CityAccount)>,
+    /// New unit slots from the original round-end barbarian arrival phase.
+    pub barbarian_arrivals: Vec<usize>,
 }
 
 /// AI role 5 = settle (Rules @UNITS field 11).
@@ -138,6 +140,7 @@ impl WorldState {
             sum.city_accounts.push((k, account));
         }
 
+        sum.barbarian_arrivals = self.barbarian_arrivals(rules);
         self.advance_turn();
         if let Some(ev) = events {
             let ctx = Ctx {

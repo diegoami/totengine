@@ -3,7 +3,12 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
-## [Unreleased] — AI v1 + economy depth (v0.8.0)
+## [Unreleased]
+
+- Round-end surface barbarian arrivals now use the original timing, site search,
+  treasury chance, technology-selected ships/raiders and CRT stream. Native
+  comparisons cover 1,024 synthetic contexts (successful allocation and UI
+  boundaries); sustained live-game arrival parity remains open. — AI v1 + economy depth (v0.8.0)
 
 - **Calendar:** turns now update the raw date using the original difficulty
   tables and decoded scenario increments/start dates (324 native vectors,

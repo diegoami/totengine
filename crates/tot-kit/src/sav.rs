@@ -596,6 +596,8 @@ pub struct SavedAiState {
     pub city_landmasses: [[u8; 256]; 8],
     pub landmass_flags: [[u8; 256]; 8],
     pub leader_ids: [i16; 8],
+    /// Signed population cache, civ +116 (original 0x53ae5e).
+    pub population: [i16; 8],
     pub power_ranks: [u8; 8],
     pub power_reference: u8,
 }
@@ -606,6 +608,7 @@ impl Default for SavedAiState {
             city_landmasses: [[0; 256]; 8],
             landmass_flags: [[0; 256]; 8],
             leader_ids: [0; 8],
+            population: [0; 8],
             power_ranks: [0; 8],
             power_reference: 0,
         }
@@ -771,6 +774,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         let block = data
             .get(b..b + CIV_PROPS_STRIDE)
             .ok_or(SavError::Truncated("civ properties"))?;
+        ai_state.population[c] = i16::from_le_bytes([block[116], block[117]]);
         ai_state.leader_ids[c] = i16::from_le_bytes([block[14], block[15]]);
         ai_state.city_landmasses[c].copy_from_slice(&block[0x5d0..0x6d0]);
         ai_state.landmass_flags[c].copy_from_slice(&block[0x8d0..0x9d0]);

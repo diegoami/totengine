@@ -274,6 +274,7 @@ mod tests {
                 stored_h: 4,
                 terrain,
                 landmass: vec![1; surface],
+                landmass_values: vec![100; 256],
                 site_bits: vec![0; surface],
                 fertility: vec![0; surface],
                 special: vec![false; surface],

@@ -2329,3 +2329,43 @@ python3 tools/totctl.py save   $G/FallRome/ROMFALL.scn -o /tmp/walk.json
 python3 tools/totctl.py diff   $G/Scenario/FallRome/T4PAIR_A.SAV \
                                 $G/Scenario/FallRome/T4PAIR_B.SAV -o /tmp/diff.json
 ```
+
+
+### Round-end barbarian arrival phase (#83, partial)
+
+`engine::barbarians` ports original `0x46e6cd..0x46f6a2`; the round-close
+caller at `0x470314` invokes it before advancing the turn (except turn zero).
+`tools/barbarians_check.py` executes that original routine, CRT and map/city
+helpers in Unicorn. It substitutes successful allocation records at `0x56a1c0`,
+passenger sentry at `0x5692f7`, ship stack reordering at `0x569c88`, and UI string,
+notification and redraw calls. Notification suppression uses the original
+`0x6031b8` gate. This is request/state parity at those boundaries, **not** a
+full original turn, real capacity-failure or sustained live-game comparison.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/barbarians_check.py --gold /tmp/barbarians.json \
+  --vectors /tmp/barbarian-vectors.txt
+cmp docs/evidence/barbarians.json /tmp/barbarians.json
+cmp docs/evidence/barbarian-vectors.txt /tmp/barbarian-vectors.txt
+cargo test -p engine --lib barbarians
+```
+
+[barbarians.json](barbarians.json) records provenance and counts;
+[barbarian-vectors.txt](barbarian-vectors.txt) retains 1,024 derived synthetic
+contexts, 123 with arrivals (734 requested units), on 64×48 land, water and
+mixed maps. Rust compares every request's type, coordinates, sentry order and
+veteran flag plus the final CRT state. Cases vary difficulty, level, turn,
+family, flat/wrapped maps, technology masks, human mask, city size, treasury,
+population cache, government and original owner.
+
+Notable literal behavior: the city lottery advances to the slot *after* the
+selected surface slot before checking it; land x offsets are `2*(rand()%13)-6`;
+level 1/2 group-size cases fall through to the level 3 size assignment. Sea
+search exhaustion aborts the entire phase after the 1,001st pair of draws.
+Sea passengers are sentried and the ship has a 50% veteran roll; land groups
+include a Diplomat before the raiders. Runtime per-civ population is the saved
+signed word at civ +116 (`0x53ae5e`, denominator cache+1); the sea size gate uses
+the already-decoded landmass table word +2. Both now enter engine fingerprints.
+Runtime statistics refresh and a documented N-turn live-game comparison remain
+acceptance work. Non-surface arrivals are not represented by this engine map.

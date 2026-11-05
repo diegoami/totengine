@@ -1,0 +1,74 @@
+{
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "sources": [
+    {
+      "save": "Original/Ph_Auto2.SAV",
+      "save_sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef",
+      "rules_sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef",
+      "saved_sea_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "refreshed_sea_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "leader_modifiers_verified": 21,
+      "reference_tokens_verified": 90
+    },
+    {
+      "save": "FallRome/ROMFALL.scn",
+      "save_sha256": "394449e92f7b2d73fcfe6cd21e5d688213619dad6b4bad5f836fe0f79a942d07",
+      "rules_sha256": "e2d841e2e6722095470eefb0ece1311643d6652ba300649d7bf0bc7800bf81be",
+      "saved_sea_counts": [
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "refreshed_sea_counts": [
+        0,
+        10,
+        5,
+        0,
+        7,
+        0,
+        10,
+        0
+      ],
+      "leader_modifiers_verified": 21,
+      "reference_tokens_verified": 52
+    }
+  ],
+  "valuations": 1400,
+  "selections": 84,
+  "scoring_replacement_callees": [],
+  "leader_loader": {
+    "routine": "0x41447d",
+    "fields_verified": 42,
+    "replacement_callees": [
+      "0x486659 section",
+      "0x4866dc row",
+      "0x486a4a string token",
+      "0x4868bf numeric token",
+      "0x486935 title token"
+    ]
+  },
+  "scope": "saved inputs, Rules leader traits, refreshed ownership/naval caches; no custom saved human leader overrides or live AI parity"
+}

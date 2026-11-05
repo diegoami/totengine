@@ -2,12 +2,16 @@
 //!
 //! This is a decision kernel, not yet the campaign research policy. Callers
 //! supply eligibility and context for the value routine at 0x49c95d.
-//! AI v1 and v0.9 checkpoints keep their policy until the observation adapter
-//! and policy identity are implemented.
+//! Parsed Rules/world mechanics adapters are available; AI v1 and v0.9
+//! checkpoints keep their policy until the observation adapter and policy
+//! identity are implemented.
 //! Evidence: `docs/evidence/ai-research-choice.json` and
-//! `docs/evidence/ai-research-value.json` with their native probes.
+//! `docs/evidence/ai-research-value.json`, plus the saved-input adapters in
+//! `docs/evidence/ai-research-adapter.json`, with their native probes.
 
 use crate::combat::CrtRand;
+
+mod adapter;
 
 /// Signed byte fields used by native advance valuation.
 #[derive(Debug, Clone, Copy)]
@@ -39,6 +43,8 @@ pub struct ValueCity {
 pub struct ValueContext {
     pub civ: u8,
     pub human_mask: u8,
+    /// Native word 0x607640 (save @660), exposed by ResearchSettings::flags;
+    /// distinct from WorldState::game_flags (save @652).
     pub game_flags: u16,
     pub scenario_flags: u16,
     pub leader_id: i16,

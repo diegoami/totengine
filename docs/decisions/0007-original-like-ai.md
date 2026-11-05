@@ -113,3 +113,57 @@ intentionally ignored), along with the five Python report tests, full golden
 corpus including run50 and decoder crosschecks, workspace formatting and
 all-target Clippy with warnings denied. Both native research regressions pass;
 a second valuation probe reproduced its report and numeric fixture byte-for-byte.
+
+## Parsed Rules and saved-world adapters (2026-11-06)
+
+`ValueRules::from_rules` now resolves the classic scoring tables and rejects
+missing sections, unresolved references, malformed definitions, out-of-range
+signed values and unsupported capacities. Unused unit/advance slots are
+disabled. A trailing text-only unit annotation is accepted, as are unused
+trailing rows beyond the native 28 wonder/21 leader tables. The adapter needs
+the classic 68 improvement rows and 28 expiry rows; it does not invent these
+for a smaller Rules file.
+
+`ValueContext::from_world` reads the scoring flags from **save @660**
+(`ResearchSettings::flags`), rather than @652 (`WorldState::game_flags`). It
+uses Rules leader field 9, the world's cached contact/landmass inputs, current
+knowledge masks and a freshly counted live domain-2 roster. It does not mutate
+the world or consume world RNG. This remains a privileged mechanics context,
+not an observation. Custom human-leader overrides stored in saves remain
+outside this adapter's contract.
+
+The native leader loader at 0x41447d verifies field-9 storage for 42 rows from
+two Rules files. Only section/row/token readers are replaced in this separate
+loader check. The valuation/selection routines have no replacement callees.
+The native reference resolver at 0x490440 verifies all 142 encountered tokens;
+FallRome's `*Ind`/`*E2` comments must resolve plain `Ind`/`E2` references, and
+matching is case-insensitive. This adapter normalizes the annotation; it does
+not rewrite the general TechTree resolver or old AI v1 checkpoint behavior.
+Arbitrarily relabelled comments/native fixed identifiers still need separate
+compatibility work; this is not a port of the original text loader.
+
+`WorldState::native_research_candidates` combines valuation with original
+ownership/prerequisite checks and **0x4a2098's zero-group-flag gate**. Group
+flag 1 remains permitted by the broader player research interface but is
+excluded from the native AI selector; this distinction is tested explicitly.
+The new context does not change what `SetResearch` permits a player to request.
+
+`ai-research-adapter.json` and its numeric fixture record 1,400 native scores,
+1,400 eligibility results and 84 complete choices: both retained Original and
+FallRome positions, all seven civs, all six selection difficulties. The Rust
+install test boots each source through the actual decoder and checks every
+value/gate, winner, final CRT state and unchanged world checksum. Ownership
+and naval inputs are reconstructed before native execution; the other saved
+caches are held fixed. In FallRome the saved naval word differs from the live
+roster, as recorded in the artifact. No full native statistics refresh is
+claimed by this comparison.
+
+Observation-safe policy integration and explicit campaign/checkpoint policy
+identity remain next. Campaigns still use AI v1; no milestone completion or
+live original-AI round parity is claimed.
+
+Validation: install-backed `make test` passed all 199 Rust tests (one nightly
+test intentionally ignored), five Python report tests and the full golden
+corpus including run50 and decoder crosschecks. Workspace formatting and
+all-target Clippy with warnings denied passed. The native adapter probe's
+report and numeric fixture reproduced byte-for-byte.

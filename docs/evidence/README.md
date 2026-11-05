@@ -3549,3 +3549,49 @@ cmp /tmp/ai-research-value.json docs/evidence/ai-research-value.json
 cmp /tmp/ai-research-value.txt crates/engine/tests/fixtures/ai-research-value.txt
 cargo test -p engine --test ai_research_value
 ```
+
+## Research Rules/world adapters (v0.10, #106)
+
+`ai-research-adapter.json` records 1,400 native advance scores, 1,400 eligibility
+results and 84 complete research choices on the retained Original and FallRome
+positions (seven civs, six difficulties). The install-backed Rust test decodes
+these saves, parses their own Rules, constructs `ValueRules`/`ValueContext`, and
+checks scores, gates, choices, final CRT state and unchanged world checksum.
+Native scoring, eligibility, group and selection routines execute unchanged.
+The numeric fixture contains only paths and derived numbers, with no assets.
+
+The context uses the flags word **file @660 / native 0x607640**, not the distinct
+options word at file @652. The fresh-world regression deliberately sets these
+two words differently. Ownership masks and domain-2 live unit counts are
+reconstructed before native execution; other caches are copied from the saved
+inputs. The report preserves saved/refreshed naval totals: FallRome differs.
+This tests the prepared mechanics context, not a complete native statistics
+pass. Saved custom human-leader overrides are not loaded; traits come from Rules.
+
+The separate leader-loader experiment executes original `0x41447d`, replacing
+only section/row/string/numeric token readers. It verifies all 21 field-9 values
+from each Rules file land in `0x606f4a +60*leader` (42 rows). The full scoring and
+selection comparisons use no callee replacements. Original `0x490440` also
+checks every encountered reference token without replacements: 90 Original,
+52 FallRome. FallRome comments `*Ind` / `*E2` still denote slots 37 / 24, while
+references omit the asterisk. The scoring adapter normalizes this annotation
+and matches case-insensitively. General `TechTree`/AI v1 behavior is unchanged;
+arbitrary comment relabelling versus native fixed identifiers remains outside
+this bounded adapter comparison.
+
+The native selector uses `0x4a2098` (zero leader-group flag) rather than the
+broader `0x4a2111` player research gate. Flag 1 therefore blocks the native
+selector but permits the player to request the advance. Both the asset-free
+adapter test and the saved-input check retain that distinction. Missing or
+malformed required scoring tables fail explicitly; a final text-only unit
+annotation is accepted. No privileged inputs are added to `Observation`.
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+  python3 tools/ai_research_adapter_check.py --vectors /tmp/ai-research-adapter.txt \
+  > /tmp/ai-research-adapter.json
+cmp /tmp/ai-research-adapter.json docs/evidence/ai-research-adapter.json
+cmp /tmp/ai-research-adapter.txt crates/engine/tests/fixtures/ai-research-adapter.txt
+CIVTOT_HOME=/path/to/CIVTOT cargo test -p engine --test ai_research_adapter_install
+cargo test -p engine --test ai_research_adapter
+```

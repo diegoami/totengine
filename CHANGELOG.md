@@ -12,6 +12,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   choices match original execution without callee replacements. Campaign AI
   integration remains pending (#106).
 
+- Add parsed Rules/world research adapters and the native selector eligibility
+  gate, checked against 1,400 saved-input scores and 84 complete choices across
+  Original/FallRome positions and six difficulties. Verify leader trait loading
+  and annotated technology references; retain the existing player boundary.
+
 - Remove the stale "comparison pending" label from `totctl worldgen`
   (non-blocking v0.9 review follow-up #111); retain its engine-designed caveat.
 

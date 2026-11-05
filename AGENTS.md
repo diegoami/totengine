@@ -136,9 +136,13 @@ records gates and material geography limits. Next: v0.10 original-like AI.
 v0.10 is in progress: `engine::ai_research` implements original research
 selection (512 isolated contexts) and full advance valuation (12,800 values
 and 128 complete selections, unmodified native callees). Numeric regression
-fixtures run without assets. Parsed Rules/world adapters, observation-safe
-policy integration and campaign policy identity remain open; AI v1 campaigns
-are unchanged.
+fixtures run without assets. Parsed Rules/world adapters and the native selector
+gate now match 1,400 saved-input scores and 84 choices (Original + FallRome,
+all seven civs/six difficulties). Leader field loading and 142 reference tokens
+are separately native-checked. Context refreshes ownership/naval inputs but
+does not claim a full native statistics pass or custom saved-leader overrides.
+Observation-safe policy integration and campaign policy identity remain open;
+AI v1 campaigns are unchanged.
 Next plan: `docs/decisions/0007-original-like-ai.md` (#106).
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

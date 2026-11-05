@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Correct the historical framing table to show native-verified u32 unit/city
+  identities and point to the superseding evidence (review follow-up #109).
+
 ## [0.8.0] — AI v1 + economy depth
 
 - Refresh hut-facing landmass flags from current surface military, cities and

@@ -44,7 +44,11 @@ True layouts (the classic Civ2 records shifted by two bytes):
 | moves spent @10, visibility @11 | | name 16 B @34 | |
 | damage @12, last dir @13 | | net science u16@76, net taxes u16@78 | |
 | orders @17, home city @18 | | gross trade u16@80, food u8@82, shields u8@83 | |
-| stack prev/next i16@26/@28, id u16@30 | | u8@84 open (old "owner"), city id u16@86 | |
+| stack prev/next i16@26/@28, id u32@30 | | u8@84 open (old "owner"), city id u32@86 | |
+
+Identity widths above correct the superseded u16 claims: native dword writes
+and cases above 65,535 are recorded in §Live hut-entry parity and unit allocation
+and [unit-allocation.json](unit-allocation.json) (review follow-up #109).
 
 Old-to-new translation: unit `old − 6` with index `old + 1`, and old
 record 0's bytes 0..5 were the previous unit's tail. City fields at old

@@ -73,7 +73,8 @@ partly decoded), obsolete units + veterans, goody-hut outcomes in part
 **v0.7.0 "browser observer"** is released too (AGREE on #104, 1 round):
 `engine::observer` per-turn snapshots, `totctl observe`,
 local browser UI in `totui`; #80/#81, usage in `docs/browser-observer.md`.
-v0.8.0 AI v1 + economy depth is a candidate awaiting owner-run review: #87 science/tax split is
+**v0.8.0 "AI v1 + economy depth"** is released (AGREE on #108,
+GLM-5.3, 1 round; tag dc5427b): #87 science/tax split is
 implemented in `engine::finance` (146/146 FallRome + 10/10 standard-city
 records exact from stored trade/shields), city finance refreshes in
 `run_turn`; civ rates and specialists are decoded and fingerprinted.
@@ -110,7 +111,8 @@ Actual round processing matches 500 controlled native city transitions over
 transitions and civ treasuries from 50 original-written saves match run_turn. City-slot reuse, classic capacity and deletion extent now match native checks.
 Surface hut-facing landmass flags now refresh (512 native contexts); the live
 city fixture isolates economics rather than full original-AI round parity.
-Owner requested all v0.8 tasks then the owner-run milestone review;
+The owner-run v0.8 review passed all 181 tests and reproduced 85/85 native
+artifacts; #109's non-blocking documentation follow-up is fixed after the tag.
 `docs/v0.8.0-readiness.md` records acceptance gates and explicit context limits.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md

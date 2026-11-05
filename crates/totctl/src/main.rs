@@ -12,6 +12,7 @@ fn main() -> ExitCode {
     let prog = args.first().map(String::as_str).unwrap_or("totctl");
     match args.get(1).map(String::as_str) {
         Some("mp") => cmd_mp(&args[2..]),
+        Some("worldgen") => cmd_worldgen(&args[2..]),
         Some("rules") => cmd_rules(&args[2..]),
         Some("boot") => cmd_boot(&args[2..]),
         Some("tech") => cmd_tech(&args[2..]),
@@ -27,7 +28,8 @@ fn main() -> ExitCode {
         }
         _ => {
             eprintln!(
-                "usage: {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
+                "usage: {prog} worldgen <out.mp> [--seed S] [--width W] [--height H] [--land-percent P]\n\
+                        {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
                         {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai | --ai-v1]\n\
                         \x20                        — random players, AI v0 (--ai), or research-capable AI (--ai-v1)\n\
@@ -558,6 +560,59 @@ fn cmd_rules(args: &[String]) -> ExitCode {
         .map(|(_, v)| v.to_string());
     println!("cosmic road   : {}", road.unwrap_or_else(|| "?".into()));
     ExitCode::SUCCESS
+}
+
+fn cmd_worldgen(args: &[String]) -> ExitCode {
+    let result = (|| -> Result<(), String> {
+        let Some(path) = args.first().filter(|p| !p.starts_with('-')) else {
+            return Err("usage: totctl worldgen <out.mp> [--seed S] [--width W] [--height H] [--land-percent P]".into());
+        };
+        let mut config = engine::worldgen::WorldConfig::default();
+        let mut options = args[1..].iter();
+        while let Some(key) = options.next() {
+            let value = options
+                .next()
+                .ok_or_else(|| format!("{key} needs a value"))?;
+            let invalid = || format!("invalid {key}: {value}");
+            match key.as_str() {
+                "--seed" => config.seed = value.parse().map_err(|_| invalid())?,
+                "--width" => config.width = value.parse().map_err(|_| invalid())?,
+                "--height" => config.height = value.parse().map_err(|_| invalid())?,
+                "--land-percent" => config.land_percent = value.parse().map_err(|_| invalid())?,
+                _ => return Err(format!("unknown worldgen option {key}")),
+            }
+        }
+        let world = engine::worldgen::generate(config)?;
+        // create_new prevents a typo from overwriting a user's original map.
+        use std::io::Write;
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(path)
+            .map_err(|e| format!("create {path}: {e}"))?;
+        file.write_all(&world.mp_bytes())
+            .map_err(|e| format!("write {path}: {e}"))?;
+        println!("generator     : engine-designed v1 (original statistical comparison pending)");
+        println!("seed          : {}", config.seed);
+        println!(
+            "dimensions    : {} x {} logical",
+            config.width, config.height
+        );
+        println!("terrain counts: {:?}", world.terrain_histogram());
+        println!(
+            "river tiles   : {}",
+            world.river.iter().filter(|&&r| r).count()
+        );
+        println!("map           : {path}");
+        Ok(())
+    })();
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("error: {e}");
+            ExitCode::FAILURE
+        }
+    }
 }
 
 fn cmd_mp(args: &[String]) -> ExitCode {

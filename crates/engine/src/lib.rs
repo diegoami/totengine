@@ -38,6 +38,7 @@ pub mod treasury;
 pub mod turn;
 pub mod wonders;
 pub mod workers;
+pub mod worldgen;
 pub mod yields;
 
 use std::fmt::Write as _;

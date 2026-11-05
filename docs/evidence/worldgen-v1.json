@@ -1,0 +1,135 @@
+{
+  "status": "prototype; statistical parity acceptance NOT met",
+  "algorithm": "engine-designed integer-field v1, not original generator",
+  "config": {
+    "logical_width": 80,
+    "height": 50,
+    "land_percent": 47,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ]
+  },
+  "original_inputs": [
+    {
+      "label": "pl2",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "53b0592d6a7c736afb0b660563bbb575fe594d6625f5388ad98471d8cba29601",
+      "source": "retained RG-2 seeded_start.sh original generated world",
+      "nr": "0x1234",
+      "crt": "0x5678",
+      "map_seed": "0x1357",
+      "params": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "pl3",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "91e7db2ae5c064bfc74a95731f96f53d1ac18b223b4bc7bd403fe8fa35102194",
+      "source": "retained RG-2 seeded_start.sh original generated world",
+      "nr": "0x1234",
+      "crt": "0x9999",
+      "map_seed": "0x1357",
+      "params": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "label": "pl4",
+      "file": "Original_Ph_Auto.SAV",
+      "sha256": "506d0d14123306e944e0251b327d310637ebacf467706557d25a0d8dad58dd4c",
+      "source": "retained RG-2 seeded_start.sh original generated world",
+      "nr": "0x1234",
+      "crt": "0x2468",
+      "map_seed": "0x1357",
+      "params": [
+        -1,
+        1,
+        0,
+        1,
+        -1
+      ]
+    }
+  ],
+  "cohorts": {
+    "original_default_pl2_pl3_percent": {
+      "desert": 1.875,
+      "plains": 8.75,
+      "grassland": 7.55,
+      "forest": 6.4,
+      "hills": 9.625,
+      "mountains": 4.05,
+      "tundra": 2.8,
+      "glacier": 3.225,
+      "swamp": 0.875,
+      "jungle": 2.075,
+      "ocean": 52.775,
+      "rivers": 4.025
+    },
+    "original_changed_parameters_pl4_percent": {
+      "desert": 1.15,
+      "plains": 9.55,
+      "grassland": 18.0,
+      "forest": 10.1,
+      "hills": 3.15,
+      "mountains": 0.55,
+      "tundra": 2.5,
+      "glacier": 3.1,
+      "swamp": 0.8,
+      "jungle": 2.25,
+      "ocean": 48.85,
+      "rivers": 3.75
+    },
+    "engine_v1_percent": {
+      "desert": 2.8281,
+      "plains": 4.1719,
+      "grassland": 9.1875,
+      "forest": 7.7531,
+      "hills": 3.7375,
+      "mountains": 0.4906,
+      "tundra": 7.8375,
+      "glacier": 5.9688,
+      "swamp": 0.7656,
+      "jungle": 4.2594,
+      "ocean": 53.0,
+      "rivers": 0.4188
+    }
+  },
+  "render": {
+    "file": "worldgen-v1-seed7.png",
+    "source_mp_sha256": "8b9234bd5b257896325e243f63956fc92506be46924645cfbf5ce2f7ec0f8ab2",
+    "scale": 6,
+    "rules": "user Original/Rules.txt",
+    "rules_sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "limits": [
+    "Only two same-setting original maps; one changed-setting control, insufficient for acceptance.",
+    "Default land target is calibrated to this small baseline; excess polar terrain and sparse rivers remain.",
+    "Decoded MP export round-trip does not establish original game import.",
+    "No original game assets are committed.",
+    "Generated worlds do not yet boot a fresh campaign; no RG-7 or original-AI parity claim."
+  ]
+}

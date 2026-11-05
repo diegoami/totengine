@@ -3248,3 +3248,45 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
   python3 tools/landmass_flags_check.py --gold /tmp/landmass-flags.json \
   --vectors /tmp/landmass-flags-vectors.txt
 ```
+
+### Engine-designed world generator prototype (#90, v0.9)
+
+`engine::worldgen` is **our algorithm**, not a decoded original generator.
+It uses integer smoothed fields and ranked sea level, latitude/moisture
+biomes and strictly downhill drainage; east/west neighbors wrap. `totctl
+worldgen` exports the proven stock `.MP` slot shape for the existing Rust and
+Python decoders. No unknown original metadata or game assets are copied.
+Successful decoder round trips do not claim original-game import.
+
+[worldgen-v1.json](worldgen-v1.json) records the first calibration data,
+original source hashes and limitations. [worldgen-v1-metrics.tsv](worldgen-v1-metrics.tsv)
+contains raw numeric counts for 16 engine seeds and the retained RG-2 original
+worlds pl2/pl3/pl4. Only pl2/pl3 share default world parameters; pl4 is a
+changed-settings control and is not pooled into the default reference.
+These original inputs were already produced by `seeded_start.sh` and used
+for start-placement evidence; no new live oracle run is claimed.
+
+The default land target is 47%, versus original pl2/pl3 mean 47.225%.
+**Statistical acceptance is not met:** prototype tundra/glacier cover
+13.8063% of real tiles versus original 6.025%, rivers cover 0.4188% versus
+4.025%, and hills/mountains are too sparse. The original baseline also needs
+more controlled seeds. [Seed 7 render](worldgen-v1-seed7.png) uses Original
+Rules terrain names/colors and was inspected: separated land regions, polar
+bands and river marks are present, with the above calibration gaps visible.
+
+The generator's dimensions and land settings are validated. Regressions
+check repeatability/different seeds, every exported terrain/river cell via
+the actual `.MP` decoder, invalid input rejection and CLI refusal to overwrite
+an existing map. These are format/determinism checks, not original generator
+parity or a complete campaign. Generated maps do not yet initialize a game.
+
+```sh
+cargo run -q -p totctl -- worldgen /tmp/generated-seed7.mp --seed 7
+python3 tools/totctl.py map /tmp/generated-seed7.mp \
+  --rules "$CIVTOT_HOME/Original/Rules.txt" -o /tmp/generated-seed7.png --scale 6
+# RG2_RUNS points to retained original seeded-start captures, outside Git:
+cargo run -q -p engine --example worldgen_metrics -- \
+  "pl2=$RG2_RUNS/pl2/Original_Ph_Auto.SAV" \
+  "pl3=$RG2_RUNS/pl3/Original_Ph_Auto.SAV" \
+  "pl4=$RG2_RUNS/pl4/Original_Ph_Auto.SAV"
+```

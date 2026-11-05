@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Start v0.9 generated-world work (#90): engine-designed seeded surface maps,
+  `totctl worldgen` MP export, decoder/CLI regressions and a measured original
+  baseline. Biome/drainage calibration and fresh campaign initialization remain
+  open; statistical parity is not claimed.
+
 - Correct the historical framing table to show native-verified u32 unit/city
   identities and point to the superseding evidence (review follow-up #109).
 

@@ -287,19 +287,15 @@ impl WorldState {
     /// - monarchy, communism, fundamentalism: @COSMIC rows 13/14/15;
     /// - republic, democracy: none.
     ///
-    /// Not modelled: fundamentalism exempts unit types with flag `0x08`
-    /// of the type table (not mapped to a Rules field yet).
+    /// Fundamentalism exempts type flag `+5 & 0x08` (Rules bit 11).
+    /// Exempt units still consume an ordinal in the free-unit allowance.
     pub fn unit_support(&self, rules: &Rules, idx: usize) -> i32 {
         let Some(c) = self.cities.get(idx) else {
             return 0;
         };
         let civ = (c.owner & 0x0F) as u8;
         let gov = self.governments.get(civ as usize).copied().unwrap_or(0);
-        let free = match gov {
-            0 | 1 => Some(c.size as i32),
-            2..=4 => rules.cosmic_row(11 + gov as usize).map(|v| v as i32),
-            _ => None,
-        };
+        let free = std::array::from_fn(|k| rules.cosmic_row(13 + k).unwrap_or(0) as i32);
         let mut n = 0;
         let mut support = 0;
         for u in &self.units {
@@ -310,9 +306,13 @@ impl WorldState {
                 continue;
             }
             n += 1;
-            if free.is_none_or(|f| n > f) {
-                support += 1;
-            }
+            support += crate::support::unit_cost(
+                gov,
+                c.size as u8 as i8 as i32,
+                free,
+                n,
+                rules.unit_flags(u.type_id as usize).unwrap_or(0) & 0x800 != 0,
+            );
         }
         support
     }

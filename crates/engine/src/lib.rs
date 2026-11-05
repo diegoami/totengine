@@ -32,6 +32,7 @@ pub mod removal;
 pub mod research;
 pub mod rng;
 pub mod statistics;
+pub mod support;
 pub mod trade_routes;
 pub mod treasury;
 pub mod turn;

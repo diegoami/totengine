@@ -2773,3 +2773,50 @@ cmp docs/evidence/mood-transitions.json /tmp/mood-transitions.json
 cmp docs/evidence/mood-transition-vectors.txt /tmp/mood-transition-vectors.txt
 cargo test -p engine --lib original_mood_transitions
 ```
+
+
+### City unit support and disband selection (#13)
+
+`engine::support` follows `0x4c18af` support charging and `0x4c92a4` disband
+selection. [support-disband.json](support-disband.json) and
+[support-disband-vectors.txt](support-disband-vectors.txt) retain 1,026 native
+synthetic surface contexts. Both the pure selector and the WorldState context
+adapter match native removal order, final city flags and shield-box results.
+The native check only replaces presentation and the deletion boundaries
+(`0x56c652`/`0x56a8c2`), marking selected slots dead; support, eligibility,
+distance comparisons and restart loops execute original bytes. Unit deletion
+itself has the separate saved-state city-removal comparisons above.
+
+A shield shortage selects the farthest live homed role <6 unit on the same
+map, using original `0x566dad`; equal distances keep the first slot. The city
+restarts its support scan after each removal. Original AI Republic/Democracy
+can also disband during disorder when `(turn+unit_index)%8 == 0`; this path
+excludes settlers, city tiles and fortresses within `0x566c40` distance three
+of an own city. The unrest disband requires distance >0 and clears riot flags
+`0x102001`. The two distance functions differ: `0x566c40` is wrapped
+`(abs(dx)+abs(dy))/2`, while `0x566dad` uses the already decoded diamond metric.
+
+Fundamentalism's exemption is type-table byte `+5 & 0x08`, which is Rules
+unit flag `0x800` (the full flag word is already decoded at +4).
+`WorldState::unit_support` now honors it. Exempt types still consume an ordinal
+in the free-unit allowance; exemption is applied when charging that unit.
+The selector takes pre-production shields/rows explicitly so new buildings or
+advances cannot silently change the current pass's cached inputs.
+
+The original contains a shield-refund branch after unrest selection, but the
+containing-city lookup repeats the city-marker helper that normally excluded
+that candidate. These vectors produce **zero refunds**. Dedicated cases with
+city+fortress bits verify that bypassing the first city-owner check does not
+invent a refund: the second lookup fails too. The native raw flags and branch
+conditions are retained; positive refunds are not claimed proven here.
+Sea cargo, unit-map retention, the game-options AI-stat branch and full city
+phase integration remain outside these contexts.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/support_disband_check.py --gold /tmp/support-disband.json \
+  --vectors /tmp/support-disband-vectors.txt
+cmp docs/evidence/support-disband.json /tmp/support-disband.json
+cmp docs/evidence/support-disband-vectors.txt /tmp/support-disband-vectors.txt
+cargo test -p engine --lib support::tests
+```

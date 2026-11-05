@@ -1,0 +1,21 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routine": "0x4c92a4",
+  "cases": 1026,
+  "forts": [
+    [
+      10,
+      8
+    ],
+    [
+      30,
+      8
+    ],
+    [
+      54,
+      8
+    ]
+  ],
+  "fortified_city_on_odd_turn": 1,
+  "scope": "Synthetic surface land units; native support accumulation, farthest-unit selection, shortage removal and AI Republic/Democracy unrest disband/refund; replacement deletion marks identity dead, presentation skipped; game options word 0; no sea cargo/civ AI-stat bookkeeping/full-turn parity."
+}

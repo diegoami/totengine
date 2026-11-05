@@ -330,13 +330,50 @@ impl crate::WorldState {
         true
     }
 
+    /// Original 0x49ebb5 follow-on grant after any discovery. The library
+    /// receives this advance once two player slots know it, without a
+    /// prerequisite-tree gate; technology-group flag 2 still forbids it.
+    pub(crate) fn library_recipient(&self, rules: &Rules, advance: usize) -> Option<u8> {
+        if advance >= 100 || advance == 89 {
+            return None;
+        }
+        let city = self.active_wonder_city(rules, 4)?;
+        let owner = (self.cities[city].owner & 15) as u8;
+        if owner == 0 || owner >= 8 || self.tech_group_flag(rules, owner, advance) == 2 {
+            return None;
+        }
+        let knows = |c: usize| self.techs[c][advance / 8] & (1 << (advance % 8)) != 0;
+        if knows(owner as usize) || (1..8).filter(|&c| knows(c)).count() < 2 {
+            return None;
+        }
+        Some(owner)
+    }
+
     /// Normal discovery bookkeeping followed by Rules-dependent effects
     /// (original 0x49ebad invokes Leonardo after the advance grant).
     pub fn grant_advance_with_rules(&mut self, rules: &Rules, civ: u8, advance: usize) -> bool {
+        let before: Vec<_> = self
+            .units
+            .iter()
+            .map(|u| self.movement_allowance(rules, u.type_id as usize, u.owner, u.damage))
+            .collect();
         if !self.grant_advance(civ, advance) {
             return false;
         }
+        let after: Vec<_> = self
+            .units
+            .iter()
+            .map(|u| self.movement_allowance(rules, u.type_id as usize, u.owner, u.damage))
+            .collect();
+        for ((unit, old), new) in self.units.iter_mut().zip(before).zip(after) {
+            if old != new {
+                unit.moves_left = new.saturating_sub(old.saturating_sub(unit.moves_left));
+            }
+        }
         self.upgrade_obsolete_units(rules, civ);
+        if let Some(library) = self.library_recipient(rules, advance) {
+            self.grant_advance_with_rules(rules, library, advance);
+        }
         true
     }
 
@@ -605,5 +642,71 @@ mod tech_group_tests {
             count += 1;
         }
         assert_eq!(count, 128);
+    }
+}
+
+#[cfg(test)]
+mod library_tests {
+
+    #[test]
+    fn original_great_library_follow_on_recipients() {
+        // Native request vectors are sufficient for this pure Rules/world boundary;
+        // no original save is needed for the regression itself.
+        let mut cases = 0;
+        let mut grants = 0;
+        for line in include_str!("../../../docs/evidence/library-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let v: Vec<i32> = line
+                .split_whitespace()
+                .map(|x| x.parse().unwrap())
+                .collect();
+            let rules=tot_kit::parse_rules(&format!(
+            "@CIVILIZE\nLearned,0,0,nil,nil,0,0 ; Lrn\nExpired,0,0,nil,nil,0,0 ; Obs\n@ENDWONDER\nnil\nnil\nnil\nnil\nObs\n@CIVILIZE2\n{}\n@LEADERS2\n{}0000000\n",v[4],v[5]));
+            let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
+            w.wonders = [-1; 28];
+            w.techs = [[0; 13]; 8];
+            w.ai_state.leader_ids = [0; 8];
+            w.cities[0].city_id = 1;
+            w.cities[0].owner = v[0] as u16;
+            if v[1] != 0 {
+                w.wonders[4] = 0;
+            }
+            let tech = v[6] as usize;
+            for civ in 0..8 {
+                if v[2] & (1 << civ) != 0 {
+                    w.techs[civ][tech / 8] |= 1 << (tech % 8);
+                }
+            }
+            if v[3] != 0 {
+                w.techs[7][0] |= 2;
+            }
+            assert_eq!(
+                w.library_recipient(&rules, tech).map_or(-1, |c| c as i32),
+                v[7],
+                "{line}"
+            );
+            // A new bookkeeping grant triggers the original follow-on path. Use
+            // an already-known player from the input mask, clear it, then grant it
+            // back, preserving exactly the native post-discovery knowledge input.
+            if tech == 89 || v[2] & 254 == 0 {
+                cases += 1;
+                continue;
+            }
+            let source = (1..8).find(|&c| v[2] & (1 << c) != 0).unwrap();
+            w.techs[source][tech / 8] &= !(1 << (tech % 8));
+            assert!(w.grant_advance_with_rules(&rules, source as u8, tech));
+            let owner = v[0] as usize;
+            if v[7] >= 0 {
+                assert!(w.techs[owner][tech / 8] & (1 << (tech % 8)) != 0, "{line}");
+                grants += 1;
+            } else if owner != 0 && v[2] & (1 << owner) == 0 {
+                assert_eq!(w.techs[owner][tech / 8] & (1 << (tech % 8)), 0, "{line}");
+            }
+            cases += 1;
+        }
+        assert_eq!(cases, 512);
+        assert_eq!(grants, 29);
     }
 }

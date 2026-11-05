@@ -26,7 +26,7 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-The version on `main` is **v0.7.0 "browser observer"**. A version counts as
+The version on `main` is **v0.8.0 "AI v1 + economy depth"**. A version counts as
 released once its `vX.Y.Z` tag exists
 ([tags](https://github.com/diegoami/totengine/tags); see
 [CHANGELOG.md](CHANGELOG.md); the queue is the GitHub
@@ -49,11 +49,14 @@ What runs today, headless, against your own ToT install:
   replay a finished game, with full-map/per-civ fog views and turn controls
   (`totctl observe`; [usage and stream format](docs/browser-observer.md)).
 
-v0.8.0 work is underway: the science/tax split (#87) now refreshes city
-outputs each turn, with record comparisons in
-[the finance evidence](docs/evidence/t1-4-finance.json). Per-civ research now works too: `totctl play --ai-v1` and
-`totctl observe --ai-v1` select the first research-capable AI v1 increment.
-The remaining AI/economy stories are still open.
+AI v1 expands, invests in city improvements, researches and handles units
+through the player interface (`totctl play --ai-v1` / `totctl observe --ai-v1`).
+Economy work includes science/tax, recurring trade routes, maintenance,
+happiness, wonder effects and capital road/rail waste. Controlled acceptance
+checks match 50 original-written city saves and 64 live barbarian phases;
+50-turn AI runs are deterministic and replay. The [completion record](docs/v0.8.0-readiness.md)
+and [evidence](docs/evidence/README.md) describe the fixtures and limits.
+Original-like AI is the v0.10 target; client design starts at v0.11.
 
 ```bash
 # Rust CLI (successor of the Python probe)

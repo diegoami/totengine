@@ -76,6 +76,7 @@ impl WorldState {
         }
 
         self.refresh_city_statistics();
+        self.refresh_landmass_flags(rules);
         sum.barbarian_arrivals = self.barbarian_arrivals(rules);
         if self.turn != 0 {
             self.refresh_power();

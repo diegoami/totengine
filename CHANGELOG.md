@@ -3,7 +3,18 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
-## [Unreleased] — AI v1 + economy depth (v0.8.0)
+## [Unreleased]
+
+## [0.8.0] — AI v1 + economy depth
+
+- Refresh hut-facing landmass flags from current surface military, cities and
+  diplomatic state; 512 native contexts match the World/Rules adapter.
+- Add Great Library follow-on grants, globally expiring Colossus/King Richard
+  tile bonuses, naval wonder/advance movement and damage rounding, and the
+  one-shot veteran exemption. Correct the name of wonder slot 20 to Eiffel Tower.
+  New checks cover 512 Library, 168 tile-yield, 1,024 movement and 512 veteran cases.
+- Verify recurring positive route trade together with final corruption and all
+  city totals: 140 complete original-executable cases, including 40 with corruption.
 
 - Verify 64 sustained live barbarian phases: 200 allocated units and all
   mechanics CRT states match. Correct sea-arrival admission to import landmass
@@ -35,7 +46,7 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   city totals match 312 native executions with fixed/automatic workers.
   Food transfers now affect
   city food totals; stored caches are distinguished from native recomputation.
-- Implement Leonardo's last-candidate upgrades (clearing veteran), Statue's
+- Implement Leonardo's last-candidate upgrades (clearing veteran), Eiffel Tower's
   diplomatic changes, Manhattan's reputation adjustment and Apollo's surface
   map/city knowledge refresh. Native comparisons cover 256 Leonardo cases,
   256 diplomatic mutations and 32 Apollo maps. Research and hut grants now
@@ -107,8 +118,8 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   rounding, improvement/wonder multipliers, Fundamentalism and
   Capitalization; city science/tax outputs refresh each turn. Every
   FallRome science/tax record (146 cities) and the current standard save
-  (10 cities) match from stored trade/shields. Trade routes and maintenance
-  remain separate work.
+  (10 cities) match from stored trade/shields; route income and maintenance
+  are integrated in the completed city phase.
 - **Per-civ research (#82 dependency):** decoded research targets,
   progress, cost counters and cost calculation; `SetResearch` orders,
   discoveries from city science, and shared hut advance bookkeeping.
@@ -116,14 +127,16 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   recorded saves check 20 increments and four discovery resets.
 - **AI v1, first increment:** `totctl play/observe --ai-v1` adds
   deterministic research choices to AI v0. A 50-turn real-save run gains
-  14 advances and replays identically; full AI v1 remains in progress.
-  Saved comparison rankings, late spaceship bonuses, discovery rewards/
-  hooks and ToTPP scenario-tail research are not yet implemented.
+  14 advances and replays identically; the final policy adds expansion and
+  economy handling described above. Original power rankings now refresh.
+  Late spaceship bonuses, further discovery hooks and unlocated ToTPP
+  scenario-tail research remain outside this release.
 - **Capital connections (#84):** road/rail paths and airport fallback now
   scale shield waste. The decoded land-path calculation matches original
   x86 execution on 123 saved city/capital pairs and 12 invented cases.
   FallRome shield totals improve from 143/146 to 145/146 exact; Aventicum
-  remains one shield low. Non-surface paths and scenarios replacing the
+  has a stale saved cache: all 156 fixed-worker native shield recomputations
+  now match. Non-surface paths and scenarios replacing the
   hard-coded land pathfinding unit type remain open.
 - **Review follow-up #105:** replace the stale autosave diff reproduction
   with the existing T4PAIR inputs and remove its dead golden mapping.

@@ -1,7 +1,7 @@
 # Browser observer (#80 / #81)
 
 The browser watches AI v0 by default using the existing player API (decision 0002).
-Add `--ai-v1` for the first research-capable AI v1 increment.
+Add `--ai-v1` for the AI v1 expansion, economy, research and unit policy.
 It renders the surface map, living units and cities with original geometric
 tiles. It needs no JavaScript build, CDN, original artwork or npm packages.
 The CLI still requires your own save and its sibling `Rules.txt`; a sibling

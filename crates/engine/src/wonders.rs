@@ -69,11 +69,14 @@ impl WorldState {
             }
         }
         for &(index, t) in &upgrades {
+            let unit = &self.units[index];
+            let old =
+                self.movement_allowance(rules, unit.type_id as usize, unit.owner, unit.damage);
+            let spent = old.saturating_sub(unit.moves_left);
+            let new = self.movement_allowance(rules, t, unit.owner, unit.damage);
             let unit = &mut self.units[index];
-            let spent = (rules.unit_move(unit.type_id as usize).unwrap_or(0) * 3)
-                .saturating_sub(unit.moves_left);
             unit.type_id = t as u8;
-            unit.moves_left = (rules.unit_move(t).unwrap_or(0) * 3).saturating_sub(spent);
+            unit.moves_left = new.saturating_sub(spent);
             unit.veteran = false;
         }
         upgrades.into_iter().map(|(i, _)| i).collect()
@@ -221,7 +224,7 @@ mod tests {
     }
 
     #[test]
-    fn original_statue_and_manhattan_mutations() {
+    fn original_eiffel_and_manhattan_mutations() {
         let rules = rules();
         let mut cases = 0;
         for line in include_str!("../../../docs/evidence/diplomatic-wonder-vectors.txt")

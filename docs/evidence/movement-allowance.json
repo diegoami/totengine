@@ -1,0 +1,7 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routine": "0x568da2",
+  "cases": 1024,
+  "replacement_callees": [],
+  "scope": "Full original maximum movement: naval wonders/advance and damage rounding.\n\nOriginal 0x568da2 with a three-third movement quantum, type maximum HP,\nactive Lighthouse/Magellan lookups and Nuclear Power knowledge. No stubs."
+}

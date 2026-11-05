@@ -135,3 +135,61 @@ fn native_radius_yields_match_reference_inputs() {
     }
     assert_eq!(cases, 3276);
 }
+
+#[test]
+fn wonder_tile_bonuses_expire_when_another_civ_learns_the_advance() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME").map(std::path::PathBuf::from) else {
+        return;
+    };
+    let save = tot_kit::parse_sav_file(&home.join("Original/Ph_Auto2.SAV")).unwrap();
+    let rules = tot_kit::parse_rules(&tot_kit::latin1(
+        &std::fs::read(home.join("Original/Rules.txt")).unwrap(),
+    ));
+    let tree = engine::research::TechTree::from_rules(&rules);
+    let obsolete: Vec<_> = [2, 8]
+        .iter()
+        .map(|&w| {
+            tree.by_abbrev(&rules.section("ENDWONDER").unwrap().rows[w][0])
+                .unwrap()
+        })
+        .collect();
+    let mut cases = 0;
+    for colossus in 0..2 {
+        for richard in 0..2 {
+            for expired in 0..2 {
+                let mut w = engine::boot(&save, 1);
+                w.wonders = [-1; 28];
+                if colossus != 0 {
+                    w.wonders[2] = 0;
+                }
+                if richard != 0 {
+                    w.wonders[8] = 0;
+                }
+                let foreign = ((w.cities[0].owner & 15) as usize) % 7 + 1;
+                for &t in &obsolete {
+                    for civ in 1..8 {
+                        w.techs[civ][t / 8] &= !(1 << (t % 8));
+                    }
+                    if expired != 0 {
+                        w.techs[foreign][t / 8] |= 1 << (t % 8);
+                    }
+                }
+                for line in include_str!("../../../docs/evidence/wonder-yield-vectors.txt")
+                    .lines()
+                    .filter(|l| !l.starts_with('#'))
+                {
+                    let v: Vec<i32> = line
+                        .split_whitespace()
+                        .map(|x| x.parse().unwrap())
+                        .collect();
+                    if v[..3] != [colossus, richard, expired] {
+                        continue;
+                    }
+                    assert_eq!(w.tile_yield(&rules, 0, v[3] as usize), v[4..], "{line}");
+                    cases += 1;
+                }
+            }
+        }
+    }
+    assert_eq!(cases, 168);
+}

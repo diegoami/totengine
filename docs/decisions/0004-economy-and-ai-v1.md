@@ -133,7 +133,7 @@ The main session prepares the candidate and milestone issue, then prints
 the owner-run review prompt; it does not launch the review.
 
 Production row arithmetic, power ranking refresh and wonder lifecycle now
-have native comparison evidence. Leonardo, Statue, Manhattan and surface
+have native comparison evidence. Leonardo, Eiffel Tower, Manhattan and surface
 Apollo completion effects are implemented, as are Darwin's pending choices.
 Population/city caches and the surface barbarian arrival phase now run at
 round close. See `docs/v0.8.0-readiness.md` for the remaining acceptance work;
@@ -199,3 +199,21 @@ labels at turn 4 are deduplicated; they are not treated as successive turns.
 At turn 43, original/AI-v1 totals are 10/10 cities, 21/24 population, 37/25
 units, 27/27 advances and 267/287 power. Early expansion is faster in AI v1;
 these are magnitude/development comparisons, not original-AI campaign parity.
+
+## Final v0.8 candidate audit
+
+The positive-route/final-corruption composition gate now passes 140 complete
+native city-total cases (all positive routes, 40 positive corruption). Surface
+hut-facing landmass flags now refresh from native-checked military/city and
+diplomacy inputs (512 contexts); the separate original-AI planning byte is not
+part of the hut input. The wonder audit adds Library follow-on grants, global
+tile-bonus expiry, naval maximum movement/damage rounding and the one-shot
+veteran exemption. Slot 20 is Eiffel Tower; slot 19 is Statue of Liberty.
+
+The effect inventory and context limits are explicit in the evidence README.
+Government selection, diplomacy workflows, pollution/space victory, transport
+and later combat-only naval/air modifiers remain outside the exposed headless
+mechanics. No claim of a complete original-game campaign or original-like AI
+is made. The owner roadmap remains v0.9 generated campaigns, v0.10 recognizable
+original-like built-in AI, v0.11 UI discovery/design, then multiple client
+milestones, with pluggable AI after the playable client.

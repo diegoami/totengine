@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute original Statue and Manhattan mutations, with notifications suppressed."""
+"""Execute original Eiffel Tower and Manhattan mutations, with notifications suppressed."""
 import argparse
 import hashlib
 import json
@@ -37,7 +37,7 @@ def main():
         values=[kind,civ,flags]+reputations+attitudes+treaties
         lines.append(' '.join(map(str,values))+' | '+' '.join(map(str,[outflags]+outrep+outatt+outtreaties)))
     report={'binary_sha256':hashlib.sha256(binary).hexdigest(),'routines':['0x4c6121','0x4c8ddf..0x4c8f7d'],
-            'cases':len(lines),'scope':'Original Statue/Manhattan civ flags, reputation, attitudes and treaty mutations, no notification/UI parity.'}
+            'cases':len(lines),'scope':'Original Eiffel Tower/Manhattan civ flags, reputation, attitudes and treaty mutations, no notification/UI parity.'}
     if a.gold:Path(a.gold).write_text(json.dumps(report,indent=2)+'\n')
     if a.vectors:Path(a.vectors).write_text('# kind civ flags reputations*8 incoming_attitudes*8 incoming_treaties*8 | flags reputations*8 incoming_attitudes*8 incoming_treaties*8\n'+'\n'.join(lines)+'\n')
     print(json.dumps(report))

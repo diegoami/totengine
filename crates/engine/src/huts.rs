@@ -240,7 +240,7 @@ impl WorldState {
                 x,
                 y,
                 is_leader: false,
-                moves_left: rules.unit_move(t).unwrap_or(0) * 3,
+                moves_left: self.movement_allowance(rules, t, civ, 0),
                 veteran: false,
                 damage: 0,
                 orders: 0xff,

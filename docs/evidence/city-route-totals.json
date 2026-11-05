@@ -1,0 +1,9 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routine": "0x4c45ff and original prerequisites/callees",
+  "cases": 140,
+  "positive_routes": 140,
+  "positive_routes_with_final_corruption": 40,
+  "replacement_callees": [],
+  "scope": "Full original city totals with invented positive routes and final corruption.\n\nStandard surface terrain/cities and fixed workers; vary all governments and\nhuman masks, set rates to 4 science/5 tax and cached partner trade to 64+16*i.\nThree positive route slots per city, sequential cache updates. No replaced\ncallees. Numeric derived fields only, never original city or map records."
+}

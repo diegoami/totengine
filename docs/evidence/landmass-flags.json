@@ -1,0 +1,6 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "cases": 512,
+  "replacement_callees": [],
+  "scope": "Original hut-facing landmass strategy flags from military/city caches.\n\nExecutes 0x507a87..0x507ff4 plus 0x508275..0x5082be (the bit-16 write).\nThe intervening landmass build-strategy calculation does not change flags.\nOriginal diplomacy/attitude callees execute; no replacements. Inputs model\nsurface admitted units and cities; per-civ military/attack accumulation is\nchecked separately using original 0x506e5e..0x506ec7 and 0x50733d..0x5073f7."
+}

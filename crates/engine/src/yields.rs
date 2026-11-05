@@ -84,10 +84,11 @@ impl WorldState {
                 .is_some_and(|b| b >> (tech & 7) & 1 != 0)
     }
 
-    fn wonder_in(&self, wonder: usize, city_idx: usize) -> bool {
+    fn wonder_in(&self, rules: &Rules, wonder: usize, city_idx: usize) -> bool {
         self.wonders
             .get(wonder)
             .is_some_and(|&c| c == city_idx as i16)
+            && self.active_wonder_city(rules, wonder) == Some(city_idx)
     }
 
     /// Food, shields and trade of radius tile `k` of city `city_idx`.
@@ -124,7 +125,7 @@ impl WorldState {
                 v += match kind {
                     FOOD => city.has_building(HARBOUR) as i32,
                     SHIELDS => city.has_building(OFFSHORE_PLATFORM) as i32,
-                    _ => self.wonder_in(COLOSSUS, city_idx) as i32,
+                    _ => self.wonder_in(rules, COLOSSUS, city_idx) as i32,
                 };
             } else if kind == FOOD {
                 if f & 0x04 != 0 || centre {
@@ -150,11 +151,11 @@ impl WorldState {
                 if (f & 0x10 != 0 || centre) && (terrain <= GRASSLAND || v != 0) {
                     v += 1;
                 }
-                if v != 0 && self.wonder_in(COLOSSUS, city_idx) {
+                if v != 0 && self.wonder_in(rules, COLOSSUS, city_idx) {
                     v += 1;
                 }
             }
-            if kind == SHIELDS && self.wonder_in(KING_RICHARDS, city_idx) {
+            if kind == SHIELDS && self.wonder_in(rules, KING_RICHARDS, city_idx) {
                 v += 1;
             }
             if kind == SHIELDS
@@ -351,13 +352,7 @@ impl WorldState {
         // production multipliers (0x4c3919)
         let q = 2 * c.has_building(FACTORY) as i32 + 2 * c.has_building(MFG_PLANT) as i32;
         let powered = POWER_PLANTS.iter().any(|&b| c.has_building(b))
-            || self.wonders.get(HOOVER_DAM).is_some_and(|&w| {
-                w >= 0
-                    && self
-                        .cities
-                        .get(w as usize)
-                        .is_some_and(|o| o.owner == c.owner)
-            });
+            || self.has_active_wonder(rules, civ, HOOVER_DAM);
         let p = if powered { 2.min(q) } else { 0 };
         let mut shields = tile_shields + tile_shields * p / 4 + tile_shields * q / 4;
         // waste

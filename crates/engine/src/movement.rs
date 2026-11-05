@@ -51,13 +51,75 @@ pub fn is_adjacent(a: (u16, u16), b: (u16, u16)) -> bool {
     matches!((dx, dy), (1, 1) | (2, 0) | (0, 2))
 }
 
+/// Original 0x568da2 inputs, normalized to the engine's three thirds per point.
+#[derive(Debug, Clone, Copy)]
+pub struct MovementInput {
+    pub moves: u32,
+    pub domain: u8,
+    pub flags: u32,
+    pub max_hp: i32,
+    pub damage: u8,
+    pub persistent_damage: bool,
+    pub nuclear_power: bool,
+    pub lighthouse: bool,
+    pub magellan: bool,
+}
+
+pub fn movement_allowance(c: &MovementInput) -> u32 {
+    if c.moves == 0 {
+        return 0;
+    }
+    let mut value = c.moves.saturating_mul(3);
+    if c.domain == 2 {
+        value += 3 * u32::from(c.nuclear_power) + 6 * u32::from(c.magellan);
+        if c.lighthouse && c.flags & 32 == 0 {
+            value += 3;
+        }
+    }
+    if c.damage != 0 && c.persistent_damage && c.domain != 1 {
+        let hp = c.max_hp.max(1);
+        value =
+            (i64::from(value) * i64::from((hp - c.damage as i32).max(0)) / i64::from(hp)) as u32;
+        if !value.is_multiple_of(3) {
+            value += 3 - value % 3;
+        }
+        value = value.max(if c.domain == 2 { 6 } else { 3 });
+    }
+    value
+}
+
 impl WorldState {
-    /// Reset every unit's movement for a new turn (`rate * 3` thirds).
+    pub fn movement_allowance(&self, rules: &Rules, type_id: usize, owner: u8, damage: u8) -> u32 {
+        let domain = rules.unit_domain(type_id).unwrap_or(0);
+        movement_allowance(&MovementInput {
+            moves: rules.unit_move(type_id).unwrap_or(0),
+            domain,
+            flags: rules.unit_flags(type_id).unwrap_or(0),
+            max_hp: rules.unit_hits(type_id).unwrap_or(1) as i32 * 10,
+            damage,
+            persistent_damage: self.game_flags & crate::combat::GAME_FLAG_PERSISTENT_DAMAGE != 0,
+            nuclear_power: domain == 2
+                && owner > 0
+                && self
+                    .techs
+                    .get(owner as usize)
+                    .is_some_and(|bits| bits[59 / 8] & (1 << (59 % 8)) != 0),
+            lighthouse: domain == 2 && self.has_active_wonder(rules, owner, 3),
+            magellan: domain == 2 && self.has_active_wonder(rules, owner, 12),
+        })
+    }
+
+    /// Reset movement using original naval bonuses and damage rounding.
     /// Unknown unit types get 0 (they cannot move until the rules table
     /// is fixed — loud in tests via the boot summary).
     pub fn start_turn(&mut self, rules: &Rules) {
-        for u in &mut self.units {
-            u.moves_left = rules.unit_move(u.type_id as usize).unwrap_or(0) * 3;
+        let allowances: Vec<_> = self
+            .units
+            .iter()
+            .map(|u| self.movement_allowance(rules, u.type_id as usize, u.owner, u.damage))
+            .collect();
+        for (u, moves) in self.units.iter_mut().zip(allowances) {
+            u.moves_left = moves;
         }
     }
 
@@ -78,7 +140,7 @@ impl WorldState {
         };
         // one step per request: the destination must be a neighbour
         // (reviewer finding #62 — no teleporting moves or attacks)
-        if !is_adjacent((unit.x, unit.y), (x, y)) || unit.moves_left == 0 {
+        if unit.id == 0 || !is_adjacent((unit.x, unit.y), (x, y)) || unit.moves_left == 0 {
             return none;
         }
         let owner = unit.owner;
@@ -157,7 +219,7 @@ impl WorldState {
     fn is_zoc(&self, _rules: &Rules, owner: u8, x: u16, y: u16) -> bool {
         self.units
             .iter()
-            .any(|u| u.owner != owner && is_adjacent((u.x, u.y), (x, y)))
+            .any(|u| u.id != 0 && u.owner != owner && is_adjacent((u.x, u.y), (x, y)))
     }
 }
 
@@ -166,6 +228,91 @@ mod tests {
     use super::*;
     use crate::rng::Lcg64;
     use crate::Unit;
+
+    #[test]
+    fn original_maximum_movement_and_world_adapter() {
+        let advances: String = (0..100)
+            .map(|n| format!("Advance{n},0,0,nil,nil,0,0 ; T{n}\n"))
+            .collect();
+        let mut cases = 0;
+        for line in include_str!("../../../docs/evidence/movement-allowance-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let v: Vec<i32> = line
+                .split_whitespace()
+                .map(|x| x.parse().unwrap())
+                .collect();
+            let input = MovementInput {
+                moves: v[0] as u32,
+                domain: v[1] as u8,
+                flags: v[2] as u32,
+                max_hp: v[3],
+                damage: v[4] as u8,
+                persistent_damage: v[5] != 0,
+                nuclear_power: v[6] != 0,
+                lighthouse: v[7] != 0 && v[9] == 0,
+                magellan: v[8] != 0,
+            };
+            assert_eq!(movement_allowance(&input), v[10] as u32, "pure {line}");
+            let rules = tot_kit::parse_rules(&format!(
+                "@UNITS\nTest,nil,{},{}.,0,1a,1d,{}h,1f,1,0,0,nil,{:015b}\n@CIVILIZE\n{}@ENDWONDER\nnil\nnil\nnil\nT0\nnil\nnil\nnil\nnil\nnil\nnil\nnil\nnil\nnil\n",
+                v[1], v[0], v[3]/10, v[2], advances));
+            let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
+            w.techs = [[0; 13]; 8];
+            w.wonders = [-1; 28];
+            w.cities[0].city_id = 1;
+            w.cities[0].owner = 1;
+            if v[6] != 0 {
+                w.techs[1][59 / 8] |= 1 << (59 % 8);
+            }
+            if v[7] != 0 {
+                w.wonders[3] = 0;
+            }
+            if v[8] != 0 {
+                w.wonders[12] = 0;
+            }
+            if v[9] != 0 {
+                w.techs[7][0] |= 1;
+            }
+            w.game_flags = if v[5] != 0 { 16 } else { 0 };
+            w.units.truncate(1);
+            w.units[0].type_id = 0;
+            w.units[0].owner = 1;
+            w.units[0].damage = v[4] as u8;
+            assert_eq!(
+                w.movement_allowance(&rules, 0, 1, v[4] as u8),
+                v[10] as u32,
+                "world {line}"
+            );
+            w.start_turn(&rules);
+            assert_eq!(w.units[0].moves_left, v[10] as u32, "turn {line}");
+            cases += 1;
+        }
+        assert_eq!(cases, 1024);
+    }
+
+    #[test]
+    fn dead_slots_cannot_move_or_exert_zone_of_control() {
+        let rules = tot_kit::parse_rules(rules_text());
+        let mut w = world_with_map();
+        w.units.truncate(1);
+        w.units[0].x = 0;
+        w.units[0].y = 0;
+        let mut corpse = w.units[0].clone();
+        corpse.id = 0;
+        corpse.owner = 2;
+        corpse.x = 1;
+        corpse.y = 1;
+        w.units.push(corpse);
+        let dest = w.map.stored_index(2, 0).unwrap();
+        w.map.terrain[dest] = 1;
+        w.start_turn(&rules);
+        assert!(!w.move_unit(&rules, 1, 3, 1).moved);
+        let out = w.move_unit(&rules, 0, 2, 0);
+        assert!(out.moved && !out.zoc_ended);
+        assert_eq!(w.units[0].moves_left, 3);
+    }
 
     fn rules_text() -> &'static str {
         "@COSMIC\r\n3       ; Road movement multiplier\r\n\

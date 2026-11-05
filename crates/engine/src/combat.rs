@@ -625,7 +625,7 @@ impl crate::WorldState {
             self.defense_of(rules, &def, Some(&att)),
             &LandDefenseContext {
                 attacker_domain: rules.unit_domain(at).unwrap_or(0),
-                attacker_move: rules.unit_move(at).unwrap_or(0),
+                attacker_move: self.movement_allowance(rules, at, att.owner, att.damage) / 3,
                 attacker_max_hp: Self::hp_max(rules, &att),
                 defender_flags: rules.unit_flags(def.type_id as usize).unwrap_or(0),
                 barbarian_type: (def.owner == 0).then_some(def.type_id),
@@ -646,12 +646,25 @@ impl crate::WorldState {
         let one_shot = |u: &crate::Unit| {
             rules.unit_flags(u.type_id as usize).unwrap_or(0) & FLAG_ONE_SHOT != 0
         };
-        {
-            let u = &mut self.units[attacker_idx];
-            u.damage = o.attacker_damage.clamp(0, 255) as u8;
-            u.moves_left = u.moves_left.saturating_sub(3);
-        }
-        self.units[def_idx].damage = o.defender_damage.clamp(0, 255) as u8;
+        let att_spent = self
+            .movement_allowance(rules, at, att.owner, att.damage)
+            .saturating_sub(att.moves_left)
+            .saturating_add(3);
+        let def_spent = self
+            .movement_allowance(rules, def.type_id as usize, def.owner, def.damage)
+            .saturating_sub(def.moves_left);
+        let att_damage = o.attacker_damage.clamp(0, 255) as u8;
+        let def_damage = o.defender_damage.clamp(0, 255) as u8;
+        let att_left = self
+            .movement_allowance(rules, at, att.owner, att_damage)
+            .saturating_sub(att_spent);
+        let def_left = self
+            .movement_allowance(rules, def.type_id as usize, def.owner, def_damage)
+            .saturating_sub(def_spent);
+        self.units[attacker_idx].damage = att_damage;
+        self.units[attacker_idx].moves_left = att_left;
+        self.units[def_idx].damage = def_damage;
+        self.units[def_idx].moves_left = def_left;
         let (winner, loser) = if o.attacker_won {
             (attacker_idx, def_idx)
         } else {

@@ -2182,7 +2182,7 @@ distance is >12. These caches are retained, not inferred from ownership:
 |---|---|---|
 | leader-table index | civ i16 +14 | `54b1df` indexes a 60-byte leader row |
 | landmass city-count bytes | civ +0x5d0, 256 bytes | `54ad4b`; statistics pass clears at `507437`, increments own land-city count at `5078e1` |
-| landmass flags | civ +0x8d0, 256 bytes | `54ad6f` tests `&127`; bit meanings/update policy still being audited |
+| landmass flags | civ +0x8d0, 256 bytes | `54ad6f` tests `&127`; surface refresh is proven in §Hut-facing landmass strategy flag lifecycle |
 | power-reference byte | file @965 / RAM `607771` | barbarian assistance at `54b584` |
 | per-civ power ranks | file @966..974 / RAM `607772` | rank comparison at `54b58b..54b59e` |
 
@@ -2370,9 +2370,9 @@ search exhaustion aborts the entire phase after the 1,001st pair of draws.
 Sea passengers are sentried and the ship has a 50% veteran roll; land groups
 include a Diplomat before the raiders. Runtime per-civ population is the saved
 signed word at civ +116 (`0x53ae5e`, denominator cache+1); the sea size gate uses
-the already-decoded landmass table word +2. Both now enter engine fingerprints.
-Runtime statistics refresh and a documented N-turn live-game comparison remain
-acceptance work. Non-surface arrivals are not represented by this engine map.
+landmass table word +4 (corrected by §Sustained live barbarian arrivals).
+Runtime city statistics and 64 sustained live phases are now checked below;
+non-surface arrivals are not represented by this engine map.
 
 
 ### Runtime city statistics and power ranking (#79/#83/#89)
@@ -2384,9 +2384,9 @@ coordinates, and foreign owners (`0x507491..0x50754c`), increments the city
 count and signed population cache (`0x507794..0x5077ee`), then counts each
 non-ocean city's landmass (`0x507845..0x507908`). Counts wrap as a byte;
 population wraps as a signed word. `engine::statistics` refreshes these
-fields after the engine's city processing. The engine does not yet implement
-the remaining landmass strategy flags, nor claim the complete original
-per-civ city/movement phase schedule.
+fields after the engine's city processing. Hut-facing surface landmass flags
+now refresh too (§Hut-facing landmass strategy flag lifecycle); the complete
+original per-civ city/movement phase schedule is not claimed.
 
 `tools/statistics_check.py` executes the admitted-city slice and its real
 landmass helper. [city-statistics.json](city-statistics.json) and
@@ -2442,7 +2442,7 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test power_install
 
 ### Wonder one-off effects and remembered world state (#88)
 
-`engine::wonders` now implements Leonardo (14), Statue (20), Manhattan (23)
+`engine::wonders` now implements Leonardo (14), Eiffel Tower (20), Manhattan (23)
 and surface Apollo (25), in addition to Darwin. `tools/leonardo_check.py`
 executes original `0x49d4f9` including active-wonder/expiry/knowledge tests
 and the entire candidate scan, suppressing only redraw and selecting AI
@@ -2469,11 +2469,11 @@ binary token, and the upgrade routine tests the civ bit at `0x49d65d`.
 Rust's native-vector tests parse each synthetic mask through this Rules field.
 Obsolete production also tests the mask before selecting its successor.
 
-`tools/diplomatic_wonders_check.py` executes full Statue `0x4c6121` and
+`tools/diplomatic_wonders_check.py` executes full Eiffel Tower `0x4c6121` and
 Manhattan `0x4c8ddf..0x4c8f7d`, with the existing notification-suppression
 flag. [diplomatic-wonders.json](diplomatic-wonders.json) and
 [diplomatic-wonder-vectors.txt](diplomatic-wonder-vectors.txt) retain 256 cases.
-Statue acts once (civ flags +0, bit 16): halves its civ's byte +38,
+Eiffel Tower acts once (civ flags +0, bit 16): halves its civ's byte +38,
 subtracts 25 from other civs' attitudes toward it (clamped 0..100), and
 clears their treaty bit 16. Attitudes are civ bytes +72..80, read/set by
 `0x4546ae`/`0x4546dc`. Manhattan replaces **all seven** player bytes +38 with
@@ -2887,7 +2887,7 @@ updates them, and the subsequent city's starvation branch reads those prior
 inputs, as native `0x4c596b` does. This initialization, civ scheduling after
 all player orders and turn-event dispatch remain headless engine policy.
 Pollution/settler-job planning and their CRT draws, original AI build selection,
-non-surface cities and sea cargo are not ported by this change. Dynamic landmass strategy flags still need their lifecycle audit. City-slot
+non-surface cities and sea cargo are not ported by this change. Surface landmass flag lifecycle is now checked below. City-slot
 reuse/truncation is checked below. These scoped checks are not a live Wine/autosave comparison, complete
 original-round RNG replay, or completion of #13's live-save gate.
 
@@ -3130,3 +3130,117 @@ Git. City economic observations also now resolve prerequisite choices once
 per civ observation instead of rebuilding the tech tree for every city/item;
 the existing 100-turn AI v0 and two-run/replay AI v1 checks pass in about 30 s
 combined on this machine, versus about 365 s before that equivalent refactor.
+
+### Positive route income with final city corruption (#85/#86)
+
+[city-route-totals.json](city-route-totals.json) and
+[city-route-total-vectors.txt](city-route-total-vectors.txt) execute the complete
+original `0x4c45ff`, with original callees and no replacements. Ten standard
+cities are tested under seven governments and human masks 0/254. Each has
+three positive commodity routes (count @60, commodities @67, partner slots
+@70), with controlled partner trade caches. All 140 cases have positive route
+arrows and 40 also have positive final corruption. The World adapter matches
+all 16 retained city totals, including route arrows, final corruption, mood,
+shields, taxes, luxuries and science. This complements the earlier isolated
+route arithmetic and checks their composition. Route creation/delivery and
+non-surface maps remain outside #85's recurring-income implementation.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/city_route_totals_check.py --gold /tmp/city-route-totals.json \
+  --vectors /tmp/city-route-total-vectors.txt
+```
+
+### Wonder integration audit (#88)
+
+Wonder IDs follow physical Rules row order: **19 is Statue of Liberty; 20 is
+Eiffel Tower**. Earlier prose mislabeled the native-checked slot-20 reputation
+and attitude completion effect; code and native vectors already used 20.
+`diplomatic-wonders.json` and its probe now use the correct name.
+
+[Library vectors](library-vectors.txt) and [library.json](library.json) retain
+512 executions of the original discovery follow-on slice
+`0x49ebb5..0x49ec5c`, including original owner/expiry/knowledge/group helpers.
+There are 29 grant requests. A newly granted advance propagates to an active
+Great Library owner when at least two player civilizations know it, the owner
+does not, and its technology-group flag is not 2. This is a discovery-triggered
+follow-on, not a round polling policy. Reserved Future Technology 89 does not
+qualify. The Rust test checks every recipient and exercises those 29 grants
+through the shared discovery path (which also runs Leonardo).
+
+[wonder-yields.json](wonder-yields.json) and
+[wonder-yield-vectors.txt](wonder-yield-vectors.txt) record 168 native tile-yield
+triples: 21 radius tiles under eight combinations of Colossus/King Richard
+ownership and global foreign-civ expiry. Original `0x4c22a7` and its callees
+execute; all triples match the World/Rules adapter. Finance, tile bonuses,
+Hoover power, veteran eligibility and combat now use the common active-wonder
+lookup instead of treating a completed but obsolete wonder as active.
+
+[production-veterans.json](production-veterans.json) and
+[production-veteran-vectors.txt](production-veteran-vectors.txt) retain 512 native
+eligibility checks at `0x4c6728..0x4c68aa`, with original improvement/wonder
+helpers. One-shot flag `0x1000` prevents automatic veterans even with the
+corresponding Barracks/Port/Airport/Sun Tzu/Lighthouse context. The unit
+production adapter matches every vector.
+
+[movement-allowance.json](movement-allowance.json) and
+[movement-allowance-vectors.txt](movement-allowance-vectors.txt) retain 1,024
+complete `0x568da2` calls without replacement callees. Sea movement gains one
+point from Nuclear Power, two from Magellan and one from active Lighthouse
+unless type flag 32 excludes it. Persistent damage scales non-air movement,
+rounding upward to a whole point, with minima of one point on land/two at sea;
+zero-base-movement types stay immobile. The engine and its World/Rules adapter
+match all cases with the engine's three-thirds quantum. Turn resets, created
+units, discovery/Leonardo changes and post-combat remaining movement use this
+allowance. The pikemen check uses the current effective maximum movement.
+Custom ToTPP movement quanta, transport and trireme sinking remain separate.
+
+The shipped effect inventory is: city food storage, tile food/shields/trade,
+happiness/disorder, science multipliers, upkeep exemptions, defence, automatic
+veterans, naval movement, Library discoveries and the decoded Darwin,
+Leonardo, Eiffel, Manhattan and surface Apollo one-offs. Marco Polo, Statue of
+Liberty and UN effects require diplomacy/government-selection workflows that
+this headless API does not yet expose. They can be built and registered, but
+those interactions are not claimed here. Pollution, space victory and later
+naval/air combat-only modifiers are also outside this release's effect proof.
+
+```sh
+export CIVTOT_HOME=/mnt/d/games/CIVTOT
+export PYTHONPATH=/tmp/totengine-research-deps
+python3 tools/library_check.py --gold /tmp/library.json --vectors /tmp/library-vectors.txt
+python3 tools/wonder_yield_check.py --gold /tmp/wonder-yields.json --vectors /tmp/wonder-yield-vectors.txt
+python3 tools/veteran_check.py --gold /tmp/production-veterans.json --vectors /tmp/production-veteran-vectors.txt
+python3 tools/movement_allowance_check.py --gold /tmp/movement-allowance.json --vectors /tmp/movement-allowance-vectors.txt
+```
+
+### Hut-facing landmass strategy flag lifecycle (#79)
+
+`engine::statistics::refresh_landmass_flags` now refreshes the flags consumed
+by hut selection instead of retaining stale imported flags. Original military
+counts include admitted types with role <=4; strength sums their signed attack
+bytes (all admitted roles), excluding types with attack >=99. Both sums wrap
+as words. Surface landmasses 1..254 are compared using original city counts,
+treaty and attitude gates. Bits 1/2 describe non-allied city presence and bits
+4/8 military presence, split by treaty bit 4. Bit 16 uses the original hostile
+or treaty-32 strength/city test. Landmasses 0/255 and barbarian flags stay clear.
+
+[landmass-flags.json](landmass-flags.json) and
+[landmass-flags-vectors.txt](landmass-flags-vectors.txt) retain 512 native
+contexts. `tools/landmass_flags_check.py` executes admitted-unit accumulation
+at `0x506e5e..0x506ec7` and `0x50733d..0x5073f7`, then flag calculation at
+`0x507a87..0x507ff4` and the bit-16 write at `0x508275..0x5082be`.
+Original diplomacy/attitude callees execute, with no replacements. The skipped
+intervening calculation changes the separate landmass build-strategy byte,
+not these flags. The Rust World adapter builds units/cities from each numeric
+fixture and matches every flag, also excluding deleted/invalid unit slots.
+
+The headless loop refreshes city caches and flags at round close. It does not
+claim the original's complete per-civ scheduling or AI planning, and the
+surface-only unit model cannot resolve non-surface military caches. Earlier
+sections identifying this lifecycle as open are superseded for surface flags.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/landmass_flags_check.py --gold /tmp/landmass-flags.json \
+  --vectors /tmp/landmass-flags-vectors.txt
+```

@@ -73,7 +73,7 @@ partly decoded), obsolete units + veterans, goody-hut outcomes in part
 **v0.7.0 "browser observer"** is released too (AGREE on #104, 1 round):
 `engine::observer` per-turn snapshots, `totctl observe`,
 local browser UI in `totui`; #80/#81, usage in `docs/browser-observer.md`.
-v0.8.0 AI v1 + economy depth is in progress: #87 science/tax split is
+v0.8.0 AI v1 + economy depth is a candidate awaiting owner-run review: #87 science/tax split is
 implemented in `engine::finance` (146/146 FallRome + 10/10 standard-city
 records exact from stored trade/shields), city finance refreshes in
 `run_turn`; civ rates and specialists are decoded and fingerprinted.
@@ -95,9 +95,9 @@ bankruptcy sales (1,000 synthetic and 490 saved-input x86 cost checks).
 Happiness/disorder stages now refresh after production (#86; 1,000
 synthetic x86 cases and 156/156 original recomputations from saved inputs;
 15 FallRome stored values differ under original recomputation too).
-Wonder lifecycle and Darwin choices are implemented. Leonardo, Statue,
-Manhattan and surface Apollo one-offs now have native comparisons; ongoing
-effects/integration limits still need the #88 audit. #89's late AI shield-row adjustment is implemented
+Wonder lifecycle and Darwin choices are implemented. Leonardo, Eiffel Tower,
+Manhattan and surface Apollo one-offs now have native comparisons; ongoing effects now include native-checked Library, expiry, naval movement and
+one-shot veteran handling; diplomacy/government/transport contexts are explicit limits. #89's late AI shield-row adjustment is implemented
 and default AI row rounding corrected (1,108 original-x86 cases). Original
 power score/rank refresh now runs at round close (256 synthetic + 2 saved-input
 x86 comparisons); population and city-landmass caches refresh too (128 cases).
@@ -108,10 +108,10 @@ workers, support/disbands, post-production mood/finance and forced human anarchy
 Actual round processing matches 500 controlled native city transitions over
 50 rounds. A controlled live Wine sequence now also passes: 500 economic
 transitions and civ treasuries from 50 original-written saves match run_turn. City-slot reuse, classic capacity and deletion extent now match native checks.
-Landmass strategy flags and unsupported-context audits remain open; the live
+Surface hut-facing landmass flags now refresh (512 native contexts); the live
 city fixture isolates economics rather than full original-AI round parity.
 Owner requested all v0.8 tasks then the owner-run milestone review;
-`docs/v0.8.0-readiness.md` tracks the outstanding acceptance gates.
+`docs/v0.8.0-readiness.md` records acceptance gates and explicit context limits.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

@@ -1,0 +1,11 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routine": "0x4c22a7",
+  "cases": 168,
+  "original_x86_calls": 504,
+  "obsolete_tech_ids": [
+    30,
+    37
+  ],
+  "scope": "Original Colossus/King Richard tile yields before and after global expiry.\n\nExisting standard city/radius and Rules, invented wonder hosts and foreign\nknowledge of the actual obsoleting advances. All original callees execute."
+}

@@ -3,7 +3,7 @@
 //! city outputs; treasury credit and maintenance are in `crate::treasury`.
 use tot_kit::Rules;
 
-use crate::{research::TechTree, WorldState};
+use crate::WorldState;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct CityFinance {
@@ -28,22 +28,7 @@ impl WorldState {
     /// wonder once any player knows its obsoleting advance. Use physical
     /// @ENDWONDER row IDs, including repeated scenario labels such as '*'.
     fn finance_wonder(&self, rules: &Rules, wonder: usize) -> Option<usize> {
-        let city = *self.wonders.get(wonder)?;
-        if city < 0 || city as usize >= self.cities.len() {
-            return None;
-        }
-        let raw = rules
-            .section("ENDWONDER")
-            .and_then(|s| s.rows.get(wonder))
-            .and_then(|r| r.first());
-        if let Some(abbrev) = raw.filter(|s| s.as_str() != "nil" && s.as_str() != "no") {
-            if let Some(tech) = TechTree::from_rules(rules).by_abbrev(abbrev) {
-                if (1..8).any(|civ| self.finance_knows(civ, tech)) {
-                    return None;
-                }
-            }
-        }
-        Some(city as usize)
+        self.active_wonder_city(rules, wonder)
     }
 
     /// Split trade after routes and corruption, with already computed net
@@ -155,6 +140,7 @@ mod tests {
     fn world() -> WorldState {
         let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
         w.wonders = [-1; 28];
+        w.cities[1].city_id = 1;
         w.cities[1].buildings = [0; 5];
         w.cities[1].specialists = 0;
         w.cities[1].building = 0;

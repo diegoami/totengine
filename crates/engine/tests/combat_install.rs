@@ -119,6 +119,9 @@ fn oracle_battle_2_through_move_unit() {
 fn expected_defender_after(d: &engine::Unit) -> engine::Unit {
     engine::Unit {
         damage: 10,
+        // The post-damage snapshot uses original 0x568da2's land minimum.
+        // This allowance is checked by movement vectors, not the battle capture.
+        moves_left: 3,
         ..d.clone()
     }
 }

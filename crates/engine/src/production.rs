@@ -26,8 +26,8 @@
 //!   - an air unit (option `0x10` on) comes from a city with an Airport
 //!     (32).
 //!
-//!   A type-table flag (`+5 & 0x10`) exempts units; it is not mapped to
-//!   Rules yet and the engine treats it as clear.
+//!   Type flag `0x1000` (`+5 & 0x10`, the one-shot flag) exempts units
+//!   in every domain; 512 native eligibility cases verify this path.
 //!
 //! Not modelled yet:
 //! - the Settlers-at-size-1 case at Chieftain (and the population cost:
@@ -121,6 +121,9 @@ impl WorldState {
         let Some(c) = self.cities.get(idx) else {
             return false;
         };
+        if rules.unit_flags(t).unwrap_or(0) & crate::combat::FLAG_ONE_SHOT != 0 {
+            return false;
+        }
         let domain = rules.unit_domain(t).unwrap_or(0);
         let option = self.game_flags & 0x10 != 0;
         if domain == 0 || !option {
@@ -221,7 +224,7 @@ impl WorldState {
                     x,
                     y,
                     is_leader: false,
-                    moves_left: rules.unit_move(t).unwrap_or(0) * 3,
+                    moves_left: self.movement_allowance(rules, t, civ, 0),
                     veteran,
                     damage: 0,
                     orders: 0xff,
@@ -438,5 +441,43 @@ Archers, nil, 0, 1., 0, 3a, 2d, 1h, 1f, 3, 0, 0, Feu, 000000000000000\n\
             panic!("a second Phalanx completes")
         };
         assert!(w.units[u].veteran);
+    }
+}
+
+#[cfg(test)]
+mod veteran_native_tests {
+    #[test]
+    fn original_veteran_eligibility() {
+        for line in include_str!("../../../docs/evidence/production-veteran-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let v: Vec<u32> = line
+                .split_whitespace()
+                .map(|x| x.parse().unwrap())
+                .collect();
+            let rules = tot_kit::parse_rules(&format!(
+                "@UNITS\nUnit,nil,{},1.,0,1a,1d,1h,1f,1,0,{},nil,{:015b}\n",
+                v[0], v[1], v[2]
+            ));
+            let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
+            w.cities[0].city_id = 1;
+            w.cities[0].owner = 1;
+            w.cities[0].buildings = [0; 5];
+            w.wonders = [-1; 28];
+            for (id, present) in [(2, v[4]), (34, v[5]), (32, v[6])] {
+                if present != 0 {
+                    w.cities[0].buildings[id / 8] |= 1 << (id % 8);
+                }
+            }
+            if v[7] != 0 {
+                w.wonders[7] = 0;
+            }
+            if v[8] != 0 {
+                w.wonders[3] = 0;
+            }
+            w.game_flags = if v[3] != 0 { 16 } else { 0 };
+            assert_eq!(w.made_veteran(&rules, 0, 1, 0), v[9] != 0, "{line}");
+        }
     }
 }

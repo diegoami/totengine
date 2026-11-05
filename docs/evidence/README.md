@@ -2820,3 +2820,37 @@ cmp docs/evidence/support-disband.json /tmp/support-disband.json
 cmp docs/evidence/support-disband-vectors.txt /tmp/support-disband-vectors.txt
 cargo test -p engine --lib support::tests
 ```
+
+
+### Forced human anarchy (#13/#86)
+
+`WorldState::force_human_anarchy` follows the human zero-government dispatch
+`0x52588e -> 0x52522f`. [anarchy.json](anarchy.json) and
+[anarchy-vectors.txt](anarchy-vectors.txt) retain 49 native executions over
+all seven civs and starting governments 0..6 on the standard reference world.
+The human mask selects the target civ, incoming treaty words are supplied,
+and all city queues start with literal unit 8. **No callees are replaced**:
+original city total/worker refresh runs for every affected city. Rust matches
+resulting government, all eight incoming treaty words and thirteen retained
+fields for each of ten cities, including the build queue.
+
+A changed government becomes Anarchy (0), clears bit `0x10` from incoming
+treaties, and refreshes own live surface cities in ascending index order.
+Queued unit 8 changes to literal unit 11 when outside Fundamentalism, matching
+the original's Fanatics-to-Riflemen switch. Already-Anarchy does not refresh
+cities or clear those treaties. The city unrest caller separately clears civic
+flag `0x1` before dispatch and sets it after returning; the mood-transition
+vectors cover that request/flag boundary.
+
+This supports forced human Democracy collapse from city unrest. It does not
+implement player-selected revolutions, non-surface refresh, the original AI's
+diplomatic notification path, or later government selection. City-phase runtime
+integration remains outstanding.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/anarchy_check.py --gold /tmp/anarchy.json --vectors /tmp/anarchy-vectors.txt
+cmp docs/evidence/anarchy.json /tmp/anarchy.json
+cmp docs/evidence/anarchy-vectors.txt /tmp/anarchy-vectors.txt
+CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test anarchy_install
+```

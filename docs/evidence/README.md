@@ -2512,3 +2512,50 @@ cmp docs/evidence/apollo.json /tmp/apollo.json
 cmp docs/evidence/apollo-vectors.txt /tmp/apollo-vectors.txt
 cargo test -p engine --lib wonders
 ```
+
+
+### Native growth preparation (#13, integration pending)
+
+The old `engine::cities::CityEcon` is an observed-series approximation, not the
+original growth algorithm. `engine::growth` now holds independently checked
+preparation arithmetic; **the turn loop still uses the old approximation**
+until starvation/worker/collection ordering is ready. This does not close
+#13 or establish 50-turn city parity.
+
+`tools/growth_check.py` executes food-row routine `0x4c19e0` (including its
+original clamp) and positive-box growth `0x4c5cdb` through explicit stops
+before UI/worker assignment. Its growth-limit helper `0x434ce5`, building
+lookup and Pyramids ownership/expiry helpers run from original bytes, without
+replacement callees. [city-growth.json](city-growth.json),
+[food-row-vectors.txt](food-row-vectors.txt), and
+[city-growth-vectors.txt](city-growth-vectors.txt) retain 1,024 cases each.
+Rust compares row results, growth thresholds, granary/Pyramids storage and
+Aqueduct/Sewer blocking with the original results.
+
+Confirmed ordering: `0x4cb15d` prepares growth using the **starting** food box,
+then `0x4cb17d` refreshes city totals/workers; `0x4cb1da..0x4cb23d` collects
+food and charges citizens and homed settlers. This explains why the observed
+series appeared to carry the current surplus after growth. The original
+threshold is starting box >= `(size+1)*civ_food_rows`, not the old approximation
+of adding food then comparing against `(cosmic_rows-1)*(size+1)`. AI food rows
+follow the shield-row arithmetic, except the late adjustment begins at
+**turn >200** (shield rows use >=200). Government >2 selects the high settler
+food cost. Standard-game lab difficulty is 4, so its early AI rows are 9;
+that must not be generalized to every civ or game.
+
+An allowed growth increments size and resets the box to zero, or to
+`(new_size+1)*floor(raw_cosmic_rows/2)` with Granary (improvement 3) or active
+Pyramids (wonder 0). Aqueduct (9) and Sewer (23) checks use the pre-growth
+size against the respective cosmic limits; a blocked growth rolls back size
+**after** resetting storage. Negative food boxes use a separate original
+starvation path and must not be clamped away before its next processing.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/growth_check.py --gold /tmp/city-growth.json \
+  --rows-vectors /tmp/food-row-vectors.txt --growth-vectors /tmp/city-growth-vectors.txt
+cmp docs/evidence/city-growth.json /tmp/city-growth.json
+cmp docs/evidence/food-row-vectors.txt /tmp/food-row-vectors.txt
+cmp docs/evidence/city-growth-vectors.txt /tmp/city-growth-vectors.txt
+cargo test -p engine --lib growth::tests
+```

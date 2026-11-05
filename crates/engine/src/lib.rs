@@ -18,6 +18,7 @@ pub mod effects;
 pub mod events;
 pub mod finance;
 pub mod founding;
+pub mod growth;
 pub mod happiness;
 pub mod huts;
 pub mod movement;

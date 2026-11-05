@@ -1,0 +1,17 @@
+{
+  "seed": 1,
+  "turn_start": 128,
+  "turns": 64,
+  "new_units": 200,
+  "final_crt": 3502493852,
+  "reference_save_sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef",
+  "runtime_executable_sha256": "dbbd24d8b72fd1ac56d81adf3a16273affc6ae3294dd5ad4a2c59d4d781c00b4",
+  "notification_context_0x6031b8": 1,
+  "call_thread": "GUI",
+  "boundaries": [
+    "0x569c88",
+    "0x40cef0",
+    "0x467d19"
+  ],
+  "scope": "Sustained live original-game arrival phases, with a continuous mechanics CRT.\n\nLoad Original/Ph_Auto2.SAV first. Pin level 3, difficulty 4, all-human mechanics\nplayer mask (barbarians excluded) and treasury 32000 to exercise land and naval arrivals. Cities/units persist\nbetween phases; only arrivals run. UI/network presentation callees are suppressed;\nallocation and order-setting execute in the game. The original quiet-context\nword 0x6031b8=1 suppresses arrival alert dialogs after creation. The previous phase's final CRT\nis restored before the next phase so intervening screen repaint draws cannot\nchange the mechanics stream. No full AI-turn/pollution RNG parity is claimed."
+}

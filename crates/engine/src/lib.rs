@@ -156,7 +156,7 @@ pub struct MapState {
     pub terrain: Vec<u8>,
     /// Tile byte +3, used by the original connection routine.
     pub landmass: Vec<u8>,
-    /// Original per-landmass word +2 (sea arrival minimum size).
+    /// Original per-landmass word +4, used for sea-arrival admission.
     pub landmass_values: Vec<i16>,
     pub site_bits: Vec<u8>,
     pub fertility: Vec<u8>,
@@ -359,7 +359,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
                 .as_chunks::<40>()
                 .0
                 .iter()
-                .map(|e| i16::from_le_bytes([e[2], e[3]]))
+                .map(|e| i16::from_le_bytes([e[4], e[5]]))
                 .collect(),
             site_bits: (0..surface).map(|t| m.site_bits(t)).collect(),
             fertility: (0..surface).map(|t| m.fertility(t)).collect(),

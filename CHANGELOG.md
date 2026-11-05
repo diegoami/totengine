@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- Verify 64 sustained live barbarian phases: 200 allocated units and all
+  mechanics CRT states match. Correct sea-arrival admission to import landmass
+  word +4; regenerate fingerprints for that field.
+- Reuse civ-wide improvement prerequisite resolution in economic observations;
+  preserve AI behavior while avoiding repeated tree parsing per city/item.
 - Integrate combat walls/fortresses, Palace protection and active wonders;
   add native-checked air defence and land modifiers (1,536 + 1,024 contexts).
   Casualties retain stable slots, and dead units no longer obstruct movement.

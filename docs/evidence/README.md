@@ -3073,3 +3073,60 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
   python3 tools/combat_land_check.py --gold /tmp/combat-land.json \
   --vectors /tmp/combat-land-vectors.txt
 ```
+
+
+### Sustained live barbarian arrivals (#83)
+
+[barbarian-live.json](barbarian-live.json) and
+[barbarian-live-vectors.txt](barbarian-live-vectors.txt) record 64 consecutive
+arrival phases (turns 128..191), a continuous mechanics CRT seeded to 1, and
+200 actual new units in the owned Wine game. Cities and created units persist
+between phases. `same_seed_arrivals_match_sixty_four_live_original_phases`
+starts from the same reference save and matches every slot/type/position,
+orders, veteran flag, and per-phase final CRT; final state is 3,502,493,852.
+Native creation, reused dead slots, stack insertion and order-setting execute;
+the earlier 1,024 synthetic vectors stopped at a successful allocation boundary.
+
+This caught an import error hidden by the uniform synthetic maps: the sea
+admission check at `0x46e8ce` reads **landmass-table word +4** (`0x61bcac`),
+whereas boot had supplied word +2 (the separately decoded start-placement
+input). `MapState::landmass_values` now imports +4, and the complete 64-phase
+comparison passes, including all naval arrivals. The deterministic fingerprints
+are intentionally regenerated for the corrected imported field.
+
+The fixture fixes level 3, difficulty 4, human mask 254 (all player civs;
+barbarians excluded), treasury 32000 for civs 1..7 and the original quiet
+notification context `0x6031b8=1`. Terrain, technologies, governments, city
+records and existing units come from the reference save. It executes only
+arrivals; no player/AI, city, pollution, research, calendar or full-round RNG
+parity is claimed. The preceding phase's final CRT is restored before the next
+phase, excluding unrelated repaint draws between calls. Original network/UI
+callbacks `0x569c88`, `0x40cef0` and `0x467d19` are suppressed; text helper
+`0x42095e`, allocation and order-setting execute unchanged.
+
+`tools/oracle/call_gui.c` temporarily redirects the suspended GUI thread to a
+wrapper in the dead startup cave, preserving registers/flags and resuming at
+the exact interrupted instruction. It restores its wrapper only after the
+thread has left the cave. This avoids a suspended-GUI loader-lock deadlock in
+the worker-thread calling method. The native quiet-context switch suppresses
+visible-arrival alerts (the diagnostic 64-phase attempt blocked at turn 185
+without it). A timeout stops the owned game before any cave restoration.
+
+```sh
+/home/diego/review-tmp/llvm-mingw/bin/clang --target=i686-pc-windows-gnu \
+  -O2 -o /tmp/totengine-call-gui.exe tools/oracle/call_gui.c -luser32
+CIVTOT_HOME=/mnt/d/games/CIVTOT DISPLAY=:99 \
+  WINEPREFIX=/home/diego/.wine_civ2tot tools/oracle/load_save.sh original/ph_auto2.sav
+CIVTOT_HOME=/mnt/d/games/CIVTOT DISPLAY=:99 \
+  WINEPREFIX=/home/diego/.wine_civ2tot python3 tools/oracle/barbarian_series.py \
+  --helper /tmp/totengine-call-gui.exe --turns 64 --seed 1 \
+  --gold /tmp/barbarian-live.json --vectors /tmp/barbarian-live-vectors.txt
+```
+
+Both live acceptance runs are finished. The owned game was stopped, all 50
+numeric city-test saves were removed after checking their saved hashes, and
+the initial 25 SAV/INI backup hashes were reverified. No original assets enter
+Git. City economic observations also now resolve prerequisite choices once
+per civ observation instead of rebuilding the tech tree for every city/item;
+the existing 100-turn AI v0 and two-run/replay AI v1 checks pass in about 30 s
+combined on this machine, versus about 365 s before that equivalent refactor.

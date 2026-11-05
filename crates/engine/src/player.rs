@@ -310,6 +310,21 @@ impl WorldState {
                 0
             }
         });
+        // Prerequisites are civ-wide. Resolve the tree once per observation,
+        // rather than reparsing it for every candidate in every own city.
+        let tree = crate::research::TechTree::from_rules(rules);
+        let available: [bool; 36] = std::array::from_fn(|id| {
+            rules.improvement_cost(id).is_some()
+                && match rules.improvement_prereq_raw(id) {
+                    None | Some("nil") => true,
+                    Some("no") => false,
+                    Some(raw) => tree.by_abbrev(raw).is_some_and(|t| {
+                        self.techs[c]
+                            .get(t / 8)
+                            .is_some_and(|b| b & (1 << (t % 8)) != 0)
+                    }),
+                }
+        });
         let city_economy = cities
             .iter()
             .filter(|k| k.owner == civ)
@@ -348,11 +363,7 @@ impl WorldState {
                         .city_growth_context(rules, k.index)
                         .and_then(|v| v.blocking_improvement()),
                     available_improvements: (2..36)
-                        .filter(|&id| {
-                            !city.has_building(id)
-                                && rules.improvement_cost(id).is_some()
-                                && self.knows(rules, civ, rules.improvement_prereq_raw(id))
-                        })
+                        .filter(|&id| !city.has_building(id) && available[id])
                         .map(|id| id as u8)
                         .collect(),
                 }

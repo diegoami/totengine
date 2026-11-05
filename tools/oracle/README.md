@@ -27,6 +27,7 @@ Headless Wine + Xvfb harness that drives the original game and harvests saves.
 | `launcher_pick.py` | Select a launcher game-type item by reading the red radio button (the list remembers the last choice and wraps). Used by `seeded_start.sh`, `newgame.sh` and `lab_std.sh` via `GAME` (default 0 = Original). |
 | `load_save.sh` | Start the game under memspool and load a save by its install-relative path (`load_save.sh original/ph_auto2.sav`): picks "Load a Saved Game", clicks the filename field, types `d:\…`. |
 | `call_game.c` / `city_series.py` | Controlled city phases on the owned game, with GUI suspension and presentation-only boundaries; the original save dialog harvests 50 saves outside the repo. Build the helper as documented in evidence §Live city-save comparison; back up the install before starting the rig. |
+| `call_gui.c` / `barbarian_series.py` | Controlled consecutive live arrival phases on the GUI thread, native allocation and continuous mechanics CRT, with quiet presentation context; numeric-only evidence. Build/run in evidence §Sustained live barbarian arrivals. |
 | `hut_entry.py` | Controlled hut entry: pins CRT at entry, separates the three identified presentation callers, captures outcome/RNG/mutations and restores hooks. Fresh load per case; command examples below. |
 | `corrhook.py` | `on`/`off`/`dump`: log calls of the corruption function `0x4c35a2` (city, amount, waste flag, capital distance). Same cave as randhook — use one at a time. |
 

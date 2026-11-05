@@ -101,6 +101,8 @@ effects/integration limits still need the #88 audit. #89's late AI shield-row ad
 and default AI row rounding corrected (1,108 original-x86 cases). Original
 power score/rank refresh now runs at round close (256 synthetic + 2 saved-input
 x86 comparisons); population and city-landmass caches refresh too (128 cases).
+64 sustained live arrival phases now match 200 allocated units and all CRT
+states. The live check corrected sea admission to use landmass word +4.
 The decoded surface city phase now runs in `run_turn` (signed growth/debt,
 workers, support/disbands, post-production mood/finance and forced human anarchy).
 Actual round processing matches 500 controlled native city transitions over

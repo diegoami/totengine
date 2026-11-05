@@ -5,6 +5,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
+- **AI production rows (#89):** corrected default difficulty rows and
+  decoded the turn-200 adjustment using the saved power leader, wonder
+  state and live knowledge masks. All 1,108 arithmetic cases match the
+  original x86 fragment, including signed masks for civ 7.
 - **Recurring trade-route income (#85 slice):** decoded partner trade caches,
   commodity/partner slots, domestic rounding and connection/building bonuses;
   route arrows now enter city trade and finance. The original x86 loop agrees

@@ -96,6 +96,19 @@ supply/demand refresh and non-surface routes remain open; #85 stays open.
 
 ## Remaining milestone work
 
+The owner requested completion of the entire v0.8 queue and then a milestone
+review candidate (2026-11-05). Treat the live issue acceptance as the gate;
+do not substitute isolated formula tests for full campaign-parity claims.
+The main session prepares the candidate and milestone issue, then prints
+the owner-run review prompt; it does not launch the review.
+
+Next production work decodes #89's row adjustment and #88's wonder lifecycle.
+The original row fragment is executable independently of unit support. In
+particular, cosmic rows = 10 bypass scaling **and even rounding**; the prior
+port rounded unconditionally. The late adjustment starts at turn >= 200,
+requires a human power leader, and depends on wonder slots 23/25 plus
+knowledge masks 73/58/76. Preserve the original signed-mask arithmetic.
+
 AI v1 still needs economy/unit/war refinements and the acceptance stated
 in #82 (deterministic 50-turn autoplay plus justified oracle comparisons).
 #83/#79 require oracle arrival/outcome evidence; #85/#86/#88/#89 require

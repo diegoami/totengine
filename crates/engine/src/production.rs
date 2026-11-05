@@ -9,7 +9,7 @@
 //! - **Cost** = Rules cost × the civ's shield rows. Human civs use the
 //!   @COSMIC shield rows (row 4). AI civs use `13 − difficulty`, +1 at
 //!   difficulty 0, +1 below 3, scaled by the @COSMIC rows / 10 and rounded
-//!   up to even.
+//!   up to even only when the @COSMIC rows differ from 10.
 //! - **Completion:** the box drops by the cost, then the unit is created
 //!   in the city (homed there) or the improvement is set.
 //!
@@ -32,7 +32,6 @@
 //!
 //! Not modelled yet:
 //! - wonders (ids ≥ 40) and their box reset;
-//! - the late-game AI rows adjustment (turn > 200);
 //! - the Settlers-at-size-1 case at Chieftain (and the population cost:
 //!   the engine's rule is in `founding.rs`);
 //! - what an AI chooses next (the item stays).
@@ -53,20 +52,68 @@ pub enum Built {
 const CAPITALIZATION: i8 = -39;
 const FIRST_WONDER: usize = 40;
 
+/// `0x4c1c2c..0x4c1dd3`: row arithmetic after unit-support evaluation.
+/// The saved power ranking identifies the leader. Knowledge masks retain
+/// the original's signed-byte extension, including its owner-7 behavior.
+#[allow(clippy::too_many_arguments)] // Mirrors the independently executed arithmetic inputs.
+pub fn production_rows(
+    cosmic: i32,
+    difficulty: u8,
+    humans: u8,
+    civ: u8,
+    turn: i16,
+    leader: u8,
+    wonders: [i16; 2],
+    masks: [u8; 3],
+) -> i32 {
+    if (humans as u32) & (1u32 << (civ & 31)) != 0 {
+        return cosmic;
+    }
+    let d = difficulty as i32;
+    let mut rows = 13 - d + (d < 3) as i32 + (d == 0) as i32;
+    if turn >= 200 && d > 1 && (humans as u32) & (1u32 << (leader & 31)) != 0 {
+        let [m73, m58, m76] = masks;
+        let mut adjustment: i32 = 2;
+        if wonders[0] != -1 && (m73 as i8 as i32) & !(humans as i32) != 0 {
+            adjustment -= 1;
+            if m73 & humans == 0 || m58 & humans == 0 {
+                adjustment -= 1;
+            }
+        }
+        if wonders[1] != -1 && (m76 as i8 as i32) & !(humans as i32) != 0 {
+            adjustment -= 1;
+            if m76 & humans == 0 {
+                adjustment -= 1;
+            }
+        }
+        rows -= adjustment.clamp(0, 2);
+    }
+    if cosmic != 10 {
+        rows = cosmic * rows / 10;
+        rows += rows & 1;
+    }
+    rows
+}
+
 impl WorldState {
     /// Shield-box rows of `civ` (`0x4c1bdf`).
     pub fn shield_rows(&self, rules: &Rules, civ: u8) -> i32 {
         let cosmic = rules.cosmic_row(4).unwrap_or(10) as i32;
-        if self.human_mask >> civ & 1 != 0 {
-            return cosmic;
-        }
-        let d = self.difficulty as i32;
-        let mut rows = 13 - d + (d < 3) as i32 + (d == 0) as i32;
-        rows = cosmic * rows / 10;
-        if rows & 1 != 0 {
-            rows += 1;
-        }
-        rows
+        let mask = |t: usize| {
+            (1..8).fold(0u8, |m, c| {
+                m | (((self.techs[c][t / 8] >> (t % 8)) & 1) << c)
+            })
+        };
+        production_rows(
+            cosmic,
+            self.difficulty,
+            self.human_mask,
+            civ,
+            self.turn,
+            self.power_order[7],
+            [self.wonders[23], self.wonders[25]],
+            [mask(73), mask(58), mask(76)],
+        )
     }
 
     fn civ_holds_wonder(&self, civ: u8, wonder: usize) -> bool {
@@ -272,7 +319,56 @@ Warriors, nil, 0, 1., 0, 1a, 1d, 1h, 1f, 1, 0, 1, nil, 000000000000000\n\
                 w.shield_rows(&rules, 1)
             })
             .collect();
-        assert_eq!(rows, vec![16, 14, 12, 10, 10, 8]);
+        assert_eq!(rows, vec![15, 13, 12, 10, 9, 8]);
+    }
+
+    #[test]
+    fn row_arithmetic_matches_original_x86() {
+        let vectors = include_str!("../../../docs/evidence/production-row-vectors.txt");
+        let mut count = 0;
+        for line in vectors.lines().filter(|l| !l.starts_with('#')) {
+            let v: Vec<i32> = line
+                .split_whitespace()
+                .map(|x| x.parse().unwrap())
+                .collect();
+            assert_eq!(
+                production_rows(
+                    v[0],
+                    v[1] as u8,
+                    v[2] as u8,
+                    v[3] as u8,
+                    v[4] as i16,
+                    v[5] as u8,
+                    [v[6] as i16, v[7] as i16],
+                    [v[8] as u8, v[9] as u8, v[10] as u8]
+                ),
+                v[11],
+                "{line}"
+            );
+            count += 1;
+        }
+        assert_eq!(count, 1108);
+    }
+
+    #[test]
+    fn late_rows_read_leader_wonders_and_live_knowledge() {
+        let rules = tot_kit::parse_rules(RULES);
+        let mut w = crate::boot(&synthetic_save(), 1);
+        w.difficulty = 4;
+        w.human_mask = 2;
+        w.power_order[7] = 1;
+        w.wonders = [-1; 28];
+        w.techs = [[0; 13]; 8];
+        w.turn = 199;
+        assert_eq!(w.shield_rows(&rules, 2), 9);
+        w.turn = 200;
+        assert_eq!(w.shield_rows(&rules, 2), 7);
+        assert_eq!(w.shield_rows(&rules, 1), 10);
+        w.wonders[23] = 0;
+        w.techs[2][73 / 8] |= 1 << (73 % 8);
+        assert_eq!(w.shield_rows(&rules, 2), 9);
+        w.power_order[7] = 2;
+        assert_eq!(w.shield_rows(&rules, 2), 9);
     }
 }
 

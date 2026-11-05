@@ -585,6 +585,9 @@ pub struct SaveFile {
     /// aligns with @687). ROMFALL `0x02` = WRE only. Note @685..688 are also
     /// read as `seed_word` below — that label is unproven for @687.
     pub human_mask: u8,
+    /// Saved power ranking, weakest to strongest (bytes @974..982;
+    /// RAM 0x60777a). The shield-row adjustment reads the final slot.
+    pub power_order: [u8; 8],
     /// Game block @684 — §RG-1 (0 = Chieftain … 5 = Deity).
     pub difficulty: u8,
     /// u16 @685: barbarian level | civs-in-play mask << 8. Historically
@@ -677,6 +680,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     // copies must agree on every file observed; keep the first.
     let game_flags = u16le(data, 652)?;
     let human_mask = data[687];
+    let power_order = data[974..982].try_into().unwrap();
     let difficulty = data[684];
     let seed_word = u16le(data, 685)?;
     let barbarian_level = data[685];
@@ -862,6 +866,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         year,
         game_flags,
         human_mask,
+        power_order,
         barbarian_level,
         civs_mask,
         difficulty,

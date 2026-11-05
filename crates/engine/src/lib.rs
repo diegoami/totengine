@@ -202,6 +202,7 @@ pub struct WorldState {
     pub game_flags: u16,
     /// Human-players bitmask (save @687; bit n = civ n).
     pub human_mask: u8,
+    pub power_order: [u8; 8],
     pub wonders: [i16; 28],
     /// Treasury per civ, index = owner (0 = barbarians); save i32@10 of
     /// each civ-properties block (oracle-proven, evidence §T1-7 treasury).
@@ -280,6 +281,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         seed_word: sav.seed_word,
         game_flags: sav.game_flags,
         human_mask: sav.human_mask,
+        power_order: sav.power_order,
         wonders: sav.wonders,
         treasury: sav.treasury,
         governments: sav.governments,
@@ -476,6 +478,7 @@ impl WorldState {
         for t in &self.techs {
             mix(&mut h, t);
         }
+        mix(&mut h, &self.power_order);
         mix(&mut h, &self.map.improvements);
         mix(&mut h, &self.map.visible);
         for t in self.treasury {
@@ -645,6 +648,7 @@ mod tests {
             ("route count", |w| w.cities[0].route_count ^= 1),
             ("route commodity", |w| w.cities[0].route_commodities[0] ^= 1),
             ("route partner", |w| w.cities[0].route_partners[0] ^= 1),
+            ("power order", |w| w.power_order[7] ^= 1),
             ("techs", |w| w.techs[1][0] ^= 1),
             ("tile improvements", |w| w.map.improvements[0] ^= 4),
             ("tile visibility", |w| w.map.visible[0] ^= 2),

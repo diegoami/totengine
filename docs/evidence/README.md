@@ -542,8 +542,9 @@ from `0x4c1bdf`. Engine: `engine::production` (`production_step`,
 - **Cost:** Rules cost × rows.
   - Units: @UNITS field 9; improvements: @IMPROVE field 1.
   - **Human rows:** @COSMIC row 4.
-  - **AI rows:** `13 − d`, +1 if d < 3, +1 if d = 0; then × cosmic/10,
-    rounded up to even.
+  - **AI rows (corrected 2026-11-05, #89):** `13 − d`, +1 if d < 3,
+    +1 if d = 0. Only if cosmic != 10: multiply by cosmic/10, then round
+    up to even. Default rows by difficulty are **15/13/12/10/9/8**.
   - **Runtime check:** the live global `0x6537fc` reads 10 at
     difficulty 4.
 - **Completion:** `box ≥ cost` → the box drops by the cost; the unit is
@@ -553,7 +554,6 @@ from `0x4c1bdf`. Engine: `engine::production` (`production_step`,
     civ knows its advance);
   - wonders (ids ≥ 40; one path resets the box to 0);
   - veteran units;
-  - the AI rows adjustment after turn 200;
   - the Settlers-at-size-1 case at Chieftain;
   - AI build choice.
 
@@ -563,6 +563,31 @@ The misses are explained by shields that the original recomputes at
 processing time, after growth: the stored @83 of turn t is the previous
 evaluation. They all fit rows = 10 with a net 1–2 higher. Exact
 turn-pair parity is T1-10.
+
+**AI rows and late adjustment (#89, 2026-11-05):**
+`production-rows.json` and `production-row-vectors.txt` re-derive 1,108
+cases by executing original `0x4c1c2c..0x4c1dd3` and its clamp callee.
+This fragment begins after unit support and ends before the unit loop;
+there are no call stubs. Reproduce with `CIVTOT_HOME=... PYTHONPATH=...`
+`python3 tools/production_check.py --vectors /tmp/production-rows.txt`.
+
+At turn >= 200 and difficulty > 1, if the power leader is human, start
+adjustment at 2. With wonder slot 23 != -1 and some AI knowing advance 73,
+subtract 1, and another 1 unless humans know both 73 and 58. With wonder
+slot 25 != -1 and some AI knowing advance 76, subtract 1, and another 1
+unless humans know 76. Clamp adjustment to 0..2 and subtract from AI rows
+before optional cosmic scaling. The original sign-extends the knowledge
+mask bytes before `mask & ~humans`; preserve this for civ 7. Destroyed
+wonders (-2) satisfy the original != -1 test.
+
+RAM `0x60777a..0x607782` maps to file bytes 974..982: the power order,
+weakest to strongest, populated from civ ranks at `0x46e238..0x46e2ab`.
+The row code reads its last slot at `0x607781`. Global advance-owner masks
+start at RAM `0x6076d2` (file 806); discovery sets the owner's bit at
+`0x49e091..0x49e0c0`. All 100 masks equal the corresponding per-civ tech
+bitfield union in the standard and FallRome saves. The engine derives
+these masks from live knowledge and retains the saved power order in its
+checksum. Updating the power ranking itself remains separate work.
 
 ### T1-4 city totals DECODED (2026-11-04): corruption, waste, multipliers, unit support
 

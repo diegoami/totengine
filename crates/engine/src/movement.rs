@@ -200,6 +200,7 @@ mod tests {
         }
         let improvements = road.iter().map(|&r| if r { 0x10 } else { 0 }).collect();
         WorldState {
+            power_order: [0; 8],
             turn: 1,
             year: -4000,
             difficulty: 4,

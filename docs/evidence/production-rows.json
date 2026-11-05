@@ -1,0 +1,44 @@
+{
+  "source": "civ2.bak 0x4c1c2c..0x4c1dd3",
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "original_x86_cases": 1108,
+  "saves": [
+    {
+      "save": "Original/Ph_Auto2.SAV",
+      "power_order": [
+        0,
+        0,
+        0,
+        4,
+        5,
+        7,
+        2,
+        6
+      ],
+      "knowledge_masks_exact": 100
+    },
+    {
+      "save": "FallRome/ROMFALL.scn",
+      "power_order": [
+        0,
+        3,
+        5,
+        2,
+        4,
+        7,
+        6,
+        1
+      ],
+      "knowledge_masks_exact": 100
+    }
+  ],
+  "default_rows_by_difficulty": [
+    15,
+    13,
+    12,
+    10,
+    9,
+    8
+  ],
+  "scope": "shield rows, original fragment and clamp; excludes unit support"
+}

@@ -140,7 +140,11 @@ impl WorldState {
             sum.city_accounts.push((k, account));
         }
 
+        self.refresh_city_statistics();
         sum.barbarian_arrivals = self.barbarian_arrivals(rules);
+        if self.turn != 0 {
+            self.refresh_power();
+        }
         self.advance_turn();
         if let Some(ev) = events {
             let ctx = Ctx {

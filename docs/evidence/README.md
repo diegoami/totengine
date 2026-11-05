@@ -2369,3 +2369,68 @@ signed word at civ +116 (`0x53ae5e`, denominator cache+1); the sea size gate use
 the already-decoded landmass table word +2. Both now enter engine fingerprints.
 Runtime statistics refresh and a documented N-turn live-game comparison remain
 acceptance work. Non-surface arrivals are not represented by this engine map.
+
+
+### Runtime city statistics and power ranking (#79/#83/#89)
+
+The native per-civ statistics pass is `0x505df1`, called at `0x472756` for
+human and AI slots alike, after its city processing call (`0x470b69` →
+`0x4cb01d`). Its own-city cache slice filters deleted records, invalid
+coordinates, and foreign owners (`0x507491..0x50754c`), increments the city
+count and signed population cache (`0x507794..0x5077ee`), then counts each
+non-ocean city's landmass (`0x507845..0x507908`). Counts wrap as a byte;
+population wraps as a signed word. `engine::statistics` refreshes these
+fields after the engine's city processing. The engine does not yet implement
+the remaining landmass strategy flags, nor claim the complete original
+per-civ city/movement phase schedule.
+
+`tools/statistics_check.py` executes the admitted-city slice and its real
+landmass helper. [city-statistics.json](city-statistics.json) and
+[city-statistics-vectors.txt](city-statistics-vectors.txt) retain 128 cases,
+including ocean exclusion, landmass 0/255, and 260 cities causing byte-count
+and signed-population wrapping. The Rust test also checks deleted/invalid
+records against the enclosing original filters. Non-surface city populations
+are counted, but their landmass is unavailable to the surface-only model.
+
+`engine::power` ports `0x46de84..0x46e354`. Standard score is acquired
+advances×3 + cached population×8 + (treasury arithmetic-shift-right 5).
+The original computes a unit-strength sum but does not add it to the score.
+Scenario flag bit 2 instead scores twice the objective-city count, adding
+wonders if bit 4 is also set. Objective is city flag `0x04000000`; the scenario
+flags are word +0 of the already-proven scenario parameter block (same base
+as calendar/research fields). For unlocated 0x33 tails, score refresh waits
+rather than guessing scenario behavior. The alive mask is saved byte @686,
+the byte read at `0x46dea8` (RAM `0x60765a`). It remains the original saved
+mask; complete civ elimination/revival behavior is not yet implemented.
+
+The pass ranks all seven player slots including inactive zero-score slots,
+resolving ties in favor of the lower civ number for the stronger position.
+It writes only live slots into the order table, then finds strongest/weakest
+human **rank indices**, stored in game bytes @964/@965. Consumers use these
+bytes literally even where they subsequently index civ data. Refresh runs
+after barbarian arrivals and before advancing the turn, except on turn zero,
+as the round-close caller `0x47030e..0x470337` does. Its later diplomacy/war
+adjustments are excluded.
+
+[power.json](power.json), [power-vectors.txt](power-vectors.txt), and
+[power-saved-vectors.txt](power-saved-vectors.txt) record 256 native synthetic
+executions and recomputation from `Original/Ph_Auto2.SAV` and
+`FallRome/ROMFALL.scn`. The latter loads the actual civ/game/city/scenario
+inputs internally; no original records are emitted. Rust checks scores,
+ranks, order and both reference bytes. These are native recomputations,
+not assertions that all saved caches are fresh.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/statistics_check.py --gold /tmp/city-statistics.json \
+  --vectors /tmp/city-statistics-vectors.txt
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/power_check.py --gold /tmp/power.json \
+  --vectors /tmp/power-vectors.txt --saved-vectors /tmp/power-saved-vectors.txt
+cmp docs/evidence/city-statistics.json /tmp/city-statistics.json
+cmp docs/evidence/city-statistics-vectors.txt /tmp/city-statistics-vectors.txt
+cmp docs/evidence/power.json /tmp/power.json
+cmp docs/evidence/power-vectors.txt /tmp/power-vectors.txt
+cmp docs/evidence/power-saved-vectors.txt /tmp/power-saved-vectors.txt
+CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test power_install
+```

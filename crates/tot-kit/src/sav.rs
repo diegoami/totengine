@@ -598,6 +598,9 @@ pub struct SavedAiState {
     pub leader_ids: [i16; 8],
     /// Signed population cache, civ +116 (original 0x53ae5e).
     pub population: [i16; 8],
+    pub alive_mask: u8,
+    /// Scenario parameters word +0; None for unlocated 0x33 tails.
+    pub scenario_flags: Option<u16>,
     pub power_ranks: [u8; 8],
     pub power_reference: u8,
 }
@@ -609,6 +612,8 @@ impl Default for SavedAiState {
             landmass_flags: [[0; 256]; 8],
             leader_ids: [0; 8],
             population: [0; 8],
+            alive_mask: 0,
+            scenario_flags: Some(0),
             power_ranks: [0; 8],
             power_reference: 0,
         }
@@ -760,6 +765,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     let mut ai_state = SavedAiState {
         power_ranks: data[966..974].try_into().unwrap(),
         power_reference: data[965],
+        alive_mask: data[686],
         ..SavedAiState::default()
     };
     let mut governments = [0u8; 8];
@@ -918,6 +924,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         };
         let pos = tables_end + 1453 + 60 * leaders;
         let parameters = data.get(pos..pos + 100);
+        ai_state.scenario_flags = parameters.map(|b| u16::from_le_bytes([b[0], b[1]]));
         calendar = parameters.map(|b| CalendarSettings {
             turn_limit: i16::from_le_bytes([data[672], data[673]]),
             increment: i16::from_le_bytes([b[84], b[85]]),
@@ -932,6 +939,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     } else {
         if flags & 0x80 != 0 {
             calendar = None;
+            ai_state.scenario_flags = None;
         }
         None
     };

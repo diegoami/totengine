@@ -93,7 +93,10 @@ synthetic x86 cases and 156/156 original recomputations from saved inputs;
 15 FallRome stored values differ under original recomputation too).
 Wonder lifecycle and Darwin choices are implemented; remaining one-off
 effects are still #88. #89's late AI shield-row adjustment is implemented
-and default AI row rounding corrected (1,108 original-x86 cases).
+and default AI row rounding corrected (1,108 original-x86 cases). Original
+power score/rank refresh now runs at round close (256 synthetic + 2 saved-input
+x86 comparisons); population and city-landmass caches refresh too (128 cases).
+Landmass strategy flags and full city-phase parity remain open.
 Owner requested all v0.8 tasks then the owner-run milestone review;
 `docs/v0.8.0-readiness.md` tracks the outstanding acceptance gates.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.

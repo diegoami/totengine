@@ -24,9 +24,11 @@ pub mod movement;
 pub mod observer;
 pub mod placement;
 pub mod player;
+pub mod power;
 pub mod production;
 pub mod research;
 pub mod rng;
+pub mod statistics;
 pub mod trade_routes;
 pub mod treasury;
 pub mod turn;
@@ -534,6 +536,13 @@ impl WorldState {
         mix(&mut h, &self.next_unit_id.to_le_bytes());
         mix(&mut h, &[self.game_mode, self.ai_state.power_reference]);
         mix(&mut h, &self.ai_state.power_ranks);
+        mix(&mut h, &[self.ai_state.alive_mask]);
+        if let Some(flags) = self.ai_state.scenario_flags {
+            mix(&mut h, &[1]);
+            mix(&mut h, &flags.to_le_bytes());
+        } else {
+            mix(&mut h, &[0]);
+        }
         if let Some(calendar) = self.calendar {
             mix(&mut h, &[1]);
             for value in [calendar.turn_limit, calendar.increment, calendar.start_year] {
@@ -707,6 +716,10 @@ mod tests {
             ("tax rate", |w| w.tax_rates[1] ^= 1),
             ("connection diplomacy", |w| w.diplomacy[1][2] ^= 8),
             ("tile landmass", |w| w.map.landmass[0] ^= 1),
+            ("landmass value", |w| w.map.landmass_values[0] ^= 1),
+            ("population cache", |w| w.ai_state.population[1] ^= 1),
+            ("alive mask", |w| w.ai_state.alive_mask ^= 1),
+            ("scenario flags", |w| w.ai_state.scenario_flags = Some(2)),
             ("city map", |w| w.cities[0].map_id ^= 1),
             ("research progress", |w| w.research[1].progress ^= 1),
             ("research target", |w| w.research[1].target ^= 1),

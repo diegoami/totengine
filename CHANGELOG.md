@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Refresh population/city landmass caches and original power scores/ranks at
+  round close, so hut and late AI-row inputs change during play. Ranking
+  matches 256 synthetic and two saved-input native executions; city cache
+  accumulation matches 128 native cases. Landmass strategy flags and original
+  full city-phase ordering remain open.
+
 - Round-end surface barbarian arrivals now use the original timing, site search,
   treasury chance, technology-selected ships/raiders and CRT stream. Native
   comparisons cover 1,024 synthetic contexts (successful allocation and UI

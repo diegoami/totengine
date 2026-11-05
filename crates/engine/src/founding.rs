@@ -66,7 +66,7 @@ impl WorldState {
             return Some("not on land");
         }
         let w2 = 2 * self.map.stored_w as i32;
-        let too_close = self.cities.iter().any(|c| {
+        let too_close = self.cities.iter().filter(|c| c.city_id != 0).any(|c| {
             crate::placement::diamond_distance(
                 w2, false, c.x as i32, c.y as i32, u.x as i32, u.y as i32,
             ) <= 1
@@ -137,7 +137,10 @@ impl WorldState {
     /// Shared city creation for settlers and hut tribes. Creating a city
     /// does not itself consume a unit (`0x54af76` calls `0x432810`).
     pub(crate) fn create_city(&mut self, rules: &Rules, civ: u8, x: u16, y: u16) -> usize {
-        let first = !self.cities.iter().any(|c| (c.owner & 0x0F) as u8 == civ);
+        let first = !self
+            .cities
+            .iter()
+            .any(|c| c.city_id != 0 && (c.owner & 0x0F) as u8 == civ);
         let n = self
             .cities
             .iter()
@@ -268,6 +271,9 @@ Pikemen, nil, 0, 1., 0, 1a, 2d, 1h, 1f, 2, 0, 1, Feu, 000000000000000\n\
     fn founding_rules() {
         let rules = tot_kit::parse_rules(RULES);
         let mut w = crate::boot(&synthetic_save(), 1);
+        for (i, c) in w.cities.iter_mut().enumerate() {
+            c.city_id = i as u32 + 1;
+        }
         let mut u = w.units[0].clone();
         u.type_id = 2; // Warriors
         u.owner = 3;

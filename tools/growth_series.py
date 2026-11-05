@@ -9,7 +9,8 @@ with the game-framing walker (evidence §Record framing FIXED) and writes,
 per save: the turn, and per city its size (u8@11), food box (u16@28),
 gross food (u8@82) and supported settlers (units homed there with
 type 0 = Settlers or 1 = Engineers, the standard @UNITS rows). Derived
-numbers only. `crates/engine/src/cities.rs` replays the series.
+numbers only. This historical series informed the superseded city approximation;
+current native growth/phase checks are in growth_check.py and city_phase_check.py.
 """
 import argparse
 import glob

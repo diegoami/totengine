@@ -532,17 +532,18 @@ mod accounting_tests {
     #[test]
     fn research_ai_logs_orders_and_replays_discoveries() {
         let save = crate::tests_support::synthetic_save_bytes();
-        let rules_text = format!("{RULES}@TERRAIN\nDesert, 1, 1, 0, 0, 1\nPlains, 1, 1, 1, 1, 1\nGrassland, 1, 1, 2, 1, 1\n");
+        let rules_text = format!("{RULES}@TERRAIN\nDesert, 1, 1, 0, 0, 1\nPlains, 1, 1, 4, 1, 1\nGrassland, 1, 1, 2, 1, 1\n");
         // Seed the fixture with an actual research-producing civ, so this
         // exercises discoveries through Game, not direct world edits that
         // would disappear from canonical replay.
         let mut save = save;
         let fixture = tot_kit::parse_sav(&save).unwrap();
-        for city in 0..fixture.cities.len() {
-            let b = fixture.city_offset + city * 92;
-            save[b + 24..b + 28].copy_from_slice(&3u32.to_le_bytes());
-            save[b + 82] = 2;
-        }
+        // One sustainable city with a reserved scientist. The remaining
+        // fixture city slots are deleted; science comes from current workers.
+        let b = fixture.city_offset;
+        save[b + 86..b + 90].copy_from_slice(&1u32.to_le_bytes());
+        save[b + 24..b + 28].copy_from_slice(&3u32.to_le_bytes());
+        save[b + 50..b + 54].copy_from_slice(&((1u32 << 20) | (1 << 26)).to_le_bytes());
         for civ in 1..8 {
             let b = tot_kit::OFF_CIV_PROPS + 3348 * civ;
             save[b + 18..b + 20].copy_from_slice(&(-1i16).to_le_bytes());

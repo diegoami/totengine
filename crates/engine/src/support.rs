@@ -122,6 +122,17 @@ impl crate::WorldState {
             return Vec::new();
         };
         let owner = (c.owner & 15) as u8;
+        // Native selection can only mutate retained state on a shortage,
+        // or in the AI Republic/Democracy unrest branch. Avoid building map
+        // context for every world unit when neither trigger is possible.
+        if self.unit_support(rules, city) <= shields
+            && (c.flags & 1 == 0
+                || self.human_mask & (1 << owner) != 0
+                || self.governments[owner as usize] < 5)
+        {
+            return Vec::new();
+        }
+
         let width = (2 * self.map.stored_w) as i32;
         let flat = self.game_flags & 0x8000 != 0;
         let units: Vec<_> = self

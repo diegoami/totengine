@@ -70,6 +70,7 @@ impl Recorder {
                 .cities
                 .iter()
                 .enumerate()
+                .filter(|(_, c)| c.city_id != 0)
                 .map(|(index, c)| CityView {
                     index,
                     name: c.name.clone(),

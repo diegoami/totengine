@@ -200,7 +200,11 @@ impl WorldState {
                 spots.push((u.x as i32 + dx, u.y as i32 + dy));
             }
         }
-        for c in self.cities.iter().filter(|c| (c.owner & 0x0F) as u8 == civ) {
+        for c in self
+            .cities
+            .iter()
+            .filter(|c| c.city_id != 0 && (c.owner & 0x0F) as u8 == civ)
+        {
             for k in 0..21 {
                 spots.push((c.x as i32 + RADIUS_DX[k], c.y as i32 + RADIUS_DY[k]));
             }
@@ -224,7 +228,8 @@ impl WorldState {
             .iter()
             .any(|u| u.id != 0 && u.owner == civ && d((u.x, u.y)) <= 1)
             || self.cities.iter().any(|c| {
-                (c.owner & 0x0F) as u8 == civ
+                c.city_id != 0
+                    && (c.owner & 0x0F) as u8 == civ
                     && (0..21).any(|k| {
                         (c.x as i32 + RADIUS_DX[k]).rem_euclid(w2.max(1)) == x as i32
                             && c.y as i32 + RADIUS_DY[k] == y as i32
@@ -257,10 +262,12 @@ impl WorldState {
             .enumerate()
             .filter(|(_, k)| {
                 let own = (k.owner & 0x0F) as u8 == civ;
-                own || self
-                    .map
-                    .stored_index(k.x, k.y)
-                    .is_some_and(|i| self.map.visible[i] & bit != 0)
+                k.city_id != 0
+                    && (own
+                        || self
+                            .map
+                            .stored_index(k.x, k.y)
+                            .is_some_and(|i| self.map.visible[i] & bit != 0))
             })
             .map(|(i, k)| {
                 let own = (k.owner & 0x0F) as u8 == civ;
@@ -365,6 +372,9 @@ impl WorldState {
                 let Some(c) = self.cities.get(city) else {
                     return OrderResult::Rejected("no such city");
                 };
+                if c.city_id == 0 {
+                    return OrderResult::Rejected("no such city");
+                }
                 if (c.owner & 0x0F) as u8 != civ {
                     return OrderResult::Rejected("not your city");
                 }
@@ -422,7 +432,10 @@ impl WorldState {
         (1..8u8)
             .filter(|&c| {
                 self.units.iter().any(|u| u.id != 0 && u.owner == c)
-                    || self.cities.iter().any(|k| (k.owner & 0x0F) as u8 == c)
+                    || self
+                        .cities
+                        .iter()
+                        .any(|k| k.city_id != 0 && (k.owner & 0x0F) as u8 == c)
             })
             .collect()
     }
@@ -777,6 +790,7 @@ Knights, nil, 0, 2., 0, 4a, 2d, 1h, 1f, 4, 0, 1, Chv, 000000000000000\n\
     #[test]
     fn invalid_orders_change_nothing() {
         let mut g = game(1);
+        g.world.cities[0].city_id = 1;
         let before = g.world.checksum();
         let foreign_unit = g
             .world

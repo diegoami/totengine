@@ -164,7 +164,7 @@ fn cmd_boot(args: &[String]) -> ExitCode {
     println!(
         "units / cities: {} / {}",
         world.units.len(),
-        world.cities.len()
+        world.cities.iter().filter(|c| c.city_id != 0).count()
     );
     if let Some(c) = world.cities.first() {
         println!(
@@ -704,7 +704,7 @@ fn cmd_play(args: &[String]) -> ExitCode {
                 "turn {:>4} units {:>4} cities {:>3} checksum {:016x}",
                 g.world.turn,
                 g.world.units.iter().filter(|u| u.id != 0).count(),
-                g.world.cities.len(),
+                g.world.cities.iter().filter(|c| c.city_id != 0).count(),
                 g.world.checksum()
             );
         }

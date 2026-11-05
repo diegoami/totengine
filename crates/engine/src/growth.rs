@@ -1,6 +1,5 @@
-//! Native growth preparation, before collection and worker assignment (#13).
-//! This replaces the earlier observed-series approximation once the complete
-//! city phase is integrated. It is not yet the turn loop's growth path.
+//! Native growth preparation before collection and worker assignment (#13).
+//! Signed food debt uses the separate starvation branch at the next processing.
 use crate::production::production_rows;
 
 /// Original food-box rows (`0x4c19e0`): the late adjustment starts strictly

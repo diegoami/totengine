@@ -15,7 +15,7 @@ from yields_check import OriginalCity
 
 
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--gold');p.add_argument('--vectors');a=p.parse_args()
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('--gold');p.add_argument('--vectors');p.add_argument('--round-order',action='store_true');a=p.parse_args()
     from unicorn import UC_HOOK_CODE
     home=Path(os.environ['CIVTOT_HOME']);binary=(home/'civ2.bak').read_bytes()
     o=OriginalCity(binary);data,walk,rules,cities=o.load_saved(home,'Original/Ph_Auto2.SAV')
@@ -46,7 +46,9 @@ def main():
     lines=[]
     for turn in range(43,93):
         o.write(0x607648,turn,'<h')
-        for i,c in enumerate(cities):
+        order=sorted(range(len(cities)),key=lambda i:(cities[i][10],-i)) if a.round_order else range(len(cities))
+        for i in order:
+            c=cities[i]
             o.write(0x67a6e0,c[10],'<i');o.write(0x6762f8,0,'<i')
             result=o.call(0x4cb01d,i);assert result!=-999,(turn,i,'city destroyed')
             record=bytes(o.cpu.mem_read(0x5fd150+92*i,92))
@@ -59,6 +61,7 @@ def main():
     report={'binary_sha256':hashlib.sha256(binary).hexdigest(),'routine':'0x4cb01d',
             'turns':50,'cities':len(cities),'cases':len(lines),'presentation_boundaries':[hex(x) for x in sorted(used)],
             'scope':__doc__.strip()}
+    if a.round_order:report['city_order']='civ 0..7, descending city slots per civ'
     if a.gold:Path(a.gold).write_text(json.dumps(report,indent=2)+'\n')
     if a.vectors:Path(a.vectors).write_text('# turn city size food_box shield_box worked specialists flags route_trade science taxes trade food shields happy unhappy treasury\n'+'\n'.join(lines)+'\n')
     print(json.dumps(report))

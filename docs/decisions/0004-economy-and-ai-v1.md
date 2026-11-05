@@ -146,3 +146,23 @@ phase comparison. Landmass strategy flags and remaining combat/wonder effect
 limits still need audit. #84 retains its map/type limits and one saved shield
 mismatch; #85 requires the combined corruption check. Do not close these
 merely because their individual arithmetic fragments pass.
+
+
+## Native surface city-phase integration (2026-11-05)
+
+The initial finance-first turn ordering above has been superseded by the
+original city phase, now executed by `run_city_phase`/`run_turn`: signed
+starting-box growth/starvation, worker/totals refresh and food collection,
+production, support/disband enforcement, post-production totals, mood,
+science and treasury/upkeep. A newly completed Library affects post-production
+science in that city; new unrest stops the following production phase.
+The old `engine::cities` approximation is removed. City processing now follows
+descending slots within a civ; headless civ scheduling after player orders,
+initial transient inputs and turn events remain engine policy.
+
+A controlled original-x86 sequence now checks the actual round loop for 50
+turns/500 city economic transitions. The live-save gate, city-slot lifecycle,
+landmass strategy refresh, pollution/settler-job state and sea/non-surface
+limits remain explicit in `docs/v0.8.0-readiness.md` and the evidence README.
+This does not alter the owner-approved v0.10 original-like AI target or the
+later client/design milestones.

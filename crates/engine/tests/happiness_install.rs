@@ -59,7 +59,7 @@ fn saved_city_happiness_records() {
 }
 
 #[test]
-fn disorder_stops_production_and_can_clear_on_next_turn() {
+fn disorder_affects_the_following_production_phase() {
     let Some(home) = std::env::var_os("CIVTOT_HOME") else {
         return;
     };
@@ -86,10 +86,22 @@ fn disorder_stops_production_and_can_clear_on_next_turn() {
     w.run_turn(&rules, None);
     assert_ne!(w.cities[0].flags & 1, 0);
     assert!(w.cities[0].unhappy > w.cities[0].happy);
-    assert_eq!(w.cities[0].shield_box, 0);
+    // Original 0x4c6208 runs before 0x4c998e detects this turn's riot.
+    let collected = w.cities[0].shield_box;
+    assert!(collected > 0);
+    w.run_turn(&rules, None);
+    assert_eq!(
+        w.cities[0].shield_box, collected,
+        "existing disorder stops production"
+    );
     w.governments[1] = 4;
     w.run_turn(&rules, None);
     assert_eq!(w.cities[0].flags & 1, 0);
     assert_eq!(w.cities[0].unhappy, 0);
-    assert!(w.cities[0].shield_box > 0);
+    assert_eq!(
+        w.cities[0].shield_box, collected,
+        "recovery happens after production too"
+    );
+    w.run_turn(&rules, None);
+    assert!(w.cities[0].shield_box > collected);
 }

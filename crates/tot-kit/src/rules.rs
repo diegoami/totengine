@@ -225,10 +225,9 @@ impl Rules {
         self.cosmic_row(2).unwrap_or(2)
     }
 
-    /// `@COSMIC` row 4 (0-based 3): food-box rows. The comment
-    /// "rows * city_size+1 = box" is ambiguous and does NOT match the
-    /// measured capacities (20 at size 1, 27 at size 2 — see engine
-    /// `CityRules::growth_cap`); carried because the row exists.
+    /// `@COSMIC` row 4 (zero-based 3): base food-box rows. Original growth
+    /// compares the starting signed box with `(size+1)*civilization_rows`;
+    /// difficulty adjusts AI rows in `engine::growth::food_rows`.
     pub fn cosmic_food_box_rows(&self) -> u32 {
         self.cosmic_row(3).unwrap_or(10)
     }

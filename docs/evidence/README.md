@@ -274,12 +274,17 @@ full 383 MB address space — `tools/oracle/ramdump.py`):
   is NOT a 0xFF-sentinel map-parallel array (scan found none) — next
   experiment: RAM-diff while toggling a worked tile via the city screen.
 
-### T1-4 city model (2026-11-03 evening): growth math closed on a peaceful standard-game lab
+### Historical T1-4 city-model hypothesis (2026-11-03 evening, superseded)
 
 A fresh STANDARD game driven turn-by-turn through the original under the
 memspool daemon (`tools/oracle/stdloop.sh`), autosaves harvested per turn
 (`~/review-tmp/oracle-runs/std1/`): 5 AI capitals + a human-founded Madrid,
 turns 4–43, zero war noise.
+
+**Historical hypothesis, not the current algorithm.** The following notes
+used the old record framing and selected series observations. Native growth,
+worker and city-phase checks below supersede the capacity/collection claims.
+The approximation and its self-replay tests have been removed from the engine.
 
 **Growth model (7 growth events, turn-by-turn samples, 4 cities):**
 - **Food box = u16@86** (true framing: u16@28 of the *next* record — §Record framing FIXED; sample citations below are off by one city); ticks by surplus (`gross_food@48 − food_per_citizen×size
@@ -292,9 +297,8 @@ turns 4–43, zero war noise.
   (Madrid fb 18@t36, LB/Carthage 18@t22/27@t40 — all sat a full turn).
   Overflow carries: `box −= cap` (Madrid 18+4=22 → grow → 4 ✓ t38;
   Carthage 27+2=29 → grow → 2 ✓ t41).
-- `engine::cities::{CityRules, CityEcon}` implements exactly this
-  (unit tests cite each oracle sample); `CityRules::from_rules` reads the
-  `@COSMIC` constants (typed accessors in tot-kit).
+- The former `engine::cities` approximation implemented this hypothesis; it
+  has been removed in favor of the checked native phase.
 - **Shield box = u16@88** (true: u16@30, same caveat): ticks by net shields (S − unit support), resets
   on production completion (Carthage 35→3, 15→3, 31→12…). Production
   items themselves not located yet — open.
@@ -2514,13 +2518,12 @@ cargo test -p engine --lib wonders
 ```
 
 
-### Native growth preparation (#13, integration pending)
+### Native growth preparation (#13)
 
-The old `engine::cities::CityEcon` is an observed-series approximation, not the
-original growth algorithm. `engine::growth` now holds independently checked
-preparation arithmetic; **the turn loop still uses the old approximation**
-until starvation/worker/collection ordering is ready. This does not close
-#13 or establish 50-turn city parity.
+The former `engine::cities::CityEcon` was an observed-series approximation,
+not the original growth algorithm. `engine::growth` holds independently checked
+preparation arithmetic and is now integrated by `run_city_phase`/`run_turn`.
+The controlled comparisons below do not close #13's live-save acceptance gate.
 
 `tools/growth_check.py` executes food-row routine `0x4c19e0` (including its
 original clamp) and positive-box growth `0x4c5cdb` through explicit stops
@@ -2595,8 +2598,7 @@ in both implementations, while its stored cache is 6. Two food differences
 required the native `0x4c506e` transfers: each outgoing negative-commodity route
 costs one food; each incoming one adds one food, independently of ownership.
 No claim is made for growth, collection into boxes, production, treasury,
-full-turn ordering or 50-turn parity. Worker helpers are not yet called by
-`run_turn`.
+full-turn ordering or 50-turn parity. Worker helpers are now called through `run_city_phase` by `run_turn`.
 
 ```sh
 # The external Unicorn dependency is documented above; original bytes remain local.
@@ -2612,7 +2614,7 @@ cargo test -p engine --test workers_install --test yields_install --test city_to
 ```
 
 
-### Native starvation decisions (#13, integration pending)
+### Native starvation decisions (#13)
 
 [city-starvation.json](city-starvation.json) and
 [city-starvation-vectors.txt](city-starvation-vectors.txt) retain 1,024 executions
@@ -2635,8 +2637,7 @@ The check skips notification-string setup, records the unit-removal helper
 boundary without executing it and stops before city destruction. It supplies
 the preceding totals pass's outgoing-food globals, including deliberately
 inconsistent combinations to distinguish the branch inputs. It does not prove
-unit/city destruction side effects, full turns or live-game parity. The turn
-loop still uses the old city approximation pending phase integration.
+unit/city destruction side effects, full turns or live-game parity. The turn loop now uses these decisions through `run_city_phase`.
 
 ```sh
 CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
@@ -2648,7 +2649,7 @@ cargo test -p engine --lib growth::tests
 ```
 
 
-### Controlled 50-turn city-phase sequence (#13, integration pending)
+### Controlled 50-turn city-phase sequence (#13)
 
 `tools/city_phase_check.py` executes the full original `0x4cb01d` city routine
 for 50 consecutive city rounds, retaining its gameplay callees. It starts from
@@ -2673,8 +2674,8 @@ net shields are positive and the collected food surplus is nonnegative
 (`0x4c9c2d..0x4c9c8c`).
 
 This verifies the positive-growth/two-totals-pass sequence in a controlled
-setting; **the test does not call `run_turn`, which still uses the old
-approximation**. It is not a Wine/autosave comparison, ordinary unit/building
+setting; **the original sequence test calls `run_city_phase`; a second, civ-ordered
+sequence now also checks `run_turn`**. It is not a Wine/autosave comparison, ordinary unit/building
 production sequence, starvation/destruction or disorder/celebration replay,
 research campaign, or complete original turn/PRNG parity. Those remain part
 of the outstanding #13 integration and live acceptance work.
@@ -2689,7 +2690,7 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test city_phase_install -
 ```
 
 
-### Surface city destruction (#13, phase integration pending)
+### Surface city destruction (#13)
 
 `engine::removal::destroy_surface_city` follows `0x43456d` for retained state:
 remove city identity, decrement its civ's city count, handle homed units in
@@ -2735,7 +2736,7 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test city_destruction_ins
 ```
 
 
-### End-of-city unrest and celebrations (#13/#86, integration pending)
+### End-of-city unrest and celebrations (#13/#86)
 
 `engine::happiness::transition` now follows `0x4c998e`, which runs **after**
 production and a second city-total refresh. [mood-transitions.json](mood-transitions.json)
@@ -2763,7 +2764,8 @@ and settlers' consumption gains an additional citizen if growth limits allow;
 this does not reset the food box. A lost celebration clears flag `0x2`.
 The controlled 500-transition city-sequence test uses this checked transition
 helper too. `run_turn` integration, actual revolution/government mutation,
-original AI production selection and live-save parity remain open.
+original AI production selection and live-save parity remain open. Runtime
+now applies these arithmetic transitions in `run_city_phase`.
 
 ```sh
 CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
@@ -2844,8 +2846,7 @@ vectors cover that request/flag boundary.
 
 This supports forced human Democracy collapse from city unrest. It does not
 implement player-selected revolutions, non-surface refresh, the original AI's
-diplomatic notification path, or later government selection. City-phase runtime
-integration remains outstanding.
+diplomatic notification path, or later government selection. City-phase runtime integration now invokes this dispatch on a revolution request.
 
 ```sh
 CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
@@ -2853,4 +2854,49 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
 cmp docs/evidence/anarchy.json /tmp/anarchy.json
 cmp docs/evidence/anarchy-vectors.txt /tmp/anarchy-vectors.txt
 CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test anarchy_install
+```
+
+
+### Integrated surface city phase and controlled full-round replay (#13)
+
+`WorldState::run_turn` now calls `run_city_phase` in civ order 0..7, descending
+city slots within each civ, replacing the removed observed-series approximation.
+It processes live surface cities even when their old stored food cache is zero.
+Each city prepares growth/starvation from its starting signed box, recomputes
+workers/totals, collects food, produces using the previous disorder flag,
+enforces support/disband rules, recomputes totals again, resolves unrest and
+celebration, collects science, and accounts for taxes/upkeep. A completed Library
+therefore affects the same city's post-production science, and newly detected
+unrest stops the **next** production phase. Forced human Democracy collapse
+runs the checked Anarchy dispatch. Deleted cities leave observations and no
+longer block founding or accept production orders.
+
+[city-round.json](city-round.json) and [city-round-vectors.txt](city-round-vectors.txt)
+repeat the controlled standard-world experiment in civ/descending-city order.
+The install test now calls the actual `run_turn` for 50 rounds and matches all
+500 city economic transitions plus end-of-civ treasury balances. Native
+`0x4cb01d` and its gameplay callees execute; only open-city-window query and map
+redraw boundaries are replaced. As above, the native settler-job-planner flag
+`0x80000` remains in the artifact but is excluded from the economic comparison.
+Barbarian level is zero in the headless comparison; the native probe invokes
+city processing only. The original ascending-city sequence also still matches
+through the same `run_city_phase` helper.
+
+The round begins with empty transient food-route inputs; each totals pass
+updates them, and the subsequent city's starvation branch reads those prior
+inputs, as native `0x4c596b` does. This initialization, civ scheduling after
+all player orders and turn-event dispatch remain headless engine policy.
+Pollution/settler-job planning and their CRT draws, original AI build selection,
+non-surface cities and sea cargo are not ported by this change. Native city-slot
+reuse/truncation and dynamic landmass strategy flags still need their lifecycle
+audit. These scoped checks are not a live Wine/autosave comparison, complete
+original-round RNG replay, or completion of #13's live-save gate.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/city_phase_check.py --round-order --gold /tmp/city-round.json \
+  --vectors /tmp/city-round-vectors.txt
+cmp docs/evidence/city-round.json /tmp/city-round.json
+cmp docs/evidence/city-round-vectors.txt /tmp/city-round-vectors.txt
+CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test city_phase_install
 ```

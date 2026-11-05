@@ -81,14 +81,15 @@ Per-civ research is implemented (`engine::research`, `SetResearch`,
 `--ai-v1` first research-capable AI increment): 1,014 costs match original
 x86 execution; a 50-turn standard-save run gains 14 advances and replays.
 Capital road/rail connections now scale waste (`engine::connections`,
-#84; 123 saved pairs match original x86, FallRome shields 145/146 exact).
+#84; 123 saved pairs and all 156 fixed-worker native shield totals match;
+Aventicum's saved cache is stale).
 Recurring route arrows are implemented (`engine::trade_routes`, #85 slice;
 288 arithmetic cases match original x86). Partner trade caches refresh
 before finance. Creation/delivery rewards and supply/demand refresh remain
 open, as does AI v1 economy/war work. Treasury accounting now credits city
 taxes and charges original human-mask upkeep, including exemptions and
 bankruptcy sales (1,000 synthetic and 490 saved-input x86 cost checks).
-Happiness/disorder stages now refresh before production (#86; 1,000
+Happiness/disorder stages now refresh after production (#86; 1,000
 synthetic x86 cases and 156/156 original recomputations from saved inputs;
 15 FallRome stored values differ under original recomputation too).
 Wonder lifecycle and Darwin choices are implemented. Leonardo, Statue,
@@ -97,7 +98,11 @@ effects/integration limits still need the #88 audit. #89's late AI shield-row ad
 and default AI row rounding corrected (1,108 original-x86 cases). Original
 power score/rank refresh now runs at round close (256 synthetic + 2 saved-input
 x86 comparisons); population and city-landmass caches refresh too (128 cases).
-Landmass strategy flags and full city-phase parity remain open.
+The decoded surface city phase now runs in `run_turn` (signed growth/debt,
+workers, support/disbands, post-production mood/finance and forced human anarchy).
+Actual round processing matches 500 controlled native city transitions over
+50 rounds; this is not Wine/autosave acceptance. Live-save parity, city-slot
+lifecycle, landmass strategy flags and unsupported-context audits remain open.
 Owner requested all v0.8 tasks then the owner-run milestone review;
 `docs/v0.8.0-readiness.md` tracks the outstanding acceptance gates.
 Plan: `docs/decisions/0004-economy-and-ai-v1.md`.

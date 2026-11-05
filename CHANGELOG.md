@@ -5,13 +5,16 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased] — AI v1 + economy depth (v0.8.0)
 
-- Decode growth/starvation preparation and expose city-total refresh helpers.
-  A controlled 50-turn sequence matches 500 native economic transitions;
-  runtime integration and live-save parity remain open.
+- Replace the old city-growth approximation with the decoded surface city phase:
+  signed food debt/growth, workers, collection, support/disbands, post-production
+  totals, unrest/celebration and forced human anarchy. The actual round loop
+  matches 500 controlled native city transitions over 50 rounds; the live-save
+  acceptance gate remains open. New Libraries affect post-production science;
+  newly detected unrest stops the following production phase.
 - Decode original worker allocation and radius availability; check 1,024
   synthetic allocations, 156 saved radii and 3,276 tile yields. Combined
   city totals match 312 native executions with fixed/automatic workers.
-  These helpers await city-phase integration. Food transfers now affect
+  Food transfers now affect
   city food totals; stored caches are distinguished from native recomputation.
 - Implement Leonardo's last-candidate upgrades (clearing veteran), Statue's
   diplomatic changes, Manhattan's reputation adjustment and Apollo's surface
@@ -58,7 +61,7 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   original-x86 cases, plus the original bankruptcy mutation path.
 - **Happiness and disorder (#86):** decoded happiness stages, luxury and
   specialist balancing, improvements/wonders and military inputs; city
-  happiness now refreshes before production and can stop or resume it.
+  happiness now refreshes after production and controls the following phase.
   The arithmetic matches 1,000 original-x86 cases and native recomputation
   on 156 saved city inputs. Fifteen FallRome stored values also differ
   when original bytes recompute them; full-turn parity remains open.

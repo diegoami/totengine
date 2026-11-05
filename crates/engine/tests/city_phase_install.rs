@@ -1,5 +1,5 @@
-//! Controlled full-native city-phase comparison. This is not the `run_turn`
-//! acceptance gate: no Wine saves, research, ordinary builds or AI campaign.
+//! Controlled native city-phase and full headless-round economic comparisons.
+//! No Wine saves, research, ordinary builds or AI campaign acceptance claim.
 #[test]
 fn controlled_fifty_turn_city_sequence() {
     let Some(home) = std::env::var_os("CIVTOT_HOME").map(std::path::PathBuf::from) else {
@@ -28,6 +28,7 @@ fn controlled_fifty_turn_city_sequence() {
     }
     let mut mismatches = Vec::new();
     let mut cases = 0;
+    let mut routes = engine::city_phase::FoodRouteState::default();
     for line in include_str!("../../../docs/evidence/city-phase-vectors.txt")
         .lines()
         .filter(|l| !l.starts_with('#'))
@@ -38,49 +39,9 @@ fn controlled_fifty_turn_city_sequence() {
             .collect();
         w.turn = v[0] as i16;
         let k = v[1] as usize;
-        w.cities[k].flags &= 0xffbfffbb;
-        let context = w.city_growth_context(&rules, k).unwrap();
-        assert!(
-            context.food_box >= 0,
-            "controlled case reached unsupported starvation"
-        );
-        let growth = engine::growth::prepare_growth(context);
-        w.cities[k].size = growth.size as u16;
-        w.cities[k].food_box = growth.food_box as u16;
-        let pre = w.refresh_city_totals(&rules, k, false).unwrap();
-        let surplus = pre.output.food
-            - w.cities[k].size as i32 * rules.cosmic_food_per_citizen() as i32
-            - pre.settlers * pre.settler_food;
-        w.cities[k].food_box = (w.cities[k].food_box as i16 as i32 + surplus) as u16;
-        assert!(w.production_step(&rules, k).is_none());
-        let post = w.refresh_city_totals(&rules, k, true).unwrap();
-        let city = &w.cities[k];
-        let owner = (city.owner & 15) as usize;
-        let transition = engine::happiness::transition(&engine::happiness::MoodTransitionInput {
-            size: city.size as u8,
-            owner: owner as u8,
-            government: w.governments[owner],
-            human: true,
-            flags: city.flags,
-            happy: post.mood.happy,
-            unhappy: post.mood.unhappy,
-            food: post.output.food,
-            eaten: city.size as i32 * rules.cosmic_food_per_citizen() as i32,
-            net_shields: post.output.shields - post.support,
-            surplus,
-            taxes: post.finance.taxes,
-            scenario: false,
-            scenario_flags: 0,
-            growth_blocked: w
-                .city_growth_context(&rules, k)
-                .unwrap()
-                .blocking_improvement()
-                .is_some(),
-        });
-        assert!(!transition.revolution && !transition.choose_production);
-        w.cities[k].size = transition.size as u16;
-        w.cities[k].flags = transition.flags;
-        w.process_city_treasury(&rules, k, post.finance.taxes);
+        let step = w.run_city_phase(&rules, k, &mut routes).unwrap();
+        assert!(!step.destroyed && !step.famined && !step.revolution);
+        assert!(step.built.is_none() && step.disbanded.is_empty());
         let c = &w.cities[k];
         let actual = [
             c.size as i64,
@@ -126,4 +87,85 @@ fn controlled_fifty_turn_city_sequence() {
             .collect::<Vec<_>>()
             .join("\n")
     );
+}
+
+#[test]
+fn full_round_loop_matches_controlled_native_city_economics_for_fifty_turns() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME").map(std::path::PathBuf::from) else {
+        return;
+    };
+    let save = tot_kit::parse_sav_file(&home.join("Original/Ph_Auto2.SAV")).unwrap();
+    let rules = tot_kit::parse_rules(&tot_kit::latin1(
+        &std::fs::read(home.join("Original/Rules.txt")).unwrap(),
+    ));
+    let mut w = engine::boot(&save, 1);
+    w.human_mask = 255;
+    w.difficulty = 0;
+    w.science_rates = [0; 8];
+    w.tax_rates = [10; 8];
+    w.seed_word &= 0xff00; // Barbarian level zero; no arrivals in this city-only control.
+    for c in &mut w.cities {
+        c.specialists = 0;
+        c.building = -39;
+        c.flags = 0;
+        c.size = 1;
+        c.food_box = 0;
+        c.worked = 1 << 20;
+        c.buildings = [c.buildings[0] & 2, 0, 0, 0, 0];
+    }
+    for u in &mut w.units {
+        u.home = 255;
+    }
+    let rows: Vec<Vec<i64>> = include_str!("../../../docs/evidence/city-round-vectors.txt")
+        .lines()
+        .filter(|l| !l.starts_with('#'))
+        .map(|l| l.split_whitespace().map(|x| x.parse().unwrap()).collect())
+        .collect();
+    assert_eq!(rows.len(), 500);
+    for round in rows.as_chunks::<10>().0 {
+        assert_eq!(w.turn as i64, round[0][0]);
+        let report = w.run_turn(&rules, None);
+        assert!(
+            report.built.is_empty()
+                && report.famined.is_empty()
+                && report.disbanded_units.is_empty()
+                && report.discoveries.is_empty()
+                && report.barbarian_arrivals.is_empty()
+        );
+        for row in round {
+            let k = row[1] as usize;
+            let c = &w.cities[k];
+            let actual = [
+                c.size as i64,
+                c.food_box as i16 as i64,
+                c.shield_box as i16 as i64,
+                c.worked as i64,
+                c.specialists as i64,
+                (c.flags & !0x80000) as i64,
+                c.route_trade as i64,
+                c.net_science as i64,
+                c.net_taxes as i64,
+                c.gross_trade as i64,
+                c.gross_food as i64,
+                c.gross_shields as i64,
+                c.happy as i64,
+                c.unhappy as i64,
+            ];
+            let mut expected = row[2..16].to_vec();
+            expected[5] &= !0x80000;
+            assert_eq!(actual, expected[..], "turn {} city {k}", row[0]);
+        }
+        for civ in 1..8 {
+            if let Some(row) = round
+                .iter()
+                .rfind(|r| w.cities[r[1] as usize].owner & 15 == civ as u16)
+            {
+                assert_eq!(
+                    w.treasury[civ] as i64, row[16],
+                    "turn {} civ {civ} treasury",
+                    row[0]
+                );
+            }
+        }
+    }
 }

@@ -168,7 +168,7 @@ mod tests {
 
     #[test]
     fn turns_credit_taxes_and_charge_upkeep_once() {
-        let rules = tot_kit::parse_rules("@IMPROVE\nNone,0,0,nil\nPalace,10,0,nil\nBarracks,4,0,nil\nGranary,6,0,nil\nTemple,4,1,nil\n");
+        let rules = tot_kit::parse_rules("@IMPROVE\nNone,0,0,nil\nPalace,10,0,nil\nBarracks,4,0,nil\nGranary,6,0,nil\nTemple,4,1,nil\n@TERRAIN\nDesert,1,1,0,0,0\nPlains,1,1,2,0,0\n");
         let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
         for c in &mut w.cities {
             c.gross_food = 0;
@@ -180,12 +180,13 @@ mod tests {
         w.difficulty = 3;
         w.treasury[1] = 0;
         let c = &mut w.cities[1];
+        c.city_id = 1;
         c.owner = 1;
         c.size = 1;
         c.gross_food = 2;
         c.specialists = 2;
-        c.worked = 0;
-        c.building = -39;
+        c.worked = (1 << 20) | (1 << 26);
+        c.building = -1;
         c.buildings = [1 << 4, 0, 0, 0, 0];
         c.flags = 0;
         for expected in [2, 4] {

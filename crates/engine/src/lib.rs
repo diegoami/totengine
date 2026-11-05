@@ -11,7 +11,6 @@ pub mod ai;
 mod allocation;
 pub mod barbarians;
 pub mod calendar;
-pub mod cities;
 pub mod city_phase;
 pub mod combat;
 pub mod connections;

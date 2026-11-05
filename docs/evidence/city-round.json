@@ -1,0 +1,13 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routine": "0x4cb01d",
+  "turns": 50,
+  "cities": 10,
+  "cases": 500,
+  "presentation_boundaries": [
+    "0x411c50",
+    "0x467c89"
+  ],
+  "scope": "Execute a controlled 50-turn native city phase, with presentation boundaries.\n\nStandard reference terrain/cities; all human-mask, Chieftain, size-one start,\nCapitalization, 100% tax, and unhomed units isolate city phase sequencing.\nThis is original-x86 execution, not Wine/autosave parity or an AI campaign.",
+  "city_order": "civ 0..7, descending city slots per civ"
+}

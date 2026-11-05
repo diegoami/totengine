@@ -255,12 +255,16 @@ mod tests {
     }
 
     #[test]
-    fn turns_refresh_finance_before_completing_a_library() {
+    fn completed_library_affects_the_post_production_finance_pass() {
         let mut w = world();
         let improvements = (0..7)
             .map(|i| format!("Building {i}, 1, 0, nil\n"))
             .collect::<String>();
-        let rules = tot_kit::parse_rules(&format!("@IMPROVE\n{improvements}"));
+        let rules = tot_kit::parse_rules(&format!(
+            "@IMPROVE\n{improvements}@TERRAIN\nDesert,1,1,0,0,0\nPlains,1,1,2,0,0\n"
+        ));
+        w.cities[1].city_id = 1;
+        w.cities[1].worked = (1 << 20) | (1 << 26);
         w.cities[1].specialists = 3; // scientist supplies 3, with no tile trade
         w.cities[1].building = -6;
         w.cities[1].shield_box = 100;
@@ -270,7 +274,7 @@ mod tests {
         let treasury = w.treasury;
         w.run_turn(&rules, None);
         assert!(w.cities[1].has_building(6));
-        assert_eq!((w.cities[1].net_science, w.cities[1].net_taxes), (3, 0));
+        assert_eq!((w.cities[1].net_science, w.cities[1].net_taxes), (4, 0));
         w.cities[1].gross_food = 2;
         w.run_turn(&rules, None);
         assert_eq!(w.cities[1].net_science, 4);

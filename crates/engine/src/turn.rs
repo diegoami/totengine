@@ -1,30 +1,14 @@
-//! The headless turn loop (v0.2.0): what one game turn does to the world.
+//! Headless round loop. Surface cities use the decoded growth, allocation,
+//! collection, production, support and end-of-city mood sequence in
+//! `crate::city_phase`; each civ's cities run in descending slot order.
 //!
-//! [`WorldState::run_turn`] chains the modelled subsystems:
-//!
-//! 1. **Cities** grow or starve via [`crate::cities::CityEcon::turn`]. The
-//!    model is oracle-replayed (evidence §T1-4 growth replay). Gross food is
-//!    the save's value held constant, because tile yields are not modelled
-//!    yet. Settlers are the role-5 ("settle") units homed in the city.
-//!    Cities with gross food 0 are skipped: the original leaves young cities
-//!    half-initialised until their first processing (evidence §T1-4).
-//! 2. **Production** ([`WorldState::production_step`]): shields fill
-//!    the box; units and improvements complete (evidence §T1-4
-//!    production).
-//! 3. **Turn events**: TURN, TURNINTERVAL and RANDOMTURN fire against the
-//!    new turn number, and their effects are applied. RANDOMTURN rolls
-//!    `next_below(n) == 0` on the kernel's generator, once per event in file
-//!    order.
-//! 4. The turn counter advances and movement resets for every unit.
-//!
-//! **The order of these steps, and which generator draws the RANDOMTURN
-//! rolls, are the engine's choice, not decoded from the original.** The
-//! loop is deterministic: the same save, seed and rules give the same
-//! fingerprints (the 50-turn golden, `docs/evidence/fallrome-50turn.txt`).
+//! Civ scheduling (0..7, after player orders), initial transient city context,
+//! and turn-event dispatch are engine policy. This is not a complete original
+//! round/PRNG replay: non-surface maps, sea cargo, pollution/settler-job planning
+//! and the original AI's build choices remain separate.
 
 use tot_kit::Rules;
 
-use crate::cities::{CityEcon, CityRules};
 use crate::effects::Applied;
 use crate::events::{Ctx, Effect, EventEngine};
 use crate::rng::GameRng;
@@ -38,6 +22,9 @@ pub struct TurnSummary {
     /// Cities that grew / starved this turn (indices).
     pub grew: Vec<usize>,
     pub famined: Vec<usize>,
+    pub destroyed_cities: Vec<usize>,
+    pub disbanded_units: Vec<usize>,
+    pub revolutions: Vec<u8>,
     /// Turn events fired, with what applying them did.
     pub events: Vec<(Effect, Applied)>,
     /// What city production completed: (city index, item).
@@ -49,95 +36,43 @@ pub struct TurnSummary {
     pub barbarian_arrivals: Vec<usize>,
 }
 
-/// AI role 5 = settle (Rules @UNITS field 11).
-const ROLE_SETTLE: u8 = 5;
-
 impl WorldState {
     /// Run one full turn; see the module docs for what it covers.
     pub fn run_turn(&mut self, rules: &Rules, events: Option<&mut EventEngine>) -> TurnSummary {
         let mut sum = TurnSummary::default();
-        let cr = CityRules::from_rules(rules);
-        for k in 0..self.cities.len() {
-            let c = &self.cities[k];
-            if c.gross_food == 0 {
-                continue;
-            }
-            let settlers = self
-                .units
-                .iter()
-                .filter(|u| {
-                    u.home as usize == k && rules.unit_role(u.type_id as usize) == Some(ROLE_SETTLE)
-                })
-                .count() as u32;
-            let mut econ = CityEcon {
-                size: c.size,
-                food_box: c.food_box as u32,
-                shield_box: c.shield_box as u32,
-            };
-            let t = econ.turn(c.gross_food as u32, settlers, &cr);
-            let c = &mut self.cities[k];
-            c.size = econ.size;
-            c.food_box = econ.food_box.min(u16::MAX as u32) as u16;
-            if t.grew {
-                sum.grew.push(k);
-            }
-            if t.famined {
-                sum.famined.push(k);
-            }
-        }
-        // production (evidence §T1-4 production); cities with no food
-        // are the half-initialised young cities the growth step skips too
-        for k in 0..self.cities.len() {
-            if self.cities[k].gross_food == 0 {
-                continue;
-            }
-            // City finance (#87): evaluate before this turn's build is
-            // completed, so a new Library affects the next totals pass.
-            // Refresh this city's pre-route trade cache before partners
-            // read it; city iteration order remains engine-chosen.
-            self.cities[k].route_trade = self.pre_route_trade(rules, k);
-            let mood = self.city_happiness(rules, k);
-            self.cities[k].happy = mood.happy as u8;
-            self.cities[k].unhappy = mood.unhappy as u8;
-            if mood.unhappy > mood.happy {
-                self.cities[k].flags |= 1;
-            } else {
-                self.cities[k].flags &= !1;
-            }
-            let finance = self.city_finance(rules, k);
-            self.cities[k].net_science = finance.science.clamp(0, u16::MAX as i32) as u16;
-            self.cities[k].net_taxes = finance.taxes.clamp(0, u16::MAX as i32) as u16;
-            let civ = (self.cities[k].owner & 15) as u8;
-            // 0x4ca000: anarchy contributes no research. The tutorial's
-            // Chieftain human bonus doubles science toward an advance
-            // already discovered by another player. The late spaceship-
-            // related AI doubling branch is not modelled yet.
-            if self.governments.get(civ as usize).is_some_and(|&g| g != 0) {
-                let mut science = finance.science;
-                let target = self.research[civ as usize].target;
-                if self.difficulty == 0
-                    && self.human_mask & (1 << civ) != 0
-                    && (0..100).contains(&target)
-                    && target != 89
-                    && self
-                        .techs
-                        .iter()
-                        .any(|b| b[target as usize / 8] & (1 << (target as usize % 8)) != 0)
-                {
-                    science *= 2;
+        let mut food_routes = crate::city_phase::FoodRouteState::default();
+        // 0x470aa5..0x470b69: descending city slots within each civ/map.
+        // The headless round uses civ order 0..7 and the retained surface.
+        for civ in 0..8 {
+            for k in (0..self.cities.len()).rev() {
+                if self.cities[k].owner & 15 != civ {
+                    continue;
                 }
-                if let Some(advance) = self.add_research(rules, civ, science) {
-                    sum.discoveries.push((civ, advance));
+                let Some(city) = self.run_city_phase(rules, k, &mut food_routes) else {
+                    continue;
+                };
+                if city.grew {
+                    sum.grew.push(k);
                 }
+                if city.famined {
+                    sum.famined.push(k);
+                }
+                if city.destroyed {
+                    sum.destroyed_cities.push(k);
+                    continue;
+                }
+                if let Some(built) = city.built {
+                    sum.built.push((k, built));
+                }
+                if let Some(discovery) = city.discovery {
+                    sum.discoveries.push(discovery);
+                }
+                sum.disbanded_units.extend(city.disbanded);
+                if city.revolution {
+                    sum.revolutions.push(civ as u8);
+                }
+                sum.city_accounts.push((k, city.account));
             }
-            // the totals pass (0x4c45ff -> 0x430232) clears create_city's
-            // refresh-pending bit (evidence §City founding)
-            self.cities[k].flags &= !crate::founding::CITY_REFRESH;
-            if let Some(b) = self.production_step(rules, k) {
-                sum.built.push((k, b));
-            }
-            let account = self.process_city_treasury(rules, k, finance.taxes);
-            sum.city_accounts.push((k, account));
         }
 
         self.refresh_city_statistics();
@@ -211,14 +146,22 @@ owner=Testers\nveteran=no\nhomecity=NONE\nlocations\n4,2\nendlocations\n@ENDIF\n
         assert!((10..=40).contains(&created), "{created}");
     }
 
-    /// The city step: City0 feeds a settler (surplus 1), the others
-    /// gain 2 a turn; 18 is the size-1 capacity, growth strictly above.
+    /// Growth reads the starting box; current food is collected afterwards.
     #[test]
-    fn cities_grow_on_schedule() {
-        let (_, w) = run(7, 10);
-        // City1..7: +2 a turn from 0 → 20 > 18 at turn 10 → size 2, box 2
-        assert!(w.cities[1..].iter().all(|c| (c.size, c.food_box) == (2, 2)));
-        // City0 with its settler: +1 a turn → box 10, still size 1
-        assert_eq!((w.cities[0].size, w.cities[0].food_box), (1, 10));
+    fn growth_precedes_current_food_collection() {
+        let mut w = crate::boot(&synthetic_save(), 7);
+        let rules = tot_kit::parse_rules("@TERRAIN\nDesert,1,1,0,0,0\nPlains,1,1,4,0,0\n");
+        w.human_mask = 2;
+        w.governments[1] = 2;
+        let c = &mut w.cities[1];
+        c.city_id = 1;
+        c.food_box = 19;
+        c.worked = (1 << 20) | (1 << 26);
+        let first = w.run_turn(&rules, None);
+        assert!(!first.grew.contains(&1));
+        assert_eq!((w.cities[1].size, w.cities[1].food_box), (1, 21));
+        let second = w.run_turn(&rules, None);
+        assert!(second.grew.contains(&1));
+        assert_eq!((w.cities[1].size, w.cities[1].food_box), (2, 0));
     }
 }

@@ -393,6 +393,7 @@ mod tests {
         let rules = rules();
         let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
         w.wonders = [-1; 28];
+        w.cities[1].city_id = 1;
         w.cities[1].owner = 1;
         assert_eq!(
             w.apply_order(&rules, None, 1, Order::SetProduction { city: 1, item: -40 }),

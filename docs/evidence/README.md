@@ -3355,3 +3355,47 @@ python3 -m unittest discover -s tools -p 'test_worldgen_compare.py'
 # 31: 1dff44f6c2d4cb2653e65359acf5c8e0880d093fbfb34090fc81723c090b8ebb
 # 79: 0577a847e24bb982db3a02b58fa2531b8c5857660200655baf2b4d46dced342f
 ```
+
+### Fresh generated-world campaign (#91, v0.9)
+
+`engine::newgame` constructs a world directly from Rules and generator v2;
+no stock save, city, unit or cache is imported. Setup resources, synthetic
+civ names, separate land/sea components and food-based fertility estimates
+are explicit initialization policy v1. The decoded start sampler operates
+on those inputs. Power/statistics caches derive from the fresh state.
+[Usage, defaults and limits](../generated-campaign.md) give the complete
+contract; original new-game initialization parity is not claimed.
+
+[generated-campaign-v1.json](generated-campaign-v1.json) records Rules hashes,
+setup and validation context. [The full authored-rules checkpoint golden](generated-campaign-v1.ctc)
+contains every order and round fingerprint for 100 rounds of AI v1, including
+the final fingerprint `b22e4340b6ab8bf6`. It reaches 20 cities, 27 population,
+28 units and 35 acquired advances. [The authored trajectory](generated-authored-campaign.tsv)
+and [Original Rules trajectory](generated-standard-campaign.tsv) contain
+numeric-only round data. With the user's Original Rules, the same setup
+reaches 16 cities, 39 population, 53 units and 35 acquired advances, fingerprint
+`76814781c4e92589`. These trajectories compare two Rules inputs on our world;
+they are not comparisons against original-game AI.
+
+The authored test Rules are original project data with synthetic balance;
+no original Rules or save bytes are committed. Checkpoints are explicitly
+engine replay files, not native `.SAV` exports. Restore replays AI from setup
+and requires identical transcript/state, restoring private AI state as well
+as the world. The 32-seed, 100-round suite compares uninterrupted runs with
+37 rounds + checkpoint restore + 63 rounds and independently reapplies every
+logged order through the generated-game replay API. The install-backed
+Original Rules test verifies the same continuation and replay properties.
+
+```sh
+cargo test -p engine --test generated_campaign --release -- --include-ignored
+cargo test -p totctl --test campaign
+CIVTOT_HOME=/path/to/CIVTOT cargo test -p engine --test generated_campaign_install
+cargo run -q -p engine --example generated_campaign_metrics -- \
+  crates/engine/tests/fixtures/campaign-rules.txt 7 100
+cargo run -q -p engine --example generated_campaign_metrics -- \
+  "$CIVTOT_HOME/Original/Rules.txt" 7 100
+```
+
+The generated checkpoint's engine package version is part of its identity.
+Intentional engine/version changes require regenerating the authored golden
+and its hash; the per-round fingerprints continue to verify mechanics state.

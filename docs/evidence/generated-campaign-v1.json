@@ -1,0 +1,52 @@
+{
+  "initialization_policy": 1,
+  "world_generator": 2,
+  "setup": "1 2 80 50 47 7 7 5 2",
+  "authored_rules": {
+    "file": "crates/engine/tests/fixtures/campaign-rules.txt",
+    "sha256": "edd127e7f6b71b5746cfd61494816d111f566f607a9ffbf2d3f4f724790e0eb2",
+    "source": "authored synthetic rules; no original game data copied"
+  },
+  "original_rules": {
+    "file": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef",
+    "source": "user install; Rules are runtime input, never committed"
+  },
+  "golden": {
+    "file": "generated-campaign-v1.ctc",
+    "sha256": "3b0d428fde8aec908a3df2f7efb300e214970c30836eb5bee91ebd74b50845b1",
+    "engine_version": "0.8.0",
+    "kind": "engine replay checkpoint, not native SAV"
+  },
+  "authored_100_round_result": {
+    "round": "100",
+    "cities": "20",
+    "population": "27",
+    "units": "28",
+    "advances": "35",
+    "improvements": "35",
+    "treasury": "1320",
+    "fingerprint": "b22e4340b6ab8bf6"
+  },
+  "original_rules_100_round_result": {
+    "round": "100",
+    "cities": "16",
+    "population": "39",
+    "units": "53",
+    "advances": "35",
+    "improvements": "19",
+    "treasury": "965",
+    "fingerprint": "76814781c4e92589"
+  },
+  "validation": [
+    "32 authored-rules seeds, 100 rounds each, uninterrupted == restored at 37 + 63 more; independent order replay agrees",
+    "Original Rules seed 7: uninterrupted 100 == 37 + checkpoint restore + 63; independent order replay agrees",
+    "CLI overwrite refusal and setup-override rejection; checkpoint transcript/version/Rules tampering rejected"
+  ],
+  "limits": [
+    "Engine-designed terrain/regions/fertility and initial defaults; no original new-game initialization parity.",
+    "All-AI surface context; zero recurring barbarian activity, huts enabled; original-like AI remains v0.10.",
+    "Restoring is O(recorded rounds), replaying AI to restore private state.",
+    "No native game save loading/import or original victory-rule claim."
+  ]
+}

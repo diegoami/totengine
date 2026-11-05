@@ -558,6 +558,44 @@ pub struct Game {
 }
 
 impl Game {
+    /// Boot an engine-designed fresh world, without any reference save.
+    /// The generated log binds setup versions, canonical Rules and initial
+    /// state. It is separate from the existing save-backed log format.
+    pub fn generated(config: crate::newgame::NewGameConfig, rules: Rules) -> Result<Game, String> {
+        let mut world = crate::newgame::generate(config, &rules)?;
+        world.start_turn(&rules);
+        for c in 1..8 {
+            world.reveal(c);
+        }
+        let canonical_rules = tot_kit::emit_rules(&rules);
+        let log = format!(
+            "totengine-generated-orderlog 1\nsetup {}\nrules {} {:016x} initial {:016x}\n",
+            config.descriptor(),
+            canonical_rules.len(),
+            fnv64(canonical_rules.as_bytes()),
+            world.checksum()
+        );
+        Ok(Game {
+            world,
+            rules,
+            events: None,
+            players: (0..8).map(|_| None).collect(),
+            log,
+        })
+    }
+
+    pub fn replay_generated(
+        config: crate::newgame::NewGameConfig,
+        rules: Rules,
+        log: &str,
+    ) -> Result<Game, String> {
+        let g = Self::generated(config, rules)?;
+        if !log.starts_with(&g.log) {
+            return Err("generated setup, Rules or initial state differ from order log".into());
+        }
+        Self::replay_records(g, log.lines().enumerate().skip(3), |_| {})
+    }
+
     /// Boot a game from save bytes; the log header records the seed and a
     /// fingerprint of the save.
     pub fn new(
@@ -672,11 +710,19 @@ impl Game {
             .and_then(|l| l.strip_prefix("seed "))
             .and_then(|v| v.parse().ok())
             .ok_or("line 2: bad seed")?;
-        let mut g = Game::new(save_name, save, seed, rules, events)?;
+        let g = Game::new(save_name, save, seed, rules, events)?;
         if g.log.lines().nth(2) != hdr.get(2).copied() {
             return Err("line 3: the save differs from the logged one".into());
         }
         observer(&g);
+        Self::replay_records(g, lines, observer)
+    }
+
+    fn replay_records<'a>(
+        mut g: Game,
+        lines: impl Iterator<Item = (usize, &'a str)>,
+        mut observer: impl FnMut(&Game),
+    ) -> Result<Game, String> {
         for (n, line) in lines {
             let at = n + 1;
             if let Some(rest) = line.strip_prefix("R ") {

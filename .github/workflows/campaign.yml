@@ -1,0 +1,26 @@
+name: Generated campaign autoplay
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'crates/engine/**'
+      - 'crates/tot-kit/**'
+      - 'docs/evidence/generated-campaign-v1.ctc'
+      - '.github/workflows/campaign.yml'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+  pull_request:
+
+jobs:
+  autoplay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Golden campaign, checkpoint continuation and 32-seed autoplay
+        run: cargo test -p engine --test generated_campaign --release -- --include-ignored

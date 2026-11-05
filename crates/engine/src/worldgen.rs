@@ -51,7 +51,7 @@ const DIRECTIONS: [(i32, i32); 8] = [
     (0, -2),
 ];
 
-fn neighbors(config: WorldConfig, index: usize) -> impl Iterator<Item = usize> {
+pub(crate) fn neighbors(config: WorldConfig, index: usize) -> impl Iterator<Item = usize> {
     let width = i32::from(config.width);
     let stride = width / 2;
     let y = index as i32 / stride;

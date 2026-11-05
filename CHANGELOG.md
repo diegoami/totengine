@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Add fresh generated-world AI campaigns (#91): `totctl campaign`, explicit
+  initialization policy, versioned engine replay checkpoints, strict Rules/setup
+  identity, deterministic continuation and a scheduled 32-seed autoplay suite.
+  Retain an authored-rules 100-round checkpoint golden and numeric trajectories
+  using authored and user-supplied Original Rules. No native SAV compatibility
+  or original new-game/AI parity is claimed.
+
 - Calibrate generated biomes and replace sparse downhill river attempts with
   sea-rooted basin drainage (#90, algorithm v2). Retain numeric comparisons for
   16 calibration and 64 fresh engine seeds, three inspected renders and basin/

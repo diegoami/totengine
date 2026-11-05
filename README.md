@@ -13,6 +13,7 @@ installation and reads its data files directly.
 | [docs/milestone-review.md](docs/milestone-review.md) | Release process: independent milestone review, AGREE/BLOCK verdict, tag-on-reviewed-SHA |
 | [docs/feasibility.md](docs/feasibility.md) | Evidence-based feasibility evaluation: formats, prior art, risks, effort, value assessment, verdict |
 | [docs/plan.md](docs/plan.md) | Phased implementation plan: architecture, milestones, testing strategy |
+| [docs/generated-campaign.md](docs/generated-campaign.md) | Seeded fresh games, AI autoplay and deterministic engine checkpoints |
 | [docs/evidence/](docs/evidence/) | Tier-0 probe results — measured format findings, rendered map, save walks |
 
 ## Local reference environment (verified)

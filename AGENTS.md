@@ -120,7 +120,12 @@ provide deterministic engine-designed MP export. First measured baseline and
 render are in `docs/evidence/worldgen-v1.json`. Algorithm v2 corrects polar
 bands/relief and drains inland basins to the sea; 16 calibration and 64 fresh
 engine seeds are measured in `worldgen-v2.json`. Broader original sampling and
-spatial comparison remain open. No fresh campaign initialization yet.
+spatial comparison remain open. `engine::newgame` now constructs fresh surface
+games without a save; `engine::campaign` and `totctl campaign` provide AI v1
+autoplay, order replay and versioned replay checkpoints (not native SAV).
+The 100-round authored golden and 32-seed continuation/replay suite pass;
+Original Rules seed 7 reaches 16 cities/53 units/35 advances and resumes.
+Broader original-map capture and release validation are still in progress.
 Next plan: `docs/decisions/0006-generated-world-campaign.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

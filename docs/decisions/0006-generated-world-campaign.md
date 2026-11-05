@@ -87,3 +87,26 @@ tests across 36 test binaries, the three Python report checks and the full
 golden corpus (including the 50-turn fingerprint run and Rust/Python format
 crosschecks). Workspace formatting and all-target Clippy with warnings
 denied passed; the report re-derived byte-identically from its retained TSV.
+
+## Fresh-game campaigns (2026-11-05)
+
+`engine::newgame` now constructs state from generated terrain and Rules,
+without booting a reference save. The decoded placement sampler consumes
+engine-defined region/food-fertility inputs. Default initial resources,
+names and fertility are explicit engine policy; original startup parity is
+not claimed. Power/statistics caches derive from the initial state. Enabled
+research count excludes Rules rows with a `no` prerequisite, matching 89
+enabled advances in the current Original profile.
+
+`engine::campaign` and `totctl campaign` run AI v1 and save versioned replay
+checkpoints. Restore reconstructs both world and private AI state by playing
+the recorded prefix and requiring identical transcripts/fingerprints. This
+is an O(turns) checkpoint, not a native `.SAV` or an instant snapshot. The
+complete 100-round authored-rules golden and 32-seed continuation/replay test
+are asset-free; the scheduled workflow uses the same suite. The Original
+Rules fresh-game test also expands, independently replays, and resumes
+identically. Usage/defaults/limits: `docs/generated-campaign.md`; numeric
+results and source identities: `docs/evidence/generated-campaign-v1.json`.
+
+The expanded original-map cohort is being captured under the predeclared
+`worldgen-comparison-protocol.json`; #90 and release validation remain open.

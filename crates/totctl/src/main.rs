@@ -13,6 +13,7 @@ fn main() -> ExitCode {
     match args.get(1).map(String::as_str) {
         Some("mp") => cmd_mp(&args[2..]),
         Some("worldgen") => cmd_worldgen(&args[2..]),
+        Some("campaign") => cmd_campaign(&args[2..]),
         Some("rules") => cmd_rules(&args[2..]),
         Some("boot") => cmd_boot(&args[2..]),
         Some("tech") => cmd_tech(&args[2..]),
@@ -29,6 +30,7 @@ fn main() -> ExitCode {
         _ => {
             eprintln!(
                 "usage: {prog} worldgen <out.mp> [--seed S] [--width W] [--height H] [--land-percent P]\n\
+                        {prog} campaign <Rules.txt> [--turns N] [--seed S] [--civs C] [--difficulty D] [--width W] [--height H] [--land-percent P] [--checkpoint OUT] [--resume FILE] [--log OUT]\n\
                         {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
                         {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai | --ai-v1]\n\
@@ -560,6 +562,119 @@ fn cmd_rules(args: &[String]) -> ExitCode {
         .map(|(_, v)| v.to_string());
     println!("cosmic road   : {}", road.unwrap_or_else(|| "?".into()));
     ExitCode::SUCCESS
+}
+
+fn cmd_campaign(args: &[String]) -> ExitCode {
+    use std::io::Write;
+    let run = || -> Result<(), String> {
+        let rules_path = args.first().ok_or("usage: totctl campaign <Rules.txt> [--turns N] [--seed S] [--checkpoint OUT] [--resume FILE]")?;
+        let mut config = engine::newgame::NewGameConfig::default();
+        let mut changed_setup = false;
+        let mut turns = 100u32;
+        let mut checkpoint = None;
+        let mut resume = None;
+        let mut log_path = None;
+        let (options, remainder) = args[1..].as_chunks::<2>();
+        for option in options {
+            let key = option[0].as_str();
+            let value = &option[1];
+            let bad = || format!("invalid value for {key}: {value}");
+            match key {
+                "--turns" => turns = value.parse().map_err(|_| bad())?,
+                "--checkpoint" => checkpoint = Some(value),
+                "--resume" => resume = Some(value),
+                "--log" => log_path = Some(value),
+                "--seed" => {
+                    config.world.seed = value.parse().map_err(|_| bad())?;
+                    config.gameplay_seed = config.world.seed;
+                    changed_setup = true;
+                }
+                "--width" => {
+                    config.world.width = value.parse().map_err(|_| bad())?;
+                    changed_setup = true;
+                }
+                "--height" => {
+                    config.world.height = value.parse().map_err(|_| bad())?;
+                    changed_setup = true;
+                }
+                "--land-percent" => {
+                    config.world.land_percent = value.parse().map_err(|_| bad())?;
+                    changed_setup = true;
+                }
+                "--civs" => {
+                    config.civilizations = value.parse().map_err(|_| bad())?;
+                    changed_setup = true;
+                }
+                "--difficulty" => {
+                    config.difficulty = value.parse().map_err(|_| bad())?;
+                    changed_setup = true;
+                }
+                _ => return Err(format!("unknown campaign option {key}")),
+            }
+        }
+        if !remainder.is_empty() {
+            return Err("campaign options need values".into());
+        }
+        if resume.is_some() && changed_setup {
+            return Err("resume uses the checkpoint setup; omit setup options".into());
+        }
+        if checkpoint.is_some() && checkpoint == log_path {
+            return Err("checkpoint and log output paths must differ".into());
+        }
+        for path in [checkpoint, log_path].into_iter().flatten() {
+            if std::path::Path::new(path).exists() {
+                return Err(format!("output already exists: {path}"));
+            }
+        }
+        let bytes = std::fs::read(rules_path).map_err(|e| format!("read {rules_path}: {e}"))?;
+        let rules = tot_kit::parse_rules(&tot_kit::latin1(&bytes));
+        let mut campaign = if let Some(path) = resume {
+            let saved = std::fs::read_to_string(path).map_err(|e| format!("read {path}: {e}"))?;
+            engine::campaign::Campaign::restore(rules, &saved)?
+        } else {
+            engine::campaign::Campaign::new(config, rules)?
+        };
+        let outcome = campaign.advance(turns)?;
+        for (path, contents) in [
+            (checkpoint, campaign.checkpoint()),
+            (log_path, campaign.game.log().to_string()),
+        ] {
+            if let Some(path) = path {
+                let mut file = std::fs::OpenOptions::new()
+                    .write(true)
+                    .create_new(true)
+                    .open(path)
+                    .map_err(|e| format!("create {path}: {e}"))?;
+                file.write_all(contents.as_bytes())
+                    .map_err(|e| format!("write {path}: {e}"))?;
+            }
+        }
+        let world = &campaign.game.world;
+        println!(
+            "generated campaign: engine-designed world v{}, initialization policy v{}",
+            engine::worldgen::ALGORITHM_VERSION,
+            engine::newgame::INITIALIZATION_VERSION
+        );
+        println!("setup       : {}", campaign.config().descriptor());
+        println!("rounds      : {}", campaign.rounds());
+        println!("turn / year : {} / {}", world.turn, world.year);
+        println!("living civs : {:?}", world.living_civs());
+        println!(
+            "cities/units: {} / {}",
+            world.cities.iter().filter(|c| c.city_id != 0).count(),
+            world.units.iter().filter(|u| u.id != 0).count()
+        );
+        println!("fingerprint : {:016x}", world.checksum());
+        println!("outcome     : {outcome:?} (observed state; original victory rules not claimed)");
+        Ok(())
+    };
+    match run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("{e}");
+            ExitCode::FAILURE
+        }
+    }
 }
 
 fn cmd_worldgen(args: &[String]) -> ExitCode {

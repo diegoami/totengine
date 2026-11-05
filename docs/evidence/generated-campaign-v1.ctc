@@ -1,0 +1,947 @@
+totengine-campaign 1
+engine 0.8.0
+setup 1 2 80 50 47 7 7 5 2
+rounds 100
+fingerprint b22e4340b6ab8bf6
+log 23071 f8cd054b2c7de92b
+totengine-generated-orderlog 1
+setup 1 2 80 50 47 7 7 5 2
+rules 9535 1ccad4603a4ff062 initial 23777aed5ea5b148
+T 1 C 1 research 11 = research-set
+T 1 C 1 found 0 = founded 0
+T 1 C 1 end = ended
+T 1 C 2 research 11 = research-set
+T 1 C 2 found 1 = founded 1
+T 1 C 2 end = ended
+T 1 C 3 research 11 = research-set
+T 1 C 3 found 2 = founded 2
+T 1 C 3 end = ended
+T 1 C 4 research 11 = research-set
+T 1 C 4 found 3 = founded 3
+T 1 C 4 end = ended
+T 1 C 5 research 11 = research-set
+T 1 C 5 found 4 = founded 4
+T 1 C 5 end = ended
+R 2 fab2f9fbc01a38dc
+T 2 C 1 end = ended
+T 2 C 2 end = ended
+T 2 C 3 end = ended
+T 2 C 4 end = ended
+T 2 C 5 end = ended
+R 3 3955dc2a72bddd66
+T 3 C 1 end = ended
+T 3 C 2 end = ended
+T 3 C 3 end = ended
+T 3 C 4 end = ended
+T 3 C 5 end = ended
+R 4 7c1cc06ed6d9eb02
+T 4 C 1 end = ended
+T 4 C 2 end = ended
+T 4 C 3 end = ended
+T 4 C 4 end = ended
+T 4 C 5 end = ended
+R 5 bc744d55ae7e5f45
+T 5 C 1 end = ended
+T 5 C 2 end = ended
+T 5 C 3 end = ended
+T 5 C 4 end = ended
+T 5 C 5 end = ended
+R 6 421c2498ceb7ed03
+T 6 C 1 end = ended
+T 6 C 2 end = ended
+T 6 C 3 end = ended
+T 6 C 4 end = ended
+T 6 C 5 end = ended
+R 7 6710edd3f141af78
+T 7 C 1 research 10 = research-set
+T 7 C 1 end = ended
+T 7 C 2 research 10 = research-set
+T 7 C 2 end = ended
+T 7 C 3 research 10 = research-set
+T 7 C 3 end = ended
+T 7 C 4 research 10 = research-set
+T 7 C 4 end = ended
+T 7 C 5 research 10 = research-set
+T 7 C 5 prod 4 -9 = prod-set
+T 7 C 5 end = ended
+R 8 91161b5f8c68c62d
+T 8 C 1 end = ended
+T 8 C 2 end = ended
+T 8 C 3 end = ended
+T 8 C 4 end = ended
+T 8 C 5 end = ended
+R 9 2bf3b18e988ff113
+T 9 C 1 end = ended
+T 9 C 2 end = ended
+T 9 C 3 end = ended
+T 9 C 4 end = ended
+T 9 C 5 end = ended
+R 10 8b8c642f2d6b05a6
+T 10 C 1 end = ended
+T 10 C 2 end = ended
+T 10 C 3 end = ended
+T 10 C 4 end = ended
+T 10 C 5 end = ended
+R 11 f027473e68327c57
+T 11 C 1 end = ended
+T 11 C 2 end = ended
+T 11 C 3 end = ended
+T 11 C 4 end = ended
+T 11 C 5 end = ended
+R 12 95c9c1cfc4345b35
+T 12 C 1 end = ended
+T 12 C 2 end = ended
+T 12 C 3 end = ended
+T 12 C 4 end = ended
+T 12 C 5 end = ended
+R 13 e05230140a3309f6
+T 13 C 1 research 9 = research-set
+T 13 C 1 prod 0 -9 = prod-set
+T 13 C 1 end = ended
+T 13 C 2 research 9 = research-set
+T 13 C 2 end = ended
+T 13 C 3 research 9 = research-set
+T 13 C 3 prod 2 -9 = prod-set
+T 13 C 3 end = ended
+T 13 C 4 research 9 = research-set
+T 13 C 4 prod 3 -9 = prod-set
+T 13 C 4 end = ended
+T 13 C 5 research 9 = research-set
+T 13 C 5 end = ended
+R 14 0f281d52c1dd57a3
+T 14 C 1 end = ended
+T 14 C 2 end = ended
+T 14 C 3 end = ended
+T 14 C 4 end = ended
+T 14 C 5 end = ended
+R 15 b36256885f6aef6a
+T 15 C 1 end = ended
+T 15 C 2 end = ended
+T 15 C 3 end = ended
+T 15 C 4 end = ended
+T 15 C 5 end = ended
+R 16 2aec0c7e614b325e
+T 16 C 1 end = ended
+T 16 C 2 end = ended
+T 16 C 3 end = ended
+T 16 C 4 end = ended
+T 16 C 5 prod 4 -23 = prod-set
+T 16 C 5 end = ended
+R 17 c9f3c5dc32738548
+T 17 C 1 end = ended
+T 17 C 2 end = ended
+T 17 C 3 end = ended
+T 17 C 4 end = ended
+T 17 C 5 end = ended
+R 18 42199f744179f480
+T 18 C 1 end = ended
+T 18 C 2 end = ended
+T 18 C 3 end = ended
+T 18 C 4 end = ended
+T 18 C 5 end = ended
+R 19 9f7fe7c98cfacfc1
+T 19 C 1 end = ended
+T 19 C 2 end = ended
+T 19 C 3 end = ended
+T 19 C 4 end = ended
+T 19 C 5 end = ended
+R 20 42009bb7c37c01bd
+T 20 C 1 end = ended
+T 20 C 2 end = ended
+T 20 C 3 end = ended
+T 20 C 4 end = ended
+T 20 C 5 end = ended
+R 21 31313f1c1b15125d
+T 21 C 1 end = ended
+T 21 C 2 end = ended
+T 21 C 3 end = ended
+T 21 C 4 end = ended
+T 21 C 5 end = ended
+R 22 ddb5aacf20e5ec2f
+T 22 C 1 end = ended
+T 22 C 2 end = ended
+T 22 C 3 end = ended
+T 22 C 4 end = ended
+T 22 C 5 end = ended
+R 23 64aa3f4b3112d4f6
+T 23 C 1 end = ended
+T 23 C 2 end = ended
+T 23 C 3 end = ended
+T 23 C 4 end = ended
+T 23 C 5 end = ended
+R 24 33f424933b4a13a5
+T 24 C 1 end = ended
+T 24 C 2 end = ended
+T 24 C 3 end = ended
+T 24 C 4 end = ended
+T 24 C 5 end = ended
+R 25 d83b1cc083e15688
+T 25 C 1 research 8 = research-set
+T 25 C 1 end = ended
+T 25 C 2 research 8 = research-set
+T 25 C 2 prod 1 -9 = prod-set
+T 25 C 2 end = ended
+T 25 C 3 research 8 = research-set
+T 25 C 3 end = ended
+T 25 C 4 research 8 = research-set
+T 25 C 4 end = ended
+T 25 C 5 research 8 = research-set
+T 25 C 5 prod 4 -3 = prod-set
+T 25 C 5 end = ended
+R 26 9bdd0fb15ccb7303
+T 26 C 1 end = ended
+T 26 C 2 end = ended
+T 26 C 3 end = ended
+T 26 C 4 end = ended
+T 26 C 5 end = ended
+R 27 ab99c720168a96a4
+T 27 C 1 end = ended
+T 27 C 2 end = ended
+T 27 C 3 end = ended
+T 27 C 4 end = ended
+T 27 C 5 end = ended
+R 28 1552b08c23404833
+T 28 C 1 end = ended
+T 28 C 2 end = ended
+T 28 C 3 end = ended
+T 28 C 4 end = ended
+T 28 C 5 end = ended
+R 29 a669b11e3689282f
+T 29 C 1 end = ended
+T 29 C 2 end = ended
+T 29 C 3 end = ended
+T 29 C 4 end = ended
+T 29 C 5 end = ended
+R 30 70b567a5ab765f5b
+T 30 C 1 end = ended
+T 30 C 2 end = ended
+T 30 C 3 end = ended
+T 30 C 4 end = ended
+T 30 C 5 end = ended
+R 31 5c9365da32ec982d
+T 31 C 1 prod 0 -23 = prod-set
+T 31 C 1 end = ended
+T 31 C 2 end = ended
+T 31 C 3 prod 2 -23 = prod-set
+T 31 C 3 end = ended
+T 31 C 4 prod 3 -23 = prod-set
+T 31 C 4 end = ended
+T 31 C 5 end = ended
+R 32 feb8d8787d26bf8b
+T 32 C 1 end = ended
+T 32 C 2 end = ended
+T 32 C 3 end = ended
+T 32 C 4 end = ended
+T 32 C 5 end = ended
+R 33 84d5380b2b64046b
+T 33 C 1 end = ended
+T 33 C 2 end = ended
+T 33 C 3 end = ended
+T 33 C 4 end = ended
+T 33 C 5 prod 4 -6 = prod-set
+T 33 C 5 end = ended
+R 34 78bc3b52682c67cf
+T 34 C 1 end = ended
+T 34 C 2 end = ended
+T 34 C 3 end = ended
+T 34 C 4 end = ended
+T 34 C 5 end = ended
+R 35 d900a069508874a9
+T 35 C 1 end = ended
+T 35 C 2 end = ended
+T 35 C 3 end = ended
+T 35 C 4 end = ended
+T 35 C 5 end = ended
+R 36 808e022f7c4a9116
+T 36 C 1 end = ended
+T 36 C 2 end = ended
+T 36 C 3 end = ended
+T 36 C 4 end = ended
+T 36 C 5 end = ended
+R 37 c6cf0ae90a1ba3e8
+T 37 C 1 end = ended
+T 37 C 2 end = ended
+T 37 C 3 end = ended
+T 37 C 4 end = ended
+T 37 C 5 end = ended
+R 38 728da32fc86925d0
+T 38 C 1 end = ended
+T 38 C 2 end = ended
+T 38 C 3 end = ended
+T 38 C 4 end = ended
+T 38 C 5 end = ended
+R 39 b1c017752943b515
+T 39 C 1 end = ended
+T 39 C 2 end = ended
+T 39 C 3 end = ended
+T 39 C 4 end = ended
+T 39 C 5 end = ended
+R 40 f9ae1b9058c2f5bc
+T 40 C 1 end = ended
+T 40 C 2 end = ended
+T 40 C 3 end = ended
+T 40 C 4 end = ended
+T 40 C 5 prod 4 -5 = prod-set
+T 40 C 5 end = ended
+R 41 82837089df3e5fb9
+T 41 C 1 end = ended
+T 41 C 2 end = ended
+T 41 C 3 end = ended
+T 41 C 4 end = ended
+T 41 C 5 end = ended
+R 42 0b99b2fad353a1d8
+T 42 C 1 end = ended
+T 42 C 2 end = ended
+T 42 C 3 end = ended
+T 42 C 4 end = ended
+T 42 C 5 end = ended
+R 43 db8b4569e46898c2
+T 43 C 1 end = ended
+T 43 C 2 end = ended
+T 43 C 3 end = ended
+T 43 C 4 end = ended
+T 43 C 5 end = ended
+R 44 47352af212fe7eb5
+T 44 C 1 end = ended
+T 44 C 2 end = ended
+T 44 C 3 end = ended
+T 44 C 4 end = ended
+T 44 C 5 research 7 = research-set
+T 44 C 5 prod 4 0 = prod-set
+T 44 C 5 end = ended
+R 45 29355db07b35c3a1
+T 45 C 1 end = ended
+T 45 C 2 end = ended
+T 45 C 3 end = ended
+T 45 C 4 end = ended
+T 45 C 5 prod 4 -5 = prod-set
+T 45 C 5 move 5 23 5 = moved
+T 45 C 5 end = ended
+R 46 e07878a6315de839
+T 46 C 1 research 7 = research-set
+T 46 C 1 end = ended
+T 46 C 2 research 7 = research-set
+T 46 C 2 end = ended
+T 46 C 3 research 7 = research-set
+T 46 C 3 end = ended
+T 46 C 4 research 7 = research-set
+T 46 C 4 end = ended
+T 46 C 5 move 5 23 3 = moved
+T 46 C 5 end = ended
+R 47 ac81091b8a2c187b
+T 47 C 1 end = ended
+T 47 C 2 end = ended
+T 47 C 3 end = ended
+T 47 C 4 end = ended
+T 47 C 5 move 5 24 2 = moved
+T 47 C 5 end = ended
+R 48 2502e79bd7d2351a
+T 48 C 1 end = ended
+T 48 C 2 end = ended
+T 48 C 3 end = ended
+T 48 C 4 end = ended
+T 48 C 5 found 5 = founded 5
+T 48 C 5 end = ended
+R 49 ee720e910ab7e067
+T 49 C 1 prod 0 -3 = prod-set
+T 49 C 1 end = ended
+T 49 C 2 end = ended
+T 49 C 3 prod 2 -3 = prod-set
+T 49 C 3 end = ended
+T 49 C 4 prod 3 -3 = prod-set
+T 49 C 4 end = ended
+T 49 C 5 end = ended
+R 50 be572667f86dcd42
+T 50 C 1 end = ended
+T 50 C 2 end = ended
+T 50 C 3 end = ended
+T 50 C 4 end = ended
+T 50 C 5 end = ended
+R 51 2568e7defd4e7010
+T 51 C 1 end = ended
+T 51 C 2 end = ended
+T 51 C 3 end = ended
+T 51 C 4 end = ended
+T 51 C 5 prod 4 -2 = prod-set
+T 51 C 5 end = ended
+R 52 0382893c9a0cab77
+T 52 C 1 end = ended
+T 52 C 2 end = ended
+T 52 C 3 end = ended
+T 52 C 4 end = ended
+T 52 C 5 end = ended
+R 53 e409ce25501cd76c
+T 53 C 1 end = ended
+T 53 C 2 end = ended
+T 53 C 3 end = ended
+T 53 C 4 end = ended
+T 53 C 5 end = ended
+R 54 a04cbb499512f502
+T 54 C 1 end = ended
+T 54 C 2 end = ended
+T 54 C 3 end = ended
+T 54 C 4 end = ended
+T 54 C 5 end = ended
+R 55 30b308f584039637
+T 55 C 1 end = ended
+T 55 C 2 end = ended
+T 55 C 3 end = ended
+T 55 C 4 end = ended
+T 55 C 5 prod 4 0 = prod-set
+T 55 C 5 end = ended
+R 56 8f5f1958a89eb841
+T 56 C 1 end = ended
+T 56 C 2 end = ended
+T 56 C 3 end = ended
+T 56 C 4 end = ended
+T 56 C 5 prod 4 -2 = prod-set
+T 56 C 5 move 5 23 9 = moved
+T 56 C 5 end = ended
+R 57 b5e49d60be369066
+T 57 C 1 end = ended
+T 57 C 2 end = ended
+T 57 C 3 end = ended
+T 57 C 4 end = ended
+T 57 C 5 research 6 = research-set
+T 57 C 5 move 5 23 11 = moved
+T 57 C 5 end = ended
+R 58 f99f5bee90c5176f
+T 58 C 1 end = ended
+T 58 C 2 end = ended
+T 58 C 3 end = ended
+T 58 C 4 end = ended
+T 58 C 5 found 5 = founded 6
+T 58 C 5 end = ended
+R 59 27db8aa5bc6be08c
+T 59 C 1 prod 0 0 = prod-set
+T 59 C 1 end = ended
+T 59 C 2 end = ended
+T 59 C 3 end = ended
+T 59 C 4 end = ended
+T 59 C 5 end = ended
+R 60 84e96d1270e0466f
+T 60 C 1 prod 0 -3 = prod-set
+T 60 C 1 move 5 43 7 = moved
+T 60 C 1 end = ended
+T 60 C 2 end = ended
+T 60 C 3 end = ended
+T 60 C 4 end = ended
+T 60 C 5 end = ended
+R 61 549c3a30bd408c27
+T 61 C 1 move 5 42 8 = moved
+T 61 C 1 move 6 42 10 = moved
+T 61 C 1 end = ended
+T 61 C 2 prod 1 -23 = prod-set
+T 61 C 2 end = ended
+T 61 C 3 prod 2 -6 = prod-set
+T 61 C 3 end = ended
+T 61 C 4 prod 3 -6 = prod-set
+T 61 C 4 end = ended
+T 61 C 5 end = ended
+R 62 e588ad3c001ff08b
+T 62 C 1 move 5 41 9 = moved
+T 62 C 1 move 6 42 12 = moved
+T 62 C 1 end = ended
+T 62 C 2 end = ended
+T 62 C 3 prod 2 0 = prod-set
+T 62 C 3 end = ended
+T 62 C 4 end = ended
+T 62 C 5 end = ended
+R 63 7ae9992d8c17768f
+T 63 C 1 move 5 41 11 = moved
+T 63 C 1 move 6 42 14 = moved
+T 63 C 1 end = ended
+T 63 C 2 end = ended
+T 63 C 3 end = ended
+T 63 C 4 end = ended
+T 63 C 5 prod 4 2 = prod-set
+T 63 C 5 end = ended
+R 64 a99c667ca47e9f27
+T 64 C 1 found 5 = founded 7
+T 64 C 1 move 6 40 14 = moved
+T 64 C 1 end = ended
+T 64 C 2 end = ended
+T 64 C 3 end = ended
+T 64 C 4 end = ended
+T 64 C 5 end = ended
+R 65 f0908e2452bbd248
+T 65 C 1 move 6 38 14 = moved
+T 65 C 1 end = ended
+T 65 C 2 end = ended
+T 65 C 3 research 6 = research-set
+T 65 C 3 end = ended
+T 65 C 4 end = ended
+T 65 C 5 prod 4 0 = prod-set
+T 65 C 5 end = ended
+R 66 b173599045d0ef69
+T 66 C 1 move 6 36 14 = moved
+T 66 C 1 end = ended
+T 66 C 2 end = ended
+T 66 C 3 end = ended
+T 66 C 4 end = ended
+T 66 C 5 prod 6 -9 = prod-set
+T 66 C 5 end = ended
+R 67 240aba211834e2ab
+T 67 C 1 move 6 34 14 = moved
+T 67 C 1 end = ended
+T 67 C 2 end = ended
+T 67 C 3 prod 2 -6 = prod-set
+T 67 C 3 move 7 30 44 = moved
+T 67 C 3 end = ended
+T 67 C 4 end = ended
+T 67 C 5 prod 4 2 = prod-set
+T 67 C 5 move 8 21 7 = moved
+T 67 C 5 end = ended
+R 68 b98100a3afb9d51f
+T 68 C 1 move 6 34 16 = moved
+T 68 C 1 end = ended
+T 68 C 2 end = ended
+T 68 C 3 move 7 31 43 = moved
+T 68 C 3 end = ended
+T 68 C 4 prod 3 0 = prod-set
+T 68 C 4 end = ended
+T 68 C 5 research 5 = research-set
+T 68 C 5 move 8 19 7 = moved
+T 68 C 5 end = ended
+R 69 56f5c725d16cb0a9
+T 69 C 1 research 6 = research-set
+T 69 C 1 prod 0 -6 = prod-set
+T 69 C 1 move 6 34 18 = moved
+T 69 C 1 end = ended
+T 69 C 2 end = ended
+T 69 C 3 move 7 33 43 = moved
+T 69 C 3 end = ended
+T 69 C 4 prod 3 -6 = prod-set
+T 69 C 4 move 9 0 4 = moved
+T 69 C 4 end = ended
+T 69 C 5 found 8 = founded 8
+T 69 C 5 end = ended
+R 70 54cc018c28907c3c
+T 70 C 1 prod 0 0 = prod-set
+T 70 C 1 move 6 34 20 = moved
+T 70 C 1 end = ended
+T 70 C 2 end = ended
+T 70 C 3 found 7 = founded 9
+T 70 C 3 end = ended
+T 70 C 4 move 9 0 2 = moved
+T 70 C 4 end = ended
+T 70 C 5 end = ended
+R 71 ecc905f67dd11dd9
+T 71 C 1 move 6 34 22 = moved
+T 71 C 1 end = ended
+T 71 C 2 end = ended
+T 71 C 3 prod 2 0 = prod-set
+T 71 C 3 end = ended
+T 71 C 4 found 9 = founded 10
+T 71 C 4 end = ended
+T 71 C 5 end = ended
+R 72 f0527f4662e18c3e
+T 72 C 1 prod 7 -9 = prod-set
+T 72 C 1 move 6 34 24 = moved
+T 72 C 1 end = ended
+T 72 C 2 end = ended
+T 72 C 3 end = ended
+T 72 C 4 end = ended
+T 72 C 5 prod 5 -9 = prod-set
+T 72 C 5 move 9 25 7 = moved
+T 72 C 5 end = ended
+R 73 8b08cd5be8ccd4ba
+T 73 C 1 move 6 34 26 = moved
+T 73 C 1 end = ended
+T 73 C 2 end = ended
+T 73 C 3 prod 2 -6 = prod-set
+T 73 C 3 move 10 30 44 = moved
+T 73 C 3 end = ended
+T 73 C 4 research 6 = research-set
+T 73 C 4 end = ended
+T 73 C 5 move 9 27 7 = moved
+T 73 C 5 end = ended
+R 74 de6e10b58f692319
+T 74 C 1 move 6 32 26 = moved
+T 74 C 1 end = ended
+T 74 C 2 research 6 = research-set
+T 74 C 2 end = ended
+T 74 C 3 move 10 28 44 = moved
+T 74 C 3 end = ended
+T 74 C 4 end = ended
+T 74 C 5 move 9 29 7 = moved
+T 74 C 5 end = ended
+R 75 b2ee863eb16216c4
+T 75 C 1 prod 0 -6 = prod-set
+T 75 C 1 move 6 31 25 = moved
+T 75 C 1 move 11 47 7 = moved
+T 75 C 1 end = ended
+T 75 C 2 end = ended
+T 75 C 3 move 10 26 44 = moved
+T 75 C 3 end = ended
+T 75 C 4 end = ended
+T 75 C 5 prod 4 0 = prod-set
+T 75 C 5 move 9 29 5 = moved
+T 75 C 5 end = ended
+R 76 b271bdfd27a0aa01
+T 76 C 1 move 6 29 25 = moved
+T 76 C 1 move 11 49 7 = moved
+T 76 C 1 end = ended
+T 76 C 2 end = ended
+T 76 C 3 move 10 24 44 = moved
+T 76 C 3 end = ended
+T 76 C 4 end = ended
+T 76 C 5 prod 4 2 = prod-set
+T 76 C 5 move 9 29 3 = moved
+T 76 C 5 move 12 21 7 = moved
+T 76 C 5 end = ended
+R 77 0171a80706d183ec
+T 77 C 1 move 6 29 23 = moved
+T 77 C 1 found 11 = founded 11
+T 77 C 1 end = ended
+T 77 C 2 end = ended
+T 77 C 3 move 10 22 44 = moved
+T 77 C 3 end = ended
+T 77 C 4 end = ended
+T 77 C 5 move 9 29 1 = moved
+T 77 C 5 move 12 21 9 = moved
+T 77 C 5 end = ended
+R 78 4e9eb805335a47b5
+T 78 C 1 prod 0 0 = prod-set
+T 78 C 1 move 6 29 21 = moved
+T 78 C 1 end = ended
+T 78 C 2 end = ended
+T 78 C 3 move 10 20 44 = moved
+T 78 C 3 found 11 = founded 12
+T 78 C 3 end = ended
+T 78 C 4 prod 3 0 = prod-set
+T 78 C 4 end = ended
+T 78 C 5 prod 6 -23 = prod-set
+T 78 C 5 move 9 30 0 = moved
+T 78 C 5 move 12 20 10 = moved
+T 78 C 5 end = ended
+R 79 bc3e69f3ab73e70c
+T 79 C 1 move 6 29 19 = moved
+T 79 C 1 end = ended
+T 79 C 2 end = ended
+T 79 C 3 move 10 19 43 = moved
+T 79 C 3 end = ended
+T 79 C 4 prod 3 -6 = prod-set
+T 79 C 4 move 11 0 4 = moved
+T 79 C 4 end = ended
+T 79 C 5 move 9 28 0 = moved
+T 79 C 5 move 12 19 11 = moved
+T 79 C 5 end = ended
+R 80 72d4fdeaf91e2b10
+T 80 C 1 move 6 29 17 = moved
+T 80 C 1 end = ended
+T 80 C 2 end = ended
+T 80 C 3 research 5 = research-set
+T 80 C 3 move 10 19 41 = moved
+T 80 C 3 end = ended
+T 80 C 4 move 11 2 4 = moved
+T 80 C 4 end = ended
+T 80 C 5 research 4 = research-set
+T 80 C 5 move 9 26 0 = moved
+T 80 C 5 found 12 = founded 13
+T 80 C 5 end = ended
+R 81 38dcf5654355a3ec
+T 81 C 1 prod 0 -6 = prod-set
+T 81 C 1 move 6 30 16 = moved
+T 81 C 1 move 12 45 5 = moved
+T 81 C 1 end = ended
+T 81 C 2 end = ended
+T 81 C 3 move 10 19 39 = moved
+T 81 C 3 end = ended
+T 81 C 4 move 11 4 4 = moved
+T 81 C 4 end = ended
+T 81 C 5 prod 8 -9 = prod-set
+T 81 C 5 move 9 28 0 = moved
+T 81 C 5 end = ended
+R 82 80a91bd3026c9896
+T 82 C 1 prod 0 0 = prod-set
+T 82 C 1 move 6 31 15 = moved
+T 82 C 1 move 12 45 3 = moved
+T 82 C 1 end = ended
+T 82 C 2 end = ended
+T 82 C 3 prod 9 -9 = prod-set
+T 82 C 3 found 10 = founded 14
+T 82 C 3 end = ended
+T 82 C 4 move 11 6 4 = moved
+T 82 C 4 end = ended
+T 82 C 5 move 9 26 0 = moved
+T 82 C 5 move 15 22 6 = moved
+T 82 C 5 end = ended
+R 83 eb2164e56dc1fe28
+T 83 C 1 research 5 = research-set
+T 83 C 1 prod 11 -9 = prod-set
+T 83 C 1 move 6 31 17 = moved
+T 83 C 1 found 12 = founded 15
+T 83 C 1 end = ended
+T 83 C 2 end = ended
+T 83 C 3 prod 2 0 = prod-set
+T 83 C 3 end = ended
+T 83 C 4 move 11 8 4 = moved
+T 83 C 4 end = ended
+T 83 C 5 move 9 28 0 = moved
+T 83 C 5 move 15 23 5 = moved
+T 83 C 5 end = ended
+R 84 d65d8ad584d9c2a8
+T 84 C 1 prod 7 -23 = prod-set
+T 84 C 1 move 6 29 17 = moved
+T 84 C 1 end = ended
+T 84 C 2 end = ended
+T 84 C 3 prod 12 -9 = prod-set
+T 84 C 3 end = ended
+T 84 C 4 found 11 = founded 16
+T 84 C 4 end = ended
+T 84 C 5 move 9 30 0 = moved
+T 84 C 5 move 15 24 6 = moved
+T 84 C 5 end = ended
+R 85 adc94779b9b8cb0c
+T 85 C 1 move 6 28 18 = moved
+T 85 C 1 end = ended
+T 85 C 2 end = ended
+T 85 C 3 end = ended
+T 85 C 4 end = ended
+T 85 C 5 move 9 28 0 = moved
+T 85 C 5 move 15 24 8 = moved
+T 85 C 5 end = ended
+R 86 deee870ec4a3800a
+T 86 C 1 move 6 26 18 = moved
+T 86 C 1 end = ended
+T 86 C 2 end = ended
+T 86 C 3 end = ended
+T 86 C 4 end = ended
+T 86 C 5 move 9 26 0 = moved
+T 86 C 5 move 15 24 6 = moved
+T 86 C 5 end = ended
+R 87 83953ef85fdb58ef
+T 87 C 1 prod 0 -6 = prod-set
+T 87 C 1 move 6 24 18 = moved
+T 87 C 1 move 11 45 5 = moved
+T 87 C 1 end = ended
+T 87 C 2 end = ended
+T 87 C 3 end = ended
+T 87 C 4 end = ended
+T 87 C 5 prod 4 0 = prod-set
+T 87 C 5 move 9 24 0 = moved
+T 87 C 5 move 15 23 5 = moved
+T 87 C 5 move 16 24 6 = moved
+T 87 C 5 end = ended
+R 88 4e82a42d9863cf73
+T 88 C 1 prod 0 0 = prod-set
+T 88 C 1 move 6 22 18 = moved
+T 88 C 1 move 11 43 5 = moved
+T 88 C 1 end = ended
+T 88 C 2 end = ended
+T 88 C 3 end = ended
+T 88 C 4 prod 3 -5 = prod-set
+T 88 C 4 end = ended
+T 88 C 5 move 9 22 0 = moved
+T 88 C 5 move 15 24 6 = moved
+T 88 C 5 move 16 26 6 = moved
+T 88 C 5 end = ended
+R 89 b9a5751346b5f132
+T 89 C 1 move 6 20 18 = moved
+T 89 C 1 move 11 42 6 = moved
+T 89 C 1 end = ended
+T 89 C 2 end = ended
+T 89 C 3 prod 2 -5 = prod-set
+T 89 C 3 move 17 30 44 = moved
+T 89 C 3 end = ended
+T 89 C 4 research 5 = research-set
+T 89 C 4 end = ended
+T 89 C 5 move 9 20 0 = moved
+T 89 C 5 move 15 24 4 = moved
+T 89 C 5 move 16 24 6 = moved
+T 89 C 5 move 18 22 4 = moved
+T 89 C 5 end = ended
+R 90 3519c7b3637f7355
+T 90 C 1 move 6 18 18 = moved
+T 90 C 1 move 11 42 8 = moved
+T 90 C 1 end = ended
+T 90 C 2 end = ended
+T 90 C 3 research 4 = research-set
+T 90 C 3 prod 14 -9 = prod-set
+T 90 C 3 move 17 28 44 = moved
+T 90 C 3 end = ended
+T 90 C 4 prod 16 -9 = prod-set
+T 90 C 4 end = ended
+T 90 C 5 research 3 = research-set
+T 90 C 5 prod 6 -3 = prod-set
+T 90 C 5 move 9 18 0 = moved
+T 90 C 5 move 15 24 2 = moved
+T 90 C 5 move 16 25 5 = moved
+T 90 C 5 move 18 20 4 = moved
+T 90 C 5 end = ended
+R 91 9e924829237cc5e9
+T 91 C 1 prod 15 -9 = prod-set
+T 91 C 1 move 6 18 20 = moved
+T 91 C 1 move 11 42 6 = moved
+T 91 C 1 end = ended
+T 91 C 2 end = ended
+T 91 C 3 move 17 26 44 = moved
+T 91 C 3 end = ended
+T 91 C 4 prod 3 0 = prod-set
+T 91 C 4 end = ended
+T 91 C 5 move 9 16 0 = moved
+T 91 C 5 move 15 24 0 = moved
+T 91 C 5 move 16 24 6 = moved
+T 91 C 5 move 18 18 4 = moved
+T 91 C 5 end = ended
+R 92 950280f16bb2e695
+T 92 C 1 prod 11 -23 = prod-set
+T 92 C 1 move 6 18 22 = moved
+T 92 C 1 move 11 42 8 = moved
+T 92 C 1 end = ended
+T 92 C 2 end = ended
+T 92 C 3 move 17 26 42 = moved
+T 92 C 3 end = ended
+T 92 C 4 end = ended
+T 92 C 5 prod 4 2 = prod-set
+T 92 C 5 prod 13 -9 = prod-set
+T 92 C 5 move 9 14 0 = moved
+T 92 C 5 move 15 22 0 = moved
+T 92 C 5 move 16 22 6 = moved
+T 92 C 5 move 18 16 4 = moved
+T 92 C 5 move 23 25 7 = moved
+T 92 C 5 end = ended
+R 93 0ef859b4b095f5f1
+T 93 C 1 prod 0 -6 = prod-set
+T 93 C 1 move 6 18 24 = moved
+T 93 C 1 move 11 42 6 = moved
+T 93 C 1 move 24 44 8 = moved
+T 93 C 1 end = ended
+T 93 C 2 end = ended
+T 93 C 3 prod 12 -23 = prod-set
+T 93 C 3 move 17 25 41 = moved
+T 93 C 3 end = ended
+T 93 C 4 end = ended
+T 93 C 5 move 9 12 0 = moved
+T 93 C 5 move 15 24 0 = moved
+T 93 C 5 move 16 21 7 = moved
+T 93 C 5 move 18 16 6 = moved
+T 93 C 5 move 23 27 7 = moved
+T 93 C 5 end = ended
+R 94 e845fbaeac73ab0a
+T 94 C 1 move 6 18 26 = moved
+T 94 C 1 move 11 42 8 = moved
+T 94 C 1 move 24 42 8 = moved
+T 94 C 1 end = ended
+T 94 C 2 end = ended
+T 94 C 3 found 17 = founded 17
+T 94 C 3 end = ended
+T 94 C 4 end = ended
+T 94 C 5 move 9 10 0 = moved
+T 94 C 5 move 15 22 0 = moved
+T 94 C 5 move 16 20 6 = moved
+T 94 C 5 move 18 16 8 = moved
+T 94 C 5 found 23 = founded 18
+T 94 C 5 end = ended
+R 95 bbcddd9c7d42f8d3
+T 95 C 1 research 4 = research-set
+T 95 C 1 move 6 18 28 = moved
+T 95 C 1 move 11 42 6 = moved
+T 95 C 1 move 24 42 6 = moved
+T 95 C 1 end = ended
+T 95 C 2 end = ended
+T 95 C 3 prod 2 0 = prod-set
+T 95 C 3 end = ended
+T 95 C 4 prod 3 -5 = prod-set
+T 95 C 4 prod 10 -9 = prod-set
+T 95 C 4 move 23 0 4 = moved
+T 95 C 4 end = ended
+T 95 C 5 move 9 8 0 = moved
+T 95 C 5 move 15 24 0 = moved
+T 95 C 5 move 16 20 4 = moved
+T 95 C 5 move 18 16 10 = moved
+T 95 C 5 end = ended
+R 96 350a4964fe133614
+T 96 C 1 prod 7 -3 = prod-set
+T 96 C 1 move 6 18 30 = moved
+T 96 C 1 move 11 42 8 = moved
+T 96 C 1 move 24 42 8 = moved
+T 96 C 1 end = ended
+T 96 C 2 end = ended
+T 96 C 3 prod 2 -5 = prod-set
+T 96 C 3 move 25 30 44 = moved
+T 96 C 3 end = ended
+T 96 C 4 move 23 2 4 = moved
+T 96 C 4 end = ended
+T 96 C 5 move 9 6 0 = moved
+T 96 C 5 move 15 26 0 = moved
+T 96 C 5 move 16 22 4 = moved
+T 96 C 5 move 18 15 11 = moved
+T 96 C 5 move 26 4 0 = moved
+T 96 C 5 end = ended
+R 97 9e0fb5e58a1e4849
+T 97 C 1 move 6 18 32 = moved
+T 97 C 1 move 11 42 6 = moved
+T 97 C 1 move 24 42 6 = moved
+T 97 C 1 end = ended
+T 97 C 2 prod 1 -3 = prod-set
+T 97 C 2 end = ended
+T 97 C 3 move 25 28 44 = moved
+T 97 C 3 end = ended
+T 97 C 4 move 23 4 4 = moved
+T 97 C 4 end = ended
+T 97 C 5 prod 4 0 = prod-set
+T 97 C 5 move 9 6 2 = moved
+T 97 C 5 move 15 28 0 = moved
+T 97 C 5 move 16 20 4 = moved
+T 97 C 5 move 18 15 13 = moved
+T 97 C 5 move 26 2 0 = moved
+T 97 C 5 end = ended
+R 98 afd0b5d3c17c3573
+T 98 C 1 move 6 18 34 = moved
+T 98 C 1 move 11 42 8 = moved
+T 98 C 1 move 24 42 8 = moved
+T 98 C 1 end = ended
+T 98 C 2 end = ended
+T 98 C 3 move 25 27 45 = moved
+T 98 C 3 end = ended
+T 98 C 4 move 23 4 6 = moved
+T 98 C 4 end = ended
+T 98 C 5 move 9 6 4 = moved
+T 98 C 5 move 15 30 0 = moved
+T 98 C 5 move 16 19 5 = moved
+T 98 C 5 move 18 16 14 = moved
+T 98 C 5 move 26 0 0 = moved
+T 98 C 5 end = ended
+R 99 0b7fe18764275f0c
+T 99 C 1 move 6 18 36 = moved
+T 99 C 1 move 11 42 6 = moved
+T 99 C 1 move 24 42 6 = moved
+T 99 C 1 end = ended
+T 99 C 2 end = ended
+T 99 C 3 move 25 26 46 = moved
+T 99 C 3 end = ended
+T 99 C 4 prod 16 -23 = prod-set
+T 99 C 4 found 23 = founded 19
+T 99 C 4 end = ended
+T 99 C 5 prod 4 2 = prod-set
+T 99 C 5 prod 6 -6 = prod-set
+T 99 C 5 prod 8 -23 = prod-set
+T 99 C 5 move 9 6 6 = moved
+T 99 C 5 move 15 28 0 = moved
+T 99 C 5 move 16 19 7 = moved
+T 99 C 5 move 18 17 15 = moved
+T 99 C 5 move 26 2 0 = moved
+T 99 C 5 move 27 22 8 = moved
+T 99 C 5 end = ended
+R 100 c3caab83c9deb895
+T 100 C 1 move 6 18 38 = moved
+T 100 C 1 move 11 42 8 = moved
+T 100 C 1 move 24 42 8 = moved
+T 100 C 1 end = ended
+T 100 C 2 end = ended
+T 100 C 3 research 3 = research-set
+T 100 C 3 prod 9 -23 = prod-set
+T 100 C 3 move 25 25 47 = moved
+T 100 C 3 end = ended
+T 100 C 4 end = ended
+T 100 C 5 prod 18 -9 = prod-set
+T 100 C 5 move 9 8 6 = moved
+T 100 C 5 move 15 26 0 = moved
+T 100 C 5 move 16 18 6 = moved
+T 100 C 5 move 18 17 17 = moved
+T 100 C 5 move 26 4 0 = moved
+T 100 C 5 move 27 21 9 = moved
+T 100 C 5 end = ended
+R 101 b22e4340b6ab8bf6

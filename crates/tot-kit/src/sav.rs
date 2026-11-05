@@ -147,8 +147,8 @@ impl MapHeader {
     }
 }
 
-/// One decoded map block: a 7 B/tile block (unidentified; not the
-/// per-civ fog, which is tile byte +4) and the 6-B tile records. The
+/// One decoded map block: seven per-civ remembered-improvement arrays
+/// (civs 1..7; visibility itself is tile byte +4) and the 6-B tile records. The
 /// block starts right after the 16-B map header; a 2-B trailer (a copy of
 /// the resource seed) follows the records. An earlier framing put those
 /// 2 bytes in front, which shifted every record by 2: terrain still came
@@ -169,6 +169,8 @@ impl MapHeader {
 /// | +5 | fertility `& 0x0F`; owner `>> 4` (`0xF` = none) | `0x570390`, `0x570169`; 146/146 city tiles carry the city's owner |
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MapBlock {
+    /// Seven remembered-improvement arrays, civ 1..7, each one byte per tile.
+    /// File loop 0x56fbb6..0x56fc07; accessor 0x57008f.
     pub visibility: Vec<u8>,
     /// 6 B per stored tile, in stored order.
     pub tile_fields: Vec<u8>,
@@ -599,6 +601,9 @@ pub struct SavedAiState {
     /// Signed population cache, civ +116 (original 0x53ae5e).
     pub population: [i16; 8],
     pub alive_mask: u8,
+    pub civ_flags: [u16; 8],
+    pub reputation: [u8; 8],
+    pub attitudes: [[u8; 8]; 8],
     /// Scenario parameters word +0; None for unlocated 0x33 tails.
     pub scenario_flags: Option<u16>,
     pub power_ranks: [u8; 8],
@@ -613,6 +618,9 @@ impl Default for SavedAiState {
             leader_ids: [0; 8],
             population: [0; 8],
             alive_mask: 0,
+            civ_flags: [0; 8],
+            reputation: [0; 8],
+            attitudes: [[0; 8]; 8],
             scenario_flags: Some(0),
             power_ranks: [0; 8],
             power_reference: 0,
@@ -780,6 +788,9 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         let block = data
             .get(b..b + CIV_PROPS_STRIDE)
             .ok_or(SavError::Truncated("civ properties"))?;
+        ai_state.civ_flags[c] = u16::from_le_bytes([block[0], block[1]]);
+        ai_state.reputation[c] = block[38];
+        ai_state.attitudes[c].copy_from_slice(&block[72..80]);
         ai_state.population[c] = i16::from_le_bytes([block[116], block[117]]);
         ai_state.leader_ids[c] = i16::from_le_bytes([block[14], block[15]]);
         ai_state.city_landmasses[c].copy_from_slice(&block[0x5d0..0x6d0]);

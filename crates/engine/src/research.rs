@@ -330,6 +330,16 @@ impl crate::WorldState {
         true
     }
 
+    /// Normal discovery bookkeeping followed by Rules-dependent effects
+    /// (original 0x49ebad invokes Leonardo after the advance grant).
+    pub fn grant_advance_with_rules(&mut self, rules: &Rules, civ: u8, advance: usize) -> bool {
+        if !self.grant_advance(civ, advance) {
+            return false;
+        }
+        self.upgrade_obsolete_units(rules, civ);
+        true
+    }
+
     /// Add positive science (`0x4a1ebf`) using the signed 16-bit saved
     /// accumulator. A completed target discards overflow and clears the
     /// target (`0x4a154b`/`0x4a1565`). The player chooses its next target
@@ -347,7 +357,8 @@ impl crate::WorldState {
         }
         self.research[c].progress = 0;
         self.research[c].target = -1;
-        self.grant_advance(civ, target).then_some(target)
+        self.grant_advance_with_rules(rules, civ, target)
+            .then_some(target)
     }
 }
 

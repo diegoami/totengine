@@ -1,0 +1,6 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "fragment": "0x4c8fcf..0x4c91d7",
+  "cases": 32,
+  "scope": "Original single-surface-map visibility, all seven remembered-improvement arrays, and live/dead city knowledge; stop before completion UI."
+}

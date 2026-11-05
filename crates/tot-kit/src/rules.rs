@@ -363,6 +363,17 @@ impl Rules {
             .map(|f| f.trim())
     }
 
+    /// @UNITS_ADVANCED field 0, binary civilization availability mask.
+    /// Original loader 0x4138e5 defaults to 255 when the section is absent;
+    /// 0x413993 stores the binary field at unit table +20.
+    pub fn unit_civ_mask(&self, id: usize) -> u8 {
+        self.section("UNITS_ADVANCED")
+            .and_then(|s| s.rows.get(id))
+            .and_then(|r| r.first())
+            .and_then(|s| u8::from_str_radix(s.trim(), 2).ok())
+            .unwrap_or(255)
+    }
+
     /// Unit "until" field (row field 1) as written: the advance that makes
     /// the unit obsolete, or `nil`.
     pub fn unit_until_raw(&self, id: usize) -> Option<&str> {

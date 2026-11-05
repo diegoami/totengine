@@ -1,0 +1,7 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routine": "0x49d4f9",
+  "cases": 256,
+  "upgraded": 106,
+  "scope": "Original ownership/expiry and upgrade dispatch; 16 synthetic unit types, remaining 64 unavailable; AI notifications absent and redraw suppressed."
+}

@@ -16,8 +16,7 @@
 //! - **Obsolete units** (#77, `0x4c63b0`..`0x4c6532`): when the civ knows
 //!   the advance in the unit's "until" field, the build switches to the
 //!   first unit whose prerequisite is that advance and whose role is the
-//!   same. The original also tests a type-table byte at +0x14, not mapped
-//!   to Rules yet; the engine treats every candidate as available.
+//!   same, subject to the @UNITS_ADVANCED civilization mask.
 //! - **Veterans** (#78, `0x4c6728`..`0x4c68aa`): the new unit is veteran
 //!   (unit attr `0x2000`) when:
 //!   - a land unit (or any unit while game option `0x10` is off) of role
@@ -156,7 +155,9 @@ impl WorldState {
         }
         (0..rules.unit_names().len().min(80))
             .find(|&n| {
-                rules.unit_prereq_raw(n) == Some(until) && rules.unit_role(n) == rules.unit_role(t)
+                rules.unit_civ_mask(n) & (1 << civ) != 0
+                    && rules.unit_prereq_raw(n) == Some(until)
+                    && rules.unit_role(n) == rules.unit_role(t)
             })
             .unwrap_or(t)
     }
@@ -246,7 +247,7 @@ impl WorldState {
                 self.wonders[wonder] = idx as i16;
                 c.flags |= 0x100;
                 c.shield_box = 0;
-                self.wonder_completed(civ, wonder);
+                self.wonder_completed(rules, civ, wonder);
                 return Some(Built::Wonder(wonder as u8));
             }
             if c.has_building(id) {

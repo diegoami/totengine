@@ -1,0 +1,9 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routines": [
+    "0x4c6121",
+    "0x4c8ddf..0x4c8f7d"
+  ],
+  "cases": 256,
+  "scope": "Original Statue/Manhattan civ flags, reputation, attitudes and treaty mutations, no notification/UI parity."
+}

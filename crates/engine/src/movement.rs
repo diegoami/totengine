@@ -283,6 +283,7 @@ mod tests {
                 rail: vec![false; surface],
                 improvements,
                 visible: vec![0; surface],
+                known_improvements: std::array::from_fn(|_| Vec::new()),
                 owner: vec![0xF; surface],
                 resource_seed: 0,
                 huts_enabled: false,

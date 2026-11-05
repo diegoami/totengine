@@ -503,7 +503,7 @@ impl WorldState {
                     }
                     match found {
                         Some(t) => {
-                            self.grant_advance(civ, t);
+                            self.grant_advance_with_rules(rules, civ, t);
                             return HutOutcome::Advance(t);
                         }
                         None => {
@@ -703,6 +703,7 @@ Warriors, nil, 0, 1., 0, 1a, 1d, 1h, 1f, 1, 0, 1, nil, 000000000000000\n\
                 rail: vec![false; 128],
                 improvements: vec![0; 128],
                 visible: vec![0; 128],
+                known_improvements: std::array::from_fn(|_| Vec::new()),
                 owner: vec![15; 128],
                 resource_seed: 0,
                 huts_enabled: false,

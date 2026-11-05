@@ -262,6 +262,7 @@ mod tests {
             improvements: vec![16; n],
             owner: vec![15; n],
             visible: vec![255; n],
+            known_improvements: std::array::from_fn(|_| Vec::new()),
             resource_seed: 0,
             huts_enabled: false,
         };

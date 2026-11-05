@@ -97,6 +97,9 @@ pub struct City {
     pub owner: u16,
     pub city_id: u32,
     pub original_owner: u8,
+    /// Saved city knowledge mask +14 and per-civ remembered sizes +15..23.
+    pub known_to: u8,
+    pub known_sizes: [u8; 8],
     /// Gross food/shields/trade (the City Status report's columns).
     pub gross_food: u8,
     pub gross_shields: u8,
@@ -163,6 +166,8 @@ pub struct MapState {
     /// tile). The player interface reveals tiles around units and cities
     /// (decision 0003; the original's reveal rules are not decoded).
     pub visible: Vec<u8>,
+    /// Seven surface arrays in civ 1..7 order, from the map 7-byte block.
+    pub known_improvements: [Vec<u8>; 7],
     /// Tile owner nibble (tile byte +5 `>> 4`; `0xF` = none). Any unit
     /// entering a tile makes its civ the owner, and the tile stays owned
     /// after the unit leaves (oracle, evidence §RG-2 goody huts).
@@ -350,6 +355,9 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             rail,
             improvements,
             visible,
+            known_improvements: std::array::from_fn(|c| {
+                m.visibility[c * surface..(c + 1) * surface].to_vec()
+            }),
             owner,
             resource_seed: sav.map_header.raw[4] as u16,
             huts_enabled: true,
@@ -410,6 +418,8 @@ fn city_from(r: &CityRecord) -> City {
         owner: r.owner(),
         city_id: r.city_id(),
         original_owner: r.original_owner(),
+        known_to: r.raw[14],
+        known_sizes: r.raw[15..23].try_into().unwrap(),
         gross_food: r.gross_food(),
         gross_shields: r.gross_shields(),
         gross_trade: r.gross_trade(),
@@ -554,6 +564,9 @@ impl WorldState {
         for civ in 0..8 {
             mix(&mut h, &self.ai_state.leader_ids[civ].to_le_bytes());
             mix(&mut h, &self.ai_state.population[civ].to_le_bytes());
+            mix(&mut h, &self.ai_state.civ_flags[civ].to_le_bytes());
+            mix(&mut h, &[self.ai_state.reputation[civ]]);
+            mix(&mut h, &self.ai_state.attitudes[civ]);
             mix(&mut h, &self.ai_state.city_landmasses[civ]);
             mix(&mut h, &self.ai_state.landmass_flags[civ]);
         }
@@ -579,6 +592,9 @@ impl WorldState {
         mix(&mut h, &self.map.landmass);
         for value in &self.map.landmass_values {
             mix(&mut h, &value.to_le_bytes());
+        }
+        for cache in &self.map.known_improvements {
+            mix(&mut h, cache);
         }
         mix(&mut h, &self.map.site_bits);
         mix(&mut h, &self.map.fertility);
@@ -611,7 +627,8 @@ impl WorldState {
         }
         for c in &self.cities {
             mix(&mut h, &c.map_id.to_le_bytes());
-            mix(&mut h, &[c.original_owner]);
+            mix(&mut h, &[c.original_owner, c.known_to]);
+            mix(&mut h, &c.known_sizes);
             mix(&mut h, &[c.happy, c.unhappy]);
             buf.clear();
             let _ = write!(
@@ -719,8 +736,16 @@ mod tests {
             ("landmass value", |w| w.map.landmass_values[0] ^= 1),
             ("population cache", |w| w.ai_state.population[1] ^= 1),
             ("alive mask", |w| w.ai_state.alive_mask ^= 1),
+            ("civ flags", |w| w.ai_state.civ_flags[1] ^= 1),
+            ("reputation", |w| w.ai_state.reputation[1] ^= 1),
+            ("attitude", |w| w.ai_state.attitudes[1][2] ^= 1),
             ("scenario flags", |w| w.ai_state.scenario_flags = Some(2)),
             ("city map", |w| w.cities[0].map_id ^= 1),
+            ("city knowledge", |w| w.cities[0].known_to ^= 1),
+            ("remembered city size", |w| w.cities[0].known_sizes[1] ^= 1),
+            ("remembered improvements", |w| {
+                w.map.known_improvements[0][0] ^= 1
+            }),
             ("research progress", |w| w.research[1].progress ^= 1),
             ("research target", |w| w.research[1].target ^= 1),
             ("research count", |w| w.research[1].acquired ^= 1),

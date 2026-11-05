@@ -341,7 +341,7 @@ impl WorldState {
                 if self.free_research[civ as usize] > 0 {
                     self.free_research[civ as usize] -= 1;
                     self.research[civ as usize].progress = 0;
-                    self.grant_advance(civ, advance);
+                    self.grant_advance_with_rules(rules, civ, advance);
                 }
                 OrderResult::ResearchSet
             }

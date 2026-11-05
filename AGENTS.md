@@ -91,8 +91,9 @@ bankruptcy sales (1,000 synthetic and 490 saved-input x86 cost checks).
 Happiness/disorder stages now refresh before production (#86; 1,000
 synthetic x86 cases and 156/156 original recomputations from saved inputs;
 15 FallRome stored values differ under original recomputation too).
-Wonder lifecycle and Darwin choices are implemented; remaining one-off
-effects are still #88. #89's late AI shield-row adjustment is implemented
+Wonder lifecycle and Darwin choices are implemented. Leonardo, Statue,
+Manhattan and surface Apollo one-offs now have native comparisons; ongoing
+effects/integration limits still need the #88 audit. #89's late AI shield-row adjustment is implemented
 and default AI row rounding corrected (1,108 original-x86 cases). Original
 power score/rank refresh now runs at round close (256 synthetic + 2 saved-input
 x86 comparisons); population and city-landmass caches refresh too (128 cases).

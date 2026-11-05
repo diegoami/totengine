@@ -3,7 +3,15 @@
 All notable changes to ToTEngine. The format follows Keep a Changelog; releases
 are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
-## [Unreleased]
+## [Unreleased] — AI v1 + economy depth (v0.8.0)
+
+- Implement Leonardo's last-candidate upgrades (clearing veteran), Statue's
+  diplomatic changes, Manhattan's reputation adjustment and Apollo's surface
+  map/city knowledge refresh. Native comparisons cover 256 Leonardo cases,
+  256 diplomatic mutations and 32 Apollo maps. Research and hut grants now
+  invoke Leonardo, and obsolete production respects civilization masks.
+- Decode civilization flags/reputation/attitudes, city knowledge and the map's
+  seven remembered-improvement arrays; retain them in deterministic state.
 
 - Refresh population/city landmass caches and original power scores/ranks at
   round close, so hut and late AI-row inputs change during play. Ranking
@@ -14,7 +22,7 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 - Round-end surface barbarian arrivals now use the original timing, site search,
   treasury chance, technology-selected ships/raiders and CRT stream. Native
   comparisons cover 1,024 synthetic contexts (successful allocation and UI
-  boundaries); sustained live-game arrival parity remains open. — AI v1 + economy depth (v0.8.0)
+  boundaries); sustained live-game arrival parity remains open.
 
 - **Calendar:** turns now update the raw date using the original difficulty
   tables and decoded scenario increments/start dates (324 native vectors,

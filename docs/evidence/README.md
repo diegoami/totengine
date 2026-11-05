@@ -2434,3 +2434,81 @@ cmp docs/evidence/power-vectors.txt /tmp/power-vectors.txt
 cmp docs/evidence/power-saved-vectors.txt /tmp/power-saved-vectors.txt
 CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test power_install
 ```
+
+
+### Wonder one-off effects and remembered world state (#88)
+
+`engine::wonders` now implements Leonardo (14), Statue (20), Manhattan (23)
+and surface Apollo (25), in addition to Darwin. `tools/leonardo_check.py`
+executes original `0x49d4f9` including active-wonder/expiry/knowledge tests
+and the entire candidate scan, suppressing only redraw and selecting AI
+inputs (so upgrade notification branches are absent). [leonardo.json](leonardo.json)
+and [leonardo-vectors.txt](leonardo-vectors.txt) retain 256 synthetic cases,
+106 with a changed type. Cases include deleted/foreign units, unavailable
+wonders, knowledge, civilization masks, candidate roles/costs, damaged and
+veteran units. Sixteen unit types vary; remaining native slots are unavailable.
+
+The original chooses the **last** qualifying type, with prerequisite equal
+to the known obsoleting advance, equal role, and cost at least the old cost.
+For role 1, a weaker defence than slot 7 plus knowledge of advance 35 forces
+that obsoleting advance. An upgrade clears veteran, preserves damage and
+leaves the original spent-move byte untouched. Rust preserves spent moves
+within its remaining-movement representation (already-overdrawn imported
+moves are clamped by that existing model). Completion and Rules-aware
+research/hut grants invoke this path; the raw `grant_advance` API remains
+bookkeeping-only. Capture-triggered upgrades await the city capture path.
+
+The unit civilization mask is @UNITS_ADVANCED field 0: the loader at
+`0x4138a7` selects that section; `0x4138e5` defaults +20 to 255 when absent;
+`0x413993..0x41399e` parses/stores its binary field. `0x486960` converts the
+binary token, and the upgrade routine tests the civ bit at `0x49d65d`.
+Rust's native-vector tests parse each synthetic mask through this Rules field.
+Obsolete production also tests the mask before selecting its successor.
+
+`tools/diplomatic_wonders_check.py` executes full Statue `0x4c6121` and
+Manhattan `0x4c8ddf..0x4c8f7d`, with the existing notification-suppression
+flag. [diplomatic-wonders.json](diplomatic-wonders.json) and
+[diplomatic-wonder-vectors.txt](diplomatic-wonder-vectors.txt) retain 256 cases.
+Statue acts once (civ flags +0, bit 16): halves its civ's byte +38,
+subtracts 25 from other civs' attitudes toward it (clamped 0..100), and
+clears their treaty bit 16. Attitudes are civ bytes +72..80, read/set by
+`0x4546ae`/`0x4546dc`. Manhattan replaces **all seven** player bytes +38 with
+`min(6, ceil(old/2))`, including inactive slots. Flags, reputation byte +38,
+and attitudes are now retained/fingerprinted; these checks prove their
+mutations, not a complete diplomacy model or government-selection interface.
+
+`tools/apollo_check.py` executes `0x4c8fcf..0x4c91d7` with **no replacement
+callees**, stopping before completion UI. [apollo.json](apollo.json) and
+[apollo-vectors.txt](apollo-vectors.txt) retain 32 synthetic 8×4 surface maps.
+Every tile's visibility becomes 255, all seven civs' remembered-improvement
+bytes receive tile byte +1, and each live city gets knowledge mask 255 and
+its current size in all eight remembered-size slots. Dead city slots remain
+unchanged. Rust compares all these fields. It retains city byte +14 and
+sizes +15..23; creation initializes global knowledge only when the Apollo
+table entry is nonnegative (`0x432b4f..0x432ba9`).
+
+This also identifies the formerly unnamed 7 B/tile save block: seven
+remembered-improvement arrays in civ 1..7 order. The original file loop
+`0x56fbb6..0x56fc07` transfers each civ array, one byte per tile, before the
+6-B tile-record block. `0x57008f` indexes its per-civ pointer plus tile index;
+Apollo uses that real accessor through `0x571819`. Boot retains these arrays
+and fingerprints them. General movement-time updates of remembered city/map
+state and non-surface maps remain separate work; this is not fog-of-war UI
+parity or full completion-dialog parity.
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/leonardo_check.py --gold /tmp/leonardo.json --vectors /tmp/leonardo-vectors.txt
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/diplomatic_wonders_check.py --gold /tmp/diplomatic-wonders.json \
+  --vectors /tmp/diplomatic-wonder-vectors.txt
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/tmp/totengine-research-deps \
+  python3 tools/apollo_check.py --gold /tmp/apollo.json --vectors /tmp/apollo-vectors.txt
+cmp docs/evidence/leonardo.json /tmp/leonardo.json
+cmp docs/evidence/leonardo-vectors.txt /tmp/leonardo-vectors.txt
+cmp docs/evidence/diplomatic-wonders.json /tmp/diplomatic-wonders.json
+cmp docs/evidence/diplomatic-wonder-vectors.txt /tmp/diplomatic-wonder-vectors.txt
+cmp docs/evidence/apollo.json /tmp/apollo.json
+cmp docs/evidence/apollo-vectors.txt /tmp/apollo-vectors.txt
+cargo test -p engine --lib wonders
+```

@@ -132,17 +132,17 @@ do not substitute isolated formula tests for full campaign-parity claims.
 The main session prepares the candidate and milestone issue, then prints
 the owner-run review prompt; it does not launch the review.
 
-Next production work decodes #89's row adjustment and #88's wonder lifecycle.
-The original row fragment is executable independently of unit support. In
-particular, cosmic rows = 10 bypass scaling **and even rounding**; the prior
-port rounded unconditionally. The late adjustment starts at turn >= 200,
-requires a human power leader, and depends on wonder slots 23/25 plus
-knowledge masks 73/58/76. Preserve the original signed-mask arithmetic.
+Production row arithmetic, power ranking refresh and wonder lifecycle now
+have native comparison evidence. Leonardo, Statue, Manhattan and surface
+Apollo completion effects are implemented, as are Darwin's pending choices.
+Population/city caches and the surface barbarian arrival phase now run at
+round close. See `docs/v0.8.0-readiness.md` for the remaining acceptance work;
+these isolated comparisons do not establish full campaign parity.
 
-AI v1 still needs economy/unit/war refinements and the acceptance stated
-in #82 (deterministic 50-turn autoplay plus justified oracle comparisons).
-#83/#79 require oracle arrival/outcome evidence; #85/#86/#88/#89 require
-finishing their decodes and checks. #84 retains the map/type limits above.
-Do not close those on the strength of
-#87. In particular, #89's late-game condition reads leader and wonder state,
-not simply `(turn > 200 && difficulty > 1)`.
+AI v1 still needs economy/unit/war refinements and the acceptance stated in
+#82 (deterministic 50-turn autoplay plus justified oracle comparisons).
+#83 requires sustained live arrival evidence; #13 requires the complete city
+phase comparison. Landmass strategy flags and remaining combat/wonder effect
+limits still need audit. #84 retains its map/type limits and one saved shield
+mismatch; #85 requires the combined corruption check. Do not close these
+merely because their individual arithmetic fragments pass.

@@ -180,6 +180,10 @@ impl WorldState {
             owner: civ as u16,
             city_id,
             original_owner: civ,
+            // Original 0x432b4f..0x432ba9 initializes global knowledge
+            // only if the Apollo table entry is nonnegative.
+            known_to: if self.wonders[25] >= 0 { 255 } else { 0 },
+            known_sizes: [u8::from(self.wonders[25] >= 0); 8],
             gross_food: 0,
             gross_shields: 0,
             gross_trade: 0,

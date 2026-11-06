@@ -193,8 +193,18 @@ Usage/recipe limits: `docs/ui/asset-preview.md`; numeric source/crop evidence:
 citizens/icons and interface textures; all game state/actions remain simulated.
 Six install-free routing/selection tests and the optional real-browser artwork
 check pass. This is not a production renderer or a human game-session driver.
-`docs/v0.11.0-readiness.md` records the acceptance gaps and completed checks;
-it is an in-progress record, not authorization to call the milestone.
+`docs/v0.11.0-readiness.md` records the acceptance gaps and completed checks.
+`docs/ui/client-architecture.md` audits the existing engine/observer/assets and
+proposes one Rust human-session layer with local-hosted browser and native
+desktop adapters. `docs/ui/client-milestones.md` now includes a concrete first-
+slice review packet (both clients, generated Original surface game, interaction
+defaults, human checkpoint route) and six prerequisite stories. This packet is
+proposed, not owner-approved; no versions or implementation milestones assigned.
+The next required owner input is acceptance/revision of that scope, not another
+prototype or owned-asset-source confirmation. SDL2 is a feasibility candidate,
+not an implemented/selected toolkit; browser hosting without a local executable
+is excluded from this proposal, not from all future browser possibilities.
+Readiness is an in-progress record, not authorization to call the milestone.
 This is not an accepted design or milestone candidate; substantial client
 implementation still waits for decision 0005's design gate. Representative city,
 map/unit, government, negotiation, report, Fantasy transfer and classic custom

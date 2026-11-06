@@ -87,6 +87,15 @@ amend that decision or approve a trusted compatibility driver.
 
 ## Owner feedback and remaining decisions
 
+The subsequent [architecture audit](client-architecture.md) and
+[first-slice review packet](client-milestones.md#proposed-first-slice-for-owner-review)
+now make a concrete recommendation: both clients, local Rust browser hosting,
+an SDL2 desktop feasibility gate, immediate empty-tile movement with attack
+confirmation, explicit draft Apply/Cancel, and safe destructive-dialog defaults.
+These are proposed choices for owner review, not selections inferred from the
+earlier prototype acceptance. The alternatives in this design remain visible
+for comparison until that review is recorded.
+
 2026-11-06: after receiving the GitHub design/plan links, the owner said:
 “ok for a prototype is ok”. Revision 02 is accepted as a prototype and a basis
 for continued planning. No specific redesign was requested.

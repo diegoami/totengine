@@ -7,7 +7,10 @@ boundaries must be chosen from the reviewed design. They are not a promise of
 one release per row or a complete client in one milestone.
 
 Inputs: [design proposal](client-design.md), [screen contracts](screen-contracts.md)
-and [reference inventory/gaps](discovery.md). The complete original-AI program
+and [reference inventory/gaps](discovery.md). The [implementation audit and
+architecture recommendation](client-architecture.md) identifies the driver,
+visibility, resource and persistence gaps and six concrete prerequisite stories
+for both clients. The complete original-AI program
 #117 and pluggable AIs remain behind completion of the playable client. Neither
 is a dependency of the UI work below. Existing built-in opponents are sufficient
 for the human-play acceptance routes.
@@ -39,7 +42,7 @@ for the other.
 ## First deliverable to approve
 
 Proposed first deliverable: a **human-controlled standard surface-game turn**.
-The player can start/import a supported game, inspect its known map, select a
+The player can start a supported fresh game, inspect its known map, select a
 unit/stack, move/attack, found a named city, end the human turn, see opponent
 results and regain input. Keyboard and mouse paths must both work, with visible
 rejections and explicit supported-format/resource errors. This is a narrower
@@ -54,6 +57,77 @@ movement confirmation and the minimum human-choice handling needed when the
 first turn reaches founding, production or research. Do not ship a map that
 silently auto-answers those required decisions or consumes the human's orders
 through an AI action loop. Discovery proved these choices arise early.
+
+## Proposed first slice for owner review
+
+This is the concrete recommendation after the code audit, replacing the need
+to answer each technical question separately. **It is proposed, not yet
+owner-approved or assigned a version.** Prototype acceptance remains recorded;
+this is review of delivery scope and specific interaction defaults.
+
+**Deliver both clients for the first human-turn slice.** Use a packaged local
+Rust host plus browser Canvas/DOM, and a standalone native desktop application
+using the same Rust human-session and resource APIs. Evaluate SDL2 in the
+desktop spike; require Windows/Linux window, text input, modal focus and scaling
+to pass before committing production UI to it. Browser hosting without a local
+executable is not included in this first proposal. Browser progress must not
+stand in for the native desktop application.
+
+**Use the installed Original profile and a freshly generated standard surface
+game**, with explicit human civilization selection and the existing built-in
+opponents. Include owned-resource selection, fog-filtered map inspection,
+pan/zoom, unit/stack activation, adjacent surface land movement/combat and
+supported city occupation, wait/skip scheduling, founding with a typed name,
+basic own-city inspection/production selection, required research selection,
+EndTurn/opponent processing and return to human input. Limit combat/capture
+claims to current supported engine contexts and show unsupported actions
+explicitly. Do not promise sea/air/cargo, full original AI, original SAV import,
+native SAV export, scenarios/multiple maps, full city economics, government or
+diplomacy in this first slice. Track original-save/scenario import in the later
+lifecycle package; engine checkpoint resume is included here.
+
+**Use these interaction defaults on both clients:**
+
+- Viewing inspects without spending movement. In Moving mode, an adjacent
+  legal empty-tile move commits immediately; attacks/city capture and ending a
+  turn with movable units require confirmation. Keep an optional confirmation
+  for every move. An input received before selection changes must never apply
+  to the newly selected unit.
+- City/production draft edits use Apply/Cancel, with engine-derived preview
+  effects; Cancel and Escape discard drafts. This is an intentional usability
+  proposal where the original applies edits immediately. Later worker/rate
+  editors follow the same explicit commit convention.
+- Destructive dialogs default to Cancel; Escape cancels. This intentionally
+  differs from the observed native revolution dialog. A required research or
+  government choice can suspend/return to inspection, but cannot be dismissed
+  into unrestricted gameplay or auto-answered by the client.
+- Human checkpoints preserve pending decisions. A failed load leaves the
+  current session intact. Native import and engine checkpoints receive distinct
+  labels; unsupported formats/capabilities get specific errors.
+
+**Accept the slice through both a scripted parity route and actual human
+input.** On each surface, start the same supported setup, select a stack,
+reject an illegal move, found/name a city, choose production and initial
+research, fight a supported ground battle, end turns and regain control. Save
+and resume both at normal input and at a required choice; compare the next
+accepted command, result and state/replay. Test duplicate input, wrong/stale
+choices, cancel, focus loss and missing resources. The owner plays at least ten
+human rounds in each client, with keyboard and mixed input and no console help;
+fix observed blockers. This is a proposed minimum for this narrow slice, **not
+the sustained campaign acceptance for completing the client track**.
+
+If a route reaches an unimplemented required decision, stop with a supported-
+scope diagnostic and retain a resumable checkpoint; never choose for the human.
+The ten-round fixture must avoid those unimplemented systems through declared
+setup, not silent defaults. If required government handling cannot be avoided
+in a useful standard route, promote that phase into this slice's prerequisites.
+
+After the owner accepts or revises this packet, schedule the shared foundation,
+driver, browser, desktop and checkpoint integration stories with the acceptance
+above. Choose release boundaries from those dependencies and the desktop spike
+results; later full-city, science/government, diplomacy, report/lifecycle and
+scenario work remains separately scoped. A fixed number of later milestones
+would still be premature.
 
 ## Dependencies and acceptance
 
@@ -74,8 +148,9 @@ Each selected release must be independently coherent, and each underlying issue
 must name its human route, supported fixture, engine/API dependency, cancel/error
 case, persistence/replay check and material exclusions. Some packages can proceed
 in parallel after their contracts are agreed; others must split further. No
-implementation estimate is reliable until the asset/driver audit and first
-human-turn integration are complete.
+implementation estimate is reliable until the desktop/decoder spikes and first
+human-turn integration are complete. The initial code audit is now recorded in
+the architecture recommendation; it does not replace those implementation checks.
 
 ## Sustained-play validation to agree before client completion
 
@@ -109,6 +184,7 @@ this; they cannot establish that a person can understand or finish a game.
 This planning release needs owner-reviewed layouts/interactions and an accepted
 first deliverable plus decomposition, followed by the normal independent
 milestone review. The current proposal, screen contracts and prototype are ready
-for that **design discussion**. The prototype is accepted as a planning basis; specific interaction and delivery
-alternatives remain open. No v0.11 version bump, release candidate, implementation
+for that **design discussion**. The prototype is accepted as a planning basis;
+the first-slice packet above recommends interaction and delivery defaults for
+owner acceptance or revision. No v0.11 version bump, release candidate, implementation
 milestone creation or review launch is justified yet.

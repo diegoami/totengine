@@ -175,7 +175,10 @@ both movement variants and nested diplomacy, plus own-art previews;
 delivery categories. `docs/ui/screen-contracts.md` specifies proposed decision/view/
 command/persistence boundaries; `docs/ui/client-milestones.md` proposes the first
 human-controlled standard-game turn and dependent delivery packages, without
-assigning versions. Layout, input behavior and decomposition await owner review.
+assigning versions. Owner accepted revision 02 as a prototype on 2026-11-06
+("ok for a prototype is ok"); use it as the planning basis without asking for
+prototype acceptance again. Specific input behavior, toolkit and implementation
+scope/decomposition remain open.
 `docs/v0.11.0-readiness.md` records the acceptance gaps and completed checks;
 it is an in-progress record, not authorization to call the milestone.
 This is not an accepted design or milestone candidate; substantial client

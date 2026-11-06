@@ -1,6 +1,6 @@
 # Playable client: design proposal 02
 
-**Status: awaiting owner review; not an accepted specification.** For #107,
+**Status: prototype accepted by owner; detailed interaction and delivery decisions remain open.** For #107,
 v0.11, under [decision 0005](../decisions/0005-playable-client-planning.md).
 [Reference findings](discovery.md) distinguish inspected behavior from unknowns.
 The [clickable prototype](client-prototype.html) is a standalone local HTML file:
@@ -76,15 +76,17 @@ preserve the observation boundary in decision 0003. The full native AI program
 #117 remains gated behind the playable client; this design work does not
 amend that decision or approve a trusted compatibility driver.
 
-## Owner review requested
+## Owner feedback and remaining decisions
 
-1. Is the reference-inspired menu/status/map arrangement and dense city
-   workspace the right direction? Is matching the original arrangement more
-   important than the proposed redistribution of the city panels?
-2. Should Moving mode execute an adjacent click immediately, use the proposed
-   confirmation, or offer confirmation only for attack/capture/destructive orders?
-3. Which visual adjustments are needed before this becomes the basis for
-   implementation? Review the supplied map/city images and interactive states.
+2026-11-06: after receiving the GitHub design/plan links, the owner said:
+“ok for a prototype is ok”. Revision 02 is accepted as a prototype and a basis
+for continued planning. No specific redesign was requested.
+
+The response does not select the movement variant, city-edit commit behavior,
+production toolkit or first implementation deliverable/decomposition. Those
+choices remain open; the prototype acceptance should not be requested again.
+Further visual refinement can proceed from this prototype as the interaction
+and delivery scope are settled.
 
 These are concrete layout/interaction decisions, not permission to skip missing
 discovery. Owner feedback should be recorded here with date and exact accepted
@@ -130,6 +132,6 @@ play. All four previews contain only our authored drawings/text/fixture values.
 The reference inventory now has 33 representative route groups across standard,
 FallRome, Fantasy and a classic custom scenario, plus explicit Lua/invalid-file
 rejection. The detailed gaps remain in the discovery record and screen contracts.
-Owner design review and acceptance of the first deliverable/decomposition are
-still pending. No milestone candidate or substantial client implementation is
+Prototype acceptance is recorded above. Detailed interaction decisions and
+acceptance of the first deliverable/decomposition are still pending. No milestone candidate or substantial client implementation is
 claimed by this package.

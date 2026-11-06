@@ -1,6 +1,7 @@
 # Playable client: proposed delivery breakdown
 
-Draft for owner review, #107 / v0.11. **No later versions or implementation
+Draft delivery plan for owner review, #107 / v0.11. The owner accepted design
+revision 02 as a prototype on 2026-11-06; delivery scope is still to be settled. **No later versions or implementation
 milestones are assigned.** These are dependent work packages; their release
 boundaries must be chosen from the reviewed design. They are not a promise of
 one release per row or a complete client in one milestone.
@@ -81,6 +82,6 @@ this; they cannot establish that a person can understand or finish a game.
 This planning release needs owner-reviewed layouts/interactions and an accepted
 first deliverable plus decomposition, followed by the normal independent
 milestone review. The current proposal, screen contracts and prototype are ready
-for that **design discussion**. General continuation requests do not select the
-pending alternatives. No v0.11 version bump, release candidate, implementation
+for that **design discussion**. The prototype is accepted as a planning basis; specific interaction and delivery
+alternatives remain open. No v0.11 version bump, release candidate, implementation
 milestone creation or review launch is justified yet.

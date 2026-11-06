@@ -234,7 +234,7 @@ route in U18 proves only visible date/project retention, not full engine parity.
 
 ## Owner decisions still needed
 
-- Overall layout fidelity and city panel arrangement.
+- Final layout fidelity/refinement beyond the prototype accepted on 2026-11-06.
 - Immediate movement versus per-move confirmation, plus consequential orders.
 - Which immediate city edits should use a draft/preview/Apply interaction.
 - Desktop delivery target/toolkit and asset/style expectations before selecting

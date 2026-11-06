@@ -164,7 +164,13 @@ behind the playable UI/client work** (owner decision, 2026-11-06). First AI task
 after that gate: #118 (native decision inventory, explicit fidelity boundary
 and revised work estimates). The proposed
 trusted compatibility driver is not an approved amendment of decision 0003.
-v0.10 is released at the reviewed SHA; v0.11 UI discovery/design is in progress.
+**v0.11.0 "UI discovery, reviewed design and client planning"** is released
+(AGREE on #132, GLM-5.3, one round; tag ad605ec). The tag points exactly to
+`ad605ec1eadd45939c6b3ee80611a559368393be`. Independent review reproduced all
+209 install-backed Rust tests, Python/golden/fmt/clippy, checkpoint and UI/art
+source evidence, plus the shipped browser check. No MUST-FIX; #133's stale
+approval wording is corrected after the tag. This release is planning, not a
+playable client. Next work is milestone 10 (both clients, version unassigned).
 Second-pass reference inventory (33 route groups) and remaining coverage:
 `docs/ui/discovery.md`;
 derived capture/source hashes: `docs/evidence/ui-discovery.json` (original
@@ -205,10 +211,10 @@ driver, #128 resources/filtered views, #129 browser, #130 desktop, #131 checkpoi
 and both-client acceptance. Complete-client umbrellas #94/#125 remain open;
 full city/government/diplomacy/import/scenarios and sustained campaigns follow.
 The owner scope gate under decision 0005 is satisfied for this first slice;
-v0.11 candidate checks pass (209 install-backed Rust, 5+6 Python, golden,
-fmt/clippy and prototype browser checks). Publish the candidate and milestone
-issue, then print the owner-run independent-review prompt and stop. Do not start client implementation while
-that candidate is under review. Reference coverage includes representative city,
+v0.11 is released and its review gate is complete. Start #126 desktop feasibility,
+#127 shared human driver and #128 resources/filtered views; checkpoint design
+starts with the driver. Browser #129 and desktop #130 must both pass #131
+acceptance before the first playable milestone closes. Reference coverage includes representative city,
 map/unit, government, negotiation, report, Fantasy transfer and classic custom
 scenario routes are now inspected; remaining branches and delivery impacts are
 explicit in the inventory. Lua-disabled and invalid-file rejection are covered.

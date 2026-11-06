@@ -27,9 +27,9 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-The latest released tag is **v0.10.0 — built-in opponent: research and land
-campaigns**, independently reviewed on
-[#116](https://github.com/diegoami/totengine/issues/116). A version counts as
+The latest released tag is **v0.11.0 — UI discovery, reviewed design and client
+planning**, independently reviewed on
+[#132](https://github.com/diegoami/totengine/issues/132). A version counts as
 released once its
 `vX.Y.Z` tag exists
 ([tags](https://github.com/diegoami/totengine/tags); see
@@ -74,7 +74,7 @@ and [decision 0007](docs/decisions/0007-original-like-ai.md). Full original-AI
 parity is not claimed. The owner-requested [complete original-AI scope](docs/original-ai-scope.md)
 now defines the remaining ports and completion gates ([program #117](https://github.com/diegoami/totengine/issues/117)).
 Full AI reproduction is gated behind the playable UI/client work.
-The v0.11 planning candidate contains [owner-reviewed client discovery/design](docs/v0.11.0-readiness.md)
+The v0.11 planning release contains [owner-reviewed client discovery/design](docs/v0.11.0-readiness.md)
 and a [shared implementation plan](docs/ui/client-milestones.md). Both a playable
 browser and standalone desktop are required; the prototype remains simulated.
 

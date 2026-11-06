@@ -204,6 +204,7 @@ this; they cannot establish that a person can understand or finish a game.
 
 Owner review of the prototype, first deliverable and interaction choices is
 recorded above. The accepted prerequisite decomposition is in the live queue above.
-Finish version/release notes and candidate checks, then follow the independent
-milestone review process. The owner launches that review. This planning release
+The v0.11 planning release passed owner-launched independent review on #132
+and is tagged at the reviewed SHA. Implementation proceeds in milestone 10;
+future release candidates follow the same owner-launched review process. This planning release
 does not pass any future playable-client or sustained-human-campaign gate.

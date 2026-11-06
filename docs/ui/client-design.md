@@ -157,6 +157,6 @@ The reference inventory now has 33 representative route groups across standard,
 FallRome, Fantasy and a classic custom scenario, plus explicit Lua/invalid-file
 rejection. The detailed gaps remain in the discovery record and screen contracts.
 Prototype and first-scope acceptance are recorded above; the live delivery
-queue is linked from the plan. The v0.11 planning candidate still requires
-independent milestone review. No substantial playable-client implementation is
+queue is linked from the plan. The v0.11 planning release passed independent
+review on #132 and is tagged at the reviewed SHA. No substantial playable-client implementation is
 delivered by this package.

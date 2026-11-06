@@ -1,7 +1,8 @@
 # Playable client: reference discovery
 
-Status: second-pass reference inventory for #107, v0.11. Owner design approval
-is pending. [Decision 0005](../decisions/0005-playable-client-planning.md) governs
+Status: representative reference inventory for released v0.11 (#107). The owner
+accepted the prototype and first delivery/interaction scope on 2026-11-06.
+[Decision 0005](../decisions/0005-playable-client-planning.md) governs
 this work. [Design proposal](client-design.md) and
 [interactive layout](client-prototype.html) are separate from reference facts.
 
@@ -130,7 +131,8 @@ claims; this inventory does not silently waive them.
 | Scenario/multiple maps | Scenario event choices, cargo/teleport/restricted transfers and successful Lua import remain untested. Shipped Fantasy transfer and classic custom Constantine layouts are observed; Lua-disabled rejection is explicit.                            |
 | Usability              | Keyboard-only full routes, text scaling/long names/localization, accessibility, focus/modal priority and sustained human play. Prototype browser tests do not establish these.                                                                      |
 
-Owner review of layout, movement/city edit behavior, first delivery scope and
-decomposition remains required by decision 0005. No release candidate or later
-client version is assigned. The scope of remaining reference work must be
-recorded in that reviewed plan rather than treated as implemented compatibility.
+Owner review of the prototype, movement/city-edit behavior and first delivery
+scope is recorded in decision 0005 (2026-11-06); the accepted decomposition is
+live in milestone 10 and #126–#131. Later release versions remain unassigned.
+Remaining reference gaps, later dialog redesigns and sustained-human-play
+acceptance stay explicit work in the reviewed plan, not implemented compatibility.

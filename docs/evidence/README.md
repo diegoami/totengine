@@ -3768,8 +3768,10 @@ chooser leads to rate review and a newspaper notice in the small standard case.
 design fixtures, not reference screenshots. Their proposed interactions and
 browser-only validation are recorded in `docs/ui/client-design.md`.
 `docs/ui/screen-contracts.md` separates proposed interface/decision contracts
-from reference observations; `docs/ui/client-milestones.md` is an unversioned
-delivery proposal. Owner design/decomposition approval remains pending.
+from reference observations; `docs/ui/client-milestones.md` records the owner-
+accepted first scope and live decomposition (decision 0005, 2026-11-06). Later
+release versions, dialog redesigns and sustained-play/native-parity acceptance
+remain explicitly unassigned or unproven.
 
 
 ## Installed-art client prototype (#107, v0.11)

@@ -18,7 +18,8 @@ native Windows and Linux with actual OS input and packaged launch; SDL2 is viabl
 for the first desktop adapter. The production shared atlas/controller and browser/native adapters now exist in
 `totui::client`; [usage](../playable-clients.md). Both use the same frame,
 validated commands and checkpoint slots. Automated assembled acceptance passes, and the owner confirmed ten rounds on
-each surface with no blockers. Independent candidate review is next. The design prototype
+each surface with no blockers. Independent review passed on #134; both clients
+ship in v0.12.0. The design prototype
 remains simulated and is not connected by this foundation change.
 
 ## Findings from the audited code

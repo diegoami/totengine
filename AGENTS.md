@@ -206,7 +206,7 @@ check pass. This is not a production renderer or a human game-session driver.
 `docs/ui/client-architecture.md` audits the engine/observer/assets and defines
 one Rust human-session layer with local-hosted browser and native desktop
 adapters. Accepted decomposition is live: milestone 10 “Playable human turn —
-browser and desktop” (v0.12.0 candidate), #126 desktop feasibility, #127 human
+browser and desktop” (v0.12.0 released), #126 desktop feasibility, #127 human
 driver, #128 resources/filtered views, #129 browser, #130 desktop, #131 checkpoints
 and both-client acceptance. Complete-client umbrellas #94/#125 remain open;
 full city/government/diplomacy/import/scenarios and sustained campaigns follow.
@@ -228,13 +228,19 @@ research/founding, notices and last-seen fog memory. Human checkpoints format 2
 restore that memory and exact engine/resource/policy/session state through replay.
 Windows and Linux packages contain notices/runtime DLLs, never game assets/fonts.
 Usage: `docs/playable-clients.md`; validation/current gates:
-`docs/v0.12.0-readiness.md`. #126/#127 are closed. #128–#131 and milestone 10
-remain open until review/release. The owner explicitly confirmed at least ten
-human rounds in both clients with no blockers, satisfying the manual gate.
-The v0.12.0 candidate is prepared for owner-launched independent review; main
-takes review fixes only until tagging. Do not launch that review or tag before
-AGREE at its exact SHA. Full-client #94/#125 and
-full-AI gate #117 remain open beyond this narrow slice.
+`docs/v0.12.0-readiness.md`. **v0.12.0 is released** at exactly the reviewed SHA
+`4ccf2cd62f4f6022cd045cf0a467dea5f7e46fbd` (AGREE on #134, GLM-5.3,
+one round, no findings). The independent reviewer reproduced 233 Rust tests,
+11 Python tests, golden/fmt/clippy, the 32-seed-per-policy campaign suite and
+real browser/Linux desktop input with all checkpoint hashes matching. The owner
+confirmed ten human rounds in both clients with no blockers. Windows/Linux
+packages and checksums are attached to the GitHub release; no game assets/fonts.
+#126–#131, review #134 and milestone 10 are closed. Full-client #94/#125 and
+full-AI gate #117 remain open beyond this narrow slice. Next work is a separately
+scoped playable-client package from `docs/ui/client-milestones.md`; deeper city
+management and input polish are natural next candidates. No next release version
+or fixed remaining milestone count is assigned. Full original-AI work remains
+gated behind complete playable-client delivery.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

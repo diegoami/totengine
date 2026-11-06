@@ -128,14 +128,14 @@ results; later full-city, science/government, diplomacy, report/lifecycle and
 scenario work remains separately scoped. A fixed number of later milestones
 would still be premature.
 
-## Live implementation queue
+## First-slice implementation record
 
 The accepted first slice is [milestone 10](https://github.com/diegoami/totengine/milestone/10),
-“Playable human turn — browser and desktop”, now proposed as v0.12.0.
+“Playable human turn — browser and desktop”, released as v0.12.0 at
+`4ccf2cd62f4f6022cd045cf0a467dea5f7e46fbd` after AGREE on #134.
 Both actual clients and checkpoint parity are implemented. The owner explicitly
-confirmed ten human rounds in each with no blockers. Readiness and review gate:
-[the v0.12 candidate record](../v0.12.0-readiness.md).
-Both adapters must pass before that milestone closes. The broad desktop #94
+confirmed ten human rounds in each with no blockers. Both adapters passed, and
+milestone 10/#126–#131 are closed. [Release readiness and limits](../v0.12.0-readiness.md). The broad desktop #94
 and browser #125 continue to track the complete clients beyond this slice.
 
 | Story | Deliverable | Dependencies |
@@ -148,10 +148,9 @@ and browser #125 continue to track the complete clients beyond this slice.
 | [#131](https://github.com/diegoami/totengine/issues/131) | Human checkpoints and both-client acceptance | Persistence starts with #127; assembled acceptance requires #129/#130 |
 
 Each issue specifies a human route, real state/replay checks, input/error cases
-and explicit exclusions. Begin with #126/#127/#128 after the v0.11 release;
-checkpoint design starts alongside the session driver. This is one first-slice
-milestone with both clients, not a fixed count of releases for the whole client
-track. Subsequent packages below retain their own discovery and scope gates.
+and explicit exclusions. All six stories shipped in the first-slice milestone
+with both clients. This does not assign a fixed count of releases for the whole
+client track or a version for the next package. Subsequent packages below retain their own discovery and scope gates.
 
 ## Dependencies and acceptance
 

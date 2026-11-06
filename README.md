@@ -27,9 +27,8 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-The latest released tag is **v0.11.0 — UI discovery, reviewed design and client
-planning**, independently reviewed on
-[#132](https://github.com/diegoami/totengine/issues/132). A version counts as
+The latest released tag is **v0.12.0 — First playable human turn, browser and desktop**, independently reviewed on
+[#134](https://github.com/diegoami/totengine/issues/134). A version counts as
 released once its
 `vX.Y.Z` tag exists
 ([tags](https://github.com/diegoami/totengine/tags); see
@@ -56,8 +55,10 @@ What runs today, headless, against your own ToT install:
   (`totctl observe`; [usage and stream format](docs/browser-observer.md)).
 
 The playable-client track targets **both a browser client and a standalone
-desktop client**, sharing the Rust engine. The first generated-game slice is now implemented in `totplay` and `totdesktop`
-and is undergoing milestone acceptance; [launch and controls](docs/playable-clients.md).
+desktop client**, sharing the Rust engine. The first generated-game slice is
+released in `totplay` and `totdesktop`; [launch and controls](docs/playable-clients.md).
+[Windows/Linux downloads](https://github.com/diegoami/totengine/releases/tag/v0.12.0)
+include both programs, runtime/dependency notices and no original game assets.
 Full client delivery continues across later milestones.
 See the [client delivery plan](docs/ui/client-milestones.md).
 

@@ -79,7 +79,8 @@ successful reconstruction. Restore is O(recorded work), with a 16 MiB input and
 200,000-operation parser bound; instant snapshots and cross-version migrations
 are not implemented. Resource identities/fingerprints detect accidental changes,
 not deliberate cryptographic forgery. Both clients now provide named local slots and atomic replacement after successful
-reconstruction; #131 also requires owner play and assembled acceptance.
+reconstruction. Assembled acceptance and owner play subsequently passed in both
+clients; #131 shipped in v0.12.0.
 
 ## Verification
 
@@ -98,7 +99,8 @@ policy behavior agree; canonical world replay agrees too. Pending research and
 founding checkpoints and retry receipt restoration are covered separately.
 
 These automated routes supply choices in test code. They are not the required
-actual ten-round human acceptance route in either client and do not close #131.
+actual ten-round human acceptance route. The owner separately confirmed ten
+rounds in both clients with no blockers before the v0.12 review/release.
 
 The human view now retains last-seen tile features and foreign-city identity,
 name, owner and population. Explored tiles do not expose hidden later changes;

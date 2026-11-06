@@ -164,7 +164,17 @@ behind the playable UI/client work** (owner decision, 2026-11-06). First AI task
 after that gate: #118 (native decision inventory, explicit fidelity boundary
 and revised work estimates). The proposed
 trusted compatibility driver is not an approved amendment of decision 0003.
-v0.10 is released at the reviewed SHA; v0.11 UI discovery/design is next.
+v0.10 is released at the reviewed SHA; v0.11 UI discovery/design is in progress.
+First-pass reference routes and remaining coverage: `docs/ui/discovery.md`;
+derived capture/source hashes: `docs/evidence/ui-discovery.json` (original
+screenshots stay outside Git). `docs/ui/client-prototype.html` is the local,
+simulated nine-screen design for owner feedback, with own-art map/city previews;
+`docs/ui/client-design.md` records proposed interactions, API gaps and unversioned
+delivery categories. Layout and movement-confirmation choices await owner review.
+This is not an accepted design or milestone candidate; substantial client
+implementation still waits for decision 0005's design gate. Next discovery:
+city operations, controlled map/unit inputs, later research/government choices,
+negotiation, remaining reports and multi-map/custom-scenario workflows.
 Next-session entry point: #107. Read `docs/decisions/0005-playable-client-planning.md`
 for UI discovery/design acceptance before choosing implementation work; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.

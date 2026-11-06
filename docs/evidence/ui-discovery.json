@@ -1,0 +1,315 @@
+{
+  "schema": 1,
+  "date": "2026-11-06",
+  "issue": 107,
+  "status": "first-pass-incomplete",
+  "reference": "Installed ToTPP-patched ToT; unpatched UI equivalence not established",
+  "method": "Private copied install/prefix, Xvfb 1024x768x24, no RAM/presentation patches; visual inspection of captures. See docs/ui/discovery.md for routes/limits.",
+  "private_capture_directory": "/tmp/totengine-ui-discovery",
+  "original_images_committed": false,
+  "sources": [
+    {
+      "install_relative_path": "civ2.exe",
+      "sha256": "dbbd24d8b72fd1ac56d81adf3a16273affc6ae3294dd5ad4a2c59d4d781c00b4"
+    },
+    {
+      "install_relative_path": "Menu.txt",
+      "sha256": "1f8d9ebd5e5d639c1aca636ce498b0bdc7efb896830c4f5f323ceddb292b9456"
+    },
+    {
+      "install_relative_path": "TOTPP.ini",
+      "sha256": "acf62999cfd27c89191f2fc5e7ac3a967da3ca4a0403ca38c672aaa85cd6b507"
+    },
+    {
+      "install_relative_path": "Original/Ph_Auto2.SAV",
+      "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+    },
+    {
+      "install_relative_path": "FallRome/ROMFALL.scn",
+      "sha256": "394449e92f7b2d73fcfe6cd21e5d688213619dad6b4bad5f836fe0f79a942d07"
+    }
+  ],
+  "observations": [
+    {
+      "id": "U01",
+      "summary": "Single-player radio-list launcher.",
+      "captures": [
+        {
+          "filename": "launcher.png",
+          "sha256": "3b9b60086302ff8b6eb9458f9e3d29049c16d97fcb77025308428b202609816c"
+        }
+      ]
+    },
+    {
+      "id": "U02",
+      "summary": "Game-family selection is separate from launcher.",
+      "captures": [
+        {
+          "filename": "game-type.png",
+          "sha256": "645dfee37e94f43a7e3ae33ec261869cf38dd31775d54f73c442a68b9d5b1f8e"
+        }
+      ]
+    },
+    {
+      "id": "U03",
+      "summary": "Remembered-folder file dialog and load summary.",
+      "captures": [
+        {
+          "filename": "load.png",
+          "sha256": "8bde73c92d7f02a4525547ae03d27ba25d4552f59043f56a89aa6a69320147a7"
+        },
+        {
+          "filename": "loaded.png",
+          "sha256": "149daccb8dd2bdc58ea3d1e2aff0ce347f486c3c2ba1fb1c57f9323dc1a4fe01"
+        }
+      ]
+    },
+    {
+      "id": "U04",
+      "summary": "Empire/unit/mode header, overview and diamond map.",
+      "captures": [
+        {
+          "filename": "map-max.png",
+          "sha256": "7167ae4442cc966394ceb754e17ec36004fbee54b788fe68cb1c12063ac387ec"
+        }
+      ]
+    },
+    {
+      "id": "U05",
+      "summary": "City report with production progress; city row opens management.",
+      "captures": [
+        {
+          "filename": "cities-focus.png",
+          "sha256": "08f0d9272fa0f2e49234ecd95071494f957fe66b6cea9801ea90953cf520f90e"
+        }
+      ]
+    },
+    {
+      "id": "U06",
+      "summary": "City resources, radius, citizens, production and storage workspace.",
+      "captures": [
+        {
+          "filename": "city.png",
+          "sha256": "7a345156df2b9217eab004ab05353b633ca76d8860b65d4286fa8f6de1791e3f"
+        }
+      ]
+    },
+    {
+      "id": "U07",
+      "summary": "Mixed build list, estimates, separate recommendation dialogs.",
+      "captures": [
+        {
+          "filename": "production.png",
+          "sha256": "eab2812d4de36f0ff35a3ede5f4d34302c85a5e76dc5330e026024cefd4975a1"
+        }
+      ]
+    },
+    {
+      "id": "U08",
+      "summary": "Known advances plus long-term goal selector; not a current-project test.",
+      "captures": [
+        {
+          "filename": "science.png",
+          "sha256": "102846a06c13a14f2ad45328dceb07f9416fc082be9297f387f26fef20f8c406"
+        },
+        {
+          "filename": "research-goal.png",
+          "sha256": "8da3d079902bc1809ba8199d863074990aeda0e40fd796a38e80f29e31809426"
+        }
+      ]
+    },
+    {
+      "id": "U09",
+      "summary": "Three rate sliders, locks, government cap and economic estimates.",
+      "captures": [
+        {
+          "filename": "rates-focus.png",
+          "sha256": "33715b25fdafdfba249f4eefc64e8c8c35d996b849fc80a377725d7d2e0f8fd7"
+        }
+      ]
+    },
+    {
+      "id": "U10",
+      "summary": "Yes initially selected. Escape/focus sequence followed by revolution notice; exact key handling not isolated.",
+      "captures": [
+        {
+          "filename": "revolution.png",
+          "sha256": "6de95cc70cc19770610af12bdb1bc9cc720839c968559bdcd507bdede48d8afa"
+        },
+        {
+          "filename": "revolution-result.png",
+          "sha256": "b2dc5300c68336312953bffb5c87908adc93d8e738c068bd5a58a4ac5706a4c5"
+        }
+      ]
+    },
+    {
+      "id": "U11",
+      "summary": "Standard fixture has no contact.",
+      "captures": [
+        {
+          "filename": "foreign.png",
+          "sha256": "af11af3735b7a89d32048a0932dc355625c0712f0aef4d0dee4a870308ee0816"
+        }
+      ]
+    },
+    {
+      "id": "U12",
+      "summary": "FallRome foreign report with earned contacts and scenario naming.",
+      "captures": [
+        {
+          "filename": "scenario-map.png",
+          "sha256": "46c78e220b518b4e7190e398937c9229495745306de414ccc0c79becf478a512"
+        }
+      ]
+    },
+    {
+      "id": "U13",
+      "summary": "Hostile emissary refusal.",
+      "captures": [
+        {
+          "filename": "scenario-diplomacy.png",
+          "sha256": "4bac044cab7b3fbd56f4e7bb97198d3ac3d1deb9373e183863938cbd03bb9c4b"
+        }
+      ]
+    },
+    {
+      "id": "U14",
+      "summary": "Separate diplomatic presentation opened; readable negotiation choices not reached.",
+      "captures": [
+        {
+          "filename": "neutral-dialogue.png",
+          "sha256": "f6f8ca0012fc0554f0354429e71c7e32691ceaaade4a3c46fd7d2ad850ee905c"
+        }
+      ]
+    },
+    {
+      "id": "U15",
+      "summary": "Fresh Original game: generation mode, size, difficulty, competition, barbarians, rules, gender, tribe, leader name, city style, introduction, first turn. Accepted visibly inspected remembered selections; no seeded-world claim.",
+      "captures": [
+        {
+          "filename": "setup-entry.png",
+          "sha256": "dbcf125779fe5f179198f3fd6079de3dffff3ea69cdfd110cb2b76dec162179f"
+        },
+        {
+          "filename": "setup-size.png",
+          "sha256": "03ce3cab6043e50d863d15055f469fa793ceb1acfa2f8226734d184e8ef951b7"
+        },
+        {
+          "filename": "setup-difficulty.png",
+          "sha256": "ebd494ff8c18ff064cbc6f8e2a913054e37fbeea01bd01c4830de43b547397ab"
+        },
+        {
+          "filename": "setup-competition.png",
+          "sha256": "6de959a11b5f67c3e82e6c2e7c3ffdf2448cb6c773fea155404c321ffb5903bd"
+        },
+        {
+          "filename": "setup-barbarians.png",
+          "sha256": "7a4c74a1164625297e48486760352416cc5f56b6bda3bb4a04bd35cf31cbac2b"
+        },
+        {
+          "filename": "setup-rules.png",
+          "sha256": "4de6b2360b1b8baadfc7c8d604a598cd53e7e3247447454f316b16a9d3cd381b"
+        },
+        {
+          "filename": "setup-gender.png",
+          "sha256": "813b907429c0a37e961865d187bee9a818eb1e5e3d2bc19b3d410f15e17f5c0e"
+        },
+        {
+          "filename": "setup-tribe.png",
+          "sha256": "7126ecce415b86a96cc54c382e43488a35232f0df4abdc4e7b4202ecf13f4c2b"
+        },
+        {
+          "filename": "setup-name.png",
+          "sha256": "0b729867b8cb0b1abeeee5ac0343a0a0f112b0e106e1b12c98ff31ee29b66f75"
+        },
+        {
+          "filename": "setup-style.png",
+          "sha256": "b62db08416d4374cc915dfed1e5f60cd54b60475c528d7babf6b8176cebb1d86"
+        },
+        {
+          "filename": "setup-created.png",
+          "sha256": "b049f4641df9002e482dae888c30e91d8a3a76b16460d06531649a0c204b2fcd"
+        },
+        {
+          "filename": "setup-first-turn.png",
+          "sha256": "7c884dae7d993c837a4474522c023f00f6a6c356888f039d801ec9dfd1c65197"
+        }
+      ]
+    },
+    {
+      "id": "U16",
+      "summary": "Selected settler B: city-name prompt, founding notice, city management. City exit was followed by turn advancement; precise auto-end setting not isolated.",
+      "captures": [
+        {
+          "filename": "founding-name.png",
+          "sha256": "cfdd13b1ee999821e95b46f41ae91ab14378db47e43af62077c85f3653a4e15f"
+        },
+        {
+          "filename": "founding-result.png",
+          "sha256": "f16920dd5244c03a5c3e603aa109838148d6368f24e35c71e9ed85b785ce6921"
+        },
+        {
+          "filename": "founding-city.png",
+          "sha256": "cd22cf183cd67e060648bfd4a45b52458b4d06b936a020486fa9149c67177e42"
+        }
+      ]
+    },
+    {
+      "id": "U17",
+      "summary": "Required initial project-choice prompt distinct from Goal; Pottery selected. After native save/reload, science advisor displays Pottery and progress.",
+      "captures": [
+        {
+          "filename": "founding-return.png",
+          "sha256": "9d71725290e3e3f8778396b8e4950efdd0daf477977c15d23578f77088b78c1e"
+        },
+        {
+          "filename": "resumed.png",
+          "sha256": "23d2a0a86deaec81b4e5b5c7d06d05166116f7420061cf5427f4659670ea2a07"
+        }
+      ]
+    },
+    {
+      "id": "U18",
+      "summary": "Native save dialog retained earlier scenario directory. Explicit scratch path saved successfully; repeated path requested overwrite, No returned to save dialog; Cancel and reload returned to the saved date. No next-turn parity claim.",
+      "captures": [
+        {
+          "filename": "research-chosen.png",
+          "sha256": "e163ec4321887c8ec40a9d1eb9d9da046b7ab2e4c369409a9801b534cba89782"
+        },
+        {
+          "filename": "saved-first.png",
+          "sha256": "7196ef9d54badb711b944426ad7059ea6dcec83c2c9b13256fc6a4c2a60cdf00"
+        },
+        {
+          "filename": "save-overwrite.png",
+          "sha256": "6797077faaeb141e1d4a76c2d3569ea779f320be3bec89e3a5856b13a0bd34d4"
+        },
+        {
+          "filename": "overwrite-declined.png",
+          "sha256": "26603c6e589b8abb8a36d07e85b2e76c87575a5a7a9771a00f35f412e75072d4"
+        },
+        {
+          "filename": "reloaded.png",
+          "sha256": "56360cb4ec67bf889b3fef980e2f55838481a69f45414c1e7e77356defa2f05b"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "No exhaustive screen/shortcut inventory completed.",
+    "No native gameplay parity claim.",
+    "Research goal is not active-project choice.",
+    "Revolution Escape sequence not isolated.",
+    "Negotiation controls not reached.",
+    "Custom/pre-made setup branches, complete overwrite acceptance/corrupt-file handling, additional reports, multi-map and custom scenarios remain unverified."
+  ],
+  "private_generated_fixture": {
+    "relative_to_copied_install": "Original/ui-study.sav",
+    "sha256": "050686988b26e270819bec55f1fed37d743078d8158bd0890373d78b40e93270",
+    "size": 70403,
+    "turn": 2,
+    "year": -3950,
+    "research_visually_after_reload": "Pottery",
+    "original_file_committed": false
+  }
+}

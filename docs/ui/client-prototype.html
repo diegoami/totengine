@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ToTEngine — playable client design review 01</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #161b1d;
+      --panel: #252d2e;
+      --edge: #64706b;
+      --ink: #e3e6da;
+      --muted: #acb7ae;
+      --gold: #e4c77e;
+      --green: #86a68a;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      background: #111718;
+      color: var(--ink);
+      font:
+        15px/1.4 system-ui,
+        sans-serif;
+    }
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+    button,
+    select {
+      color: var(--ink);
+      background: #35403f;
+      border: 1px solid #748079;
+      border-radius: 2px;
+      padding: 5px 12px;
+    }
+    button:hover,
+    button:focus-visible {
+      background: #4a5c55;
+      outline: 2px solid var(--gold);
+      outline-offset: 1px;
+    }
+    button[aria-pressed="true"],
+    button.primary {
+      background: #566652;
+      color: #fff1bf;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    a {
+      color: var(--gold);
+    }
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0 0 10px;
+    }
+    h1 {
+      font:
+        26px Georgia,
+        serif;
+      color: var(--gold);
+    }
+    h2 {
+      font:
+        24px Georgia,
+        serif;
+      color: var(--gold);
+    }
+    h3 {
+      font-size: 15px;
+      color: var(--gold);
+    }
+    small,
+    .muted {
+      color: var(--muted);
+    }
+    .review {
+      padding: 15px 24px;
+      background: #222d30;
+      border-bottom: 1px solid #5b6b65;
+      display: flex;
+      gap: 22px;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .review p {
+      margin: 3px 0;
+      font-size: 13px;
+    }
+    .review strong {
+      color: var(--gold);
+    }
+    .reviewnav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      max-width: 630px;
+    }
+    .reviewnav button {
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+    .client {
+      max-width: 1440px;
+      margin: 18px auto;
+      border: 2px solid #899080;
+      box-shadow: 0 10px 36px #0008;
+      background: var(--bg);
+    }
+    .menubar {
+      display: flex;
+      gap: 0;
+      background: #c8ccbe;
+      color: #182020;
+      padding: 2px 8px;
+      position: relative;
+      z-index: 3;
+    }
+    .menubar details {
+      position: relative;
+    }
+    .menubar summary {
+      padding: 2px 12px;
+      cursor: pointer;
+      list-style: none;
+    }
+    .dropdown {
+      position: absolute;
+      top: 28px;
+      left: 0;
+      min-width: 240px;
+      border: 1px solid var(--edge);
+      background: var(--panel);
+      box-shadow: 0 4px 12px #0009;
+      padding: 6px;
+    }
+    .dropdown button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin: 2px 0;
+    }
+    .statusbar {
+      display: grid;
+      grid-template-columns: 245px 1fr 150px;
+      gap: 3px;
+      border-bottom: 4px ridge #839084;
+      padding: 5px;
+      background: #535e58;
+    }
+    .statusbar > div {
+      padding: 9px 13px;
+      background: var(--panel);
+    }
+    .statusbar b {
+      color: var(--gold);
+    }
+    .statusbar p {
+      margin: 2px 0;
+    }
+    .minimap {
+      background: #101b20 !important;
+      display: grid;
+      place-content: center;
+      position: relative;
+    }
+    .minimap svg {
+      width: 122px;
+      height: 64px;
+    }
+    .mode {
+      float: right;
+    }
+    .workspace {
+      min-height: 620px;
+      position: relative;
+    }
+    .mapwrap {
+      position: relative;
+      min-height: 620px;
+      overflow: hidden;
+    }
+    .mapwrap canvas {
+      display: block;
+      width: 100%;
+      height: 620px;
+      touch-action: none;
+    }
+    .maptools {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      display: flex;
+      gap: 4px;
+    }
+    .maphint {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      max-width: 660px;
+      background: #1b2424ee;
+      border: 1px solid var(--edge);
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+    .orderbar {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 9px 14px;
+      background: var(--panel);
+      border-top: 1px solid var(--edge);
+    }
+    .orderbar .spacer {
+      flex: 1;
+    }
+    .screen {
+      padding: 20px;
+      background: #1b2324;
+      min-height: 620px;
+    }
+    .titleline {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      gap: 16px;
+      border-bottom: 1px solid #57655c;
+      padding-bottom: 10px;
+      margin-bottom: 16px;
+    }
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    .box {
+      background: var(--panel);
+      border: 1px solid var(--edge);
+      padding: 14px;
+    }
+    .box p {
+      margin-bottom: 8px;
+    }
+    .citygrid {
+      display: grid;
+      grid-template-columns: 225px 1fr 245px;
+      gap: 12px;
+    }
+    .citytiles {
+      width: 100%;
+      height: 320px;
+      display: block;
+      background: #142126;
+    }
+    .resources {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+    }
+    .resources dd {
+      margin: 0;
+      color: var(--gold);
+    }
+    .meter {
+      background: #0f1719;
+      height: 17px;
+      border: 1px solid #7a8478;
+      margin: 8px 0;
+    }
+    .meter span {
+      display: block;
+      height: 100%;
+      background: #c6a75f;
+    }
+    .citizens {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .citizens button {
+      font-size: 13px;
+      padding: 5px;
+    }
+    .stack > * {
+      margin-bottom: 12px;
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+    .choices {
+      display: grid;
+      gap: 5px;
+    }
+    .choices button {
+      display: flex;
+      justify-content: space-between;
+      text-align: left;
+    }
+    .choices button[aria-pressed="true"] {
+      border: 2px solid var(--gold);
+    }
+    .note {
+      font-size: 13px;
+      padding: 10px 12px;
+      background: #303a33;
+      border-left: 3px solid var(--gold);
+      margin: 12px 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    td,
+    th {
+      text-align: left;
+      padding: 9px;
+      border-bottom: 1px solid #4c5b53;
+    }
+    th {
+      color: var(--gold);
+    }
+    .rates label {
+      display: grid;
+      grid-template-columns: 90px 1fr 50px;
+      gap: 14px;
+      align-items: center;
+      margin: 14px 0;
+    }
+    .rates input {
+      width: 100%;
+      accent-color: var(--gold);
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .form {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+    .form input {
+      background: #152022;
+      border: 1px solid var(--edge);
+      padding: 6px;
+      color: var(--ink);
+    }
+    .log {
+      padding: 7px 14px;
+      background: #121a1d;
+      font-size: 13px;
+      min-height: 33px;
+      color: #d5dfc8;
+      border-top: 1px solid var(--edge);
+    }
+    dialog {
+      color: var(--ink);
+      background: var(--panel);
+      border: 2px solid var(--edge);
+      max-width: 480px;
+      padding: 24px;
+    }
+    dialog::backdrop {
+      background: #000a;
+    }
+    .footer {
+      max-width: 1440px;
+      margin: 12px auto 30px;
+      color: var(--muted);
+      font-size: 13px;
+      padding: 0 12px;
+    }
+    .focusline {
+      color: var(--gold);
+    }
+    @media (max-width: 1000px) {
+      .review {
+        display: block;
+      }
+      .reviewnav {
+        margin-top: 10px;
+      }
+      .client {
+        margin: 8px;
+      }
+      .citygrid {
+        grid-template-columns: 190px 1fr;
+      }
+      .citygrid > aside {
+        grid-column: 1/-1;
+      }
+      .columns {
+        grid-template-columns: 1fr;
+      }
+      .menubar summary {
+        padding: 3px 7px;
+      }
+      .statusbar {
+        grid-template-columns: 210px 1fr;
+      }
+      .minimap {
+        display: none !important;
+      }
+    }
+    @media (max-width: 650px) {
+      .citygrid {
+        display: block;
+      }
+      .citygrid > * {
+        margin-bottom: 12px;
+      }
+      .statusbar {
+        grid-template-columns: 1fr;
+      }
+      .menubar {
+        flex-wrap: wrap;
+      }
+      .screen {
+        padding: 12px;
+      }
+      .review {
+        padding: 12px;
+      }
+      .form {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+  <header class="review">
+    <div>
+      <strong>ToTEngine · design review 01</strong>
+      <p>Proposed client layouts. Every value and action is simulated.</p>
+      <p>
+        No engine connection, original artwork or real save support.
+        <a href="client-design.md">Design notes</a>
+      </p>
+    </div>
+    <nav class="reviewnav" aria-label="Review screens" id="reviewnav"></nav>
+  </header>
+  <main class="client">
+    <nav class="menubar" aria-label="Game menus" id="menus"></nav>
+    <section class="statusbar" aria-label="Empire and selection">
+      <div>
+        <b>Vale Republic</b>
+        <p id="date">1000 BC · Turn 41</p>
+        <p>
+          <span id="treasury">125</span> gold ·
+          <span id="ratebadge">40 / 60 / 0</span>
+        </p>
+      </div>
+      <div>
+        <span class="mode" id="modebadge">Viewing pieces</span
+        ><b id="unitname">Warriors · Alder</b>
+        <p id="unitdetail">Moves 1/1 · Veteran · Home: Alder</p>
+        <p class="muted" id="selection">
+          Select a tile to inspect. Orders require Moving mode.
+        </p>
+      </div>
+      <div class="minimap" aria-label="Illustrative overview map">
+        <svg
+          viewBox="0 0 120 65"
+          role="img"
+          aria-label="Known land and viewport"
+        >
+          <path
+            d="M15 30L30 12 55 8 76 20 108 15 113 40 93 57 65 46 40 56 20 46Z"
+            fill="#52684e"
+          />
+          <path d="M45 12L56 28 48 48" stroke="#7898a5" fill="none" />
+          <rect
+            x="29"
+            y="17"
+            width="50"
+            height="31"
+            fill="none"
+            stroke="#e4c77e"
+          /></svg
+        ><small>Known world</small>
+      </div>
+    </section>
+    <div class="workspace" id="workspace"></div>
+    <div class="orderbar">
+      <button id="mode">Move pieces (V)</button
+      ><button id="wait">Wait (W)</button><button id="skip">Skip (Space)</button
+      ><button id="found">Found city (B)</button><span class="spacer"></span
+      ><button class="primary" id="endturn">End turn</button>
+    </div>
+    <div class="log" role="status" aria-live="polite" id="log">
+      Design fixture loaded. No commands are sent to an engine.
+    </div>
+  </main>
+  <p class="footer">
+    Review focus: information density, map / unit modes, city workspace,
+    selection → confirmation → result. Sample names and terrain are authored for
+    this prototype. Open this file directly; no server is needed. Browser HTML
+    is a review medium; client technology remains undecided.
+  </p>
+  <dialog id="confirm">
+    <h2 id="confirmtitle"></h2>
+    <p id="confirmbody"></p>
+    <div class="actions">
+      <button id="cancel">Cancel</button
+      ><button class="primary" id="accept">Confirm</button>
+    </div>
+  </dialog>
+  <script>
+    "use strict";
+    const $ = (id) => document.getElementById(id);
+    const state = {
+      screen: "map",
+      moving: false,
+      turn: 41,
+      production: "Phalanx",
+      research: "Alphabet",
+      rates: [40, 60, 0],
+      government: "Despotism",
+      citizens: 0,
+      worked: 2,
+      unit: [7, 5],
+      target: null,
+      zoom: 1,
+    };
+    const screens = [
+      ["map", "Map"],
+      ["city", "City"],
+      ["production", "Production"],
+      ["research", "Research"],
+      ["government", "Government"],
+      ["diplomacy", "Diplomacy"],
+      ["reports", "Reports"],
+      ["setup", "Setup"],
+      ["saves", "Save / load"],
+    ];
+    const menus = {
+      Game: [
+        ["setup", "New game…"],
+        ["saves", "Save / load…"],
+      ],
+      Kingdom: [["government", "Rates / government…"]],
+      View: [["map", "Map workspace"]],
+      Orders: [["map", "Unit orders"]],
+      Advisors: [
+        ["reports", "City status · F1"],
+        ["diplomacy", "Foreign minister · F3"],
+        ["research", "Science advisor · F6"],
+      ],
+      World: [["reports", "World reports"]],
+      Civilopedia: [["research", "Advance details (sample)"]],
+    };
+    $("reviewnav").innerHTML = screens
+      .map(
+        ([s, n]) =>
+          `<button data-screen="${s}" aria-pressed="false">${n}</button>`,
+      )
+      .join("");
+    $("menus").innerHTML = Object.entries(menus)
+      .map(
+        ([n, items]) =>
+          `<details><summary>${n}</summary><div class="dropdown">${items.map(([s, t]) => `<button data-screen="${s}">${t}</button>`).join("")}</div></details>`,
+      )
+      .join("");
+    function log(t) {
+      $("log").textContent = "Prototype · " + t;
+    }
+    function confirmAction(title, body, fn) {
+      $("confirmtitle").textContent = title;
+      $("confirmbody").textContent = body;
+      $("confirm").showModal();
+      $("cancel").focus();
+      $("accept").onclick = () => {
+        $("confirm").close();
+        fn();
+      };
+    }
+    $("cancel").onclick = () => $("confirm").close();
+    function heading(title, sub, back = "map") {
+      return `<div class="titleline"><div><h1>${title}</h1><p class="muted">${sub}</p></div><button data-screen="${back}">Close</button></div>`;
+    }
+    function show(s) {
+      state.screen = s;
+      document.querySelectorAll(".orderbar button").forEach((button) => {
+        button.disabled = s !== "map";
+      });
+      document
+        .querySelectorAll(".menubar details")
+        .forEach((x) => (x.open = false));
+      document
+        .querySelectorAll("#reviewnav [data-screen]")
+        .forEach((x) => x.setAttribute("aria-pressed", x.dataset.screen === s));
+      $("workspace").innerHTML = views[s]();
+      $("workspace").querySelector("h1")?.setAttribute("tabindex", "-1");
+      if (s === "map") drawMap();
+      if (s === "city") drawCity();
+      bind(s);
+    }
+    const views = {
+      map: () =>
+        `<section class="mapwrap"><canvas id="mapcanvas" width="1380" height="620" tabindex="0" aria-label="Illustrative diamond map. Tab to Moving mode to issue a simulated order."></canvas><div class="maptools"><button id="zoomout" aria-label="Zoom out">−</button><button id="zoomin" aria-label="Zoom in">+</button><button id="center">Center unit</button><button data-screen="city">Open Alder</button></div><div class="maphint"><b id="mapcaption">${state.moving ? "Moving pieces" : "Viewing pieces"}</b> · Click a diamond to ${state.moving ? "preview a move" : "inspect terrain"}.<br>Proposed safeguard: selecting a destination never moves immediately. Open Alder to inspect the city workspace.</div></section>`,
+      city: () =>
+        `<section class="screen">${heading("Alder", "Population 30,000 · City 1 of 2 · fictional review fixture")}<div class="citygrid"><div class="stack"><div class="box"><h3>City resources</h3><dl class="resources"><dt>Food surplus</dt><dd id="food">+${4 - state.citizens}</dd><dt>Taxes</dt><dd>2</dd><dt>Luxury</dt><dd>0</dd><dt>Science</dt><dd>${3 + state.citizens}</dd><dt>Net shields</dt><dd>3</dd><dt>Support</dt><dd>1 shield</dd></dl></div><div class="box"><h3>Building: ${state.production}</h3><div class="meter"><span style="width:60%"></span></div><p>12 / 20 shields · 3 turns</p><div class="row"><button data-screen="production">Change…</button><button id="buy">Buy…</button></div><small>Illustrative costs; not recalculated mechanics.</small></div></div><div class="box"><h3>Worked city radius</h3><canvas id="citycanvas" class="citytiles" width="650" height="320" tabindex="0" aria-label="Illustrative city tiles; click to preview worker assignment"></canvas><p class="muted">Gold marks the ${state.worked} worked tiles. Select a tile to preview a worker change.</p><h3>Citizens</h3><div class="citizens"><button id="specialist">${state.citizens ? "Scientist" : "Worker"} ↻</button><button disabled>Content worker</button></div><p><small>First citizen cycles worker / scientist. Numbers are illustrative.</small></p></div><aside class="stack"><div class="box"><h3>Food storage</h3><div class="meter"><span style="width:73%"></span></div><p>22 / 30 · Growth in 2 turns</p></div><div class="box"><h3>Improvements</h3><p>Palace · Granary</p><button id="sell">Sell granary…</button></div><div class="box"><h3>Supported / present units</h3><p>Warriors · 1 shield</p><p>Settlers · 1 food</p><button data-screen="map">Locate warriors</button></div></aside></div></section>`,
+      production: () =>
+        `<section class="screen">${heading("What shall Alder build?", "Select an item, inspect its details, then apply. Cancel retains the current build.", "city")}<div class="columns"><div class="box choices" id="buildchoices">${["Settlers", "Warriors", "Phalanx", "Barracks", "Colossus"].map((n) => `<button data-build="${n}" aria-pressed="${n === state.production}"><span>${n}</span><span>${{ Settlers: 10, Warriors: 1, Phalanx: 3, Barracks: 12, Colossus: 65 }[n]} turns*</span></button>`).join("")}</div><div class="box"><h2 id="buildname">${state.production}</h2><p id="builddetail">Current selection. Unit or improvement details appear here.</p><p class="note">* Turn estimates are fixture values. Real costs, obsolescence, legal choices, shield retention and hurry costs must come from the engine.</p><p>Advisor recommendations will be separate from the legal build list. Native recommendation logic is outside this design slice.</p></div></div><div class="actions"><button data-screen="city">Cancel</button><button class="primary" id="applybuild">Apply production</button></div></section>`,
+      research: () =>
+        `<section class="screen">${heading("Science advisor", "Current research and a longer-term goal are separate concepts.")}<div class="columns"><div class="box"><h2>${state.research}</h2><p>18 / 40 beakers · +6 per turn*</p><div class="meter"><span style="width:45%"></span></div><h3>Choose current research</h3><div class="choices">${["Alphabet", "Pottery", "Ceremonial Burial"].map((n) => `<button data-tech="${n}" aria-pressed="${n === state.research}">${n}</button>`).join("")}</div></div><div class="box"><h2 id="techname">${state.research}</h2><p id="techdetail">Available in this authored fixture. Prerequisite and unlock details belong here.</p><h3>Known advances</h3><p>Bronze Working</p><h3>Long-term goal</h3><p>Navigation → prerequisite path preview</p><p class="note">Goal selection was observed in the original advisor. Changing the active project mid-research is still a discovery question. * All progress here is simulated.</p></div></div><div class="actions"><button data-screen="map">Cancel</button><button class="primary" id="applytech">Apply research</button></div></section>`,
+      government: () =>
+        `<section class="screen">${heading("Kingdom", "Rates and government changes · proposed explicit commit / cancel.")}<div class="columns"><div class="box rates"><h2>Distribute the wealth</h2><p>Government: ${state.government} · Maximum rate: 60%*</p>${["Taxes", "Science", "Luxuries"].map((n, i) => `<label>${n}<input type="range" min="0" max="60" step="10" data-rate="${i}" value="${state.rates[i]}" aria-label="${n}"><output id="rate${i}">${state.rates[i]}%</output></label>`).join("")}<p id="ratetotal">Total: 100%</p><p>Income +8 · Upkeep −3 · Science +6*</p><button id="applyrates" class="primary">Apply rates</button><p class="note">* Estimates and caps are examples. Other sliders rebalance to 100%; exact previews require engine support.</p></div><div class="box"><h2>${state.government}</h2><p>Government effects, permitted rates and transition status belong here.</p><button id="revolt">Start revolution…</button><p class="note">The proposed confirmation defaults to Cancel. Escape closes it without changing the fixture. Government selection after anarchy is not yet observed.</p></div></div></section>`,
+      diplomacy: () =>
+        `<section class="screen">${heading("Foreign minister", "Established contacts only; no access to hidden foreign state.")}<div class="columns"><div class="box"><h2>Known contacts</h2><div class="choices"><button data-contact="Westmere" aria-pressed="true">Westmere · Neutral · Ceasefire</button><button data-contact="Highlands" aria-pressed="false">Highlands · Enraged · War</button></div><p>Reputation: sample standing<br>Embassy: none</p></div><div class="box"><h2 id="contactname">Westmere</h2><p id="contactdetail">Ceasefire · No embassy. The report may only disclose information earned by contact or intelligence.</p><button id="contact">Send emissary</button><div id="dialogue" class="note">The original may refuse contact or open a separate diplomatic presentation. Negotiation choices below will need further reference discovery.</div></div></div></section>`,
+      reports: () =>
+        `<section class="screen">${heading("City status", "Report rows are navigation, not just summaries.")}<div class="box"><table><thead><tr><th>City</th><th>Population</th><th>Food</th><th>Shields</th><th>Build</th><th>Action</th></tr></thead><tbody><tr><td>Alder</td><td>30,000</td><td>+4*</td><td>3*</td><td>${state.production}</td><td><button data-screen="city">Open city</button></td></tr><tr><td>Riverwatch</td><td>20,000</td><td>+2*</td><td>2*</td><td>Warriors</td><td><button disabled>Fixture only</button></td></tr></tbody></table></div><div class="columns" style="margin-top:16px"><div class="box"><h3>Advisor reports to specify</h3><p>Defense · Attitude · Trade · Science</p></div><div class="box"><h3>World reports to specify</h3><p>Wonders · Top cities · Score · Demographics · Spaceships</p></div></div><p class="note">Only the city report has been traced into a city in this first pass. These additional report names come from the reference menu; contents and workflows are still unverified.</p></section>`,
+      setup: () =>
+        `<section class="screen">${heading("Begin a game", "Proposed consolidation of the observed standard-game setup sequence.")}<div class="columns"><div class="box form"><label for="gametype">Game</label><select id="gametype"><option>Original single-map game</option><option>Scenario from own install</option><option disabled>Extended / multiple maps — design pending</option></select><label for="worldsize">World size</label><select id="worldsize"><option>Standard</option><option>Small</option><option>Large</option></select><label for="difficulty">Difficulty</label><select id="difficulty"><option>Prince</option><option>King</option><option>Emperor</option></select><label for="seed">Engine map seed</label><input id="seed" type="number" value="7"><label for="playername">Leader name</label><input id="playername" value="Avery" maxlength="30"></div><div class="box"><h2>Review before starting</h2><p>Human: Vale · Opponents: built-in</p><p>Resources resolve from your own installation. Missing files should give a specific corrective message.</p><p class="note">This prototype does not inspect files or generate a game. Scenario restrictions, factions, map parameters and options need their own discovery coverage.</p><button class="primary" id="start">Preview start</button></div></div></section>`,
+      saves: () =>
+        `<section class="screen">${heading("Save / load", "Proposed separation between engine checkpoints and imported original files.")}<div class="columns"><div class="box"><h2>Engine game</h2><p>Future client: persist the human turn, pending unit state, policy identity, RNG and scenario state. A valid resume must reproduce the next decisions.</p><button id="export">Download design fixture</button><p class="note">Downloads a tiny prototype JSON, not a game checkpoint or native SAV.</p></div><div class="box"><h2>Original game / scenario</h2><p>Choose a file from your own installation; detect its supported format before starting a session.</p><button id="unsupported">Preview unsupported-file message</button><p id="loadmessage" role="status"></p><p class="note">No files are read by this prototype. Native save writing is not implemented by the engine.</p></div></div></section>`,
+    };
+    function bind(s) {
+      if (s === "map") {
+        $("zoomin").onclick = () => {
+          state.zoom = Math.min(1.5, state.zoom + 0.1);
+          drawMap();
+        };
+        $("zoomout").onclick = () => {
+          state.zoom = Math.max(0.6, state.zoom - 0.1);
+          drawMap();
+        };
+        $("center").onclick = () => {
+          state.zoom = 1;
+          drawMap();
+          log("View centered on the selected unit.");
+        };
+        $("mapcanvas").onclick = selectTile;
+      }
+      if (s === "city") {
+        $("citycanvas").onclick = () =>
+          confirmAction(
+            "Reassign worker?",
+            "Preview: change a worked tile. Food and shields here remain illustrative.",
+            () => {
+              state.worked = state.worked === 2 ? 3 : 2;
+              show("city");
+              log("Worked-tile marker changed in the fixture.");
+            },
+          );
+        $("specialist").onclick = () => {
+          state.citizens = 1 - state.citizens;
+          show("city");
+          log("Citizen changed in the fixture; output is illustrative.");
+        };
+        $("buy").onclick = () =>
+          confirmAction(
+            "Buy production?",
+            "Illustrative cost: 19 gold. Real costs require an engine quote.",
+            () =>
+              log(
+                "Buy intention previewed; no treasury or production changed.",
+              ),
+          );
+        $("sell").onclick = () =>
+          confirmAction(
+            "Sell granary?",
+            "This is a confirmation-layout preview. There is no engine sale.",
+            () => log("Sell intention previewed; fixture buildings retained."),
+          );
+      }
+      if (s === "production") {
+        let draft = state.production;
+        document.querySelectorAll("[data-build]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              draft = b.dataset.build;
+              document
+                .querySelectorAll("[data-build]")
+                .forEach((x) => x.setAttribute("aria-pressed", x === b));
+              $("buildname").textContent = draft;
+              $("builddetail").textContent =
+                draft === "Settlers"
+                  ? "Found cities and improve terrain. Support costs need an engine preview."
+                  : "Cost, role, upkeep and unlock details appear here.";
+            }),
+        );
+        $("applybuild").onclick = () => {
+          state.production = draft;
+          show("city");
+          log("Production choice applied to the design fixture.");
+        };
+      }
+      if (s === "research") {
+        let draft = state.research;
+        document.querySelectorAll("[data-tech]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              draft = b.dataset.tech;
+              document
+                .querySelectorAll("[data-tech]")
+                .forEach((x) => x.setAttribute("aria-pressed", x === b));
+              $("techname").textContent = draft;
+              $("techdetail").textContent =
+                "Eligible in this fixture. The engine must provide legal choices and exact prerequisite details.";
+            }),
+        );
+        $("applytech").onclick = () => {
+          state.research = draft;
+          show("research");
+          log("Research choice applied to the design fixture.");
+        };
+      }
+      if (s === "government") {
+        let draft = [...state.rates];
+        document.querySelectorAll("[data-rate]").forEach(
+          (el) =>
+            (el.oninput = () => {
+              const i = +el.dataset.rate;
+              draft[i] = +el.value;
+              let delta = 100 - draft.reduce((a, b) => a + b, 0);
+              for (let k = 1; k < 3; k++) {
+                const j = (i + k) % 3,
+                  change = Math.max(-draft[j], Math.min(60 - draft[j], delta));
+                draft[j] += change;
+                delta -= change;
+              }
+              document.querySelectorAll("[data-rate]").forEach((e) => {
+                e.value = draft[+e.dataset.rate];
+                $("rate" + e.dataset.rate).textContent = e.value + "%";
+              });
+              $("ratetotal").textContent =
+                "Total: " + draft.reduce((a, b) => a + b, 0) + "%";
+            }),
+        );
+        $("applyrates").onclick = () => {
+          state.rates = draft;
+          $("ratebadge").textContent = draft.join(" / ");
+          log("Rates applied to the design fixture.");
+        };
+        $("revolt").onclick = () =>
+          confirmAction(
+            "Start a revolution?",
+            "Your civilization enters anarchy. This proposed action requires explicit confirmation.",
+            () => {
+              state.government = "Anarchy";
+              show("government");
+              log("Government changed to Anarchy in the design fixture.");
+            },
+          );
+      }
+      if (s === "diplomacy") {
+        let contact = "Westmere";
+        document.querySelectorAll("[data-contact]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              contact = b.dataset.contact;
+              document
+                .querySelectorAll("[data-contact]")
+                .forEach((x) => x.setAttribute("aria-pressed", x === b));
+              $("contactname").textContent = contact;
+              $("contactdetail").textContent =
+                contact === "Westmere"
+                  ? "Neutral · Ceasefire · No embassy"
+                  : "Enraged · War · No embassy";
+            }),
+        );
+        $("contact").onclick = () => {
+          $("dialogue").textContent =
+            contact === "Highlands"
+              ? "Contact refused (illustrative response). Return to the report; turn control is unchanged."
+              : "Negotiation view pending reference discovery. Proposed topics: treaty, tribute, technology; no functional diplomatic actions.";
+          log("Diplomacy presentation preview only.");
+        };
+      }
+      if (s === "setup")
+        $("start").onclick = () => {
+          show("map");
+          log("Setup layout preview complete; no game was created.");
+        };
+      if (s === "saves") {
+        $("unsupported").onclick = () => {
+          $("loadmessage").textContent =
+            "Unsupported file format. No game state was replaced. Show detected version and supported alternatives here.";
+        };
+        $("export").onclick = () => {
+          const a = document.createElement("a"),
+            u = URL.createObjectURL(
+              new Blob(
+                [
+                  JSON.stringify(
+                    {
+                      kind: "totengine-design-fixture",
+                      version: 1,
+                      production: state.production,
+                      research: state.research,
+                    },
+                    null,
+                    2,
+                  ),
+                ],
+                { type: "application/json" },
+              ),
+            );
+          a.href = u;
+          a.download = "totengine-design-fixture.json";
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(u), 1000);
+          log("Downloaded prototype selections only.");
+        };
+      }
+    }
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-screen]");
+      if (b) show(b.dataset.screen);
+    });
+    function updateMode() {
+      $("modebadge").textContent = state.moving
+        ? "Moving units"
+        : "Viewing pieces";
+      $("mode").textContent = state.moving
+        ? "View pieces (V)"
+        : "Move pieces (V)";
+      if (state.screen === "map") show("map");
+      log(
+        state.moving
+          ? "Moving mode: select a destination, then confirm."
+          : "Viewing mode: map clicks inspect without issuing orders.",
+      );
+    }
+    $("mode").onclick = () => {
+      state.moving = !state.moving;
+      updateMode();
+    };
+    $("wait").onclick = () =>
+      log("Wait intention previewed; unit scheduling needs an engine order.");
+    $("skip").onclick = () =>
+      log("Skip intention previewed; movement remains unchanged.");
+    $("found").onclick = () =>
+      log(
+        "Rejected preview: the selected warriors cannot found a city. No state changed.",
+      );
+    $("endturn").onclick = () =>
+      confirmAction(
+        "End your turn?",
+        "This fixture still has a unit with movement. Confirm advances the displayed turn only.",
+        () => {
+          state.turn++;
+          $("date").textContent = "Illustrative year · Turn " + state.turn;
+          log("Turn label advanced. No opponents or mechanics ran.");
+        },
+      );
+    function tileColor(x, y) {
+      if (x < 3 || x > 14 || y < 1 || y > 9) return "#121b1e";
+      if ((x * 7 + y * 11) % 17 < 3) return "#3b5968";
+      if ((x + y * 3) % 8 === 0) return "#70776a";
+      return ["#546b50", "#657a57", "#4c6350", "#71805b"][(x * 3 + y) % 4];
+    }
+    function diamond(ctx, x, y, w, h, fill) {
+      ctx.beginPath();
+      ctx.moveTo(x, y - h / 2);
+      ctx.lineTo(x + w / 2, y);
+      ctx.lineTo(x, y + h / 2);
+      ctx.lineTo(x - w / 2, y);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.strokeStyle = "#223832";
+      ctx.stroke();
+    }
+    function mapPoint(x, y) {
+      return [
+        210 + (x - y) * 37 * state.zoom + 350,
+        95 + (x + y) * 20 * state.zoom,
+      ];
+    }
+    function drawMap() {
+      const c = $("mapcanvas");
+      if (!c) return;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#10191c";
+      ctx.fillRect(0, 0, c.width, c.height);
+      for (let y = 0; y < 11; y++)
+        for (let x = 0; x < 18; x++) {
+          const [px, py] = mapPoint(x, y);
+          diamond(
+            ctx,
+            px,
+            py,
+            74 * state.zoom,
+            40 * state.zoom,
+            tileColor(x, y),
+          );
+          if (x >= 3 && x <= 14 && y >= 1 && y <= 9 && (x + y * 3) % 8 === 0) {
+            ctx.fillStyle = "#9a9e8c";
+            ctx.beginPath();
+            ctx.moveTo(px - 12, py + 4);
+            ctx.lineTo(px, py - 15);
+            ctx.lineTo(px + 13, py + 4);
+            ctx.fill();
+          }
+        }
+      [
+        [7, 5, "Alder"],
+        [12, 4, "Riverwatch"],
+      ].forEach(([x, y, n]) => {
+        const [px, py] = mapPoint(x, y);
+        ctx.fillStyle = "#d0b96c";
+        ctx.fillRect(px - 10, py - 12, 20, 17);
+        ctx.fillStyle = "#26322b";
+        ctx.fillRect(px - 3, py - 6, 5, 11);
+        ctx.font = "18px Georgia";
+        ctx.fillStyle = "#f2d78d";
+        ctx.textAlign = "center";
+        ctx.fillText(n, px, py + 30);
+      });
+      const [ux, uy] = mapPoint(...state.unit);
+      ctx.strokeStyle = "#ead990";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(ux - 16, uy - 23, 32, 39);
+      ctx.fillStyle = "#e5d998";
+      ctx.beginPath();
+      ctx.arc(ux, uy - 11, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(ux - 5, uy - 5, 10, 16);
+      ctx.lineWidth = 1;
+    }
+    function selectTile(e) {
+      const c = $("mapcanvas"),
+        r = c.getBoundingClientRect(),
+        mx = ((e.clientX - r.left) * c.width) / r.width,
+        my = ((e.clientY - r.top) * c.height) / r.height;
+      let best = null,
+        d = Infinity;
+      for (let y = 1; y <= 9; y++)
+        for (let x = 3; x <= 14; x++) {
+          const [px, py] = mapPoint(x, y),
+            v =
+              ((mx - px) / 37 / state.zoom) ** 2 +
+              ((my - py) / 20 / state.zoom) ** 2;
+          if (v < d) {
+            d = v;
+            best = [x, y];
+          }
+        }
+      if (d > 2) return;
+      const text = `Tile ${best.join(", ")} · illustrative terrain`;
+      $("selection").textContent = text;
+      if (!state.moving) {
+        log(text + " · inspected; no order sent.");
+        return;
+      }
+      const dist =
+        Math.abs(best[0] - state.unit[0]) + Math.abs(best[1] - state.unit[1]);
+      if (dist !== 1) {
+        log(
+          "Rejected preview: choose a neighboring diamond. No state changed.",
+        );
+        return;
+      }
+      confirmAction(
+        "Move warriors?",
+        `Destination ${best.join(", ")}. This changes only the drawn fixture position.`,
+        () => {
+          state.unit = best;
+          drawMap();
+          log(
+            "Unit moved in the design fixture. No combat, fog or movement costs computed.",
+          );
+        },
+      );
+    }
+    function drawCity() {
+      const c = $("citycanvas"),
+        ctx = c.getContext("2d");
+      let k = 0;
+      for (let y = -2; y <= 2; y++)
+        for (let x = -2; x <= 2; x++) {
+          if (Math.abs(x) === 2 && Math.abs(y) === 2) continue;
+          const px = 325 + (x - y) * 52,
+            py = 150 + (x + y) * 28;
+          diamond(
+            ctx,
+            px,
+            py,
+            104,
+            56,
+            ["#526b4d", "#657c53", "#4a6656"][(x * x + y * y) % 3],
+          );
+          if (k++ < state.worked) {
+            ctx.fillStyle = "#f0d685";
+            ctx.font = "24px Georgia";
+            ctx.textAlign = "center";
+            ctx.fillText("•", px, py + 6);
+          }
+          if (x === 0 && y === 0) {
+            ctx.fillStyle = "#d0b96c";
+            ctx.fillRect(px - 10, py - 12, 20, 20);
+          }
+        }
+    }
+    document.addEventListener("keydown", (e) => {
+      if ($("confirm").open || e.target.matches("input,select,button,summary"))
+        return;
+      if (e.key.toLowerCase() === "v") {
+        if (state.screen !== "map") return;
+        e.preventDefault();
+        state.moving = !state.moving;
+        updateMode();
+      }
+      if (e.key === "F1") {
+        e.preventDefault();
+        show("reports");
+      }
+      if (e.key === "F3") {
+        e.preventDefault();
+        show("diplomacy");
+      }
+      if (e.key === "F6") {
+        e.preventDefault();
+        show("research");
+      }
+    });
+    show("map");
+  </script>
+</html>

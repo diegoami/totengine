@@ -3731,3 +3731,24 @@ CIVTOT_HOME=/path/to/CIVTOT python3 tools/ai_campaign_audit.py \
   --engine-example target/release/examples/ai_policy_audit \
   --report /tmp/ai-campaign-audit.json
 ```
+
+## Playable-client UI discovery (v0.11, first pass, #107)
+
+`ui-discovery.json` records source identities, private screenshot hashes and
+18 inspected route groups from the installed ToTPP reference UI. Routes,
+reinspection procedure and explicit gaps are in `docs/ui/discovery.md`.
+Two sessions used copied install/Wine directories on an owned Xvfb display;
+no RAM or presentation patches were applied. Original screenshots and the
+generated human save remain outside Git. This is visual workflow evidence,
+not unpatched-UI equivalence or automated pixel/next-turn parity.
+
+The routes include map/city/production, distinct science-goal and required
+project-choice screens, rates/revolution, FallRome foreign-report/refusal/
+presentation entry, fresh standard setup, founding and scratch save/reload.
+The reload retains the visible selected research project. Overwrite refusal
+returns to the chooser; full persistence fidelity is not established.
+The revolution Escape/focus sequence is explicitly not an isolated key rule.
+
+`docs/ui/client-prototype.html` and its map/city PNG previews are authored
+design fixtures, not reference screenshots. Their proposed interactions and
+browser-only validation are recorded in `docs/ui/client-design.md`.

@@ -221,8 +221,16 @@ explicit in the inventory. Lua-disabled and invalid-file rejection are covered.
 The isolated installed-reference revolution Escape test starts a revolution;
 the prototype deliberately proposes safe cancellation. No vanilla equivalence
 or comprehensive native-UI parity is claimed. All owned Wine/Xvfb sessions stopped.
-Next-session entry point: #107. Read `docs/decisions/0005-playable-client-planning.md`
-for UI discovery/design acceptance before choosing implementation work; read
+Milestone 10 implementation has started: `engine::human::HumanSession` owns
+resumable human input and bounded builtin-1 scheduling, explicit research/named
+founding, identity/revision/retry validation, filtered views/notices and replay-based
+human checkpoints. See `docs/ui/human-session.md`; these are engine foundations,
+not actual human acceptance in either client. `totui::resources` resolves profile
+Rules/art and decodes BMP/GIF with shared measured masks; all five retained
+Original crop opacity counts match. Decoder notices: `docs/third-party/README.md`.
+Full atlas/adjacency/colors/font, desktop feasibility, both adapters and assembled
+checkpoint acceptance remain. Next entry points: #126, #128, #129/#130 and #131.
+Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md

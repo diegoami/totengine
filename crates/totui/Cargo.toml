@@ -3,7 +3,8 @@ name = "totui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Local browser observer for ToTEngine"
+description = "Shared client resources and local browser interfaces for ToTEngine"
 [dependencies]
 engine = { path = "../engine" }
 tot-kit = { path = "../tot-kit" }
+image = { version = "0.25.10", default-features = false, features = ["bmp", "gif"] }

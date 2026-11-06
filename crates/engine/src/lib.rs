@@ -24,6 +24,7 @@ pub mod founding;
 pub mod government;
 pub mod growth;
 pub mod happiness;
+pub mod human;
 pub mod huts;
 pub mod movement;
 pub mod newgame;

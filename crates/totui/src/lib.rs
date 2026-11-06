@@ -1,4 +1,5 @@
-//! Local read-only browser observer, with no external dependencies or assets.
+//! Browser interfaces and shared client resources. No game assets are bundled.
+pub mod resources;
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{Ipv4Addr, TcpListener, TcpStream};
 use std::time::Duration;

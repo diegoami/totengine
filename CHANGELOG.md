@@ -5,6 +5,17 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Add a shared resumable human-session driver for generated games, with explicit
+  research/named founding, production choices, stale/foreign/retry protection,
+  bounded builtin-1 opponents and filtered human views/round notices (#127).
+  Atomic-round science banking is explicit; unsupported government choice stops.
+- Add replay-based human checkpoints restoring pending decisions, retry receipts
+  and private opponent state, including partial turns (engine portion of #131).
+  Both actual client adapters and their human acceptance remain outstanding.
+- Add shared profile Rules/art resolution, bounded BMP/GIF RGBA decoding and
+  measured sprite masks (part of #128). All five retained Original crop opacity
+  counts match; no original assets included. Retain decoder dependency notices.
+
 ## [0.11.0] — UI discovery, reviewed design and client planning
 
 - Inventory 33 representative original UI/workflow groups across standard,

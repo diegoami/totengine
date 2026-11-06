@@ -102,3 +102,31 @@ The check verifies served-byte hashes against the manifest, five sprite-mask
 samples, zoom, a simulated move, citizen-image replacement without duplicate
 images, all nine main screens, desktop/1024 layout and absence of JS errors.
 The standalone schematic browser flows also passed after the renderer was added.
+
+## Shared Rust loader (milestone 10 implementation)
+
+`totui::resources::Resources::load` now implements the explicit profile/root
+selection in Rust, including profile Rules, ASCII case-insensitive resolution,
+ambiguity/missing diagnostics, symlink containment, bounded reads and BMP/GIF
+(first frame) decoding to RGBA. This is shared data for the forthcoming two
+adapters; the Python preview and its simulated actions remain unchanged.
+`Resources::identity()` binds selected relative source names, content lengths and
+FNV fingerprints to human checkpoints. A corrupt preferred BMP produces an
+explicit error, rather than silently selecting a lower-precedence GIF.
+
+`Resources::crop` implements the measured magenta/purple/edge-matte/diamond
+recipes above. Its install-backed test compares all five retained preview sample
+opacity counts and transparent corners, including the food icon. Synthetic tests
+cover both codecs, bounded/corrupt data, resource precedence, Rules consistency,
+traversal, missing/ambiguous names, symlink escape, rectangle bounds and preserving
+isolated interior gray details. Reproduce with:
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT cargo test -p totui resources
+```
+
+The new `image` dependency enables only BMP/GIF; redistributed notices and its
+transitive dependency audit are in [third-party notices](../third-party/README.md).
+No original bytes are retained by tests or in Git. Full Rules-to-sprite atlas,
+adjacency, owner colors, font and both-adapter rendering are still #128 work;
+these five measured examples are not complete native rendering support.

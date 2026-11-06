@@ -55,6 +55,7 @@ pub struct Ctx {
     pub denominator: Option<i32>,
 }
 
+#[derive(Clone)]
 pub struct EventEngine {
     pub file: EventFile,
     fired: HashSet<usize>,

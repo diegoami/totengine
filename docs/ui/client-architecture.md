@@ -7,7 +7,17 @@ human client is implemented. Both #94 (desktop) and #125 (browser) are required.
 Read with the [screen contracts](screen-contracts.md) and
 [delivery proposal](client-milestones.md).
 
-## Findings from the current code
+## Implementation progress after v0.11
+
+The audit below is the planning baseline. The shared human driver and checkpoint
+engine foundation now exist in `engine::human`; see [session contract and
+checks](human-session.md). `totui::resources` provides profile Rules/art selection,
+BMP/GIF decoding and the measured crop masks; see [loader status](asset-preview.md#shared-rust-loader-milestone-10-implementation).
+The remaining desktop feasibility, full atlas/presentation, two adapters and
+assembled human acceptance are still milestone 10 work. The design prototype
+remains simulated and is not connected by this foundation change.
+
+## Findings from the audited code
 
 | Area | Existing implementation | Consequence for client work |
 | --- | --- | --- |

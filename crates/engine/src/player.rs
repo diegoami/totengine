@@ -21,6 +21,41 @@ use crate::rng::{GameRng, Lcg64};
 use crate::yields::{CityOutput, RADIUS_DX, RADIUS_DY};
 use crate::WorldState;
 
+/// Engine client policy: a trimmed, nonempty UTF-8 name of at most 63 bytes.
+/// This is not a claim about the native save's name encoding or capacity.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CityName([u8; 64]);
+
+impl CityName {
+    pub fn new(name: &str) -> Result<Self, &'static str> {
+        if name.is_empty()
+            || name.len() > 63
+            || name.trim() != name
+            || name.chars().any(char::is_control)
+        {
+            return Err("city name must be trimmed, nonempty, at most 63 UTF-8 bytes and contain no controls");
+        }
+        let mut bytes = [0; 64];
+        bytes[..name.len()].copy_from_slice(name.as_bytes());
+        Ok(Self(bytes))
+    }
+
+    pub fn as_str(&self) -> &str {
+        std::str::from_utf8(&self.0[..self.0.iter().position(|&b| b == 0).unwrap()]).unwrap()
+    }
+
+    pub(crate) fn from_hex(hex: &str) -> Option<Self> {
+        if !hex.len().is_multiple_of(2) || hex.len() > 126 || !hex.is_ascii() {
+            return None;
+        }
+        let bytes = (0..hex.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).ok())
+            .collect::<Option<Vec<_>>>()?;
+        Self::new(std::str::from_utf8(&bytes).ok()?).ok()
+    }
+}
+
 /// Orders a player may give (decision 0003). `FoundCity` came with AI v0
 /// (#75); `SetResearch` uses the per-civ research accounting (#82).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,6 +83,11 @@ pub enum Order {
     /// ([`WorldState::found_city`]).
     FoundCity {
         unit: usize,
+    },
+    /// Human founding, atomically recorded with its explicit name.
+    FoundNamedCity {
+        unit: usize,
+        name: CityName,
     },
     /// End this civ's turn.
     EndTurn,
@@ -82,6 +122,13 @@ impl fmt::Display for Order {
             Order::SetProduction { city, item } => write!(f, "prod {city} {item}"),
             Order::SetResearch { advance } => write!(f, "research {advance}"),
             Order::FoundCity { unit } => write!(f, "found {unit}"),
+            Order::FoundNamedCity { unit, name } => {
+                write!(f, "found-named {unit} ")?;
+                for b in name.as_str().as_bytes() {
+                    write!(f, "{b:02x}")?;
+                }
+                Ok(())
+            }
             Order::EndTurn => write!(f, "end"),
         }
     }
@@ -127,6 +174,10 @@ impl Order {
             }),
             ["found", u] => Some(Order::FoundCity {
                 unit: u.parse().ok()?,
+            }),
+            ["found-named", u, name] => Some(Order::FoundNamedCity {
+                unit: u.parse().ok()?,
+                name: CityName::from_hex(name)?,
             }),
             ["end"] => Some(Order::EndTurn),
             _ => None,
@@ -232,6 +283,30 @@ pub trait Player {
 pub const ACTION_CAP: usize = 200;
 
 impl WorldState {
+    /// Shared production legality for command validation and human pickers.
+    pub fn can_set_production(&self, rules: &Rules, civ: u8, city: usize, item: i8) -> bool {
+        let Some(c) = self
+            .cities
+            .get(city)
+            .filter(|c| c.city_id != 0 && c.owner & 15 == u16::from(civ))
+        else {
+            return false;
+        };
+        if item >= 0 {
+            self.can_build_unit(rules, civ, item as usize)
+        } else {
+            let id = -(item as i32) as usize;
+            (1..68).contains(&id)
+                && rules.improvement_cost(id).is_some()
+                && if id < 40 {
+                    !c.has_building(id)
+                } else {
+                    self.wonders[id - 40] == -1
+                }
+                && self.knows(rules, civ, rules.improvement_prereq_raw(id))
+        }
+    }
+
     /// Mark the tiles a civ currently sees as seen: distance ≤ 1 around its
     /// units, the city radius around its cities.
     pub fn reveal(&mut self, civ: u8) {
@@ -473,7 +548,7 @@ impl WorldState {
                 }
                 OrderResult::ResearchSet
             }
-            Order::FoundCity { unit } => {
+            Order::FoundCity { unit } | Order::FoundNamedCity { unit, .. } => {
                 if self
                     .units
                     .get(unit)
@@ -483,6 +558,9 @@ impl WorldState {
                 }
                 match self.found_city(rules, unit) {
                     Ok(c) => {
+                        if let Order::FoundNamedCity { name, .. } = order {
+                            self.cities[c].name = name.as_str().to_owned();
+                        }
                         self.reveal(civ);
                         OrderResult::Founded(c)
                     }
@@ -531,20 +609,7 @@ impl WorldState {
                 if (c.owner & 0x0F) as u8 != civ {
                     return OrderResult::Rejected("not your city");
                 }
-                let ok = if item >= 0 {
-                    let t = item as usize;
-                    self.can_build_unit(rules, civ, t)
-                } else {
-                    let id = -(item as i32) as usize;
-                    (1..68).contains(&id)
-                        && rules.improvement_cost(id).is_some()
-                        && if id < 40 {
-                            !c.has_building(id)
-                        } else {
-                            self.wonders[id - 40] == -1
-                        }
-                        && self.knows(rules, civ, rules.improvement_prereq_raw(id))
-                };
+                let ok = self.can_set_production(rules, civ, city, item);
                 if !ok {
                     return OrderResult::Rejected("cannot build");
                 }
@@ -628,15 +693,43 @@ impl Game {
     /// The generated log binds setup versions, canonical Rules and initial
     /// state. It is separate from the existing save-backed log format.
     pub fn generated(config: crate::newgame::NewGameConfig, rules: Rules) -> Result<Game, String> {
+        Self::generated_with_human(config, rules, None)
+    }
+
+    pub(crate) fn generated_human(
+        config: crate::newgame::NewGameConfig,
+        rules: Rules,
+        human: u8,
+    ) -> Result<Game, String> {
+        if !(1..=config.civilizations).contains(&human) {
+            return Err("human civilization is outside the generated setup".into());
+        }
+        Self::generated_with_human(config, rules, Some(human))
+    }
+
+    fn generated_with_human(
+        config: crate::newgame::NewGameConfig,
+        rules: Rules,
+        human: Option<u8>,
+    ) -> Result<Game, String> {
         let mut world = crate::newgame::generate(config, &rules)?;
+        if let Some(civ) = human {
+            world.human_mask = 1 << civ;
+        }
         world.start_turn(&rules);
         for c in 1..8 {
             world.reveal(c);
         }
         let canonical_rules = tot_kit::emit_rules(&rules);
+        let (header, setup) = match human {
+            Some(civ) => (
+                "totengine-human-orderlog 1",
+                format!("{} human {civ}", config.descriptor()),
+            ),
+            None => ("totengine-generated-orderlog 1", config.descriptor()),
+        };
         let log = format!(
-            "totengine-generated-orderlog 1\nsetup {}\nrules {} {:016x} initial {:016x}\n",
-            config.descriptor(),
+            "{header}\nsetup {setup}\nrules {} {:016x} initial {:016x}\n",
             canonical_rules.len(),
             fnv64(canonical_rules.as_bytes()),
             world.checksum()
@@ -658,6 +751,22 @@ impl Game {
         let g = Self::generated(config, rules)?;
         if !log.starts_with(&g.log) {
             return Err("generated setup, Rules or initial state differ from order log".into());
+        }
+        Self::replay_records(g, log.lines().enumerate().skip(3), |_| {})
+    }
+
+    /// Re-derive a generated human game's canonical orders and round checksums.
+    /// This is world replay; HumanSession checkpoints also reconstruct policies
+    /// and the suspended scheduler/decision state.
+    pub fn replay_human(
+        config: crate::newgame::NewGameConfig,
+        rules: Rules,
+        human: u8,
+        log: &str,
+    ) -> Result<Game, String> {
+        let g = Self::generated_human(config, rules, human)?;
+        if !log.starts_with(&g.log) {
+            return Err("human setup, Rules or initial state differ from order log".into());
         }
         Self::replay_records(g, log.lines().enumerate().skip(3), |_| {})
     }
@@ -697,7 +806,7 @@ impl Game {
         &self.log
     }
 
-    fn submit(&mut self, civ: u8, order: Order) -> OrderResult {
+    pub(crate) fn submit(&mut self, civ: u8, order: Order) -> OrderResult {
         let result = self
             .world
             .apply_order(&self.rules, self.events.as_mut(), civ, order);
@@ -708,8 +817,29 @@ impl Game {
         result
     }
 
-    fn close_turn(&mut self) {
-        self.world.run_turn(&self.rules, self.events.as_mut());
+    /// Human commands are transactional, including rejected moves that would
+    /// otherwise refresh fog. Legacy autoplay still records its rejected orders.
+    pub(crate) fn submit_checked(
+        &mut self,
+        civ: u8,
+        order: Order,
+    ) -> Result<OrderResult, &'static str> {
+        let world = self.world.clone();
+        let events = self.events.clone();
+        let len = self.log.len();
+        let result = self.submit(civ, order);
+        if let OrderResult::Rejected(why) = result {
+            self.world = world;
+            self.events = events;
+            self.log.truncate(len);
+            Err(why)
+        } else {
+            Ok(result)
+        }
+    }
+
+    pub(crate) fn close_turn(&mut self) -> crate::turn::TurnSummary {
+        let summary = self.world.run_turn(&self.rules, self.events.as_mut());
         for c in 1..8 {
             self.world.reveal(c);
         }
@@ -718,6 +848,7 @@ impl Game {
             self.world.turn,
             self.world.checksum()
         ));
+        summary
     }
 
     /// One full turn: every living civ with a player acts until it ends its

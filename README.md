@@ -27,8 +27,10 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-The version on `main` is the **v0.10.0 built-in opponent candidate**; the
-latest released tag is **v0.9.0**. A version counts as released once its
+The latest released tag is **v0.10.0 — built-in opponent: research and land
+campaigns**, independently reviewed on
+[#116](https://github.com/diegoami/totengine/issues/116). A version counts as
+released once its
 `vX.Y.Z` tag exists
 ([tags](https://github.com/diegoami/totengine/tags); see
 [CHANGELOG.md](CHANGELOG.md); the queue is the GitHub
@@ -60,11 +62,14 @@ happiness, wonder effects and capital road/rail waste. Controlled acceptance
 checks match 50 original-written city saves and 64 live barbarian phases;
 50-turn AI runs are deterministic and replay. The [completion record](docs/v0.8.0-readiness.md)
 and [evidence](docs/evidence/README.md) describe the fixtures and limits.
-The v0.10 candidate adds original-derived research scoring and controlled
+v0.10 adds original-derived research scoring and controlled
 production comparisons across six difficulties, with supported land campaigns
 and explicit remaining differences. See [the readiness record](docs/v0.10.0-readiness.md)
 and [decision 0007](docs/decisions/0007-original-like-ai.md). Full original-AI
-parity is not claimed. Owner-reviewed client discovery/design starts at v0.11.
+parity is not claimed. The owner-requested [complete original-AI scope](docs/original-ai-scope.md)
+now defines the remaining ports and completion gates ([program #117](https://github.com/diegoami/totengine/issues/117)).
+Full AI reproduction is gated behind the playable UI/client work.
+Owner-reviewed client discovery/design starts at v0.11.
 
 ```bash
 # Rust CLI (successor of the Python probe)

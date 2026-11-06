@@ -1,11 +1,13 @@
-# Playable client: design proposal 01
+# Playable client: design proposal 02
 
 **Status: awaiting owner review; not an accepted specification.** For #107,
 v0.11, under [decision 0005](../decisions/0005-playable-client-planning.md).
 [Reference findings](discovery.md) distinguish inspected behavior from unknowns.
 The [clickable prototype](client-prototype.html) is a standalone local HTML file:
-open it in a browser; no server or engine is needed. Static previews: [map](map-layout.png) and [city](city-layout.png). Its review navigation is
+open it in a browser; no server or engine is needed. Static previews: [map](map-layout.png), [city](city-layout.png), [reports](reports-layout.png) and [diplomacy](diplomacy-layout.png). Its review navigation is
 outside the proposed game window. All values and actions are authored fixtures.
+Detailed [screen/decision contracts](screen-contracts.md) and the proposed
+[delivery breakdown](client-milestones.md) accompany this layout review.
 
 ## Layout proposal
 
@@ -33,18 +35,18 @@ is deferred until the design and deployment decision are settled.
 
 ## Interaction walkthroughs
 
-| Screen           | Walkthrough to review                                                                                                                       | Result / cancellation rule                                                                                                                                                                                                          |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Map and units    | Inspect a tile in Viewing mode → switch to Moving → select adjacent destination → read preview → confirm. Zoom and center retain selection. | Proposed explicit confirmation prevents an inspection click from silently issuing an order. This adds a step versus the reference rig's observed click behavior; owner must judge its cost. Prototype movement only redraws a unit. |
-| City             | Open Alder → inspect radius/output/storage/support → preview tile reassignment or cycle first citizen → inspect production.                 | Prototype markers and sample specialist numbers change, but do not calculate yields. Real client must show one consistent engine-derived preview/result.                                                                            |
-| Production       | Select Settlers → inspect costs/support → Cancel, or Apply → return to city with new build.                                                 | Draft selection does not commit. Current item survives Cancel. Actual shield retention/penalties and legal choices must come from engine.                                                                                           |
-| Research         | Open Science → inspect current progress and known advances → choose a legal project → Apply. Keep a distinct long-term goal view.           | Project-change availability and progress effects remain provisional pending discovery. Do not infer this workflow from the reference Goal dialog.                                                                                   |
-| Rates/government | Adjust one rate, inspect total/cap and estimates → Apply. Start revolution → explicit consequence dialog.                                   | Prototype rebalances other rates to 100; this is proposed, not measured native behavior. Confirm performs a fixture transition; Escape/Cancel never commits. Government selection after anarchy needs further design.               |
-| Diplomacy        | Select known civilization → inspect earned relationship/intelligence → send emissary → refusal or negotiation presentation → return.        | No hidden state exposed. Only the report, refusal and presentation entry were observed. Negotiation topics in prototype are placeholders, not a completed interaction spec.                                                         |
-| Reports          | City rows show output/build → open a city → return. Additional advisors/world reports share clear drill-down and return paths.              | Prototype implements only the city drill-down; other report contents remain discovery work.                                                                                                                                         |
-| Setup            | Choose standard/scenario → configure supported world/difficulty/leader settings → review roster/resources → start.                          | These settings consolidate only a subset of the observed standard wizard. Prototype creates no game. Scenario and multi-map restrictions need additional screens.                                                                   |
-| Save/load        | Distinguish engine checkpoint from original import → show support/version → validate before replacing session → resume same human turn.     | Prototype downloads only a tiny labeled design-fixture JSON and previews an error. It does not load files or export native SAV.                                                                                                     |
-| Turn progression | End turn with movable units → read explicit confirmation → cancel or confirm → results → next human decision.                               | Prototype changes a turn label only. A real client must preserve input ownership while opponents/events run and route resulting choices before accepting another move.                                                              |
+| Screen           | Walkthrough to review                                                                                                                                                                             | Result / cancellation rule                                                                                                                                                                                                            |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Map and units    | Inspect in Viewing mode → switch to Moving → compare per-move confirmation and immediate-movement variants using the selector on the map → test an adjacent move/cancel.                          | Both are unapproved proposals. Viewing never orders. Native keyboard directions and activation are observed in U30; mouse behavior depends on preferences. No combat/fog/costs run in this fixture.                                   |
+| City             | Open Alder → inspect radius/output/storage/support → preview a tile assignment or citizen role → inspect production.                                                                              | Entertainer/tax collector/scientist states are now observed (U19); prototype role/output values remain authored. Immediate native edits versus proposed previews require owner choice.                                                |
+| Production       | Select Settlers → inspect costs/support → Cancel, or Apply → return to city with new build.                                                                                                       | Draft selection does not commit. Current item survives Cancel. Actual shield retention/penalties and legal choices must come from engine.                                                                                             |
+| Research         | Open Science → inspect current progress and known advances → choose a legal project → Apply. Keep a distinct long-term goal view.                                                                 | Project-change availability and progress effects remain provisional pending discovery. Do not infer this workflow from the reference Goal dialog.                                                                                     |
+| Rates/government | Adjust an unlocked rate, inspect total/cap → lock other rates and try an impossible change → Apply. Revolution requires confirmation; preview the post-anarchy government choice and rate review. | Native early-government sequence is now observed (U31/U32). Prototype Escape defaults to cancellation, intentionally differing from the installed revolution dialog. Redistribution is authored; extra governments remain unobserved. |
+| Diplomacy        | Select a known civilization → send emissary → refuse incoming demands → accept a peace offer → open proposals → select an offered advance → return through proposals/topics/report.               | Branch sequence is based on U26. Only the authored treaty label changes; no real technology or diplomacy runs. Gift/tribute controls explicitly remain unobserved placeholders.                                                       |
+| Reports          | Switch among nine report families, compare standard/scenario score forms, inspect early unavailable spaceships, and drill from Cities into Alder.                                                 | Layouts now have reference evidence (U23/U24). Values, public-information rules and additional drill-downs are not implemented mechanics; late space screens remain unknown.                                                          |
+| Setup            | Review world size, six difficulties, civilization count, barbarians, rules/style and leader fields → preview a start.                                                                             | A proposed consolidation of the observed standard wizard, not a game constructor. Custom rules, scenario-start and identity/style details need further design.                                                                        |
+| Save/load        | Distinguish engine checkpoint from original import → preview invalid-format and missing-Lua-capability diagnostics → download the labeled fixture selections.                                     | Diagnostic types are observed (U29/U33), but no file is loaded. Fixture JSON is neither a human checkpoint nor native SAV.                                                                                                            |
+| Turn progression | End turn with movable units → read explicit confirmation → cancel or confirm → results → next human decision.                                                                                     | Prototype changes a turn label only. A real client must preserve input ownership while opponents/events run and route resulting choices before accepting another move.                                                                |
 
 Use the review strip to reach all nine layouts. The game menus expose a subset
 of those same layouts. No production action, engine connection or disk mutation
@@ -62,14 +64,14 @@ choices, quotes and resulting gameplay mutations belong in engine APIs.
 | Workflow          | Existing foundation                                                          | Missing work to schedule after design                                                                                                                                                   |
 | ----------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Map/unit          | Move/attack, OccupyCity, FoundCity, EndTurn; own movement and visible tiles. | Unit scheduling, wait/skip/fortify/jobs, go-to, cargo/air/multi-map orders; legal-action/quote feedback; human turn/prompt driver.                                                      |
-| City              | SetProduction; own output, finance, buildings, available improvements.       | Worker/specialist commands and detailed city-radius data; food/storage/support view; hurry/sale quote and commit; legal production list.                                                |
+| City              | SetProduction; own output, finance, buildings and available improvements.    | Worker/specialist commands and radius/storage/support views; hurry/sale quotes and commit; legal production choices; human city naming.                                                 |
 | Science           | SetResearch, ResearchView and own tech bits.                                 | Human choice prompt delivery, legal project/detail/goal model; validate active-project change semantics.                                                                                |
-| Rates/government  | Government field and finance mechanics exist.                                | Rates view/commands/preview, revolution and government-choice phase; cancellation and persistence.                                                                                      |
+| Rates/government  | Government field and finance mechanics.                                      | Rates view/commands/quote, revolution/anarchy/government-choice phase and human-session persistence.                                                                                    |
 | Diplomacy/reports | Partial capture/diplomacy state and power mechanics.                         | Earned contact/intelligence views, diplomatic commands/state machine (#96), report views; prevent disclosure through summaries.                                                         |
 | Setup/save        | Newgame and campaign checkpoint/replay foundations.                          | Human session lifecycle, install resolver/errors, supported scenario setup, human-turn checkpoint/resume. Campaign policy checkpoints alone do not establish human-session persistence. |
 
-Do not route the UI around `Game::apply` by handing out unrestricted mutable
-WorldState. Extend the validated command/view interface where required and
+Do not bypass `WorldState::apply_order` and the Game order-log boundary by
+handing the UI unrestricted mutable WorldState. Extend the validated command/view interface where required and
 preserve the observation boundary in decision 0003. The full native AI program
 #117 remains gated behind the playable client; this design work does not
 amend that decision or approve a trusted compatibility driver.
@@ -86,8 +88,8 @@ amend that decision or approve a trusted compatibility driver.
 
 These are concrete layout/interaction decisions, not permission to skip missing
 discovery. Owner feedback should be recorded here with date and exact accepted
-or revised choices. After closing coverage gaps, revise the design and then
-freeze the first delivery slice. Do not label the initial prototype approved
+or revised choices. Review the explicit coverage gaps and scope them into the delivery plan,
+revise the design and then freeze the first delivery slice. Do not label the initial prototype approved
 because implementation work was generally authorized.
 
 ## Proposed implementation slices (unversioned, not yet scheduled)
@@ -109,18 +111,25 @@ release versions, milestone count, dates or complete-playability claim are
 assigned by this proposal. v0.11 cannot close until discovery, owner-reviewed
 design and accepted implementation decomposition satisfy #107.
 
-## First-pass validation
+## Prototype validation (revision 02)
 
-The standalone prototype was checked in real headless Chromium (Playwright,
-2026-11-06). All nine views opened without JavaScript errors. Checks exercised
-production Cancel/Apply, specialist preview, research selection, rate totals,
-revolution Escape/default Cancel, refusal presentation, report-to-city navigation,
-setup preview, fixture download and error display, end-turn Cancel/Confirm and
-no horizontal overflow at 1440 px / city layout at 1024 px. Unit-order controls
-are disabled while a management screen is open. These checks validate the
-prototype interaction states only; they are not engine, accessibility or human
-usability acceptance. Captured previews contain only our authored drawings.
+The revised standalone prototype was checked in real headless Chromium
+(Playwright, 2026-11-06). All nine main screens and nine report families opened
+without JavaScript errors. Checks exercised both movement variants with
+confirmation cancellation, three specialist roles, production Cancel/Apply,
+research selection, 100% rate conservation and impossible locked-rate rejection,
+revolution Escape/default Cancel, government-choice preview, nested diplomatic
+reply/proposal/advance/back/end routes, treaty label refresh, report-to-city
+navigation, six setup difficulties, fixture download and two diagnostic types,
+end-turn Cancel/Confirm and 1440/1024 layout overflow checks.
 
-Owner review remains pending. The fresh setup/founding/initial-research and
-native scratch-save sequence added in U15–U18 narrows discovery gaps; it does
-not complete the coverage table in the discovery record.
+These validate authored interaction states only; no engine runtime or original
+AI port changed. They do not replace accessibility/usability or sustained human
+play. All four previews contain only our authored drawings/text/fixture values.
+
+The reference inventory now has 33 representative route groups across standard,
+FallRome, Fantasy and a classic custom scenario, plus explicit Lua/invalid-file
+rejection. The detailed gaps remain in the discovery record and screen contracts.
+Owner design review and acceptance of the first deliverable/decomposition are
+still pending. No milestone candidate or substantial client implementation is
+claimed by this package.

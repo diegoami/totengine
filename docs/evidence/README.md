@@ -3732,12 +3732,12 @@ CIVTOT_HOME=/path/to/CIVTOT python3 tools/ai_campaign_audit.py \
   --report /tmp/ai-campaign-audit.json
 ```
 
-## Playable-client UI discovery (v0.11, first pass, #107)
+## Playable-client UI discovery (v0.11, second pass, #107)
 
 `ui-discovery.json` records source identities, private screenshot hashes and
-18 inspected route groups from the installed ToTPP reference UI. Routes,
+33 inspected route groups from the installed ToTPP reference UI. Routes,
 reinspection procedure and explicit gaps are in `docs/ui/discovery.md`.
-Two sessions used copied install/Wine directories on an owned Xvfb display;
+Three sessions used copied install/Wine directories on an owned Xvfb display;
 no RAM or presentation patches were applied. Original screenshots and the
 generated human save remain outside Git. This is visual workflow evidence,
 not unpatched-UI equivalence or automated pixel/next-turn parity.
@@ -3747,8 +3747,19 @@ project-choice screens, rates/revolution, FallRome foreign-report/refusal/
 presentation entry, fresh standard setup, founding and scratch save/reload.
 The reload retains the visible selected research project. Overwrite refusal
 returns to the chooser; full persistence fidelity is not established.
-The revolution Escape/focus sequence is explicitly not an isolated key rule.
+The second pass adds worker/specialist edits, purchase and sale cancellation,
+support/happiness panes, city navigation and a production change; advisor/world
+reports and standard/scenario score forms; plain-dialog negotiation through
+peace/advance exchange and intelligence; Fantasy unit transfer; classic custom
+scenario labels/resources; Lua-extension and authored-invalid-file rejection.
+An explicitly focused revolution question followed by Escape alone yields the
+revolution notice and Anarchy in the installed reference. It is not proof of
+unpatched equivalence or a general rule for every dialog. A later government
+chooser leads to rate review and a newspaper notice in the small standard case.
 
-`docs/ui/client-prototype.html` and its map/city PNG previews are authored
+`docs/ui/client-prototype.html` and its map/city/report/diplomacy PNG previews are authored
 design fixtures, not reference screenshots. Their proposed interactions and
 browser-only validation are recorded in `docs/ui/client-design.md`.
+`docs/ui/screen-contracts.md` separates proposed interface/decision contracts
+from reference observations; `docs/ui/client-milestones.md` is an unversioned
+delivery proposal. Owner design/decomposition approval remains pending.

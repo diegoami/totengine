@@ -2,7 +2,7 @@
 <html lang="en">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ToTEngine — playable client design review 01</title>
+  <title>ToTEngine — playable client design review 02</title>
   <style>
     :root {
       color-scheme: dark;
@@ -338,6 +338,14 @@
       align-items: center;
       margin: 14px 0;
     }
+    .rates .ratelock {
+      display: flex;
+      gap: 8px;
+      margin: 4px 0 12px;
+    }
+    .rates .ratelock input {
+      width: auto;
+    }
     .rates input {
       width: 100%;
       accent-color: var(--gold);
@@ -443,7 +451,7 @@
   </style>
   <header class="review">
     <div>
-      <strong>ToTEngine · design review 01</strong>
+      <strong>ToTEngine · design review 02</strong>
       <p>Proposed client layouts. Every value and action is simulated.</p>
       <p>
         No engine connection, original artwork or real save support.
@@ -534,6 +542,9 @@
       unit: [7, 5],
       target: null,
       zoom: 1,
+      report: "Cities",
+      treaty: "Ceasefire",
+      movement: "confirm",
     };
     const screens = [
       ["map", "Map"],
@@ -610,26 +621,253 @@
     }
     const views = {
       map: () =>
-        `<section class="mapwrap"><canvas id="mapcanvas" width="1380" height="620" tabindex="0" aria-label="Illustrative diamond map. Tab to Moving mode to issue a simulated order."></canvas><div class="maptools"><button id="zoomout" aria-label="Zoom out">−</button><button id="zoomin" aria-label="Zoom in">+</button><button id="center">Center unit</button><button data-screen="city">Open Alder</button></div><div class="maphint"><b id="mapcaption">${state.moving ? "Moving pieces" : "Viewing pieces"}</b> · Click a diamond to ${state.moving ? "preview a move" : "inspect terrain"}.<br>Proposed safeguard: selecting a destination never moves immediately. Open Alder to inspect the city workspace.</div></section>`,
+        `<section class="mapwrap"><canvas id="mapcanvas" width="1380" height="620" tabindex="0" aria-label="Illustrative diamond map. Tab to Moving mode to issue a simulated order."></canvas><div class="maptools"><button id="zoomout" aria-label="Zoom out">−</button><button id="zoomin" aria-label="Zoom in">+</button><button id="center">Center unit</button><button data-screen="city">Open Alder</button></div><div class="maphint"><label for="movestyle">Review movement variant: </label><select id="movestyle"><option value="confirm">Confirm each move</option><option value="direct">Immediate movement</option></select><br><b id="mapcaption">${state.moving ? "Moving pieces" : "Viewing pieces"}</b> · Click a diamond to ${state.moving ? "preview a move" : "inspect terrain"}.<br>Compare movement variants above. Viewing mode always inspects. These are design alternatives, not approved defaults.</div></section>`,
       city: () =>
-        `<section class="screen">${heading("Alder", "Population 30,000 · City 1 of 2 · fictional review fixture")}<div class="citygrid"><div class="stack"><div class="box"><h3>City resources</h3><dl class="resources"><dt>Food surplus</dt><dd id="food">+${4 - state.citizens}</dd><dt>Taxes</dt><dd>2</dd><dt>Luxury</dt><dd>0</dd><dt>Science</dt><dd>${3 + state.citizens}</dd><dt>Net shields</dt><dd>3</dd><dt>Support</dt><dd>1 shield</dd></dl></div><div class="box"><h3>Building: ${state.production}</h3><div class="meter"><span style="width:60%"></span></div><p>12 / 20 shields · 3 turns</p><div class="row"><button data-screen="production">Change…</button><button id="buy">Buy…</button></div><small>Illustrative costs; not recalculated mechanics.</small></div></div><div class="box"><h3>Worked city radius</h3><canvas id="citycanvas" class="citytiles" width="650" height="320" tabindex="0" aria-label="Illustrative city tiles; click to preview worker assignment"></canvas><p class="muted">Gold marks the ${state.worked} worked tiles. Select a tile to preview a worker change.</p><h3>Citizens</h3><div class="citizens"><button id="specialist">${state.citizens ? "Scientist" : "Worker"} ↻</button><button disabled>Content worker</button></div><p><small>First citizen cycles worker / scientist. Numbers are illustrative.</small></p></div><aside class="stack"><div class="box"><h3>Food storage</h3><div class="meter"><span style="width:73%"></span></div><p>22 / 30 · Growth in 2 turns</p></div><div class="box"><h3>Improvements</h3><p>Palace · Granary</p><button id="sell">Sell granary…</button></div><div class="box"><h3>Supported / present units</h3><p>Warriors · 1 shield</p><p>Settlers · 1 food</p><button data-screen="map">Locate warriors</button></div></aside></div></section>`,
+        `<section class="screen">${heading("Alder", "Population 30,000 · City 1 of 2 · fictional review fixture")}<div class="citygrid"><div class="stack"><div class="box"><h3>City resources</h3><dl class="resources"><dt>Food surplus</dt><dd id="food">+${4 - (state.citizens ? 1 : 0)}</dd><dt>Taxes</dt><dd>${2 + (state.citizens === 2 ? 3 : 0)}</dd><dt>Luxury</dt><dd>${state.citizens === 1 ? 3 : 0}</dd><dt>Science</dt><dd>${3 + (state.citizens === 3 ? 3 : 0)}</dd><dt>Net shields</dt><dd>3</dd><dt>Support</dt><dd>1 shield</dd></dl></div><div class="box"><h3>Building: ${state.production}</h3><div class="meter"><span style="width:60%"></span></div><p>12 / 20 shields · 3 turns</p><div class="row"><button data-screen="production">Change…</button><button id="buy">Buy…</button></div><small>Illustrative costs; not recalculated mechanics.</small></div></div><div class="box"><h3>Worked city radius</h3><canvas id="citycanvas" class="citytiles" width="650" height="320" tabindex="0" aria-label="Illustrative city tiles; click to preview worker assignment"></canvas><p class="muted">Gold marks the ${state.worked} worked tiles. Select a tile to preview a worker change.</p><h3>Citizens</h3><div class="citizens"><button id="specialist">${["Worker", "Entertainer", "Tax collector", "Scientist"][state.citizens]} ↻</button><button disabled>Content worker</button></div><p><small>First citizen previews worker / entertainer / tax collector / scientist. Reassignment behavior and numbers are illustrative.</small></p></div><aside class="stack"><div class="box"><h3>Food storage</h3><div class="meter"><span style="width:73%"></span></div><p>22 / 30 · Growth in 2 turns</p></div><div class="box"><h3>Improvements</h3><p>Palace · Granary</p><button id="sell">Sell granary…</button></div><div class="box"><h3>Supported / present units</h3><p>Warriors · 1 shield</p><p>Settlers · 1 food</p><button data-screen="map">Locate warriors</button></div></aside></div></section>`,
       production: () =>
         `<section class="screen">${heading("What shall Alder build?", "Select an item, inspect its details, then apply. Cancel retains the current build.", "city")}<div class="columns"><div class="box choices" id="buildchoices">${["Settlers", "Warriors", "Phalanx", "Barracks", "Colossus"].map((n) => `<button data-build="${n}" aria-pressed="${n === state.production}"><span>${n}</span><span>${{ Settlers: 10, Warriors: 1, Phalanx: 3, Barracks: 12, Colossus: 65 }[n]} turns*</span></button>`).join("")}</div><div class="box"><h2 id="buildname">${state.production}</h2><p id="builddetail">Current selection. Unit or improvement details appear here.</p><p class="note">* Turn estimates are fixture values. Real costs, obsolescence, legal choices, shield retention and hurry costs must come from the engine.</p><p>Advisor recommendations will be separate from the legal build list. Native recommendation logic is outside this design slice.</p></div></div><div class="actions"><button data-screen="city">Cancel</button><button class="primary" id="applybuild">Apply production</button></div></section>`,
       research: () =>
         `<section class="screen">${heading("Science advisor", "Current research and a longer-term goal are separate concepts.")}<div class="columns"><div class="box"><h2>${state.research}</h2><p>18 / 40 beakers · +6 per turn*</p><div class="meter"><span style="width:45%"></span></div><h3>Choose current research</h3><div class="choices">${["Alphabet", "Pottery", "Ceremonial Burial"].map((n) => `<button data-tech="${n}" aria-pressed="${n === state.research}">${n}</button>`).join("")}</div></div><div class="box"><h2 id="techname">${state.research}</h2><p id="techdetail">Available in this authored fixture. Prerequisite and unlock details belong here.</p><h3>Known advances</h3><p>Bronze Working</p><h3>Long-term goal</h3><p>Navigation → prerequisite path preview</p><p class="note">Goal selection was observed in the original advisor. Changing the active project mid-research is still a discovery question. * All progress here is simulated.</p></div></div><div class="actions"><button data-screen="map">Cancel</button><button class="primary" id="applytech">Apply research</button></div></section>`,
       government: () =>
-        `<section class="screen">${heading("Kingdom", "Rates and government changes · proposed explicit commit / cancel.")}<div class="columns"><div class="box rates"><h2>Distribute the wealth</h2><p>Government: ${state.government} · Maximum rate: 60%*</p>${["Taxes", "Science", "Luxuries"].map((n, i) => `<label>${n}<input type="range" min="0" max="60" step="10" data-rate="${i}" value="${state.rates[i]}" aria-label="${n}"><output id="rate${i}">${state.rates[i]}%</output></label>`).join("")}<p id="ratetotal">Total: 100%</p><p>Income +8 · Upkeep −3 · Science +6*</p><button id="applyrates" class="primary">Apply rates</button><p class="note">* Estimates and caps are examples. Other sliders rebalance to 100%; exact previews require engine support.</p></div><div class="box"><h2>${state.government}</h2><p>Government effects, permitted rates and transition status belong here.</p><button id="revolt">Start revolution…</button><p class="note">The proposed confirmation defaults to Cancel. Escape closes it without changing the fixture. Government selection after anarchy is not yet observed.</p></div></div></section>`,
+        `<section class="screen">${heading("Kingdom", "Rates and government changes · proposed explicit commit / cancel.")}<div class="columns"><div class="box rates"><h2>Distribute the wealth</h2><p>Government: ${state.government} · Maximum rate: 60%*</p>${["Taxes", "Science", "Luxuries"].map((n, i) => `<label>${n}<input type="range" min="0" max="60" step="10" data-rate="${i}" value="${state.rates[i]}" aria-label="${n}"><output id="rate${i}">${state.rates[i]}%</output></label><label class="ratelock"><input type="checkbox" data-lock="${i}" aria-label="Lock ${n}">Lock ${n}</label>`).join("")}<p id="ratetotal">Total: 100%</p><p>Income +8 · Upkeep −3 · Science +6*</p><button id="applyrates" class="primary">Apply rates</button><p class="note">* Estimates and caps are examples. Unlocked sliders rebalance to 100%; impossible adjustments are rejected. The redistribution rule here is authored, not a native algorithm port.</p></div><div class="box"><h2>${state.government}</h2><p>Government effects, permitted rates and transition status belong here.</p><button id="revolt">Start revolution…</button><button id="choosegov">Preview government choice…</button><p class="note">The proposed confirmation defaults to Cancel. Escape closes it without changing the fixture. After anarchy the original requires a government choice, then rate review. The button below previews that sequence.</p></div></div></section>`,
       diplomacy: () =>
-        `<section class="screen">${heading("Foreign minister", "Established contacts only; no access to hidden foreign state.")}<div class="columns"><div class="box"><h2>Known contacts</h2><div class="choices"><button data-contact="Westmere" aria-pressed="true">Westmere · Neutral · Ceasefire</button><button data-contact="Highlands" aria-pressed="false">Highlands · Enraged · War</button></div><p>Reputation: sample standing<br>Embassy: none</p></div><div class="box"><h2 id="contactname">Westmere</h2><p id="contactdetail">Ceasefire · No embassy. The report may only disclose information earned by contact or intelligence.</p><button id="contact">Send emissary</button><div id="dialogue" class="note">The original may refuse contact or open a separate diplomatic presentation. Negotiation choices below will need further reference discovery.</div></div></div></section>`,
-      reports: () =>
-        `<section class="screen">${heading("City status", "Report rows are navigation, not just summaries.")}<div class="box"><table><thead><tr><th>City</th><th>Population</th><th>Food</th><th>Shields</th><th>Build</th><th>Action</th></tr></thead><tbody><tr><td>Alder</td><td>30,000</td><td>+4*</td><td>3*</td><td>${state.production}</td><td><button data-screen="city">Open city</button></td></tr><tr><td>Riverwatch</td><td>20,000</td><td>+2*</td><td>2*</td><td>Warriors</td><td><button disabled>Fixture only</button></td></tr></tbody></table></div><div class="columns" style="margin-top:16px"><div class="box"><h3>Advisor reports to specify</h3><p>Defense · Attitude · Trade · Science</p></div><div class="box"><h3>World reports to specify</h3><p>Wonders · Top cities · Score · Demographics · Spaceships</p></div></div><p class="note">Only the city report has been traced into a city in this first pass. These additional report names come from the reference menu; contents and workflows are still unverified.</p></section>`,
+        `<section class="screen">${heading("Foreign minister", "Established contacts only; no access to hidden foreign state.")}<div class="columns"><div class="box"><h2>Known contacts</h2><div class="choices"><button data-contact="Westmere" aria-pressed="true">Westmere · Neutral · ${state.treaty}</button><button data-contact="Highlands" aria-pressed="false">Highlands · Enraged · War</button></div><p>Reputation: sample standing<br>Embassy: none</p></div><div class="box"><h2 id="contactname">Westmere</h2><p id="contactdetail">${state.treaty} · No embassy. The report may only disclose information earned by contact or intelligence.</p><button id="contact">Send emissary</button><div id="dialogue" class="note">The original may refuse contact or open a separate diplomatic presentation. Plain-dialog negotiation is observed: incoming demands, treaty offer, player topics, proposals and offered-advance selection.</div></div></div></section>`,
+      reports: () => renderReports(),
       setup: () =>
-        `<section class="screen">${heading("Begin a game", "Proposed consolidation of the observed standard-game setup sequence.")}<div class="columns"><div class="box form"><label for="gametype">Game</label><select id="gametype"><option>Original single-map game</option><option>Scenario from own install</option><option disabled>Extended / multiple maps — design pending</option></select><label for="worldsize">World size</label><select id="worldsize"><option>Standard</option><option>Small</option><option>Large</option></select><label for="difficulty">Difficulty</label><select id="difficulty"><option>Prince</option><option>King</option><option>Emperor</option></select><label for="seed">Engine map seed</label><input id="seed" type="number" value="7"><label for="playername">Leader name</label><input id="playername" value="Avery" maxlength="30"></div><div class="box"><h2>Review before starting</h2><p>Human: Vale · Opponents: built-in</p><p>Resources resolve from your own installation. Missing files should give a specific corrective message.</p><p class="note">This prototype does not inspect files or generate a game. Scenario restrictions, factions, map parameters and options need their own discovery coverage.</p><button class="primary" id="start">Preview start</button></div></div></section>`,
+        `<section class="screen">${heading("Begin a game", "Proposed consolidation of the observed standard-game setup sequence.")}<div class="columns"><div class="box form"><label for="gametype">Game</label><select id="gametype"><option>Original single-map game</option><option>Scenario from own install</option><option disabled>Extended / multiple maps — design pending</option></select><label for="worldsize">World size</label><select id="worldsize"><option>Standard</option><option>Small</option><option>Large</option></select><label for="difficulty">Difficulty</label><select id="difficulty"><option>Chieftain</option><option>Warlord</option><option selected>Prince</option><option>King</option><option>Emperor</option><option>Deity</option></select><label for="competition">Civilizations</label><select id="competition"><option>3</option><option>4</option><option>5</option><option>6</option><option selected>7</option></select><label for="barbarians">Barbarian activity</label><select id="barbarians"><option>Villages only</option><option>Roving bands</option><option selected>Restless tribes</option><option>Raging hordes</option></select><label for="rules">Rules</label><select id="rules"><option>Standard</option><option disabled>Customized — detail design pending</option></select><label for="citystyle">City appearance</label><select id="citystyle"><option>Use chosen tribe default</option><option>Choose from installed styles</option></select><label for="seed">Engine map seed</label><input id="seed" type="number" value="7"><label for="playername">Leader name</label><input id="playername" value="Avery" maxlength="30"></div><div class="box"><h2>Review before starting</h2><p>Human: Vale · Opponents: built-in</p><p>Resources resolve from your own installation. Missing files should give a specific corrective message.</p><p class="note">This prototype does not inspect files or generate a game. Scenario restrictions, factions, map parameters and options need their own discovery coverage.</p><button class="primary" id="start">Preview start</button></div></div></section>`,
       saves: () =>
-        `<section class="screen">${heading("Save / load", "Proposed separation between engine checkpoints and imported original files.")}<div class="columns"><div class="box"><h2>Engine game</h2><p>Future client: persist the human turn, pending unit state, policy identity, RNG and scenario state. A valid resume must reproduce the next decisions.</p><button id="export">Download design fixture</button><p class="note">Downloads a tiny prototype JSON, not a game checkpoint or native SAV.</p></div><div class="box"><h2>Original game / scenario</h2><p>Choose a file from your own installation; detect its supported format before starting a session.</p><button id="unsupported">Preview unsupported-file message</button><p id="loadmessage" role="status"></p><p class="note">No files are read by this prototype. Native save writing is not implemented by the engine.</p></div></div></section>`,
+        `<section class="screen">${heading("Save / load", "Proposed separation between engine checkpoints and imported original files.")}<div class="columns"><div class="box"><h2>Engine game</h2><p>Future client: persist the human turn, pending unit state, policy identity, RNG and scenario state. A valid resume must reproduce the next decisions.</p><button id="export">Download design fixture</button><p class="note">Downloads a tiny prototype JSON, not a game checkpoint or native SAV.</p></div><div class="box"><h2>Original game / scenario</h2><p>Choose a file from your own installation; detect its supported format before starting a session.</p><button id="unsupported">Preview unsupported-file message</button><button id="extensionerror">Preview missing-extension message</button><p id="loadmessage" role="status"></p><p class="note">No files are read by this prototype. Native save writing is not implemented by the engine.</p></div></div></section>`,
     };
+    const reportNames = [
+      "Cities",
+      "Defense",
+      "Attitude",
+      "Trade",
+      "Wonders",
+      "Top cities",
+      "Score",
+      "Demographics",
+      "Spaceships",
+    ];
+    function table(headers, rows) {
+      return `<table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((v) => `<td>${v}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    }
+    function renderReports() {
+      const cityLink = '<button data-screen="city">Open city</button>';
+      const bodies = {
+        Cities: table(
+          ["City", "Population", "Food", "Shields", "Build", "Action"],
+          [
+            ["Alder", "30,000", "+4*", "3*", state.production, cityLink],
+            ["Riverwatch", "20,000", "+2*", "2*", "Warriors", "Fixture only"],
+          ],
+        ),
+        Defense:
+          table(
+            [
+              "Unit type",
+              "Attack / defense / moves",
+              "Active",
+              "In production",
+              "Losses",
+            ],
+            [
+              ["Warriors", "1 / 1 / 1", "3", "1", "0"],
+              ["Settlers", "0 / 1 / 1", "1", "0", "0"],
+            ],
+          ) +
+          '<p class="note">Observed report has Statistics / Casualties views. Unit costs, abilities and summaries must be engine-derived.</p>',
+        Attitude:
+          table(
+            ["City", "Content", "Unhappy", "Specialists", "Action"],
+            [
+              [
+                "Alder",
+                "2",
+                "0",
+                state.citizens ? "1 scientist" : "1 worker",
+                cityLink,
+              ],
+              ["Riverwatch", "2", "0", "0", "Fixture only"],
+            ],
+          ) +
+          '<p class="note">Reference uses citizen rows and a city happiness-stage panel. These sample counts are schematic.</p>',
+        Trade:
+          '<div class="columns"><div>' +
+          table(
+            ["City", "Taxes", "Science"],
+            [
+              ["Alder", "2*", "3*"],
+              ["Riverwatch", "1*", "2*"],
+            ],
+          ) +
+          "</div><div>" +
+          table(
+            ["Improvement", "Count", "Maintenance"],
+            [
+              ["Granary", "1", "1*"],
+              ["Palace", "1", "0*"],
+            ],
+          ) +
+          '</div></div><p class="note">Reference also offers Supply and Demand. Route partners, commodities, fees and permitted intelligence need their own engine views.</p>',
+        Wonders:
+          table(
+            ["Wonder (authored sample)", "Location", "State"],
+            [
+              ["Harbor Beacon", "Alder", "Active"],
+              ["Grand Archive", "Unreported", "Unknown"],
+            ],
+          ) +
+          '<p class="note">The reference distinguishes active/expired/lost entries. Do not disclose unknown locations just to populate a table.</p>',
+        "Top cities":
+          table(
+            ["Rank", "City", "Civilization", "Population"],
+            [
+              ["1", "Alder", "Vale", "30,000"],
+              ["2", "Riverwatch", "Vale", "20,000"],
+            ],
+          ) +
+          '<p class="note">Authored two-row sample. The reference ranks five cities with citizens and wonders. Public-ranking visibility must be specified independently from own-city views.</p>',
+        Score:
+          '<div class="columns"><div><h2>Standard game</h2>' +
+          table(
+            ["Component", "Points*"],
+            [
+              ["Citizens", "5"],
+              ["Achievements", "0"],
+              ["Barbarian adjustment", "0"],
+              ["Total", "5"],
+            ],
+          ) +
+          "</div><div><h2>Scenario objectives</h2>" +
+          table(
+            ["Objective state", "Example*"],
+            [
+              ["Owned / total", "3 / 10"],
+              ["Current outcome", "Stalemate"],
+              ["Next threshold", "5 objectives"],
+            ],
+          ) +
+          '</div></div><p class="note">Both forms were observed separately. Values here are illustrative, not the original scoring formula.</p>',
+        Demographics:
+          table(
+            ["Measure", "Value*", "Rank*"],
+            [
+              ["Population", "50,000", "3rd"],
+              ["Approval", "60%", "2nd"],
+              ["Land area", "40,000 sq. miles", "4th"],
+              ["Production", "12 units", "3rd"],
+            ],
+          ) +
+          '<p class="note">Reference includes units and ranks, with selected comparison values. Earned/public information rules need an explicit contract.</p>',
+        Spaceships:
+          '<h2>The space race has not begun</h2><p>This early-game state was observed in the standard fixture. There are no launch controls available.</p><p class="note">Component assembly, launch and arrival screens remain unobserved; this layout does not claim to specify them.</p>',
+      };
+      return `<section class="screen">${heading("Reports · " + state.report, "Authored fixtures arranged from inspected reference report families.")}<nav class="row" aria-label="Report families">${reportNames.map((n) => `<button data-report="${n}" aria-pressed="${state.report === n}">${n}</button>`).join("")}</nav><div class="box" style="margin-top:14px">${bodies[state.report]}</div><p class="note">All report values are simulated. This prototype does not inspect any foreign state or compute metrics.</p></section>`;
+    }
+    function dialogueStep(step) {
+      const box = $("dialogue");
+      const text = {
+        demand: [
+          "Reply required",
+          "A known contact asks you to break an alliance with a third party.",
+          [
+            ["decline", "Retain alliance"],
+            ["end", "End discussion"],
+          ],
+        ],
+        decline: [
+          "Technology demand",
+          "The contact requests Engineering. This fixture lets you decline before the treaty offer.",
+          [
+            ["peace", "Decline demand"],
+            ["end", "End discussion"],
+          ],
+        ],
+        peace: [
+          "Peace offer",
+          "Review the offered treaty before accepting. This is an authored walkthrough of an observed branch.",
+          [
+            ["treaty", "Accept peace"],
+            ["topics", "Decline offer"],
+          ],
+        ],
+        topics: [
+          "Your topics",
+          "Choose a proposal or finish the discussion.",
+          [
+            ["proposal", "Make a proposal"],
+            ["gift", "Offer a gift…"],
+            ["tribute", "Demand tribute…"],
+            ["end", "End discussion"],
+          ],
+        ],
+        proposal: [
+          "Choose a proposal",
+          "The observed menu distinguishes knowledge, war against a third party and map sharing.",
+          [
+            ["exchange", "Exchange knowledge"],
+            ["topics", "Never mind"],
+          ],
+        ],
+        exchange: [
+          "Select offered advance",
+          "The observed exchange opens a separate eligible-advance chooser. Select a fixture option to return to proposals.",
+          [
+            ["trade", "Choose offered Pottery"],
+            ["proposal", "Cancel exchange"],
+          ],
+        ],
+        gift: [
+          "Gift proposal",
+          "Gift amount/type controls are not yet observed. No state changes here.",
+          [["topics", "Return to topics"]],
+        ],
+        tribute: [
+          "Tribute demand",
+          "Demand/outcome branches require further reference coverage. No state changes here.",
+          [["topics", "Return to topics"]],
+        ],
+      };
+      if (step === "treaty") {
+        state.treaty = "Peace";
+        document.querySelector('[data-contact="Westmere"]').textContent =
+          "Westmere · Neutral · Peace";
+        $("contactdetail").textContent =
+          "Neutral · Peace · No embassy (fixture)";
+        step = "topics";
+        log("Peace accepted in the fixture; no engine diplomacy ran.");
+      }
+      if (step === "trade") {
+        step = "proposal";
+        log("Offered-advance selection previewed; no technology was granted.");
+      }
+      if (step === "end") {
+        box.innerHTML =
+          "<p>Conversation complete. Selection and turn control return to the foreign report.</p>";
+        $("contact").focus();
+        return;
+      }
+      const [title, body, choices] = text[step];
+      box.innerHTML = `<h3>${title}</h3><p>${body}</p><div class="choices">${choices.map(([value, label]) => `<button data-reply="${value}">${label}</button>`).join("")}</div>`;
+      box
+        .querySelectorAll("[data-reply]")
+        .forEach((b) => (b.onclick = () => dialogueStep(b.dataset.reply)));
+      box.querySelector("button")?.focus();
+    }
     function bind(s) {
       if (s === "map") {
+        $("movestyle").value = state.movement;
+        $("movestyle").onchange = (e) => {
+          state.movement = e.target.value;
+          log(
+            "Movement review variant: " +
+              (state.movement === "direct"
+                ? "immediate"
+                : "confirm each move") +
+              ". No approved default implied.",
+          );
+        };
         $("zoomin").onclick = () => {
           state.zoom = Math.min(1.5, state.zoom + 0.1);
           drawMap();
@@ -657,7 +895,7 @@
             },
           );
         $("specialist").onclick = () => {
-          state.citizens = 1 - state.citizens;
+          state.citizens = (state.citizens + 1) % 4;
           show("city");
           log("Citizen changed in the fixture; output is illustrative.");
         };
@@ -725,13 +963,28 @@
           (el) =>
             (el.oninput = () => {
               const i = +el.dataset.rate;
+              const previous = [...draft];
               draft[i] = +el.value;
               let delta = 100 - draft.reduce((a, b) => a + b, 0);
               for (let k = 1; k < 3; k++) {
-                const j = (i + k) % 3,
-                  change = Math.max(-draft[j], Math.min(60 - draft[j], delta));
+                const j = (i + k) % 3;
+                if (document.querySelector(`[data-lock="${j}"]`).checked)
+                  continue;
+                const change = Math.max(
+                  -draft[j],
+                  Math.min(60 - draft[j], delta),
+                );
                 draft[j] += change;
                 delta -= change;
+              }
+              if (
+                delta !== 0 ||
+                document.querySelector(`[data-lock="${i}"]`).checked
+              ) {
+                draft = previous;
+                log(
+                  "Rate preview rejected: locked rates or caps prevent a total of 100%. No rates changed.",
+                );
               }
               document.querySelectorAll("[data-rate]").forEach((e) => {
                 e.value = draft[+e.dataset.rate];
@@ -746,6 +999,18 @@
           $("ratebadge").textContent = draft.join(" / ");
           log("Rates applied to the design fixture.");
         };
+        $("choosegov").onclick = () =>
+          confirmAction(
+            "Choose government",
+            "Observed early-game list contains Despotism only. Confirm previews selection followed by rate review; other governments require an eligible fixture.",
+            () => {
+              state.government = "Despotism";
+              show("government");
+              log(
+                "Government choice preview complete. Review rates before returning to the map.",
+              );
+            },
+          );
         $("revolt").onclick = () =>
           confirmAction(
             "Start a revolution?",
@@ -769,24 +1034,36 @@
               $("contactname").textContent = contact;
               $("contactdetail").textContent =
                 contact === "Westmere"
-                  ? "Neutral · Ceasefire · No embassy"
+                  ? "Neutral · " + state.treaty + " · No embassy"
                   : "Enraged · War · No embassy";
             }),
         );
         $("contact").onclick = () => {
-          $("dialogue").textContent =
-            contact === "Highlands"
-              ? "Contact refused (illustrative response). Return to the report; turn control is unchanged."
-              : "Negotiation view pending reference discovery. Proposed topics: treaty, tribute, technology; no functional diplomatic actions.";
-          log("Diplomacy presentation preview only.");
+          if (contact === "Highlands") {
+            $("dialogue").textContent =
+              "Contact refused (illustrative response). Return to the report; turn control is unchanged.";
+            log("Refusal presentation preview.");
+          } else dialogueStep("demand");
         };
       }
+      if (s === "reports")
+        document.querySelectorAll("[data-report]").forEach(
+          (b) =>
+            (b.onclick = () => {
+              state.report = b.dataset.report;
+              show("reports");
+            }),
+        );
       if (s === "setup")
         $("start").onclick = () => {
           show("map");
           log("Setup layout preview complete; no game was created.");
         };
       if (s === "saves") {
+        $("extensionerror").onclick = () => {
+          $("loadmessage").textContent =
+            "This scenario needs a Lua event capability absent from this example profile. Keep the existing session; explain the required capability and supported alternatives. No file read.";
+        };
         $("unsupported").onclick = () => {
           $("loadmessage").textContent =
             "Unsupported file format. No game state was replaced. Show detected version and supported alternatives here.";
@@ -966,17 +1243,20 @@
         );
         return;
       }
-      confirmAction(
-        "Move warriors?",
-        `Destination ${best.join(", ")}. This changes only the drawn fixture position.`,
-        () => {
-          state.unit = best;
-          drawMap();
-          log(
-            "Unit moved in the design fixture. No combat, fog or movement costs computed.",
-          );
-        },
-      );
+      const move = () => {
+        state.unit = best;
+        drawMap();
+        log(
+          "Unit moved in the design fixture. No combat, fog or movement costs computed.",
+        );
+      };
+      if (state.movement === "direct") move();
+      else
+        confirmAction(
+          "Move warriors?",
+          `Destination ${best.join(", ")}. This changes only the drawn fixture position.`,
+          move,
+        );
     }
     function drawCity() {
       const c = $("citycanvas"),

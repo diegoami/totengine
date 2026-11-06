@@ -165,16 +165,27 @@ after that gate: #118 (native decision inventory, explicit fidelity boundary
 and revised work estimates). The proposed
 trusted compatibility driver is not an approved amendment of decision 0003.
 v0.10 is released at the reviewed SHA; v0.11 UI discovery/design is in progress.
-First-pass reference routes and remaining coverage: `docs/ui/discovery.md`;
+Second-pass reference inventory (33 route groups) and remaining coverage:
+`docs/ui/discovery.md`;
 derived capture/source hashes: `docs/evidence/ui-discovery.json` (original
 screenshots stay outside Git). `docs/ui/client-prototype.html` is the local,
-simulated nine-screen design for owner feedback, with own-art map/city previews;
+simulated nine-screen design for owner feedback, with nine report families,
+both movement variants and nested diplomacy, plus own-art previews;
 `docs/ui/client-design.md` records proposed interactions, API gaps and unversioned
-delivery categories. Layout and movement-confirmation choices await owner review.
+delivery categories. `docs/ui/screen-contracts.md` specifies proposed decision/view/
+command/persistence boundaries; `docs/ui/client-milestones.md` proposes the first
+human-controlled standard-game turn and dependent delivery packages, without
+assigning versions. Layout, input behavior and decomposition await owner review.
+`docs/v0.11.0-readiness.md` records the acceptance gaps and completed checks;
+it is an in-progress record, not authorization to call the milestone.
 This is not an accepted design or milestone candidate; substantial client
-implementation still waits for decision 0005's design gate. Next discovery:
-city operations, controlled map/unit inputs, later research/government choices,
-negotiation, remaining reports and multi-map/custom-scenario workflows.
+implementation still waits for decision 0005's design gate. Representative city,
+map/unit, government, negotiation, report, Fantasy transfer and classic custom
+scenario routes are now inspected; remaining branches and delivery impacts are
+explicit in the inventory. Lua-disabled and invalid-file rejection are covered.
+The isolated installed-reference revolution Escape test starts a revolution;
+the prototype deliberately proposes safe cancellation. No vanilla equivalence
+or comprehensive native-UI parity is claimed. All owned Wine/Xvfb sessions stopped.
 Next-session entry point: #107. Read `docs/decisions/0005-playable-client-planning.md`
 for UI discovery/design acceptance before choosing implementation work; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.

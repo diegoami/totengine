@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-11-06",
   "issue": 107,
-  "status": "first-pass-incomplete",
+  "status": "second-pass-inventory-owner-review-pending",
   "reference": "Installed ToTPP-patched ToT; unpatched UI equivalence not established",
   "method": "Private copied install/prefix, Xvfb 1024x768x24, no RAM/presentation patches; visual inspection of captures. See docs/ui/discovery.md for routes/limits.",
   "private_capture_directory": "/tmp/totengine-ui-discovery",
@@ -27,6 +27,26 @@
     {
       "install_relative_path": "FallRome/ROMFALL.scn",
       "sha256": "394449e92f7b2d73fcfe6cd21e5d688213619dad6b4bad5f836fe0f79a942d07"
+    },
+    {
+      "install_relative_path": "Game.txt",
+      "sha256": "0bdd7006a6b729023146680e588766427a6dc4afef14dde6957763f3124a6512"
+    },
+    {
+      "install_relative_path": "Fantasy/Menu.txt",
+      "sha256": "ade3c713d636f5a69e77e75aa0806f33944c0dcd2bfabbc419b8bf0f6d9d8ae9"
+    },
+    {
+      "install_relative_path": "Fantasy/Ya_Auto.SAV",
+      "sha256": "8a3321398eecd9d8eb466cee56aff65e76d5b0fcc624c7ccdaa39cea1833dc05"
+    },
+    {
+      "install_relative_path": "Scenario/ToT_Constantine/Const.scn",
+      "sha256": "4774244243c7aa9dcfc49da72921fbbccc416fb3638295f731504de4dd6365d9"
+    },
+    {
+      "install_relative_path": "Scenario/china/deiQin.sav",
+      "sha256": "cfaa15710e0b6cec11e6975cec8264e94fb906fe804ae0659042b02250758f55"
     }
   ],
   "observations": [
@@ -293,15 +313,410 @@
           "sha256": "56360cb4ec67bf889b3fef980e2f55838481a69f45414c1e7e77356defa2f05b"
         }
       ]
+    },
+    {
+      "id": "U19",
+      "summary": "Roma worked tile removed \u2192 entertainer \u2192 tax collector \u2192 scientist \u2192 tile restored. Resource totals and starvation notice update immediately.",
+      "captures": [
+        {
+          "filename": "pass2-roma.png",
+          "sha256": "d639a3007f5c11796e1580ba00f5e4d837aed062f4d1d353d52eb50f397f28bb"
+        },
+        {
+          "filename": "pass2-worker.png",
+          "sha256": "73791bbdf623021c9a058849d003a5f2ce3c6115ad101f4887ad08c756d13e9a"
+        },
+        {
+          "filename": "pass2-specialist.png",
+          "sha256": "e145fa9032a0b42f956162c54d2ba37646b0548aa3344b6c54f5a7b67cd6d7ba"
+        },
+        {
+          "filename": "pass2-scientist.png",
+          "sha256": "962fd198fdca2d7391f03f3061c460d4e748d23c85809992cfb980173e101c12"
+        },
+        {
+          "filename": "pass2-buy.png",
+          "sha256": "39821e8867f06b779181adb5bb2590b9eb0c2c982a4ba30eb47c9e229cb46bba"
+        }
+      ]
+    },
+    {
+      "id": "U20",
+      "summary": "Buy dialog defaults to Never mind. Cancel retains 5/100; explicit Complete fills 100/100 with one turn remaining. Repainting another city pane shows treasury 9359, down from 10000 by quoted 641.",
+      "captures": [
+        {
+          "filename": "pass2-buy.png",
+          "sha256": "39821e8867f06b779181adb5bb2590b9eb0c2c982a4ba30eb47c9e229cb46bba"
+        },
+        {
+          "filename": "pass2-buy-cancel.png",
+          "sha256": "044f984252da5e20ba2044587a37011021d3edded95cf7245986f70862cb5706"
+        },
+        {
+          "filename": "pass2-buy-commit.png",
+          "sha256": "222cb12c62134cc08e2fe8ca7691b17dadb215d09e93499998715021f2005310"
+        },
+        {
+          "filename": "pass2-improvements.png",
+          "sha256": "0c832f4b1a721723a647b7d32663ebf9cf4cd26a8e6c75edfb4e5e23dbd2a189"
+        }
+      ]
+    },
+    {
+      "id": "U21",
+      "summary": "Improvements click opens sale with single/all-city alternatives; explicit Never mind returns. Support and staged Happiness panels inspected.",
+      "captures": [
+        {
+          "filename": "pass2-improvements.png",
+          "sha256": "0c832f4b1a721723a647b7d32663ebf9cf4cd26a8e6c75edfb4e5e23dbd2a189"
+        },
+        {
+          "filename": "pass2-sell.png",
+          "sha256": "a3a6910bec27e921dc57f26eada95b3b954e42e532d6f115ecee765b109b30cb"
+        },
+        {
+          "filename": "pass2-sell-cancel.png",
+          "sha256": "0c832f4b1a721723a647b7d32663ebf9cf4cd26a8e6c75edfb4e5e23dbd2a189"
+        },
+        {
+          "filename": "pass2-support.png",
+          "sha256": "bef9fef97c31de4b0f17d7ab42f8ae168b5c96836a9387c25272161ed01dfe3f"
+        },
+        {
+          "filename": "pass2-happiness.png",
+          "sha256": "4f55ff6edd604018a9600cd9d6ead381fbd1ebec66dfe87d694ce2d8c48e08f5"
+        }
+      ]
+    },
+    {
+      "id": "U22",
+      "summary": "City arrow changes Roma to Rhegium retaining Happiness panel. Heavy Warship 5/150 changes to Engineers; invested shields retained in this one unit-to-unit case.",
+      "captures": [
+        {
+          "filename": "pass2-nextcity.png",
+          "sha256": "48ca2bb8eca4aeb72130e90a854654bb2c0e3a3ee2a7264b397c3916ce50cd73"
+        },
+        {
+          "filename": "pass2-production-change.png",
+          "sha256": "e461130aaafa43fffbfce1b46fbb71252647c88c9c2b86ba4c0a9cb75ff5590c"
+        },
+        {
+          "filename": "pass2-production-applied.png",
+          "sha256": "2468290281adbf15e1e771abc06808c8aaf89afc39b0c16e8ba8af33a093cc2d"
+        }
+      ]
+    },
+    {
+      "id": "U23",
+      "summary": "Defense statistics/casualties, attitude citizen rows, trade revenues/maintenance, wonders, top cities and demographics inspected in FallRome. Nested details and visibility rules not fully tested.",
+      "captures": [
+        {
+          "filename": "pass2-defense.png",
+          "sha256": "1f7c501c04ae866a1cdce08030969a243a2dc3f06f48579e102be7e7bc928cf2"
+        },
+        {
+          "filename": "pass2-casualties.png",
+          "sha256": "ebff161ca574fa07a043007ab4a0cd203a65fb2420421accfa9e08c137fcb309"
+        },
+        {
+          "filename": "pass2-attitude.png",
+          "sha256": "929cd88fbaf9cf3737e96273315da6743fc669ae6c0d69441c0f27f049f16c8b"
+        },
+        {
+          "filename": "pass2-trade.png",
+          "sha256": "339dba2c002ab594c33b1d85785bb7c082d3137b41decae46a59559bf4eb03cc"
+        },
+        {
+          "filename": "pass2-wonders.png",
+          "sha256": "87d046213881fa749985bf761880baf9fa64a3bdd1164429c1b0971e8905a91c"
+        },
+        {
+          "filename": "pass2-topcities.png",
+          "sha256": "668615f92e90757570e579dcb8dd1c2f96452628f4e3718032b4fcc80ea88b5c"
+        },
+        {
+          "filename": "pass2-demographics.png",
+          "sha256": "23c0bd9981257103d6877333a0338722bd5830fab3c305b0635f34f045405a68"
+        }
+      ]
+    },
+    {
+      "id": "U24",
+      "summary": "Standard score breakdown differs from FallRome scenario objective/threshold score. Standard early-game spaceship action reports race not begun; FallRome F12 produced no visible report in this context.",
+      "captures": [
+        {
+          "filename": "pass2-score.png",
+          "sha256": "b9a1d95c7b31586cf4982fd70a8d30a11e9ab00b6d44bb612e95836c5806f2ac"
+        },
+        {
+          "filename": "pass2-standard-score.png",
+          "sha256": "783a0445281c7f487582783babd95dae86bcc958165788bf5f947a2a2945c54f"
+        },
+        {
+          "filename": "pass2-spaceships.png",
+          "sha256": "94286043a9f8d160cb05ccc9a2080fc4cd1530093f8d1714a32afbf000901408"
+        },
+        {
+          "filename": "pass2-standard-space.png",
+          "sha256": "182e1e1cc01472029c81177f013b4aff73388fc941b919231891d9507280cf49"
+        }
+      ]
+    },
+    {
+      "id": "U25",
+      "summary": "Game/graphics preferences expose input, end-turn, notifications and visual-diplomacy options. Turning Diplomacy Screen off in the copied game exposes readable plain dialogs.",
+      "captures": [
+        {
+          "filename": "pass2-options.png",
+          "sha256": "b26b22953abcf1eef0fd107b1e3e1cac30458dd3f2459ae1d3f0168827b26019"
+        },
+        {
+          "filename": "pass2-graphics.png",
+          "sha256": "be897d0eacb32255660f9f4bbc38990afcc674a604f2ab3fc70a92480aba0375"
+        },
+        {
+          "filename": "pass2-diplomacy-plain.png",
+          "sha256": "ab238c76145610eb629d2d803fab43dd582981bc174ee5a05b1e31ba600c8981"
+        }
+      ]
+    },
+    {
+      "id": "U26",
+      "summary": "Plain diplomacy: greeting, alliance demand declined, tech demand declined, response, peace offer accepted, player topics, proposal and offered-advance chooser. Returns to proposals/topics/report. Foreign report shows Cordial/Peace; intelligence and its return route inspected.",
+      "captures": [
+        {
+          "filename": "pass2-diplomacy-plain.png",
+          "sha256": "ab238c76145610eb629d2d803fab43dd582981bc174ee5a05b1e31ba600c8981"
+        },
+        {
+          "filename": "pass2-diplomacy-greeting.png",
+          "sha256": "0d914e650d5635be630b108d1fb85f33ce602124882f4b8161ed1edd1c9d45a8"
+        },
+        {
+          "filename": "pass2-diplomacy-reply.png",
+          "sha256": "88d5f66f061695576b5fe9569487748896f0f9fcd0f219a30f90021e04e1cf8f"
+        },
+        {
+          "filename": "pass2-diplomacy-demand.png",
+          "sha256": "83c42136cf7fac10628151ae14fe1758a16e2eefa049d28d23b3520635e808f8"
+        },
+        {
+          "filename": "pass2-diplomacy-menu.png",
+          "sha256": "060d88e2e0c360562323dd4ad0667a4f1eb1861814cec388e515eede6346276c"
+        },
+        {
+          "filename": "pass2-diplomacy-peace.png",
+          "sha256": "bde0843d7fb89c1c27810d8db31338240409aab4c78f372709f69ee77edc4476"
+        },
+        {
+          "filename": "pass2-diplomacy-topics.png",
+          "sha256": "63faf5a0678d5de9e5e2e110362cfe02079856777817afed0e156fe4b92d34b4"
+        },
+        {
+          "filename": "pass2-diplomacy-proposal.png",
+          "sha256": "85230745c67d1b3544f67bd109b05c955563200d46024fbc52fa26147809730e"
+        },
+        {
+          "filename": "pass2-diplomacy-exchange.png",
+          "sha256": "24cd980c8eda920ac1c7a5b39a5f8d1733ae39dc4e41136a2b2f01cd02d3c51e"
+        },
+        {
+          "filename": "pass2-diplomacy-exchanged.png",
+          "sha256": "28c0bb9a1b7d898abb9b266df3283b3fdf29dea1520660e818584ed69146802c"
+        },
+        {
+          "filename": "pass2-diplomacy-selected.png",
+          "sha256": "11dd04388dd324a4242861602d1db5b85b0b813fc8662c8b04814187b810261c"
+        },
+        {
+          "filename": "pass2-diplomacy-back.png",
+          "sha256": "b43c6b835c883a3925ef76f094644b8a881d0cddbe8f2511229c2a1d1ed1f007"
+        },
+        {
+          "filename": "pass2-diplomacy-ended.png",
+          "sha256": "18e1cd3b19a48b106f1d3c680a903b7861cd53ec892e850e56b97557770f8c0d"
+        },
+        {
+          "filename": "pass2-intelligence.png",
+          "sha256": "8f5f28c41bf43727539e92e45b716fb5289d8185d323062449a382aa2252b6f3"
+        },
+        {
+          "filename": "pass2-intelligence-return.png",
+          "sha256": "ebf50f5338ce6ca6311df52b90603686d7a8681924836def2e6cf404af858720"
+        }
+      ]
+    },
+    {
+      "id": "U27",
+      "summary": "Fantasy Ya_Auto loads with different menu/date/terrain/unit labels. Move To Another World offers Undersea World/Underworld with Cancel; Undersea accepted and selected unit/map presentation changes. No transfer-rule completeness claimed.",
+      "captures": [
+        {
+          "filename": "pass2-fantasy-summary.png",
+          "sha256": "501b38e9851e2379d2db16262f7aa6cbf37636b89d89e1b2ea26414f3ac0b61e"
+        },
+        {
+          "filename": "pass2-fantasy-map.png",
+          "sha256": "902c05a514c62e6dd77ef274d5ca0988d93ae23c00f956cd0c8b26e514f32f2d"
+        },
+        {
+          "filename": "pass2-fantasy-menu.png",
+          "sha256": "8b0fd37710d7d4771e53c3b1bce736b252d5671f4ce20315b5c47f662fc78e66"
+        },
+        {
+          "filename": "pass2-fantasy-orders-focus.png",
+          "sha256": "bb49491a2cf994616da3b5507c3e9852ebec5f1dfb1bb4ac469b2cf982e44e4f"
+        },
+        {
+          "filename": "pass2-fantasy-transfer.png",
+          "sha256": "763b75883bc1c0e71e5c3027702578328e9e863f075434d85d1dbea52d4d0075"
+        },
+        {
+          "filename": "pass2-fantasy-undersea.png",
+          "sha256": "6dba6ef2e3467e9d0a0d2779e868875093fc25c2c3c5181e3417e1262e44d534"
+        }
+      ]
+    },
+    {
+      "id": "U28",
+      "summary": "Constantine classic custom scenario loads with custom unit/art/difficulty/currency/date labels and objective-based score. Scenario-start wizard and event branches not traversed.",
+      "captures": [
+        {
+          "filename": "pass2-custom-classic-summary.png",
+          "sha256": "e83eeeeb5bf55e561af81957108bcb31f90e9cf0125b72d2a4559d8537dd7136"
+        },
+        {
+          "filename": "pass2-custom-map.png",
+          "sha256": "c42443ff5a13a9dfa0f6900f928756b63de44c49616994d0fde19a096c5a8fc9"
+        },
+        {
+          "filename": "pass2-custom-score.png",
+          "sha256": "3a09e0b413dc0fcf7e760a75ff06e5db2bbd6a773914d457921baafe41f18e50"
+        }
+      ]
+    },
+    {
+      "id": "U29",
+      "summary": "Warring States deiQin import rejected with specific missing Lua Scenario events patch diagnostic under the copied Lua-disabled patch profile. No claim custom Lua scenario successfully loaded.",
+      "captures": [
+        {
+          "filename": "pass2-custom-summary.png",
+          "sha256": "25a29c1c4ba53e75ad36fc96777dc9a1f1909646f3c3cbb9eed3b07e6aa4312b"
+        }
+      ]
+    },
+    {
+      "id": "U30",
+      "summary": "Constantine V changes to Viewing. One keypad-6 moves displayed cursor (44,46) to (46,46). A opens stack activation chooser; chosen legion becomes Moving unit. One keypad-6 exhausts/advances selection. Separate Wait/Space/zoom inputs inspected; complete scheduling/coordinate rules not inferred.",
+      "captures": [
+        {
+          "filename": "pass2-view-mode.png",
+          "sha256": "73ab85b144c5c54a4e4676594c883a54bf6f0faff51610f23567f8ea55e7bf88"
+        },
+        {
+          "filename": "pass2-view-step.png",
+          "sha256": "52d286e4a149ccda8d6b66dac6ede1ff128517c394aee5905f25df44db1f3336"
+        },
+        {
+          "filename": "pass2-activate.png",
+          "sha256": "7aaa22cde85a1a6df481b82149c0489af8973f2419d3e06d0031da42e4584541"
+        },
+        {
+          "filename": "pass2-unit-active.png",
+          "sha256": "9fbab1279000a6e035004e40798398837a1a96ffceafcece7d6a8ab658fe0ca3"
+        },
+        {
+          "filename": "pass2-unit-move.png",
+          "sha256": "e27994213206b02f26e82942328af23e1a3f4f7d2e6b2fc3f2799e7ee0db4bde"
+        },
+        {
+          "filename": "pass2-wait.png",
+          "sha256": "736ac86089e4a223f5188d2c9eef00a33b1adb7e32f1a45ac979812d19ac0156"
+        },
+        {
+          "filename": "pass2-skip.png",
+          "sha256": "07e00216cfce82ae4ed4a9c00775a7905542933354a5d3305e9ffc6e835f36fb"
+        },
+        {
+          "filename": "pass2-zoom.png",
+          "sha256": "4afba8b5fb33b65734ecd28faf569cec4c67d350b7e47524c351a05978fca241"
+        }
+      ]
+    },
+    {
+      "id": "U31",
+      "summary": "Explicitly focused Revolution with Yes selected + only Escape yields Revolution! notice. Rate view confirms Anarchy. End-turn Enter advances observed dates, then legal-government chooser (Despotism only) \u2192 rate editor \u2192 newspaper notice. No general anarchy-length claim.",
+      "captures": [
+        {
+          "filename": "pass2-revolution-before.png",
+          "sha256": "45093d002c6b40d04ef15fc2310800e0e60a4eb0cf5d24cad6442d5dd6c65f0c"
+        },
+        {
+          "filename": "pass2-revolution-escape.png",
+          "sha256": "7044bc5063a403482591bdf7738aa572055427a38775b46fe7edd24e95f3657a"
+        },
+        {
+          "filename": "pass2-anarchy.png",
+          "sha256": "90bf4346d6bf7b3b23eb90b91c8d5fb143e779dd24cf5f9c8ba92e1074c9ce46"
+        },
+        {
+          "filename": "pass2-anarchy-round2.png",
+          "sha256": "4207d9fbf4d8e5a3de3993402fc507f10a0aaf76028e4dbeaf768e4255b14bae"
+        },
+        {
+          "filename": "pass2-anarchy-round3.png",
+          "sha256": "9e38933bbd03397dbe0cb21d4a5bb7d9de1d59ca41735a1a72d7078da73265d7"
+        },
+        {
+          "filename": "pass2-government-selected.png",
+          "sha256": "84f905c72a7d43028b6513d0e56c1b440895be7b452b2ca53963681f1224f0cb"
+        },
+        {
+          "filename": "pass2-newspaper.png",
+          "sha256": "dd22fbfb5ac3616c2040e41a3783c5fb1cde1955809bf6cf83cc398d6c4149ac"
+        }
+      ]
+    },
+    {
+      "id": "U32",
+      "summary": "Rate arrow input alone left displayed shares unchanged; science-lock checkmark inspected. Unlocking then tax-track input changes 40/60/0 to 50/50/0 and displayed income/research estimates. Entire redistribution/rounding behavior unproven.",
+      "captures": [
+        {
+          "filename": "pass2-rate-adjust.png",
+          "sha256": "b7995ae7af058455d6092169588f3e6f84d77842a3359dafd2916cfac7d6cd9e"
+        },
+        {
+          "filename": "pass2-rate-lock.png",
+          "sha256": "6f4c4f59a4883eaf39e2087c13a1e2acd405a3a011a10f3a0d3a4e4bc8888775"
+        },
+        {
+          "filename": "pass2-rate-page.png",
+          "sha256": "98c5b4c3a895a5a62d75f8320511b8ba2f04c125a3cf0907a68b5e5065ce9b3d"
+        },
+        {
+          "filename": "pass2-anarchy-round1.png",
+          "sha256": "e1c995f10ee719736be1a822437dc9bb2f724f9ebba6bd335de1a17a6e350c83"
+        }
+      ]
+    },
+    {
+      "id": "U33",
+      "summary": "A 39-byte authored invalid text .sav is rejected as not a saved game. Previous map remains visible; complete prior-state preservation is not proven.",
+      "captures": [
+        {
+          "filename": "pass2-invalid-result.png",
+          "sha256": "c026596615c75e15256533062840a3ed01845c5bc14360506ededf45628e819c"
+        }
+      ]
     }
   ],
   "limitations": [
-    "No exhaustive screen/shortcut inventory completed.",
-    "No native gameplay parity claim.",
-    "Research goal is not active-project choice.",
-    "Revolution Escape sequence not isolated.",
-    "Negotiation controls not reached.",
-    "Custom/pre-made setup branches, complete overwrite acceptance/corrupt-file handling, additional reports, multi-map and custom scenarios remain unverified."
+    "Installed ToTPP UI only; unpatched equivalence not established.",
+    "Representative routes, not every branch or full gameplay/parity acceptance.",
+    "Mid-project/later research, late-game space, transport/combat prompts and some scenario-start/event paths remain open.",
+    "Slider total/cap/lock algorithm not completely characterized.",
+    "Diplomatic visibility eligibility, gifts/tribute/third-party war branches and event decisions remain open.",
+    "No claim successful Lua scenario import or complete human checkpoint/next-turn parity.",
+    "Owner layout, input behavior, toolkit and delivery decomposition approval remain pending."
   ],
   "private_generated_fixture": {
     "relative_to_copied_install": "Original/ui-study.sav",
@@ -311,5 +726,18 @@
     "year": -3950,
     "research_visually_after_reload": "Pottery",
     "original_file_committed": false
+  },
+  "second_pass_settings": {
+    "reference_exe": "same patched civ2.exe",
+    "ram_or_presentation_hooks": false,
+    "private_UI_preference_change": "Diplomacy Screen unchecked via Graphic Options; plain-dialog path used thereafter",
+    "private_patch_profile": "LuaScripting and LuaScenario remain disabled; Warring States load rejected",
+    "native_interface_inputs": "Win32 focus, explicit file edit selection, SendInput, final X backing-window resize; no game RAM edits",
+    "sessions_stopped": true
+  },
+  "authored_invalid_fixture": {
+    "text": "Authored invalid UI-discovery fixture.\n",
+    "bytes": 39,
+    "sha256": "4aab1120ef9fe566f069ad4ba24256cafde6dbaa2c80562c176e855c1a7ef8e1"
   }
 }

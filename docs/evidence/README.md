@@ -3368,7 +3368,9 @@ contract; original new-game initialization parity is not claimed.
 
 [generated-campaign-v1.json](generated-campaign-v1.json) records Rules hashes,
 setup and validation context. [The full authored-rules checkpoint golden](generated-campaign-v1.ctc)
-contains every order and round fingerprint for 100 rounds of AI v1, including
+is regenerated for engine v0.11.0; only the exact-version header changes from
+the v0.10 fixture, with metadata hash/version refreshed. It still contains every
+order and round fingerprint for 100 rounds of AI v1, including
 the final fingerprint `b22e4340b6ab8bf6`. It reaches 20 cities, 27 population,
 28 units and 35 acquired advances. [The authored trajectory](generated-authored-campaign.tsv)
 and [Original Rules trajectory](generated-standard-campaign.tsv) contain
@@ -3735,7 +3737,12 @@ CIVTOT_HOME=/path/to/CIVTOT python3 tools/ai_campaign_audit.py \
 ## Playable-client UI discovery (v0.11, second pass, #107)
 
 `ui-discovery.json` records source identities, private screenshot hashes and
-33 inspected route groups from the installed ToTPP reference UI. Routes,
+33 inspected route groups from the installed ToTPP reference UI. The manifest
+contains 115 references to 112 private capture filenames with 111 unique content
+hashes: the improvements panel and return after cancelling sale are identical.
+All retained capture/source hashes were rechecked for the planning candidate.
+Owner acceptance of the prototype and first scope is recorded alongside the
+explicit native-coverage limits; this is not playable-client validation. Routes,
 reinspection procedure and explicit gaps are in `docs/ui/discovery.md`.
 Three sessions used copied install/Wine directories on an owned Xvfb display;
 no RAM or presentation patches were applied. Original screenshots and the

@@ -74,7 +74,9 @@ and [decision 0007](docs/decisions/0007-original-like-ai.md). Full original-AI
 parity is not claimed. The owner-requested [complete original-AI scope](docs/original-ai-scope.md)
 now defines the remaining ports and completion gates ([program #117](https://github.com/diegoami/totengine/issues/117)).
 Full AI reproduction is gated behind the playable UI/client work.
-Owner-reviewed client discovery/design starts at v0.11.
+The v0.11 planning candidate contains [owner-reviewed client discovery/design](docs/v0.11.0-readiness.md)
+and a [shared implementation plan](docs/ui/client-milestones.md). Both a playable
+browser and standalone desktop are required; the prototype remains simulated.
 
 ```bash
 # Rust CLI (successor of the Python probe)

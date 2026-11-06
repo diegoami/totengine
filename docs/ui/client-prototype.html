@@ -544,7 +544,7 @@
       zoom: 1,
       report: "Cities",
       treaty: "Ceasefire",
-      movement: "confirm",
+      movement: "direct",
     };
     const screens = [
       ["map", "Map"],
@@ -621,9 +621,9 @@
     }
     const views = {
       map: () =>
-        `<section class="mapwrap"><canvas id="mapcanvas" width="1380" height="620" tabindex="0" aria-label="Illustrative diamond map. Tab to Moving mode to issue a simulated order."></canvas><div class="maptools"><button id="zoomout" aria-label="Zoom out">−</button><button id="zoomin" aria-label="Zoom in">+</button><button id="center">Center unit</button><button data-screen="city">Open Alder</button></div><div class="maphint"><label for="movestyle">Review movement variant: </label><select id="movestyle"><option value="confirm">Confirm each move</option><option value="direct">Immediate movement</option></select><br><b id="mapcaption">${state.moving ? "Moving pieces" : "Viewing pieces"}</b> · Click a diamond to ${state.moving ? "preview a move" : "inspect terrain"}.<br>Compare movement variants above. Viewing mode always inspects. These are design alternatives, not approved defaults.</div></section>`,
+        `<section class="mapwrap"><canvas id="mapcanvas" width="1380" height="620" tabindex="0" aria-label="Illustrative diamond map. Tab to Moving mode to issue a simulated order."></canvas><div class="maptools"><button id="zoomout" aria-label="Zoom out">−</button><button id="zoomin" aria-label="Zoom in">+</button><button id="center">Center unit</button><button data-screen="city">Open Alder</button></div><div class="maphint"><label for="movestyle">Movement preference: </label><select id="movestyle"><option value="confirm">Confirm each move</option><option value="direct">Immediate movement</option></select><br><b id="mapcaption">${state.moving ? "Moving pieces" : "Viewing pieces"}</b> · Click a diamond to ${state.moving ? "preview a move" : "inspect terrain"}.<br>Owner-selected default: immediate empty-tile movement; confirm attacks/capture in the real client. Viewing always inspects. This fixture has no combat.</div></section>`,
       city: () =>
-        `<section class="screen">${heading("Alder", "Population 30,000 · City 1 of 2 · fictional review fixture")}<div class="citygrid"><div class="stack"><div class="box"><h3>City resources</h3><dl class="resources"><dt>Food surplus</dt><dd id="food">+${4 - (state.citizens ? 1 : 0)}</dd><dt>Taxes</dt><dd>${2 + (state.citizens === 2 ? 3 : 0)}</dd><dt>Luxury</dt><dd>${state.citizens === 1 ? 3 : 0}</dd><dt>Science</dt><dd>${3 + (state.citizens === 3 ? 3 : 0)}</dd><dt>Net shields</dt><dd>3</dd><dt>Support</dt><dd>1 shield</dd></dl></div><div class="box"><h3>Building: ${state.production}</h3><div class="meter"><span style="width:60%"></span></div><p>12 / 20 shields · 3 turns</p><div class="row"><button data-screen="production">Change…</button><button id="buy">Buy…</button></div><small>Illustrative costs; not recalculated mechanics.</small></div></div><div class="box"><h3>Worked city radius</h3><canvas id="citycanvas" class="citytiles" width="650" height="320" tabindex="0" aria-label="Illustrative city tiles; click to preview worker assignment"></canvas><p class="muted">Gold marks the ${state.worked} worked tiles. Select a tile to preview a worker change.</p><h3>Citizens</h3><div class="citizens"><button id="specialist">${["Worker", "Entertainer", "Tax collector", "Scientist"][state.citizens]} ↻</button><button disabled>Content worker</button></div><p><small>First citizen previews worker / entertainer / tax collector / scientist. Reassignment behavior and numbers are illustrative.</small></p></div><aside class="stack"><div class="box"><h3>Food storage</h3><div class="meter"><span style="width:73%"></span></div><p>22 / 30 · Growth in 2 turns</p></div><div class="box"><h3>Improvements</h3><p>Palace · Granary</p><button id="sell">Sell granary…</button></div><div class="box"><h3>Supported / present units</h3><p>Warriors · 1 shield</p><p>Settlers · 1 food</p><button data-screen="map">Locate warriors</button></div></aside></div></section>`,
+        `<section class="screen">${heading("Alder", "Population 30,000 · City 1 of 2 · fictional review fixture")}<div class="citygrid"><div class="stack"><div class="box"><h3>City resources</h3><dl class="resources"><dt>Food surplus</dt><dd id="food">+${4 - (state.citizens ? 1 : 0)}</dd><dt>Taxes</dt><dd>${2 + (state.citizens === 2 ? 3 : 0)}</dd><dt>Luxury</dt><dd>${state.citizens === 1 ? 3 : 0}</dd><dt>Science</dt><dd>${3 + (state.citizens === 3 ? 3 : 0)}</dd><dt>Net shields</dt><dd>3</dd><dt>Support</dt><dd>1 shield</dd></dl></div><div class="box"><h3>Building: ${state.production}</h3><div class="meter"><span style="width:60%"></span></div><p>12 / 20 shields · 3 turns</p><div class="row"><button data-screen="production">Change…</button><button id="buy">Buy…</button></div><small>Illustrative costs; not recalculated mechanics.</small></div></div><div class="box"><h3>Worked city radius</h3><canvas id="citycanvas" class="citytiles" width="650" height="320" tabindex="0" aria-label="Illustrative city tiles; click to change worker assignment immediately"></canvas><p class="muted">Gold marks the ${state.worked} worked tiles. Select a tile to change a worker assignment immediately.</p><h3>Citizens</h3><div class="citizens"><button id="specialist">${["Worker", "Entertainer", "Tax collector", "Scientist"][state.citizens]} ↻</button><button disabled>Content worker</button></div><p><small>First citizen changes immediately: worker / entertainer / tax collector / scientist. Reassignment behavior and numbers are illustrative.</small></p></div><aside class="stack"><div class="box"><h3>Food storage</h3><div class="meter"><span style="width:73%"></span></div><p>22 / 30 · Growth in 2 turns</p></div><div class="box"><h3>Improvements</h3><p>Palace · Granary</p><button id="sell">Sell granary…</button></div><div class="box"><h3>Supported / present units</h3><p>Warriors · 1 shield</p><p>Settlers · 1 food</p><button data-screen="map">Locate warriors</button></div></aside></div></section>`,
       production: () =>
         `<section class="screen">${heading("What shall Alder build?", "Select an item, inspect its details, then apply. Cancel retains the current build.", "city")}<div class="columns"><div class="box choices" id="buildchoices">${["Settlers", "Warriors", "Phalanx", "Barracks", "Colossus"].map((n) => `<button data-build="${n}" aria-pressed="${n === state.production}"><span>${n}</span><span>${{ Settlers: 10, Warriors: 1, Phalanx: 3, Barracks: 12, Colossus: 65 }[n]} turns*</span></button>`).join("")}</div><div class="box"><h2 id="buildname">${state.production}</h2><p id="builddetail">Current selection. Unit or improvement details appear here.</p><p class="note">* Turn estimates are fixture values. Real costs, obsolescence, legal choices, shield retention and hurry costs must come from the engine.</p><p>Advisor recommendations will be separate from the legal build list. Native recommendation logic is outside this design slice.</p></div></div><div class="actions"><button data-screen="city">Cancel</button><button class="primary" id="applybuild">Apply production</button></div></section>`,
       research: () =>
@@ -861,11 +861,11 @@
         $("movestyle").onchange = (e) => {
           state.movement = e.target.value;
           log(
-            "Movement review variant: " +
+            "Movement preference: " +
               (state.movement === "direct"
                 ? "immediate"
                 : "confirm each move") +
-              ". No approved default implied.",
+              ". Attacks/capture require confirmation in the real client.",
           );
         };
         $("zoomin").onclick = () => {
@@ -884,16 +884,11 @@
         $("mapcanvas").onclick = selectTile;
       }
       if (s === "city") {
-        $("citycanvas").onclick = () =>
-          confirmAction(
-            "Reassign worker?",
-            "Preview: change a worked tile. Food and shields here remain illustrative.",
-            () => {
-              state.worked = state.worked === 2 ? 3 : 2;
-              show("city");
-              log("Worked-tile marker changed in the fixture.");
-            },
-          );
+        $("citycanvas").onclick = () => {
+          state.worked = state.worked === 2 ? 3 : 2;
+          show("city");
+          log("Worker assignment changed immediately in the fixture; outputs are illustrative.");
+        };
         $("specialist").onclick = () => {
           state.citizens = (state.citizens + 1) % 4;
           show("city");

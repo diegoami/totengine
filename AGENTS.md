@@ -177,12 +177,15 @@ command/persistence boundaries; `docs/ui/client-milestones.md` proposes the firs
 human-controlled standard-game turn and dependent delivery packages, without
 assigning versions. Owner accepted revision 02 as a prototype on 2026-11-06
 ("ok for a prototype is ok"); use it as the planning basis without asking for
-prototype acceptance again. Specific input behavior, toolkit and implementation
-scope/decomposition remain open. The owner explicitly requires BOTH a playable
-browser client and a normal standalone desktop client ("also", "we need both",
-2026-11-06). The observer/prototype do not satisfy either complete playable
-client. Track delivery and human-play acceptance for both, sharing the engine
-and session contracts; framework/toolkit and ordering remain open. Do not
+prototype acceptance again. The owner then explicitly answered five questions:
+“1 yes 2 both 3 yes 4 option 1 5 like the original”. Local browser hosting is
+accepted; browser and standalone desktop land together in the first playable
+milestone; generated-standard-game scope is accepted, before import/deeper
+management; immediate empty-tile moves confirm attacks/capture; city worker/
+specialist edits commit immediately like the original, without a global draft.
+Production pickers and buy/sell keep explicit decision confirmations. Both clients
+remain required. Toolkit adoption follows feasibility; SDL2 is the first
+candidate, not an already validated/selected toolkit. Do not
 reinterpret this as browser-only, desktop-only or a desktop requirement replacing
 the browser target. Live delivery stories: desktop #94, browser #125, shared
 design/decomposition #107. The owner then explicitly directed an
@@ -193,20 +196,19 @@ Usage/recipe limits: `docs/ui/asset-preview.md`; numeric source/crop evidence:
 citizens/icons and interface textures; all game state/actions remain simulated.
 Six install-free routing/selection tests and the optional real-browser artwork
 check pass. This is not a production renderer or a human game-session driver.
-`docs/v0.11.0-readiness.md` records the acceptance gaps and completed checks.
-`docs/ui/client-architecture.md` audits the existing engine/observer/assets and
-proposes one Rust human-session layer with local-hosted browser and native
-desktop adapters. `docs/ui/client-milestones.md` now includes a concrete first-
-slice review packet (both clients, generated Original surface game, interaction
-defaults, human checkpoint route) and six prerequisite stories. This packet is
-proposed, not owner-approved; no versions or implementation milestones assigned.
-The next required owner input is acceptance/revision of that scope, not another
-prototype or owned-asset-source confirmation. SDL2 is a feasibility candidate,
-not an implemented/selected toolkit; browser hosting without a local executable
-is excluded from this proposal, not from all future browser possibilities.
-Readiness is an in-progress record, not authorization to call the milestone.
-This is not an accepted design or milestone candidate; substantial client
-implementation still waits for decision 0005's design gate. Representative city,
+`docs/v0.11.0-readiness.md` records acceptance, checks and explicit limits.
+`docs/ui/client-architecture.md` audits the engine/observer/assets and defines
+one Rust human-session layer with local-hosted browser and native desktop
+adapters. Accepted decomposition is live: milestone 10 “Playable human turn —
+browser and desktop” (version unassigned), #126 desktop feasibility, #127 human
+driver, #128 resources/filtered views, #129 browser, #130 desktop, #131 checkpoints
+and both-client acceptance. Complete-client umbrellas #94/#125 remain open;
+full city/government/diplomacy/import/scenarios and sustained campaigns follow.
+The owner scope gate under decision 0005 is satisfied for this first slice;
+v0.11 candidate checks pass (209 install-backed Rust, 5+6 Python, golden,
+fmt/clippy and prototype browser checks). Publish the candidate and milestone
+issue, then print the owner-run independent-review prompt and stop. Do not start client implementation while
+that candidate is under review. Reference coverage includes representative city,
 map/unit, government, negotiation, report, Fantasy transfer and classic custom
 scenario routes are now inspected; remaining branches and delivery impacts are
 explicit in the inventory. Lua-disabled and invalid-file rejection are covered.

@@ -1,8 +1,8 @@
-# Playable client: proposed delivery breakdown
+# Playable client: accepted first slice and delivery breakdown
 
-Draft delivery plan for owner review, #107 / v0.11. The owner accepted design
-revision 02 as a prototype on 2026-11-06; delivery scope is still to be settled. **No later versions or implementation
-milestones are assigned.** These are dependent work packages; their release
+Owner-reviewed delivery plan, #107 / v0.11. The owner accepted design
+revision 02 as a prototype and the first-slice scope on 2026-11-06. **The first playable milestone is assigned; later release versions and the
+remaining milestone count are not.** These are dependent work packages; their release
 boundaries must be chosen from the reviewed design. They are not a promise of
 one release per row or a complete client in one milestone.
 
@@ -24,8 +24,8 @@ browser [#125](https://github.com/diegoami/totengine/issues/125), shared design
 The current observer and simulated
 browser prototype are useful foundations, not either complete playable client.
 The desktop application must have an ordinary launch and its own game window;
-opening the browser preview is not desktop delivery. Frameworks/toolkits and
-which surface lands first remain undecided.
+opening the browser preview is not desktop delivery. Toolkit selection follows the desktop feasibility spike. Both surfaces must
+reach the first playable milestone together; internal implementation order may vary.
 
 Share the engine, validated gameplay commands/views, human decision/session
 protocol and persistence semantics. Evaluate asset decoding/rendering reuse as
@@ -39,9 +39,9 @@ play on **both**, including launch, input, decisions, original-resource loading
 and save/resume. One implementation can inform the other; one cannot substitute
 for the other.
 
-## First deliverable to approve
+## Accepted first deliverable
 
-Proposed first deliverable: a **human-controlled standard surface-game turn**.
+Accepted first deliverable: a **human-controlled standard surface-game turn**.
 The player can start a supported fresh game, inspect its known map, select a
 unit/stack, move/attack, found a named city, end the human turn, see opponent
 results and regain input. Keyboard and mouse paths must both work, with visible
@@ -49,21 +49,19 @@ rejections and explicit supported-format/resource errors. This is a narrower
 claim than a playable full campaign: city/economic choice depth, government,
 diplomacy, reports and scenario compatibility arrive through later packages.
 
-The owner has now directed use of the installed original artwork; the local
-prototype demonstrates that source direction. Before assigning a version,
-settle the browser/desktop architecture, desktop toolkit, surface delivery order
-and detailed rendering behavior,
-movement confirmation and the minimum human-choice handling needed when the
-first turn reaches founding, production or research. Do not ship a map that
-silently auto-answers those required decisions or consumes the human's orders
-through an AI action loop. Discovery proved these choices arise early.
+The installed original artwork source and first scope are accepted. The
+[architecture audit](client-architecture.md) defines the prerequisite work;
+actual toolkit adoption depends on the desktop feasibility spike.
 
 ## Proposed first slice for owner review
 
-This is the concrete recommendation after the code audit, replacing the need
-to answer each technical question separately. **It is proposed, not yet
-owner-approved or assigned a version.** Prototype acceptance remains recorded;
-this is review of delivery scope and specific interaction defaults.
+**Accepted first slice, 2026-11-06.** This heading is retained for existing review
+links. The owner's answers were “1 yes 2 both 3 yes 4 option 1 5 like the
+original”: local browser hosting is acceptable; both surfaces ship together;
+the generated-standard-game scope is accepted; immediate movement confirms
+attacks/capture; city edits follow the original's immediate behavior.
+No later release version is assigned. Acceptance replaces the earlier city-draft
+recommendation; it does not approve the proposed later revolution Escape change.
 
 **Deliver both clients for the first human-turn slice.** Use a packaged local
 Rust host plus browser Canvas/DOM, and a standalone native desktop application
@@ -86,21 +84,22 @@ native SAV export, scenarios/multiple maps, full city economics, government or
 diplomacy in this first slice. Track original-save/scenario import in the later
 lifecycle package; engine checkpoint resume is included here.
 
-**Use these interaction defaults on both clients:**
+**Use these owner-selected interaction defaults on both clients:**
 
 - Viewing inspects without spending movement. In Moving mode, an adjacent
   legal empty-tile move commits immediately; attacks/city capture and ending a
   turn with movable units require confirmation. Keep an optional confirmation
   for every move. An input received before selection changes must never apply
   to the newly selected unit.
-- City/production draft edits use Apply/Cancel, with engine-derived preview
-  effects; Cancel and Escape discard drafts. This is an intentional usability
-  proposal where the original applies edits immediately. Later worker/rate
-  editors follow the same explicit commit convention.
-- Destructive dialogs default to Cancel; Escape cancels. This intentionally
-  differs from the observed native revolution dialog. A required research or
-  government choice can suspend/return to inspection, but cannot be dismissed
-  into unrestricted gameplay or auto-answered by the client.
+- Worker/specialist and other immediate city edits commit directly through
+  validated commands and refresh outputs/mood, like the original. No global
+  Apply/Cancel city draft; closing a city does not undo accepted changes.
+  Production selection remains a picker with explicit acceptance/cancellation;
+  buying/selling still require a quote and confirmation.
+- Required research/government choices can return to inspection, but cannot
+  be dismissed into unrestricted gameplay or auto-answered. The later proposed
+  safe revolution Escape behavior has not been selected by these answers and
+  stays deferred with government implementation.
 - Human checkpoints preserve pending decisions. A failed load leaves the
   current session intact. Native import and engine checkpoints receive distinct
   labels; unsupported formats/capabilities get specific errors.
@@ -122,12 +121,34 @@ The ten-round fixture must avoid those unimplemented systems through declared
 setup, not silent defaults. If required government handling cannot be avoided
 in a useful standard route, promote that phase into this slice's prerequisites.
 
-After the owner accepts or revises this packet, schedule the shared foundation,
+With this scope accepted, schedule the shared foundation,
 driver, browser, desktop and checkpoint integration stories with the acceptance
 above. Choose release boundaries from those dependencies and the desktop spike
 results; later full-city, science/government, diplomacy, report/lifecycle and
 scenario work remains separately scoped. A fixed number of later milestones
 would still be premature.
+
+## Live implementation queue
+
+The accepted first slice is [milestone 10](https://github.com/diegoami/totengine/milestone/10),
+“Playable human turn — browser and desktop”, with release version unassigned.
+Both adapters must pass before that milestone closes. The broad desktop #94
+and browser #125 continue to track the complete clients beyond this slice.
+
+| Story | Deliverable | Dependencies |
+| --- | --- | --- |
+| [#126](https://github.com/diegoami/totengine/issues/126) | Native desktop feasibility: Windows/Linux window, owned art, text/modal input, scaling and packaging | Informs toolkit adoption and shared resource API |
+| [#127](https://github.com/diegoami/totengine/issues/127) | Resumable human driver, validated choices and canonical recording | Existing engine boundary; preserves autonomous behavior |
+| [#128](https://github.com/diegoami/totengine/issues/128) | Shared resources/atlas and filtered human views | Existing evidence; coordinates with #126/#127 |
+| [#129](https://github.com/diegoami/totengine/issues/129) | Engine-backed browser adapter with packaged local host | #127/#128; integrates #131 |
+| [#130](https://github.com/diegoami/totengine/issues/130) | Engine-backed standalone desktop adapter | #126/#127/#128; integrates #131 |
+| [#131](https://github.com/diegoami/totengine/issues/131) | Human checkpoints and both-client acceptance | Persistence starts with #127; assembled acceptance requires #129/#130 |
+
+Each issue specifies a human route, real state/replay checks, input/error cases
+and explicit exclusions. Begin with #126/#127/#128 after the v0.11 release;
+checkpoint design starts alongside the session driver. This is one first-slice
+milestone with both clients, not a fixed count of releases for the whole client
+track. Subsequent packages below retain their own discovery and scope gates.
 
 ## Dependencies and acceptance
 
@@ -181,10 +202,8 @@ this; they cannot establish that a person can understand or finish a game.
 
 ## v0.11 readiness gate
 
-This planning release needs owner-reviewed layouts/interactions and an accepted
-first deliverable plus decomposition, followed by the normal independent
-milestone review. The current proposal, screen contracts and prototype are ready
-for that **design discussion**. The prototype is accepted as a planning basis;
-the first-slice packet above recommends interaction and delivery defaults for
-owner acceptance or revision. No v0.11 version bump, release candidate, implementation
-milestone creation or review launch is justified yet.
+Owner review of the prototype, first deliverable and interaction choices is
+recorded above. The accepted prerequisite decomposition is in the live queue above.
+Finish version/release notes and candidate checks, then follow the independent
+milestone review process. The owner launches that review. This planning release
+does not pass any future playable-client or sustained-human-campaign gate.

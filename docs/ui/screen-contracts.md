@@ -1,6 +1,6 @@
 # Playable-client screen and decision contracts
 
-Draft for owner review under #107 / decision 0005. This specifies proposed
+Owner-reviewed planning contracts under #107 / decision 0005 (2026-11-06). This specifies proposed
 behavior and required information, not implemented engine APIs. Route IDs refer
 to [reference discovery](discovery.md) and its capture manifest. The
 [prototype](client-prototype.html) is an authored layout and interaction aid.
@@ -61,9 +61,10 @@ labels resolve through the current rules/scenario, not standard English names.
 Entry: standard start/import or return from another screen. Viewing mode
 inspects. Activating a multi-unit tile opens a chooser; selected unit becomes
 the order target. Moving mode offers legal orders for that type and context.
-The prototype offers two **unapproved** variants: confirm every move, or move
-immediately. The final attack/capture/destructive confirmation rules also need
-owner review. An accepted order returns movement/combat/capture/founding or a
+The owner selected immediate empty-tile movement with attack/capture
+confirmation; optional confirmation for every move remains available. Viewing
+never moves a unit. Other destructive actions retain their own explicit quotes
+and confirmations. An accepted order returns movement/combat/capture/founding or a
 specific rejection. Advance selection after exhaustion only after the result is
 presented; never send another queued click to a newly selected unit.
 
@@ -100,9 +101,12 @@ commodity supply/demand and routes where available. Do not force a player to
 infer this from totals or expose an unrestricted world snapshot to supply it.
 
 Tile reassignment and specialist changes are validated commands with resulting
-resource and mood views. Proposed preview/confirmation for tile changes differs
-from the reference's immediate edits; owner must decide whether that extra step
-is warranted. The layout may retain immediate edits with explicit feedback.
+resource and mood views. The owner selected immediate worker/specialist edits
+like the original, without a global city draft or Apply/Cancel layer. Refresh
+outputs and mood after each accepted edit; rejection leaves gameplay unchanged.
+Closing the city does not undo accepted edits. Production pickers and buy/sell
+confirmations remain explicit decisions, rather than committing a purchase or
+selection merely because its row was inspected.
 Closing a city does not implicitly end a human turn in the proposed session;
 end-turn preferences and unit scheduling need their own visible rules.
 
@@ -241,14 +245,21 @@ supported map/context, with format/version validation. Validate resume at a
 normal order, required choice and nested conversation. The native save/reload
 route in U18 proves only visible date/project retention, not full engine parity.
 
-## Owner decisions still needed
+## Owner decisions and deferred implementation choices
 
-- Final layout fidelity/refinement beyond the prototype accepted on 2026-11-06.
-- Immediate movement versus per-move confirmation, plus consequential orders.
-- Which immediate city edits should use a draft/preview/Apply interaction.
-- Browser/desktop architecture, toolkit, delivery order and detailed rendering before selecting
-  the first implementation deliverable.
-- Acceptance of the proposed decomposition and supported first-slice boundary.
+2026-11-06, answers “1 yes 2 both 3 yes 4 option 1 5 like the original”:
 
-General authorization to continue discovery does not choose these alternatives.
-No substantial playable-client implementation has started.
+- Local Rust hosting is acceptable for the first playable browser version.
+- Both clients reach the first playable milestone together.
+- The generated-standard-game first slice is accepted; original-save/scenario
+  import and deeper management follow later.
+- Immediate movement, with confirmation for attacks/capture, is selected.
+- City edits commit immediately like the original; no global city draft.
+
+The accepted prototype remains the layout basis. Toolkit choice is an
+implementation feasibility decision; SDL2 must pass the desktop spike before
+adoption. Detailed later government, diplomacy, late-game and scenario branches
+remain scoped discovery/implementation work, not silently approved native
+parity. The revolution Escape redesign remains a later unaccepted proposal.
+No substantial playable-client implementation is delivered by this planning
+package. The live decomposition is in the delivery plan.

@@ -2,7 +2,7 @@
   "schema": 1,
   "date": "2026-11-06",
   "issue": 107,
-  "status": "second-pass-inventory-owner-review-pending",
+  "status": "representative-inventory-owner-reviewed-first-scope-accepted",
   "reference": "Installed ToTPP-patched ToT; unpatched UI equivalence not established",
   "method": "Private copied install/prefix, Xvfb 1024x768x24, no RAM/presentation patches; visual inspection of captures. See docs/ui/discovery.md for routes/limits.",
   "private_capture_directory": "/tmp/totengine-ui-discovery",
@@ -316,7 +316,7 @@
     },
     {
       "id": "U19",
-      "summary": "Roma worked tile removed \u2192 entertainer \u2192 tax collector \u2192 scientist \u2192 tile restored. Resource totals and starvation notice update immediately.",
+      "summary": "Roma worked tile removed → entertainer → tax collector → scientist → tile restored. Resource totals and starvation notice update immediately.",
       "captures": [
         {
           "filename": "pass2-roma.png",
@@ -644,7 +644,7 @@
     },
     {
       "id": "U31",
-      "summary": "Explicitly focused Revolution with Yes selected + only Escape yields Revolution! notice. Rate view confirms Anarchy. End-turn Enter advances observed dates, then legal-government chooser (Despotism only) \u2192 rate editor \u2192 newspaper notice. No general anarchy-length claim.",
+      "summary": "Explicitly focused Revolution with Yes selected + only Escape yields Revolution! notice. Rate view confirms Anarchy. End-turn Enter advances observed dates, then legal-government chooser (Despotism only) → rate editor → newspaper notice. No general anarchy-length claim.",
       "captures": [
         {
           "filename": "pass2-revolution-before.png",
@@ -716,7 +716,7 @@
     "Slider total/cap/lock algorithm not completely characterized.",
     "Diplomatic visibility eligibility, gifts/tribute/third-party war branches and event decisions remain open.",
     "No claim successful Lua scenario import or complete human checkpoint/next-turn parity.",
-    "Owner layout, input behavior, toolkit and delivery decomposition approval remain pending."
+    "Prototype and first delivery/interaction scope accepted by owner on 2026-11-06; toolkit adoption and later detailed workflow coverage remain implementation work."
   ],
   "private_generated_fixture": {
     "relative_to_copied_install": "Original/ui-study.sav",
@@ -739,5 +739,21 @@
     "text": "Authored invalid UI-discovery fixture.\n",
     "bytes": 39,
     "sha256": "4aab1120ef9fe566f069ad4ba24256cafde6dbaa2c80562c176e855c1a7ef8e1"
+  },
+  "capture_counts": {
+    "references": 115,
+    "filenames": 112,
+    "unique_sha256": 111,
+    "identical_captures": [
+      "pass2-improvements.png",
+      "pass2-sell-cancel.png"
+    ]
+  },
+  "owner_review": {
+    "date": "2026-11-06",
+    "first_scope_answers": "1 yes 2 both 3 yes 4 option 1 5 like the original",
+    "decisions": "docs/decisions/0005-playable-client-planning.md",
+    "delivery_plan": "docs/ui/client-milestones.md",
+    "limits": "Planning acceptance; no playable-client, native pixel or full workflow parity claim."
   }
 }

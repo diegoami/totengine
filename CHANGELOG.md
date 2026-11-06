@@ -5,6 +5,32 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+## [0.11.0] — UI discovery, reviewed design and client planning
+
+- Inventory 33 representative original UI/workflow groups across standard,
+  FallRome, Fantasy transfer and a classic custom scenario, including unsupported
+  Lua and invalid-import diagnostics. Retain numeric source/capture identities,
+  explicit unknown branches and no original screenshots/assets in Git (#107).
+- Add a nine-screen interactive design prototype, detailed decision/view
+  contracts and an owned-install artwork preview. The latter reads BMP/GIF
+  resources locally; all prototype gameplay remains simulated. Six install-free
+  resource/HTTP tests and an optional real-browser artwork/interaction check
+  cover the preview. No playable-client or native-renderer parity claim.
+- Record owner acceptance of both a playable browser and ordinary standalone
+  desktop client, together in the first playable milestone; local browser hosting,
+  generated standard-game scope, immediate movement with attack/capture
+  confirmation, and immediate city edits like the original.
+- Audit shared human-session, visibility, asset and checkpoint gaps; create
+  milestone 10 and stories #126–#131 for desktop feasibility, shared driver/views/
+  resources, both adapters and human checkpoint acceptance. Later import,
+  city/government/diplomacy, reports, scenarios and sustained campaign validation
+  remain separately scoped; release versions/counts are unassigned.
+- This release is discovery/design/planning. Full original-AI completion and
+  pluggable AIs remain gated behind playable-client work. Toolkit adoption still
+  requires Windows/Linux feasibility. Existing campaign checkpoints require the
+  exact engine version, so v0.10 checkpoints are rejected by v0.11; no migration
+  or human-session checkpoint is delivered here.
+
 ## [0.10.0] — built-in opponent: research and land campaigns
 
 - Add the original research selection kernel, including CRT consumption and

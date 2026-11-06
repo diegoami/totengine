@@ -1,6 +1,6 @@
 # Playable client: design proposal 02
 
-**Status: prototype accepted by owner; detailed interaction and delivery decisions remain open.** For #107,
+**Status: prototype and first playable delivery/interaction scope accepted by owner (2026-11-06).** For #107,
 v0.11, under [decision 0005](../decisions/0005-playable-client-planning.md).
 [Reference findings](discovery.md) distinguish inspected behavior from unknowns.
 The [clickable prototype](client-prototype.html) is a standalone local HTML file:
@@ -46,8 +46,8 @@ is deferred until the design and deployment decision are settled.
 
 | Screen           | Walkthrough to review                                                                                                                                                                             | Result / cancellation rule                                                                                                                                                                                                            |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Map and units    | Inspect in Viewing mode → switch to Moving → compare per-move confirmation and immediate-movement variants using the selector on the map → test an adjacent move/cancel.                          | Both are unapproved proposals. Viewing never orders. Native keyboard directions and activation are observed in U30; mouse behavior depends on preferences. No combat/fog/costs run in this fixture.                                   |
-| City             | Open Alder → inspect radius/output/storage/support → preview a tile assignment or citizen role → inspect production.                                                                              | Entertainer/tax collector/scientist states are now observed (U19); prototype role/output values remain authored. Immediate native edits versus proposed previews require owner choice.                                                |
+| Map and units    | Inspect in Viewing mode → switch to Moving → compare per-move confirmation and immediate-movement variants using the selector on the map → test an adjacent move/cancel.                          | Owner selected immediate movement with attack/capture confirmation; per-move confirmation is optional. Viewing never orders. Native keyboard directions and activation are observed in U30; mouse behavior depends on preferences. No combat/fog/costs run in this fixture.                                   |
+| City             | Open Alder → inspect radius/output/storage/support → change a tile assignment or citizen role immediately → inspect production.                                                                              | Entertainer/tax collector/scientist states are now observed (U19); prototype role/output values remain authored. Owner selected immediate edits like the original; no global city draft.                                                |
 | Production       | Select Settlers → inspect costs/support → Cancel, or Apply → return to city with new build.                                                                                                       | Draft selection does not commit. Current item survives Cancel. Actual shield retention/penalties and legal choices must come from engine.                                                                                             |
 | Research         | Open Science → inspect current progress and known advances → choose a legal project → Apply. Keep a distinct long-term goal view.                                                                 | Project-change availability and progress effects remain provisional pending discovery. Do not infer this workflow from the reference Goal dialog.                                                                                     |
 | Rates/government | Adjust an unlocked rate, inspect total/cap → lock other rates and try an impossible change → Apply. Revolution requires confirmation; preview the post-anarchy government choice and rate review. | Native early-government sequence is now observed (U31/U32). Prototype Escape defaults to cancellation, intentionally differing from the installed revolution dialog. Redistribution is authored; extra governments remain unobserved. |
@@ -87,40 +87,46 @@ amend that decision or approve a trusted compatibility driver.
 
 ## Owner feedback and remaining decisions
 
-The subsequent [architecture audit](client-architecture.md) and
-[first-slice review packet](client-milestones.md#proposed-first-slice-for-owner-review)
-now make a concrete recommendation: both clients, local Rust browser hosting,
-an SDL2 desktop feasibility gate, immediate empty-tile movement with attack
-confirmation, explicit draft Apply/Cancel, and safe destructive-dialog defaults.
-These are proposed choices for owner review, not selections inferred from the
-earlier prototype acceptance. The alternatives in this design remain visible
-for comparison until that review is recorded.
+2026-11-06: the owner first accepted revision 02 “for a prototype”. That
+acceptance remains the layout basis. Following the [architecture audit](client-architecture.md)
+and [first-slice review packet](client-milestones.md#proposed-first-slice-for-owner-review),
+the owner answered five explicit questions: “1 yes 2 both 3 yes 4 option 1
+5 like the original”. The accepted choices are:
 
-2026-11-06: after receiving the GitHub design/plan links, the owner said:
-“ok for a prototype is ok”. Revision 02 is accepted as a prototype and a basis
-for continued planning. No specific redesign was requested.
+1. Local Rust hosting is acceptable for the first playable browser client.
+2. Browser and normal standalone desktop reach the first playable milestone
+   together; both remain required.
+3. Generated standard games with movement/combat, founding, production/research
+   choices and checkpoint save/resume form the first slice. Original-save/
+   scenario import and deeper management follow later.
+4. Empty-tile moves commit immediately; attacks/capture require confirmation.
+   Viewing always inspects; optional confirmation for every move remains.
+5. City worker/specialist edits commit immediately like the original, updating
+   results without a global draft Apply/Cancel. Production selection and
+   buy/sell confirmations keep their separate explicit decision semantics.
 
-The response does not select the movement variant, city-edit commit behavior,
-production toolkit or first implementation deliverable/decomposition. Those
-choices remain open; the prototype acceptance should not be requested again.
-Further visual refinement can proceed from this prototype as the interaction
-and delivery scope are settled.
+The prototype now defaults to immediate movement and directly changes worker
+assignments as well as specialist roles. Its production picker still requires
+acceptance. All actions remain simulated. Committed PNGs illustrate the earlier
+schematic revision; they are not captures of installed original artwork.
 
-These are concrete layout/interaction decisions, not permission to skip missing
-discovery. Owner feedback should be recorded here with date and exact accepted
-or revised choices. Review the explicit coverage gaps and scope them into the delivery plan,
-revise the design and then freeze the first delivery slice. Do not label the initial prototype approved
-because implementation work was generally authorized.
+Toolkit adoption follows a Windows/Linux feasibility spike, not another owner
+preference question. SDL2 remains the initial candidate. Later government,
+diplomacy, scenario and late-game details remain explicit discovery/work items;
+these answers do not approve the proposed revolution Escape redesign or claim
+exhaustive native parity. The v0.11 scope is reviewed planning, not a playable
+client. The accepted delivery decomposition is in the live queue linked from
+[client-milestones](client-milestones.md).
 
-## Proposed implementation slices (unversioned, not yet scheduled)
+## Delivery categories beyond the accepted first slice (unversioned)
 
-These remain categories until discovery and owner feedback determine ordering
-and release boundaries. Multiple categories may split into several releases.
+The first human-turn scope is accepted; later categories retain their own
+discovery and release boundaries. Multiple categories may split into several releases.
 
 | Candidate slice                    | Concrete completion check                                                                                                                                                                                                              | Dependencies / exclusions                                                                                                         |
 | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Human turn and map workspace       | Human loads/starts a supported standard game; keyboard/mouse selection, movement/attack/capture/founding, visible rejection, turn handoff and return work through validated commands; fog respected; result/log replay checked.        | Define prompt driver, supported unit orders and rendering/assets. Not full city management or complete scenario parity.           |
-| City/economic decisions            | A human assigns workers/specialists, changes production, buys/sells with correct quotes, handles growth/disorder; city and report values agree with engine; Cancel has no mutation.                                                    | Engine commands/views and measured reference interactions; persistence across city transitions.                                   |
+| City/economic decisions            | A human assigns workers/specialists, changes production, buys/sells with correct quotes, handles growth/disorder; city and report values agree with engine; cancelled uncommitted decisions have no mutation.                                                    | Engine commands/views and measured reference interactions; persistence across city transitions.                                   |
 | Science, government and diplomacy  | Human resolves research discoveries, rate/government transitions and supported contact/treaty choices; modal priority, earned intelligence and interrupted turns persist.                                                              | Later research-choice discovery, government state machine and diplomacy mechanics #96; likely several slices.                     |
 | Campaign lifecycle and reports     | Supported setup/scenario import, all scoped reports and errors, save/reload at decision boundaries, missing-assets guidance; multi-map requirements explicitly scoped.                                                                 | Asset resolution and scenario support; native SAV export is not implicitly promised.                                              |
 | Assembled sustained play/usability | Owner completes a new-game campaign segment and a scenario segment covering movement/combat, cities/economy/research, notifications and save/reload; no console edits or agent-only commands; session issues fixed and replay checked. | Duration/fixtures fixed with owner after design; include conquest, loss and recovery paths. Twenty-turn autoplay is insufficient. |
@@ -128,8 +134,8 @@ and release boundaries. Multiple categories may split into several releases.
 Each eventual issue needs a human-play route, keyboard route, supported fixture,
 engine/API dependency, failure/cancel checks and its explicit limits. No client
 release versions, milestone count, dates or complete-playability claim are
-assigned by this proposal. v0.11 cannot close until discovery, owner-reviewed
-design and accepted implementation decomposition satisfy #107.
+assigned by this proposal. v0.11 closes through independent review of the discovery, recorded owner
+design/scope decisions and accepted live-queue decomposition under #107.
 
 ## Prototype validation (revision 02)
 
@@ -150,6 +156,7 @@ play. All four previews contain only our authored drawings/text/fixture values.
 The reference inventory now has 33 representative route groups across standard,
 FallRome, Fantasy and a classic custom scenario, plus explicit Lua/invalid-file
 rejection. The detailed gaps remain in the discovery record and screen contracts.
-Prototype acceptance is recorded above. Detailed interaction decisions and
-acceptance of the first deliverable/decomposition are still pending. No milestone candidate or substantial client implementation is
-claimed by this package.
+Prototype and first-scope acceptance are recorded above; the live delivery
+queue is linked from the plan. The v0.11 planning candidate still requires
+independent milestone review. No substantial playable-client implementation is
+delivered by this package.

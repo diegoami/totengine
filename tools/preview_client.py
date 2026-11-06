@@ -19,7 +19,7 @@ ART_NAMES = ("terrain1", "terrain2", "units", "cities", "city", "icons", "people
 DESIGN_FILES = {
     "/": "client-prototype.html",
     "/asset-preview.js": "asset-preview.js",
-    **{f"/{name}.md": f"{name}.md" for name in ("client-design", "discovery", "screen-contracts", "client-milestones")},
+    **{f"/{name}.md": f"{name}.md" for name in ("client-design", "discovery", "screen-contracts", "client-milestones", "client-architecture")},
 }
 
 

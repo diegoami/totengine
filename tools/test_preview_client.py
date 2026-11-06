@@ -109,6 +109,7 @@ class BoundedHttp(unittest.TestCase):
         self.assertEqual(self.get("/")[0], 200)
         self.assertEqual(self.get("/asset-preview.js")[0], 200)
         self.assertEqual(self.get("/client-design.md")[0], 200)
+        self.assertEqual(self.get("/client-architecture.md")[0], 200)
 
 
 if __name__ == "__main__":

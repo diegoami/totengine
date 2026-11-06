@@ -64,3 +64,24 @@ sustained-human-play acceptance. The user supplies original assets for both;
 shipping original artwork is still prohibited. The milestone decomposition must
 track both clients explicitly and cannot mark the client track complete after
 only one surface works. Later versions/counts remain unassigned.
+
+
+## First playable scope accepted — 2026-11-06
+
+After accepting the prototype and requiring both clients, the owner answered
+five explicit delivery/interaction questions: “1 yes 2 both 3 yes 4 option 1
+5 like the original”. This accepts local hosting for the first browser version,
+both clients in the same first playable milestone, and a generated-standard-game
+slice with movement/combat/founding, production/research choices and checkpoint
+save/resume. Original-save/scenario import and deeper management follow later.
+Movement commits immediately with attack/capture confirmation; city worker/
+specialist edits commit immediately like the original, without a global draft.
+Production pickers and buy/sell retain their explicit decision confirmations.
+
+The [delivery plan](../ui/client-milestones.md) and
+[architecture audit](../ui/client-architecture.md) define the prerequisite work
+and acceptance. This satisfies the owner review of first scope and selected
+interactions, allowing decomposition into the live queue. It does not deliver
+playable software or approve every later dialog redesign. Toolkit adoption
+follows feasibility checks; later release versions/counts remain unassigned.
+The normal independent review still gates the v0.11 planning release.

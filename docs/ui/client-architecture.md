@@ -1,6 +1,7 @@
 # Browser and desktop client: implementation audit and proposed architecture
 
-Draft for #107, 2026-11-06, audited against `373d418`. This completes the initial
+Architecture plan for #107, 2026-11-06, audited against `373d418`. The owner
+accepted local browser hosting and the both-client first scope after this audit. This completes the initial
 code/dependency audit; it does not select a release version or claim that a
 human client is implemented. Both #94 (desktop) and #125 (browser) are required.
 Read with the [screen contracts](screen-contracts.md) and
@@ -136,8 +137,8 @@ HTTP server is not sufficient for this mutation protocol.
 
 ## Concrete next work and evidence
 
-These are draft implementation stories to schedule after the owner reviews the
-[first-slice proposal](client-milestones.md#proposed-first-slice-for-owner-review).
+These are implementation stories for the owner-accepted
+[first-slice scope](client-milestones.md#proposed-first-slice-for-owner-review).
 They are prerequisites of both client umbrellas, not separate releases:
 
 1. **Desktop feasibility:** open/close/resize a normal Windows and Linux window;

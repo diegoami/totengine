@@ -21,6 +21,7 @@ const fs = require("node:fs/promises");
     );
     const metadata = await page.evaluate(() => window.installedArtwork);
     assert.ok(metadata, await page.locator("#artwork-status").textContent());
+    assert.equal(await page.locator("#movestyle").inputValue(), "direct");
     for (const [name, sample] of Object.entries(metadata.measurements)) {
       assert.ok(
         sample && sample.opaque > 0 && sample.transparent > 0,
@@ -68,6 +69,10 @@ const fs = require("node:fs/promises");
       .click({ position: { x: (x * box.width) / 1380, y } });
     assert.deepEqual(await page.evaluate(() => state.unit), [8, 5]);
     await screen("City");
+    const workedBefore = await page.evaluate(() => state.worked);
+    await page.locator("#citycanvas").click();
+    assert.notEqual(await page.evaluate(() => state.worked), workedBefore);
+    assert.equal(await page.locator("#confirm").isVisible(), false);
     assert.equal(await page.locator(".citizens img").count(), 1);
     assert.equal(await page.locator(".resources img").count(), 6);
     const before = await page.locator(".citizens img").getAttribute("src");

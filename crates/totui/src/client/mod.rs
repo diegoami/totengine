@@ -1,6 +1,7 @@
 //! One controller, filtered presentation and persistence for both native adapters.
 mod atlas;
 pub mod browser;
+mod city;
 #[cfg(feature = "desktop")]
 pub mod desktop;
 #[cfg(any(feature = "desktop", test))]
@@ -115,6 +116,11 @@ enum Action {
     Found,
     Research,
     City,
+    OpenCity,
+    CloseCity,
+    CityStep(i32),
+    Worker(Entity, u8),
+    Specialist(Entity, u8),
     Production(Entity),
     Choose(i32),
     Accept,
@@ -180,6 +186,8 @@ pub struct Client {
     choice: Option<i32>,
     active: Option<Entity>,
     city: Option<Entity>,
+    city_open: bool,
+    city_tile: u8,
     inspect: Option<(u16, u16)>,
     moving: bool,
     confirm_moves: bool,
@@ -215,6 +223,8 @@ impl Client {
             choice: None,
             active: None,
             city: None,
+            city_open: false,
+            city_tile: 20,
             inspect: None,
             moving: false,
             confirm_moves: false,
@@ -291,6 +301,9 @@ impl Client {
             }
             if self.city.is_none_or(|c| !v.cities.contains(&c)) {
                 self.city = v.cities.first().copied();
+            }
+            if self.city.is_none() {
+                self.city_open = false;
             }
         }
     }
@@ -401,6 +414,9 @@ impl Client {
                 if let Some(b) = buttons.into_iter().find(|b| b.contains(x, y)) {
                     return self.action(b.action);
                 }
+                if self.modal.is_none() && self.city_open {
+                    return self.city_click(x, y);
+                }
                 if self.modal.is_none()
                     && self.loaded.is_some()
                     && (12.0..752.0).contains(&x)
@@ -451,6 +467,9 @@ impl Client {
             };
         }
         if key == "Escape" {
+            if self.modal.is_none() && self.city_open {
+                return self.action(Action::CloseCity);
+            }
             return self.action(Action::Cancel);
         }
         if self.modal.is_some() {
@@ -474,8 +493,11 @@ impl Client {
                 "PageUp" => self.action(Action::Page(-1)),
                 _ => Ok(()),
             }
+        } else if self.city_open {
+            self.city_key(key)
         } else {
             match key {
+                "o" => self.action(Action::OpenCity),
                 "f" => self.action(Action::Found),
                 "r" => self.action(Action::Research),
                 "c" => self.action(Action::City),
@@ -600,6 +622,45 @@ impl Client {
                 }
                 self.status = "Own city selected; Production opens its explicit picker.".into();
             }
+            Action::OpenCity => {
+                self.refresh();
+                let city = self.city.ok_or("No own city to manage")?;
+                if !self
+                    .view()
+                    .is_some_and(|v| v.city_citizens.iter().any(|d| d.index == city.slot))
+                {
+                    return Err("This city is outside the supported surface context".into());
+                }
+                self.city_open = true;
+                self.city_tile = 20;
+                self.focus_button = 0;
+                self.status = "City inspection. Citizen edits commit immediately.".into();
+            }
+            Action::CloseCity => {
+                self.city_open = false;
+                self.focus_button = 0;
+                self.status = "Returned to map; accepted city edits remain committed.".into();
+            }
+            Action::CityStep(delta) => {
+                let v = self.view().ok_or("No running game")?;
+                let at = v
+                    .cities
+                    .iter()
+                    .position(|c| Some(*c) == self.city)
+                    .unwrap_or(0) as i32;
+                if !v.cities.is_empty() {
+                    self.city =
+                        Some(v.cities[(at + delta).rem_euclid(v.cities.len() as i32) as usize]);
+                }
+                self.city_tile = 20;
+                self.focus_button = 0;
+            }
+            Action::Worker(city, tile) => {
+                self.order(Command::Worker { city, tile })?;
+            }
+            Action::Specialist(city, slot) => {
+                self.order(Command::Specialist { city, slot })?;
+            }
             Action::Production(city) => self.open(Modal::Production { city }),
             Action::Choose(id) => self.choice = Some(id),
             Action::Slot(name) => self.entry = name,
@@ -621,6 +682,7 @@ impl Client {
                     }
                     Modal::NewGame => {
                         self.loaded = None;
+                        self.city_open = false;
                         self.modal = None;
                         self.active = None;
                         self.city = None;
@@ -709,6 +771,7 @@ impl Client {
             }
             Action::Cancel => {
                 let restore_required = matches!(self.modal, Some(Modal::Save | Modal::Load));
+                let production_cancel = matches!(self.modal, Some(Modal::Production { .. }));
                 if matches!(self.modal, Some(Modal::Name)) {
                     if let Some(Decision::Founding { id, .. }) =
                         self.view().and_then(|v| v.decision)
@@ -720,9 +783,17 @@ impl Client {
                 if restore_required {
                     self.required();
                 }
-                self.status =
-                    "Dialog closed. Required research still blocks gameplay; reopen with Research."
-                        .into();
+                self.status = match self.view().and_then(|v| v.decision) {
+                    Some(Decision::Research { .. }) => {
+                        "Research is still required; reopen with Research."
+                    }
+                    Some(Decision::Founding { .. }) => "City naming remains pending.",
+                    None if production_cancel => {
+                        "Production selection cancelled; existing item unchanged."
+                    }
+                    None => "Cancelled.",
+                }
+                .into();
             }
             Action::End => {
                 let v = self.view().ok_or("Start a game first")?;
@@ -1135,6 +1206,9 @@ impl Client {
             );
             return b;
         }
+        if self.city_open {
+            return self.city_buttons();
+        }
         if self.loaded.is_none() {
             add(
                 100.,
@@ -1235,6 +1309,16 @@ impl Client {
         );
         add(325., 685., 160., 30., "New game".into(), Action::NewGame);
         add(500., 685., 160., 30., "Close client".into(), Action::Quit);
+        if self.city.is_some() {
+            add(
+                674.,
+                685.,
+                336.,
+                30.,
+                "Manage city [O]".into(),
+                Action::OpenCity,
+            );
+        }
         if self.view().is_some_and(|v| v.phase == Phase::Opponents) {
             add(
                 770.,
@@ -1316,129 +1400,132 @@ impl Client {
         ));
         let view = self.view();
         if let Some(v) = &view {
-            draws.push(Draw::Tile {
-                x: 764.,
-                y: 100.,
-                w: 250.,
-                h: 580.,
-                sprite: "panel".into(),
-            });
-            draws.push(rect(12., 100., 740., 580., "#050906"));
-            self.map_draw(&mut draws, v);
-            let o = &v.observation;
-            for (i, line) in [
-                format!("Turn {} · Civ {}", o.turn, o.civ),
-                format!("Treasury: {}", o.treasury),
-                format!(
-                    "Research: {} / {}",
-                    o.research.progress,
-                    o.research
-                        .cost
-                        .map_or_else(|| "unavailable".into(), |n| n.to_string())
-                ),
-                match v.phase {
-                    Phase::Human => "Your orders",
-                    Phase::Opponents => "Opponents playing",
-                    Phase::Eliminated => "Your civilization is eliminated",
-                    Phase::UnsupportedGovernment => "Government choice required",
-                    Phase::TurnLimit => "Turn limit reached",
-                }
-                .into(),
-            ]
-            .into_iter()
-            .enumerate()
-            {
-                draws.push(text(770., 110. + i as f64 * 30., &line, 17, "#eee8d4"));
-            }
-            if let Some(u) = self
-                .active
-                .and_then(|e| o.units.iter().find(|u| u.index == e.slot))
-            {
-                let name = self
-                    .loaded
-                    .as_ref()
-                    .unwrap()
-                    .resources
-                    .rules
-                    .unit_names()
-                    .get(u.type_id as usize)
-                    .unwrap_or(&"Unit")
-                    .to_string();
-                draws.push(text(
-                    770.,
-                    240.,
-                    &format!("{name} #{}", u.index),
-                    17,
-                    "#ffef9a",
-                ));
-                draws.push(text(
-                    770.,
-                    268.,
-                    &format!("({}, {}) · moves {}/3", u.x, u.y, u.moves_left),
-                    17,
-                    "#eee8d4",
-                ));
-            }
-            if let Some((_, hp, max)) = self
-                .active
-                .and_then(|e| v.unit_health.iter().find(|(slot, _, _)| *slot == e.slot))
-            {
-                draws.push(text(
-                    770.,
-                    285.,
-                    &format!("Health: {hp}/{max}"),
-                    13,
-                    "#ddd9bd",
-                ));
-            }
-            if let Some(c) = self
-                .city
-                .and_then(|e| o.cities.iter().find(|c| c.index == e.slot))
-            {
-                draws.push(text(
-                    770.,
-                    300.,
-                    &format!("{} · size {}", c.name, c.size),
-                    17,
-                    "#ffef9a",
-                ));
-                draws.push(text(
-                    770.,
-                    325.,
-                    &format!(
-                        "{} · shields {}",
-                        self.item_name(c.building.unwrap_or(0)),
-                        c.shield_box.unwrap_or(0)
-                    ),
-                    15,
-                    "#eee8d4",
-                ));
-            }
-            if let Some(e) = self
-                .city
-                .and_then(|city| o.city_economy.iter().find(|e| e.index == city.slot))
-            {
+            if self.city_open {
+                self.city_draw(&mut draws, v);
+            } else {
+                draws.push(Draw::Tile {
+                    x: 764.,
+                    y: 100.,
+                    w: 250.,
+                    h: 580.,
+                    sprite: "panel".into(),
+                });
+                draws.push(rect(12., 100., 740., 580., "#050906"));
+                self.map_draw(&mut draws, v);
+                let o = &v.observation;
                 for (i, line) in [
-                    format!("Food {:+} · shields {}", e.food_surplus, e.net_shields),
-                    format!("Science {} · tax {}", e.finance.science, e.finance.taxes),
-                    format!("Happy {} · unhappy {}", e.happy, e.unhappy),
+                    format!("Turn {} · Civ {}", o.turn, o.civ),
+                    format!("Treasury: {}", o.treasury),
+                    format!(
+                        "Research: {} / {}",
+                        o.research.progress,
+                        o.research
+                            .cost
+                            .map_or_else(|| "unavailable".into(), |n| n.to_string())
+                    ),
+                    match v.phase {
+                        Phase::Human => "Your orders",
+                        Phase::Opponents => "Opponents playing",
+                        Phase::Eliminated => "Your civilization is eliminated",
+                        Phase::UnsupportedGovernment => "Government choice required",
+                        Phase::TurnLimit => "Turn limit reached",
+                    }
+                    .into(),
                 ]
                 .into_iter()
                 .enumerate()
                 {
-                    draws.push(text(770., 400. + i as f64 * 23., &line, 15, "#ddd9bd"));
+                    draws.push(text(770., 110. + i as f64 * 30., &line, 17, "#eee8d4"));
                 }
-            }
-            if v.phase == Phase::UnsupportedGovernment {
-                draws.push(text(
+                if let Some(u) = self
+                    .active
+                    .and_then(|e| o.units.iter().find(|u| u.index == e.slot))
+                {
+                    let name = self
+                        .loaded
+                        .as_ref()
+                        .unwrap()
+                        .resources
+                        .rules
+                        .unit_names()
+                        .get(u.type_id as usize)
+                        .unwrap_or(&"Unit")
+                        .to_string();
+                    draws.push(text(
+                        770.,
+                        240.,
+                        &format!("{name} #{}", u.index),
+                        17,
+                        "#ffef9a",
+                    ));
+                    draws.push(text(
+                        770.,
+                        268.,
+                        &format!("({}, {}) · moves {}/3", u.x, u.y, u.moves_left),
+                        17,
+                        "#eee8d4",
+                    ));
+                }
+                if let Some((_, hp, max)) = self
+                    .active
+                    .and_then(|e| v.unit_health.iter().find(|(slot, _, _)| *slot == e.slot))
+                {
+                    draws.push(text(
+                        770.,
+                        285.,
+                        &format!("Health: {hp}/{max}"),
+                        13,
+                        "#ddd9bd",
+                    ));
+                }
+                if let Some(c) = self
+                    .city
+                    .and_then(|e| o.cities.iter().find(|c| c.index == e.slot))
+                {
+                    draws.push(text(
+                        770.,
+                        300.,
+                        &format!("{} · size {}", c.name, c.size),
+                        17,
+                        "#ffef9a",
+                    ));
+                    draws.push(text(
+                        770.,
+                        325.,
+                        &format!(
+                            "{} · shields {}",
+                            self.item_name(c.building.unwrap_or(0)),
+                            c.shield_box.unwrap_or(0)
+                        ),
+                        15,
+                        "#eee8d4",
+                    ));
+                }
+                if let Some(e) = self
+                    .city
+                    .and_then(|city| o.city_economy.iter().find(|e| e.index == city.slot))
+                {
+                    for (i, line) in [
+                        format!("Food {:+} · shields {}", e.food_surplus, e.net_shields),
+                        format!("Science {} · tax {}", e.finance.science, e.finance.taxes),
+                        format!("Happy {} · unhappy {}", e.happy, e.unhappy),
+                    ]
+                    .into_iter()
+                    .enumerate()
+                    {
+                        draws.push(text(770., 400. + i as f64 * 23., &line, 15, "#ddd9bd"));
+                    }
+                }
+                if v.phase == Phase::UnsupportedGovernment {
+                    draws.push(text(
                     25.,
                     140.,
                     "Government choice is unsupported. Save a checkpoint to preserve this game.",
                     17,
                     "#ffba8a",
                 ));
-            }
-            let notices=v.notices.iter().map(|n| {
+                }
+                let notices=v.notices.iter().map(|n| {
                 use engine::human::Notice;
                 let city_name=|id:usize|o.cities.iter().find(|c|c.index==id).map_or_else(||format!("City {id}"),|c|c.name.clone());
                 match n {
@@ -1451,13 +1538,14 @@ impl Client {
                     Notice::Revolution=>"Your government fell into anarchy; save to preserve this unsupported choice".into(),
                 }
             }).collect::<Vec<_>>().join(" · ");
-            draws.push(text(
-                16.,
-                724.,
-                &notices.chars().take(110).collect::<String>(),
-                14,
-                "#ddd9bd",
-            ));
+                draws.push(text(
+                    16.,
+                    724.,
+                    &notices.chars().take(110).collect::<String>(),
+                    14,
+                    "#ddd9bd",
+                ));
+            }
         } else {
             draws.push(text(
                 100.,
@@ -1548,6 +1636,21 @@ impl Client {
                 });
             }
             draws.push(text(b.x + 7., b.y + 7., &b.label, 16, "#f4eedb"));
+            if let Action::Specialist(city, slot) = &b.action {
+                let role = view
+                    .as_ref()
+                    .and_then(|v| v.city_citizens.iter().find(|c| c.index == city.slot))
+                    .and_then(|c| c.specialists.get(*slot as usize))
+                    .copied()
+                    .unwrap_or(0);
+                draws.push(Draw::Sprite {
+                    x: b.x + b.w - 28.,
+                    y: b.y + 1.,
+                    w: 24.,
+                    h: 28.,
+                    sprite: format!("citizen-{role}"),
+                });
+            }
         }
         if let Some(e) = self.entry_meta() {
             draws.push(rect(e.x - 1., e.y - 1., e.w + 2., e.h + 2., "#d6c885"));
@@ -1575,6 +1678,7 @@ impl Client {
     fn feedback(&self) -> String {
         match self.status.as_str() {
             "moved" => "Unit moved".into(),
+            "citizens-set" => "Citizen assignment updated immediately.".into(),
             "prod-set" => "Production changed".into(),
             "research-set" => "Research selected".into(),
             "ended" => "Your turn ended; opponents are playing".into(),

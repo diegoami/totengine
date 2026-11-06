@@ -197,7 +197,8 @@ addEventListener("keydown", (e) => {
   if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
   const editing = document.activeElement === entry;
   if (editing && !["Enter", "Escape", "Tab"].includes(e.key)) return;
-  const key = e.key === "Tab" && e.shiftKey ? "ShiftTab" : e.key;
+  const key = e.key === "Tab" && e.shiftKey ? "ShiftTab" :
+    e.key.length === 1 ? e.key.toLowerCase() : e.key;
   if (
     [
       "Enter",
@@ -215,7 +216,7 @@ addEventListener("keydown", (e) => {
       "-",
       "=",
     ].includes(e.key) ||
-    (!editing && /^[fcrmewsl12346789]$/.test(e.key))
+    (!editing && /^[fcrmewosl12346789]$/.test(key))
   ) {
     e.preventDefault();
     send({ type: "key", key });

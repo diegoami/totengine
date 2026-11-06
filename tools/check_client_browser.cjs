@@ -42,6 +42,36 @@ fs.mkdirSync(out,{recursive:true});
  await page.waitForFunction(()=>frame.phase==='Human'&&frame.draws.some(d=>d.text?.startsWith('Turn 2 ')));await idle();
  await research();await key('s');await save('normalnext');
  async function loadPending(name){if(has(await state(),'Name your city'))await key('Escape');await load(name)}
+ const citizens=process.env.TOTENGINE_CITIZENS_FIXTURES;
+ if(citizens){
+  const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;
+  if(!saves)throw Error('set TOTENGINE_CLIENT_SAVES');
+  fs.copyFileSync(path.join(citizens,'mature.cth'),path.join(saves,'mature.cth'));
+  const meta=JSON.parse(fs.readFileSync(path.join(citizens,'route.json'),'utf8'));
+  async function compare(name,expected){await key('s');await save(name);if(!fs.readFileSync(path.join(saves,name+'.cth')).equals(fs.readFileSync(path.join(citizens,expected+'.cth'))))throw Error('citizen checkpoint differs '+name)}
+  await load('mature');await key('o');
+  if(!(await state()).draws.some(d=>d.text?.includes('population 5')))throw Error('mature city missing');
+  const x=500+[1,2,1,0,-1,-2,-1,0,2,2,-2,-2,1,3,3,1,-1,-3,-3,-1,0][meta.worker_tile]*45;
+  const y=300+[-1,0,1,2,1,0,-1,-2,-2,2,2,-2,-3,-1,1,3,3,1,-1,-3,0][meta.worker_tile]*25;
+  await page.mouse.click(x,y);await idle();await compare('cityentertainer','after-entertainer');
+  await click('1: Entertainer');await compare('citytax','after-tax');
+  await click('1: Tax collector');await compare('cityscience','after-science');
+  await click('1: Scientist');await compare('citycycle','after-cycle');
+  await click('Choose production');await key('ArrowDown');await key('Escape');
+  await page.screenshot({path:out+'/city-citizens.png'});
+  await click('Auto workers (centre tile)');await load('citycycle');
+  for(let i=0;i<21;i++){if(has(await state(),'Tile '+meta.worker_tile))break;await key('ArrowRight')}
+  await key('Space');await compare('cityresume','after-resume');
+  await key('Escape');await key('o');
+  if(process.env.TOTENGINE_NAVIGATION_FIXTURE){
+   fs.copyFileSync(process.env.TOTENGINE_NAVIGATION_FIXTURE,path.join(saves,'navigation.cth'));await load('navigation');
+   const first=(await state()).draws.find(d=>d.text?.includes(' — population ')).text;
+   await key('PageDown');if((await state()).draws.find(d=>d.text?.includes(' — population ')).text===first)throw Error('city navigation did not change city');
+   await key('PageUp');await key('s');await save('citynavigation');
+   if(!fs.readFileSync(path.join(saves,'citynavigation.cth')).equals(fs.readFileSync(process.env.TOTENGINE_NAVIGATION_FIXTURE)))throw Error('navigation mutated gameplay');
+  }
+  await key('Escape');
+ }
  const fixtures=process.env.TOTENGINE_ENCOUNTER_FIXTURES;
  if(fixtures){
   const path=require('path');const saves=process.env.TOTENGINE_CLIENT_SAVES;if(!saves)throw Error('set TOTENGINE_CLIENT_SAVES');

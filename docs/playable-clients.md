@@ -1,6 +1,6 @@
 # Playable browser and desktop clients
 
-This first playable slice supports generated Original-profile surface games,
+The playable clients support generated Original-profile surface games,
 one human civilization and the existing built-in opponents. Both clients use
 the same validated human session, presentation, owned artwork and checkpoints.
 
@@ -32,11 +32,22 @@ owned TTF if required.
   Inspect a stack and choose Activate unit to select a member.
 - Arrow keys pan, **Home** centers, **+ / -** zoom. Center/+/- also have buttons.
 - **F** opens founding for an eligible settler. Type the city name and accept;
-  Escape cancels without consuming the settler. **C** cycles your cities.
+  Escape cancels without consuming the settler. **C** cycles your map cities.
+- **O / Manage city** opens the selected own city's workspace. Click a radius
+  tile to remove/assign its worker; arrows select a tile and **Space** changes
+  it. Removing a worker creates an entertainer. Click a specialist to cycle
+  entertainer → tax collector → scientist; tax/scientist roles need population
+  five. Outputs/mood refresh immediately, without collecting income or ending
+  the turn. **PageUp/PageDown** navigate your cities; **Escape** returns to the
+  map and keeps accepted edits. **S/L** work inside the city too.
+- **Auto workers**, or the centre tile, requests automatic allocation. An empty
+  tile clicked without a spare specialist also requests automatic allocation,
+  following the original transition. First remove a worker when you want to
+  assign that citizen to a particular empty tile. Blocked tiles reject the edit.
 - Choose production opens a picker: arrows or click select, Enter accepts,
   Escape cancels. Switching currently retains the shield box; native switching
-  penalties are not implemented. Workers/specialists and buying/selling are
-  reserved for later city-management work.
+  penalties are not implemented. Buying/selling and deeper city panels remain
+  later city-management work.
 - **R** opens required research. Select explicitly and accept. Escape permits
   inspection while the choice still blocks gameplay; it never auto-selects.
 - **E** ends the human turn, confirming if movable units remain. Opponents run

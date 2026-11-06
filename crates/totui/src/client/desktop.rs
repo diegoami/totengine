@@ -40,6 +40,7 @@ fn key(k: Keycode, shift: bool) -> Option<String> {
             Keycode::F => "f",
             Keycode::R => "r",
             Keycode::C => "c",
+            Keycode::O => "o",
             Keycode::M => "m",
             Keycode::E => "e",
             Keycode::W => "w",

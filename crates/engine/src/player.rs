@@ -60,6 +60,14 @@ impl CityName {
 /// (#75); `SetResearch` uses the per-civ research accounting (#82).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Order {
+    ToggleWorker {
+        city: usize,
+        tile: u8,
+    },
+    CycleSpecialist {
+        city: usize,
+        slot: u8,
+    },
     /// Move unit `unit` (index in [`WorldState::units`]) to a diamond
     /// neighbour; onto foreign units this is an attack.
     Move {
@@ -100,6 +108,7 @@ pub enum Order {
 /// What applying an [`Order`] did.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OrderResult {
+    CitizensSet,
     Moved,
     /// The move was an attack; `won` = the attacker won.
     Attacked {
@@ -134,6 +143,8 @@ impl fmt::Display for Order {
                 }
                 Ok(())
             }
+            Order::ToggleWorker { city, tile } => write!(f, "worker {city} {tile}"),
+            Order::CycleSpecialist { city, slot } => write!(f, "specialist {city} {slot}"),
             Order::EndTurn => write!(f, "end"),
             Order::SkipUnit { unit } => write!(f, "skip {unit}"),
         }
@@ -155,6 +166,7 @@ impl fmt::Display for OrderResult {
             OrderResult::Founded(c) => write!(f, "founded {c}"),
             OrderResult::TurnEnded => write!(f, "ended"),
             OrderResult::Skipped => write!(f, "skipped"),
+            OrderResult::CitizensSet => write!(f, "citizens-set"),
             OrderResult::Rejected(why) => write!(f, "rejected {}", why.replace(' ', "_")),
         }
     }
@@ -185,6 +197,14 @@ impl Order {
             ["found-named", u, name] => Some(Order::FoundNamedCity {
                 unit: u.parse().ok()?,
                 name: CityName::from_hex(name)?,
+            }),
+            ["worker", city, tile] => Some(Order::ToggleWorker {
+                city: city.parse().ok()?,
+                tile: tile.parse().ok()?,
+            }),
+            ["specialist", city, slot] => Some(Order::CycleSpecialist {
+                city: city.parse().ok()?,
+                slot: slot.parse().ok()?,
             }),
             ["end"] => Some(Order::EndTurn),
             ["skip", u] => Some(Order::SkipUnit {
@@ -551,6 +571,18 @@ impl WorldState {
         order: Order,
     ) -> OrderResult {
         match order {
+            Order::ToggleWorker { city, tile } => {
+                match self.edit_citizen(rules, civ, city, tile, false) {
+                    Ok(()) => OrderResult::CitizensSet,
+                    Err(why) => OrderResult::Rejected(why),
+                }
+            }
+            Order::CycleSpecialist { city, slot } => {
+                match self.edit_citizen(rules, civ, city, slot, true) {
+                    Ok(()) => OrderResult::CitizensSet,
+                    Err(why) => OrderResult::Rejected(why),
+                }
+            }
             Order::EndTurn => OrderResult::TurnEnded,
             Order::SkipUnit { unit } => {
                 let Some(u) = self
@@ -593,6 +625,13 @@ impl WorldState {
                             self.cities[c].name = name.as_str().to_owned();
                         }
                         self.reveal(civ);
+                        if matches!(order, Order::FoundNamedCity { .. })
+                            && self.human_mask & (1 << civ) != 0
+                        {
+                            // Human founding enters city management with allocated
+                            // citizens; inspection itself remains entirely inert.
+                            self.refresh_city_totals(rules, c, false);
+                        }
                         OrderResult::Founded(c)
                     }
                     Err(why) => OrderResult::Rejected(why),

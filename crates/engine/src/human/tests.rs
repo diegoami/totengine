@@ -1,4 +1,5 @@
 use super::*;
+use crate::rng::GameRng;
 
 fn rules() -> Rules {
     tot_kit::parse_rules(&format!(
@@ -434,6 +435,181 @@ fn unsupported_government_and_elimination_stop_with_a_readable_phase() {
     }
     assert_eq!(s.phase(), Phase::Eliminated);
     assert_eq!(s.advance(1), 0);
+}
+
+#[test]
+fn citizen_edits_are_immediate_atomic_and_replayable() {
+    let mut s = session(1);
+    choose(&mut s);
+    let unit = s.view().units[0];
+    send(&mut s, Command::BeginFound { unit });
+    let Some(Decision::Founding { id, .. }) = s.decision else {
+        panic!()
+    };
+    send(
+        &mut s,
+        Command::NameCity {
+            decision: id,
+            name: CityName::new("Citizens").unwrap(),
+        },
+    );
+    let city = s.view().cities[0];
+    // Human named founding allocates citizens without mutating on inspection.
+    // An explicit centre command requests another automatic allocation.
+    send(&mut s, Command::Worker { city, tile: 20 });
+    let before = s.view();
+    let tile = before.city_citizens[0]
+        .radius
+        .iter()
+        .take(20)
+        .position(|t| t.worked)
+        .unwrap() as u8;
+    let turn = before.observation.turn;
+    let treasury = before.observation.treasury;
+    let random = (
+        s.game.world.rng.state(),
+        s.game.world.combat_rng.state(),
+        s.game.world.combat_rng.draws(),
+    );
+    let checkpoint = s.checkpoint("authored-test-resources-v1");
+    let mut restored = round_trip(&s);
+    let r = send(&mut s, Command::Worker { city, tile });
+    restored.submit(r).unwrap();
+    assert_eq!(restored.view(), s.view());
+    let v = s.view();
+    assert_eq!(v.city_citizens[0].specialists, vec![1]);
+    assert!(!v.city_citizens[0].radius[tile as usize].worked);
+    assert_eq!(v.observation.turn, turn);
+    assert_eq!(v.observation.treasury, treasury);
+    assert_eq!(
+        random,
+        (
+            s.game.world.rng.state(),
+            s.game.world.combat_rng.state(),
+            s.game.world.combat_rng.draws()
+        )
+    );
+    assert!(
+        v.observation.city_economy[0].food_surplus
+            < before.observation.city_economy[0].food_surplus
+    );
+    let after = s.checkpoint("authored-test-resources-v1");
+    assert_eq!(s.submit(r).unwrap().revision, s.revision);
+    assert_eq!(after, s.checkpoint("authored-test-resources-v1"));
+    for command in [
+        Command::Specialist { city, slot: 0 },
+        Command::Worker { city, tile: 21 },
+        Command::Worker {
+            city: Entity {
+                id: city.id + 1,
+                ..city
+            },
+            tile,
+        },
+    ] {
+        let bad = Request {
+            civ: 1,
+            revision: s.revision,
+            id: 99,
+            command,
+        };
+        assert!(s.submit(bad).is_err());
+        assert_eq!(s.checkpoint("authored-test-resources-v1"), after);
+    }
+    send(&mut s, Command::Worker { city, tile });
+    assert!(s.view().city_citizens[0].specialists.is_empty());
+    assert!(s.view().city_citizens[0].radius[tile as usize].worked);
+    round_trip(&s);
+    let replay = Game::replay_human(config(), rules(), 1, s.game.log()).unwrap();
+    assert_eq!(replay.world.checksum(), s.game.world.checksum());
+    assert_ne!(checkpoint, after);
+    send(&mut s, Command::EndTurn);
+    assert_eq!(s.advance(1), 1);
+    let mut partial = round_trip(&s);
+    ready(&mut s, 1);
+    ready(&mut partial, 256);
+    assert_eq!(s.view(), partial.view());
+    assert_eq!(s.game.world.checksum(), partial.game.world.checksum());
+    let own = s.view().city_citizens;
+    assert!(s
+        .game
+        .world
+        .city_citizens(&s.game.rules, 2, city.slot)
+        .is_none());
+    s.game.world.treasury[2] += 999;
+    assert_eq!(s.build_view().city_citizens, own);
+}
+
+#[test]
+fn authored_city_roles_blocked_tiles_and_food_debt_refresh_without_a_round() {
+    let mut s = session(1);
+    choose(&mut s);
+    let unit = s.view().units[0];
+    send(&mut s, Command::BeginFound { unit });
+    let Some(Decision::Founding { id, .. }) = s.decision else {
+        panic!()
+    };
+    send(
+        &mut s,
+        Command::NameCity {
+            decision: id,
+            name: CityName::new("Role fixture").unwrap(),
+        },
+    );
+    // Authored size-five fixture for the new command boundary. Native arithmetic
+    // is independently covered by the retained worker/finance/mood vectors.
+    let w = &mut s.game.world;
+    w.cities[0].size = 5;
+    w.cities[0].worked = 0;
+    w.refresh_city_totals(&s.game.rules, 0, false).unwrap();
+    let tile = w
+        .city_citizens(&s.game.rules, 1, 0)
+        .unwrap()
+        .radius
+        .iter()
+        .take(20)
+        .position(|t| t.worked)
+        .unwrap() as u8;
+    w.edit_citizen(&s.game.rules, 1, 0, tile, false).unwrap();
+    let entertainer = w.city_finance(&s.game.rules, 0);
+    w.edit_citizen(&s.game.rules, 1, 0, 0, true).unwrap();
+    let tax = w.city_finance(&s.game.rules, 0);
+    assert_eq!(tax.taxes, entertainer.taxes + 3);
+    assert_eq!(tax.luxuries, entertainer.luxuries - 2);
+    w.edit_citizen(&s.game.rules, 1, 0, 0, true).unwrap();
+    let science = w.city_finance(&s.game.rules, 0);
+    assert_eq!(science.science, tax.science + 3);
+    assert_eq!(science.taxes, tax.taxes - 3);
+    w.edit_citizen(&s.game.rules, 1, 0, 0, true).unwrap();
+    assert_eq!(w.city_finance(&s.game.rules, 0), entertainer);
+    let before = w.checksum();
+    assert!(w.edit_citizen(&s.game.rules, 2, 0, tile, false).is_err());
+    assert!(w.edit_citizen(&s.game.rules, 1, 0, 16, true).is_err());
+    assert_eq!(w.checksum(), before);
+    // Foreign overlap blocks assignment without exposing that city's worker mask.
+    let mut neighbour = w.cities[0].clone();
+    neighbour.city_id += 100;
+    neighbour.owner = 2;
+    neighbour.worked = 1 << tile;
+    w.cities.push(neighbour);
+    let before = w.checksum();
+    assert!(!w.city_citizens(&s.game.rules, 1, 0).unwrap().radius[tile as usize].available);
+    assert!(w.edit_citizen(&s.game.rules, 1, 0, tile, false).is_err());
+    assert_eq!(w.checksum(), before);
+    w.cities.pop();
+    // Taking every worker off the land creates food debt; restoring workers
+    // clears it. No turn, growth or treasury collection is performed here.
+    loop {
+        let detail = w.city_citizens(&s.game.rules, 1, 0).unwrap();
+        let Some(k) = detail.radius.iter().take(20).position(|t| t.worked) else {
+            break;
+        };
+        w.edit_citizen(&s.game.rules, 1, 0, k as u8, false).unwrap();
+    }
+    assert!((w.cities[0].food_box as i16) < 0);
+    assert_eq!(w.cities[0].size, 5);
+    w.edit_citizen(&s.game.rules, 1, 0, 20, false).unwrap();
+    assert_eq!(w.cities[0].food_box as i16, 0);
 }
 
 #[test]

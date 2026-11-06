@@ -79,6 +79,23 @@ impl Atlas {
                 },
             )?;
         }
+        // Measured first-row People.bmp crops, following the reviewed art preview.
+        for (role, column) in [(0, 2), (1, 4), (2, 9), (3, 10)] {
+            add(
+                format!("citizen-{role}"),
+                "people",
+                Rect {
+                    x: 1 + column * 28,
+                    y: 1,
+                    w: 27,
+                    h: 32,
+                },
+                Mask {
+                    matte: true,
+                    ..Default::default()
+                },
+            )?;
+        }
         for size in 0..2 {
             add(
                 format!("city-{size}"),

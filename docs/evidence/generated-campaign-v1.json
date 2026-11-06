@@ -14,10 +14,10 @@
   },
   "golden": {
     "file": "generated-campaign-v1.ctc",
-    "sha256": "843c3a38a796f316908a82dc0b21e295298b6b43a7be79923f2af7adf79de876",
-    "engine_version": "0.12.0",
+    "sha256": "8299715058c2834e7cbcc416b692b245553f4de4fe6940e0838346802061a407",
+    "engine_version": "0.13.0",
     "kind": "engine replay checkpoint, not native SAV",
-    "refresh": "v0.12 version-header refresh reproduced the authored 100-round campaign; transcript, fingerprints and results unchanged from v0.11. The validation list below records the original v0.9 campaign validation; current release checks are recorded separately."
+    "refresh": "v0.13 version-header refresh reproduced the authored 100-round campaign; transcript, fingerprints and results unchanged from v0.12. Historical v0.9 validation remains listed below; current release checks are recorded separately."
   },
   "authored_100_round_result": {
     "round": "100",

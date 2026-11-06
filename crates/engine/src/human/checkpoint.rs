@@ -133,6 +133,10 @@ impl HumanSession {
 impl Command {
     fn encode(self) -> String {
         match self {
+            Self::Worker { city, tile } => format!("worker {} {} {}", city.slot, city.id, tile),
+            Self::Specialist { city, slot } => {
+                format!("specialist {} {} {}", city.slot, city.id, slot)
+            }
             Self::Skip { unit } => format!("skip {} {}", unit.slot, unit.id),
             Self::Move { unit, to } => format!("move {} {} {} {}", unit.slot, unit.id, to.0, to.1),
             Self::Occupy { unit, city } => {
@@ -182,6 +186,20 @@ impl Command {
                     slot: city.parse().ok()?,
                     id: city_id.parse().ok()?,
                 },
+            }),
+            ["worker", city, id, tile] => Some(Self::Worker {
+                city: Entity {
+                    slot: city.parse().ok()?,
+                    id: id.parse().ok()?,
+                },
+                tile: tile.parse().ok()?,
+            }),
+            ["specialist", city, id, slot] => Some(Self::Specialist {
+                city: Entity {
+                    slot: city.parse().ok()?,
+                    id: id.parse().ok()?,
+                },
+                slot: slot.parse().ok()?,
             }),
             ["production", slot, id, item] => Some(Self::Production {
                 city: Entity {

@@ -223,6 +223,191 @@ fn invalid_load_and_existing_slot_cannot_destroy_the_running_game() {
     key(&mut fresh, "Enter");
     assert_eq!(fresh.checkpoint().unwrap(), before);
 }
+
+#[test]
+fn city_workspace_edits_commit_close_and_resume_without_retargeting() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    let original = c.checkpoint().unwrap();
+    key(&mut c, "o");
+    assert!(c.city_open);
+    assert_eq!(original, c.checkpoint().unwrap(), "opening is inert");
+    let v = c.view().unwrap();
+    let k = v.city_citizens[0]
+        .radius
+        .iter()
+        .take(20)
+        .position(|t| t.worked)
+        .unwrap() as u8;
+    for _ in 0..21 {
+        if c.city_tile == k {
+            break;
+        }
+        key(&mut c, "ArrowRight");
+    }
+    let stale = c.revision;
+    key(&mut c, " ");
+    assert_eq!(c.status, "citizens-set");
+    assert_eq!(c.view().unwrap().city_citizens[0].specialists, vec![1]);
+    let edited = c.checkpoint().unwrap();
+    assert!(c
+        .input(stale, 999, Input::Click { x: 500., y: 300. })
+        .is_err());
+    assert_eq!(edited, c.checkpoint().unwrap());
+    button(&mut c, "1: Entertainer");
+    assert!(c.status.contains("population five"));
+    assert_eq!(edited, c.checkpoint().unwrap());
+    button(&mut c, "Choose production");
+    key(&mut c, "ArrowDown");
+    key(&mut c, "Escape");
+    assert_eq!(
+        edited,
+        c.checkpoint().unwrap(),
+        "production cancel is inert"
+    );
+    key(&mut c, "Escape");
+    assert!(!c.city_open);
+    assert_eq!(
+        edited,
+        c.checkpoint().unwrap(),
+        "closing keeps immediate edits"
+    );
+    key(&mut c, "s");
+    edit(&mut c, "citizens");
+    key(&mut c, "Enter");
+    key(&mut c, "o");
+    button(&mut c, "Auto workers");
+    assert_ne!(edited, c.checkpoint().unwrap());
+    key(&mut c, "l");
+    edit(&mut c, "citizens");
+    key(&mut c, "Enter");
+    assert_eq!(edited, c.checkpoint().unwrap());
+    c.city_tile = k;
+    key(&mut c, " ");
+    assert!(c.view().unwrap().city_citizens[0].specialists.is_empty());
+    assert!(c.view().unwrap().city_citizens[0].radius[k as usize].worked);
+}
+
+#[test]
+#[ignore = "install-backed genuine generated population-five city fixture"]
+fn generated_population_five_city_fixture() {
+    let home = std::env::var("CIVTOT_HOME").expect("set CIVTOT_HOME");
+    let out = PathBuf::from(std::env::var("TOTENGINE_CITIZENS_OUT").expect("set private output"));
+    fs::create_dir_all(&out).unwrap();
+    let mut c = Client::new(home, out.clone());
+    for _ in 0..3 {
+        button(&mut c, "Civilizations");
+    }
+    for _ in 0..4 {
+        button(&mut c, "Difficulty");
+    }
+    start(&mut c);
+    founding(&mut c);
+    button(&mut c, "Choose production");
+    let id = c
+        .current_choices()
+        .iter()
+        .position(|(id, _)| {
+            *id >= 0
+                && c.loaded
+                    .as_ref()
+                    .unwrap()
+                    .resources
+                    .rules
+                    .unit_role(*id as usize)
+                    != Some(5)
+        })
+        .unwrap();
+    for _ in 0..id / 12 {
+        button(&mut c, "Next page");
+    }
+    input(
+        &mut c,
+        Input::Click {
+            x: 220.,
+            y: 177. + (id % 12) as f64 * 29.,
+        },
+    );
+    key(&mut c, "Enter");
+    for _ in 0..250 {
+        research(&mut c);
+        let v = c.view().unwrap();
+        if v.observation
+            .cities
+            .iter()
+            .any(|city| city.owner == v.observation.civ && city.size >= 5)
+        {
+            fs::write(out.join("mature.cth"), c.checkpoint().unwrap()).unwrap();
+            let inputs = c.receipts.values().map(|(_, i)| i).collect::<Vec<_>>();
+            fs::write(
+                out.join("inputs.json"),
+                serde_json::to_string(&inputs).unwrap(),
+            )
+            .unwrap();
+            println!(
+                "Generated mature city at turn {}: {:?}",
+                v.observation.turn,
+                v.observation
+                    .cities
+                    .iter()
+                    .map(|c| (&c.name, c.size))
+                    .collect::<Vec<_>>()
+            );
+            let tile = v.city_citizens[0]
+                .radius
+                .iter()
+                .take(20)
+                .position(|t| t.worked)
+                .unwrap() as u8;
+            key(&mut c, "o");
+            for _ in 0..21 {
+                if c.city_tile == tile {
+                    break;
+                }
+                key(&mut c, "ArrowRight");
+            }
+            key(&mut c, " ");
+            assert_eq!(c.view().unwrap().city_citizens[0].specialists, vec![1]);
+            fs::write(out.join("after-entertainer.cth"), c.checkpoint().unwrap()).unwrap();
+            button(&mut c, "1: Entertainer");
+            assert_eq!(c.view().unwrap().city_citizens[0].specialists, vec![2]);
+            fs::write(out.join("after-tax.cth"), c.checkpoint().unwrap()).unwrap();
+            button(&mut c, "1: Tax collector");
+            assert_eq!(c.view().unwrap().city_citizens[0].specialists, vec![3]);
+            fs::write(out.join("after-science.cth"), c.checkpoint().unwrap()).unwrap();
+            button(&mut c, "1: Scientist");
+            let edited = c.checkpoint().unwrap();
+            fs::write(out.join("after-cycle.cth"), &edited).unwrap();
+            let save_name = format!("edited{}", storage::nonce().unwrap());
+            key(&mut c, "s");
+            edit(&mut c, &save_name);
+            key(&mut c, "Enter");
+            button(&mut c, "Auto workers");
+            key(&mut c, "l");
+            edit(&mut c, &save_name);
+            key(&mut c, "Enter");
+            assert_eq!(edited, c.checkpoint().unwrap());
+            c.city_tile = tile;
+            key(&mut c, " ");
+            fs::write(out.join("after-resume.cth"), c.checkpoint().unwrap()).unwrap();
+            assert!(c.view().unwrap().city_citizens[0].specialists.is_empty());
+            fs::write(out.join("route.json"),serde_json::to_string_pretty(&serde_json::json!({"worker_tile":tile,"city_slot":v.cities[0].slot,"mature_turn":v.observation.turn,"population":5})).unwrap()).unwrap();
+            return;
+        }
+        assert_eq!(v.phase, Phase::Human, "{}", c.status);
+        key(&mut c, "e");
+        if matches!(c.modal, Some(Modal::Confirm { .. })) {
+            key(&mut c, "Enter");
+        }
+        ready(&mut c);
+    }
+    panic!(
+        "generated city did not reach population five: {:?}",
+        c.view().unwrap().observation.city_economy
+    );
+}
 #[test]
 fn frame_serialization_never_contains_spectator_state_or_replay() {
     let f = Fixture::new();
@@ -396,6 +581,16 @@ fn generated_land_encounter_through_shared_ui() {
     assert!(battle, "no ground battle in recorded input route");
     assert!(capture, "no city occupation in recorded input route");
     fs::write(out.join("last.cth"), c.checkpoint().unwrap()).unwrap();
+    let v = c.view().unwrap();
+    println!(
+        "Own cities: {:?}",
+        v.observation
+            .cities
+            .iter()
+            .filter(|city| city.owner == v.observation.civ)
+            .map(|city| (&city.name, city.size))
+            .collect::<Vec<_>>()
+    );
     println!(
         "Generated route completed at turn {}: {out:?}",
         c.view().unwrap().observation.turn
@@ -419,7 +614,7 @@ fn installed_atlas_matches_retained_numeric_manifest() {
         fs::write(out, serde_json::to_string_pretty(&measured).unwrap() + "\n").unwrap();
     }
     let expected: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../docs/evidence/client-atlas-v1.json"
+        "../../../../docs/evidence/client-atlas-v2.json"
     ))
     .unwrap();
     // Different owned installs remain supported; this evidence binds the reference install.
@@ -428,6 +623,6 @@ fn installed_atlas_matches_retained_numeric_manifest() {
     }
     assert_eq!(
         atlas.sprites.len(),
-        61 + resources.rules.unit_names().len().min(80)
+        65 + resources.rules.unit_names().len().min(80)
     );
 }

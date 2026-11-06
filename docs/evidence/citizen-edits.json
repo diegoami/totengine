@@ -1,0 +1,23 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "cases": 1548,
+  "specialist_cases": 288,
+  "worker_cases": 1260,
+  "worker_entry_stop": [
+    "0x4dddc6",
+    "0x4ddec9"
+  ],
+  "specialist_entry_stop": [
+    "0x4dd19f",
+    "0x4dd24d"
+  ],
+  "early_return_stops": [
+    "0x4dd286",
+    "0x4ddeff"
+  ],
+  "ui_substitutions": {
+    "0x411c50": "current city index 0",
+    "0x411c20": "record small-city message"
+  },
+  "scope": "Original raw citizen edit branches and original packed setters/getters. Synthetic packed-field input boundary; totals refresh, allocation, rendering, network notifications and full city-turn parity are not claimed."
+}

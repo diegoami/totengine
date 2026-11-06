@@ -239,8 +239,23 @@ packages and checksums are attached to the GitHub release; no game assets/fonts.
 full-AI gate #117 remain open beyond this narrow slice. Next work is a separately
 scoped playable-client package from `docs/ui/client-milestones.md`; deeper city
 management and input polish are natural next candidates. No next release version
-or fixed remaining milestone count is assigned. Full original-AI work remains
+or fixed remaining milestone count is implied. Full original-AI work remains
 gated behind complete playable-client delivery.
+The owner then directed the next milestone: **v0.13.0 city workers and specialists**,
+GitHub milestone 11, #135 (validated edits/views), #136 (shared city workspace),
+#137 (continuation/real-input/owner acceptance). Scope/design:
+`docs/ui/city-citizens-milestone.md`. Implementation is in progress, not released.
+Native raw edit branches match 1,548 original-x86 cases; citizen commands are
+recorded/replayed by HumanSession and immediate totals reuse existing kernels.
+Named human founding now allocates citizens through the totals kernel; autonomous
+FoundCity behavior is unchanged. Both adapters share the new own-city workspace;
+O opens it, arrows/Space select/toggle tiles, PageUp/Down navigate, roles cycle
+through explicit commands, Escape returns without undo. A generated population-
+five fixture reaches turn 72 through normal recorded play for tax/scientist checks.
+Keep working through the milestone; do not claim v0.12 owner play accepts these
+new controls. New owner acceptance and independent owner-launched review remain
+required. City buying/selling, switching penalties, deeper panels and other full-
+client packages stay later; complete original-AI work remains gated.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

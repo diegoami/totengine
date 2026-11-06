@@ -152,6 +152,18 @@ and explicit exclusions. All six stories shipped in the first-slice milestone
 with both clients. This does not assign a fixed count of releases for the whole
 client track or a version for the next package. Subsequent packages below retain their own discovery and scope gates.
 
+## Next slice: v0.13 city workers and specialists
+
+The owner requested the next milestone after the v0.12 release. Milestone 11
+selects the citizen-management portion of the reviewed city design, delivering
+both clients together. Stories #135–#137 cover validated commands/own-city
+views, the shared workspace and assembled continuation/human acceptance.
+[Scope and evidence plan](city-citizens-milestone.md). Work is in progress;
+subsequent release versions and the remaining milestone count stay unassigned.
+Buying/selling and production-switch penalties remain separate prerequisites to
+complete city management. Existing v0.12 owner acceptance does not pass the new
+citizen-management acceptance route. Full original AI remains gated.
+
 ## Dependencies and acceptance
 
 | Package                                  | Deliverable and meaningful acceptance                                                                                                                                                                                                                                                                                           | Dependencies / boundary                                                                                                                                                                   |

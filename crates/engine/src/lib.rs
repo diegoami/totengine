@@ -14,6 +14,7 @@ pub mod barbarians;
 pub mod calendar;
 pub mod campaign;
 pub mod capture;
+pub mod citizens;
 pub mod city_phase;
 pub mod combat;
 pub mod connections;

@@ -1,0 +1,30 @@
+{
+  "engine_version": "0.13.0",
+  "scope": "Generated Original-profile city citizen controls; not full city/native UI/AI parity",
+  "owner_acceptance": {
+    "browser": "pending",
+    "desktop": "pending"
+  },
+  "mature_setup": "1 2 80 50 47 7 7 2 0",
+  "mature_route": {
+    "city_slot": 0,
+    "mature_turn": 72,
+    "population": 5,
+    "worker_tile": 0
+  },
+  "mature_checkpoint_sha256": "43081ba0e8c5edcbbf6dfc0237e3f328c8784b45bfcc390e2b459335f787a93d",
+  "citizen_checkpoints": {
+    "cityentertainer": "1f77b6b86d1adec093cc5dfba8d70af48496c126aaf0d54a9cc4ca838e39ca9c",
+    "citytax": "78de71948ddf59fa3d7153721eb3536322101c7aa7ec62c7dd416aa32c16d104",
+    "cityscience": "dd838fe8963392fc08c895371a8e6c671d0b5e6d9fb166c91fc64fb4de72b6bf",
+    "citycycle": "24a03b74c722b07d86de0c466d9643f9ace05bd3f76f68fa54d2c6a7def8d237",
+    "cityresume": "7f2752b5d217ef0ee72a9e06be75b915c87ed9693c78f45d6d3390936c729eb9"
+  },
+  "navigation_checkpoint_sha256": "53e73aa57071ff8e9999a4cd62a114944a921776ae4db2000ee230f75a6ff6a2",
+  "runtime": {
+    "browser": "Chromium real mouse/keyboard: worker removal, all roles, production cancel, save/reload next assignment and two-city navigation pass",
+    "linux": "XTest real keyboard on isolated authenticated Xvfb: equivalent route passes; checkpoint bytes match browser and shared controller",
+    "windows": "pending extended route"
+  },
+  "art": "145 measured sprites, including four People.bmp crops; numeric identities only, no pixels committed"
+}

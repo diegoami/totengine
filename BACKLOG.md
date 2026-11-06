@@ -5,10 +5,11 @@
   v0.5.0 player interface → v0.6.0 AI v0 → v0.7.0 browser observer →
   v0.8.0 AI v1 + economy depth → v0.9.0 generated-world campaign →
   v0.10.0 original-like built-in AI → v0.11.0 UI discovery, reviewed design
-  and client milestone planning → playable browser AND desktop clients across later milestones →
+  and client milestone planning → v0.12 first playable turn in both clients →
+  v0.13 city workers/specialists (in progress) → remaining client packages →
   pluggable AIs (later, version unassigned). Each has one theme
   and a few stories, so every review stays one round (decision 0002).
-  Client scope, subsequent milestone count and versions are not yet known;
+  The first two client slices are scoped; later milestone count/versions remain unassigned;
   [decision 0005](docs/decisions/0005-playable-client-planning.md) requires
   inspecting the original UI and reviewing concrete designs first.
 - **Stories** are [issues](https://github.com/diegoami/totengine/issues). The
@@ -27,7 +28,7 @@ The owner-requested complete original-AI port is scoped in
 A0–A8 delivery gates. Full original-AI reproduction is gated behind the
 playable UI/client work (owner decision, 2026-11-06). The first AI task after
 that gate is inventory/fidelity-boundary story #118. These gates have no
-assigned release versions; v0.11 UI discovery remains next.
+assigned AI release versions; v0.13 city workers/specialists is the next client slice.
 
 This file keeps the working conventions only. The story tables it used to
 hold (stories T0-1 … RG-11 with their acceptance and status notes) are in

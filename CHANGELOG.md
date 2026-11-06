@@ -5,6 +5,19 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+### v0.13.0 preparation — city workers and specialists
+
+- Add immediate worker/specialist commands and own-city radius/storage/detail
+  views through the recorded human-session boundary (#135). Native packed edit
+  branches match 1,548 original-x86 cases; wrong/stale/blocked input is inert.
+- Add a shared city workspace to browser and native desktop: worked-radius
+  inspection, citizen roles, food/finance/mood feedback, city navigation,
+  production picker and persistent immediate edits (#136).
+- Start real-input continuation checks on both clients, including a population-
+  five fixture generated through 72 ordinary recorded turns (#137). Owner
+  acceptance and independent milestone review remain pending.
+
+
 ## [0.12.0] — first playable human turn, browser and desktop
 
 - Add `totplay`, a packaged loopback Rust host/browser client, and `totdesktop`,

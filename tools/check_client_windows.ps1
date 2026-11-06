@@ -41,6 +41,21 @@ public static class SpikeWindow {
     [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
     [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
     [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+    [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] private static extern bool AttachThreadInput(uint a,uint b,bool attach);
+    [DllImport("user32.dll")] private static extern IntPtr SetActiveWindow(IntPtr window);
+    [DllImport("user32.dll")] private static extern IntPtr SetFocus(IntPtr window);
+    public static bool ActivateOwn(IntPtr window,uint pid) {
+        uint owner; GetWindowThreadProcessId(window,out owner);
+        if(owner!=pid)return false;
+        uint other; uint foreground=GetWindowThreadProcessId(GetForegroundWindow(),out other);
+        uint current=GetCurrentThreadId(); bool attached=false;
+        try {
+            if(foreground!=0 && foreground!=current) attached=AttachThreadInput(current,foreground,true);
+            SetForegroundWindow(window);SetActiveWindow(window);SetFocus(window);
+            return GetForegroundWindow()==window;
+        } finally {if(attached)AttachThreadInput(current,foreground,false);}
+    }
     [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr h, int x, int y, int w, int height, bool repaint);
     [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint msg, IntPtr w, IntPtr l);
 }
@@ -63,7 +78,7 @@ try {
         Start-Sleep -Milliseconds 50
     }
     if($window -eq [IntPtr]::Zero){throw 'our client window did not open'}
-    [void][SpikeWindow]::SetForegroundWindow($window)
+    if(-not [SpikeWindow]::ActivateOwn($window,$app.Id)){throw "our new client window could not acquire initial focus"}
     Start-Sleep -Milliseconds 300
     function Read-Scene {
         try {return (Get-Content -Encoding UTF8 (Join-Path $run 'trace.painted.json') -Raw | ConvertFrom-Json)} catch {return $null}
@@ -166,6 +181,39 @@ try {
     if(Has-Text (Read-Scene) 'End your turn with movable units?'){Send-Key 13}
     [void](Wait-Scene {param($s) $s.phase -eq 'Human' -and @($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith('Turn 2 ')}).Count -gt 0})
     Research;Send-Text 's';Save-Dialog 'normalnext'
+    if($env:TOTENGINE_CITIZENS_FIXTURES) {
+        $citizens=$env:TOTENGINE_CITIZENS_FIXTURES
+        Copy-Item (Join-Path $citizens 'mature.cth') (Join-Path $env:TOTENGINE_SAVES 'mature.cth')
+        $meta=Get-Content -Encoding UTF8 (Join-Path $citizens 'route.json') -Raw | ConvertFrom-Json
+        function Compare-Citizens([string]$Name,[string]$Expected) {
+            Send-Text 's';Save-Dialog $Name
+            $actual=(Get-FileHash (Join-Path $env:TOTENGINE_SAVES ($Name+'.cth')) -Algorithm SHA256).Hash
+            $wanted=(Get-FileHash (Join-Path $citizens ($Expected+'.cth')) -Algorithm SHA256).Hash
+            if($actual -ne $wanted){throw "Citizen checkpoint differs: $Name"}
+        }
+        Load-Slot 'mature';Send-Text 'o'
+        for($n=0;$n -lt 21;$n++) {if(Has-Text (Read-Scene) ('Tile '+$meta.worker_tile)){break};Send-Key 39}
+        Send-Key 32;Compare-Citizens 'cityentertainer' 'after-entertainer'
+        Focus-Button '1: Entertainer';Compare-Citizens 'citytax' 'after-tax'
+        Focus-Button '1: Tax collector';Compare-Citizens 'cityscience' 'after-science'
+        Focus-Button '1: Scientist';Compare-Citizens 'citycycle' 'after-cycle'
+        Focus-Button 'Choose production';Send-Key 40;Send-Key 27
+        Focus-Button 'Auto workers (centre tile)';Load-Slot 'citycycle'
+        for($n=0;$n -lt 21;$n++) {if(Has-Text (Read-Scene) ('Tile '+$meta.worker_tile)){break};Send-Key 39}
+        Send-Key 32;Compare-Citizens 'cityresume' 'after-resume'
+        Send-Key 27;Send-Text 'o'
+        if($env:TOTENGINE_NAVIGATION_FIXTURE) {
+            Copy-Item $env:TOTENGINE_NAVIGATION_FIXTURE (Join-Path $env:TOTENGINE_SAVES 'navigation.cth')
+            Load-Slot 'navigation'
+            $first=@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.text.Contains('population')})[0].text
+            Send-Key 34
+            $next=@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.text.Contains('population')})[0].text
+            if($first -eq $next){throw 'city navigation did not change city'}
+            Send-Key 33;Send-Text 's';Save-Dialog 'citynavigation'
+            if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES 'citynavigation.cth')).Hash -ne (Get-FileHash $env:TOTENGINE_NAVIGATION_FIXTURE).Hash){throw 'city navigation changed gameplay'}
+        }
+        Send-Key 27
+    }
     if($env:TOTENGINE_ENCOUNTER_FIXTURES) {
         foreach($name in @('battle','capture')) {
             $actor=if($name -eq 'battle'){1}else{7}

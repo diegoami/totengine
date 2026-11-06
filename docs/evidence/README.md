@@ -3833,3 +3833,22 @@ Stopped Windows package attempts are explicitly recorded, not counted as passes.
 Reproduction, packaging, owner acceptance and limits:
 [`v0.12.0-readiness.md`](../v0.12.0-readiness.md). The original AI completion
 program remains gated behind full playable-client completion.
+
+## City citizens (v0.13 in progress)
+
+`citizen-edits.json` and `citizen-edit-vectors.txt` retain 1,548 raw original
+worker/specialist edit comparisons from unpatched civ2.bak: worker entry/stop
+0x4dddc6/0x4ddec9, specialist entry/stop 0x4dd19f/0x4dd24d. UI current-city
+access returns synthetic city 0 and the small-city message is recorded; native
+branches and packed helpers run unchanged. Original arithmetic is compared at
+a synthetic packed-field boundary, not a complete city/window transition.
+The population-five role restriction executes in those original cases.
+Re-derive with tools/citizens_check.py (Unicorn outside Git, CIVTOT_HOME); the
+Rust regression test consumes numeric vectors without assets.
+
+`client-atlas-v2.json` adds four measured People.bmp crops to v1's 141 sprites;
+`city-citizens-v1.json` records generated turn-72 population-five fixture and
+role/continuation/navigation checkpoint hashes, actual browser/Linux input
+comparisons and explicit remaining platform/manual gates. All retained data is
+numeric or authored input; original screenshots, sprites, maps and saves stay
+private. Scope, exact commands and limits: [v0.13 readiness](../v0.13.0-readiness.md).

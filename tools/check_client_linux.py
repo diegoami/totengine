@@ -44,6 +44,9 @@ def run():
                 open_display = bind(x, "XOpenDisplay", ptr, c.c_char_p)
                 display = open_display(address.encode())
                 if not display: raise RuntimeError("cannot open our Xvfb display")
+                class Attributes(c.Structure):
+                    _fields_=[("x",c.c_int),("y",c.c_int),("width",c.c_int),("height",c.c_int),("border_width",c.c_int),("depth",c.c_int),("visual",ptr),("root",ul),("klass",c.c_int),("bit_gravity",c.c_int),("win_gravity",c.c_int),("backing_store",c.c_int),("backing_planes",ul),("backing_pixel",ul),("save_under",c.c_int),("colormap",ul),("map_installed",c.c_int),("map_state",c.c_int),("all_event_masks",c.c_long),("your_event_mask",c.c_long),("do_not_propagate_mask",c.c_long),("override_redirect",c.c_int),("screen",ptr)]
+                get_attributes=bind(x,"XGetWindowAttributes",c.c_int,ptr,ul,c.POINTER(Attributes))
                 root = bind(x, "XDefaultRootWindow", ul, ptr)(display)
                 query = bind(x, "XQueryTree", c.c_int, ptr, ul, c.POINTER(ul), c.POINTER(ul), c.POINTER(c.POINTER(ul)), c.POINTER(ui))
                 fetch = bind(x, "XFetchName", c.c_int, ptr, ul, c.POINTER(c.c_char_p))
@@ -68,6 +71,7 @@ def run():
                 env["TOTENGINE_SAVES"]=str(work/"saves")
                 env["TOTENGINE_CLIENT_TRACE"]=str(work/"trace.jsonl")
                 app = subprocess.Popen([os.environ.get("TOTENGINE_CLIENT_BINARY", str(ROOT.parent / "target/debug/totdesktop"))], env=env)
+                (work/"owned-processes.json").write_text(__import__("json").dumps({"app_pid":app.pid,"display_pid":server.pid,"authority":str(auth)}))
                 window = None
                 for _ in range(100):
                     owner, parent, children, count = ul(), ul(), c.POINTER(ul)(), ui()
@@ -85,6 +89,12 @@ def run():
                     if app.poll() is not None: raise RuntimeError("client exited before opening a window")
                     time.sleep(.05)
                 if not window: raise RuntimeError("our SDL window did not open")
+                for _ in range(200):
+                    attributes=Attributes()
+                    if get_attributes(display,window,c.byref(attributes)) and attributes.map_state==2:break
+                    if app.poll() is not None:raise RuntimeError("client exited before its window mapped")
+                    time.sleep(.05)
+                else:raise RuntimeError("our client window never became viewable")
                 focus(display, window, 2, 0); sync(display, 0); time.sleep(.3)
                 import json
                 def scene():
@@ -144,6 +154,40 @@ def run():
                 if has(scene(),"End your turn with movable units?"):key("Return")
                 wait(lambda s:s["phase"]=="Human" and any(d.get("text","").startswith("Turn 2 ") for d in s["draws"]))
                 research();key("s");save_dialog("normalnext")
+                citizens=os.environ.get("TOTENGINE_CITIZENS_FIXTURES")
+                if citizens:
+                    import shutil
+                    fixtures_root=Path(citizens)
+                    shutil.copyfile(fixtures_root/"mature.cth",work/"saves/mature.cth")
+                    meta=json.loads((fixtures_root/"route.json").read_text())
+                    def compare(name,expected):
+                        key("s");save_dialog(name)
+                        assert (work/"saves"/(name+".cth")).read_bytes()==(fixtures_root/(expected+".cth")).read_bytes(),name
+                    load("mature");key("o")
+                    assert any("population 5" in d.get("text","") for d in scene()["draws"])
+                    for _ in range(21):
+                        if has(scene(),"Tile "+str(meta["worker_tile"])):break
+                        key("Right")
+                    key("space");compare("cityentertainer","after-entertainer")
+                    button("1: Entertainer");compare("citytax","after-tax")
+                    button("1: Tax collector");compare("cityscience","after-science")
+                    button("1: Scientist");compare("citycycle","after-cycle")
+                    button("Choose production");key("Down");key("Escape")
+                    button("Auto workers (centre tile)");load("citycycle")
+                    for _ in range(21):
+                        if has(scene(),"Tile "+str(meta["worker_tile"])):break
+                        key("Right")
+                    key("space");compare("cityresume","after-resume")
+                    key("Escape");key("o")
+                    navigation=os.environ.get("TOTENGINE_NAVIGATION_FIXTURE")
+                    if navigation:
+                        shutil.copyfile(navigation,work/"saves/navigation.cth");load("navigation")
+                        first=next(d["text"] for d in scene()["draws"] if " — population " in d.get("text",""))
+                        key("Next")
+                        assert next(d["text"] for d in scene()["draws"] if " — population " in d.get("text",""))!=first
+                        key("Prior");key("s");save_dialog("citynavigation")
+                        assert (work/"saves/citynavigation.cth").read_bytes()==Path(navigation).read_bytes()
+                    key("Escape")
                 fixtures=os.environ.get("TOTENGINE_ENCOUNTER_FIXTURES")
                 if fixtures:
                     import shutil

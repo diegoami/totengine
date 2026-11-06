@@ -37,6 +37,8 @@ pub enum Decision {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
+    Worker { city: Entity, tile: u8 },
+    Specialist { city: Entity, slot: u8 },
     Move { unit: Entity, to: (u16, u16) },
     Occupy { unit: Entity, city: Entity },
     Production { city: Entity, item: i8 },
@@ -90,6 +92,7 @@ pub struct HumanView {
     pub production_choices: Vec<(Entity, Vec<i8>)>,
     /// (visible unit slot, current HP, maximum HP), filtered before transport.
     pub unit_health: Vec<(usize, u32, u32)>,
+    pub city_citizens: Vec<crate::citizens::CityCitizens>,
 }
 
 /// Owns the game and opponent policies. Adapters cannot bypass recording or
@@ -213,6 +216,16 @@ impl HumanSession {
         );
         observation.cities.sort_by_key(|c| c.index);
         HumanView {
+            city_citizens: observation
+                .cities
+                .iter()
+                .filter(|c| c.owner == self.human)
+                .filter_map(|c| {
+                    self.game
+                        .world
+                        .city_citizens(&self.game.rules, self.human, c.index)
+                })
+                .collect(),
             unit_health: observation
                 .units
                 .iter()
@@ -497,6 +510,20 @@ impl HumanSession {
                 Some(Order::OccupyCity {
                     unit: unit.slot,
                     city: city.slot,
+                })
+            }
+            (None, Command::Worker { city, tile }) => {
+                self.city(city, true)?;
+                Some(Order::ToggleWorker {
+                    city: city.slot,
+                    tile,
+                })
+            }
+            (None, Command::Specialist { city, slot }) => {
+                self.city(city, true)?;
+                Some(Order::CycleSpecialist {
+                    city: city.slot,
+                    slot,
                 })
             }
             (None, Command::Production { city, item }) => {

@@ -64,7 +64,9 @@ The v0.10 candidate adds original-derived research scoring and controlled
 production comparisons across six difficulties, with supported land campaigns
 and explicit remaining differences. See [the readiness record](docs/v0.10.0-readiness.md)
 and [decision 0007](docs/decisions/0007-original-like-ai.md). Full original-AI
-parity is not claimed. Owner-reviewed client discovery/design starts at v0.11.
+parity is not claimed. The owner-requested [complete original-AI scope](docs/original-ai-scope.md)
+now defines the remaining ports and completion gates ([program #117](https://github.com/diegoami/totengine/issues/117)).
+Owner-reviewed client discovery/design starts at v0.11.
 
 ```bash
 # Rust CLI (successor of the Python probe)

@@ -119,6 +119,26 @@ oracle/          Wine automation: launch, key macros (xdotool), save capture
   by recorded oracle comparisons and a documented list of remaining differences;
   deterministic autoplay alone is insufficient. Full AI parity requires evidence.
 
+### Full original AI — scoped program, release slots unassigned
+
+The v0.10 candidate contains original-derived research and engine campaign
+policies; it is not the complete original AI. The owner-requested
+[full-port scope](original-ai-scope.md) is tracked by
+[program #117](https://github.com/diegoami/totengine/issues/117).
+It defines eight dependency gates A0–A7 for standard single-map original AI,
+then A8 for full vanilla ToT maps/scenarios. A0 (#118) inventories native
+planners/state/callees, specifies the fidelity boundary and supplies revised
+work estimates before further heuristic tuning. Ported decisions require
+matched inputs, mutations, scheduling and random consumption; successful
+engine autoplay is a separate regression.
+
+Decision 0003's observation/private-RNG contract needs an explicit owner-reviewed
+amendment before any trusted native-compatibility driver can use privileged
+inputs/shared randomness. This scope proposes that separation; it does not
+approve it. v0.11 UI discovery/design remains as accepted below. Later client
+and full-AI release slots must be reconciled after that design/inventory;
+external AIs remain after the playable client.
+
 ### Phase 2 — Graphical classic client (T2) · multiple milestones; v0.11.0 starts discovery/design (decision 0005)
 - Inspect the original screens, dialogs, keyboard shortcuts and workflows,
   including scenario-specific behavior; no validated client specification exists yet

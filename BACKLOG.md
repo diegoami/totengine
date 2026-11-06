@@ -21,6 +21,13 @@
   [#22 T3](https://github.com/diegoami/totengine/issues/22) ·
   [#23 RG](https://github.com/diegoami/totengine/issues/23).
 
+The owner-requested complete original-AI port is scoped in
+[docs/original-ai-scope.md](docs/original-ai-scope.md) and tracked by
+[program #117](https://github.com/diegoami/totengine/issues/117), with ordered
+A0–A8 delivery gates. The first AI task is the inventory/fidelity-boundary
+story #118. These gates are not assigned release versions and do not move
+v0.11 UI discovery or the post-client external-AI work.
+
 This file keeps the working conventions only. The story tables it used to
 hold (stories T0-1 … RG-11 with their acceptance and status notes) are in
 git history up to tag `v0.4.0`; [docs/plan.md](docs/plan.md) holds the

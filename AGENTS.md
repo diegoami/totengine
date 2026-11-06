@@ -155,7 +155,13 @@ checks cover the integration. The v0.10 candidate passes 209 install-backed Rust
 with exact replay (36 also continue through checkpoints), and the real-browser
 100-round test. Candidate readiness/limits: `docs/v0.10.0-readiness.md`.
 Owner-run milestone review is next; no tag or agent-launched review.
-Next plan: `docs/decisions/0007-original-like-ai.md` (#106).
+v0.10 is original-derived, not the complete original AI. The owner's subsequent
+full-port scope is `docs/original-ai-scope.md`, program #117: A0–A7 standard-game
+completion, A8 full vanilla maps/scenarios. First AI task: #118 (native decision
+inventory, explicit fidelity boundary and revised work estimates). The proposed
+trusted compatibility driver is not an approved amendment of decision 0003.
+The v0.10 candidate/review #116 stays unchanged; v0.11 UI discovery remains.
+Candidate plan: `docs/decisions/0007-original-like-ai.md` (#106).
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;
 decision 0002; observing and playing are the two main goals): v0.3.0

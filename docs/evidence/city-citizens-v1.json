@@ -24,7 +24,20 @@
   "runtime": {
     "browser": "Chromium real mouse/keyboard: worker removal, all roles, production cancel, save/reload next assignment and two-city navigation pass",
     "linux": "XTest real keyboard on isolated authenticated Xvfb: equivalent route passes; checkpoint bytes match browser and shared controller",
-    "windows": "pending extended route"
+    "windows": "Packaged native Windows real OS keyboard: ten rounds, pending choices/resume, citizen roles/next assignment, two-city navigation and battle/capture passed. All new city checkpoints match browser/Linux/shared-controller bytes. Initial focus uses guarded thread attachment; every key still checks the own process foreground window."
   },
-  "art": "145 measured sprites, including four People.bmp crops; numeric identities only, no pixels committed"
+  "art": "145 measured sprites, including four People.bmp crops; numeric identities only, no pixels committed",
+  "package_code_revision": "0d35cc4",
+  "package_binaries": {
+    "linux": {
+      "totdesktop": "c7ff6617efdffb1f1e7f10a0dbaadd4074ed552e7d25b97197e3792a2b347494",
+      "totplay": "0282a9141e80112928cdbf74f056eb05905b6c58df2a85d1070a607166a21e90"
+    },
+    "windows": {
+      "SDL2.dll": "53e8fa7e9ed43c30bd650c39396f0d9d2067d2fff0b926c9433b75202592e4aa",
+      "libunwind.dll": "f170c420d203cfb6640b3f90ca46373fd886670adad08ce5f2fdde054db27976",
+      "totdesktop.exe": "caac527f4371389c52b768d422edfb6c3c02101eac4a167cde4ce8636b65f66a",
+      "totplay.exe": "644082cab8e8c1ea7f3f8ae3c0ba90b1ca0df49db0d5c818bc7b72b3ddfe1f26"
+    }
+  }
 }

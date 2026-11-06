@@ -13,8 +13,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 - Add a shared city workspace to browser and native desktop: worked-radius
   inspection, citizen roles, food/finance/mood feedback, city navigation,
   production picker and persistent immediate edits (#136).
-- Start real-input continuation checks on both clients, including a population-
-  five fixture generated through 72 ordinary recorded turns (#137). Owner
+- Pass real-input continuation checks in browser and native Windows/Linux,
+  including a population-five fixture generated through 72 ordinary recorded
+  turns (#137). Owner
   acceptance and independent milestone review remain pending.
 
 

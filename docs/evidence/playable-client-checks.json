@@ -1,0 +1,59 @@
+{
+  "engine_version": "0.12.0",
+  "human_checkpoint_format": 2,
+  "owner_manual_acceptance": {
+    "browser": "pending",
+    "desktop": "pending"
+  },
+  "ten_round_setup": "1 2 80 50 47 7 7 5 2",
+  "ten_round_human": 1,
+  "city_name": "athena",
+  "production": "Warriors",
+  "rounds_completed": 10,
+  "checksums": {
+    "research": "5e7cda3d7aaea4cd4c6a9e6bb79e9062cc8613bb8228ae2618197b5b1dd743fc",
+    "founding": "e56be9275124d3ff949c7b08c6d9f0cce7acf44111bdc732b1c0cd2dfec2cf2c",
+    "normal": "5d02dc13e76ac3bda8e0546a528a52450bb58720a3378c81cb54d4e9ce0ea96f",
+    "tenrounds": "ee4ccd6a75d32ae04f1688504abf3835b80e93dac0b931b428911dbf9bef0a59",
+    "researchnext": "e56be9275124d3ff949c7b08c6d9f0cce7acf44111bdc732b1c0cd2dfec2cf2c",
+    "foundingnext": "5d02dc13e76ac3bda8e0546a528a52450bb58720a3378c81cb54d4e9ce0ea96f",
+    "normalnext": "b01732b8223d06fd4d5e034a4f7f9fb4bc2234c9fe624b14257e624de6e4473d"
+  },
+  "encounter_setup": "1 2 32 24 47 2 2 2 0",
+  "encounters": {
+    "battle": {
+      "actor": 1,
+      "command": "Some(Move { unit: Entity { slot: 1, id: 4 }, to: (9, 7) })",
+      "direction": "8",
+      "result": "Some(Attacked { won: false })",
+      "before_sha256": "b97d763f51e71e02df925ff912b4bbfdbb80496a720102e80faa110e8c01ab7d",
+      "after_sha256": "38ef632b5eaf9b47be36ee7ba76fa9c9e9903b3fcd2b2deada004fcea87c4200"
+    },
+    "capture": {
+      "actor": 7,
+      "command": "Some(Occupy { unit: Entity { slot: 7, id: 11 }, city: Entity { slot: 4, id: 5 } })",
+      "direction": "8",
+      "result": "Some(Occupied { city: 4, razed: true })",
+      "before_sha256": "c8c023ecb8ae0b397b73c98aa2b2e0004952a631e6425ae6c7482a21def177eb",
+      "after_sha256": "9e30376dc1e03cd7dc818ba0b622cc9732efac0864f0f8c62fb626e08c0c9f89"
+    }
+  },
+  "platform_status": {
+    "browser": "packaged Linux host + Chromium: ten rounds, resume, reconnect, combat/capture passed",
+    "linux_desktop": "packaged executable + XTest: ten rounds, resume, focus/resize, combat/capture passed",
+    "windows_desktop": "native Windows 10: ten rounds and four checkpoint hashes match; extended package attempts stopped on foreground loss. Not counted as extended package passes."
+  },
+  "artifacts": "Only numeric identities/hashes and authored UI input are committed; owned-art screenshots and traces remain private.",
+  "package_binaries": {
+    "linux": {
+      "totdesktop": "f9987d42b9f5c19325d6f4c7f894d2bdeb1a9923772a441f20ca9a0a7fd87c57",
+      "totplay": "a79948326c7e4643d8cfd7f7f7428288f0d664c27677f05540d17aa449aa6688"
+    },
+    "windows": {
+      "SDL2.dll": "53e8fa7e9ed43c30bd650c39396f0d9d2067d2fff0b926c9433b75202592e4aa",
+      "libunwind.dll": "f170c420d203cfb6640b3f90ca46373fd886670adad08ce5f2fdde054db27976",
+      "totdesktop.exe": "bc4c06e114a2f564f4238deecdba7a5c0a4ba6ca047920cc34b768f7afce45f2",
+      "totplay.exe": "ecd0177cdf980dc64e058c4d7ef90408aa0ee53af6d96fbb6a2ed5403a3a6d02"
+    }
+  }
+}

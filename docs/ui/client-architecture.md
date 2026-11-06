@@ -15,8 +15,10 @@ checks](human-session.md). `totui::resources` provides profile Rules/art selecti
 BMP/GIF decoding and the measured crop masks; see [loader status](asset-preview.md#shared-rust-loader-milestone-10-implementation).
 The isolated [desktop feasibility spike](desktop-feasibility.md) now passes on
 native Windows and Linux with actual OS input and packaged launch; SDL2 is viable
-for the first desktop adapter. Full atlas/presentation, two adapters and assembled
-human acceptance are still milestone 10 work. The design prototype
+for the first desktop adapter. The production shared atlas/controller and browser/native adapters now exist in
+`totui::client`; [usage](../playable-clients.md). Both use the same frame,
+validated commands and checkpoint slots. Automated assembled acceptance is in
+progress; owner ten-round play on each surface remains mandatory. The design prototype
 remains simulated and is not connected by this foundation change.
 
 ## Findings from the audited code

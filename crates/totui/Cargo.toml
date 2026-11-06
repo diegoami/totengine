@@ -8,3 +8,16 @@ description = "Shared client resources and local browser interfaces for ToTEngin
 engine = { path = "../engine" }
 tot-kit = { path = "../tot-kit" }
 image = { version = "0.25.10", default-features = false, features = ["bmp", "gif"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+getrandom = "0.3"
+tempfile = "3"
+sdl2 = { version = "0.38.0", optional = true }
+fontdue = { version = "0.9.5", optional = true }
+
+[features]
+desktop = ["dep:sdl2", "dep:fontdue"]
+
+[[bin]]
+name = "totdesktop"
+required-features = ["desktop"]

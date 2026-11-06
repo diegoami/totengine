@@ -211,9 +211,8 @@ driver, #128 resources/filtered views, #129 browser, #130 desktop, #131 checkpoi
 and both-client acceptance. Complete-client umbrellas #94/#125 remain open;
 full city/government/diplomacy/import/scenarios and sustained campaigns follow.
 The owner scope gate under decision 0005 is satisfied for this first slice;
-v0.11 is released and its review gate is complete. Start #126 desktop feasibility,
-#127 shared human driver and #128 resources/filtered views; checkpoint design
-starts with the driver. Browser #129 and desktop #130 must both pass #131
+v0.11 is released and its review gate is complete. #126 desktop feasibility and
+#127 shared human driver are completed; #128–#131 finish the first slice. Browser #129 and desktop #130 must both pass #131
 acceptance before the first playable milestone closes. Reference coverage includes representative city,
 map/unit, government, negotiation, report, Fantasy transfer and classic custom
 scenario routes are now inspected; remaining branches and delivery impacts are
@@ -221,19 +220,20 @@ explicit in the inventory. Lua-disabled and invalid-file rejection are covered.
 The isolated installed-reference revolution Escape test starts a revolution;
 the prototype deliberately proposes safe cancellation. No vanilla equivalence
 or comprehensive native-UI parity is claimed. All owned Wine/Xvfb sessions stopped.
-Milestone 10 implementation has started: `engine::human::HumanSession` owns
-resumable human input and bounded builtin-1 scheduling, explicit research/named
-founding, identity/revision/retry validation, filtered views/notices and replay-based
-human checkpoints. See `docs/ui/human-session.md`; these are engine foundations,
-not actual human acceptance in either client. `totui::resources` resolves profile
-Rules/art and decodes BMP/GIF with shared measured masks; all five retained
-Original crop opacity counts match. Decoder notices: `docs/third-party/README.md`.
-Desktop feasibility #126 now passes on native Windows 10 and Linux, including
-real OS keyboard/focus/resize and packaged launch with owned art. SDL2 is viable
-for #130; isolated code/build/notices: `tools/desktop-spike/`, numeric evidence:
-`docs/evidence/desktop-feasibility.json`. No SDL dependency enters production yet.
-Full atlas/adjacency/colors/presentation, both adapters and assembled checkpoint
-acceptance remain. Next entry points: #128, #129/#130 and #131.
+Milestone 10 implementation now supplies both actual clients: `totplay` (loopback
+browser host) and `totdesktop` (standalone SDL2 window, optional `desktop` feature).
+Shared `totui::client` owns atlas/presentation/input and named checkpoint slots;
+`engine::human` owns validated input, bounded builtin-1 scheduling, required
+research/founding, notices and last-seen fog memory. Human checkpoints format 2
+restore that memory and exact engine/resource/policy/session state through replay.
+Windows and Linux packages contain notices/runtime DLLs, never game assets/fonts.
+Usage: `docs/playable-clients.md`; validation/current gates:
+`docs/v0.12.0-readiness.md`. #126/#127 are closed. #128–#131 and milestone 10
+remain open pending assembled acceptance, including owner ten-round play on each
+surface. Do not replace owner play with automation or launch milestone review.
+Version 0.12.0 is preparation only until those gates pass and a clean candidate
+is committed for owner-launched independent review. Full-client #94/#125 and
+full-AI gate #117 remain open beyond this narrow slice.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

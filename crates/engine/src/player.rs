@@ -91,6 +91,10 @@ pub enum Order {
     },
     /// End this civ's turn.
     EndTurn,
+    /// Spend this own unit's remaining movement for the current turn.
+    SkipUnit {
+        unit: usize,
+    },
 }
 
 /// What applying an [`Order`] did.
@@ -110,6 +114,7 @@ pub enum OrderResult {
     /// A city was founded; its index.
     Founded(usize),
     TurnEnded,
+    Skipped,
     /// Nothing changed; the reason says why.
     Rejected(&'static str),
 }
@@ -130,6 +135,7 @@ impl fmt::Display for Order {
                 Ok(())
             }
             Order::EndTurn => write!(f, "end"),
+            Order::SkipUnit { unit } => write!(f, "skip {unit}"),
         }
     }
 }
@@ -148,6 +154,7 @@ impl fmt::Display for OrderResult {
             OrderResult::ResearchSet => write!(f, "research-set"),
             OrderResult::Founded(c) => write!(f, "founded {c}"),
             OrderResult::TurnEnded => write!(f, "ended"),
+            OrderResult::Skipped => write!(f, "skipped"),
             OrderResult::Rejected(why) => write!(f, "rejected {}", why.replace(' ', "_")),
         }
     }
@@ -180,6 +187,9 @@ impl Order {
                 name: CityName::from_hex(name)?,
             }),
             ["end"] => Some(Order::EndTurn),
+            ["skip", u] => Some(Order::SkipUnit {
+                unit: u.parse().ok()?,
+            }),
             _ => None,
         }
     }
@@ -309,8 +319,7 @@ impl WorldState {
 
     /// Mark the tiles a civ currently sees as seen: distance ≤ 1 around its
     /// units, the city radius around its cities.
-    pub fn reveal(&mut self, civ: u8) {
-        let bit = 1u8 << (civ & 7);
+    pub(crate) fn visible_indices(&self, civ: u8) -> Vec<usize> {
         let mut spots: Vec<(i32, i32)> = Vec::new();
         for u in self.units.iter().filter(|u| u.id != 0 && u.owner == civ) {
             spots.push((u.x as i32, u.y as i32));
@@ -328,13 +337,24 @@ impl WorldState {
             }
         }
         let w2 = 2 * self.map.stored_w as i32;
+        let mut indices = Vec::new();
         for (x, y) in spots {
             if y < 0 || w2 == 0 {
                 continue;
             }
             if let Some(i) = self.map.stored_index(x.rem_euclid(w2) as u16, y as u16) {
-                self.map.visible[i] |= bit;
+                indices.push(i);
             }
+        }
+        indices.sort_unstable();
+        indices.dedup();
+        indices
+    }
+
+    pub fn reveal(&mut self, civ: u8) {
+        let bit = 1u8 << (civ & 7);
+        for i in self.visible_indices(civ) {
+            self.map.visible[i] |= bit;
         }
     }
 
@@ -532,6 +552,17 @@ impl WorldState {
     ) -> OrderResult {
         match order {
             Order::EndTurn => OrderResult::TurnEnded,
+            Order::SkipUnit { unit } => {
+                let Some(u) = self
+                    .units
+                    .get_mut(unit)
+                    .filter(|u| u.id != 0 && u.owner == civ)
+                else {
+                    return OrderResult::Rejected("not your unit");
+                };
+                u.moves_left = 0;
+                OrderResult::Skipped
+            }
             Order::SetResearch { advance } => {
                 if !self
                     .observe_research(rules, civ)

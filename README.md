@@ -56,8 +56,9 @@ What runs today, headless, against your own ToT install:
   (`totctl observe`; [usage and stream format](docs/browser-observer.md)).
 
 The playable-client track targets **both a browser client and a standalone
-desktop client**, sharing the Rust engine. Both are planned across subsequent
-milestones; the current observer and design prototype are not playable clients.
+desktop client**, sharing the Rust engine. The first generated-game slice is now implemented in `totplay` and `totdesktop`
+and is undergoing milestone acceptance; [launch and controls](docs/playable-clients.md).
+Full client delivery continues across later milestones.
 See the [client delivery plan](docs/ui/client-milestones.md).
 
 AI v1 expands, invests in city improvements, researches and handles units

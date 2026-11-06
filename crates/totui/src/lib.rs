@@ -1,4 +1,5 @@
 //! Browser interfaces and shared client resources. No game assets are bundled.
+pub mod client;
 pub mod resources;
 use std::io::{self, BufRead, BufReader, Write};
 use std::net::{Ipv4Addr, TcpListener, TcpStream};

@@ -14,10 +14,10 @@ impl HumanSession {
     pub fn checkpoint(&self, resources: &str) -> String {
         let rules = tot_kit::emit_rules(&self.game.rules);
         let mut text = format!(
-            "totengine-human 1\nengine {}\nsetup {}\nhuman {}\npolicy builtin-1\nrules {} {:016x}\nresources {} {:016x}\nworld {:016x}\nlog {} {:016x}\n",
+            "totengine-human 2\nengine {}\nsetup {}\nhuman {}\npolicy builtin-1\nrules {} {:016x}\nresources {} {:016x}\nworld {:016x}\nknowledge {:016x}\nlog {} {:016x}\n",
             env!("CARGO_PKG_VERSION"), self.config.descriptor(), self.human,
             rules.len(), fingerprint(rules.as_bytes()), resources.len(), fingerprint(resources.as_bytes()),
-            self.game.world.checksum(), self.game.log().len(), fingerprint(self.game.log().as_bytes()),
+            self.game.world.checksum(), self.knowledge_fingerprint(), self.game.log().len(), fingerprint(self.game.log().as_bytes()),
         );
         for op in &self.journal {
             match op {
@@ -43,7 +43,7 @@ impl HumanSession {
             return Err("human checkpoint exceeds 16 MiB".into());
         }
         let mut lines = text.lines();
-        if lines.next() != Some("totengine-human 1")
+        if lines.next() != Some("totengine-human 2")
             || lines.next() != Some(&format!("engine {}", env!("CARGO_PKG_VERSION")))
         {
             return Err("unsupported human checkpoint or engine version".into());
@@ -83,6 +83,7 @@ impl HumanSession {
         }
         // Final world/log assertions are checked by canonical re-emission below.
         lines.next().ok_or("missing world fingerprint")?;
+        lines.next().ok_or("missing knowledge fingerprint")?;
         lines.next().ok_or("missing order-log identity")?;
         let mut session = Self::generated(config, rules, human)?;
         let mut ended = false;
@@ -132,6 +133,7 @@ impl HumanSession {
 impl Command {
     fn encode(self) -> String {
         match self {
+            Self::Skip { unit } => format!("skip {} {}", unit.slot, unit.id),
             Self::Move { unit, to } => format!("move {} {} {} {}", unit.slot, unit.id, to.0, to.1),
             Self::Occupy { unit, city } => {
                 format!("occupy {} {} {} {}", unit.slot, unit.id, city.slot, city.id)
@@ -158,6 +160,12 @@ impl Command {
     fn decode(text: &str) -> Option<Self> {
         let fields: Vec<_> = text.split_whitespace().collect();
         match fields.as_slice() {
+            ["skip", slot, id] => Some(Self::Skip {
+                unit: Entity {
+                    slot: slot.parse().ok()?,
+                    id: id.parse().ok()?,
+                },
+            }),
             ["move", slot, id, x, y] => Some(Self::Move {
                 unit: Entity {
                     slot: slot.parse().ok()?,

@@ -1,0 +1,233 @@
+"use strict";
+const canvas = document.querySelector("#game"),
+  ctx = canvas.getContext("2d"),
+  stage = document.querySelector("#stage"),
+  entry = document.querySelector("#entry"),
+  error = document.querySelector("#error");
+const token = document.querySelector("meta[name=totengine-token]").content;
+let frame = null,
+  scale = 1,
+  busy = false,
+  editPending = false,
+  pendingKey = null,
+  assets = "",
+  sprites = new Map(),
+  counter = 0,
+  paintedRevision = -1;
+const prefix = crypto.getRandomValues(new Uint32Array(1))[0] >>> 0;
+function id() {
+  return prefix * 1048576 + ++counter;
+} // below Number.MAX_SAFE_INTEGER
+function resize() {
+  scale = Math.min(innerWidth / 1024, innerHeight / 768);
+  stage.style.transform = `translate(${(innerWidth - 1024 * scale) / 2}px,${(innerHeight - 768 * scale) / 2}px) scale(${scale})`;
+}
+addEventListener("resize", resize);
+resize();
+function showError(s) {
+  error.textContent = s;
+  error.style.display = s ? "block" : "none";
+}
+async function sprite(key) {
+  if (sprites.has(key)) return sprites.get(key);
+  const promise = (async () => {
+    let r = await fetch(`/sprite/${assets}/${key}`);
+    if (!r.ok) throw Error("Artwork unavailable: " + key);
+    const buffer = await r.arrayBuffer(),
+      v = new DataView(buffer),
+      w = v.getUint32(0, true),
+      h = v.getUint32(4, true);
+    if (w * h * 4 + 8 !== buffer.byteLength) throw Error("Invalid sprite");
+    const c = document.createElement("canvas");
+    c.width = w;
+    c.height = h;
+    c.getContext("2d").putImageData(
+      new ImageData(new Uint8ClampedArray(buffer, 8), w, h),
+      0,
+      0,
+    );
+    return c;
+  })();
+  sprites.set(key, promise);
+  return promise;
+}
+let paintSerial = 0;
+async function paint(next) {
+  if (frame && next.revision < frame.revision) return;
+  frame = next;
+  if (assets !== next.assets) {
+    assets = next.assets;
+    sprites.clear();
+  }
+  const serial = ++paintSerial;
+  const keys = [
+    ...new Set(
+      next.draws.filter((d) => d.kind === "sprite" || d.kind === "tile").map((d) => d.sprite),
+    ),
+  ];
+  const images = await Promise.all(keys.map(sprite));
+  const ready = new Map(keys.map((k, i) => [k, images[i]]));
+  if (serial !== paintSerial) return;
+  ctx.imageSmoothingEnabled = false;
+  for (const d of next.draws) {
+    switch (d.kind) {
+      case "rect":
+        ctx.fillStyle = d.color;
+        ctx.fillRect(d.x, d.y, d.w, d.h);
+        break;
+      case "text":
+        ctx.fillStyle = d.color;
+        ctx.font = `${d.size}px Georgia,serif`;
+        ctx.textBaseline = "top";
+        ctx.fillText(d.text, d.x, d.y);
+        break;
+      case "tile":
+        ctx.save();ctx.translate(d.x,d.y);ctx.fillStyle=ctx.createPattern(ready.get(d.sprite),"repeat");ctx.fillRect(0,0,d.w,d.h);ctx.restore();break;
+      case "sprite":
+        ctx.drawImage(ready.get(d.sprite), d.x, d.y, d.w, d.h);
+        break;
+      case "line":
+        ctx.strokeStyle = d.color;
+        ctx.lineWidth = d.width;
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x2, d.y2);
+        ctx.stroke();
+        break;
+    }
+  }
+  const meta = next.entry;
+  if (meta) {
+    if (entry.dataset.field !== meta.id) {
+      entry.value = meta.value;
+      entry.dataset.field = meta.id;
+      editPending = false;
+    } else if (!editPending) entry.value = meta.value;
+    Object.assign(entry.style, {
+      left: meta.x + "px",
+      top: meta.y + "px",
+      width: meta.w + "px",
+      height: meta.h + "px",
+    });
+    entry.hidden = false;
+    if (document.activeElement !== entry) entry.focus({ preventScroll: true });
+  } else {
+    entry.hidden = true;
+    entry.dataset.field = "";
+    if (document.activeElement === entry) canvas.focus();
+  }
+  paintedRevision = next.revision;
+
+}
+async function refresh() {
+  const r = await fetch("/state");
+  if (!r.ok) throw Error("Host unavailable");
+  await paint(await r.json());
+}
+async function send(input) {
+  if (!frame) return;
+  if (busy) {
+    if (input.type === "edit") editPending = true;
+    else if (input.type === "key" && !entry.hidden)
+      pendingKey = { input, field: entry.dataset.field };
+    else showError("Input is pending; wait for the refreshed selection");
+    return;
+  }
+  busy = true;
+  const request = { revision: frame.revision, id: id(), input };
+  try {
+    let r; // A network retry keeps the identical ID, revision and payload.
+    for (let n = 0; n < 2; n++) {
+      try {
+        r = await fetch("/input", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Totengine-Token": token,
+          },
+          body: JSON.stringify(request),
+        });
+        break;
+      } catch (e) {
+        if (n === 1) throw e;
+      }
+    }
+    const data = await r.json();
+    if (!r.ok) {
+      showError(data.error || "Input rejected");
+      await refresh();
+    } else {
+      showError("");
+      await paint(data);
+      if (data.phase === "Opponents" && data.advancing && ["click","key","tick"].includes(input.type)) setTimeout(()=>send({type:"tick"}),20);
+    }
+  } catch (e) {
+    showError(e.message + " — reconnect to retrieve the pending decision");
+  } finally {
+    busy = false;
+    if (editPending && !entry.hidden) {
+      editPending = false;
+      const field = entry.dataset.field,
+        value = entry.value;
+      setTimeout(() => send({ type: "edit", field, value }), 0);
+    } else if (pendingKey) {
+      const pending = pendingKey;
+      pendingKey = null;
+      if (!entry.hidden && entry.dataset.field === pending.field)
+        setTimeout(() => send(pending.input), 0);
+    }
+  }
+}
+canvas.addEventListener("click", (e) => {
+  const r = canvas.getBoundingClientRect();
+  send({
+    type: "click",
+    x: (e.clientX - r.left) / scale,
+    y: (e.clientY - r.top) / scale,
+  });
+});
+entry.addEventListener("input", () => {
+  editPending = true;
+  if (!busy) {
+    editPending = false;
+    send({ type: "edit", field: entry.dataset.field, value: entry.value });
+  }
+});
+addEventListener("keydown", (e) => {
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  const editing = document.activeElement === entry;
+  if (editing && !["Enter", "Escape", "Tab"].includes(e.key)) return;
+  const key = e.key === "Tab" && e.shiftKey ? "ShiftTab" : e.key;
+  if (
+    [
+      "Enter",
+      "Escape",
+      "Tab",
+      "ArrowLeft",
+      "ArrowRight",
+      "ArrowUp",
+      "ArrowDown",
+      "PageUp",
+      "PageDown",
+      "Home",
+      " ",
+      "+",
+      "-",
+      "=",
+    ].includes(e.key) ||
+    (!editing && /^[fcrmewsl12346789]$/.test(e.key))
+  ) {
+    e.preventDefault();
+    send({ type: "key", key });
+  }
+});
+addEventListener("blur", () => send({ type: "focus", focused: false }));
+addEventListener("focus", async () => {
+  await refresh();
+  send({ type: "focus", focused: true });
+});
+setInterval(() => {
+  if (frame?.phase !== "Closed" && !busy && !editPending)
+    refresh().catch((e) => showError(e.message));
+}, 1500);
+refresh().catch((e) => showError(e.message));

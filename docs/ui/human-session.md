@@ -62,9 +62,9 @@ native victory rules or the later full-client management commands.
 
 ## Human checkpoints
 
-`checkpoint(resource_identity)` emits `totengine-human 1`, binding exact engine
+`checkpoint(resource_identity)` emits `totengine-human 2`, binding exact engine
 version, generated setup, human owner, policy ID, canonical Rules, adapter-supplied
-resource manifest identity, world checksum and order-log identity. Its journal
+resource manifest identity, world checksum, last-seen knowledge fingerprint and order-log identity. Its journal
 records accepted human inputs and performed opponent work, including a partial
 opponent turn. Restore reconstructs a temporary session, reruns that journal and
 compares the canonical checkpoint in full. This rebuilds private AI RNG/state,
@@ -78,8 +78,8 @@ identity, provide file selection, and replace the active session only after
 successful reconstruction. Restore is O(recorded work), with a 16 MiB input and
 200,000-operation parser bound; instant snapshots and cross-version migrations
 are not implemented. Resource identities/fingerprints detect accidental changes,
-not deliberate cryptographic forgery. First-client file integration and assembled
-save/load acceptance remain #131.
+not deliberate cryptographic forgery. Both clients now provide named local slots and atomic replacement after successful
+reconstruction; #131 also requires owner play and assembled acceptance.
 
 ## Verification
 
@@ -87,7 +87,7 @@ save/load acceptance remain #131.
 cargo test -p engine --lib human::tests
 ```
 
-Eight authored engine tests cover inert polling/rejection/retries, changed
+Nine authored engine tests cover inert polling/rejection/retries, changed
 request IDs and stale/foreign/reused entity references, real movement, named
 founding/cancellation, initial and later research, legal production and more
 human actions than the AI cap, private-data filtering, unsupported government
@@ -99,3 +99,13 @@ founding checkpoints and retry receipt restoration are covered separately.
 
 These automated routes supply choices in test code. They are not the required
 actual ten-round human acceptance route in either client and do not close #131.
+
+The human view now retains last-seen tile features and foreign-city identity,
+name, owner and population. Explored tiles do not expose hidden later changes;
+actual sight refreshes memory after each accepted command and opponent work item.
+This memory is reconstructed by checkpoint replay and fingerprinted separately.
+Foreign units remain current-sight-only. The existing autonomous Player
+observation and AI trajectory contract are unchanged. A focused authored test
+covers hidden city growth/rename/ownership, new cities on explored tiles, slot
+reuse, roads and reacquisition. The 1/256-work-budget continuation test covers
+knowledge reconstruction at partial opponent boundaries.

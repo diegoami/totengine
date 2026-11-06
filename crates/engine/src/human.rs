@@ -45,6 +45,7 @@ pub enum Command {
     CancelFound { decision: u64 },
     Research { decision: u64, advance: usize },
     EndTurn,
+    Skip { unit: Entity },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -87,12 +88,17 @@ pub struct HumanView {
     /// Identities only for cities present in the filtered observation.
     pub known_cities: Vec<Entity>,
     pub production_choices: Vec<(Entity, Vec<i8>)>,
+    /// (visible unit slot, current HP, maximum HP), filtered before transport.
+    pub unit_health: Vec<(usize, u32, u32)>,
 }
 
 /// Owns the game and opponent policies. Adapters cannot bypass recording or
 /// supply their own Player for the human. Retry receipts live for this session;
 /// changed payloads with a reused request ID are rejected, never reexecuted.
 pub struct HumanSession {
+    view_cache: std::cell::RefCell<Option<(u64, HumanView)>>,
+    known_tiles: Vec<Option<crate::player::TileView>>,
+    known_cities: BTreeMap<usize, (u32, crate::player::CityView)>,
     config: NewGameConfig,
     game: Game,
     human: u8,
@@ -115,6 +121,16 @@ enum Operation {
 }
 
 impl HumanSession {
+    /// Next unused canonical input ID, including after checkpoint restoration.
+    pub fn next_request_id(&self) -> Result<u64, &'static str> {
+        self.receipts
+            .keys()
+            .next_back()
+            .copied()
+            .unwrap_or(0)
+            .checked_add(1)
+            .ok_or("human request IDs exhausted")
+    }
     pub fn generated(config: NewGameConfig, rules: Rules, human: u8) -> Result<Self, String> {
         if !(1..=config.civilizations).contains(&human) {
             return Err("human civilization is outside the generated setup".into());
@@ -130,6 +146,9 @@ impl HumanSession {
             }
         }
         let mut session = Self {
+            known_tiles: vec![None; game.world.map.terrain.len()],
+            known_cities: BTreeMap::new(),
+            view_cache: std::cell::RefCell::new(None),
             config,
             game,
             human,
@@ -144,6 +163,7 @@ impl HumanSession {
             notices: Vec::new(),
             journal: Vec::new(),
         };
+        session.remember();
         session.require_research();
         Ok(session)
     }
@@ -165,11 +185,51 @@ impl HumanSession {
     }
 
     pub fn view(&self) -> HumanView {
-        let observation =
+        if let Some((_, view)) = self
+            .view_cache
+            .borrow()
+            .as_ref()
+            .filter(|(revision, _)| *revision == self.revision)
+        {
+            return view.clone();
+        }
+        let view = self.build_view();
+        *self.view_cache.borrow_mut() = Some((self.revision, view.clone()));
+        view
+    }
+
+    fn build_view(&self) -> HumanView {
+        let mut observation =
             self.game
                 .world
                 .observe(&self.game.rules, self.human, self.last_human.clone());
+        observation.seen = self.known_tiles.clone();
+        observation.cities.retain(|c| c.owner == self.human);
+        observation.cities.extend(
+            self.known_cities
+                .values()
+                .filter(|(_, c)| c.owner != self.human)
+                .map(|(_, c)| c.clone()),
+        );
+        observation.cities.sort_by_key(|c| c.index);
         HumanView {
+            unit_health: observation
+                .units
+                .iter()
+                .map(|u| {
+                    let max = self
+                        .game
+                        .rules
+                        .unit_hits(u.type_id as usize)
+                        .unwrap_or(1)
+                        .saturating_mul(10);
+                    (
+                        u.index,
+                        max.saturating_sub(u32::from(self.game.world.units[u.index].damage)),
+                        max,
+                    )
+                })
+                .collect(),
             revision: self.revision,
             phase: self.phase(),
             decision: self.decision.clone(),
@@ -200,7 +260,11 @@ impl HumanSession {
                 .iter()
                 .map(|c| Entity {
                     slot: c.index,
-                    id: self.game.world.cities[c.index].city_id,
+                    id: if c.owner == self.human {
+                        self.game.world.cities[c.index].city_id
+                    } else {
+                        self.known_cities[&c.index].0
+                    },
                 })
                 .collect(),
             production_choices: observation
@@ -229,6 +293,89 @@ impl HumanSession {
                 .collect(),
             observation,
         }
+    }
+
+    fn remember(&mut self) {
+        let w = &self.game.world;
+        let bit = 1u8 << self.human;
+        let mut visible = vec![false; w.map.terrain.len()];
+        for i in w.visible_indices(self.human) {
+            visible[i] = true;
+        }
+        let mut newly_known = vec![false; visible.len()];
+        for i in 0..visible.len() {
+            newly_known[i] = self.known_tiles[i].is_none() && w.map.visible[i] & bit != 0;
+            if visible[i] || newly_known[i] {
+                self.known_tiles[i] = Some(crate::player::TileView {
+                    terrain: w.map.terrain[i],
+                    river: w.map.river[i],
+                    special: w.map.special[i],
+                    road: w.map.road[i],
+                    rail: w.map.rail[i],
+                });
+            }
+        }
+        self.known_cities.retain(|index, (id, old)| {
+            let Some(i) = w.map.stored_index(old.x, old.y) else {
+                return false;
+            };
+            !visible[i]
+                || w.cities
+                    .get(*index)
+                    .is_some_and(|c| c.city_id == *id && c.x == old.x && c.y == old.y)
+        });
+        for (index, c) in w.cities.iter().enumerate() {
+            let Some(i) = w.map.stored_index(c.x, c.y) else {
+                continue;
+            };
+            let was_own = self
+                .known_cities
+                .get(&index)
+                .is_some_and(|(id, old)| *id == c.city_id && old.owner == self.human);
+            if c.city_id == 0 {
+                if was_own {
+                    self.known_cities.remove(&index);
+                }
+                continue;
+            }
+            if c.owner & 15 == u16::from(self.human)
+                || visible[i]
+                || newly_known[i]
+                || was_own
+                || (c.known_to & bit != 0
+                    && self
+                        .known_cities
+                        .get(&index)
+                        .is_none_or(|(id, _)| *id != c.city_id))
+            {
+                self.known_cities.insert(
+                    index,
+                    (
+                        c.city_id,
+                        crate::player::CityView {
+                            index,
+                            name: c.name.clone(),
+                            owner: (c.owner & 15) as u8,
+                            x: c.x,
+                            y: c.y,
+                            size: c.size,
+                            building: None,
+                            shield_box: None,
+                            output: None,
+                        },
+                    ),
+                );
+            }
+        }
+    }
+
+    fn knowledge_fingerprint(&self) -> u64 {
+        // Versioned checkpoint consistency, not an authenticity signature.
+        format!("{:?} {:?}", self.known_tiles, self.known_cities)
+            .bytes()
+            .fold(0xcbf2_9ce4_8422_2325, |h, b| {
+                (h ^ u64::from(b)).wrapping_mul(0x100_0000_01b3)
+            })
     }
 
     fn require_research(&mut self) {
@@ -330,6 +477,10 @@ impl HumanSession {
                     to,
                 })
             }
+            (None, Command::Skip { unit }) => {
+                self.unit(unit)?;
+                Some(Order::SkipUnit { unit: unit.slot })
+            }
             (None, Command::Occupy { unit, city }) => {
                 self.unit(unit)?;
                 // Unknown foreign entities cannot be probed through this API.
@@ -383,6 +534,7 @@ impl HumanSession {
         if order == Some(Order::EndTurn) {
             self.next_civ();
         }
+        self.remember();
         self.revision += 1;
         self.require_research();
         let response = Response {
@@ -430,6 +582,7 @@ impl HumanSession {
             } else {
                 self.next_civ();
             }
+            self.remember();
             steps += 1;
             self.revision += 1;
             self.require_research();

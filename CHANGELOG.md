@@ -5,21 +5,31 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
-- Prove the isolated SDL2 desktop candidate on native Windows and Linux (#126):
-  shared owned-art decoding, system-font text/name modal, real OS keyboard/focus/
-  resize/close and packaged launches. Retain numeric evidence and notices; no
-  artwork/fonts bundled and no production SDL dependency yet.
+### v0.12.0 preparation — first playable human turn, both clients
 
-- Add a shared resumable human-session driver for generated games, with explicit
-  research/named founding, production choices, stale/foreign/retry protection,
-  bounded builtin-1 opponents and filtered human views/round notices (#127).
-  Atomic-round science banking is explicit; unsupported government choice stops.
-- Add replay-based human checkpoints restoring pending decisions, retry receipts
-  and private opponent state, including partial turns (engine portion of #131).
-  Both actual client adapters and their human acceptance remain outstanding.
-- Add shared profile Rules/art resolution, bounded BMP/GIF RGBA decoding and
-  measured sprite masks (part of #128). All five retained Original crop opacity
-  counts match; no original assets included. Retain decoder dependency notices.
+- Add `totplay`, a packaged loopback Rust host/browser client, and `totdesktop`,
+  a standalone SDL2 Windows/Linux window. Both use the shared atlas/controller,
+  validated human session and local checkpoint slots (#128–#131).
+- Support generated Original surface setups, map inspection/pan/zoom, stack/unit
+  activation, adjacent land movement/combat and limited city occupation, wait/
+  skip, named founding, own-city inspection/production, required research and
+  explicit end-turn/opponent processing. Confirm attacks/capture and optionally
+  every move; required choices are never silently answered.
+- Retain last-seen terrain and foreign-city information in human views, keeping
+  later hidden changes private. Human checkpoint format 2 binds reconstructed
+  knowledge as well as world/log/resources. Preserve pending research/founding,
+  partial opponents, private policies and retry receipts. Invalid loads preserve
+  the current game; existing slots cannot be overwritten.
+- Prove native SDL2 feasibility on Windows/Linux (#126), add the shared driver
+  and resource decoder (#127), and retain dependency/runtime notices. Packages
+  contain no game artwork, Rules, original saves or fonts.
+- Verify both renderers through real browser/OS input, generated combat/capture
+  routes, checkpoint continuation and cross-platform byte comparisons. Owner
+  ten-round acceptance in both clients remains pending; this is not yet a
+  reviewed release candidate. See docs/v0.12.0-readiness.md.
+- Full city/government/diplomacy, SAV/scenario import, multi-map and sustained
+  campaign acceptance remain later work. Full original-AI reconstruction stays
+  behind completion of the playable-client track.
 
 ## [0.11.0] — UI discovery, reviewed design and client planning
 

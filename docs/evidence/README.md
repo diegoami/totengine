@@ -3808,3 +3808,28 @@ are observations rather than golden byte-parity assertions. Commands, dependency
 notices and explicit limitations: [desktop feasibility](../ui/desktop-feasibility.md)
 and [spike README](../../tools/desktop-spike/README.md). This is not human gameplay
 or a full native-renderer claim.
+## Playable human clients (milestone 10, v0.12 preparation)
+
+`client-atlas-v1.json` retains numeric identities/dimensions/opacity/fingerprints
+for the 141 Original-profile crops used by both clients. Regenerate/check with
+`CIVTOT_HOME=... cargo test -p totui installed_atlas_matches`; an explicit
+`TOTENGINE_ATLAS_MANIFEST_OUT` writes a candidate numeric manifest. A different
+owned installation is supported but does not claim to reproduce this corpus.
+No sprite pixels are retained.
+
+`client-input-route-v1.json` is an authored/recorded 879-input generated-game
+route (seed 2, 32×24, two civs, human 1, difficulty 0), with a ground battle
+and city occupation by round 67. It contains no original map/save/artwork.
+`CIVTOT_HOME=... TOTENGINE_ENCOUNTER_OUT=/tmp/client-encounters cargo test -p
+totui generated_land_encounter -- --ignored --nocapture` reconstructs private
+before/after engine checkpoints. Existing built-in policy authored the route;
+this is automation evidence, not human-play acceptance or a new AI port.
+
+`playable-client-checks.json` retains cross-client/cross-platform checkpoint
+hashes and exact scope/status for real browser and native-window input checks.
+The browser/Linux extended routes match pending-choice continuation and
+combat/capture results byte-for-byte; Windows ten-round checkpoints match.
+Stopped Windows package attempts are explicitly recorded, not counted as passes.
+Reproduction, packaging, remaining owner play and limits:
+[`v0.12.0-readiness.md`](../v0.12.0-readiness.md). The original AI completion
+program remains gated behind full playable-client completion.

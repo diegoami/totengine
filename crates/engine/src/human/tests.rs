@@ -281,8 +281,11 @@ fn invalid_checkpoint_replacement_is_atomic_and_binds_resources_rules_and_versio
     assert!(HumanSession::restore(changed_rules, "assets", &before).is_err());
     assert!(HumanSession::restore(rules(), "different assets", &before).is_err());
     for bad in [
-        before.replace("totengine-human 1", "totengine-human 2"),
-        before.replace("engine 0.11.0", "engine 0.10.0"),
+        before.replace("totengine-human 2", "totengine-human 999"),
+        before.replace(
+            &format!("engine {}", env!("CARGO_PKG_VERSION")),
+            "engine 0.0.0",
+        ),
         before.replace("end\n", ""),
         before.replace("world ", "world 0"),
         before.clone() + "junk\n",
@@ -394,7 +397,7 @@ fn accepted_movement_replays_and_hidden_changes_do_not_enter_human_view() {
         .position(Option::is_none)
         .unwrap();
     s.game.world.map.terrain[hidden] = (s.game.world.map.terrain[hidden] + 1) % 11;
-    assert_eq!(s.view(), view);
+    assert_eq!(s.build_view(), view);
     // Simulate slot reuse while retaining the old client entity reference.
     s.game.world.units[unit.slot].id += 1;
     let before = s.checkpoint("assets");
@@ -414,7 +417,7 @@ fn unsupported_government_and_elimination_stop_with_a_readable_phase() {
     let mut s = session(1);
     choose(&mut s);
     s.game.world.governments[1] = 0;
-    assert_eq!(s.view().phase, Phase::UnsupportedGovernment);
+    assert_eq!(s.build_view().phase, Phase::UnsupportedGovernment);
     let before = s.checkpoint("assets");
     assert_eq!(s.advance(256), 0);
     assert!(s
@@ -431,4 +434,80 @@ fn unsupported_government_and_elimination_stop_with_a_readable_phase() {
     }
     assert_eq!(s.phase(), Phase::Eliminated);
     assert_eq!(s.advance(1), 0);
+}
+
+#[test]
+fn explored_tiles_and_foreign_cities_remember_last_sight_without_hidden_updates() {
+    let mut s = session(1);
+    choose(&mut s);
+    let unit = s.view().units[0];
+    send(&mut s, Command::BeginFound { unit });
+    let Some(Decision::Founding { id, .. }) = s.decision else {
+        panic!()
+    };
+    send(
+        &mut s,
+        Command::NameCity {
+            decision: id,
+            name: CityName::new("Seen city").unwrap(),
+        },
+    );
+    // An authored visibility fixture: first observe a foreign city and its tile.
+    let mut foreign = s.game.world.cities[0].clone();
+    foreign.city_id += 100;
+    foreign.owner = 2;
+    foreign.known_to = 0;
+    foreign.name = "Last seen".into();
+    s.game.world.cities[0].city_id = 0;
+    s.game.world.units[unit.slot].owner = 1;
+    s.game.world.units[unit.slot].x = foreign.x;
+    s.game.world.units[unit.slot].y = foreign.y;
+    s.game.world.cities.push(foreign);
+    s.game.world.units[unit.slot].id = unit.id;
+    s.remember();
+    let old = s.build_view();
+    assert_eq!(old.observation.cities[0].name, "Last seen");
+    let (x, y) = (s.game.world.cities[1].x, s.game.world.cities[1].y);
+    let tile = s.game.world.map.stored_index(x, y).unwrap();
+    // Remove own sight while preserving explored-map bits.
+    for u in &mut s.game.world.units {
+        if u.owner == 1 {
+            u.id = 0;
+        }
+    }
+    let hidden = &mut s.game.world.cities[1];
+    hidden.size += 3;
+    hidden.name = "Secret renamed city".into();
+    hidden.owner = 3;
+    s.game.world.map.road[tile] = !s.game.world.map.road[tile];
+    s.remember();
+    let now = s.build_view();
+    assert_eq!(now.observation.cities, old.observation.cities);
+    assert_eq!(now.observation.seen, old.observation.seen);
+    assert_eq!(now.known_cities, old.known_cities);
+    // A reused slot outside sight must not change the remembered identity.
+    s.game.world.cities[1].city_id += 1;
+    s.remember();
+    assert_eq!(s.build_view().known_cities, old.known_cities);
+    s.known_cities.clear();
+    s.remember();
+    assert!(
+        s.build_view().observation.cities.is_empty(),
+        "new city on an explored tile stays hidden"
+    );
+    // Re-establish actual sight and refresh both city and terrain memory.
+    s.game.world.units[unit.slot].id = unit.id;
+    s.remember();
+    let seen = s.build_view();
+    assert_eq!(seen.observation.cities[0].name, "Secret renamed city");
+    assert_ne!(seen.observation.seen[tile], old.observation.seen[tile]);
+    // Replacing a destroyed city at the same visible position removes its old slot.
+    let mut replacement = s.game.world.cities[1].clone();
+    replacement.city_id += 1;
+    s.game.world.cities[1].city_id = 0;
+    s.game.world.cities.push(replacement);
+    s.remember();
+    let replaced = s.build_view();
+    assert_eq!(replaced.observation.cities.len(), 1);
+    assert_eq!(replaced.observation.cities[0].index, 2);
 }

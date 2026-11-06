@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><meta name="totengine-token" content="__TOKEN__" /><title>
+    ToTEngine — play
+  </title>
+  <style>
+    html,
+    body {
+      margin: 0;
+      background: #171d16;
+      color: #f4eedb;
+      font-family: Georgia, serif;
+      height: 100%;
+      overflow: hidden;
+    }
+    #stage {
+      position: absolute;
+      transform-origin: 0 0;
+      width: 1024px;
+      height: 768px;
+    }
+    canvas {
+      position: absolute;
+      width: 1024px;
+      height: 768px;
+    }
+    input {
+      position: absolute;
+      box-sizing: border-box;
+      background: #121811;
+      color: #f4eedb;
+      border: 1px solid #ebd996;
+      padding: 7px;
+      font:
+        18px Georgia,
+        serif;
+    }
+    #error {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #782e21;
+      color: white;
+      padding: 6px;
+      display: none;
+    }
+  </style>
+  <div id="stage">
+    <canvas
+      id="game"
+      width="1024"
+      height="768"
+      aria-label="ToTEngine game map and controls"
+      tabindex="0"
+    ></canvas
+    ><input
+      id="entry"
+      aria-label="Dialog text"
+      autocomplete="off"
+      spellcheck="false"
+      hidden
+    />
+  </div>
+  <div id="error" role="status"></div>
+  <script src="/play.js" defer></script>
+</html>

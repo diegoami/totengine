@@ -165,7 +165,10 @@ after that gate: #118 (native decision inventory, explicit fidelity boundary
 and revised work estimates). The proposed
 trusted compatibility driver is not an approved amendment of decision 0003.
 v0.10 is released at the reviewed SHA; v0.11 UI discovery/design is next.
-Candidate plan: `docs/decisions/0007-original-like-ai.md` (#106).
+Next-session entry point: #107. Read `docs/decisions/0005-playable-client-planning.md`
+for UI discovery/design acceptance before choosing implementation work; read
+`tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
+v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;
 decision 0002; observing and playing are the two main goals): v0.3.0

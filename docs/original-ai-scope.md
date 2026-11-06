@@ -3,8 +3,11 @@
 Status: scoped proposal, 2026-11-06, requested by the owner after the v0.10
 candidate. Tracking: [program #117](https://github.com/diegoami/totengine/issues/117).
 Baseline: 8f6b57feb44a834a2a452a73e70664ee4895b81a.
-This document does not change or approve that candidate, assign a release
-number, or supersede the accepted v0.11 UI-discovery priority.
+Owner scheduling decision: **complete original-AI reproduction is gated behind
+completion of the playable UI/client work**. v0.11 UI discovery/design comes
+first. The gates below are the sequence for after that UI gate, not the next
+implementation milestones. Read-only scoping/binary questions do not start the
+port. This document assigns no release number or calendar date.
 
 ## What we are delivering
 
@@ -121,7 +124,7 @@ is not an instruction to wait for whole subsystems before testing integration.
 A7 comparisons start during A0 and expand at every gate. A8's inventory starts
 in A0 even though its final implementation depends on multi-map mechanics.
 
-### A0: ready to start, before further heuristic tuning
+### A0: first task after the UI gate
 
 Deliver a machine-readable catalogue of decision families: native entry/caller,
 reads/writes, persistent versus transient state, direct/transitive callees,
@@ -269,14 +272,61 @@ planners are not almost finished because their mechanics already exist.
 
 The critical path is A0 → native decisions plus action/mechanics dependencies
 → matched full-turn execution → A7 → map dependencies → A8. More heuristic
-calibration does not shorten that path. A0 (#118) is the first implementation priority
-within this AI program. Its entry catalogue and missing-state inventory are the
+calibration does not shorten that path. After the playable UI/client gate,
+A0 (#118) is the first implementation priority within this AI program. Its
+entry catalogue and missing-state inventory are the
 basis for estimating person-days/ranges for the remaining gates; a calendar
 date before that would be invented. Record that estimate and assumptions on the
 program issue when A0 exits, and revise it after the first full planner port A1.
 
-v0.11 UI discovery/design remains next in the accepted release roadmap. Later
-client versions and this AI program's release slots must be reconciled with the
-owner after UI scope is known; this document neither postpones UI until A8 nor
-pretends full native AI is scheduled in v0.10/v0.11. External AI protocols and
-tournaments remain after the playable client.
+v0.11 UI discovery/design remains next in the accepted release roadmap.
+**The complete original-AI program waits for the playable UI/client gate.**
+Later client and AI release versions remain unassigned; this scope does not
+schedule A0 before that gate or implement its proposed architecture amendment.
+External AI protocols and tournaments also remain after the playable client;
+this document does not assign their relative order against the full-AI program.
+
+## What the binaries let us recover
+
+The local reference is a roughly 2.1 MiB PE32/i386 Windows executable with seven
+sections, stripped symbols and a zero debug-directory entry. Its instructions
+can be disassembled directly; the existing full listing is about 26 MiB.
+These properties describe the checked reference, not the size of the AI or
+an estimate of porting effort. Re-derive them locally without committing the
+binary or listing:
+
+```sh
+file "$CIVTOT_HOME/civ2.bak"
+objdump -x "$CIVTOT_HOME/civ2.bak" > /tmp/original-pe-headers.txt
+objdump -d -M intel "$CIVTOT_HOME/civ2.bak" > /tmp/original-disassembly.asm
+```
+
+What is recoverable from instructions and measured execution:
+
+- Exact arithmetic/constants, signedness, thresholds, candidate iteration,
+  tie-breaking, branching and random-generator calls on exercised paths.
+- Table and field accesses, caller/callee relationships, mutation order and
+  gameplay side effects, once their runtime inputs have been identified.
+- Decision routines as executable references: the existing complete research
+  scorer/selector and production selector already demonstrate this capability.
+  Research has 12,800 exact valuations plus full selections; production has
+  918 native calls across five positions and six difficulties. The production
+  selector is executable in the probe but has not been ported into the player.
+
+What needs dynamic investigation rather than plausible pseudocode:
+
+- Which globals/caches the original refreshes, their phase/preconditions, and
+  saved versus transient state; caller context and callbacks matter.
+- Rare branches, cross-unit/turn missions, indirect dispatch, UI/native-action
+  boundaries, imported helper behavior and executable/patch identity.
+- Meaningful field/routine names. Stripped symbols do not remove the behavior,
+  but the original source names, comments, abstractions and design intent are
+  not recoverable as the original text from these binaries.
+
+The evidence supports high confidence for the routines and inputs we actually
+check. It does not justify a percentage of all AI recovered, nor a promise
+that a decompiler output is a complete implementation. In principle the machine
+code specifies the reachable algorithmic behavior; in practice the remaining
+work is mapping it, recreating the state/mechanics it reads and validating path
+coverage. The post-UI A0 inventory measures that unknown surface. No additional
+planner port or live full-AI trace is started by this read-only assessment.

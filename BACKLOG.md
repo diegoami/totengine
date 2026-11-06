@@ -24,9 +24,10 @@
 The owner-requested complete original-AI port is scoped in
 [docs/original-ai-scope.md](docs/original-ai-scope.md) and tracked by
 [program #117](https://github.com/diegoami/totengine/issues/117), with ordered
-A0–A8 delivery gates. The first AI task is the inventory/fidelity-boundary
-story #118. These gates are not assigned release versions and do not move
-v0.11 UI discovery or the post-client external-AI work.
+A0–A8 delivery gates. Full original-AI reproduction is gated behind the
+playable UI/client work (owner decision, 2026-11-06). The first AI task after
+that gate is inventory/fidelity-boundary story #118. These gates have no
+assigned release versions; v0.11 UI discovery remains next.
 
 This file keeps the working conventions only. The story tables it used to
 hold (stories T0-1 … RG-11 with their acceptance and status notes) are in

@@ -258,3 +258,17 @@ proposal. Decision 0003 is not silently amended by this scoping work. The
 existing v0.10 candidate and #116 review remain pinned to their recorded SHA.
 v0.11 UI discovery/design retains its accepted position. Full-AI release slots
 and calendar estimates depend on A0's inventory and later roadmap reconciliation.
+
+
+## Release and owner priority clarification (2026-11-06)
+
+GLM-5.3 independently returned AGREE on #116 for
+`8f6b57feb44a834a2a452a73e70664ee4895b81a`, with no findings. Native reports,
+production comparisons and the full 64-run audit were reproduced byte for
+byte. v0.10.0 is tagged at exactly that SHA.
+
+The owner explicitly confirmed that **complete original-AI reproduction stays
+gated behind completion of the playable UI/client work**. v0.11 UI discovery
+remains next; #118/A0 is the first full-AI task after the UI gate, not the next
+release. The binary assessment in `docs/original-ai-scope.md` records what can
+be inferred from the existing reference/evidence without beginning that port.

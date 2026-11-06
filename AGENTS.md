@@ -132,8 +132,10 @@ The independent reviewer reproduced all retained comparisons/trajectories
 byte-identically, passed 194 install-backed Rust tests, five Python evidence
 tests, golden/fmt/clippy and the 32-seed nightly suite. No MUST-FIX findings;
 #111's stale CLI status is corrected after the tag. `docs/v0.9.0-readiness.md`
-records gates and material geography limits. Next: v0.10 original-like AI.
-v0.10 is in progress: `engine::ai_research` implements original research
+records its gates and material geography limits.
+**v0.10.0 "built-in opponent: research and land campaigns"** is released
+(AGREE on #116, GLM-5.3, one round, no findings; tag 8f6b57f).
+`engine::ai_research` implements original research
 selection (512 isolated contexts) and full advance valuation (12,800 values
 and 128 complete selections, unmodified native callees). Numeric regression
 fixtures run without assets. Parsed Rules/world adapters and the native selector
@@ -150,17 +152,19 @@ FallRome remains 42/750. Known-land settlement/military routing and explicit
 `OccupyCity` now support war/ownership transfer. Loot/building/population
 kernels match 843 native vectors; capital/diplomacy/technology/cargo capture
 handling remains partial. Six authored campaign/strategy tests plus event/replay
-checks cover the integration. The v0.10 candidate passes 209 install-backed Rust tests, full golden/fmt/clippy,
+checks cover the integration. The reviewed v0.10 candidate passed 209 install-backed Rust tests, full golden/fmt/clippy,
 32 seeds per policy in the nightly suite, 64 retained campaign comparisons
 with exact replay (36 also continue through checkpoints), and the real-browser
-100-round test. Candidate readiness/limits: `docs/v0.10.0-readiness.md`.
-Owner-run milestone review is next; no tag or agent-launched review.
+100-round test. Release readiness/limits: `docs/v0.10.0-readiness.md`.
+The release tag points exactly to the independently reviewed SHA.
 v0.10 is original-derived, not the complete original AI. The owner's subsequent
 full-port scope is `docs/original-ai-scope.md`, program #117: A0–A7 standard-game
-completion, A8 full vanilla maps/scenarios. First AI task: #118 (native decision
-inventory, explicit fidelity boundary and revised work estimates). The proposed
+completion, A8 full vanilla maps/scenarios. **The complete AI program is gated
+behind the playable UI/client work** (owner decision, 2026-11-06). First AI task
+after that gate: #118 (native decision inventory, explicit fidelity boundary
+and revised work estimates). The proposed
 trusted compatibility driver is not an approved amendment of decision 0003.
-The v0.10 candidate/review #116 stays unchanged; v0.11 UI discovery remains.
+v0.10 is released at the reviewed SHA; v0.11 UI discovery/design is next.
 Candidate plan: `docs/decisions/0007-original-like-ai.md` (#106).
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

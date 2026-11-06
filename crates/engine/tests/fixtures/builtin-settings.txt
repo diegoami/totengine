@@ -1,0 +1,52 @@
+; Authored built-in AI test settings. No original data.
+@ENDWONDER
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+nil
+@LEADERS
+Leader 0, Partner 0, 0, 1, 0, People 0, Own 0, 0, 0, -1
+Leader 1, Partner 1, 0, 1, 0, People 1, Own 1, 0, 0, 0
+Leader 2, Partner 2, 0, 1, 0, People 2, Own 2, 0, 0, 1
+Leader 3, Partner 3, 0, 1, 0, People 3, Own 3, 0, 0, -1
+Leader 4, Partner 4, 0, 1, 0, People 4, Own 4, 0, 0, 0
+Leader 5, Partner 5, 0, 1, 0, People 5, Own 5, 0, 0, 1
+Leader 6, Partner 6, 0, 1, 0, People 6, Own 6, 0, 0, -1
+Leader 7, Partner 7, 0, 1, 0, People 7, Own 7, 0, 0, 0
+Leader 8, Partner 8, 0, 1, 0, People 8, Own 8, 0, 0, 1
+Leader 9, Partner 9, 0, 1, 0, People 9, Own 9, 0, 0, -1
+Leader 10, Partner 10, 0, 1, 0, People 10, Own 10, 0, 0, 0
+Leader 11, Partner 11, 0, 1, 0, People 11, Own 11, 0, 0, 1
+Leader 12, Partner 12, 0, 1, 0, People 12, Own 12, 0, 0, -1
+Leader 13, Partner 13, 0, 1, 0, People 13, Own 13, 0, 0, 0
+Leader 14, Partner 14, 0, 1, 0, People 14, Own 14, 0, 0, 1
+Leader 15, Partner 15, 0, 1, 0, People 15, Own 15, 0, 0, -1
+Leader 16, Partner 16, 0, 1, 0, People 16, Own 16, 0, 0, 0
+Leader 17, Partner 17, 0, 1, 0, People 17, Own 17, 0, 0, 1
+Leader 18, Partner 18, 0, 1, 0, People 18, Own 18, 0, 0, -1
+Leader 19, Partner 19, 0, 1, 0, People 19, Own 19, 0, 0, 0
+Leader 20, Partner 20, 0, 1, 0, People 20, Own 20, 0, 0, 1

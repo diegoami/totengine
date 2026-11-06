@@ -27,8 +27,9 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-The version on `main` is **v0.8.0 "AI v1 + economy depth"**. A version counts as
-released once its `vX.Y.Z` tag exists
+The version on `main` is the **v0.10.0 built-in opponent candidate**; the
+latest released tag is **v0.9.0**. A version counts as released once its
+`vX.Y.Z` tag exists
 ([tags](https://github.com/diegoami/totengine/tags); see
 [CHANGELOG.md](CHANGELOG.md); the queue is the GitHub
 [milestones](https://github.com/diegoami/totengine/milestones)).
@@ -39,13 +40,15 @@ What runs today, headless, against your own ToT install:
   exactly; macro events; city growth; tile yields, corruption, waste and
   the production queue, each decoded from the original executable and
   replayed against its saves.
-- **New games:** start placement reproduces the original's new games
-  draw for draw, goody huts included.
+- **New games:** seeded engine-designed worlds, decoded start-placement
+  sampling, AI autoplay and deterministic checkpoints (`totctl campaign`;
+  [scope and usage](docs/generated-campaign.md)).
 - **Players:** every civ is driven by a player behind a headless
   interface, and games replay bit-exact from their order logs
   (`totctl play` / `totctl replay`; decision 0003).
-- **AI:** an all-AI game runs headless; AI v0 explores, founds cities and
-  builds (`totctl play --ai`).
+- **AI:** the built-in opponent researches, expands, reserves garrisons,
+  builds field armies, attacks and occupies cities (`totctl play --builtin`).
+  Campaigns and browser observation use it by default; legacy AI options remain.
 - **Browser observer:** watch live AI turns or
   replay a finished game, with full-map/per-civ fog views and turn controls
   (`totctl observe`; [usage and stream format](docs/browser-observer.md)).
@@ -57,7 +60,11 @@ happiness, wonder effects and capital road/rail waste. Controlled acceptance
 checks match 50 original-written city saves and 64 live barbarian phases;
 50-turn AI runs are deterministic and replay. The [completion record](docs/v0.8.0-readiness.md)
 and [evidence](docs/evidence/README.md) describe the fixtures and limits.
-Original-like AI is the v0.10 target; client design starts at v0.11.
+The v0.10 candidate adds original-derived research scoring and controlled
+production comparisons across six difficulties, with supported land campaigns
+and explicit remaining differences. See [the readiness record](docs/v0.10.0-readiness.md)
+and [decision 0007](docs/decisions/0007-original-like-ai.md). Full original-AI
+parity is not claimed. Owner-reviewed client discovery/design starts at v0.11.
 
 ```bash
 # Rust CLI (successor of the Python probe)

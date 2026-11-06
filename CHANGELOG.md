@@ -5,17 +5,28 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+## [0.10.0] — built-in opponent: research and land campaigns
+
 - Add the original research selection kernel, including CRT consumption and
   human recommendation filtering, checked against 512 isolated native contexts.
   Add full advance valuation: leader/context adjustments, dependency priorities,
   wonder expiry, growth and naval development; 12,800 values and 128 complete
-  choices match original execution without callee replacements. Campaign AI
-  integration remains pending (#106).
+  choices match original execution without callee replacements (#106).
 
 - Add parsed Rules/world research adapters and the native selector eligibility
   gate, checked against 1,400 saved-input scores and 84 complete choices across
   Original/FallRome positions and six difficulties. Verify leader trait loading
   and annotated technology references; retain the existing player boundary.
+
+- Integrate observation-only `builtin-1` research, expansion and military policy
+  through saved-game play/browser observation and generated campaigns. Default
+  generated campaigns and browser observation to this policy; retain
+  explicit policy identity and deterministic checkpoint continuation/replay.
+
+- Add validated surface city occupation through the player interface, including
+  CITYTAKEN effects, ownership, plunder, building/population loss, displaced
+  units and destruction. Retain 843 native capture-kernel vectors; complete
+  capital/diplomacy/technology/transport capture handling remains outside scope.
 
 - Remove the stale "comparison pending" label from `totctl worldgen`
   (non-blocking v0.9 review follow-up #111); retain its engine-designed caveat.

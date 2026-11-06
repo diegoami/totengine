@@ -13,6 +13,7 @@ mod allocation;
 pub mod barbarians;
 pub mod calendar;
 pub mod campaign;
+pub mod capture;
 pub mod city_phase;
 pub mod combat;
 pub mod connections;
@@ -105,6 +106,7 @@ pub struct City {
     pub size: u16,
     pub owner: u16,
     pub city_id: u32,
+    /// Ownership-history byte +12; capture records the previous owner here.
     pub original_owner: u8,
     /// Saved city knowledge mask +14 and per-civ remembered sizes +15..23.
     pub known_to: u8,

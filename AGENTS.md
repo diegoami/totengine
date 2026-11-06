@@ -141,8 +141,20 @@ gate now match 1,400 saved-input scores and 84 choices (Original + FallRome,
 all seven civs/six difficulties). Leader field loading and 142 reference tokens
 are separately native-checked. Context refreshes ownership/naval inputs but
 does not claim a full native statistics pass or custom saved-leader overrides.
-Observation-safe policy integration and campaign policy identity remain open;
-AI v1 campaigns are unchanged.
+`BuiltInAi` now uses an observation-only research context and explicit
+`builtin-1` identity (`play/observe --builtin`, `campaign --policy builtin-1`);
+format-2 checkpoints restore private policy state. CLI campaign/observer defaults use the new policy; explicit legacy options
+and the AI v1 golden remain available. Production compares 918 native prepared choices across six
+difficulties: standard archived holdout 84/108 exact vs AI v1 12/108, but
+FallRome remains 42/750. Known-land settlement/military routing and explicit
+`OccupyCity` now support war/ownership transfer. Loot/building/population
+kernels match 843 native vectors; capital/diplomacy/technology/cargo capture
+handling remains partial. Six authored campaign/strategy tests plus event/replay
+checks cover the integration. The v0.10 candidate passes 209 install-backed Rust tests, full golden/fmt/clippy,
+32 seeds per policy in the nightly suite, 64 retained campaign comparisons
+with exact replay (36 also continue through checkpoints), and the real-browser
+100-round test. Candidate readiness/limits: `docs/v0.10.0-readiness.md`.
+Owner-run milestone review is next; no tag or agent-launched review.
 Next plan: `docs/decisions/0007-original-like-ai.md` (#106).
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;

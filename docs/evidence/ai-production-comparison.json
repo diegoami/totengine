@@ -1,0 +1,173 @@
+{
+  "source_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routine": "0x47e26b",
+  "replacement_callees": [],
+  "sources": [
+    {
+      "save": "standard",
+      "save_sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef",
+      "rules_sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef",
+      "saved_sea_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "refreshed_sea_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "leader_modifiers_verified": 21,
+      "reference_tokens_verified": 90,
+      "partition": "calibration",
+      "choices": 60,
+      "exact_matches": {
+        "ai-v1": 0,
+        "builtin": 48
+      }
+    },
+    {
+      "save": "fallrome",
+      "save_sha256": "394449e92f7b2d73fcfe6cd21e5d688213619dad6b4bad5f836fe0f79a942d07",
+      "rules_sha256": "e2d841e2e6722095470eefb0ece1311643d6652ba300649d7bf0bc7800bf81be",
+      "saved_sea_counts": [
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "refreshed_sea_counts": [
+        0,
+        10,
+        5,
+        0,
+        7,
+        0,
+        10,
+        0
+      ],
+      "leader_modifiers_verified": 21,
+      "reference_tokens_verified": 52,
+      "partition": "holdout",
+      "choices": 750,
+      "exact_matches": {
+        "ai-v1": 42,
+        "builtin": 42
+      }
+    },
+    {
+      "save": "std1-turn01.sav",
+      "save_sha256": "f8a1345094d72336f6a956f854a037e29f7531abb9f85ae23d01839d7c8c871d",
+      "rules_sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef",
+      "saved_sea_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "refreshed_sea_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "leader_modifiers_verified": 21,
+      "reference_tokens_verified": 90,
+      "partition": "holdout",
+      "choices": 24,
+      "exact_matches": {
+        "ai-v1": 12,
+        "builtin": 12
+      }
+    },
+    {
+      "save": "std1-turn10.sav",
+      "save_sha256": "81b3f3e88c0a4972908b8c72dfae624da9c88a3ad59838f3c462c67a29df9457",
+      "rules_sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef",
+      "saved_sea_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "refreshed_sea_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "leader_modifiers_verified": 21,
+      "reference_tokens_verified": 90,
+      "partition": "holdout",
+      "choices": 24,
+      "exact_matches": {
+        "ai-v1": 0,
+        "builtin": 24
+      }
+    },
+    {
+      "save": "std1-final_Ph_Auto.SAV",
+      "save_sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef",
+      "rules_sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef",
+      "saved_sea_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "refreshed_sea_counts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "leader_modifiers_verified": 21,
+      "reference_tokens_verified": 90,
+      "partition": "holdout",
+      "choices": 60,
+      "exact_matches": {
+        "ai-v1": 0,
+        "builtin": 48
+      }
+    }
+  ],
+  "scope": "Original complete build selector on prepared saved inputs; per-case NR/CRT seed 106, city accounting collection off and presentation context quiet, source mechanics mask retained. Engine choices use own observations and private generators. Exact agreement is descriptive, not full original AI parity or a statistical acceptance gate."
+}

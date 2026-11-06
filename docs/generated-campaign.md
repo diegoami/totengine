@@ -1,7 +1,8 @@
 # Generated-world campaigns
 
 `totctl campaign` boots an engine-designed surface world directly from a
-seed and Rules. It uses no reference save. AI v1 drives every civilization.
+seed and Rules. It uses no reference save. The v0.10 `builtin-1` opponent
+drives every civilization; `--policy ai-v1` selects the legacy policy.
 
 ```sh
 cargo run -p totctl -- campaign "$CIVTOT_HOME/Original/Rules.txt" \
@@ -11,12 +12,12 @@ cargo run -p totctl -- campaign "$CIVTOT_HOME/Original/Rules.txt" \
   --resume /tmp/campaign.ctc --turns 50 --checkpoint /tmp/campaign-150.ctc
 # Asset-free authored test rules also work:
 cargo run -p totctl -- campaign crates/engine/tests/fixtures/campaign-rules.txt \
-  --seed 7 --turns 100
+  --policy ai-v1 --seed 7 --turns 100
 ```
 
 Options: `--seed` (sets world and gameplay seeds), `--width`, `--height`,
 `--land-percent`, `--civs` (2–7), `--difficulty` (0–5), `--turns`,
-`--checkpoint`, `--log`, and `--resume`. Resume uses its recorded setup and
+`--checkpoint`, `--log`, `--policy ai-v1|builtin-1`, and `--resume`. Resume uses its recorded setup and
 rejects setup overrides. Outputs refuse to overwrite an existing file.
 The default is an 80×50 logical world, 47% land, five AI civs, difficulty 2,
 seed 1, and 100 rounds. Generator bounds are documented by `totctl worldgen`;
@@ -46,11 +47,15 @@ are derived from the fresh world before play.
 
 Only the standard surface terrain IDs and classic unit/advance capacities
 are supported. Scenario events, authored scenario starts and multiplayer
-setup are outside this command's scope. Original-like AI remains v0.10.
+setup are outside this command's scope. The built-in policy requires the classic
+research/leader tables; the smaller authored campaign fixture supports AI v1.
+See [decision 0007](decisions/0007-original-like-ai.md) for behavioral scope.
 
 ## Checkpoint contract
 
 `.ctc` is a versioned **engine replay checkpoint**, not a native `.SAV`.
+Format 1 retains AI v1. Format 2 records the explicit `builtin-1` policy;
+unknown policies and policy overrides during resume are rejected.
 It records initialization/generator versions, setup, engine package version,
 Rules identity, the full order log and the final world fingerprint. Restore
 rebuilds the initial world and AI players, replays the deterministic AI
@@ -70,7 +75,7 @@ rules have fired.
 
 The authored-rules 100-round golden contains the complete order transcript
 and final fingerprint in `docs/evidence/generated-campaign-v1.ctc`.
-Regular tests compare it byte for byte. The scheduled workflow runs 32 seeds
+Regular tests compare it byte for byte. The scheduled workflow runs both policies across 32 seeds
 for 100 rounds each, comparing uninterrupted play against checkpoint restore
 at round 37 plus 63 more rounds and independently replaying each order log.
 

@@ -61,3 +61,45 @@ fn hundred_turn_observer_cli_replays_identically() {
     assert_eq!(a, std::fs::read(&live).unwrap());
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn builtin_observer_stream_replays_identically() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME").map(PathBuf::from) else {
+        return;
+    };
+    let save = home.join("Original/Ph_Auto2.SAV");
+    let dir =
+        std::env::temp_dir().join(format!("totengine-builtin-observer-{}", std::process::id()));
+    std::fs::create_dir(&dir).unwrap();
+    let live = dir.join("live.ndjson");
+    let replay = dir.join("replay.ndjson");
+    let log = dir.join("orders.log");
+    for replaying in [false, true] {
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_totctl"));
+        cmd.arg("observe").arg(&save);
+        if replaying {
+            cmd.arg("--replay").arg(&log);
+        } else {
+            cmd.args(["--turns", "50", "--seed", "7", "--log"])
+                .arg(&log);
+        }
+        let output = cmd
+            .arg("--stream")
+            .arg(if replaying { &replay } else { &live })
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    let text = std::fs::read_to_string(&log).unwrap();
+    assert!(text.contains("research "));
+    assert_eq!(
+        std::fs::read(&live).unwrap(),
+        std::fs::read(&replay).unwrap()
+    );
+    assert_eq!(std::fs::read_to_string(&live).unwrap().lines().count(), 51);
+    std::fs::remove_dir_all(dir).unwrap();
+}

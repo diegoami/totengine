@@ -1,0 +1,24 @@
+{
+  "policy": "builtin-1",
+  "seed": 7,
+  "rounds": 100,
+  "frames": 101,
+  "final_turn": 143,
+  "final_checksum": "95887f80394d960d",
+  "outcomes": {
+    "research-set": 39,
+    "moved": 6313,
+    "ended": 500,
+    "prod-set": 274,
+    "attack": 88,
+    "founded": 41,
+    "occupied": 25
+  },
+  "razed_occupations": 7,
+  "save_sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef",
+  "rules_sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef",
+  "scope": "Real Chromium observer smoke test on the standard save with sibling events as loaded by totctl. Existing script verified live stepping, fog, play/pause, restart during seek, archive download/import, invalid archive rejection and identical final replay canvas pixels. Engine policy demonstration; no native campaign parity claim.",
+  "screenshot_sha256": "9114516e66602f2ac4229681afa2e3ee04da84cf065468fabbbc00a9cca79ffc",
+  "final_cities": 43,
+  "final_units": 174
+}

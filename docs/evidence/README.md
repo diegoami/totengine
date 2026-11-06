@@ -3595,3 +3595,139 @@ cmp /tmp/ai-research-adapter.txt crates/engine/tests/fixtures/ai-research-adapte
 CIVTOT_HOME=/path/to/CIVTOT cargo test -p engine --test ai_research_adapter_install
 cargo test -p engine --test ai_research_adapter
 ```
+
+### Built-in policy production comparison (#106, v0.10)
+
+`tools/ai_production_compare.py` executes the complete original build selector
+`0x47e26b` on prepared saved inputs, with **no replacement scoring callees**.
+It restores the baseline memory for every live non-barbarian city and each of
+six difficulties, seeds both original generators to 106 and records the
+selected item and final generator states. Inputs include native-resolved
+technology references, leader/group tables, full unit scalar fields
+(including obsolescence, civ mask, hit-point scaling and Rules movement
+multiplier), improvements/upkeep and the saved map/city/civ caches. City
+accounting collection is off and presentation context is quiet. These are
+prepared independent choices; they are not executions of complete native
+turns or a reconstruction of all campaign caches.
+
+The engine example collects both policies' production intentions through
+the player interface, before the turn kernel's existing obsolete-build
+replacement. A raw unit-ID mismatch can therefore still produce the same
+upgraded unit; the percentages do not measure completed production. Its observation and private RNG differ from the
+original's privileged context and shared RNG. `ai-production-comparison.json`
+and `ai-production-choices.txt` retain **918 choices**:
+
+| Input | Partition | Choices | AI v1 exact | Built-in exact |
+|---|---|---:|---:|---:|
+| Standard initial save | Calibration | 60 | 0 | 48 |
+| FallRome | Holdout | 750 | 42 | 42 |
+| std1 turn 01 | Holdout | 24 | 12 | 12 |
+| std1 turn 10 | Holdout | 24 | 0 | 24 |
+| std1 final | Holdout | 60 | 0 | 48 |
+
+The standard archived holdout improves from 12/108 to 84/108 exact choices.
+FallRome stays at **42/750 (5.6%)**: advanced worker/settler production,
+development and scenario-specific planning remain substantial differences.
+No acceptance budget was frozen and these percentages are descriptive. The
+calibration changes were made using the standard initial position; the
+remaining positions were retained for the reported holdout evaluation.
+The retained std1 saves include the historical oracle/human workflow and are
+not claimed to be controlled all-AI original campaigns.
+
+```sh
+cargo build -p engine --example ai_build_choices --release
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+  python3 tools/ai_production_compare.py \
+  --engine-example target/release/examples/ai_build_choices \
+  --holdout-root /path/to/retained/std1 \
+  --vectors /tmp/ai-production-choices.txt > /tmp/ai-production-comparison.json
+```
+
+The report and vectors reproduced byte-for-byte after integration. The
+retained private saves are identified by hashes in the report; obtaining
+those exact archived inputs is required for the full reproduction.
+
+### Military capture subkernels (#106, v0.10)
+
+`capture-kernels.json` and `capture-kernel-vectors.txt` retain **843 native
+checks**: loot `0x53adc6` (75), building attrition
+`0x53d9ac..0x53da34` (192), and military population loss for non-barbarian
+conquerors `0x53da34..0x53dc1f` (576). The instruction ranges use authored
+caller frames and stop before city destruction/ownership transfer. A control
+hook stops the size-one recapture exit; it replaces no callee or decision.
+Cases cover both alternating masks, recapture, capture modes, positive
+signed-byte city sizes, low/high treasury arithmetic, population caches,
+human masks, city knowledge and saved power ranks. Final CRT states are
+checked alongside values. No original game records/assets are retained.
+
+An additional eight native checks at `0x53f522..0x53f55c` prove that city
+byte +12 records the previous owner after capture; it is not an immutable
+founder identity. They are retained as `owner_history_checks` in the report.
+
+The Rust kernel test consumes every vector. Player tests cover defended-city
+rejection without state/RNG change, occupation and transferred economy,
+rehoming a lone defender, size-one destruction with route/wonder cleanup,
+and an authored CITYTAKEN effect with independent order-log replay. The
+explicit order preserves earlier `move` replay semantics. The enclosing
+engine occupation transition remains partial: no native capital relocation,
+civil war, technology plunder, civilization respawn, full diplomacy or cargo
+handling is claimed. See decision 0007.
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+  python3 tools/capture_check.py --vectors /tmp/capture-kernel-vectors.txt \
+  --report /tmp/capture-kernels.json
+cargo test -p engine --lib capture::tests
+cargo test -p engine --test builtin_campaign
+```
+
+### Built-in opponent in the browser (#106)
+
+`builtin-observer.json` and `builtin-observer.png` retain a real Chromium
+observer demonstration on the standard save with seed 7 and the built-in
+policy: **100 rounds / 101 frames**, 88 battles, 41 founding results and 25
+occupations (seven razed). The order log contains no rejected orders. The
+final frame is turn 143, checksum `95887f80394d960d`, with 43 cities and 174
+units. All map rendering is the observer's own geometric artwork.
+
+The existing `tools/test_observer_browser.cjs` checks fog, step/back,
+play/pause, restart during seek, archive download/import, malformed archive
+rejection and identical final replay canvas pixels. Separately, the CLI
+install test requires all 51 frames from a 50-round built-in run to equal
+verified order-log replay byte for byte. This demonstrates the resulting
+engine opponent; it is not an original-game campaign comparison.
+
+```sh
+cargo run --release -p totctl -- observe \
+  "$CIVTOT_HOME/Original/Ph_Auto2.SAV" --builtin --turns 100 --seed 7 --port 0
+# Against the printed loopback URL, with external Playwright/Chromium:
+node tools/test_observer_browser.cjs http://127.0.0.1:PORT
+```
+
+### Built-in campaign cohort (#106)
+
+`ai-campaign-audit.json` retains **64 runs** comparing AI v1 and `builtin-1`:
+three generated-world seeds × six difficulties × two policies (100 rounds),
+two standard-save seeds × six difficulties × two policies (100 rounds), and
+one FallRome seed × two endpoint difficulties × two policies (25 rounds).
+Every case reaches its requested round count, independently replays its
+complete order log and has zero rejected orders. All 36 generated runs also
+restore a halfway checkpoint and require byte-identical continuation. The
+scheduled authored-rules suite independently covers 32 seeds for each policy.
+
+The built-in cohort makes 90 generated-world occupations, 254 standard-save
+occupations and 114 FallRome occupations. Final city ranges and baseline
+comparisons are in `docs/v0.10.0-readiness.md`. These are engine sustainability
+and replay checks; they execute no native original turns and establish no
+original campaign or AI-strength parity. Source hashes and numeric metrics
+are retained; original saves/Rules are read only. Difficulty changes use the
+typed editor on an in-memory copy. The mechanics cohort disables events;
+the separate browser run uses normal sibling-event loading. FallRome takes
+minutes under both policies; the shorter scenario window is explicit.
+
+```sh
+cargo build -p engine --example ai_policy_audit --release
+CIVTOT_HOME=/path/to/CIVTOT python3 tools/ai_campaign_audit.py \
+  --engine-example target/release/examples/ai_policy_audit \
+  --report /tmp/ai-campaign-audit.json
+```

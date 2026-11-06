@@ -31,6 +31,11 @@ pub enum Order {
         unit: usize,
         to: (u16, u16),
     },
+    /// Enter and capture an adjacent undefended surface city.
+    OccupyCity {
+        unit: usize,
+        city: usize,
+    },
     /// Set city `city`'s build item: unit type ≥ 0, improvement `-id` < 0.
     SetProduction {
         city: usize,
@@ -56,6 +61,10 @@ pub enum OrderResult {
     Attacked {
         won: bool,
     },
+    Occupied {
+        city: usize,
+        razed: bool,
+    },
     ProductionSet,
     ResearchSet,
     /// A city was founded; its index.
@@ -69,6 +78,7 @@ impl fmt::Display for Order {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Order::Move { unit, to } => write!(f, "move {unit} {} {}", to.0, to.1),
+            Order::OccupyCity { unit, city } => write!(f, "occupy {unit} {city}"),
             Order::SetProduction { city, item } => write!(f, "prod {city} {item}"),
             Order::SetResearch { advance } => write!(f, "research {advance}"),
             Order::FoundCity { unit } => write!(f, "found {unit}"),
@@ -83,6 +93,9 @@ impl fmt::Display for OrderResult {
             OrderResult::Moved => write!(f, "moved"),
             OrderResult::Attacked { won } => {
                 write!(f, "attack {}", if *won { "won" } else { "lost" })
+            }
+            OrderResult::Occupied { city, razed } => {
+                write!(f, "occupied {city} {}", u8::from(*razed))
             }
             OrderResult::ProductionSet => write!(f, "prod-set"),
             OrderResult::ResearchSet => write!(f, "research-set"),
@@ -100,6 +113,10 @@ impl Order {
             ["move", u, x, y] => Some(Order::Move {
                 unit: u.parse().ok()?,
                 to: (x.parse().ok()?, y.parse().ok()?),
+            }),
+            ["occupy", u, c] => Some(Order::OccupyCity {
+                unit: u.parse().ok()?,
+                city: c.parse().ok()?,
             }),
             ["prod", c, i] => Some(Order::SetProduction {
                 city: c.parse().ok()?,
@@ -181,6 +198,13 @@ pub struct Observation {
     pub government: u8,
     pub techs: [u8; 13],
     pub research: crate::research::ResearchView,
+    /// Own leader and public setup inputs for research policy. These carry no
+    /// foreign knowledge, reputation, treaties or landmass caches.
+    pub leader_id: i16,
+    pub research_flags: u16,
+    pub scenario_flags: Option<u16>,
+    /// Own wonder hosts, indexed by wonder ID; foreign hosts are absent.
+    pub own_wonders: [Option<usize>; 28],
     /// Logical x range and height of the map.
     pub w2: u16,
     pub h: u16,
@@ -376,6 +400,16 @@ impl WorldState {
             government: self.governments.get(c).copied().unwrap_or(0),
             techs: self.techs.get(c).copied().unwrap_or([0; 13]),
             research: self.observe_research(rules, civ),
+            leader_id: self.ai_state.leader_ids.get(c).copied().unwrap_or(-1),
+            research_flags: self.research_settings.flags,
+            scenario_flags: self.ai_state.scenario_flags,
+            own_wonders: self.wonders.map(|host| {
+                usize::try_from(host).ok().filter(|&i| {
+                    self.cities
+                        .get(i)
+                        .is_some_and(|city| city.city_id != 0 && city.owner == u16::from(civ))
+                })
+            }),
             w2: (2 * self.map.stored_w) as u16,
             h: self.map.stored_h as u16,
             seen: (0..self.map.terrain.len())
@@ -451,6 +485,38 @@ impl WorldState {
                     Ok(c) => {
                         self.reveal(civ);
                         OrderResult::Founded(c)
+                    }
+                    Err(why) => OrderResult::Rejected(why),
+                }
+            }
+            Order::OccupyCity { unit, city } => {
+                if self
+                    .units
+                    .get(unit)
+                    .is_none_or(|u| u.id == 0 || u.owner != civ)
+                {
+                    return OrderResult::Rejected("not your unit");
+                }
+                let name = self.cities.get(city).map(|c| c.name.clone());
+                match self.occupy_city(rules, unit, city) {
+                    Ok(out) => {
+                        if !out.razed {
+                            if let Some(events) = events {
+                                let ctx = crate::events::Ctx {
+                                    city: name,
+                                    attacker: Some(self.civ_name(out.new_owner).to_owned()),
+                                    defender: Some(self.civ_name(out.old_owner).to_owned()),
+                                    turn: Some(self.turn as i32),
+                                    ..Default::default()
+                                };
+                                self.fire_event(rules, events, "CITYTAKEN", &ctx);
+                            }
+                        }
+                        self.reveal(civ);
+                        OrderResult::Occupied {
+                            city,
+                            razed: out.razed,
+                        }
                     }
                     Err(why) => OrderResult::Rejected(why),
                 }
@@ -844,6 +910,45 @@ Knights, nil, 0, 2., 0, 4a, 2d, 1h, 1f, 4, 0, 1, Chv, 000000000000000\n\
             g.players[civ] = Some(Box::new(RandomPlayer::new(seed, civ as u8)));
         }
         g
+    }
+
+    #[test]
+    fn occupation_logs_replay_and_citytaken_effects_apply() {
+        let rules = tot_kit::parse_rules(RULES);
+        let mut raw = synthetic_save_bytes();
+        let parsed = tot_kit::parse_sav(&raw).unwrap();
+        let base = parsed.city_offset;
+        raw[base..base + 2].copy_from_slice(&4u16.to_le_bytes());
+        raw[base + 2..base + 4].copy_from_slice(&0u16.to_le_bytes());
+        raw[base + 10] = 2;
+        raw[base + 11] = 3;
+        raw[base + 12] = 2;
+        raw[base + 86..base + 90].copy_from_slice(&1u32.to_le_bytes());
+        let mut editor = tot_kit::SavEditor::new(&raw).unwrap();
+        editor.set_unit_type(0, 1).unwrap();
+        editor.set_unit_pos(0, 2, 0).unwrap();
+        editor.set_unit_pos(1, 7, 3).unwrap();
+        let raw = editor.into_bytes();
+        let events = || {
+            crate::events::EventEngine::new(tot_kit::parse_events(
+            "@IF\nCITYTAKEN\ncity=City0\nattacker=Testers\ndefender=ANYBODY\n@THEN\nCHANGEMONEY\nreceiver=TriggerAttacker\namount=17\nJUSTONCE\n@ENDIF\n"
+        ).unwrap())
+        };
+        let mut game = Game::new("occupation", &raw, 17, rules.clone(), Some(events())).unwrap();
+        assert_eq!(
+            game.submit(1, Order::OccupyCity { unit: 0, city: 0 }),
+            OrderResult::Occupied {
+                city: 0,
+                razed: false
+            }
+        );
+        assert_eq!(game.world.cities[0].owner, 1);
+        assert_eq!(game.world.treasury[1], 17);
+        assert_eq!(game.events.as_ref().unwrap().fired_count(), 1);
+        assert!(game.log().contains("occupy 0 0 = occupied 0 0"));
+        let replay = Game::replay("occupation", &raw, rules, Some(events()), game.log()).unwrap();
+        assert_eq!(replay.world.checksum(), game.world.checksum());
+        assert_eq!(replay.events.as_ref().unwrap().fired_count(), 1);
     }
 
     /// RG-8 acceptance (CI half): random play logs orders and results,

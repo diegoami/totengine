@@ -22,6 +22,8 @@
 
 use std::collections::HashSet;
 
+mod strategy;
+
 use tot_kit::Rules;
 
 use crate::founding::ROLE_SETTLE;
@@ -269,6 +271,7 @@ impl Player for AiV0 {
 /// the separate v0.10 target.
 pub struct AiV1 {
     base: AiV0,
+    strategic: bool,
     research_values: Vec<i32>,
     terrain_food: Vec<i32>,
     visited: HashSet<(usize, u16, u16)>,
@@ -279,6 +282,7 @@ impl AiV1 {
     pub fn new(rules: &Rules, seed: u64, civ: u8) -> Self {
         Self {
             base: AiV0::new(rules, seed, civ),
+            strategic: false,
             research_values: rules
                 .tech_defs()
                 .iter()
@@ -351,6 +355,71 @@ impl AiV1 {
                     .filter(|&id| affordable(id))
                     .map(|id| -(id as i8));
             }
+            if want.is_none() && self.strategic {
+                let queued_settlers = own
+                    .iter()
+                    .filter(|v| {
+                        v.index != c.index
+                            && v.building.is_some_and(|id| {
+                                id >= 0
+                                    && self
+                                        .base
+                                        .units
+                                        .get(id as usize)
+                                        .is_some_and(|t| t.role == ROLE_SETTLE)
+                            })
+                    })
+                    .count();
+                if own.len() < 24
+                    && c.size >= 2
+                    && e.food_surplus >= 2
+                    && settlers + queued_settlers < own.len() + 1
+                    && e.net_shields > 0
+                {
+                    want = self.base.settler(obs).map(|id| id as i8);
+                }
+                let field = obs
+                    .units
+                    .iter()
+                    .filter(|u| {
+                        u.owner == obs.civ
+                            && self
+                                .base
+                                .units
+                                .get(u.type_id as usize)
+                                .is_some_and(|t| t.role != ROLE_SETTLE && t.defense > 0)
+                    })
+                    .count();
+                let queued_field = own
+                    .iter()
+                    .filter(|v| {
+                        v.index != c.index
+                            && v.building.is_some_and(|id| {
+                                id >= 0
+                                    && self
+                                        .base
+                                        .units
+                                        .get(id as usize)
+                                        .is_some_and(|t| t.role != ROLE_SETTLE && t.defense > 0)
+                            })
+                    })
+                    .count();
+                if want.is_none() && field + queued_field < own.len() * 4 + 2 {
+                    want = self
+                        .base
+                        .units
+                        .iter()
+                        .enumerate()
+                        .filter(|(id, t)| {
+                            t.role <= 1
+                                && t.domain == 0
+                                && t.attack > 0
+                                && self.base.buildable(obs, *id)
+                        })
+                        .max_by_key(|(id, t)| (t.attack * 100 / t.cost, *id))
+                        .map(|(id, _)| id as i8);
+                }
+            }
             let queued = own
                 .iter()
                 .filter(|v| {
@@ -401,6 +470,47 @@ impl AiV1 {
                     .into_iter()
                     .find(|&(id, useful)| useful && affordable(id))
                     .map(|(id, _)| -(id as i8));
+            }
+            if want.is_none() && self.strategic {
+                let attacks = obs
+                    .units
+                    .iter()
+                    .filter(|u| {
+                        u.owner == obs.civ
+                            && self.base.units.get(u.type_id as usize).is_some_and(|t| {
+                                t.domain == 0 && t.role == 0 && t.attack > t.defense
+                            })
+                    })
+                    .count();
+                let queued = own
+                    .iter()
+                    .filter(|other| {
+                        other.index != c.index
+                            && other.building.is_some_and(|id| {
+                                id >= 0
+                                    && self
+                                        .base
+                                        .units
+                                        .get(id as usize)
+                                        .is_some_and(|t| t.role == 0 && t.attack > t.defense)
+                            })
+                    })
+                    .count();
+                if attacks + queued < own.len() / 2 + 1 {
+                    want = self
+                        .base
+                        .units
+                        .iter()
+                        .enumerate()
+                        .filter(|(id, t)| {
+                            t.role <= 1
+                                && t.domain == 0
+                                && t.attack > t.defense
+                                && self.base.buildable(obs, *id)
+                        })
+                        .max_by_key(|(id, t)| (t.attack * 100 / t.cost, *id))
+                        .map(|(id, _)| id as i8);
+                }
             }
             if want.is_none() {
                 want = self.base.best_defender(obs).map(|t| t as i8);
@@ -535,8 +645,8 @@ impl AiV1 {
     }
 }
 
-impl Player for AiV1 {
-    fn act(&mut self, obs: &Observation) -> Order {
+impl AiV1 {
+    fn act_with_research(&mut self, obs: &Observation, research: bool) -> Order {
         if self.base.turn != obs.turn {
             self.base.turn = obs.turn;
             self.base.done.clear();
@@ -552,10 +662,11 @@ impl Player for AiV1 {
                 self.base.done.insert(unit);
             }
         }
-        if obs
-            .research
-            .target
-            .is_none_or(|t| !obs.research.available.contains(&t))
+        if research
+            && obs
+                .research
+                .target
+                .is_none_or(|t| !obs.research.available.contains(&t))
         {
             if let Some(&advance) = obs.research.available.iter().max_by_key(|&&t| {
                 (
@@ -573,6 +684,217 @@ impl Player for AiV1 {
             self.base.production_done = true;
         }
         self.unit_order(obs).unwrap_or(Order::EndTurn)
+    }
+}
+
+impl Player for AiV1 {
+    fn act(&mut self, obs: &Observation) -> Order {
+        self.act_with_research(obs, true)
+    }
+}
+
+/// Original-derived research, with AI v1 economy/movement as the initial
+/// foundation. Only own observations enter scoring. Foreign caches are unknown,
+/// so this is not full native decision parity. Its policy ID is checkpointed.
+pub struct BuiltInAi {
+    base: AiV1,
+    tables: crate::ai_research::ValueRules,
+    leaders: Vec<i8>,
+    domains: Vec<Option<u8>>,
+    groups: Vec<i8>,
+    leader_groups: Vec<[u8; 8]>,
+    rng: crate::combat::CrtRand,
+    terrain_defense: Vec<i32>,
+}
+
+impl BuiltInAi {
+    pub const POLICY: &'static str = "builtin-1";
+
+    pub fn new(rules: &Rules, seed: u64, civ: u8) -> Result<Self, String> {
+        let tables = crate::ai_research::ValueRules::from_rules(rules)?;
+        let leaders = rules
+            .section("LEADERS")
+            .ok_or("built-in AI requires LEADERS")?
+            .rows
+            .iter()
+            .take(21)
+            .map(|r| {
+                r.get(9)
+                    .and_then(|n| n.parse().ok())
+                    .ok_or_else(|| "invalid built-in leader modifier".to_string())
+            })
+            .collect::<Result<Vec<i8>, _>>()?;
+        if leaders.len() != 21 {
+            return Err("built-in AI requires 21 leaders".into());
+        }
+        let mut groups = vec![-1; 100];
+        if let Some(s) = rules.section("CIVILIZE2") {
+            for (i, row) in s.rows.iter().take(100).enumerate() {
+                groups[i] = row
+                    .first()
+                    .and_then(|n| n.parse::<i8>().ok())
+                    .filter(|n| (-1..8).contains(n))
+                    .ok_or("invalid built-in technology group")?;
+            }
+        }
+        let mut leader_groups = vec![[0; 8]; 21];
+        if let Some(s) = rules.section("LEADERS2") {
+            for (i, row) in s.rows.iter().take(21).enumerate() {
+                let raw = row.first().ok_or("missing built-in leader group flags")?;
+                if raw.len() != 8 || !raw.bytes().all(|b| b.is_ascii_digit()) {
+                    return Err("invalid built-in leader group flags".into());
+                }
+                for (to, from) in leader_groups[i].iter_mut().zip(raw.bytes()) {
+                    *to = from - b'0';
+                }
+            }
+        }
+        Ok(Self {
+            base: {
+                let mut base = AiV1::new(rules, seed, civ);
+                base.strategic = true;
+                base
+            },
+            tables,
+            leaders,
+            terrain_defense: (0..33)
+                .map(|i| rules.terrain_defense(i).unwrap_or(2) as i32)
+                .collect(),
+            domains: (0..80).map(|i| rules.unit_domain(i)).collect(),
+            groups,
+            leader_groups,
+            rng: crate::combat::CrtRand::new(
+                (seed as u32) ^ ((seed >> 32) as u32) ^ u32::from(civ).wrapping_mul(0x9e37_79b9),
+            ),
+        })
+    }
+
+    fn research(&mut self, obs: &Observation) -> Option<Order> {
+        use crate::ai_research::{choose, value, Candidate, Context, ValueCity, ValueContext};
+        if obs
+            .research
+            .target
+            .is_some_and(|id| obs.research.available.contains(&id))
+        {
+            return None;
+        }
+        let leader = usize::try_from(obs.leader_id).ok()?;
+        let modifier = *self.leaders.get(leader)?;
+        let scenario_flags = obs.scenario_flags?;
+        let own: Vec<_> = obs.cities.iter().filter(|c| c.owner == obs.civ).collect();
+        // Preserve stable host indices without copying any foreign city data.
+        let extent = own.iter().map(|c| c.index + 1).max().unwrap_or(0);
+        let mut cities = vec![
+            ValueCity {
+                owner: 0,
+                size: 0,
+                live: false
+            };
+            extent
+        ];
+        for c in own {
+            cities[c.index] = ValueCity {
+                owner: c.owner,
+                size: c.size as u8 as i8,
+                live: true,
+            };
+        }
+        let mut state = ValueContext {
+            civ: obs.civ,
+            human_mask: 0,
+            game_flags: obs.research_flags,
+            scenario_flags,
+            leader_id: obs.leader_id,
+            leader_modifier: modifier,
+            acquired: [0; 8],
+            reputations: [0; 8],
+            treaties: [0; 8],
+            city_landmasses: [[0; 256]; 8],
+            tech_owner_masks: std::array::from_fn(|i| {
+                if obs.techs[i / 8] & (1 << (i % 8)) != 0 {
+                    1 << obs.civ
+                } else {
+                    0
+                }
+            }),
+            sea_units: obs
+                .units
+                .iter()
+                .filter(|u| {
+                    u.owner == obs.civ && self.domains.get(u.type_id as usize) == Some(&Some(2))
+                })
+                .count() as i16,
+            cities,
+            wonder_cities: obs
+                .own_wonders
+                .map(|host| host.and_then(|i| i16::try_from(i).ok()).unwrap_or(-1)),
+        };
+        state.acquired[obs.civ as usize] =
+            obs.techs.iter().map(|b| b.count_ones()).sum::<u32>() as u8;
+        let candidates = std::array::from_fn(|id| Candidate {
+            eligible: obs.research.available.contains(&id)
+                && (self.groups[id] < 0
+                    || self.leader_groups[leader][self.groups[id] as usize] == 0),
+            value: value(&self.tables, &state, id).unwrap_or(1),
+        });
+        choose(
+            &candidates,
+            Context {
+                human: false,
+                difficulty: 0,
+                acquired: 0,
+            },
+            &mut self.rng,
+        )
+        .map(|advance| Order::SetResearch { advance })
+    }
+}
+
+impl Player for BuiltInAi {
+    fn act(&mut self, obs: &Observation) -> Order {
+        if let Some(order) = self.research(obs) {
+            return order;
+        }
+        let order = self.base.act_with_research(obs, false);
+        let mut chosen = self.strategic_order(obs, order);
+        if chosen == Order::EndTurn {
+            // The baseline may have refused every neighbouring enemy because
+            // of its stricter strength threshold. Reconsider free field units
+            // against the campaign policy's visible-strength estimate.
+            for unit in obs
+                .units
+                .iter()
+                .filter(|u| u.owner == obs.civ && u.moves_left > 0)
+            {
+                if self.is_garrison(obs, unit) {
+                    continue;
+                }
+                let candidate = self.strategic_order(
+                    obs,
+                    Order::Move {
+                        unit: unit.index,
+                        to: (unit.x, unit.y),
+                    },
+                );
+                if matches!(candidate, Order::Move {to,..} if to != (unit.x, unit.y))
+                    || matches!(
+                        candidate,
+                        Order::FoundCity { .. } | Order::OccupyCity { .. }
+                    )
+                {
+                    chosen = candidate;
+                    break;
+                }
+            }
+        }
+        if let Order::Move { unit, .. } | Order::OccupyCity { unit, .. } = chosen {
+            self.base.base.done.remove(&unit);
+            self.base.pending_unit = Some(unit);
+            if let Some(u) = obs.units.iter().find(|u| u.index == unit) {
+                self.base.visited.insert((unit, u.x, u.y));
+            }
+        }
+        chosen
     }
 }
 

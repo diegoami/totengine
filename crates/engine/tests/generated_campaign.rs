@@ -174,30 +174,39 @@ fn hundred_round_generated_campaign_matches_the_full_checkpoint_golden() {
 #[test]
 #[ignore = "nightly multi-seed autoplay"]
 fn nightly_generated_campaigns_resume_and_replay_across_seeds() {
-    use engine::campaign::Campaign;
+    use engine::campaign::{AiPolicy, Campaign};
     for seed in 0..32 {
-        let config = configured(seed);
-        let rules = || tot_kit::parse_rules(RULES);
-        let mut uninterrupted = Campaign::new(config, rules()).unwrap();
-        uninterrupted.advance(100).unwrap();
-        let mut split = Campaign::new(config, rules()).unwrap();
-        split.advance(37).unwrap();
-        let mut restored = Campaign::restore(rules(), &split.checkpoint()).unwrap();
-        restored.advance(63).unwrap();
-        assert_eq!(
-            uninterrupted.checkpoint(),
-            restored.checkpoint(),
-            "resume seed {seed}"
-        );
-        let replay = Game::replay_generated(config, rules(), uninterrupted.game.log()).unwrap();
-        assert_eq!(
-            uninterrupted.game.world.checksum(),
-            replay.world.checksum(),
-            "replay seed {seed}"
-        );
-        assert!(
-            uninterrupted.game.log().contains("= founded"),
-            "seed {seed}"
-        );
+        for policy in [AiPolicy::AiV1, AiPolicy::BuiltIn1] {
+            let config = configured(seed);
+            let rules = || match policy {
+                AiPolicy::AiV1 => tot_kit::parse_rules(RULES),
+                AiPolicy::BuiltIn1 => tot_kit::parse_rules(&format!(
+                    "{}\n{}",
+                    RULES,
+                    include_str!("fixtures/builtin-settings.txt")
+                )),
+            };
+            let mut uninterrupted = Campaign::with_policy(config, rules(), policy).unwrap();
+            uninterrupted.advance(100).unwrap();
+            let mut split = Campaign::with_policy(config, rules(), policy).unwrap();
+            split.advance(37).unwrap();
+            let mut restored = Campaign::restore(rules(), &split.checkpoint()).unwrap();
+            restored.advance(63).unwrap();
+            assert_eq!(
+                uninterrupted.checkpoint(),
+                restored.checkpoint(),
+                "resume {policy:?} seed {seed}"
+            );
+            let replay = Game::replay_generated(config, rules(), uninterrupted.game.log()).unwrap();
+            assert_eq!(
+                uninterrupted.game.world.checksum(),
+                replay.world.checksum(),
+                "replay {policy:?} seed {seed}"
+            );
+            assert!(
+                uninterrupted.game.log().contains("= founded"),
+                "{policy:?} seed {seed}"
+            );
+        }
     }
 }

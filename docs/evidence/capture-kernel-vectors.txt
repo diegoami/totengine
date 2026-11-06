@@ -1,0 +1,844 @@
+# loot size treasury population result | buildings mode recapture seed input*5 output*5 final_CRT
+loot 1 0 0 0
+loot 1 0 40 0
+loot 1 0 127 0
+loot 1 1 0 1
+loot 1 1 40 0
+loot 1 1 127 0
+loot 1 1000 0 1000
+loot 1 1000 40 24
+loot 1 1000 127 7
+loot 1 20000 0 20000
+loot 1 20000 40 487
+loot 1 20000 127 156
+loot 1 100000 0 100000
+loot 1 100000 40 2439
+loot 1 100000 127 781
+loot 2 0 0 0
+loot 2 0 40 0
+loot 2 0 127 0
+loot 2 1 0 2
+loot 2 1 40 0
+loot 2 1 127 0
+loot 2 1000 0 2000
+loot 2 1000 40 48
+loot 2 1000 127 15
+loot 2 20000 0 40000
+loot 2 20000 40 974
+loot 2 20000 127 312
+loot 2 100000 0 200000
+loot 2 100000 40 4878
+loot 2 100000 127 1562
+loot 3 0 0 0
+loot 3 0 40 0
+loot 3 0 127 0
+loot 3 1 0 3
+loot 3 1 40 0
+loot 3 1 127 0
+loot 3 1000 0 3000
+loot 3 1000 40 73
+loot 3 1000 127 23
+loot 3 20000 0 60000
+loot 3 20000 40 1461
+loot 3 20000 127 468
+loot 3 100000 0 300000
+loot 3 100000 40 7317
+loot 3 100000 127 2343
+loot 12 0 0 0
+loot 12 0 40 0
+loot 12 0 127 0
+loot 12 1 0 12
+loot 12 1 40 0
+loot 12 1 127 0
+loot 12 1000 0 12000
+loot 12 1000 40 292
+loot 12 1000 127 93
+loot 12 20000 0 240000
+loot 12 20000 40 5844
+loot 12 20000 127 1872
+loot 12 100000 0 1200000
+loot 12 100000 40 29268
+loot 12 100000 127 9372
+loot 127 0 0 0
+loot 127 0 40 0
+loot 127 0 127 0
+loot 127 1 0 127
+loot 127 1 40 3
+loot 127 1 127 0
+loot 127 1000 0 127000
+loot 127 1000 40 3048
+loot 127 1000 127 889
+loot 127 20000 0 2540000
+loot 127 20000 40 61849
+loot 127 20000 127 19812
+loot 127 100000 0 12700000
+loot 127 100000 40 309753
+loot 127 100000 127 99187
+buildings 0 0 1 255 255 255 255 255 85 85 85 85 85 2745024
+buildings 0 0 1 0 18 52 86 120 0 16 20 84 80 2745024
+buildings 0 0 2 255 255 255 255 255 85 85 85 85 85 2959037
+buildings 0 0 2 0 18 52 86 120 0 16 20 84 80 2959037
+buildings 0 0 3 255 255 255 255 255 170 170 170 170 170 3173050
+buildings 0 0 3 0 18 52 86 120 0 2 32 2 40 3173050
+buildings 0 0 4 255 255 255 255 255 85 85 85 85 85 3387063
+buildings 0 0 4 0 18 52 86 120 0 16 20 84 80 3387063
+buildings 0 0 5 255 255 255 255 255 170 170 170 170 170 3601076
+buildings 0 0 5 0 18 52 86 120 0 2 32 2 40 3601076
+buildings 0 0 6 255 255 255 255 255 170 170 170 170 170 3815089
+buildings 0 0 6 0 18 52 86 120 0 2 32 2 40 3815089
+buildings 0 0 7 255 255 255 255 255 85 85 85 85 85 4029102
+buildings 0 0 7 0 18 52 86 120 0 16 20 84 80 4029102
+buildings 0 0 8 255 255 255 255 255 170 170 170 170 170 4243115
+buildings 0 0 8 0 18 52 86 120 0 2 32 2 40 4243115
+buildings 0 0 9 255 255 255 255 255 170 170 170 170 170 4457128
+buildings 0 0 9 0 18 52 86 120 0 2 32 2 40 4457128
+buildings 0 0 10 255 255 255 255 255 85 85 85 85 85 4671141
+buildings 0 0 10 0 18 52 86 120 0 16 20 84 80 4671141
+buildings 0 0 11 255 255 255 255 255 170 170 170 170 170 4885154
+buildings 0 0 11 0 18 52 86 120 0 2 32 2 40 4885154
+buildings 0 0 12 255 255 255 255 255 85 85 85 85 85 5099167
+buildings 0 0 12 0 18 52 86 120 0 16 20 84 80 5099167
+buildings 0 0 13 255 255 255 255 255 85 85 85 85 85 5313180
+buildings 0 0 13 0 18 52 86 120 0 16 20 84 80 5313180
+buildings 0 0 14 255 255 255 255 255 170 170 170 170 170 5527193
+buildings 0 0 14 0 18 52 86 120 0 2 32 2 40 5527193
+buildings 0 0 15 255 255 255 255 255 85 85 85 85 85 5741206
+buildings 0 0 15 0 18 52 86 120 0 16 20 84 80 5741206
+buildings 0 0 16 255 255 255 255 255 170 170 170 170 170 5955219
+buildings 0 0 16 0 18 52 86 120 0 2 32 2 40 5955219
+buildings 0 1 1 255 255 255 255 255 255 255 255 255 255 1
+buildings 0 1 1 0 18 52 86 120 0 18 52 86 120 1
+buildings 0 1 2 255 255 255 255 255 255 255 255 255 255 2
+buildings 0 1 2 0 18 52 86 120 0 18 52 86 120 2
+buildings 0 1 3 255 255 255 255 255 255 255 255 255 255 3
+buildings 0 1 3 0 18 52 86 120 0 18 52 86 120 3
+buildings 0 1 4 255 255 255 255 255 255 255 255 255 255 4
+buildings 0 1 4 0 18 52 86 120 0 18 52 86 120 4
+buildings 0 1 5 255 255 255 255 255 255 255 255 255 255 5
+buildings 0 1 5 0 18 52 86 120 0 18 52 86 120 5
+buildings 0 1 6 255 255 255 255 255 255 255 255 255 255 6
+buildings 0 1 6 0 18 52 86 120 0 18 52 86 120 6
+buildings 0 1 7 255 255 255 255 255 255 255 255 255 255 7
+buildings 0 1 7 0 18 52 86 120 0 18 52 86 120 7
+buildings 0 1 8 255 255 255 255 255 255 255 255 255 255 8
+buildings 0 1 8 0 18 52 86 120 0 18 52 86 120 8
+buildings 0 1 9 255 255 255 255 255 255 255 255 255 255 9
+buildings 0 1 9 0 18 52 86 120 0 18 52 86 120 9
+buildings 0 1 10 255 255 255 255 255 255 255 255 255 255 10
+buildings 0 1 10 0 18 52 86 120 0 18 52 86 120 10
+buildings 0 1 11 255 255 255 255 255 255 255 255 255 255 11
+buildings 0 1 11 0 18 52 86 120 0 18 52 86 120 11
+buildings 0 1 12 255 255 255 255 255 255 255 255 255 255 12
+buildings 0 1 12 0 18 52 86 120 0 18 52 86 120 12
+buildings 0 1 13 255 255 255 255 255 255 255 255 255 255 13
+buildings 0 1 13 0 18 52 86 120 0 18 52 86 120 13
+buildings 0 1 14 255 255 255 255 255 255 255 255 255 255 14
+buildings 0 1 14 0 18 52 86 120 0 18 52 86 120 14
+buildings 0 1 15 255 255 255 255 255 255 255 255 255 255 15
+buildings 0 1 15 0 18 52 86 120 0 18 52 86 120 15
+buildings 0 1 16 255 255 255 255 255 255 255 255 255 255 16
+buildings 0 1 16 0 18 52 86 120 0 18 52 86 120 16
+buildings 1 0 1 255 255 255 255 255 255 255 255 255 255 1
+buildings 1 0 1 0 18 52 86 120 0 18 52 86 120 1
+buildings 1 0 2 255 255 255 255 255 255 255 255 255 255 2
+buildings 1 0 2 0 18 52 86 120 0 18 52 86 120 2
+buildings 1 0 3 255 255 255 255 255 255 255 255 255 255 3
+buildings 1 0 3 0 18 52 86 120 0 18 52 86 120 3
+buildings 1 0 4 255 255 255 255 255 255 255 255 255 255 4
+buildings 1 0 4 0 18 52 86 120 0 18 52 86 120 4
+buildings 1 0 5 255 255 255 255 255 255 255 255 255 255 5
+buildings 1 0 5 0 18 52 86 120 0 18 52 86 120 5
+buildings 1 0 6 255 255 255 255 255 255 255 255 255 255 6
+buildings 1 0 6 0 18 52 86 120 0 18 52 86 120 6
+buildings 1 0 7 255 255 255 255 255 255 255 255 255 255 7
+buildings 1 0 7 0 18 52 86 120 0 18 52 86 120 7
+buildings 1 0 8 255 255 255 255 255 255 255 255 255 255 8
+buildings 1 0 8 0 18 52 86 120 0 18 52 86 120 8
+buildings 1 0 9 255 255 255 255 255 255 255 255 255 255 9
+buildings 1 0 9 0 18 52 86 120 0 18 52 86 120 9
+buildings 1 0 10 255 255 255 255 255 255 255 255 255 255 10
+buildings 1 0 10 0 18 52 86 120 0 18 52 86 120 10
+buildings 1 0 11 255 255 255 255 255 255 255 255 255 255 11
+buildings 1 0 11 0 18 52 86 120 0 18 52 86 120 11
+buildings 1 0 12 255 255 255 255 255 255 255 255 255 255 12
+buildings 1 0 12 0 18 52 86 120 0 18 52 86 120 12
+buildings 1 0 13 255 255 255 255 255 255 255 255 255 255 13
+buildings 1 0 13 0 18 52 86 120 0 18 52 86 120 13
+buildings 1 0 14 255 255 255 255 255 255 255 255 255 255 14
+buildings 1 0 14 0 18 52 86 120 0 18 52 86 120 14
+buildings 1 0 15 255 255 255 255 255 255 255 255 255 255 15
+buildings 1 0 15 0 18 52 86 120 0 18 52 86 120 15
+buildings 1 0 16 255 255 255 255 255 255 255 255 255 255 16
+buildings 1 0 16 0 18 52 86 120 0 18 52 86 120 16
+buildings 1 1 1 255 255 255 255 255 255 255 255 255 255 1
+buildings 1 1 1 0 18 52 86 120 0 18 52 86 120 1
+buildings 1 1 2 255 255 255 255 255 255 255 255 255 255 2
+buildings 1 1 2 0 18 52 86 120 0 18 52 86 120 2
+buildings 1 1 3 255 255 255 255 255 255 255 255 255 255 3
+buildings 1 1 3 0 18 52 86 120 0 18 52 86 120 3
+buildings 1 1 4 255 255 255 255 255 255 255 255 255 255 4
+buildings 1 1 4 0 18 52 86 120 0 18 52 86 120 4
+buildings 1 1 5 255 255 255 255 255 255 255 255 255 255 5
+buildings 1 1 5 0 18 52 86 120 0 18 52 86 120 5
+buildings 1 1 6 255 255 255 255 255 255 255 255 255 255 6
+buildings 1 1 6 0 18 52 86 120 0 18 52 86 120 6
+buildings 1 1 7 255 255 255 255 255 255 255 255 255 255 7
+buildings 1 1 7 0 18 52 86 120 0 18 52 86 120 7
+buildings 1 1 8 255 255 255 255 255 255 255 255 255 255 8
+buildings 1 1 8 0 18 52 86 120 0 18 52 86 120 8
+buildings 1 1 9 255 255 255 255 255 255 255 255 255 255 9
+buildings 1 1 9 0 18 52 86 120 0 18 52 86 120 9
+buildings 1 1 10 255 255 255 255 255 255 255 255 255 255 10
+buildings 1 1 10 0 18 52 86 120 0 18 52 86 120 10
+buildings 1 1 11 255 255 255 255 255 255 255 255 255 255 11
+buildings 1 1 11 0 18 52 86 120 0 18 52 86 120 11
+buildings 1 1 12 255 255 255 255 255 255 255 255 255 255 12
+buildings 1 1 12 0 18 52 86 120 0 18 52 86 120 12
+buildings 1 1 13 255 255 255 255 255 255 255 255 255 255 13
+buildings 1 1 13 0 18 52 86 120 0 18 52 86 120 13
+buildings 1 1 14 255 255 255 255 255 255 255 255 255 255 14
+buildings 1 1 14 0 18 52 86 120 0 18 52 86 120 14
+buildings 1 1 15 255 255 255 255 255 255 255 255 255 255 15
+buildings 1 1 15 0 18 52 86 120 0 18 52 86 120 15
+buildings 1 1 16 255 255 255 255 255 255 255 255 255 255 16
+buildings 1 1 16 0 18 52 86 120 0 18 52 86 120 16
+buildings 2 0 1 255 255 255 255 255 255 255 255 255 255 1
+buildings 2 0 1 0 18 52 86 120 0 18 52 86 120 1
+buildings 2 0 2 255 255 255 255 255 255 255 255 255 255 2
+buildings 2 0 2 0 18 52 86 120 0 18 52 86 120 2
+buildings 2 0 3 255 255 255 255 255 255 255 255 255 255 3
+buildings 2 0 3 0 18 52 86 120 0 18 52 86 120 3
+buildings 2 0 4 255 255 255 255 255 255 255 255 255 255 4
+buildings 2 0 4 0 18 52 86 120 0 18 52 86 120 4
+buildings 2 0 5 255 255 255 255 255 255 255 255 255 255 5
+buildings 2 0 5 0 18 52 86 120 0 18 52 86 120 5
+buildings 2 0 6 255 255 255 255 255 255 255 255 255 255 6
+buildings 2 0 6 0 18 52 86 120 0 18 52 86 120 6
+buildings 2 0 7 255 255 255 255 255 255 255 255 255 255 7
+buildings 2 0 7 0 18 52 86 120 0 18 52 86 120 7
+buildings 2 0 8 255 255 255 255 255 255 255 255 255 255 8
+buildings 2 0 8 0 18 52 86 120 0 18 52 86 120 8
+buildings 2 0 9 255 255 255 255 255 255 255 255 255 255 9
+buildings 2 0 9 0 18 52 86 120 0 18 52 86 120 9
+buildings 2 0 10 255 255 255 255 255 255 255 255 255 255 10
+buildings 2 0 10 0 18 52 86 120 0 18 52 86 120 10
+buildings 2 0 11 255 255 255 255 255 255 255 255 255 255 11
+buildings 2 0 11 0 18 52 86 120 0 18 52 86 120 11
+buildings 2 0 12 255 255 255 255 255 255 255 255 255 255 12
+buildings 2 0 12 0 18 52 86 120 0 18 52 86 120 12
+buildings 2 0 13 255 255 255 255 255 255 255 255 255 255 13
+buildings 2 0 13 0 18 52 86 120 0 18 52 86 120 13
+buildings 2 0 14 255 255 255 255 255 255 255 255 255 255 14
+buildings 2 0 14 0 18 52 86 120 0 18 52 86 120 14
+buildings 2 0 15 255 255 255 255 255 255 255 255 255 255 15
+buildings 2 0 15 0 18 52 86 120 0 18 52 86 120 15
+buildings 2 0 16 255 255 255 255 255 255 255 255 255 255 16
+buildings 2 0 16 0 18 52 86 120 0 18 52 86 120 16
+buildings 2 1 1 255 255 255 255 255 255 255 255 255 255 1
+buildings 2 1 1 0 18 52 86 120 0 18 52 86 120 1
+buildings 2 1 2 255 255 255 255 255 255 255 255 255 255 2
+buildings 2 1 2 0 18 52 86 120 0 18 52 86 120 2
+buildings 2 1 3 255 255 255 255 255 255 255 255 255 255 3
+buildings 2 1 3 0 18 52 86 120 0 18 52 86 120 3
+buildings 2 1 4 255 255 255 255 255 255 255 255 255 255 4
+buildings 2 1 4 0 18 52 86 120 0 18 52 86 120 4
+buildings 2 1 5 255 255 255 255 255 255 255 255 255 255 5
+buildings 2 1 5 0 18 52 86 120 0 18 52 86 120 5
+buildings 2 1 6 255 255 255 255 255 255 255 255 255 255 6
+buildings 2 1 6 0 18 52 86 120 0 18 52 86 120 6
+buildings 2 1 7 255 255 255 255 255 255 255 255 255 255 7
+buildings 2 1 7 0 18 52 86 120 0 18 52 86 120 7
+buildings 2 1 8 255 255 255 255 255 255 255 255 255 255 8
+buildings 2 1 8 0 18 52 86 120 0 18 52 86 120 8
+buildings 2 1 9 255 255 255 255 255 255 255 255 255 255 9
+buildings 2 1 9 0 18 52 86 120 0 18 52 86 120 9
+buildings 2 1 10 255 255 255 255 255 255 255 255 255 255 10
+buildings 2 1 10 0 18 52 86 120 0 18 52 86 120 10
+buildings 2 1 11 255 255 255 255 255 255 255 255 255 255 11
+buildings 2 1 11 0 18 52 86 120 0 18 52 86 120 11
+buildings 2 1 12 255 255 255 255 255 255 255 255 255 255 12
+buildings 2 1 12 0 18 52 86 120 0 18 52 86 120 12
+buildings 2 1 13 255 255 255 255 255 255 255 255 255 255 13
+buildings 2 1 13 0 18 52 86 120 0 18 52 86 120 13
+buildings 2 1 14 255 255 255 255 255 255 255 255 255 255 14
+buildings 2 1 14 0 18 52 86 120 0 18 52 86 120 14
+buildings 2 1 15 255 255 255 255 255 255 255 255 255 255 15
+buildings 2 1 15 0 18 52 86 120 0 18 52 86 120 15
+buildings 2 1 16 255 255 255 255 255 255 255 255 255 255 16
+buildings 2 1 16 0 18 52 86 120 0 18 52 86 120 16
+population 1 0 0 0 1 1 1 1
+population 1 0 0 0 1 2 1 2
+population 1 0 0 0 1 7 1 7
+population 1 0 0 0 1 106 1 106
+population 1 0 0 0 4 1 0 2745024
+population 1 0 0 0 4 2 0 2959037
+population 1 0 0 0 4 7 0 4029102
+population 1 0 0 0 4 106 1 25216389
+population 1 0 0 0 7 1 0 1
+population 1 0 0 0 7 2 0 2
+population 1 0 0 0 7 7 0 7
+population 1 0 0 0 7 106 0 106
+population 1 0 0 2 1 1 1 1
+population 1 0 0 2 1 2 1 2
+population 1 0 0 2 1 7 1 7
+population 1 0 0 2 1 106 1 106
+population 1 0 0 2 4 1 0 2745024
+population 1 0 0 2 4 2 0 2959037
+population 1 0 0 2 4 7 0 4029102
+population 1 0 0 2 4 106 1 25216389
+population 1 0 0 2 7 1 0 1
+population 1 0 0 2 7 2 0 2
+population 1 0 0 2 7 7 0 7
+population 1 0 0 2 7 106 0 106
+population 1 0 32 0 1 1 0 1
+population 1 0 32 0 1 2 0 2
+population 1 0 32 0 1 7 0 7
+population 1 0 32 0 1 106 0 106
+population 1 0 32 0 4 1 0 1
+population 1 0 32 0 4 2 0 2
+population 1 0 32 0 4 7 0 7
+population 1 0 32 0 4 106 0 106
+population 1 0 32 0 7 1 0 1
+population 1 0 32 0 7 2 0 2
+population 1 0 32 0 7 7 0 7
+population 1 0 32 0 7 106 0 106
+population 1 0 32 2 1 1 0 1
+population 1 0 32 2 1 2 0 2
+population 1 0 32 2 1 7 0 7
+population 1 0 32 2 1 106 0 106
+population 1 0 32 2 4 1 0 1
+population 1 0 32 2 4 2 0 2
+population 1 0 32 2 4 7 0 7
+population 1 0 32 2 4 106 0 106
+population 1 0 32 2 7 1 0 1
+population 1 0 32 2 7 2 0 2
+population 1 0 32 2 7 7 0 7
+population 1 0 32 2 7 106 0 106
+population 1 0 64 0 1 1 0 1
+population 1 0 64 0 1 2 0 2
+population 1 0 64 0 1 7 0 7
+population 1 0 64 0 1 106 0 106
+population 1 0 64 0 4 1 0 1
+population 1 0 64 0 4 2 0 2
+population 1 0 64 0 4 7 0 7
+population 1 0 64 0 4 106 0 106
+population 1 0 64 0 7 1 0 1
+population 1 0 64 0 7 2 0 2
+population 1 0 64 0 7 7 0 7
+population 1 0 64 0 7 106 0 106
+population 1 0 64 2 1 1 0 1
+population 1 0 64 2 1 2 0 2
+population 1 0 64 2 1 7 0 7
+population 1 0 64 2 1 106 0 106
+population 1 0 64 2 4 1 0 1
+population 1 0 64 2 4 2 0 2
+population 1 0 64 2 4 7 0 7
+population 1 0 64 2 4 106 0 106
+population 1 0 64 2 7 1 0 1
+population 1 0 64 2 7 2 0 2
+population 1 0 64 2 7 7 0 7
+population 1 0 64 2 7 106 0 106
+population 1 0 2 0 1 1 1 1
+population 1 0 2 0 1 2 1 2
+population 1 0 2 0 1 7 1 7
+population 1 0 2 0 1 106 1 106
+population 1 0 2 0 4 1 0 2745024
+population 1 0 2 0 4 2 0 2959037
+population 1 0 2 0 4 7 0 4029102
+population 1 0 2 0 4 106 1 25216389
+population 1 0 2 0 7 1 0 1
+population 1 0 2 0 7 2 0 2
+population 1 0 2 0 7 7 0 7
+population 1 0 2 0 7 106 0 106
+population 1 0 2 2 1 1 0 1
+population 1 0 2 2 1 2 0 2
+population 1 0 2 2 1 7 0 7
+population 1 0 2 2 1 106 0 106
+population 1 0 2 2 4 1 0 1
+population 1 0 2 2 4 2 0 2
+population 1 0 2 2 4 7 0 7
+population 1 0 2 2 4 106 0 106
+population 1 0 2 2 7 1 0 1
+population 1 0 2 2 7 2 0 2
+population 1 0 2 2 7 7 0 7
+population 1 0 2 2 7 106 0 106
+population 1 1 0 0 1 1 1 1
+population 1 1 0 0 1 2 1 2
+population 1 1 0 0 1 7 1 7
+population 1 1 0 0 1 106 1 106
+population 1 1 0 0 4 1 1 1
+population 1 1 0 0 4 2 1 2
+population 1 1 0 0 4 7 1 7
+population 1 1 0 0 4 106 1 106
+population 1 1 0 0 7 1 1 1
+population 1 1 0 0 7 2 1 2
+population 1 1 0 0 7 7 1 7
+population 1 1 0 0 7 106 1 106
+population 1 1 0 2 1 1 1 1
+population 1 1 0 2 1 2 1 2
+population 1 1 0 2 1 7 1 7
+population 1 1 0 2 1 106 1 106
+population 1 1 0 2 4 1 1 1
+population 1 1 0 2 4 2 1 2
+population 1 1 0 2 4 7 1 7
+population 1 1 0 2 4 106 1 106
+population 1 1 0 2 7 1 1 1
+population 1 1 0 2 7 2 1 2
+population 1 1 0 2 7 7 1 7
+population 1 1 0 2 7 106 1 106
+population 1 1 32 0 1 1 1 1
+population 1 1 32 0 1 2 1 2
+population 1 1 32 0 1 7 1 7
+population 1 1 32 0 1 106 1 106
+population 1 1 32 0 4 1 1 1
+population 1 1 32 0 4 2 1 2
+population 1 1 32 0 4 7 1 7
+population 1 1 32 0 4 106 1 106
+population 1 1 32 0 7 1 1 1
+population 1 1 32 0 7 2 1 2
+population 1 1 32 0 7 7 1 7
+population 1 1 32 0 7 106 1 106
+population 1 1 32 2 1 1 1 1
+population 1 1 32 2 1 2 1 2
+population 1 1 32 2 1 7 1 7
+population 1 1 32 2 1 106 1 106
+population 1 1 32 2 4 1 1 1
+population 1 1 32 2 4 2 1 2
+population 1 1 32 2 4 7 1 7
+population 1 1 32 2 4 106 1 106
+population 1 1 32 2 7 1 1 1
+population 1 1 32 2 7 2 1 2
+population 1 1 32 2 7 7 1 7
+population 1 1 32 2 7 106 1 106
+population 1 1 64 0 1 1 1 1
+population 1 1 64 0 1 2 1 2
+population 1 1 64 0 1 7 1 7
+population 1 1 64 0 1 106 1 106
+population 1 1 64 0 4 1 1 1
+population 1 1 64 0 4 2 1 2
+population 1 1 64 0 4 7 1 7
+population 1 1 64 0 4 106 1 106
+population 1 1 64 0 7 1 1 1
+population 1 1 64 0 7 2 1 2
+population 1 1 64 0 7 7 1 7
+population 1 1 64 0 7 106 1 106
+population 1 1 64 2 1 1 1 1
+population 1 1 64 2 1 2 1 2
+population 1 1 64 2 1 7 1 7
+population 1 1 64 2 1 106 1 106
+population 1 1 64 2 4 1 1 1
+population 1 1 64 2 4 2 1 2
+population 1 1 64 2 4 7 1 7
+population 1 1 64 2 4 106 1 106
+population 1 1 64 2 7 1 1 1
+population 1 1 64 2 7 2 1 2
+population 1 1 64 2 7 7 1 7
+population 1 1 64 2 7 106 1 106
+population 1 1 2 0 1 1 1 1
+population 1 1 2 0 1 2 1 2
+population 1 1 2 0 1 7 1 7
+population 1 1 2 0 1 106 1 106
+population 1 1 2 0 4 1 1 1
+population 1 1 2 0 4 2 1 2
+population 1 1 2 0 4 7 1 7
+population 1 1 2 0 4 106 1 106
+population 1 1 2 0 7 1 1 1
+population 1 1 2 0 7 2 1 2
+population 1 1 2 0 7 7 1 7
+population 1 1 2 0 7 106 1 106
+population 1 1 2 2 1 1 1 1
+population 1 1 2 2 1 2 1 2
+population 1 1 2 2 1 7 1 7
+population 1 1 2 2 1 106 1 106
+population 1 1 2 2 4 1 1 1
+population 1 1 2 2 4 2 1 2
+population 1 1 2 2 4 7 1 7
+population 1 1 2 2 4 106 1 106
+population 1 1 2 2 7 1 1 1
+population 1 1 2 2 7 2 1 2
+population 1 1 2 2 7 7 1 7
+population 1 1 2 2 7 106 1 106
+population 2 0 0 0 1 1 1 1
+population 2 0 0 0 1 2 1 2
+population 2 0 0 0 1 7 1 7
+population 2 0 0 0 1 106 1 106
+population 2 0 0 0 4 1 1 1
+population 2 0 0 0 4 2 1 2
+population 2 0 0 0 4 7 1 7
+population 2 0 0 0 4 106 1 106
+population 2 0 0 0 7 1 1 1
+population 2 0 0 0 7 2 1 2
+population 2 0 0 0 7 7 1 7
+population 2 0 0 0 7 106 1 106
+population 2 0 0 2 1 1 1 1
+population 2 0 0 2 1 2 1 2
+population 2 0 0 2 1 7 1 7
+population 2 0 0 2 1 106 1 106
+population 2 0 0 2 4 1 1 1
+population 2 0 0 2 4 2 1 2
+population 2 0 0 2 4 7 1 7
+population 2 0 0 2 4 106 1 106
+population 2 0 0 2 7 1 1 1
+population 2 0 0 2 7 2 1 2
+population 2 0 0 2 7 7 1 7
+population 2 0 0 2 7 106 1 106
+population 2 0 32 0 1 1 1 1
+population 2 0 32 0 1 2 1 2
+population 2 0 32 0 1 7 1 7
+population 2 0 32 0 1 106 1 106
+population 2 0 32 0 4 1 1 1
+population 2 0 32 0 4 2 1 2
+population 2 0 32 0 4 7 1 7
+population 2 0 32 0 4 106 1 106
+population 2 0 32 0 7 1 1 1
+population 2 0 32 0 7 2 1 2
+population 2 0 32 0 7 7 1 7
+population 2 0 32 0 7 106 1 106
+population 2 0 32 2 1 1 1 1
+population 2 0 32 2 1 2 1 2
+population 2 0 32 2 1 7 1 7
+population 2 0 32 2 1 106 1 106
+population 2 0 32 2 4 1 1 1
+population 2 0 32 2 4 2 1 2
+population 2 0 32 2 4 7 1 7
+population 2 0 32 2 4 106 1 106
+population 2 0 32 2 7 1 1 1
+population 2 0 32 2 7 2 1 2
+population 2 0 32 2 7 7 1 7
+population 2 0 32 2 7 106 1 106
+population 2 0 64 0 1 1 1 1
+population 2 0 64 0 1 2 1 2
+population 2 0 64 0 1 7 1 7
+population 2 0 64 0 1 106 1 106
+population 2 0 64 0 4 1 1 1
+population 2 0 64 0 4 2 1 2
+population 2 0 64 0 4 7 1 7
+population 2 0 64 0 4 106 1 106
+population 2 0 64 0 7 1 1 1
+population 2 0 64 0 7 2 1 2
+population 2 0 64 0 7 7 1 7
+population 2 0 64 0 7 106 1 106
+population 2 0 64 2 1 1 1 1
+population 2 0 64 2 1 2 1 2
+population 2 0 64 2 1 7 1 7
+population 2 0 64 2 1 106 1 106
+population 2 0 64 2 4 1 1 1
+population 2 0 64 2 4 2 1 2
+population 2 0 64 2 4 7 1 7
+population 2 0 64 2 4 106 1 106
+population 2 0 64 2 7 1 1 1
+population 2 0 64 2 7 2 1 2
+population 2 0 64 2 7 7 1 7
+population 2 0 64 2 7 106 1 106
+population 2 0 2 0 1 1 1 1
+population 2 0 2 0 1 2 1 2
+population 2 0 2 0 1 7 1 7
+population 2 0 2 0 1 106 1 106
+population 2 0 2 0 4 1 1 1
+population 2 0 2 0 4 2 1 2
+population 2 0 2 0 4 7 1 7
+population 2 0 2 0 4 106 1 106
+population 2 0 2 0 7 1 1 1
+population 2 0 2 0 7 2 1 2
+population 2 0 2 0 7 7 1 7
+population 2 0 2 0 7 106 1 106
+population 2 0 2 2 1 1 1 1
+population 2 0 2 2 1 2 1 2
+population 2 0 2 2 1 7 1 7
+population 2 0 2 2 1 106 1 106
+population 2 0 2 2 4 1 1 1
+population 2 0 2 2 4 2 1 2
+population 2 0 2 2 4 7 1 7
+population 2 0 2 2 4 106 1 106
+population 2 0 2 2 7 1 1 1
+population 2 0 2 2 7 2 1 2
+population 2 0 2 2 7 7 1 7
+population 2 0 2 2 7 106 1 106
+population 2 1 0 0 1 1 1 1
+population 2 1 0 0 1 2 1 2
+population 2 1 0 0 1 7 1 7
+population 2 1 0 0 1 106 1 106
+population 2 1 0 0 4 1 1 1
+population 2 1 0 0 4 2 1 2
+population 2 1 0 0 4 7 1 7
+population 2 1 0 0 4 106 1 106
+population 2 1 0 0 7 1 1 1
+population 2 1 0 0 7 2 1 2
+population 2 1 0 0 7 7 1 7
+population 2 1 0 0 7 106 1 106
+population 2 1 0 2 1 1 1 1
+population 2 1 0 2 1 2 1 2
+population 2 1 0 2 1 7 1 7
+population 2 1 0 2 1 106 1 106
+population 2 1 0 2 4 1 1 1
+population 2 1 0 2 4 2 1 2
+population 2 1 0 2 4 7 1 7
+population 2 1 0 2 4 106 1 106
+population 2 1 0 2 7 1 1 1
+population 2 1 0 2 7 2 1 2
+population 2 1 0 2 7 7 1 7
+population 2 1 0 2 7 106 1 106
+population 2 1 32 0 1 1 1 1
+population 2 1 32 0 1 2 1 2
+population 2 1 32 0 1 7 1 7
+population 2 1 32 0 1 106 1 106
+population 2 1 32 0 4 1 1 1
+population 2 1 32 0 4 2 1 2
+population 2 1 32 0 4 7 1 7
+population 2 1 32 0 4 106 1 106
+population 2 1 32 0 7 1 1 1
+population 2 1 32 0 7 2 1 2
+population 2 1 32 0 7 7 1 7
+population 2 1 32 0 7 106 1 106
+population 2 1 32 2 1 1 1 1
+population 2 1 32 2 1 2 1 2
+population 2 1 32 2 1 7 1 7
+population 2 1 32 2 1 106 1 106
+population 2 1 32 2 4 1 1 1
+population 2 1 32 2 4 2 1 2
+population 2 1 32 2 4 7 1 7
+population 2 1 32 2 4 106 1 106
+population 2 1 32 2 7 1 1 1
+population 2 1 32 2 7 2 1 2
+population 2 1 32 2 7 7 1 7
+population 2 1 32 2 7 106 1 106
+population 2 1 64 0 1 1 1 1
+population 2 1 64 0 1 2 1 2
+population 2 1 64 0 1 7 1 7
+population 2 1 64 0 1 106 1 106
+population 2 1 64 0 4 1 1 1
+population 2 1 64 0 4 2 1 2
+population 2 1 64 0 4 7 1 7
+population 2 1 64 0 4 106 1 106
+population 2 1 64 0 7 1 1 1
+population 2 1 64 0 7 2 1 2
+population 2 1 64 0 7 7 1 7
+population 2 1 64 0 7 106 1 106
+population 2 1 64 2 1 1 1 1
+population 2 1 64 2 1 2 1 2
+population 2 1 64 2 1 7 1 7
+population 2 1 64 2 1 106 1 106
+population 2 1 64 2 4 1 1 1
+population 2 1 64 2 4 2 1 2
+population 2 1 64 2 4 7 1 7
+population 2 1 64 2 4 106 1 106
+population 2 1 64 2 7 1 1 1
+population 2 1 64 2 7 2 1 2
+population 2 1 64 2 7 7 1 7
+population 2 1 64 2 7 106 1 106
+population 2 1 2 0 1 1 1 1
+population 2 1 2 0 1 2 1 2
+population 2 1 2 0 1 7 1 7
+population 2 1 2 0 1 106 1 106
+population 2 1 2 0 4 1 1 1
+population 2 1 2 0 4 2 1 2
+population 2 1 2 0 4 7 1 7
+population 2 1 2 0 4 106 1 106
+population 2 1 2 0 7 1 1 1
+population 2 1 2 0 7 2 1 2
+population 2 1 2 0 7 7 1 7
+population 2 1 2 0 7 106 1 106
+population 2 1 2 2 1 1 1 1
+population 2 1 2 2 1 2 1 2
+population 2 1 2 2 1 7 1 7
+population 2 1 2 2 1 106 1 106
+population 2 1 2 2 4 1 1 1
+population 2 1 2 2 4 2 1 2
+population 2 1 2 2 4 7 1 7
+population 2 1 2 2 4 106 1 106
+population 2 1 2 2 7 1 1 1
+population 2 1 2 2 7 2 1 2
+population 2 1 2 2 7 7 1 7
+population 2 1 2 2 7 106 1 106
+population 12 0 0 0 1 1 11 1
+population 12 0 0 0 1 2 11 2
+population 12 0 0 0 1 7 11 7
+population 12 0 0 0 1 106 11 106
+population 12 0 0 0 4 1 11 1
+population 12 0 0 0 4 2 11 2
+population 12 0 0 0 4 7 11 7
+population 12 0 0 0 4 106 11 106
+population 12 0 0 0 7 1 11 1
+population 12 0 0 0 7 2 11 2
+population 12 0 0 0 7 7 11 7
+population 12 0 0 0 7 106 11 106
+population 12 0 0 2 1 1 11 1
+population 12 0 0 2 1 2 11 2
+population 12 0 0 2 1 7 11 7
+population 12 0 0 2 1 106 11 106
+population 12 0 0 2 4 1 11 1
+population 12 0 0 2 4 2 11 2
+population 12 0 0 2 4 7 11 7
+population 12 0 0 2 4 106 11 106
+population 12 0 0 2 7 1 11 1
+population 12 0 0 2 7 2 11 2
+population 12 0 0 2 7 7 11 7
+population 12 0 0 2 7 106 11 106
+population 12 0 32 0 1 1 11 1
+population 12 0 32 0 1 2 11 2
+population 12 0 32 0 1 7 11 7
+population 12 0 32 0 1 106 11 106
+population 12 0 32 0 4 1 11 1
+population 12 0 32 0 4 2 11 2
+population 12 0 32 0 4 7 11 7
+population 12 0 32 0 4 106 11 106
+population 12 0 32 0 7 1 11 1
+population 12 0 32 0 7 2 11 2
+population 12 0 32 0 7 7 11 7
+population 12 0 32 0 7 106 11 106
+population 12 0 32 2 1 1 11 1
+population 12 0 32 2 1 2 11 2
+population 12 0 32 2 1 7 11 7
+population 12 0 32 2 1 106 11 106
+population 12 0 32 2 4 1 11 1
+population 12 0 32 2 4 2 11 2
+population 12 0 32 2 4 7 11 7
+population 12 0 32 2 4 106 11 106
+population 12 0 32 2 7 1 11 1
+population 12 0 32 2 7 2 11 2
+population 12 0 32 2 7 7 11 7
+population 12 0 32 2 7 106 11 106
+population 12 0 64 0 1 1 11 1
+population 12 0 64 0 1 2 11 2
+population 12 0 64 0 1 7 11 7
+population 12 0 64 0 1 106 11 106
+population 12 0 64 0 4 1 11 1
+population 12 0 64 0 4 2 11 2
+population 12 0 64 0 4 7 11 7
+population 12 0 64 0 4 106 11 106
+population 12 0 64 0 7 1 11 1
+population 12 0 64 0 7 2 11 2
+population 12 0 64 0 7 7 11 7
+population 12 0 64 0 7 106 11 106
+population 12 0 64 2 1 1 11 1
+population 12 0 64 2 1 2 11 2
+population 12 0 64 2 1 7 11 7
+population 12 0 64 2 1 106 11 106
+population 12 0 64 2 4 1 11 1
+population 12 0 64 2 4 2 11 2
+population 12 0 64 2 4 7 11 7
+population 12 0 64 2 4 106 11 106
+population 12 0 64 2 7 1 11 1
+population 12 0 64 2 7 2 11 2
+population 12 0 64 2 7 7 11 7
+population 12 0 64 2 7 106 11 106
+population 12 0 2 0 1 1 11 1
+population 12 0 2 0 1 2 11 2
+population 12 0 2 0 1 7 11 7
+population 12 0 2 0 1 106 11 106
+population 12 0 2 0 4 1 11 1
+population 12 0 2 0 4 2 11 2
+population 12 0 2 0 4 7 11 7
+population 12 0 2 0 4 106 11 106
+population 12 0 2 0 7 1 11 1
+population 12 0 2 0 7 2 11 2
+population 12 0 2 0 7 7 11 7
+population 12 0 2 0 7 106 11 106
+population 12 0 2 2 1 1 11 1
+population 12 0 2 2 1 2 11 2
+population 12 0 2 2 1 7 11 7
+population 12 0 2 2 1 106 11 106
+population 12 0 2 2 4 1 11 1
+population 12 0 2 2 4 2 11 2
+population 12 0 2 2 4 7 11 7
+population 12 0 2 2 4 106 11 106
+population 12 0 2 2 7 1 11 1
+population 12 0 2 2 7 2 11 2
+population 12 0 2 2 7 7 11 7
+population 12 0 2 2 7 106 11 106
+population 12 1 0 0 1 1 11 1
+population 12 1 0 0 1 2 11 2
+population 12 1 0 0 1 7 11 7
+population 12 1 0 0 1 106 11 106
+population 12 1 0 0 4 1 11 1
+population 12 1 0 0 4 2 11 2
+population 12 1 0 0 4 7 11 7
+population 12 1 0 0 4 106 11 106
+population 12 1 0 0 7 1 11 1
+population 12 1 0 0 7 2 11 2
+population 12 1 0 0 7 7 11 7
+population 12 1 0 0 7 106 11 106
+population 12 1 0 2 1 1 11 1
+population 12 1 0 2 1 2 11 2
+population 12 1 0 2 1 7 11 7
+population 12 1 0 2 1 106 11 106
+population 12 1 0 2 4 1 11 1
+population 12 1 0 2 4 2 11 2
+population 12 1 0 2 4 7 11 7
+population 12 1 0 2 4 106 11 106
+population 12 1 0 2 7 1 11 1
+population 12 1 0 2 7 2 11 2
+population 12 1 0 2 7 7 11 7
+population 12 1 0 2 7 106 11 106
+population 12 1 32 0 1 1 11 1
+population 12 1 32 0 1 2 11 2
+population 12 1 32 0 1 7 11 7
+population 12 1 32 0 1 106 11 106
+population 12 1 32 0 4 1 11 1
+population 12 1 32 0 4 2 11 2
+population 12 1 32 0 4 7 11 7
+population 12 1 32 0 4 106 11 106
+population 12 1 32 0 7 1 11 1
+population 12 1 32 0 7 2 11 2
+population 12 1 32 0 7 7 11 7
+population 12 1 32 0 7 106 11 106
+population 12 1 32 2 1 1 11 1
+population 12 1 32 2 1 2 11 2
+population 12 1 32 2 1 7 11 7
+population 12 1 32 2 1 106 11 106
+population 12 1 32 2 4 1 11 1
+population 12 1 32 2 4 2 11 2
+population 12 1 32 2 4 7 11 7
+population 12 1 32 2 4 106 11 106
+population 12 1 32 2 7 1 11 1
+population 12 1 32 2 7 2 11 2
+population 12 1 32 2 7 7 11 7
+population 12 1 32 2 7 106 11 106
+population 12 1 64 0 1 1 11 1
+population 12 1 64 0 1 2 11 2
+population 12 1 64 0 1 7 11 7
+population 12 1 64 0 1 106 11 106
+population 12 1 64 0 4 1 11 1
+population 12 1 64 0 4 2 11 2
+population 12 1 64 0 4 7 11 7
+population 12 1 64 0 4 106 11 106
+population 12 1 64 0 7 1 11 1
+population 12 1 64 0 7 2 11 2
+population 12 1 64 0 7 7 11 7
+population 12 1 64 0 7 106 11 106
+population 12 1 64 2 1 1 11 1
+population 12 1 64 2 1 2 11 2
+population 12 1 64 2 1 7 11 7
+population 12 1 64 2 1 106 11 106
+population 12 1 64 2 4 1 11 1
+population 12 1 64 2 4 2 11 2
+population 12 1 64 2 4 7 11 7
+population 12 1 64 2 4 106 11 106
+population 12 1 64 2 7 1 11 1
+population 12 1 64 2 7 2 11 2
+population 12 1 64 2 7 7 11 7
+population 12 1 64 2 7 106 11 106
+population 12 1 2 0 1 1 11 1
+population 12 1 2 0 1 2 11 2
+population 12 1 2 0 1 7 11 7
+population 12 1 2 0 1 106 11 106
+population 12 1 2 0 4 1 11 1
+population 12 1 2 0 4 2 11 2
+population 12 1 2 0 4 7 11 7
+population 12 1 2 0 4 106 11 106
+population 12 1 2 0 7 1 11 1
+population 12 1 2 0 7 2 11 2
+population 12 1 2 0 7 7 11 7
+population 12 1 2 0 7 106 11 106
+population 12 1 2 2 1 1 11 1
+population 12 1 2 2 1 2 11 2
+population 12 1 2 2 1 7 11 7
+population 12 1 2 2 1 106 11 106
+population 12 1 2 2 4 1 11 1
+population 12 1 2 2 4 2 11 2
+population 12 1 2 2 4 7 11 7
+population 12 1 2 2 4 106 11 106
+population 12 1 2 2 7 1 11 1
+population 12 1 2 2 7 2 11 2
+population 12 1 2 2 7 7 11 7
+population 12 1 2 2 7 106 11 106

@@ -63,22 +63,11 @@ impl WorldState {
         }
     }
 
-    /// Surface city record, homed units, incoming routes, wonders and nearby
-    /// fertility/site invalidation. Interior dead slots remain available for
-    /// reuse; deleting the last slot reduces the native extent by exactly one.
-    pub fn destroy_surface_city(&mut self, rules: &Rules, index: usize) -> bool {
-        let Some(city) = self
-            .cities
-            .get(index)
-            .filter(|c| c.city_id != 0 && c.map_id == 0)
-        else {
-            return false;
-        };
-        let (x, y, owner) = (city.x as i32, city.y as i32, (city.owner & 15) as u8);
-        self.city_counts[owner as usize] = self.city_counts[owner as usize].wrapping_sub(1);
+    pub(crate) fn displace_city_units(&mut self, rules: &Rules, index: usize, owner: Option<u8>) {
         for k in (0..self.units.len()).rev() {
             let unit = &self.units[k];
-            if unit.id == 0 || unit.home as usize != index {
+            if unit.id == 0 || unit.home as usize != index || owner.is_some_and(|c| c != unit.owner)
+            {
                 continue;
             }
             if unit.type_id == 9 {
@@ -108,6 +97,22 @@ impl WorldState {
             }
             self.remove_land_unit(k);
         }
+    }
+
+    /// Surface city record, homed units, incoming routes, wonders and nearby
+    /// fertility/site invalidation. Interior dead slots remain available for
+    /// reuse; deleting the last slot reduces the native extent by exactly one.
+    pub fn destroy_surface_city(&mut self, rules: &Rules, index: usize) -> bool {
+        let Some(city) = self
+            .cities
+            .get(index)
+            .filter(|c| c.city_id != 0 && c.map_id == 0)
+        else {
+            return false;
+        };
+        let (x, y, owner) = (city.x as i32, city.y as i32, (city.owner & 15) as u8);
+        self.city_counts[owner as usize] = self.city_counts[owner as usize].wrapping_sub(1);
+        self.displace_city_units(rules, index, None);
         self.cities[index].city_id = 0;
         for city in self.cities.iter_mut().filter(|c| c.city_id != 0) {
             for slot in (0..city.route_count.clamp(0, 3) as usize).rev() {

@@ -1,7 +1,11 @@
 # Browser observer (#80 / #81)
 
-The browser watches AI v0 by default using the existing player API (decision 0002).
-Add `--ai-v1` for the AI v1 expansion, economy, research and unit policy.
+The browser watches the v0.10 built-in opponent by default through the existing
+player API (decision 0002), with original-derived research, expansion, military
+targeting and city occupation. `--builtin` explicitly selects that default;
+`--ai-v1` and `--ai` select the legacy AI v1 and AI v0 policies.
+Its supported behaviors and remaining differences are recorded in
+[decision 0007](decisions/0007-original-like-ai.md).
 It renders the surface map, living units and cities with original geometric
 tiles. It needs no JavaScript build, CDN, original artwork or npm packages.
 The CLI still requires your own save and its sibling `Rules.txt`; a sibling
@@ -36,7 +40,7 @@ To generate a finished archive and canonical order log without a server:
 
 ```sh
 cargo run -p totctl -- observe "$CIVTOT_HOME/Original/Ph_Auto2.SAV" \
-  --turns 100 --seed 3 --stream /tmp/game.ndjson --log /tmp/game.log
+  --builtin --turns 100 --seed 3 --stream /tmp/game.ndjson --log /tmp/game.log
 
 # Watch a finished game's verified order-log replay:
 cargo run -p totctl -- observe "$CIVTOT_HOME/Original/Ph_Auto2.SAV" \
@@ -83,7 +87,9 @@ comparison, existing fog-boundary comparisons, and cached-frame checks.
 With `CIVTOT_HOME` set, `crates/totctl/tests/observer_install.rs` additionally
 exports 100 turns with `--ai-v1` on `Original/Ph_Auto2.SAV`, reconstructs the stream from
 its order log, compares every byte of all 101 frames, and checks overwrite
-refusal. `make test fmt clippy` also checks the existing golden corpus.
+refusal. The built-in policy additionally exports 50 turns with `--builtin`,
+checks research orders, and requires all 51 frames to equal verified replay
+byte for byte. `make test fmt clippy` also checks the existing golden corpus.
 
 The optional real-browser smoke test needs Playwright and Chromium, installed
 outside this dependency-free workspace, for example:

@@ -30,14 +30,14 @@ fn main() -> ExitCode {
         _ => {
             eprintln!(
                 "usage: {prog} worldgen <out.mp> [--seed S] [--width W] [--height H] [--land-percent P]\n\
-                        {prog} campaign <Rules.txt> [--turns N] [--seed S] [--civs C] [--difficulty D] [--width W] [--height H] [--land-percent P] [--checkpoint OUT] [--resume FILE] [--log OUT]\n\
+                        {prog} campaign <Rules.txt> [--policy ai-v1|builtin-1] [--turns N] [--seed S] [--civs C] [--difficulty D] [--width W] [--height H] [--land-percent P] [--checkpoint OUT] [--resume FILE] [--log OUT]\n\
                         {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
-                        {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai | --ai-v1]\n\
-                        \x20                        — random players, AI v0 (--ai), or research-capable AI (--ai-v1)\n\
+                        {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai | --ai-v1 | --builtin]\n\
+                        \x20                        — random players, AI v0 (--ai), AI v1 (--ai-v1), or built-in AI (--builtin)\n\
                         {prog} replay <file.sav|scn> <order.log>\n\
                         \x20                        — re-drive a game from its log; exit 1 at the first divergence\n\
-                        {prog} observe <file.sav|scn> [--turns N] [--seed S] [--port P] [--replay LOG] [--stream OUT] [--log OUT] [--ai-v1]\n\
+                        {prog} observe <file.sav|scn> [--turns N] [--seed S] [--port P] [--replay LOG] [--stream OUT] [--log OUT] [--ai | --ai-v1 | --builtin]\n\
                         \x20                        — watch all-AI play or verified replay in a local browser\n\
                         {prog} boot <file.sav|scn> [--rules PATH] [--turns N] [--seed S]\n\
                         \x20                        — headless boot into engine state + checksum\n\
@@ -567,9 +567,10 @@ fn cmd_rules(args: &[String]) -> ExitCode {
 fn cmd_campaign(args: &[String]) -> ExitCode {
     use std::io::Write;
     let run = || -> Result<(), String> {
-        let rules_path = args.first().ok_or("usage: totctl campaign <Rules.txt> [--turns N] [--seed S] [--checkpoint OUT] [--resume FILE]")?;
+        let rules_path = args.first().ok_or("usage: totctl campaign <Rules.txt> [--policy ai-v1|builtin-1] [--turns N] [--seed S] [--checkpoint OUT] [--resume FILE]")?;
         let mut config = engine::newgame::NewGameConfig::default();
         let mut changed_setup = false;
+        let mut policy = engine::campaign::AiPolicy::BuiltIn1;
         let mut turns = 100u32;
         let mut checkpoint = None;
         let mut resume = None;
@@ -580,6 +581,10 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
             let value = &option[1];
             let bad = || format!("invalid value for {key}: {value}");
             match key {
+                "--policy" => {
+                    policy = engine::campaign::AiPolicy::parse(value)?;
+                    changed_setup = true;
+                }
                 "--turns" => turns = value.parse().map_err(|_| bad())?,
                 "--checkpoint" => checkpoint = Some(value),
                 "--resume" => resume = Some(value),
@@ -632,7 +637,7 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
             let saved = std::fs::read_to_string(path).map_err(|e| format!("read {path}: {e}"))?;
             engine::campaign::Campaign::restore(rules, &saved)?
         } else {
-            engine::campaign::Campaign::new(config, rules)?
+            engine::campaign::Campaign::with_policy(config, rules, policy)?
         };
         let outcome = campaign.advance(turns)?;
         for (path, contents) in [
@@ -833,6 +838,7 @@ fn sibling_rules_events(
 fn cmd_play(args: &[String]) -> ExitCode {
     let (mut path, mut turns, mut seed, mut out, mut ai) = (None, 10usize, 1u64, None, false);
     let mut ai_v1 = false;
+    let mut builtin = false;
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
@@ -841,6 +847,7 @@ fn cmd_play(args: &[String]) -> ExitCode {
             "--log" => out = it.next().cloned(),
             "--ai" => ai = true,
             "--ai-v1" => ai_v1 = true,
+            "--builtin" => builtin = true,
             _ if path.is_none() => path = Some(a.clone()),
             _ => {
                 eprintln!("error: unexpected argument {a}");
@@ -850,7 +857,7 @@ fn cmd_play(args: &[String]) -> ExitCode {
     }
     let Some(path) = path else {
         eprintln!(
-            "usage: totctl play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai | --ai-v1]"
+            "usage: totctl play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai | --ai-v1 | --builtin]"
         );
         return ExitCode::from(2);
     };
@@ -863,7 +870,11 @@ fn cmd_play(args: &[String]) -> ExitCode {
             .unwrap_or_default();
         let mut g = engine::player::Game::new(&name, &bytes, seed, rules, events)?;
         for civ in 1..8 {
-            g.players[civ] = if ai_v1 {
+            g.players[civ] = if builtin {
+                Some(Box::new(engine::ai::BuiltInAi::new(
+                    &g.rules, seed, civ as u8,
+                )?))
+            } else if ai_v1 {
                 Some(Box::new(engine::ai::AiV1::new(&g.rules, seed, civ as u8)))
             } else if ai {
                 Some(Box::new(engine::ai::AiV0::new(&g.rules, seed, civ as u8)))
@@ -941,10 +952,19 @@ fn cmd_observe(args: &[String]) -> ExitCode {
         let (mut turns, mut seed, mut port) = (100usize, 1u64, 8000u16);
         let (mut replay, mut stream, mut log) = (None, None, None);
         let mut ai_v1 = false;
+        let mut builtin = true;
         let mut it = args.iter();
         while let Some(a) = it.next() {
             match a.as_str() {
-                "--ai-v1" => ai_v1 = true,
+                "--ai-v1" => {
+                    ai_v1 = true;
+                    builtin = false;
+                }
+                "--ai" => {
+                    ai_v1 = false;
+                    builtin = false;
+                }
+                "--builtin" => builtin = true,
                 "--turns" => {
                     turns = it
                         .next()
@@ -970,7 +990,7 @@ fn cmd_observe(args: &[String]) -> ExitCode {
                 _ => return Err(format!("unexpected argument {a}")),
             }
         }
-        let path = path.ok_or("usage: totctl observe <save> [--turns N] [--seed S] [--port P] [--replay LOG] [--stream OUT] [--log OUT] [--ai-v1]")?;
+        let path = path.ok_or("usage: totctl observe <save> [--turns N] [--seed S] [--port P] [--replay LOG] [--stream OUT] [--log OUT] [--ai | --ai-v1 | --builtin]")?;
         if log.is_some() && stream.is_none() {
             return Err(
                 "--log requires --stream; the live viewer offers an order-log download".into(),
@@ -989,7 +1009,13 @@ fn cmd_observe(args: &[String]) -> ExitCode {
         } else {
             let mut game = engine::player::Game::new(&name, &bytes, seed, rules, events)?;
             for civ in 1..8 {
-                game.players[civ] = if ai_v1 {
+                game.players[civ] = if builtin {
+                    Some(Box::new(engine::ai::BuiltInAi::new(
+                        &game.rules,
+                        seed,
+                        civ as u8,
+                    )?))
+                } else if ai_v1 {
                     Some(Box::new(engine::ai::AiV1::new(
                         &game.rules,
                         seed,

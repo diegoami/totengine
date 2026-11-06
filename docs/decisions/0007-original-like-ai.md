@@ -167,3 +167,78 @@ test intentionally ignored), five Python report tests and the full golden
 corpus including run50 and decoder crosschecks. Workspace formatting and
 all-target Clippy with warnings denied passed. The native adapter probe's
 report and numeric fixture reproduced byte-for-byte.
+
+## Observation policy, campaigns and occupation (2026-11-06)
+
+`BuiltInAi` (`builtin-1`) now drives `totctl play/observe --builtin` and
+`totctl campaign --policy builtin-1`. Its research scorer receives own
+knowledge, own city sizes/wonder hosts/naval count, Rules leader identity and
+public game/scenario settings. Foreign knowledge, contact/reputation and
+landmass caches remain unknown. The CRT selector uses a private per-player
+stream, never the world's combat stream. Its choices consequently need not
+match the privileged native-context comparisons above. Tests alter foreign
+knowledge/caches and require unchanged observations and choices.
+
+Generated checkpoints explicitly record this policy in format 2. Format 1
+retains AI v1 and its existing golden transcript. Restore reconstructs private
+policy state by playing the prefix, rejects unknown policy identities and
+checks the complete canonical checkpoint. The CLI defaults to the built-in policy for generated campaigns and browser
+observation. Explicit legacy options remain available. `Campaign::new` retains
+AI v1 for existing callers; the CLI uses `with_policy`. Saved-game `play`
+retains its random-player default and selects the new opponent with `--builtin`.
+
+The new policy also changes production and movement. It reserves a city
+garrison, prioritizes urgent defense/happiness/growth, budgets expansion and
+field armies, and selects affordable land attack strength. Settlers seek
+known food-rich sites away from known cities and visible enemies. Field
+units route over known land toward missing garrisons or visible targets;
+attacks use a conservative visible strength estimate. These are engine
+policies calibrated with original production choices, **not** a port of the
+native unit-AI or complete build-scoring dispatcher. They retain the player
+observation boundary and cannot cross the map seam.
+
+War testing exposed missing city ownership transfer. The explicit
+`OccupyCity` order now validates a land combat unit, an adjacent live foreign
+surface city, available movement and absence of foreign defenders. It
+charges ordinary movement, transfers treasury, applies building/population
+loss, removes or rehomes displaced units, transfers ownership and refreshes
+city statistics. A surviving city fires CITYTAKEN through the existing event
+engine; Leonardo ownership is evaluated after transfer. A zero-population
+city uses the already-decoded destruction path. Existing `move` transcripts
+retain their pre-v0.10 semantics; this explicit order is required for capture.
+
+The capture loot kernel has 75 native vectors, alternating-bit building
+attrition has 192, and non-barbarian military population loss has 576,
+including final CRT states. The building phase uses **one** draw to choose a
+shared alternating mask for all five bytes, rather than independent building
+rolls. Recapture skips attrition and protects size-one cities. Population
+handling retains the original saved-rank/human-knowledge exceptions for
+size-one AI cities. The retained evidence executes unmodified instruction
+ranges with authored caller frames and no replacement callees. It does not
+assert parity of the enclosing capture dispatcher.
+
+Capital relocation/civil war, technology plunder, treaty consequences,
+civilization respawn/elimination, sea cargo, worker improvements and naval
+transport remain concrete gaps. The engine transition currently chooses a
+fresh production item through its normal player policy instead of executing
+the native capture dispatcher's immediate chooser. Its visibility and event
+ordering remain engine-defined. No whole-capture or whole-campaign native
+parity is claimed.
+
+Concrete follow-ups are tracked in #112 (worker/scenario production), #113
+(remaining capture consequences), #114 (transport and large-scenario turn
+scaling), and #115/#96 (government/rates/diplomacy-aware planning). They have
+no assigned release and do not change v0.11's owner-reviewed UI discovery
+priority. The inherited 200-order per-civ turn budget is a material limit on
+large scenarios, alongside expensive repeated observations; the standard-game
+demonstration does not erase those limitations.
+
+Candidate validation: install-backed `make test fmt clippy` passes 209 Rust
+tests (one nightly test intentionally ignored), five Python report tests and
+the complete golden corpus, including run50 and decoder crosschecks. The
+separate autoplay suite passes 32 seeds for each policy (64 campaigns). Both production artifacts
+reproduce byte-for-byte on v0.10. The capture probe additionally verifies all
+eight previous-owner encodings; an authored occupation test starts with a
+different saved history owner and verifies its replacement. The legacy
+checkpoint golden changes only its package-version header to 0.10.0; its
+order transcript, fingerprint and log identity are unchanged.

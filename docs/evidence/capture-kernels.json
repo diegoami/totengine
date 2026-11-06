@@ -1,0 +1,48 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routines": [
+    "0x53adc6",
+    "0x53d9ac..0x53da34",
+    "0x53da34..0x53dc1f",
+    "0x53f522..0x53f55c"
+  ],
+  "loot_cases": 75,
+  "building_cases": 192,
+  "population_cases": 576,
+  "replacement_callees": [],
+  "owner_history_checks": [
+    {
+      "old_owner": 0,
+      "resulting_original_owner": 0
+    },
+    {
+      "old_owner": 1,
+      "resulting_original_owner": 1
+    },
+    {
+      "old_owner": 2,
+      "resulting_original_owner": 2
+    },
+    {
+      "old_owner": 3,
+      "resulting_original_owner": 3
+    },
+    {
+      "old_owner": 4,
+      "resulting_original_owner": 4
+    },
+    {
+      "old_owner": 5,
+      "resulting_original_owner": 5
+    },
+    {
+      "old_owner": 6,
+      "resulting_original_owner": 6
+    },
+    {
+      "old_owner": 7,
+      "resulting_original_owner": 7
+    }
+  ],
+  "scope": "Authored caller inputs for loot, alternating-bit building attrition, non-barbarian military population loss and previous-owner recording only; not complete city capture, capital handling or unit movement."
+}

@@ -34,8 +34,12 @@ neither mode computes native terrain connections or game mechanics.
 At 1440 px the prototype presents three city columns. At 1024 px its third
 column wraps below the worked radius. Desktop keyboard/mouse is the first
 proposed input target; this does not establish a mobile or touch client.
-A native window and browser may implement the same design; HTML is the review
-medium and **does not choose a production toolkit**. Existing SDL2 story #94
+Both a playable browser client and a normal desktop client are required
+(owner clarification, 2026-11-06). They should share this interaction design
+and engine/session contracts where practical, with acceptance on each surface.
+HTML is the review medium and **does not choose a production toolkit**.
+The current browser observer and simulated prototype do not complete either
+playable client. Existing desktop SDL2 story #94
 is deferred until the design and deployment decision are settled.
 
 ## Interaction walkthroughs

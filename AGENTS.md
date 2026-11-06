@@ -178,7 +178,14 @@ human-controlled standard-game turn and dependent delivery packages, without
 assigning versions. Owner accepted revision 02 as a prototype on 2026-11-06
 ("ok for a prototype is ok"); use it as the planning basis without asking for
 prototype acceptance again. Specific input behavior, toolkit and implementation
-scope/decomposition remain open. The owner then explicitly directed an
+scope/decomposition remain open. The owner explicitly requires BOTH a playable
+browser client and a normal standalone desktop client ("also", "we need both",
+2026-11-06). The observer/prototype do not satisfy either complete playable
+client. Track delivery and human-play acceptance for both, sharing the engine
+and session contracts; framework/toolkit and ordering remain open. Do not
+reinterpret this as browser-only, desktop-only or a desktop requirement replacing
+the browser target. Live delivery stories: desktop #94, browser #125, shared
+design/decomposition #107. The owner then explicitly directed an
 installed-art visual pass: `CIVTOT_HOME=/path/to/CIVTOT python3 tools/preview_client.py`
 serves the prototype with local profile BMP/GIF sheets (no original art committed).
 Usage/recipe limits: `docs/ui/asset-preview.md`; numeric source/crop evidence:

@@ -45,3 +45,22 @@ actual scope. Discovery/design/decomposition is tracked in #107 under
 v0.11.0.
 Do not assign later client versions or claim a known delivery schedule
 before that work is complete. This is planning, not a release candidate.
+
+
+## Delivery clarification — 2026-11-06
+
+The owner explicitly requires **both a playable browser client and a normal
+standalone desktop game client** ("also", "we need both"). They are separate
+required delivery surfaces. The existing browser observer and simulated HTML
+prototype do not satisfy the playable-browser requirement; the desktop client
+must launch as an ordinary application with its own game window, rather than
+require opening the browser preview. This does not select a desktop toolkit,
+browser engine-hosting technology or implementation order.
+
+Plan shared Rust gameplay, validated commands/views, decision/session state,
+asset interpretation and persistence contracts wherever practical. Each client
+needs its own launch, owned-asset access, input/focus, save/load, packaging and
+sustained-human-play acceptance. The user supplies original assets for both;
+shipping original artwork is still prohibited. The milestone decomposition must
+track both clients explicitly and cannot mark the client track complete after
+only one surface works. Later versions/counts remain unassigned.

@@ -12,6 +12,30 @@ and [reference inventory/gaps](discovery.md). The complete original-AI program
 is a dependency of the UI work below. Existing built-in opponents are sufficient
 for the human-play acceptance routes.
 
+## Required delivery targets
+
+Owner clarification, 2026-11-06: **both a playable browser client and a normal
+standalone desktop client are required**. Tracking: desktop [#94](https://github.com/diegoami/totengine/issues/94),
+browser [#125](https://github.com/diegoami/totengine/issues/125), shared design
+[#107](https://github.com/diegoami/totengine/issues/107).
+The current observer and simulated
+browser prototype are useful foundations, not either complete playable client.
+The desktop application must have an ordinary launch and its own game window;
+opening the browser preview is not desktop delivery. Frameworks/toolkits and
+which surface lands first remain undecided.
+
+Share the engine, validated gameplay commands/views, human decision/session
+protocol and persistence semantics. Evaluate asset decoding/rendering reuse as
+part of the architecture audit. Browser install access needs an explicit file
+selection or local-host arrangement; the desktop has its own installation and
+window/input lifecycle. No surface ships the user's original assets.
+
+Every selected gameplay slice must say which surfaces it delivers and retain
+tracked work for the other. Overall client completion requires sustained human
+play on **both**, including launch, input, decisions, original-resource loading
+and save/resume. One implementation can inform the other; one cannot substitute
+for the other.
+
 ## First deliverable to approve
 
 Proposed first deliverable: a **human-controlled standard surface-game turn**.
@@ -24,7 +48,8 @@ diplomacy, reports and scenario compatibility arrive through later packages.
 
 The owner has now directed use of the installed original artwork; the local
 prototype demonstrates that source direction. Before assigning a version,
-settle desktop delivery/toolkit, detailed rendering behavior,
+settle the browser/desktop architecture, desktop toolkit, surface delivery order
+and detailed rendering behavior,
 movement confirmation and the minimum human-choice handling needed when the
 first turn reaches founding, production or research. Do not ship a map that
 silently auto-answers those required decisions or consumes the human's orders
@@ -58,7 +83,7 @@ Use a fresh standard game and at least one representative scenario, not only
 generated autoplay. The owner must be able to reach the following outcomes
 through the client without console commands or agent help:
 
-1. Navigate unknown/known terrain, activate a stack, issue and reject orders,
+1. On each client surface, navigate unknown/known terrain, activate a stack, issue and reject orders,
    found/name cities, fight and recover from unit loss, and regain control after
    opponents/events. Check selection remains stable under fast/duplicate input.
 2. Manage a growing and an unhappy/starving city, reassign workers/specialists,

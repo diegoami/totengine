@@ -55,6 +55,11 @@ What runs today, headless, against your own ToT install:
   replay a finished game, with full-map/per-civ fog views and turn controls
   (`totctl observe`; [usage and stream format](docs/browser-observer.md)).
 
+The playable-client track targets **both a browser client and a standalone
+desktop client**, sharing the Rust engine. Both are planned across subsequent
+milestones; the current observer and design prototype are not playable clients.
+See the [client delivery plan](docs/ui/client-milestones.md).
+
 AI v1 expands, invests in city improvements, researches and handles units
 through the player interface (`totctl play --ai-v1` / `totctl observe --ai-v1`).
 Economy work includes science/tax, recurring trade routes, maintenance,

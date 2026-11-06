@@ -6,6 +6,15 @@ to [reference discovery](discovery.md) and its capture manifest. The
 [prototype](client-prototype.html) is an authored layout and interaction aid.
 Native and proposed differences are explicit below.
 
+## Required browser and desktop surfaces
+
+The owner requires both a playable browser client and an ordinary standalone
+desktop client. These contracts apply to both. Share gameplay and decision
+semantics; validate launch, input/focus, resource access, save/resume and human
+play separately. Browser file access/hosting and desktop packaging/windowing
+need explicit implementation plans. The existing observer and simulated design
+prototype are not the playable browser client, and do not replace desktop work.
+
 ## Input ownership and pending decisions
 
 A human session needs more states than the current synchronous `Player::act`
@@ -237,7 +246,7 @@ route in U18 proves only visible date/project retention, not full engine parity.
 - Final layout fidelity/refinement beyond the prototype accepted on 2026-11-06.
 - Immediate movement versus per-move confirmation, plus consequential orders.
 - Which immediate city edits should use a draft/preview/Apply interaction.
-- Desktop delivery target/toolkit and asset/style expectations before selecting
+- Browser/desktop architecture, toolkit, delivery order and detailed rendering before selecting
   the first implementation deliverable.
 - Acceptance of the proposed decomposition and supported first-slice boundary.
 

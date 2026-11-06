@@ -9,7 +9,9 @@ Run **totplay** (Windows: **totplay.exe**) for the local browser client, or
 launcher starts a local loopback host and opens your default browser. Use the
 in-game Close client button to stop that host; closing a browser tab keeps the
 game paused and available for reconnection. Desktop needs no browser/server.
-Linux desktop requires the system SDL2 runtime. Windows packages include it.
+The reference Linux x86-64 package requires glibc 2.34 or later; desktop also
+requires the system SDL2 runtime. Windows x86-64 packages include SDL2 and have
+been tested on Windows 10.
 
 Enter your original Test of Time installation directory at setup, or set
 `CIVTOT_HOME`. On Windows a typical path is `D:\games\CIVTOT`. Choose the seed,

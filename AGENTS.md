@@ -206,7 +206,7 @@ check pass. This is not a production renderer or a human game-session driver.
 `docs/ui/client-architecture.md` audits the engine/observer/assets and defines
 one Rust human-session layer with local-hosted browser and native desktop
 adapters. Accepted decomposition is live: milestone 10 “Playable human turn —
-browser and desktop” (version unassigned), #126 desktop feasibility, #127 human
+browser and desktop” (v0.12.0 candidate), #126 desktop feasibility, #127 human
 driver, #128 resources/filtered views, #129 browser, #130 desktop, #131 checkpoints
 and both-client acceptance. Complete-client umbrellas #94/#125 remain open;
 full city/government/diplomacy/import/scenarios and sustained campaigns follow.
@@ -229,10 +229,11 @@ restore that memory and exact engine/resource/policy/session state through repla
 Windows and Linux packages contain notices/runtime DLLs, never game assets/fonts.
 Usage: `docs/playable-clients.md`; validation/current gates:
 `docs/v0.12.0-readiness.md`. #126/#127 are closed. #128–#131 and milestone 10
-remain open pending assembled acceptance, including owner ten-round play on each
-surface. Do not replace owner play with automation or launch milestone review.
-Version 0.12.0 is preparation only until those gates pass and a clean candidate
-is committed for owner-launched independent review. Full-client #94/#125 and
+remain open until review/release. The owner explicitly confirmed at least ten
+human rounds in both clients with no blockers, satisfying the manual gate.
+The v0.12.0 candidate is prepared for owner-launched independent review; main
+takes review fixes only until tagging. Do not launch that review or tag before
+AGREE at its exact SHA. Full-client #94/#125 and
 full-AI gate #117 remain open beyond this narrow slice.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
@@ -244,7 +245,8 @@ reproducible new game → v0.4.0 minimal production → v0.5.0 player
 interface (headless API) → v0.6.0 AI v0 (all-AI game runs) → v0.7.0
 browser observer → v0.8.0 AI v1 + economy depth → v0.9.0 generated-world
 campaign → v0.10.0 original-like built-in AI → v0.11.0 UI discovery/design
-and client milestone planning → playable client across subsequent milestones
+and client milestone planning → v0.12.0 first playable turn on both clients
+→ full playable client across subsequent milestones
 → pluggable AIs after the playable client (version unassigned). The v0.10
 target is recognizable original-game AI behavior, supported by oracle
 comparisons; AI v1 in v0.8 is only the foundation. Client screen/workflow

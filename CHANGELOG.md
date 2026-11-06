@@ -5,7 +5,7 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
-### v0.12.0 preparation — first playable human turn, both clients
+## [0.12.0] — first playable human turn, browser and desktop
 
 - Add `totplay`, a packaged loopback Rust host/browser client, and `totdesktop`,
   a standalone SDL2 Windows/Linux window. Both use the shared atlas/controller,
@@ -25,8 +25,8 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   contain no game artwork, Rules, original saves or fonts.
 - Verify both renderers through real browser/OS input, generated combat/capture
   routes, checkpoint continuation and cross-platform byte comparisons. Owner
-  ten-round acceptance in both clients remains pending; this is not yet a
-  reviewed release candidate. See docs/v0.12.0-readiness.md.
+  confirmed ten rounds in both clients with no blockers. Candidate review and
+  tagging follow docs/milestone-review.md; readiness: docs/v0.12.0-readiness.md.
 - Full city/government/diplomacy, SAV/scenario import, multi-map and sustained
   campaign acceptance remain later work. Full original-AI reconstruction stays
   behind completion of the playable-client track.

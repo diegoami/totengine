@@ -2,8 +2,12 @@
   "engine_version": "0.12.0",
   "human_checkpoint_format": 2,
   "owner_manual_acceptance": {
-    "browser": "pending",
-    "desktop": "pending"
+    "browser": "passed: at least ten human rounds",
+    "desktop": "passed: at least ten human rounds",
+    "confirmation": "Completed ten rounds in both, no blockers",
+    "requested_input": "keyboard and mixed mouse input, without console assistance",
+    "problems_reported": "none",
+    "setup_provenance": "Original-profile clients and launch instructions supplied in the session. Owner did not separately report a seed/difficulty descriptor; automated setup descriptors below are not claimed as separate manual-session telemetry."
   },
   "ten_round_setup": "1 2 80 50 47 7 7 5 2",
   "ten_round_human": 1,
@@ -46,6 +50,18 @@
   "artifacts": "Only numeric identities/hashes and authored UI input are committed; owned-art screenshots and traces remain private.",
   "package_binaries": {
     "linux": {
+      "totdesktop": "394a76fab1f9fb42977417210e85f333672c206e6a7ee853a098e1f029b2baca",
+      "totplay": "d92d87eff7e0a7856ae9f1d10cbcb3efd03ddd746c3ac845d305e6a97b6db3af"
+    },
+    "windows": {
+      "SDL2.dll": "53e8fa7e9ed43c30bd650c39396f0d9d2067d2fff0b926c9433b75202592e4aa",
+      "libunwind.dll": "f170c420d203cfb6640b3f90ca46373fd886670adad08ce5f2fdde054db27976",
+      "totdesktop.exe": "1a7fdb3dc192e1c1fdda496a64324162e7b0a829fa9ec1d68f922a3fd977241a",
+      "totplay.exe": "f0b3b9620bb8b32726eaa8b47dfba758ba0430f6403a84c020c683dcf9318258"
+    }
+  },
+  "owner_test_package_binaries": {
+    "linux": {
       "totdesktop": "f9987d42b9f5c19325d6f4c7f894d2bdeb1a9923772a441f20ca9a0a7fd87c57",
       "totplay": "a79948326c7e4643d8cfd7f7f7428288f0d664c27677f05540d17aa449aa6688"
     },
@@ -55,5 +71,12 @@
       "totdesktop.exe": "bc4c06e114a2f564f4238deecdba7a5c0a4ba6ca047920cc34b768f7afce45f2",
       "totplay.exe": "ecd0177cdf980dc64e058c4d7ef90408aa0ee53af6d96fbb6a2ed5403a3a6d02"
     }
+  },
+  "package_code_revision": "c827e81acbb74f151d5338358d344af1014fbad1",
+  "final_candidate_recheck": {
+    "browser": "fresh package: ten rounds, pending-choice/normal continuation, reconnect, battle/capture exact checkpoints passed",
+    "linux_desktop": "fresh package: ten rounds, pending-choice/normal continuation, battle/capture exact checkpoints, focus/resize and close passed",
+    "windows_desktop": "fresh package: own native window launch and clean OS close passed; no input injected into owner window",
+    "owner_confirmation": "Completed ten rounds in both, no blockers"
   }
 }

@@ -131,7 +131,10 @@ would still be premature.
 ## Live implementation queue
 
 The accepted first slice is [milestone 10](https://github.com/diegoami/totengine/milestone/10),
-“Playable human turn — browser and desktop”, with release version unassigned.
+“Playable human turn — browser and desktop”, now proposed as v0.12.0.
+Both actual clients and checkpoint parity are implemented. The owner explicitly
+confirmed ten human rounds in each with no blockers. Readiness and review gate:
+[the v0.12 candidate record](../v0.12.0-readiness.md).
 Both adapters must pass before that milestone closes. The broad desktop #94
 and browser #125 continue to track the complete clients beyond this slice.
 

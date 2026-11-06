@@ -3808,7 +3808,7 @@ are observations rather than golden byte-parity assertions. Commands, dependency
 notices and explicit limitations: [desktop feasibility](../ui/desktop-feasibility.md)
 and [spike README](../../tools/desktop-spike/README.md). This is not human gameplay
 or a full native-renderer claim.
-## Playable human clients (milestone 10, v0.12 preparation)
+## Playable human clients (milestone 10, v0.12 candidate)
 
 `client-atlas-v1.json` retains numeric identities/dimensions/opacity/fingerprints
 for the 141 Original-profile crops used by both clients. Regenerate/check with
@@ -3830,6 +3830,6 @@ hashes and exact scope/status for real browser and native-window input checks.
 The browser/Linux extended routes match pending-choice continuation and
 combat/capture results byte-for-byte; Windows ten-round checkpoints match.
 Stopped Windows package attempts are explicitly recorded, not counted as passes.
-Reproduction, packaging, remaining owner play and limits:
+Reproduction, packaging, owner acceptance and limits:
 [`v0.12.0-readiness.md`](../v0.12.0-readiness.md). The original AI completion
 program remains gated behind full playable-client completion.

@@ -3763,3 +3763,27 @@ browser-only validation are recorded in `docs/ui/client-design.md`.
 `docs/ui/screen-contracts.md` separates proposed interface/decision contracts
 from reference observations; `docs/ui/client-milestones.md` is an unversioned
 delivery proposal. Owner design/decomposition approval remains pending.
+
+
+## Installed-art client prototype (#107, v0.11)
+
+`client-artwork.json` records eight installed Original-profile source hashes,
+browser-decoded dimensions and five numeric foreground/transparency samples.
+The local tool reads selected BMP/GIF files from `CIVTOT_HOME`; no artwork,
+extracted sprites, base64 data or installed-art captures are committed.
+`docs/ui/asset-preview.md` documents the measured crop/matte recipes, explicit
+lookup policy and limits. These are visual prototype examples, not a complete
+original renderer, palette/adjacency decoder, scenario adapter or game client.
+
+Re-derive with a local preview server and optional Playwright:
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT python3 tools/preview_client.py --profile Original
+NODE_PATH=/path/to/external/node_modules node tools/test_client_artwork.cjs \
+  http://127.0.0.1:8765 /tmp/client-artwork.json
+```
+
+The check verifies served bytes against the manifest, foreground/transparent
+sample pixels, zoom, simulated move/redraw, citizen imagery and all main screens.
+The JSON contains no original pixels. Install-free selection, fallback and
+bounded-route tests run through `tools/test_preview_client.py` in make test/CI.

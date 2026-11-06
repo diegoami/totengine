@@ -6,6 +6,9 @@ v0.11, under [decision 0005](../decisions/0005-playable-client-planning.md).
 The [clickable prototype](client-prototype.html) is a standalone local HTML file:
 open it in a browser; no server or engine is needed. Static previews: [map](map-layout.png), [city](city-layout.png), [reports](reports-layout.png) and [diplomacy](diplomacy-layout.png). Its review navigation is
 outside the proposed game window. All values and actions are authored fixtures.
+For the owner-directed visual pass using installed artwork, run the
+[local asset preview](asset-preview.md). The committed PNGs remain schematic;
+installed-art captures stay outside Git.
 Detailed [screen/decision contracts](screen-contracts.md) and the proposed
 [delivery breakdown](client-milestones.md) accompany this layout review.
 
@@ -15,16 +18,18 @@ Preserve the dense map/advisor/city structure seen in the reference. A thin
 menu strip provides familiar command families and keyboard discoverability.
 The empire status, active unit/terrain/mode and overview remain visible above
 the map. Avoid making the map a collection of unrelated management cards.
-The proposed dark, restrained palette and plain borders are our own styling,
-not original stone textures or final art approval.
+The schematic revision uses our own dark palette and plain borders. The
+owner-directed local artwork pass now uses installed city/dialog textures and
+sprites; neither preview establishes final native window composition.
 
 The city occupies the workspace: resource totals and production at left,
 worked radius and citizens in the center, food/buildings/support at right.
 The original puts city controls and a large information panel toward the upper
 right; this proposal keeps the same information families but allocates them
 more evenly. This is a design change for review, not a faithful pixel copy.
-Original visual assets, if used later, must resolve from the user's install.
-The primitive map and figures here are authored schematic drawings only.
+The local installed-art pass now resolves visual assets from the user's install.
+The standalone file and committed previews retain authored schematic drawings;
+neither mode computes native terrain connections or game mechanics.
 
 At 1440 px the prototype presents three city columns. At 1024 px its third
 column wraps below the worked radius. Desktop keyboard/mouse is the first

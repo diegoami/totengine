@@ -178,7 +178,14 @@ human-controlled standard-game turn and dependent delivery packages, without
 assigning versions. Owner accepted revision 02 as a prototype on 2026-11-06
 ("ok for a prototype is ok"); use it as the planning basis without asking for
 prototype acceptance again. Specific input behavior, toolkit and implementation
-scope/decomposition remain open.
+scope/decomposition remain open. The owner then explicitly directed an
+installed-art visual pass: `CIVTOT_HOME=/path/to/CIVTOT python3 tools/preview_client.py`
+serves the prototype with local profile BMP/GIF sheets (no original art committed).
+Usage/recipe limits: `docs/ui/asset-preview.md`; numeric source/crop evidence:
+`docs/evidence/client-artwork.json`. The browser renderer covers map/city art,
+citizens/icons and interface textures; all game state/actions remain simulated.
+Six install-free routing/selection tests and the optional real-browser artwork
+check pass. This is not a production renderer or a human game-session driver.
 `docs/v0.11.0-readiness.md` records the acceptance gaps and completed checks;
 it is an in-progress record, not authorization to call the milestone.
 This is not an accepted design or milestone candidate; substantial client

@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "kind": "client-artwork-preview",
+  "profile": "Original",
+  "measurements": {
+    "foodIcon": {
+      "width": 20,
+      "height": 20,
+      "opaque": 312,
+      "transparent": 88,
+      "visibleMagenta": 0,
+      "cornerAlpha": 0
+    },
+    "grass": {
+      "width": 64,
+      "height": 32,
+      "opaque": 1024,
+      "transparent": 1024,
+      "visibleMagenta": 0,
+      "cornerAlpha": 0
+    },
+    "forest": {
+      "width": 64,
+      "height": 32,
+      "opaque": 947,
+      "transparent": 1101,
+      "visibleMagenta": 0,
+      "cornerAlpha": 0
+    },
+    "warrior": {
+      "width": 64,
+      "height": 64,
+      "opaque": 787,
+      "transparent": 3309,
+      "visibleMagenta": 0,
+      "cornerAlpha": 0
+    },
+    "city": {
+      "width": 64,
+      "height": 48,
+      "opaque": 513,
+      "transparent": 2559,
+      "visibleMagenta": 0,
+      "cornerAlpha": 0
+    }
+  },
+  "sources": {
+    "terrain1": {
+      "url": "/assets/terrain1",
+      "source": "Original/Terrain1.BMP",
+      "sha256": "5b591d8811069228e0f74b073ef42fd3f1db1d15357545016a9bda3a7b521734"
+    },
+    "terrain2": {
+      "url": "/assets/terrain2",
+      "source": "Original/Terrain2.bmp",
+      "sha256": "3f65949a078451711512b380ac0a80b07cfc65acf2d8e9da30e707e61e540730"
+    },
+    "units": {
+      "url": "/assets/units",
+      "source": "Original/units.bmp",
+      "sha256": "7bf8a38fddd4c2023e2bd57f96d5d8c9a4af6da7ba9da859bdde473ac8248a75"
+    },
+    "cities": {
+      "url": "/assets/cities",
+      "source": "Original/Cities.bmp",
+      "sha256": "85956af43a4db2b8621b703f4e92f2998eb0e017e7a91bb4fb13d53993ef2ac4"
+    },
+    "city": {
+      "url": "/assets/city",
+      "source": "Original/city.bmp",
+      "sha256": "c35d356f9db7a622debd5675c993e7e57ab1f14ba69eb3144a1f12c6b44a922f"
+    },
+    "icons": {
+      "url": "/assets/icons",
+      "source": "Original/Icons.bmp",
+      "sha256": "6ef962ea8e66a74fda9165bbced8a6badf89849fc377ef32f622cb5ed4c8f2d5"
+    },
+    "people": {
+      "url": "/assets/people",
+      "source": "Original/People.bmp",
+      "sha256": "c956f81a4f10433764eaf4edf6647a9e71e872ff4d67df22e871fb91106bce77"
+    },
+    "dialog": {
+      "url": "/assets/dialog",
+      "source": "Original/dialog.bmp",
+      "sha256": "46697809ce8cc308161eef463a02ec906994be7d8fe7aed6ac0117afa6c15b81"
+    }
+  },
+  "dimensions": {
+    "terrain1": [
+      640,
+      480
+    ],
+    "terrain2": [
+      640,
+      480
+    ],
+    "units": [
+      640,
+      586
+    ],
+    "cities": [
+      640,
+      480
+    ],
+    "city": [
+      800,
+      600
+    ],
+    "icons": [
+      640,
+      480
+    ],
+    "people": [
+      640,
+      480
+    ],
+    "dialog": [
+      1117,
+      298
+    ]
+  },
+  "checks": "source hashes, sample masks, zoom, move, citizen redraw, nine screens, 1440/1024 layout, no JS errors"
+}

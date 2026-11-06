@@ -35,6 +35,8 @@ jobs:
         run: python3 -m py_compile tools/totctl.py tools/worldgen_compare.py tools/worldgen_capture_manifest.py tools/oracle/dialog_guard.py
       - name: World generation evidence checks
         run: python3 -m unittest discover -s tools -p 'test_worldgen_compare.py'
+      - name: Local artwork preview routing
+        run: python3 -m unittest discover -s tools -p 'test_preview_client.py'
       - name: Golden corpus (self-skips without CIVTOT_HOME)
         run: bash tools/golden.sh check
       # Golden-file tests over the local corpus run only where the game is

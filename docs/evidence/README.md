@@ -3796,3 +3796,15 @@ The check verifies served bytes against the manifest, foreground/transparent
 sample pixels, zoom, simulated move/redraw, citizen imagery and all main screens.
 The JSON contains no original pixels. Install-free selection, fallback and
 bounded-route tests run through `tools/test_preview_client.py` in make test/CI.
+
+## Desktop toolkit feasibility (milestone 10, #126)
+
+`desktop-feasibility.json` retains numeric reports/source hashes for the isolated
+SDL2 application: native Linux and Windows, shared Original artwork loader,
+scripted accented-name fixture, real OS input/focus/resize/close and packaged
+launches. Windows ran on the actual Windows host, not Wine. All original pixels,
+fonts and executable/DLL packages stay outside Git. Timing-dependent counters
+are observations rather than golden byte-parity assertions. Commands, dependency
+notices and explicit limitations: [desktop feasibility](../ui/desktop-feasibility.md)
+and [spike README](../../tools/desktop-spike/README.md). This is not human gameplay
+or a full native-renderer claim.

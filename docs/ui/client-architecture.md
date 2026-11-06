@@ -13,8 +13,10 @@ The audit below is the planning baseline. The shared human driver and checkpoint
 engine foundation now exist in `engine::human`; see [session contract and
 checks](human-session.md). `totui::resources` provides profile Rules/art selection,
 BMP/GIF decoding and the measured crop masks; see [loader status](asset-preview.md#shared-rust-loader-milestone-10-implementation).
-The remaining desktop feasibility, full atlas/presentation, two adapters and
-assembled human acceptance are still milestone 10 work. The design prototype
+The isolated [desktop feasibility spike](desktop-feasibility.md) now passes on
+native Windows and Linux with actual OS input and packaged launch; SDL2 is viable
+for the first desktop adapter. Full atlas/presentation, two adapters and assembled
+human acceptance are still milestone 10 work. The design prototype
 remains simulated and is not connected by this foundation change.
 
 ## Findings from the audited code

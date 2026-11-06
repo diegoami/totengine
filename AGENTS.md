@@ -228,8 +228,12 @@ human checkpoints. See `docs/ui/human-session.md`; these are engine foundations,
 not actual human acceptance in either client. `totui::resources` resolves profile
 Rules/art and decodes BMP/GIF with shared measured masks; all five retained
 Original crop opacity counts match. Decoder notices: `docs/third-party/README.md`.
-Full atlas/adjacency/colors/font, desktop feasibility, both adapters and assembled
-checkpoint acceptance remain. Next entry points: #126, #128, #129/#130 and #131.
+Desktop feasibility #126 now passes on native Windows 10 and Linux, including
+real OS keyboard/focus/resize and packaged launch with owned art. SDL2 is viable
+for #130; isolated code/build/notices: `tools/desktop-spike/`, numeric evidence:
+`docs/evidence/desktop-feasibility.json`. No SDL dependency enters production yet.
+Full atlas/adjacency/colors/presentation, both adapters and assembled checkpoint
+acceptance remain. Next entry points: #128, #129/#130 and #131.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

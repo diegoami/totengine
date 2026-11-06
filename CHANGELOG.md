@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Prove the isolated SDL2 desktop candidate on native Windows and Linux (#126):
+  shared owned-art decoding, system-font text/name modal, real OS keyboard/focus/
+  resize/close and packaged launches. Retain numeric evidence and notices; no
+  artwork/fonts bundled and no production SDL dependency yet.
+
 - Add a shared resumable human-session driver for generated games, with explicit
   research/named founding, production choices, stale/foreign/retry protection,
   bounded builtin-1 opponents and filtered human views/round notices (#127).

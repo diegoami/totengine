@@ -1,5 +1,6 @@
 *.pyc
 /target
+/tools/desktop-spike/target/
 __pycache__/
 tools/oracle/wininject*.exe
 tools/oracle/winject*.exe

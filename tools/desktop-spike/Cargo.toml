@@ -1,0 +1,14 @@
+[package]
+name = "tot-desktop-spike"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+# Feasibility only: no production toolkit dependency until #126 passes.
+[workspace]
+
+[dependencies]
+totui = { path = "../../crates/totui" }
+sdl2 = "0.38.0"
+fontdue = "0.9.3"

@@ -1,0 +1,158 @@
+{
+  "schema": 1,
+  "kind": "desktop-feasibility",
+  "scope": "isolated SDL2 spike; not a playable client",
+  "date": "2026-11-06",
+  "toolkit": "rust-sdl2 0.38.0 / SDL2 2.32.10",
+  "font_rasterizer": "fontdue 0.9.5; system fonts, not bundled",
+  "linux_environment": "Ubuntu 26.04.1 / WSL2 6.18.54.1; private authenticated Xvfb, x11 driver",
+  "windows_environment": "native Windows 10.0.19045.7807 via WSL interop; windows driver; not Wine",
+  "build": "Rust 1.99.1; Linux system SDL2; Windows x86_64-pc-windows-gnullvm plus llvm-mingw",
+  "reports": {
+    "linux_synthetic_script": {
+      "schema": 1,
+      "platform": "linux",
+      "sdl": "2.32.10",
+      "video": "x11",
+      "frames": 86,
+      "installed_art": false,
+      "accepted": 1,
+      "cancelled": 1,
+      "ignored_unfocused": 1,
+      "resize_events": 2,
+      "focus_lost": 1,
+      "focus_gained": 2,
+      "input_method": "queued SDL key/window events; direct TextInput fixture",
+      "name": "Athéna"
+    },
+    "linux_installed_script": {
+      "schema": 1,
+      "platform": "linux",
+      "sdl": "2.32.10",
+      "video": "x11",
+      "frames": 86,
+      "installed_art": true,
+      "accepted": 1,
+      "cancelled": 1,
+      "ignored_unfocused": 1,
+      "resize_events": 2,
+      "focus_lost": 1,
+      "focus_gained": 2,
+      "input_method": "queued SDL key/window events; direct TextInput fixture",
+      "name": "Athéna"
+    },
+    "windows_synthetic_script": {
+      "schema": 1,
+      "platform": "windows",
+      "sdl": "2.32.10",
+      "video": "windows",
+      "frames": 86,
+      "installed_art": false,
+      "accepted": 1,
+      "cancelled": 1,
+      "ignored_unfocused": 1,
+      "resize_events": 2,
+      "focus_lost": 1,
+      "focus_gained": 2,
+      "input_method": "queued SDL key/window events; direct TextInput fixture",
+      "name": "Athéna"
+    },
+    "windows_installed_script": {
+      "schema": 1,
+      "platform": "windows",
+      "sdl": "2.32.10",
+      "video": "windows",
+      "frames": 86,
+      "installed_art": true,
+      "accepted": 1,
+      "cancelled": 1,
+      "ignored_unfocused": 1,
+      "resize_events": 2,
+      "focus_lost": 1,
+      "focus_gained": 2,
+      "input_method": "queued SDL key/window events; direct TextInput fixture",
+      "name": "Athéna"
+    },
+    "linux_synthetic_os_input": {
+      "schema": 1,
+      "platform": "linux",
+      "sdl": "2.32.10",
+      "video": "x11",
+      "frames": 119,
+      "installed_art": false,
+      "accepted": 1,
+      "cancelled": 1,
+      "ignored_unfocused": 0,
+      "resize_events": 2,
+      "focus_lost": 1,
+      "focus_gained": 2,
+      "input_method": "external OS keyboard and focus events",
+      "name": "athena"
+    },
+    "linux_packaged_installed_os_input": {
+      "schema": 1,
+      "platform": "linux",
+      "sdl": "2.32.10",
+      "video": "x11",
+      "frames": 116,
+      "installed_art": true,
+      "accepted": 1,
+      "cancelled": 1,
+      "ignored_unfocused": 0,
+      "resize_events": 2,
+      "focus_lost": 1,
+      "focus_gained": 2,
+      "input_method": "external OS keyboard and focus events",
+      "name": "athena"
+    },
+    "windows_packaged_installed_os_input": {
+      "schema": 1,
+      "platform": "windows",
+      "sdl": "2.32.10",
+      "video": "windows",
+      "frames": 145,
+      "installed_art": true,
+      "accepted": 1,
+      "cancelled": 1,
+      "ignored_unfocused": 0,
+      "resize_events": 2,
+      "focus_lost": 1,
+      "focus_gained": 2,
+      "input_method": "external OS keyboard and focus events",
+      "name": "athena"
+    }
+  },
+  "source_sha256": {
+    "tools/desktop-spike/Cargo.toml": "322049f39571c5fca6a001e25942fa9f654a99dac67a67f7b04929bba7e430c8",
+    "tools/desktop-spike/Cargo.lock": "beaeaa4df0435588465ccca46ee5a16739bf5ad2edb86df03f0396d889b35c65",
+    "tools/desktop-spike/src/main.rs": "794cf48c2e5e4852fa372886b73ce5d74a57f4b4115aa0614f94ff114c097f25",
+    "tools/desktop-spike/check_linux.py": "78484e85eaf78f4219d698c47025084200259a5c7f217771d5444c18dbbec013",
+    "tools/desktop-spike/check_windows.ps1": "064b8fba54ca410c849f7e7e63251a28b2a06b8295e07baa12e720a60f3a1f77",
+    "tools/desktop-spike/package.py": "a4c1c7ffaa938ea044f97112760208eb92a09f62826997a07f8481bded975e02"
+  },
+  "artwork_evidence": "docs/evidence/client-artwork.json (Original source hashes; Rust crop checks match all five opacity counts)",
+  "diagnostics_checked": [
+    "missing installation",
+    "missing system font"
+  ],
+  "packaging": {
+    "windows": [
+      "application exe",
+      "SDL2.dll",
+      "libunwind.dll",
+      "license notices"
+    ],
+    "linux": [
+      "application binary",
+      "license notices; system SDL2 required"
+    ],
+    "game_assets_or_fonts_in_packages": false
+  },
+  "visual_inspection": "Native map and accented-name modal captures inspected privately; original pixels stay outside Git",
+  "limits": [
+    "Frame/focus/resize counts can vary with scheduling and window manager; semantic assertions are authoritative",
+    "Scripted text fixtures do not demonstrate OS text delivery; separate native OS input checks do",
+    "No IME composition, accessibility, game orders, full atlas, campaign usability or native rendering parity claim",
+    "Linux proof is a WSL/X11 native application, not an additional Wayland or distro compatibility matrix"
+  ]
+}

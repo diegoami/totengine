@@ -1,0 +1,482 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "status": "reference-study-after-owner-rejected-control-preview; client changes paused",
+  "reference": "ToTPP-patched Test of Time 1.1 on Wine; isolated copied install/prefix; original owner install and running clients untouched; no RAM writes or quiet presentation hooks",
+  "source_sha256": {
+    "civ2.exe": "dbbd24d8b72fd1ac56d81adf3a16273affc6ae3294dd5ad4a2c59d4d781c00b4",
+    "civ2.bak": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+    "Original/Ph_Auto2.SAV": "b7a8b30a08b35036a7006478040837f4fec96382d78ffd35f86c5c3766092d43",
+    "Original/Menu.txt": "b86fd8b92749b47efedbb63274970a925f3839813a635720af905388b0b4f3f3"
+  },
+  "baseline_save_sha256": "8036989b814100a7dcc81d5b793d9d3869b9fbc905665051bb35a5e9ca5cb905",
+  "indicator_config": {
+    "semantic_changes": [
+      "UnitIndicators.enabled: 1 -> 0"
+    ],
+    "enabled_config_sha256": "acf62999cfd27c89191f2fc5e7ac3a967da3ca4a0403ca38c672aaa85cd6b507",
+    "disabled_config_sha256": "e07e88ac8a2dee420a0ba00ccdc38b0883be95ed0e0c314cdabe7ec8dace0910",
+    "enabled_log_sha256": "4e754cc099451e44183c37c1269b9fe9229d65609b118700c179715dd2de6267",
+    "disabled_log_sha256": "3f5a698e25d1279f33cfbd29e118fb58c55609bd776a820d167de72a611bb44e",
+    "enabled_log_contains_active_unit_indicators": true,
+    "disabled_log_contains_active_unit_indicators": false
+  },
+  "manual": {
+    "english": "https://manuals.plus/m/0a903e975f22c7da36286b990be87bba1bd2c491a617c786f0280d99353c5fa8.pdf",
+    "german": "https://www.mogelpower.de/manuals/Civilization_2_Test_of_Time_Manual.pdf",
+    "german_pdf_sha256": "3799f6e5cbdf405ab01ccb4de3a6ce89db3a7548e12b6ac1f48f52ada00bd249",
+    "german_printed_pages": [
+      74,
+      75,
+      76,
+      77,
+      78
+    ],
+    "finding": "German pp75/77 explicitly distinguish active-unit blinking in Moving from an inspection cursor in Viewing. Do not collapse these into one tile-blink contract."
+  },
+  "observations": [
+    {
+      "id": "S01",
+      "route": "Load copied Original/Ph_Auto2.SAV; open Madrid with double-click; inspect outputs and production",
+      "captures": [
+        "06-standard-full",
+        "09-city"
+      ],
+      "observed": "City has left resources/build/buy, central terrain, right Info/Support/Improvements/Happy/Close controls, bottom citizens and lower-right food storage. Warriors are 4/10 with three turns shown.",
+      "limit": "One early standard city; no new citizen arithmetic or full city parity claim."
+    },
+    {
+      "id": "S02",
+      "route": "Close city; three verified idle Enter end-turns; dismiss first-unit tutorial and Pottery notice; choose Alphabet explicitly",
+      "captures": [
+        "13-warrior-arrival",
+        "16-next-project",
+        "17-warrior-ready"
+      ],
+      "observed": "Ordinary production yields one warrior. After required decisions, Moving Units shows Moves: 1 and warrior details.",
+      "limit": "Tutorial/advice enabled in this copied fixture; no deterministic world-generation claim."
+    },
+    {
+      "id": "S03",
+      "route": "Moving warrior temporal captures; inspect Graphics Options; disable Animated Units; repeat captures",
+      "captures": [
+        "19-graphics"
+      ],
+      "observed": "With animation off, the sampled body region stays constant while active-square brackets vary elsewhere. The copied ToTPP reference does not establish vanilla sprite blink.",
+      "limit": "Do not use the patched reference to overrule the manual or the owner-required unit blink."
+    },
+    {
+      "id": "S04",
+      "route": "Save private warrior baseline; restart exact baseline with only UnitIndicators.Enabled changed from 1 to 0; check patch application log",
+      "captures": [
+        "29-indicators-off"
+      ],
+      "observed": "Configuration key changed and Active unit indicators disappeared from the patch log. Active-square brackets still appear; sampled static unit body remains constant.",
+      "limit": "This does not prove that this patch caused bracket blinking or establish an unpatched UI. Other ToTPP patches remain enabled for Wine/NoCD."
+    },
+    {
+      "id": "S05",
+      "route": "With mouse movement off, single-click active unit head near (533,475) before keyboard movement",
+      "captures": [
+        "32-game-options",
+        "33-click-active-unit"
+      ],
+      "observed": "Map recenters; Moving and Moves: 1 remain.",
+      "limit": "Sprite head overlaps another logical tile. Do not infer pixel-to-tile arithmetic or a selection rule from this click alone."
+    },
+    {
+      "id": "S06",
+      "route": "From original ready unit at (54,30), one keypad-6 press with Always wait at end of turn off",
+      "captures": [
+        "17-warrior-ready",
+        "34-keypad-east"
+      ],
+      "observed": "Warrior reaches (56,30). The year advances 3800 BC -> 3750 BC and treasury 5 -> 6; unit again has Moves: 1.",
+      "limit": "Exhaustion and automatic round advancement are combined here; not evidence of two movement orders."
+    },
+    {
+      "id": "S07",
+      "route": "At ready warrior (56,30), V; single-click its occupied square near (614,540); then repeat V and single-click near (533,503) after recentering",
+      "captures": [
+        "35-view-warrior",
+        "36-click-warrior-foot",
+        "38-view-before-click",
+        "39-direct-selection"
+      ],
+      "observed": "Both single clicks change Viewing Pieces to Moving Units, show Moves: 1 and center the warrior. No separate Activate-button press is needed for this single ready unit.",
+      "limit": "Verified single unit outside a city, mouse movement off. Stack chooser remains earlier discovery U30; multiple-unit selection is not newly measured here."
+    },
+    {
+      "id": "S08",
+      "route": "Enable Always wait at end of turn, reopen to verify its checkmark, close options, one Right-arrow move",
+      "captures": [
+        "42-wait-verified",
+        "43-arrow-exhausted",
+        "45-click-exhausted",
+        "46-A-exhausted-location"
+      ],
+      "observed": "Warrior reaches (58,30); year stays 3750 BC and treasury stays 6. Mode becomes Viewing. Clicking the exhausted unit inspects it and shows End of Turn (Press ENTER); A at that actual location does not return to Moving.",
+      "limit": "A sent before moving the inspection cursor to the new location is not counted as an exhausted-unit activation test."
+    },
+    {
+      "id": "S09",
+      "route": "Enter from exhausted end-turn state; then Space skip",
+      "captures": [
+        "47-next-human-turn",
+        "48-skip-active"
+      ],
+      "observed": "Next turn (3700 BC, treasury 7) returns to Moving Units with Moves: 1. Space returns to Viewing/End of Turn at the same year and treasury.",
+      "limit": "One-unit scheduling context; complete multi-unit waiting/exhaustion ordering remains open."
+    }
+  ],
+  "capture_sha256": {
+    "06-standard-full.png": "27e2a897dbc98ca378844af3091617da6e3fb4b4502406cb405f47ff5f492a10",
+    "09-city.png": "92cba6427ab6b2fffa3c9d19717d09100f7557cc1d4ae9debec96e21134fc911",
+    "13-warrior-arrival.png": "eb9033a59bbc56fd0130e4af9d2bee407f27151e79fe253effd0511f5e1ce26c",
+    "16-next-project.png": "b573a2694908dfefe0c6d46222252355f93d85a429a3059e09b6b7f12a529fdf",
+    "17-warrior-ready.png": "050908c5ec86cb2aa34a9f14743db24eee356908c9d25c63900c8fd7a5c1d75b",
+    "19-graphics.png": "1206b47e6f0c2d42bbea0ab0c4c9c0e5092fbdb027f06567d2d484d38013dfe4",
+    "22-view-mode.png": "2c8cb92caad8fcd1686b714722c54d8608bdff901a5b6a60445d11241239a6fa",
+    "29-indicators-off.png": "210f84a3d875bc16fabfc207eb4fe653a13a221f53de19408298c333086cd91f",
+    "32-game-options.png": "8db8093d47575d63aa4c98e6607382bce22c9f75e17bc837a746982a554a7ad9",
+    "33-click-active-unit.png": "658e4c58a6e96ddca9becfd6847ab188a41a14966fa8d0dc277b8e2732533b44",
+    "34-keypad-east.png": "02f6d469a573729bec744d905f1b8e030596ae8d39dd4c13c566d93d707e41e4",
+    "35-view-warrior.png": "65c09e6604c7e14de55ac39384c42a18afa34a54c65371aba48eea1a8178a182",
+    "36-click-warrior-foot.png": "59c87e2afe6852d63d798c3a779cf40268f537f4d6395e3961076b5f2f537d31",
+    "38-view-before-click.png": "10d8b53cfe53ed4ae6f2212d14a83fb507dad27307adaa30bddb157fdf86c2fa",
+    "39-direct-selection.png": "b140ed4d1998086c67ec096b3895075f5b26a440d1be9448c3267be3ae17f195",
+    "42-wait-verified.png": "d83f1c283e171cde1971632eaaf31e1123553d9c89b203e833b34736895a1ff8",
+    "43-arrow-exhausted.png": "2de70d607c0ee2c24e5c769fe9d7449e2c8ef9862d0d56139cc35fb59b295198",
+    "45-click-exhausted.png": "d145702d6f44c8969caeb4a232ae3193c4ae853c67f96349e0a96fd722f8de76",
+    "46-A-exhausted-location.png": "8710cb8fb3faf83c6bdd66475637510f725a9ac5ec2dc78c8be55af47976e99f",
+    "47-next-human-turn.png": "09d5224e6266c37ea6d7b4de539d05720a947766ed2605e168df5e16279b1b43",
+    "48-skip-active.png": "236034ac422a1f7da9886416643f28e323addefe61ae4921f5336859b0ab7b9b",
+    "50-wait-selection.png": "09b20240b172b3c10be85e89475a5b110015261d98decb7f909b809d94132048"
+  },
+  "temporal_captures": {
+    "18-moving": {
+      "frames": [
+        {
+          "file": "18-moving-00.png",
+          "elapsed": 0.049,
+          "sha256": "eca5f926e63f8c33f197ad0119d45aea59c822ac0d310dff4797225954e6e258",
+          "warrior_region_sha256": "a4bd9a119ea3c77d31d36a6f1afabfa2ce4431e3ef43d413d0c8ba703336e3a3"
+        },
+        {
+          "file": "18-moving-01.png",
+          "elapsed": 0.229,
+          "sha256": "802ef7a85cdcab22d3d1b83d5818d06dab89773c58adc6f64aacb57f1652e2d2",
+          "warrior_region_sha256": "a4bd9a119ea3c77d31d36a6f1afabfa2ce4431e3ef43d413d0c8ba703336e3a3"
+        },
+        {
+          "file": "18-moving-02.png",
+          "elapsed": 0.412,
+          "sha256": "8c9270f63d4b2e23834aa3bededff479cdffc18293e3b78eb8dc2168d3f58093",
+          "warrior_region_sha256": "a4bd9a119ea3c77d31d36a6f1afabfa2ce4431e3ef43d413d0c8ba703336e3a3"
+        },
+        {
+          "file": "18-moving-03.png",
+          "elapsed": 0.613,
+          "sha256": "679e30c4ede137ecd4ecf3f9acc9395132feaa0f9b9a942330085d6bce7a21f9",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "18-moving-04.png",
+          "elapsed": 0.776,
+          "sha256": "98ac9898643c60e6c87cfc3a95caeb85ad6c2172dbc46f3c20a03f0018034bcc",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "18-moving-05.png",
+          "elapsed": 0.947,
+          "sha256": "e34f4e2937c24f5cc1ef48bfdf3ce8689083164f0b42fae73fd458239b3d8909",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "18-moving-06.png",
+          "elapsed": 1.133,
+          "sha256": "71d97e71ca5fb9c16ef8ecf5f08cd5db70bc0a7354a898aeab17b1db0f8885cc",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "18-moving-07.png",
+          "elapsed": 1.337,
+          "sha256": "71d97e71ca5fb9c16ef8ecf5f08cd5db70bc0a7354a898aeab17b1db0f8885cc",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "18-moving-08.png",
+          "elapsed": 1.519,
+          "sha256": "16982b1ca270c28603dc5c07a90a326cbd9dffcc18bde66018dd2f3647b0ebeb",
+          "warrior_region_sha256": "6ce109bd75ead1dfde9df38d1ad16740a228f63d725bbe082fde15879e07e70c"
+        },
+        {
+          "file": "18-moving-09.png",
+          "elapsed": 1.689,
+          "sha256": "06388e205c4b4798e4cacbb0618bd1f15aa7d7493c68937b90fde4ff8a7fff7f",
+          "warrior_region_sha256": "3f72576161fc4e570c644b558b056f68c550774ef422860af85ffa7de36ba96e"
+        },
+        {
+          "file": "18-moving-10.png",
+          "elapsed": 1.855,
+          "sha256": "06388e205c4b4798e4cacbb0618bd1f15aa7d7493c68937b90fde4ff8a7fff7f",
+          "warrior_region_sha256": "3f72576161fc4e570c644b558b056f68c550774ef422860af85ffa7de36ba96e"
+        },
+        {
+          "file": "18-moving-11.png",
+          "elapsed": 2.04,
+          "sha256": "005e256dc25936f6c329e0fbfa839d4ed623af91a46e149de86290fa3e3df157",
+          "warrior_region_sha256": "a4bd9a119ea3c77d31d36a6f1afabfa2ce4431e3ef43d413d0c8ba703336e3a3"
+        },
+        {
+          "file": "18-moving-12.png",
+          "elapsed": 2.239,
+          "sha256": "cff74a89f9ad2f7fe0fe00edee09f98fa10fd0e0c1388e6085f3f49f59ea2ad0",
+          "warrior_region_sha256": "a4bd9a119ea3c77d31d36a6f1afabfa2ce4431e3ef43d413d0c8ba703336e3a3"
+        },
+        {
+          "file": "18-moving-13.png",
+          "elapsed": 2.405,
+          "sha256": "589ab3e8500f5b8ef0f72526e60bbcc6710336aa013088bb35eed1a303f0f27a",
+          "warrior_region_sha256": "a4bd9a119ea3c77d31d36a6f1afabfa2ce4431e3ef43d413d0c8ba703336e3a3"
+        },
+        {
+          "file": "18-moving-14.png",
+          "elapsed": 2.589,
+          "sha256": "d4730f3d6ce030876b0d7f85da5b57d102e34f5d3b9271fc8bbbee09d9750a50",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "18-moving-15.png",
+          "elapsed": 2.778,
+          "sha256": "4ecb0ac012925cb2e53c51bfb082693f585e6c7601b929000fde75722341c1be",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        }
+      ],
+      "sampled_rgb_region": [
+        510,
+        440,
+        558,
+        510
+      ],
+      "distinct_region_hashes": 4
+    },
+    "21-static-moving": {
+      "frames": [
+        {
+          "file": "21-static-moving-00.png",
+          "elapsed": 0.048,
+          "sha256": "a93a251b92ff808d9f1a32b2f612ea8d3360fad12ee3c976af389f00d56084d3",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-01.png",
+          "elapsed": 0.216,
+          "sha256": "cc45d2759f32e620845e19eb673275543244dbe3e47576279f2257946cae4250",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-02.png",
+          "elapsed": 0.386,
+          "sha256": "19d5f065d31c82f11405ad22659f760ac1c967cb09871bebd86511b2cab0cb16",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-03.png",
+          "elapsed": 0.6,
+          "sha256": "ed155f6dfd02f1c656cc35cefded3980211683539a464bf211f379f43344549d",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-04.png",
+          "elapsed": 0.793,
+          "sha256": "ed155f6dfd02f1c656cc35cefded3980211683539a464bf211f379f43344549d",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-05.png",
+          "elapsed": 0.985,
+          "sha256": "19d5f065d31c82f11405ad22659f760ac1c967cb09871bebd86511b2cab0cb16",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-06.png",
+          "elapsed": 1.15,
+          "sha256": "679e30c4ede137ecd4ecf3f9acc9395132feaa0f9b9a942330085d6bce7a21f9",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-07.png",
+          "elapsed": 1.348,
+          "sha256": "679e30c4ede137ecd4ecf3f9acc9395132feaa0f9b9a942330085d6bce7a21f9",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-08.png",
+          "elapsed": 1.514,
+          "sha256": "98ac9898643c60e6c87cfc3a95caeb85ad6c2172dbc46f3c20a03f0018034bcc",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-09.png",
+          "elapsed": 1.68,
+          "sha256": "e34f4e2937c24f5cc1ef48bfdf3ce8689083164f0b42fae73fd458239b3d8909",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-10.png",
+          "elapsed": 1.845,
+          "sha256": "71d97e71ca5fb9c16ef8ecf5f08cd5db70bc0a7354a898aeab17b1db0f8885cc",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-11.png",
+          "elapsed": 2.046,
+          "sha256": "e34f4e2937c24f5cc1ef48bfdf3ce8689083164f0b42fae73fd458239b3d8909",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-12.png",
+          "elapsed": 2.24,
+          "sha256": "851fcf9efa0358bc48a229b78a12a0688363701ea7776e2acb21efe20826ea16",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-13.png",
+          "elapsed": 2.454,
+          "sha256": "3a16b13473db5bed5dffdd37924e2f827f7725e7c6537fc901eadd03241db46b",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-14.png",
+          "elapsed": 2.664,
+          "sha256": "851fcf9efa0358bc48a229b78a12a0688363701ea7776e2acb21efe20826ea16",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "21-static-moving-15.png",
+          "elapsed": 2.871,
+          "sha256": "c2e1f66eaeffc092635f78b23cf38d01cdec332a7c0e99bdf874905466dff252",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        }
+      ],
+      "sampled_rgb_region": [
+        510,
+        440,
+        558,
+        510
+      ],
+      "distinct_region_hashes": 1
+    },
+    "31-indicators-off-moving": {
+      "frames": [
+        {
+          "file": "31-indicators-off-moving-00.png",
+          "elapsed": 0.045,
+          "sha256": "476f524111392919afcaee80864a52b04fe3ba3da73eebb1e41a0589aa68d18e",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-01.png",
+          "elapsed": 0.261,
+          "sha256": "a1aa4dc606e7f827b343731aa2963eec446aa61c048099cbf7be01229bcae304",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-02.png",
+          "elapsed": 0.425,
+          "sha256": "76ba144603480273153fd96ad19645cd7baf2beebbc51cd6841cca0ff68d32ba",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-03.png",
+          "elapsed": 0.63,
+          "sha256": "354141dd5297f3fdbb4424f162f5ca76a5eba49f811c9f4b757dc27d8c91b8a0",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-04.png",
+          "elapsed": 0.836,
+          "sha256": "76ba144603480273153fd96ad19645cd7baf2beebbc51cd6841cca0ff68d32ba",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-05.png",
+          "elapsed": 1.049,
+          "sha256": "4b7da9976ac5570ff4bc7d2c98e8e0a6509980e032031158496957f9fd619311",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-06.png",
+          "elapsed": 1.209,
+          "sha256": "c0171cbb01a0da24b845be03494eb4eaac88f2a55041aeb83e1c3d4f4323fb86",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-07.png",
+          "elapsed": 1.428,
+          "sha256": "4b7da9976ac5570ff4bc7d2c98e8e0a6509980e032031158496957f9fd619311",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-08.png",
+          "elapsed": 1.631,
+          "sha256": "19219862ca8ac5fd1ceba43246148d0fc5549ff31a84c4fa6a3beab020c874b2",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-09.png",
+          "elapsed": 1.804,
+          "sha256": "2f01f278cfa7d36465623d9eca0beb01f9cee1eeb8ee29d402199f8f6a260f83",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-10.png",
+          "elapsed": 2.004,
+          "sha256": "19219862ca8ac5fd1ceba43246148d0fc5549ff31a84c4fa6a3beab020c874b2",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-11.png",
+          "elapsed": 2.166,
+          "sha256": "3f7147ede3c3597a0f8cd878523e2f45666589c4a431b2eb4e203bf1e7e2ebca",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-12.png",
+          "elapsed": 2.36,
+          "sha256": "95268b10079c4c52b9b84b5efbc1f27ac9122a0100775fa3ec1f1491d7004eb6",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-13.png",
+          "elapsed": 2.567,
+          "sha256": "95268b10079c4c52b9b84b5efbc1f27ac9122a0100775fa3ec1f1491d7004eb6",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-14.png",
+          "elapsed": 2.747,
+          "sha256": "3f7147ede3c3597a0f8cd878523e2f45666589c4a431b2eb4e203bf1e7e2ebca",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        },
+        {
+          "file": "31-indicators-off-moving-15.png",
+          "elapsed": 2.942,
+          "sha256": "205c3e9c2f3590d91b34e008cb297603e07888bd314cff96eb77bef9a27e83e3",
+          "warrior_region_sha256": "cffdd5c77fe2580a8f2b083ad882d50d3a07c912aaea725f93bc83605843b0fa"
+        }
+      ],
+      "sampled_rgb_region": [
+        510,
+        440,
+        558,
+        510
+      ],
+      "distinct_region_hashes": 1
+    }
+  },
+  "images_or_game_assets_committed": false,
+  "owner_requirement": "Selecting an own unit must work; blink the selected unit, not only a tile. Owner rejected the current preview; prior automated passes do not accept it.",
+  "implementation_status": "No client code changed in this study. Selection, blink and turn-selection corrections remain pending."
+}

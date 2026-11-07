@@ -3863,3 +3863,15 @@ without changing its generated engine trajectory; the v1 artifact stays intact.
 Sources and limits: [original controls](../ui/original-controls.md). Reproduction:
 [v0.13 readiness](../v0.13.0-readiness.md#movementcontrol-corrections-after-owner-feedback).
 Owner retesting remains pending; these checks do not complete the human gate.
+
+## Original selection study after rejected preview
+
+`ui-selection-study-v1.json` records nine directly inspected reference observations
+from normal production/play in a private copied ToTPP installation. It includes
+source/configuration identities, 22 key capture hashes and 48 temporal captures;
+no images/assets/saves are committed. The one-setting indicator-patch comparison
+has an explicit negative/uncertain result rather than an unpatched UI claim.
+Read [the study and replacement contract](../ui/selection-and-movement-study.md).
+The prior control-check evidence does not cover switching units by mouse while
+Moving and does not satisfy the owner's selected-unit blink requirement. The
+owner rejected that preview. No client code was changed during this study.

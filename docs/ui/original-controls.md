@@ -5,6 +5,15 @@ adding bindings. The corrected v0.13 preview uses this
 reference for supported controls. This records declared conventions, implemented
 corrections and remaining gaps; it is not full UI parity or owner acceptance.
 
+**Owner retest rejected this preview:** selection was reported worse, and the
+owner requires the selected unit to blink rather than a tile alone. The client
+was not changed during the subsequent reference study. Its findings, corrected
+blink distinction, test gap and replacement contract are in
+[selection and movement study](selection-and-movement-study.md), backed by
+`ui-selection-study-v1.json`. Implementation claims below describe the rejected
+preview's code, not accepted fidelity. In particular, sprite hit testing only
+works in Viewing; selecting another unit in Moving remains a blocker.
+
 ## Publisher manual
 
 [English Test of Time manual, MicroProse/Hasbro, 1999](https://manuals.plus/m/0a903e975f22c7da36286b990be87bba1bd2c491a617c786f0280d99353c5fa8.pdf).
@@ -17,7 +26,7 @@ games. A classic Civilization II manual is not an interchangeable source.
 | 5 | V switches between viewing and moving. Mouse movement is an option, initially disabled. |
 | 9 | B builds a city with an eligible settler. |
 | 67 | Eight surrounding numeric-keypad keys give compass directions; 5 does nothing. |
-| 68 | Activation centers the map and highlights/blinks the occupied square. |
+| 68 | Active-unit feedback; do not infer a tile-only blink. German pages 75/77 explicitly distinguish the active unit from the Viewing cursor. |
 | 69 | W defers a unit until other active units have received orders. |
 | 70 | Moving accepts keypad directions or cursor arrows. Viewing uses the keypad to move the inspection cursor. A activates units at that cursor, with a chooser for a stack. |
 | 97–98 | M is mining, R roads/railroads, O transformation and E airbase construction; these letters must not trigger unrelated actions. |

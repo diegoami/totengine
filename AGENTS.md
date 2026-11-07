@@ -264,6 +264,16 @@ exercise real warrior mouse movement and keypad Num Lock variants. Sources,
 remaining gaps and the owner's direction for more faithful subsequent UI:
 `docs/ui/original-controls.md`. New owner retesting remains required; no review
 candidate or milestone acceptance is implied by automated checks.
+The owner **rejected** that controls preview: selection was worse and the unit,
+not merely a tile, must blink. The owner asked for deeper reference study before
+more UI implementation. No client code changed during the new study; next entry:
+`docs/ui/selection-and-movement-study.md` and its replacement contract, numeric
+`docs/evidence/ui-selection-study-v1.json`. Nine observations cover a naturally
+produced standard-game warrior, direct click activation, exhaustion/turn options,
+next-turn mode and the limits of configured ToTPP blink observations. The tests
+had preselected via W and missed clicking a different unit in Moving. Keep #137
+and the milestone blocked on fixing this and new human acceptance; do not repeat
+an automated-pass claim as owner acceptance or ask to retest the same preview.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

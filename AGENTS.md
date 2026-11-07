@@ -272,6 +272,27 @@ required. Buying/selling, shield-switch penalties, deeper panels and remaining
 full-client packages are not shipped by v0.13. Complete original-AI and pluggable
 AI work remain gated behind full playable-client delivery. New milestone review
 is owner-launched only; no automatic review or tag.
+**Current v0.14 work:** milestone 12, #148 native evidence, #149 validated quotes/
+replay, #150 shared UI, #151 real-input/owner acceptance. Scope is
+docs/ui/city-production-milestone.md. #146 was fixed and merged through #147
+at 4c9a755 (focus event epochs; actual browser regression fails on v0.13 and
+passes on the fix). Work branch: feat/city-production-decisions. New production
+module, checker and 4,091 native comparisons cover prices, refunds, retained
+shields, confirmed writes, admission gates and 162 repeated-switch sequences.
+WorldState buy/sale/switch quotes are re-derived, city-ID bound and atomic.
+Human commands/logs/checkpoints are wired; readonly progress and clone-based
+sale-effect previews feed both adapters. The engine owns captured switch budgets:
+first accepted switch captures, purchase rebases, close/navigation/end clears,
+and checkpoint replay restores the context and reopens its city. Views/drafts
+never capture. Legacy autonomous SetProduction is unchanged. Normal recorded-play
+engine/controller tests cover purchase, next-phase completion, sale, cancel,
+switch restoration and reload. Cargo/checkpoints now use 0.14.0; the authored
+campaign golden differs only in its version header. These changes are not yet
+released or owner accepted. Actual browser/Linux/Windows input checks, packages
+and new both-client acceptance remain. Native accepted-picker fragment is
+0x4ecd16..0x4ecdcf (end exclusive), capture 0x4c0ee6, retention 0x4c0f37. Keep
+working through the milestone, with both clients and new owner acceptance, then
+stop only at the owner-launched review gate.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

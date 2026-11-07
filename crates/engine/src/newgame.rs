@@ -219,6 +219,7 @@ pub fn generate(config: NewGameConfig, rules: &Rules) -> Result<WorldState, Stri
         huts_enabled: true,
     };
     let mut world = WorldState {
+        production_context: None,
         turn: 1,
         year: -4000,
         difficulty: config.difficulty,

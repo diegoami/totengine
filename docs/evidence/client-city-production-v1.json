@@ -1,0 +1,280 @@
+{
+  "schema": 1,
+  "engine_version": "0.14.0",
+  "scope": "Nine recorded-play production scenarios, actual Chromium canvas/keyboard, Linux XTest and Windows SendInput. Full resulting checkpoints match the shared controller byte for byte. Original resources and generated checkpoints stay private. This is bounded route verification, not full native city UI parity or human acceptance.",
+  "native_evidence": "city-production-v1.json",
+  "source_sha256": {
+    "crates/engine/src/city_production.rs": "76104df52fbcb31eb20996ce3f5b62798c322646f1e0c6d8470f7ab310fd7c57",
+    "crates/engine/src/human.rs": "c1f5a1608d60ea43beda7f69866de3f202ea723a71845185bcb0fbb4a7d5e8a3",
+    "crates/engine/src/human/checkpoint.rs": "d695cbbf6779be8c7c17a72d1c97df96aca3aaed654a0af3b6ae318583966c93",
+    "crates/engine/src/player.rs": "4f1458c34155eeeb4129fa8f5065d855f11f050e408d5e6632a8bfa60abbd0b5",
+    "crates/totui/src/client/mod.rs": "58f36701ee3b47671ed1b59ce67e306538bf9a1b5c43548750fcb894d6da4aaa",
+    "crates/totui/src/client/city.rs": "9f4462e8b381a9819a4a601eae7e24e446b2b75c97fa7216f49640d678673285",
+    "crates/totui/src/client/tests.rs": "53ee6a5599d1431561be3950bab8dafc6f1dd03a3bdbc4533bc37151a53d70d1",
+    "tools/check_client_browser.cjs": "3003a4de082cd5d39e53b8559e0b6cb68e1f3057697d8a4c9e74d61dd2f55c34",
+    "tools/check_client_linux.py": "a92a1d9535584bd08cc1d2370d790ef4c8fd53a410e616641b54cb0180e9fa9b",
+    "tools/check_client_windows.ps1": "ea7962250ead823a2c22b7e3d2f89d227df1a08ef805e0e38338fc9b00deb292"
+  },
+  "platforms": {
+    "chromium": {
+      "routes": 9,
+      "checkpoint_comparisons": 9,
+      "result": "PASS"
+    },
+    "linux_sdl": {
+      "routes": 9,
+      "checkpoint_comparisons": 9,
+      "result": "PASS"
+    },
+    "windows_sdl": {
+      "routes": 9,
+      "checkpoint_comparisons": 9,
+      "result": "PASS"
+    }
+  },
+  "routes": [
+    {
+      "inputs": [
+        {
+          "type": "click",
+          "x": 686.0,
+          "y": 693.0
+        },
+        {
+          "type": "click",
+          "x": 32.0,
+          "y": 564.0
+        },
+        {
+          "key": "Enter",
+          "type": "key"
+        },
+        {
+          "key": "Escape",
+          "type": "key"
+        }
+      ],
+      "name": "poor",
+      "before_sha256": "106257f3843a65bb8320dc6b1c6d4d38df25d42598348d290e44581eafc548db",
+      "after_sha256": "106257f3843a65bb8320dc6b1c6d4d38df25d42598348d290e44581eafc548db"
+    },
+    {
+      "inputs": [
+        {
+          "type": "click",
+          "x": 686.0,
+          "y": 693.0
+        },
+        {
+          "type": "click",
+          "x": 32.0,
+          "y": 564.0
+        },
+        {
+          "key": "Escape",
+          "type": "key"
+        },
+        {
+          "key": "Escape",
+          "type": "key"
+        }
+      ],
+      "name": "buycancel",
+      "before_sha256": "a6de3966873ee452347be375c645b2d4bf74ab2d2f55c47cf06775209e0331ad",
+      "after_sha256": "a6de3966873ee452347be375c645b2d4bf74ab2d2f55c47cf06775209e0331ad"
+    },
+    {
+      "inputs": [
+        {
+          "type": "click",
+          "x": 686.0,
+          "y": 693.0
+        },
+        {
+          "type": "click",
+          "x": 32.0,
+          "y": 564.0
+        },
+        {
+          "key": "Enter",
+          "type": "key"
+        }
+      ],
+      "name": "buy",
+      "before_sha256": "a6de3966873ee452347be375c645b2d4bf74ab2d2f55c47cf06775209e0331ad",
+      "after_sha256": "ea5b2b9d2802d34fc63793590643d4f0d88860a7e2503fd9dbc523348580f453"
+    },
+    {
+      "inputs": [
+        {
+          "type": "click",
+          "x": 686.0,
+          "y": 693.0
+        },
+        {
+          "type": "click",
+          "x": 32.0,
+          "y": 610.0
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "Enter",
+          "type": "key"
+        },
+        {
+          "key": "Escape",
+          "type": "key"
+        },
+        {
+          "key": "Escape",
+          "type": "key"
+        }
+      ],
+      "name": "salecancel",
+      "before_sha256": "bac93269dc082643c33c993b5cc55f357fb4d61cfea6e43591a242a0b45c0dc6",
+      "after_sha256": "bac93269dc082643c33c993b5cc55f357fb4d61cfea6e43591a242a0b45c0dc6"
+    },
+    {
+      "inputs": [
+        {
+          "type": "click",
+          "x": 686.0,
+          "y": 693.0
+        },
+        {
+          "type": "click",
+          "x": 32.0,
+          "y": 610.0
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "Enter",
+          "type": "key"
+        },
+        {
+          "key": "Enter",
+          "type": "key"
+        }
+      ],
+      "name": "sale",
+      "before_sha256": "bac93269dc082643c33c993b5cc55f357fb4d61cfea6e43591a242a0b45c0dc6",
+      "after_sha256": "5abe9eb08662780422d33253323a7002560029acad1f9266ad53222924ae8015"
+    },
+    {
+      "inputs": [
+        {
+          "type": "click",
+          "x": 686.0,
+          "y": 693.0
+        },
+        {
+          "type": "click",
+          "x": 32.0,
+          "y": 518.0
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "Escape",
+          "type": "key"
+        },
+        {
+          "key": "Escape",
+          "type": "key"
+        }
+      ],
+      "name": "switchcancel",
+      "before_sha256": "3c50b3040e6c3002e345f87664dea1eb72c5c11d63971300e28b8347efefcd75",
+      "after_sha256": "3c50b3040e6c3002e345f87664dea1eb72c5c11d63971300e28b8347efefcd75"
+    },
+    {
+      "inputs": [
+        {
+          "type": "click",
+          "x": 686.0,
+          "y": 693.0
+        },
+        {
+          "type": "click",
+          "x": 32.0,
+          "y": 518.0
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "Enter",
+          "type": "key"
+        }
+      ],
+      "name": "switch",
+      "before_sha256": "3c50b3040e6c3002e345f87664dea1eb72c5c11d63971300e28b8347efefcd75",
+      "after_sha256": "561c21f4647f1d288c0f0bed2077331e71e550fa4c7306fa836097807f2bd6f7"
+    },
+    {
+      "inputs": [
+        {
+          "type": "click",
+          "x": 32.0,
+          "y": 518.0
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "ArrowDown",
+          "type": "key"
+        },
+        {
+          "key": "Enter",
+          "type": "key"
+        }
+      ],
+      "name": "restore",
+      "before_sha256": "561c21f4647f1d288c0f0bed2077331e71e550fa4c7306fa836097807f2bd6f7",
+      "after_sha256": "d8ed0f4ee58d412ff579b19101a82e756a07b573ec3f889d9c832cd023cf0ced"
+    },
+    {
+      "inputs": [
+        {
+          "key": "Escape",
+          "type": "key"
+        }
+      ],
+      "name": "close",
+      "before_sha256": "d8ed0f4ee58d412ff579b19101a82e756a07b573ec3f889d9c832cd023cf0ced",
+      "after_sha256": "735debe794fec0234c4d535af09a2e9b09c2b19d7b3678937953b52bb15a8c63"
+    }
+  ],
+  "owner_acceptance": "pending; v0.13 citizen acceptance is not reused"
+}

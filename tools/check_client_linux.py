@@ -174,6 +174,22 @@ def run():
                 if has(scene(),"End your turn with movable units?"):key("Return")
                 wait(lambda s:s["phase"]=="Human" and any(d.get("text","").startswith("Turn 2 ") for d in s["draws"]))
                 research();key("Ctrl+s");save_dialog("normalnext")
+                production=os.environ.get("TOTENGINE_PRODUCTION_FIXTURES")
+                if production:
+                    import json, shutil
+                    production=Path(production)
+                    for route in json.loads((production/"route.json").read_text()):
+                        name="production"+route["name"]
+                        shutil.copyfile(production/(route["name"]+"-before.cth"),work/"saves"/(name+".cth"))
+                        load(name)
+                        names={"ArrowDown":"Down","ArrowUp":"Up","Enter":"Return"}
+                        for item in route["inputs"]:
+                            if item["type"]=="key":key(names.get(item["key"],item["key"]))
+                            elif item["type"]=="click":click_at(item["x"],item["y"])
+                            else:raise RuntimeError("unsupported production input")
+                        key("Ctrl+s");save_dialog(name+"after")
+                        assert (work/"saves"/(name+"after.cth")).read_bytes()==(production/(route["name"]+"-after.cth")).read_bytes(),name
+                        load(name+"after")
                 citizens=os.environ.get("TOTENGINE_CITIZENS_FIXTURES")
                 if citizens:
                     import shutil

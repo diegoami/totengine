@@ -6,7 +6,8 @@ both clients and the city route pass on 2026-11-07**. Verification is recorded i
 unit selection had become worse, and required blinking of the selected unit.
 The owner then asked for more time studying the game/manual before more UI work.
 Client changes were paused for this study and subsequently resumed at the
-owner's instruction. Earlier automated passes did not resolve that report. #137 and the milestone remain open.
+owner's instruction. Earlier automated passes did not resolve that report. The replacement passed
+v0.13 owner acceptance and review; #137 and its milestone are now closed.
 
 Evidence: [numeric study](../evidence/ui-selection-study-v1.json),
 [earlier original UI discovery](discovery.md), and the publisher manuals linked

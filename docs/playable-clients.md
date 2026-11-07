@@ -1,6 +1,6 @@
 # Playable browser and desktop clients
 
-The playable clients support generated Original-profile surface games,
+The v0.14 development clients support generated Original-profile surface games,
 one human civilization and the existing built-in opponents. Both clients use
 the same validated human session, presentation, owned artwork and checkpoints.
 
@@ -58,10 +58,19 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   tile clicked without a spare specialist also requests automatic allocation,
   following the original transition. First remove a worker when you want to
   assign that citizen to a particular empty tile. Blocked tiles reject the edit.
-- Choose production opens a picker: arrows or click select, Enter accepts,
-  Escape cancels. Switching currently retains the shield box; native switching
-  penalties are not implemented. Buying/selling and deeper city panels remain
-  later city-management work.
+- **Choose production** opens a picker: arrows or click select, Enter accepts,
+  Escape cancels. The city shows invested/required/remaining shields and an
+  estimate at current output. A draft shows shields lost or restored when
+  changing category. While the city stays open, switches use its initial budget;
+  returning to the original category can restore that budget. Closing/navigating
+  to another city ends it; buying rebases it. The map's quick picker ends its
+  budget on acceptance. Saving an active city budget restores that city on load.
+- **Buy production** shows a treasury/shield quote and requires confirmation.
+  Insufficient funds leave only Cancel. Payment fills the shield box; the item
+  completes during the next production phase. **Improvements / sell** selects
+  an owned building, then shows its refund and lost effects before confirmation.
+  One sale per city per turn is allowed; Palace/wonders are excluded. Cancel
+  leaves gold, shields and accepted orders unchanged.
 - **Research** opens the required research choice. Select explicitly and accept. Escape permits
   inspection while the choice still blocks gameplay; it never auto-selects.
 - **Ctrl+N** ends the human turn, confirming if movable units remain. Opponents run

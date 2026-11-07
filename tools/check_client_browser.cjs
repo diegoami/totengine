@@ -88,6 +88,26 @@ fs.mkdirSync(out,{recursive:true});
  await page.waitForFunction(()=>frame.phase==='Human'&&frame.draws.some(d=>d.text?.startsWith('Turn 2 ')));await idle();
  await research();await key('Control+s');await save('normalnext');
  async function loadPending(name){if(has(await state(),'Name your city'))await key('Escape');await load(name)}
+ const production=process.env.TOTENGINE_PRODUCTION_FIXTURES;
+ if(production){
+  const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;
+  if(!saves)throw Error('set TOTENGINE_CLIENT_SAVES');
+  for(const route of JSON.parse(fs.readFileSync(path.join(production,'route.json'),'utf8'))){
+   const name='production'+route.name;
+   fs.copyFileSync(path.join(production,route.name+'-before.cth'),path.join(saves,name+'.cth'));
+   await load(name);
+   for(const input of route.inputs){
+    if(input.type==='key')await key(input.key.replace('Ctrl+','Control+'));
+    else if(input.type==='click'){await page.mouse.click(input.x,input.y);await idle()}
+    else throw Error('unsupported production route input');
+   }
+   await page.screenshot({path:out+'/'+name+'.png'});
+   await key('Control+s');await save(name+'after');
+   if(!fs.readFileSync(path.join(saves,name+'after.cth')).equals(fs.readFileSync(path.join(production,route.name+'-after.cth'))))throw Error('production checkpoint differs '+route.name);
+   // Replay the persisted result before following another route.
+   await load(name+'after');
+  }
+ }
  const citizens=process.env.TOTENGINE_CITIZENS_FIXTURES;
  if(citizens){
   const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;

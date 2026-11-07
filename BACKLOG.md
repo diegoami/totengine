@@ -7,7 +7,7 @@
   v0.10.0 original-like built-in AI → v0.11.0 UI discovery, reviewed design
   and client milestone planning → v0.12 first playable turn in both clients →
   v0.13 city workers/specialists (released) → v0.14 city production decisions
-  (released) → remaining client packages →
+  (released) → v0.15 city information panels (in progress) → remaining client packages →
   pluggable AIs (later, version unassigned). Each has one theme
   and a few stories, so every review stays one round (decision 0002).
   The first two client slices are scoped; later milestone count/versions remain unassigned;

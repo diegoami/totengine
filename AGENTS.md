@@ -290,12 +290,39 @@ explicit in release notes and docs/evidence/client-v014-release.json; do not
 claim those final Windows input reruns passed. Preserve all owner previews/games:
 current accepted browser is port 8797; Windows launcher is under
 review-tmp/totengine-owner-v014. Readiness: docs/v0.14.0-readiness.md.
-**Current continuation:** the owner directed “ok when done continue”. Next scope
-is city Info/Support/Improvements/Happiness panels from the reviewed screen
-contract, including faithful panel roles and retained panel across city navigation.
-Inspect retained original captures before implementation. Separate own-city filtered
-views from rendering; lists do not invent wake/activate actions. Both clients and
-new owner acceptance/review remain required. Complete original AI/pluggable AI
+**Current v0.15 work:** the owner directed “ok when done continue”. Milestone 13
+“City information panels: browser and desktop” is live: #157 reference/filtered
+views, #158 shared panels, #159 real-input/owner acceptance. Scope:
+docs/ui/city-information-milestone.md. Work branch: feat/city-information-panels.
+New private original study is complete: eleven captures, native Happy suppresses
+unchanged stages, Roma/Rhegium navigation retains the chosen panel. No original
+images/assets committed. Only the new copied prefix/display was driven; owned
+reference cleanup uses its stop marker. Numeric study: city-panels-study-v1.json.
+Engine CityInfo exposes own supported versus present unit lists, actual ordinal
+shield and settler-food charges, owned improvements/upkeep/local wonders, and
+five happiness snapshots. Views are immutable. happiness-stages-v1.json/vectors
+match 1,280 native snapshots in 256 contexts; final mood arithmetic is unchanged.
+Engine library 140 tests and strict Clippy pass; full install-backed make checks
+pass 251 Rust, 11 Python and golden. Desktop suite 26 passes; all six fixture
+authors and seven 32-seed campaign tests pass. Shared Info/Support/
+Improvements/Happy tabs are implemented; Info keeps the accepted tile inspector
+and adds present units, commodity workflows stay later. Happy omits unchanged
+rows, tabs do not close production context, city navigation clears it as before.
+Tile arrow/Space shortcuts are active only in Info; no implicit unit-list orders.
+All three adapters pass eight panel checkpoints with per-step panel/modal/page/
+roster assertions plus ninety prior-route checkpoints (114 total). The visiting
+unit case is created by recorded movement between existing own cities. Both
+new previews are ready; owner browser is 8799 and Windows launcher is under
+review-tmp/totengine-owner-v015, with separate practice slots. New acceptance
+was requested and is pending. All owner v0.14 previews remain preserved.
+A final caption-only correction aligns panel unit numbers with map slot numbers;
+its fail-before/pass-after controller test is recorded in client-city-panels-v1.json.
+The running owner preview retains initial captions; preserve its games.
+New owner acceptance and independent review
+remain required; v0.14 acceptance does not accept this slice. Cargo now 0.15.0;
+the exact-version campaign golden was rederived and differs from v0.14 only
+in the version header. Do not overwrite
+accepted v0.14 previews or released packages. Complete original AI/pluggable AI
 remain gated behind complete playable-client delivery.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.

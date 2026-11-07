@@ -301,6 +301,10 @@ def run():
                         key("Escape");key("8");key("Return")
                         key("Ctrl+s");save_dialog(name+"after")
                         assert (work/"saves"/(name+"after.cth")).read_bytes()==(Path(fixtures)/("after-"+name+".cth")).read_bytes(),name
+                panels=os.environ.get("TOTENGINE_PANELS_FIXTURES")
+                if panels:
+                    from check_city_panels import run_panels
+                    run_panels(scene,key,click_at,click_button,save_dialog,load,work,panels)
                 resize(display,window,1440,1000);sync(display,0);time.sleep(.3)
                 focus(display,root,2,0);sync(display,0);time.sleep(.2);focus(display,window,2,0);sync(display,0);time.sleep(.2)
                 button("Close client");key("Return")

@@ -381,6 +381,46 @@ try {
             if($actual -ne $expected){throw "Encounter checkpoint differs: $name"}
         }
     }
+    if(-not $MovementOnly -and -not $SelectionOnly -and $env:TOTENGINE_PANELS_FIXTURES) {
+        $routes=Get-Content -Encoding UTF8 (Join-Path $env:TOTENGINE_PANELS_FIXTURES 'route.json') -Raw | ConvertFrom-Json
+        foreach($route in $routes) {
+            $name='panel'+$route.name
+            Copy-Item (Join-Path $env:TOTENGINE_PANELS_FIXTURES ($route.name+'-before.cth')) (Join-Path $env:TOTENGINE_SAVES ($name+'.cth'))
+            Load-Slot $name
+            if(Has-Text (Read-Scene) 'Manage city'){Click-Button 'Manage city'}
+            Click-Button 'Info'
+            foreach($step in $route.inputs) {
+                $item=$step.input
+                if($item.type -eq 'click'){Click-At $item.x $item.y}
+                elseif($item.type -eq 'key'){
+                    $vk=@{'ArrowDown'=40;'ArrowUp'=38;'Enter'=13;'Escape'=27;'PageDown'=34;'PageUp'=33}[$item.key]
+                    if(-not $vk){throw ('unsupported panel key '+$item.key)}
+                    Send-Key $vk
+                } else {throw 'unsupported panel input'}
+                $draws=(Read-Scene).draws
+                if(@($draws | Where-Object {$_.kind -eq 'text' -and $_.x -eq 744 -and $_.y -eq 193 -and $_.text -eq $step.panel}).Count -ne 1){throw ('Panel transition differs '+$route.name)}
+                if($step.text -and @($draws | Where-Object {$_.text -eq $step.text}).Count -ne 1){throw ('Unit roster count differs '+$route.name)}
+                if($step.modal){
+                    if(@($draws | Where-Object {$_.text -eq $step.modal}).Count -ne 1){throw 'Sale confirmation missing'}
+                } else {
+                    if(@($draws | Where-Object {$_.text -eq 'Confirm improvement sale'}).Count -ne 0){throw 'Sale confirmation did not close'}
+                    if($step.pages -gt 1){
+                        $pageText='List '+$step.page+' / '+$step.pages
+                        if(@($draws | Where-Object {$_.text -eq $pageText}).Count -ne 1){throw ('List pagination differs '+$route.name)}
+                    }
+                }
+            }
+            $scene=Read-Scene
+            if(@($scene.draws | Where-Object {$_.kind -eq 'text' -and $_.x -eq 744 -and $_.y -eq 193 -and $_.text -eq $route.panel}).Count -ne 1){throw ('Wrong displayed panel '+$route.name)}
+            if(@($scene.draws | Where-Object {$_.kind -eq 'text' -and $_.x -eq 18 -and $_.y -eq 14 -and $_.text -eq $route.heading}).Count -ne 1){throw ('Wrong displayed city '+$route.name)}
+            Send-Chord 83;Save-Dialog ($name+'after')
+            $actual=(Get-FileHash (Join-Path $env:TOTENGINE_SAVES ($name+'after.cth')) -Algorithm SHA256).Hash
+            $expected=(Get-FileHash (Join-Path $env:TOTENGINE_PANELS_FIXTURES ($route.name+'-after.cth')) -Algorithm SHA256).Hash
+            if($actual -ne $expected){throw ('Panel checkpoint differs: '+$route.name)}
+            Load-Slot ($name+'after')
+        }
+        Send-Key 27
+    }
     Focus-Button 'Close client'
     Send-Key 13
     if(-not $app.WaitForExit(15000)){throw 'client did not close'}

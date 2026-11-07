@@ -15,6 +15,7 @@ pub mod calendar;
 pub mod campaign;
 pub mod capture;
 pub mod citizens;
+pub mod city_info;
 pub mod city_phase;
 pub mod city_production;
 pub mod combat;

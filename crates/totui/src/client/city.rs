@@ -2,7 +2,7 @@
 use super::*;
 use engine::yields::{RADIUS_DX, RADIUS_DY};
 
-fn spot(k: usize) -> (f64, f64) {
+pub(super) fn spot(k: usize) -> (f64, f64) {
     (
         500. + f64::from(RADIUS_DX[k]) * 45.,
         300. + f64::from(RADIUS_DY[k]) * 25.,
@@ -31,17 +31,17 @@ impl Client {
 
     pub(super) fn city_key(&mut self, key: &str) -> Result<(), String> {
         match key {
-            "ArrowRight" | "ArrowDown" => {
+            "ArrowRight" | "ArrowDown" if self.city_panel == CityPanel::Info => {
                 self.city_tile = (self.city_tile + 1) % 21;
                 Ok(())
             }
-            "ArrowLeft" | "ArrowUp" => {
+            "ArrowLeft" | "ArrowUp" if self.city_panel == CityPanel::Info => {
                 self.city_tile = (self.city_tile + 20) % 21;
                 Ok(())
             }
             "PageDown" => self.action(Action::CityStep(1)),
             "PageUp" => self.action(Action::CityStep(-1)),
-            " " => self.action(Action::Worker(
+            " " if self.city_panel == CityPanel::Info => self.action(Action::Worker(
                 self.city.ok_or("Select an own city first")?,
                 self.city_tile,
             )),
@@ -146,6 +146,7 @@ impl Client {
                 }
             }
         }
+        b.extend(self.city_panel_buttons());
         b
     }
 
@@ -338,33 +339,7 @@ impl Client {
                 "#ffffff",
             ));
         }
-        let t = &detail.radius[self.city_tile as usize];
-        for (i, line) in [
-            format!("Tile {}", self.city_tile),
-            format!(
-                "Position: {}",
-                t.position
-                    .map_or_else(|| "off map".into(), |(x, y)| format!("{x}, {y}"))
-            ),
-            format!("Food {} / shields {}", t.yields[0], t.yields[1]),
-            format!("Trade {}", t.yields[2]),
-            if t.worked {
-                "Worked"
-            } else if t.available {
-                "Available"
-            } else {
-                "Unavailable"
-            }
-            .into(),
-            "Arrows select a radius tile.".into(),
-            "Space changes its worker.".into(),
-        ]
-        .iter()
-        .enumerate()
-        {
-            draws.push(text(744., 130. + i as f64 * 28., line, 16, "#eee8d4"));
-        }
-        draws.push(text(744., 370., "Edits commit immediately.", 16, "#ffef9a"));
+        self.city_panel_draw(draws, v);
         let workers = detail.radius.iter().take(20).filter(|t| t.worked).count();
         for i in 0..workers.min(12) {
             draws.push(Draw::Sprite {
@@ -376,13 +351,6 @@ impl Client {
             });
         }
         draws.push(text(
-            744.,
-            398.,
-            "Closing does not undo edits.",
-            15,
-            "#eee8d4",
-        ));
-        draws.push(text(
             300.,
             542.,
             &format!(
@@ -392,13 +360,8 @@ impl Client {
             16,
             "#fff0b5",
         ));
-        draws.push(text(744., 490., "Remove a worker to", 15, "#eee8d4"));
-        draws.push(text(744., 514., "create an entertainer.", 15, "#eee8d4"));
-        draws.push(text(744., 554., "Other roles need size 5.", 15, "#eee8d4"));
-        draws.push(text(744., 598., "Empty tile, no spare:", 15, "#eee8d4"));
-        draws.push(text(744., 622., "automatic reassignment.", 15, "#eee8d4"));
         if v.decision.is_some() {
-            draws.push(text(744., 458., "Research/choice required.", 16, "#ffba8a"));
+            draws.push(text(744., 568., "Research/choice required.", 11, "#ffba8a"));
         }
     }
 }

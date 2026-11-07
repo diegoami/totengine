@@ -43,10 +43,11 @@ fn key(c: &mut Client, k: &str) {
     input(c, Input::Key { key: k.into() });
 }
 fn button(c: &mut Client, label: &str) {
-    let b = c
-        .buttons()
-        .into_iter()
-        .find(|b| b.label.contains(label))
+    let buttons = c.buttons();
+    let b = buttons
+        .iter()
+        .find(|b| b.label == label)
+        .or_else(|| buttons.iter().find(|b| b.label.contains(label)))
         .unwrap_or_else(|| panic!("missing button {label}"));
     input(
         c,
@@ -844,6 +845,26 @@ fn quoted_city_purchase_and_sale_confirm_cancel_and_resume() {
         .any(|d| matches!(d,Draw::Text{text,..} if text.starts_with("Happy:"))));
     key(&mut c, "Escape");
     assert_eq!(before, c.checkpoint().unwrap());
+    button(&mut c, "Improvements");
+    let sell = c
+        .buttons()
+        .into_iter()
+        .find(|b| matches!(b.action, Action::InspectSale(_, 4)))
+        .expect("panel sale row");
+    input(
+        &mut c,
+        Input::Click {
+            x: sell.x + 3.,
+            y: sell.y + 3.,
+        },
+    );
+    assert!(matches!(c.modal, Some(Modal::Sale { .. })));
+    key(&mut c, "Escape");
+    assert_eq!(
+        before,
+        c.checkpoint().unwrap(),
+        "panel sale inspection/cancel remains inert"
+    );
     open_sale(&mut c);
     key(&mut c, "Enter");
     assert!(c.view().unwrap().observation.city_economy[0].buildings[0] & (1 << 4) == 0);
@@ -1624,6 +1645,362 @@ fn generated_city_production_fixture() {
     scenario(&mut c, &out, &mut routes, "restore", &restore);
     assert_eq!(c.view().unwrap().city_production[0].stored, initial);
     scenario(&mut c, &out, &mut routes, "close", &[("key", "Escape")]);
+    fs::write(
+        out.join("route.json"),
+        serde_json::to_string_pretty(&routes).unwrap() + "\n",
+    )
+    .unwrap();
+}
+
+#[test]
+fn city_panels_inspect_without_orders_and_retain_panel_through_navigation_and_reload() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    button(&mut c, "Choose production");
+    let at = c
+        .current_choices()
+        .iter()
+        .position(|(id, _)| {
+            *id >= 0
+                && c.loaded
+                    .as_ref()
+                    .unwrap()
+                    .resources
+                    .rules
+                    .unit_role(*id as usize)
+                    != Some(5)
+        })
+        .unwrap();
+    for _ in 0..=at {
+        key(&mut c, "ArrowDown");
+    }
+    key(&mut c, "Enter");
+    for _ in 0..40 {
+        if !c.view().unwrap().city_info[0].supported.is_empty() {
+            break;
+        }
+        end_round(&mut c);
+    }
+    assert!(!c.view().unwrap().city_info[0].supported.is_empty());
+    button(&mut c, "Manage city");
+    let before = c.checkpoint().unwrap();
+    for (label, panel) in [
+        ("Info", CityPanel::Info),
+        ("Support", CityPanel::Support),
+        ("Improvements", CityPanel::Improvements),
+        ("Happy", CityPanel::Happy),
+    ] {
+        button(&mut c, label);
+        assert_eq!(c.city_panel, panel);
+        assert_eq!(
+            before,
+            c.checkpoint().unwrap(),
+            "panel inspection cannot issue an order"
+        );
+        if panel != CityPanel::Info {
+            let tile = c.city_tile;
+            key(&mut c, "ArrowRight");
+            key(&mut c, " ");
+            assert_eq!(
+                c.city_tile, tile,
+                "hidden tile keys have no action outside Info"
+            );
+            assert_eq!(before, c.checkpoint().unwrap());
+        }
+    }
+    button(&mut c, "Support");
+    let v = c.view().unwrap();
+    let u = &v.city_info[0].supported[0];
+    let name =
+        c.loaded.as_ref().unwrap().resources.rules.unit_names()[u.type_id as usize].to_string();
+    assert!(
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d,Draw::Text{text,..} if text==&format!("{name} #{}",u.slot))),
+        "panel identity must use the same unit number as the map"
+    );
+    button(&mut c, "Choose production");
+    let at = c
+        .current_choices()
+        .iter()
+        .position(|(id, _)| *id == -4)
+        .unwrap();
+    for _ in 0..=at {
+        key(&mut c, "ArrowDown");
+    }
+    key(&mut c, "Enter");
+    let active = c.checkpoint().unwrap();
+    assert!(c.view().unwrap().production_context_city.is_some());
+    button(&mut c, "Support");
+    button(&mut c, "Happy");
+    assert_eq!(
+        active,
+        c.checkpoint().unwrap(),
+        "tabs preserve the recorded city budget"
+    );
+    let economy = c.view().unwrap().observation.city_economy;
+    key(&mut c, "PageDown");
+    assert_eq!(c.city_panel, CityPanel::Happy);
+    assert_eq!(c.view().unwrap().production_context_city, None);
+    assert_eq!(
+        economy,
+        c.view().unwrap().observation.city_economy,
+        "navigation closes interaction context, not economics"
+    );
+    let closed = c.checkpoint().unwrap();
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "panels");
+    key(&mut c, "Enter");
+    button(&mut c, "Info");
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "panels");
+    key(&mut c, "Enter");
+    assert!(c.city_open);
+    assert_eq!(c.city_panel, CityPanel::Info);
+    assert_eq!(
+        closed,
+        c.checkpoint().unwrap(),
+        "load retains gameplay independently of presentation panel"
+    );
+}
+
+#[test]
+#[ignore = "install-backed recorded city panel input route"]
+fn generated_city_panels_fixture() {
+    let base =
+        PathBuf::from(std::env::var("TOTENGINE_PANEL_INPUTS").expect("private v0.15 fixture root"));
+    let out = PathBuf::from(std::env::var("TOTENGINE_PANELS_OUT").expect("private output"));
+    fs::create_dir_all(&out).unwrap();
+    let mut c = Client::new(std::env::var("CIVTOT_HOME").unwrap(), out.clone());
+    let mut routes = Vec::new();
+    fn load_city(c: &mut Client, source: &Path) {
+        let name = format!("source{}", storage::nonce().unwrap());
+        fs::copy(source, c.saves.join(format!("{name}.cth"))).unwrap();
+        if c.loaded.is_none() {
+            button(c, "Load engine checkpoint");
+        } else {
+            key(c, "Ctrl+l");
+        }
+        edit(c, &name);
+        key(c, "Enter");
+        if !c.city_open {
+            button(c, "Manage city");
+        }
+        button(c, "Info");
+    }
+    fn mark(c: &Client, out: &Path, name: &str, end: &str) {
+        fs::write(
+            out.join(format!("{name}-{end}.cth")),
+            c.checkpoint().unwrap(),
+        )
+        .unwrap();
+    }
+    fn step(c: &Client, inputs: &mut Vec<serde_json::Value>, input: Input) {
+        inputs.push(serde_json::json!({"input":input,"panel":c.city_panel.label(),
+            "page":c.city_panel_page.min(c.city_panel_pages()-1)+1,"pages":c.city_panel_pages(),
+            "modal":if matches!(c.modal,Some(Modal::Sale{..})){Some("Confirm improvement sale")}else{None},
+            "text":c.view().and_then(|v|c.city.and_then(|city|v.city_info.into_iter().find(|d|d.index==city.slot))).and_then(|d|match c.city_panel {
+                CityPanel::Info=>Some(format!("Own units present: {}",d.present.len())),
+                CityPanel::Support=>Some(format!("Supported units: {}",d.supported.len())),_=>None})}));
+    }
+    fn click(c: &mut Client, inputs: &mut Vec<serde_json::Value>, label: &str) {
+        let b = c
+            .buttons()
+            .into_iter()
+            .find(|b| b.label == label)
+            .unwrap_or_else(|| panic!("missing {label}"));
+        let i = Input::Click {
+            x: b.x + 12.,
+            y: b.y + 8.,
+        };
+        input(c, i.clone());
+        step(c, inputs, i);
+    }
+    fn press(c: &mut Client, inputs: &mut Vec<serde_json::Value>, key: &str) {
+        let i = Input::Key { key: key.into() };
+        input(c, i.clone());
+        step(c, inputs, i);
+    }
+    fn finish(
+        c: &Client,
+        out: &Path,
+        routes: &mut Vec<serde_json::Value>,
+        name: &str,
+        inputs: Vec<serde_json::Value>,
+    ) {
+        mark(c, out, name, "after");
+        routes.push(serde_json::json!({"name":name,"inputs":inputs,"open_city":true,"panel":c.city_panel.label(),"heading":c.frame().draws.iter().find_map(|d|match d {Draw::Text{x,y,text,..} if *x==18. && *y==14.=>Some(text),_=>None}).unwrap()}));
+    }
+    let mature = base.join("citizens/mature.cth");
+    load_city(&mut c, &mature);
+    mark(&c, &out, "overview", "before");
+    let unchanged = c.checkpoint().unwrap();
+    let mut actions = Vec::new();
+    click(&mut c, &mut actions, "Support");
+    if c.city_panel_pages() > 1 {
+        click(&mut c, &mut actions, "Next list");
+        click(&mut c, &mut actions, "Previous list");
+    }
+    click(&mut c, &mut actions, "Improvements");
+    click(&mut c, &mut actions, "Happy");
+    assert_eq!(unchanged, c.checkpoint().unwrap());
+    finish(&c, &out, &mut routes, "overview", actions);
+
+    load_city(&mut c, &mature);
+    mark(&c, &out, "entertainer", "before");
+    let tile = c.view().unwrap().city_citizens[0]
+        .radius
+        .iter()
+        .take(20)
+        .position(|t| t.worked)
+        .unwrap();
+    let mut actions = Vec::new();
+    click(&mut c, &mut actions, "Happy");
+    let (x, y) = super::city::spot(tile);
+    let i = Input::Click { x, y };
+    input(&mut c, i.clone());
+    step(&c, &mut actions, i);
+    assert_eq!(c.city_panel, CityPanel::Happy);
+    assert_eq!(c.view().unwrap().city_citizens[0].specialists, vec![1]);
+    let stages = c.view().unwrap().city_info[0].happiness;
+    assert_ne!(
+        stages[0], stages[1],
+        "fixture must demonstrate a real luxury stage"
+    );
+    finish(&c, &out, &mut routes, "entertainer", actions);
+    mark(&c, &out, "specialists", "before");
+    let mut actions = Vec::new();
+    click(&mut c, &mut actions, "Happy");
+    for label in ["1: Entertainer", "1: Tax collector", "1: Scientist"] {
+        click(&mut c, &mut actions, label);
+    }
+    finish(&c, &out, &mut routes, "specialists", actions);
+
+    for (name, accept) in [("salecancel", false), ("sale", true)] {
+        load_city(&mut c, &base.join("production/sale-before.cth"));
+        mark(&c, &out, name, "before");
+        let before = c.checkpoint().unwrap();
+        let mut actions = Vec::new();
+        click(&mut c, &mut actions, "Improvements");
+        let b = c
+            .buttons()
+            .into_iter()
+            .find(|b| matches!(b.action, Action::InspectSale(_, _)))
+            .unwrap();
+        let i = Input::Click {
+            x: b.x + 3.,
+            y: b.y + 3.,
+        };
+        input(&mut c, i.clone());
+        step(&c, &mut actions, i);
+        assert!(matches!(c.modal, Some(Modal::Sale { .. })));
+        press(
+            &mut c,
+            &mut actions,
+            if accept { "Enter" } else { "Escape" },
+        );
+        assert_eq!(c.city_panel, CityPanel::Improvements);
+        if !accept {
+            assert_eq!(before, c.checkpoint().unwrap());
+        }
+        finish(&c, &out, &mut routes, name, actions);
+    }
+    load_city(&mut c, &base.join("encounter/after-capture.cth"));
+    // This generated fixture already has two own cities; the defeated size-one
+    // foreign city was razed. Move the surviving home-city warrior into the
+    // other own city through ordinary recorded keypad orders, with explicit
+    // reselection after exhaustion. Do not inject a visiting-unit state.
+    key(&mut c, "Escape");
+    for direction in ["4", "7"] {
+        if c.view()
+            .unwrap()
+            .observation
+            .units
+            .iter()
+            .find(|u| u.index == 0)
+            .unwrap()
+            .moves_left
+            == 0
+        {
+            end_round(&mut c);
+        }
+        for _ in 0..100 {
+            if c.active.is_some_and(|u| u.slot == 0) {
+                break;
+            }
+            key(&mut c, "w");
+        }
+        assert!(c.active.is_some_and(|u| u.slot == 0));
+        if !c.moving {
+            key(&mut c, "v");
+        }
+        key(&mut c, direction);
+        assert!(
+            c.modal.is_none(),
+            "normal own-city route must not need a combat choice"
+        );
+    }
+    button(&mut c, "Manage city");
+    button(&mut c, "Info");
+    assert!(c.view().unwrap().cities.len() >= 2);
+    mark(&c, &out, "navigation", "before");
+    let unchanged = c.checkpoint().unwrap();
+    let original = c.city;
+    let mut actions = Vec::new();
+    click(&mut c, &mut actions, "Support");
+    press(&mut c, &mut actions, "PageDown");
+    assert_ne!(original, c.city);
+    assert_eq!(c.city_panel, CityPanel::Support);
+    let v = c.view().unwrap();
+    let home = v
+        .city_info
+        .iter()
+        .find(|d| d.index == original.unwrap().slot)
+        .unwrap();
+    assert!(
+        home.supported
+            .iter()
+            .any(|u| !home.present.iter().any(|p| p.id == u.id)),
+        "navigation fixture must include a supported-away unit"
+    );
+    let visited = v
+        .city_info
+        .iter()
+        .find(|d| d.index == c.city.unwrap().slot)
+        .unwrap();
+    assert!(
+        visited.present.iter().any(|u| u.shields.is_none()),
+        "visited city must contain a unit supported elsewhere or without a home"
+    );
+    click(&mut c, &mut actions, "Info");
+    click(&mut c, &mut actions, "Support");
+    press(&mut c, &mut actions, "PageUp");
+    assert_eq!(original, c.city);
+    assert_eq!(unchanged, c.checkpoint().unwrap());
+    finish(&c, &out, &mut routes, "navigation", actions);
+
+    for (name, navigate) in [("budgettabs", false), ("budgetnav", true)] {
+        load_city(&mut c, &base.join("production/switch-after.cth"));
+        assert!(c.view().unwrap().production_context_city.is_some());
+        mark(&c, &out, name, "before");
+        let before = c.checkpoint().unwrap();
+        let economy = c.view().unwrap().observation.city_economy;
+        let mut actions = Vec::new();
+        for label in ["Support", "Improvements", "Happy"] {
+            click(&mut c, &mut actions, label);
+        }
+        if navigate {
+            press(&mut c, &mut actions, "PageDown");
+            assert_eq!(c.view().unwrap().production_context_city, None);
+        } else {
+            assert_eq!(before, c.checkpoint().unwrap());
+        }
+        assert_eq!(economy, c.view().unwrap().observation.city_economy);
+        finish(&c, &out, &mut routes, name, actions);
+    }
     fs::write(
         out.join("route.json"),
         serde_json::to_string_pretty(&routes).unwrap() + "\n",

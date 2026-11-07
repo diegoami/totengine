@@ -2,6 +2,7 @@
 mod atlas;
 pub mod browser;
 mod city;
+mod city_panels;
 #[cfg(feature = "desktop")]
 pub mod desktop;
 #[cfg(any(feature = "desktop", test))]
@@ -16,6 +17,8 @@ use engine::player::CityName;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+
+use city_panels::CityPanel;
 
 pub const WIDTH: u32 = 1024;
 pub const HEIGHT: u32 = 768;
@@ -157,6 +160,9 @@ enum Action {
     OpenCity,
     CloseCity,
     CityStep(i32),
+    CityPanel(CityPanel),
+    CityPanelPage(i32),
+    InspectSale(Entity, u8),
     Worker(Entity, u8),
     Specialist(Entity, u8),
     Production(Entity),
@@ -229,6 +235,8 @@ pub struct Client {
     city: Option<Entity>,
     city_open: bool,
     city_tile: u8,
+    city_panel: CityPanel,
+    city_panel_page: usize,
     inspect: Option<(u16, u16)>,
     moving: bool,
     confirm_moves: bool,
@@ -266,6 +274,8 @@ impl Client {
             city: None,
             city_open: false,
             city_tile: 20,
+            city_panel: CityPanel::Info,
+            city_panel_page: 0,
             inspect: None,
             moving: false,
             confirm_moves: false,
@@ -640,6 +650,8 @@ impl Client {
                 });
                 self.assets = storage::nonce()?;
                 self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
+                self.city_panel = CityPanel::Info;
+                self.city_panel_page = 0;
                 self.editing.clear();
                 self.refresh();
                 self.schedule_unit(None, true);
@@ -716,6 +728,27 @@ impl Client {
                 self.focus_button = 0;
                 self.status = "Returned to map; accepted city edits remain committed.".into();
             }
+            Action::CityPanel(panel) => {
+                self.city_panel = panel;
+                self.city_panel_page = 0;
+                self.focus_button = 0;
+            }
+            Action::CityPanelPage(delta) => {
+                self.city_panel_page = self
+                    .city_panel_page
+                    .saturating_add_signed(delta as isize)
+                    .min(self.city_panel_pages().saturating_sub(1));
+            }
+            Action::InspectSale(city, improvement) => {
+                let loaded = self.loaded.as_ref().ok_or("No running game")?;
+                let preview = loaded.session.preview_sale(city, improvement)?;
+                let revision = loaded.session.view().revision;
+                self.open(Modal::Sale {
+                    city,
+                    preview,
+                    revision,
+                });
+            }
             Action::CityStep(delta) => {
                 self.close_city_production()?;
                 let v = self.view().ok_or("No running game")?;
@@ -729,6 +762,7 @@ impl Client {
                         Some(v.cities[(at + delta).rem_euclid(v.cities.len() as i32) as usize]);
                 }
                 self.city_tile = 20;
+                self.city_panel_page = 0;
                 self.focus_button = 0;
             }
             Action::Worker(city, tile) => {

@@ -1,6 +1,6 @@
 # Playable browser and desktop clients
 
-The v0.14 clients support generated Original-profile surface games,
+The clients support generated Original-profile surface games,
 one human civilization and the existing built-in opponents. Both clients use
 the same validated human session, presentation, owned artwork and checkpoints.
 
@@ -54,6 +54,12 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   five. Outputs/mood refresh immediately, without collecting income or ending
   the turn. **PageUp/PageDown** navigate your cities; **Escape** returns to the
   map and keeps accepted edits. **Ctrl+S / Ctrl+L** save/load inside the city too.
+- Development v0.15 adds **Info / Support / Improvements / Happy** panels.
+  Support distinguishes units supported here from units present in Info. Building
+  sale rows retain explicit confirmation. Happy omits unchanged stages. The
+  selected panel stays across city navigation; viewing a list never orders a
+  unit. Tile arrow/Space keys apply only in Info; radius mouse edits remain
+  immediate in every panel. These panels still require new owner acceptance.
 - **Auto workers**, or the centre tile, requests automatic allocation. An empty
   tile clicked without a spare specialist also requests automatic allocation,
   following the original transition. First remove a worker when you want to

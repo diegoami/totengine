@@ -446,6 +446,8 @@ fn viewing_movement_skip_and_partial_checkpoint_resume_use_validated_orders() {
     let mut c = f.client();
     start(&mut c);
     let before = c.checkpoint().unwrap();
+    assert!(c.moving);
+    key(&mut c, "v");
     key(&mut c, "6");
     assert_eq!(c.checkpoint().unwrap(), before);
     key(&mut c, "v");
@@ -527,15 +529,38 @@ fn generated_land_encounter_through_shared_ui() {
     let out =
         PathBuf::from(std::env::var("TOTENGINE_ENCOUNTER_OUT").expect("set private output folder"));
     fs::create_dir_all(&out).unwrap();
-    let inputs: Vec<Input> = serde_json::from_str(include_str!(
-        "../../../../docs/evidence/client-input-route-v2.json"
+    #[derive(Deserialize)]
+    struct RecordedInput {
+        input: Input,
+        actor: Option<(usize, u32)>,
+    }
+    let inputs: Vec<RecordedInput> = serde_json::from_str(include_str!(
+        "../../../../docs/evidence/client-input-route-v3.json"
     ))
     .unwrap();
     let mut c = Client::new(home, out.clone());
     let mut battle = false;
     let mut capture = false;
     let mut direction = String::new();
-    for mut i in inputs {
+    for record in inputs {
+        let mut i = record.input;
+        if let Some((slot, id)) = record.actor {
+            let actor = Entity { slot, id };
+            assert!(
+                c.view().unwrap().units.contains(&actor),
+                "recorded actor must still exist"
+            );
+            for _ in 0..c.view().unwrap().units.len() + 1 {
+                if c.active == Some(actor) {
+                    break;
+                }
+                key(&mut c, "w");
+            }
+            assert_eq!(c.active, Some(actor));
+            if !c.moving {
+                key(&mut c, "v");
+            }
+        }
         // Field tokens are presentation epochs; bind typing to the current field.
         if let Input::Edit { field, .. } = &mut i {
             *field = c.entry_meta().expect("recorded edit needs a field").id;
@@ -661,7 +686,7 @@ fn original_bindings_activation_mouse_stacking_and_blink_are_inert_or_validated(
     assert_eq!(c.active, Some(entity));
     assert_eq!(c.checkpoint().unwrap(), before);
     let frame = serde_json::to_string(&c.frame()).unwrap();
-    assert!(frame.contains("\"kind\":\"cursor\""));
+    assert!(frame.contains("\"kind\":\"unit_sprite\""));
     assert!(frame.contains("\"blink\":true"));
     assert_eq!(frame, serde_json::to_string(&c.frame()).unwrap());
     assert_eq!(
@@ -827,4 +852,310 @@ fn generated_warrior_mouse_fixture() {
         .unwrap(),
     )
     .unwrap();
+}
+
+fn end_round(c: &mut Client) {
+    research(c);
+    key(c, "Ctrl+n");
+    if matches!(c.modal, Some(Modal::Confirm { .. })) {
+        key(c, "Enter");
+    }
+    ready(c);
+    research(c);
+}
+fn build_pair(c: &mut Client) {
+    for _ in 0..3 {
+        button(c, "Civilizations");
+    }
+    for _ in 0..4 {
+        button(c, "Difficulty");
+    }
+    start(c);
+    founding(c);
+    button(c, "Choose production");
+    let item = c
+        .current_choices()
+        .iter()
+        .find(|(id, _)| {
+            *id >= 0
+                && c.loaded
+                    .as_ref()
+                    .unwrap()
+                    .resources
+                    .rules
+                    .unit_role(*id as usize)
+                    != Some(5)
+        })
+        .unwrap()
+        .0;
+    let index = c
+        .current_choices()
+        .iter()
+        .position(|(id, _)| *id == item)
+        .unwrap();
+    for _ in 0..index / 12 {
+        button(c, "Next page");
+    }
+    click_point(c, (220., 177. + (index % 12) as f64 * 29.));
+    key(c, "Enter");
+    for _ in 0..100 {
+        if c.view().unwrap().units.len() >= 2 {
+            return;
+        }
+        end_round(c);
+    }
+    panic!("no pair built: {}", c.status);
+}
+fn unit_at(c: &Client, e: Entity) -> engine::player::UnitView {
+    c.view()
+        .unwrap()
+        .observation
+        .units
+        .into_iter()
+        .find(|u| u.index == e.slot)
+        .unwrap()
+}
+fn point(c: &Client, e: Entity, sy: f64) -> (f64, f64) {
+    let u = unit_at(c, e);
+    (
+        c.pan.0 + f64::from(u.x) * 32. * c.zoom,
+        c.pan.1 + f64::from(u.y) * 16. * c.zoom + sy * c.zoom,
+    )
+}
+fn click_point(c: &mut Client, p: (f64, f64)) {
+    input(c, Input::Click { x: p.0, y: p.1 });
+}
+fn land_step(c: &Client, e: Entity) -> (i32, i32) {
+    let v = c.view().unwrap();
+    let u = unit_at(c, e);
+    [
+        (2, 0),
+        (-2, 0),
+        (0, -2),
+        (0, 2),
+        (1, -1),
+        (-1, -1),
+        (1, 1),
+        (-1, 1),
+    ]
+    .into_iter()
+    .find(|(dx, dy)| {
+        let (x, y) = (i32::from(u.x) + dx, i32::from(u.y) + dy);
+        x >= 0
+            && y >= 0
+            && x < i32::from(v.observation.w2)
+            && y < i32::from(v.observation.h)
+            && v.observation.seen[y as usize * (v.observation.w2 as usize / 2) + x as usize / 2]
+                .is_some_and(|t| t.terrain != 10)
+            && !v
+                .observation
+                .units
+                .iter()
+                .any(|u| i32::from(u.x) == x && i32::from(u.y) == y)
+            && !v
+                .observation
+                .cities
+                .iter()
+                .any(|u| i32::from(u.x) == x && i32::from(u.y) == y)
+    })
+    .unwrap()
+}
+
+#[test]
+fn mouse_switches_different_units_and_stack_selection_never_spends_moves() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    build_pair(&mut c);
+    let units = c.view().unwrap().units;
+    let a = units[0];
+    let b = units[1];
+    let before = c.checkpoint().unwrap();
+    let p = point(&c, a, -20.);
+    click_point(&mut c, p);
+    assert!(
+        matches!(c.modal, Some(Modal::Units { .. })),
+        "a stack needs explicit selection"
+    );
+    c.choice = Some(b.slot as i32);
+    key(&mut c, "Enter");
+    assert_eq!(c.active, Some(b));
+    assert!(c.moving);
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "stack selection is presentation only"
+    );
+    let (dx, dy) = land_step(&c, b);
+    c.step(dx, dy).unwrap();
+    end_round(&mut c);
+    c.action(Action::Unit(a)).unwrap();
+    let baseline = c.checkpoint().unwrap();
+    for viewing in [false, true] {
+        for zoom in [1., 1.25, 0.8] {
+            c.zoom = zoom;
+            c.action(Action::Unit(a)).unwrap();
+            if viewing {
+                key(&mut c, "v");
+            }
+            let p = point(&c, b, -20.);
+            click_point(&mut c, p);
+            assert_eq!(c.active, Some(b), "click another unit in either mode");
+            assert!(c.moving);
+            assert_eq!(
+                c.checkpoint().unwrap(),
+                baseline,
+                "click did not move the previous actor"
+            );
+            assert!(c.frame().draws.iter().any(
+                |d| matches!(d,Draw::UnitSprite{unit,selected:true,blink:true,..} if *unit==b.slot)
+            ));
+            assert!(
+                !c.frame()
+                    .draws
+                    .iter()
+                    .any(|d| matches!(d, Draw::Cursor { .. })),
+                "Moving blinks the sprite, not a tile"
+            );
+        }
+    }
+    // Snapshot identities, not just slots, survive across a stack chooser.
+    c.action(Action::Unit(a)).unwrap();
+    let p = point(&c, a, -20.);
+    click_point(&mut c, p);
+    assert_eq!(c.active, Some(a));
+    assert_eq!(c.checkpoint().unwrap(), baseline);
+}
+
+#[test]
+fn exhaustion_selects_next_then_end_turn_without_retargeting_queued_input() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    build_pair(&mut c);
+    let units = c.view().unwrap().units;
+    let a = units[0];
+    let b = units[1];
+    c.action(Action::Unit(a)).unwrap();
+    let turn = c.view().unwrap().observation.turn;
+    let revision = c.revision;
+    key(&mut c, " ");
+    assert_eq!(c.active, Some(b));
+    assert!(c.moving);
+    assert_eq!(unit_at(&c, a).moves_left, 0);
+    let checkpoint = c.checkpoint().unwrap();
+    assert!(c
+        .input(revision, 99999, Input::Key { key: "6".into() })
+        .is_err());
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        checkpoint,
+        "queued move must not act on new selection"
+    );
+    c.action(Action::Unit(a)).unwrap();
+    assert!(!c.moving);
+    assert!(c.status.contains("no moves"));
+    assert!(!c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::UnitSprite { blink: true, .. })));
+    key(&mut c, "v");
+    assert_eq!(c.active, Some(b));
+    assert!(c.moving);
+    key(&mut c, " ");
+    assert!(!c.moving);
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d,Draw::Text{text,..} if text=="End of turn")));
+    input(&mut c, Input::Tick);
+    assert_eq!(c.view().unwrap().observation.turn, turn);
+    end_round(&mut c);
+    assert!(c.moving);
+    assert!(unit_at(&c, c.active.unwrap()).moves_left > 0);
+}
+
+#[test]
+#[ignore = "install-backed normal-play two-unit selection fixture"]
+fn generated_selection_fixture() {
+    let home = std::env::var("CIVTOT_HOME").unwrap();
+    let out = PathBuf::from(std::env::var("TOTENGINE_SELECTION_OUT").unwrap());
+    fs::create_dir_all(&out).unwrap();
+    let mut c = Client::new(home, out.clone());
+    build_pair(&mut c);
+    let units = c.view().unwrap().units;
+    assert_eq!(units.len(), 2);
+    let a = units[0];
+    let b = units[1];
+    fs::write(out.join("stack.cth"), c.checkpoint().unwrap()).unwrap();
+    let p = point(&c, a, 0.);
+    click_point(&mut c, p);
+    assert!(matches!(c.modal, Some(Modal::Units { .. })));
+    button(&mut c, &format!("#{} ·", b.slot));
+    key(&mut c, "Enter");
+    let (dx, dy) = land_step(&c, b);
+    c.step(dx, dy).unwrap();
+    end_round(&mut c);
+    assert_eq!(
+        c.view().unwrap().units.len(),
+        2,
+        "fixture needs exactly two own units"
+    );
+    assert!(unit_at(&c, a).moves_left > 0 && unit_at(&c, b).moves_left > 0);
+    c.action(Action::Unit(a)).unwrap();
+    let before = c.checkpoint().unwrap();
+    fs::write(out.join("before.cth"), &before).unwrap();
+    let source = unit_at(&c, a);
+    let target = unit_at(&c, b);
+    let sprite = c
+        .atlas()
+        .unwrap()
+        .sprites
+        .get(&format!("unit-{}", target.type_id))
+        .unwrap();
+    let opaque: Vec<_> = (0..sprite.h)
+        .filter_map(|row| {
+            let cols: Vec<_> = (0..sprite.w)
+                .filter(|&col| sprite.rgba[((row * sprite.w + col) * 4 + 3) as usize] == 255)
+                .collect();
+            cols.get(cols.len() / 2).copied().map(|col| (col, row))
+        })
+        .collect();
+    let hit_points:Vec<_>=[0,opaque.len()/2,opaque.len()-1].into_iter().map(|k|{
+        let(col,row)=opaque[k];let at=((row*sprite.w+col)*4) as usize;
+        serde_json::json!({"x":(f64::from(col)+0.5)/f64::from(sprite.w),"y":(f64::from(row)+0.5)/f64::from(sprite.h),"rgb":format!("#{:02x}{:02x}{:02x}",sprite.rgba[at],sprite.rgba[at+1],sprite.rgba[at+2])})
+    }).collect();
+    let delta = land_step(&c, b);
+    // Directly click a DIFFERENT own unit while already Moving. No W or
+    // Activate button preselects it; selection must leave the checkpoint intact.
+    let (px, py) = point(&c, b, 0.);
+    let hx = hit_points[1]["x"].as_f64().unwrap();
+    let hy = hit_points[1]["y"].as_f64().unwrap();
+    click_point(&mut c, (px - 32. + hx * 64., py - 48. + hy * 64.));
+    assert_eq!(c.active, Some(b));
+    assert!(c.moving);
+    assert_eq!(c.checkpoint().unwrap(), before);
+    c.step(delta.0, delta.1).unwrap();
+    assert_eq!(c.status, "moved");
+    assert_eq!(unit_at(&c, b).moves_left, 0, "choose a one-turn empty move");
+    assert_eq!(c.active, Some(a));
+    assert!(c.moving);
+    fs::write(out.join("after-move.cth"), c.checkpoint().unwrap()).unwrap();
+    key(&mut c, " ");
+    assert!(!c.moving);
+    fs::write(out.join("after-skip.cth"), c.checkpoint().unwrap()).unwrap();
+    end_round(&mut c);
+    assert!(c.moving);
+    fs::write(out.join("after-turn.cth"), c.checkpoint().unwrap()).unwrap();
+    fs::write(
+        out.join("route.json"),
+        serde_json::to_string_pretty(&serde_json::json!({
+            "source":{"slot":a.slot,"id":a.id,"x":source.x,"y":source.y,"moves":source.moves_left},
+            "target":{"slot":b.slot,"id":b.id,"x":target.x,"y":target.y,"moves":target.moves_left},
+            "hit_points":hit_points,"move_delta":delta,"turn":c.view().unwrap().observation.turn-1
+        }))
+        .unwrap(),
+    )
+    .unwrap();
+    println!("Two-unit selection fixture: {}", out.display());
 }

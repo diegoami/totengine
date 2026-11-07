@@ -1,11 +1,12 @@
 # Selection and movement: reference study after the rejected preview
 
-Status: study and replacement interaction contract, **not implemented or owner
-accepted**. The owner rejected the v0.13 controls preview after reporting that
+Status: reference study and replacement interaction contract. The resumed
+implementation now follows this contract in both clients; **new owner acceptance
+is pending**. Verification is recorded in `client-selection-v1.json`. The owner rejected the v0.13 controls preview after reporting that
 unit selection had become worse, and required blinking of the selected unit.
 The owner then asked for more time studying the game/manual before more UI work.
-Client changes were paused for this study. Earlier automated passes do not
-resolve this report. #137 and the milestone remain open.
+Client changes were paused for this study and subsequently resumed at the
+owner's instruction. Earlier automated passes did not resolve that report. #137 and the milestone remain open.
 
 Evidence: [numeric study](../evidence/ui-selection-study-v1.json),
 [earlier original UI discovery](discovery.md), and the publisher manuals linked
@@ -76,8 +77,9 @@ the owner's report is inconsistent with the implementation.
 
 ## Replacement contract for both clients
 
-This is the concrete next implementation target, separating reference facts,
-owner choices and unsupported later work. No code in this study implements it.
+This contract separates reference facts, owner choices and unsupported later
+work. The subsequent implementation is in the shared selection module and both
+renderers; it does not change the reference facts or imply full native UI parity.
 
 | Input/state | Required result |
 | --- | --- |
@@ -106,18 +108,22 @@ Native/UI states and owner-selected deviations must remain explicit. Full
 waiting queues, fortification/sleep, go-to, native mouse-edge arrows and complete
 multi-unit scheduling are not recovered merely by these representative routes.
 
-## Release status
+## Implementation and acceptance status
 
-The published controls preview remains **owner rejected**. Its recorded automated
-results remain historical checks of the routes they actually exercised, not
-human acceptance or proof of selection/blink fidelity. There is no new client
-build from this study and no further retest is requested until the replacement
-selection behavior is implemented and checked against this contract. Do not
-propose a milestone review while the owner-reported blocker remains.
+The earlier controls preview was owner rejected. The resumed implementation now
+uses one shared render/hit order and one visible member per stack. Own-unit
+selection takes priority in either mode, chooser entries retain entity IDs,
+exhaustion advances to another ready unit or Viewing, and new human input selects
+a ready unit. The selected sprite blinks through rendering time alone and remains
+hittable while hidden. End-turn advancement remains an explicit human action.
 
-The owner ended the session on 2026-11-07 and deferred continuation. Resume with
-this contract before changing either client; the study is complete, while the
-selection/blink/state-transition implementation is unfinished. The reference
-Wine/Xvfb study was stopped cleanly. Do not close or replace existing owner
-client sessions without preserving their games. No acceptance of the rejected
-preview, new scope approval or milestone review was obtained on departure.
+New shared regressions and actual browser/Linux/Windows routes test a different
+own unit, stack selection, sprite-body blink versus a stable other unit, hidden-
+phase activation, zoom/resize, exhaustion and next-turn selection. Numeric
+comparisons and scope are in `client-selection-v1.json`; these automated results
+are not the pending new owner play result. No review candidate/tag is ready.
+
+The owner ended the earlier session and later authorized continuation. The
+reference Wine/Xvfb study was stopped cleanly. Existing owner games must be
+preserved when switching preview builds. Full waiting queues, native mouse-edge
+arrows and other later client packages remain outside this correction.

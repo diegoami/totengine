@@ -6,6 +6,7 @@ mod city;
 pub mod desktop;
 #[cfg(any(feature = "desktop", test))]
 mod editor;
+mod selection;
 pub mod storage;
 use crate::resources::Resources;
 pub use atlas::{Atlas, Sprite};
@@ -58,6 +59,18 @@ pub enum Draw {
         h: f64,
         sprite: String,
     },
+    UnitSprite {
+        x: f64,
+        y: f64,
+        w: f64,
+        h: f64,
+        sprite: String,
+        unit: usize,
+        own: bool,
+        selected: bool,
+        moves_left: u32,
+        blink: bool,
+    },
     Cursor {
         x: f64,
         y: f64,
@@ -103,6 +116,7 @@ enum Modal {
     },
     Units {
         at: (u16, u16),
+        units: Vec<Entity>,
     },
     Confirm {
         command: Command,
@@ -335,6 +349,16 @@ impl Client {
             self.advancing = true;
         }
         self.refresh();
+        match command {
+            Command::Move { unit, .. } | Command::Occupy { unit, .. } | Command::Skip { unit } => {
+                self.schedule_unit(Some(unit), false);
+            }
+            Command::Research { .. } | Command::NameCity { .. } | Command::CancelFound { .. } => {
+                self.schedule_unit(None, true);
+            }
+            Command::EndTurn => self.moving = false,
+            _ => (),
+        }
         self.required();
         Ok(())
     }
@@ -392,6 +416,7 @@ impl Client {
                         self.refresh();
                         if self.view().is_some_and(|v| v.phase != Phase::Opponents) {
                             self.advancing = false;
+                            self.schedule_unit(None, true);
                             self.status=match self.view().unwrap().phase {Phase::Human=>"Your turn. Choose actions or resolve the required research choice.",Phase::Eliminated=>"Your civilization has no units or cities. Load a checkpoint or start a new game.",Phase::UnsupportedGovernment=>"Government choice is unsupported. Save a checkpoint to preserve this game.",Phase::TurnLimit=>"Turn limit reached. Save a checkpoint to preserve this game.",Phase::Opponents=>"Opponents playing"}.into();
                             self.required();
                         }
@@ -598,6 +623,7 @@ impl Client {
                 self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
                 self.editing.clear();
                 self.refresh();
+                self.schedule_unit(None, true);
                 self.center();
                 self.required();
                 self.status =
@@ -610,33 +636,20 @@ impl Client {
                 self.advancing = !self.advancing;
             }
             Action::Mode => {
-                if !self.moving
-                    && !self.view().is_some_and(|v| {
-                        v.observation
-                            .units
-                            .iter()
-                            .any(|u| u.owner == v.observation.civ && u.moves_left > 0)
-                    })
-                {
-                    return Err("No units have moves remaining. Viewing only.".into());
-                }
-                self.moving = !self.moving;
-                if !self.moving {
-                    self.inspect = self.active.and_then(|e| {
-                        self.view()?
-                            .observation
-                            .units
-                            .iter()
-                            .find(|u| u.index == e.slot)
-                            .map(|u| (u.x, u.y))
-                    });
-                }
-                self.status = if self.moving {
-                    "Moving: click an adjacent tile; attacks/capture require confirmation."
+                if self.moving {
+                    self.moving = false;
+                    self.inspect = self.active_position();
+                    self.status =
+                        "Viewing: inspect terrain or click an own unit to activate it.".into();
                 } else {
-                    "Viewing: clicks only inspect/select."
+                    self.schedule_unit(None, false);
+                    if !self.moving {
+                        return Err(
+                            "No ready unit; resolve any required choice or end your turn.".into(),
+                        );
+                    }
+                    self.status = "Moving: keypad, cursor arrows or adjacent empty terrain. Click an own unit to select it.".into();
                 }
-                .into();
             }
             Action::ConfirmMoves => self.confirm_moves = !self.confirm_moves,
             Action::Found => {
@@ -755,14 +768,14 @@ impl Client {
                                 as usize,
                         })?;
                     }
-                    Modal::Units { at } => {
+                    Modal::Units { at, units } => {
                         let slot = self.choice.ok_or("Choose a unit explicitly")? as usize;
                         let v = self.view().ok_or("No running game")?;
-                        let entity = v
-                            .units
+                        let entity = units
                             .iter()
                             .find(|e| e.slot == slot)
                             .copied()
+                            .filter(|e| v.units.contains(e))
                             .filter(|_| {
                                 v.observation
                                     .units
@@ -821,6 +834,7 @@ impl Client {
                         self.active = None;
                         self.city = None;
                         self.refresh();
+                        self.schedule_unit(None, true);
                         self.center();
                         self.status="Checkpoint restored, including pending decisions. Original SAV import is not supported.".into();
                     }
@@ -871,33 +885,14 @@ impl Client {
                 }
             }
             Action::Wait => {
-                if let Some(v) = self.view() {
-                    let units: Vec<_> = v
-                        .units
-                        .iter()
-                        .copied()
-                        .filter(|e| {
-                            v.observation
-                                .units
-                                .iter()
-                                .any(|u| u.index == e.slot && u.moves_left > 0)
-                        })
-                        .collect();
-                    if !units.is_empty() {
-                        let next = units
-                            .iter()
-                            .position(|u| Some(*u) == self.active)
-                            .map_or(0, |i| (i + 1) % units.len());
-                        self.active = Some(units[next]);
-                        self.center();
-                    }
-                }
+                let after = self.active;
+                self.active = None;
+                self.schedule_unit(after, false);
             }
             Action::Skip => {
                 self.order(Command::Skip {
                     unit: self.active.ok_or("Select an own unit first")?,
                 })?;
-                self.action(Action::Wait)?;
             }
             Action::Center => self.center(),
             Action::Zoom(f) => {
@@ -931,22 +926,7 @@ impl Client {
                     self.inspect
                 }
                 .ok_or("Inspect an own unit first")?;
-                let own: Vec<_> = v
-                    .units
-                    .iter()
-                    .filter(|e| {
-                        v.observation
-                            .units
-                            .iter()
-                            .any(|u| u.index == e.slot && (u.x, u.y) == at)
-                    })
-                    .copied()
-                    .collect();
-                match own.as_slice() {
-                    [unit] => self.action(Action::Unit(*unit))?,
-                    [] => return Err("No own unit at the inspection cursor".into()),
-                    _ => self.open(Modal::Units { at }),
-                }
+                self.select_at(at)?;
             }
             Action::Unit(unit) => {
                 let v = self.view().ok_or("Start a game first")?;
@@ -961,12 +941,16 @@ impl Client {
                     .ok_or("Unit disappeared")?;
                 self.active = Some(unit);
                 self.inspect = Some((u.x, u.y));
-                self.moving = u.moves_left > 0;
+                self.moving = u.moves_left > 0 && v.phase == Phase::Human && v.decision.is_none();
                 self.center();
                 self.status = if self.moving {
                     "Unit activated. Moving: keypad, cursor arrows or adjacent terrain click."
                 } else {
-                    "Unit selected; no moves remaining this turn. Viewing only."
+                    if u.moves_left == 0 {
+                        "Unit selected; no moves remaining this turn. Viewing only."
+                    } else {
+                        "Unit selected for inspection; orders are currently unavailable."
+                    }
                 }
                 .into();
             }
@@ -1106,26 +1090,8 @@ impl Client {
                 best = Some((col as u16, row as u16, distance));
             }
         }
-        if !self.moving {
-            for u in v.observation.units.iter().rev() {
-                let px = self.pan.0 + f64::from(u.x) * 32. * self.zoom;
-                let py = self.pan.1 + f64::from(u.y) * 16. * self.zoom;
-                let sx = (x - (px - 32. * self.zoom)) / self.zoom;
-                let sy = (y - (py - 48. * self.zoom)) / self.zoom;
-                if let Some(sprite) = self
-                    .atlas()
-                    .and_then(|a| a.sprites.get(&format!("unit-{}", u.type_id)))
-                {
-                    if sx >= 0. && sy >= 0. && sx < 64. && sy < 64. {
-                        let col = (sx * f64::from(sprite.w) / 64.) as usize;
-                        let row = (sy * f64::from(sprite.h) / 64.) as usize;
-                        if sprite.rgba[(row * sprite.w as usize + col) * 4 + 3] > 0 {
-                            best = Some((u.x, u.y, 0.));
-                            break;
-                        }
-                    }
-                }
-            }
+        if let Some(u) = self.hit_unit(&v, x, y) {
+            best = Some((u.x, u.y, 0.));
         }
         if let Some((x, y, _)) = best {
             self.inspect = Some((x, y));
@@ -1151,29 +1117,12 @@ impl Client {
                     )
                 },
             );
-            let own: Vec<_> = v
-                .observation
+            if v.observation
                 .units
                 .iter()
-                .filter(|u| u.owner == v.observation.civ && u.x == x && u.y == y)
-                .filter_map(|u| v.units.iter().find(|e| e.slot == u.index))
-                .copied()
-                .collect();
-            let active_at = self.active.and_then(|e| {
-                v.observation
-                    .units
-                    .iter()
-                    .find(|u| u.index == e.slot)
-                    .map(|u| (u.x, u.y))
-            });
-            if self.moving && active_at != Some((x, y)) {
-                self.move_to((x, y))?;
-            } else if !own.is_empty() {
-                let n = own
-                    .iter()
-                    .position(|e| Some(*e) == self.active)
-                    .map_or(0, |i| (i + 1) % own.len());
-                self.active = Some(own[n]);
+                .any(|u| u.owner == v.observation.civ && (u.x, u.y) == (x, y))
+            {
+                self.select_at((x, y))?;
             } else if self.moving {
                 self.move_to((x, y))?;
             }
@@ -1212,11 +1161,16 @@ impl Client {
                     Vec::new()
                 }
             }
-            Some(Modal::Units { at }) => v
+            Some(Modal::Units { at, units }) => v
                 .observation
                 .units
                 .iter()
-                .filter(|u| (u.x, u.y) == *at && v.units.iter().any(|e| e.slot == u.index))
+                .filter(|u| {
+                    (u.x, u.y) == *at
+                        && units
+                            .iter()
+                            .any(|e| e.slot == u.index && v.units.contains(e))
+                })
                 .map(|u| {
                     (
                         u.index as i32,
@@ -1600,7 +1554,18 @@ impl Client {
                             .map_or_else(|| "unavailable".into(), |n| n.to_string())
                     ),
                     match v.phase {
-                        Phase::Human => "Your orders",
+                        Phase::Human if v.decision.is_some() => "Choice required",
+                        Phase::Human if self.moving => "Moving units",
+                        Phase::Human
+                            if !v
+                                .observation
+                                .units
+                                .iter()
+                                .any(|u| u.owner == o.civ && u.moves_left > 0) =>
+                        {
+                            "End of turn"
+                        }
+                        Phase::Human => "Viewing pieces",
                         Phase::Opponents => "Opponents playing",
                         Phase::Eliminated => "Your civilization is eliminated",
                         Phase::UnsupportedGovernment => "Government choice required",
@@ -1952,26 +1917,29 @@ impl Client {
             draws.push(rect(px - 5., py - 30., 10., 8., color(c.owner)));
             draws.push(text(px - 30., py + 20., &c.name, 14, color(c.owner)));
         }
-        for u in o
-            .units
-            .iter()
-            .filter(|u| !self.active.is_some_and(|e| e.slot == u.index))
-            .chain(
-                o.units
-                    .iter()
-                    .filter(|u| self.active.is_some_and(|e| e.slot == u.index)),
-            )
-        {
+        for u in self.display_units(v) {
             let (px, py) = point(u.x, u.y);
             if !(44.0..720.0).contains(&px) || !(150.0..640.0).contains(&py) {
                 continue;
             }
-            draws.push(Draw::Sprite {
+            let selected = self.active.is_some_and(|e| e.slot == u.index);
+            draws.push(Draw::UnitSprite {
                 x: px - 32. * self.zoom,
                 y: py - 48. * self.zoom,
                 w: 64. * self.zoom,
                 h: 64. * self.zoom,
                 sprite: format!("unit-{}", u.type_id),
+                unit: u.index,
+                own: u.owner == o.civ,
+                selected,
+                moves_left: u.moves_left,
+                blink: selected
+                    && self.moving
+                    && u.moves_left > 0
+                    && self.focused
+                    && self.modal.is_none()
+                    && v.phase == Phase::Human
+                    && v.decision.is_none(),
             });
             draws.push(rect(px - 4., py - 45., 9., 10., color(u.owner)));
             if let Some((_, hp, max)) = v.unit_health.iter().find(|(slot, _, _)| *slot == u.index) {
@@ -1992,16 +1960,7 @@ impl Client {
                 ));
             }
         }
-        let cursor = if self.moving {
-            self.active.and_then(|e| {
-                o.units
-                    .iter()
-                    .find(|u| u.index == e.slot)
-                    .map(|u| (u.x, u.y))
-            })
-        } else {
-            self.inspect
-        };
+        let cursor = if self.moving { None } else { self.inspect };
         if let Some((x, y)) = cursor {
             let (px, py) = point(x, y);
             if (44.0..720.0).contains(&px) && (150.0..640.0).contains(&py) {

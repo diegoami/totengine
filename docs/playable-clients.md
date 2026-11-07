@@ -25,19 +25,24 @@ owned TTF if required.
 ## Controls
 
 The supported map commands follow the original Test of Time manual and installed
-menu; [reference and remaining differences](ui/original-controls.md).
+menu; [reference and remaining differences](https://github.com/diegoami/totengine/blob/main/docs/ui/original-controls.md).
 
-- Click to inspect in Viewing mode. **V** toggles Moving/Viewing. Choose
-  **Activate unit**, or press **A** at the inspection cursor, to enter Moving
-  with that unit. A offers a chooser for a stack. The selected square blinks;
-  the selected unit appears above other units in its stack.
+- Click an own ready unit to select it and enter Moving, in either mode.
+  Selection takes priority over movement: clicking another own unit never moves
+  the previous unit. **V** toggles Moving/Viewing; **A** and **Activate unit**
+  also activate the inspected unit/stack. A stack opens an explicit chooser.
+  The selected ready **unit sprite blinks** in Moving and stays clickable during
+  its hidden phase. Viewing has a separate inspection cursor.
 - In Moving, click adjacent terrain to move, or use **7 8 9 / 4 6 / 1 2 3**
   on the keypad. The keypad works with Num Lock on or off. Cursor arrows also
   move in Moving; in Viewing they pan. Viewing keypad keys move only the
   inspection cursor. Enemy attacks and supported city occupation require
   confirmation; Confirm all moves also confirms empty-tile movement.
 - **W** cycles movable units; **Space** skips the active unit's remaining moves.
-  A selected exhausted unit reports that it has no moves left.
+  A selected exhausted unit reports that it has no moves left. When an order
+  exhausts the active unit, another ready unit is selected; with none remaining,
+  Viewing shows End of turn. A new human turn selects a ready unit in Moving.
+  Ending the turn remains explicit; no automatic human turn advancement.
 - **C** centers on the active unit. **Z / X** zoom in/out; **Shift+Z** restores
   standard zoom. The **+ / -** buttons and keys remain available as conveniences.
 - **B** opens founding for an eligible settler. Type the name and accept;

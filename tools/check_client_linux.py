@@ -208,6 +208,20 @@ def run():
                         key("Prior");key("Ctrl+s");save_dialog("citynavigation")
                         assert (work/"saves/citynavigation.cth").read_bytes()==Path(navigation).read_bytes()
                     key("Escape")
+                selection=os.environ.get("TOTENGINE_SELECTION_FIXTURES")
+                if selection:
+                    from check_client_selection import run_selection
+                    get_image=bind(x,"XGetImage",ptr,ptr,ul,c.c_int,c.c_int,ui,ui,ul,c.c_int)
+                    get_pixel=bind(x,"XGetPixel",ul,ptr,c.c_int,c.c_int)
+                    destroy_image=bind(x,"XDestroyImage",c.c_int,ptr)
+                    def pixel(xpos,ypos):
+                        attr=Attributes();get_attributes(display,window,c.byref(attr));scale=min(attr.width/1024,attr.height/768)
+                        image=get_image(display,window,int((attr.width-1024*scale)/2+xpos*scale),int((attr.height-768*scale)/2+ypos*scale),1,1,ul(-1).value,2)
+                        if not image:raise RuntimeError("cannot read own unit pixel")
+                        try:return '#'+format(get_pixel(image,0,0)&0xffffff,'06x')
+                        finally:destroy_image(image)
+                    def resize_window(w,h):resize(display,window,w,h);sync(display,0);time.sleep(.2)
+                    run_selection(scene,key,click_at,save_dialog,load,work,selection,pixel,resize_window,wait)
                 movement=os.environ.get("TOTENGINE_MOVEMENT_FIXTURES")
                 if movement:
                     import shutil

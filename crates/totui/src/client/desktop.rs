@@ -314,6 +314,11 @@ pub fn run(mut client: Client) -> Result<(), String> {
             });
         let revision = frame.revision;
         for draw in frame.draws {
+            if matches!(&draw, Draw::UnitSprite { blink: true, .. })
+                && !(animation_start.elapsed().as_millis() / 500).is_multiple_of(2)
+            {
+                continue;
+            }
             match draw {
                 Draw::Rect {
                     x,
@@ -400,7 +405,10 @@ pub fn run(mut client: Client) -> Result<(), String> {
                         canvas.set_clip_rect(clip);
                     }
                 }
-                Draw::Sprite { x, y, w, h, sprite } => {
+                Draw::Sprite { x, y, w, h, sprite }
+                | Draw::UnitSprite {
+                    x, y, w, h, sprite, ..
+                } => {
                     if !sprites.contains_key(&sprite) {
                         if let Some(s) = client.atlas().and_then(|a| a.sprites.get(&sprite)) {
                             let mut t = tc

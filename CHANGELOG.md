@@ -7,11 +7,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ### v0.13.0 preparation — city workers and specialists
 
-- Correct the owner's reported Activate-unit mouse path, restore supported
-  original keyboard conventions, add a stack chooser and blink the selection
-  square without game ticks. Browser and native checkers exercise actual mouse
-  and keypad movement; owner retesting remains required.
-
+- Replace the rejected preview's selection handling with shared render/hit
+  selection in both modes, stable stack choices, selected-unit sprite blinking
+  and ready/exhausted/new-turn selection transitions. Different-unit actual mouse
+  routes and sprite-body pixel checks now cover the missed owner interaction;
+  new owner acceptance remains required.
 - Add immediate worker/specialist commands and own-city radius/storage/detail
   views through the recorded human-session boundary (#135). Native packed edit
   branches match 1,548 original-x86 cases; wrong/stale/blocked input is inert.

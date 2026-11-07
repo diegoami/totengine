@@ -5,14 +5,13 @@ adding bindings. The corrected v0.13 preview uses this
 reference for supported controls. This records declared conventions, implemented
 corrections and remaining gaps; it is not full UI parity or owner acceptance.
 
-**Owner retest rejected this preview:** selection was reported worse, and the
-owner requires the selected unit to blink rather than a tile alone. The client
-was not changed during the subsequent reference study. Its findings, corrected
-blink distinction, test gap and replacement contract are in
-[selection and movement study](selection-and-movement-study.md), backed by
-`ui-selection-study-v1.json`. Implementation claims below describe the rejected
-preview's code, not accepted fidelity. In particular, sprite hit testing only
-works in Viewing; selecting another unit in Moving remains a blocker.
+The previous preview was owner rejected. The subsequent
+[selection and movement study](selection-and-movement-study.md) identified its
+selection precedence and blink/test gaps. The resumed implementation now selects
+own units in both modes, blinks the selected sprite and handles ready/exhausted
+selection transitions. `client-selection-v1.json` records the new checks; owner
+acceptance remains pending. The reference study's ToTPP configuration limits
+still apply, and full original UI parity is not claimed.
 
 ## Publisher manual
 
@@ -79,26 +78,33 @@ Implemented in the shared controller and both adapters:
   reports its state and remains Viewing. A opens an explicit paged chooser for
   stacks. Viewing keypad directions move only the inspection cursor. Arrows
   move the active unit in Moving and retain viewport panning in Viewing.
-- Inspection recognizes visible unit pixels above the ground diamond. Moving
-  onto an adjacent friendly stack submits a move instead of changing selection.
-  The active unit is drawn above other units in its stack.
-- A blinking diamond outlines the current unit square in Moving or inspection
-  square in Viewing. Both renderers use presentation time only; animation does
-  not generate input, change a revision, mutate game state or use either RNG.
+- Render and hit testing share the same visible units, including sprite pixels
+  above the ground diamond. Own-unit/stack selection takes precedence in both
+  modes; selecting another own unit does not issue movement. One representative
+  per stack is shown, with the chosen member visible after selection.
+- The selected ready unit sprite blinks in Moving. Viewing has a distinct
+  inspection cursor. Animation uses presentation time only, never input,
+  revisions, game state or either RNG; hidden sprites remain hittable.
+- Exhaustion advances to a remaining ready unit or Viewing/End of turn. New
+  human turns and resolved required choices select a ready unit in Moving.
+  End-turn advancement remains explicit.
 - Browser keypad decoding uses the physical code, including Num Lock-off
   navigation labels. SDL retains physical keypad keys. Text fields keep normal
   editor/clipboard shortcuts, and dialogs retain their own input priority.
 
-Regression evidence: `client-controls-v1.json`, the shared controller tests and
-real-input checkers. Historical `client-input-route-v1.json` remains unchanged;
+Current regression evidence: `client-selection-v1.json`, the shared controller
+tests and expanded real-input checkers. `client-controls-v1.json` is historical
+coverage of the rejected preview and did not establish general mouse selection. Historical `client-input-route-v1.json` remains unchanged;
 `client-input-route-v2.json` translates its old UI shortcuts to the corrected
-keys and explicit Cities button, preserving the intended engine order sequence.
+keys and explicit Cities button. V3 additionally records actor identities for
+orders, preserving the same engine trajectory across automatic UI selection.
 
 Owner testing found the original preview blocker: click unit → Activate unit →
 terrain only inspected because activation failed to enter Moving. Automated
 regressions now cover that exact route with a generated warrior and byte-exact
-checkpoint comparisons. New owner acceptance in #137 remains pending; earlier
-passing turn/city automation did not waive that blocker.
+checkpoint comparisons. The replacement contract and different-unit/sprite checks now supersede that
+limited route. New owner acceptance in #137 remains pending; earlier passing
+turn/city automation did not waive the reported blocker.
 
 The mouse preference interface, native edge-arrow mouse movement, complete
 unit scheduling, full advisor/menu layouts and unimplemented orders remain

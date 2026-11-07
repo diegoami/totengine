@@ -3875,3 +3875,16 @@ Read [the study and replacement contract](../ui/selection-and-movement-study.md)
 The prior control-check evidence does not cover switching units by mouse while
 Moving and does not satisfy the owner's selected-unit blink requirement. The
 owner rejected that preview. No client code was changed during this study.
+
+## Revised client selection contract implementation
+
+`client-selection-v1.json` records the normal-play two-unit fixture and new
+browser/Linux/Windows checks after the rejected preview. Selection-only actions,
+stack choice and zoom/resize retain the whole checkpoint. Movement, skip and
+next-turn results match across all adapters. Sprite-body pixels, rather than an
+arbitrary marker, verify selected-unit blinking and hidden-phase activation.
+`client-input-route-v3.json` adds explicit actor identities to the historical
+879-input route and reproduces the same battle/capture/final game checkpoints.
+Reproduction and pending owner gate: [v0.13 readiness](../v0.13.0-readiness.md).
+The reference-study facts and configured-ToTPP limits remain unchanged; the new
+automated checks are not human acceptance or a claim of full original UI parity.

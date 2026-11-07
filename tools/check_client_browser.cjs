@@ -4,7 +4,7 @@ const origin=process.env.TOTENGINE_CLIENT_ORIGIN||'http://127.0.0.1:8773';
 const out=process.env.TOTENGINE_CLIENT_REPORT||'/tmp/totengine-client';
 fs.mkdirSync(out,{recursive:true});
 (async()=>{
- const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ const browser=await chromium.launch({headless:true,args:['--no-sandbox'],executablePath:process.env.TOTENGINE_BROWSER_EXECUTABLE});
  const page=await browser.newPage({viewport:{width:1024,height:768}});page.on('pageerror',e=>console.error('PAGEERROR',e));
  await page.goto(origin);
  async function idle(){await page.waitForFunction(()=>typeof frame!=='undefined'&&frame&&!busy&&paintedRevision===frame.revision)}
@@ -72,6 +72,7 @@ fs.mkdirSync(out,{recursive:true});
   }
   await key('Escape');
  }
+ if(process.env.TOTENGINE_SELECTION_FIXTURES)await require('./check_client_selection.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_SELECTION_FIXTURES,saves:process.env.TOTENGINE_CLIENT_SAVES,out});
  const movement=process.env.TOTENGINE_MOVEMENT_FIXTURES;
  if(movement){
   const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;

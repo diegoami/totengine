@@ -1,5 +1,5 @@
 # Real OS input only; traces are private test instrumentation, never endpoints.
-param([string]$Binary = "$PSScriptRoot\..\target\x86_64-pc-windows-gnullvm\debug\totdesktop.exe", [string]$Work = "$PSScriptRoot\..\target\client-windows-check", [switch]$MovementOnly)
+param([string]$Binary = "$PSScriptRoot\..\target\x86_64-pc-windows-gnullvm\debug\totdesktop.exe", [string]$Work = "$PSScriptRoot\..\target\client-windows-check", [switch]$MovementOnly, [switch]$SelectionOnly)
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type @'
@@ -52,6 +52,23 @@ public static class SpikeWindow {
         var dc=GetDC(h);
         try {return GetPixel(dc,(int)(((r.right-r.left)-1024*scale)/2+380*scale),(int)(((r.bottom-r.top)-768*scale)/2+374*scale));}
         finally {ReleaseDC(h,dc);}
+    }
+    public static string Pixel(IntPtr h,uint pid,double x,double y) {
+        uint owner;GetWindowThreadProcessId(h,out owner);
+        if(owner!=pid || GetForegroundWindow()!=h)throw new Exception("Only read our own foreground unit");
+        RECT r;if(!GetClientRect(h,out r))throw new Exception("GetClientRect failed");
+        double scale=Math.Min((r.right-r.left)/1024.0,(r.bottom-r.top)/768.0);
+        var dc=GetDC(h);
+        try {uint c=GetPixel(dc,(int)(((r.right-r.left)-1024*scale)/2+x*scale),(int)(((r.bottom-r.top)-768*scale)/2+y*scale));
+            return String.Format("#{0:x2}{1:x2}{2:x2}",c&255,(c>>8)&255,(c>>16)&255);}
+        finally {ReleaseDC(h,dc);}
+    }
+    [DllImport("user32.dll")] private static extern bool GetWindowRect(IntPtr h,out RECT r);
+    public static void ResizeClient(IntPtr h,uint pid,int w,int height) {
+        uint owner;GetWindowThreadProcessId(h,out owner);
+        if(owner!=pid || GetForegroundWindow()!=h)throw new Exception("Only resize our own foreground window");
+        RECT outer,inner;if(!GetWindowRect(h,out outer)||!GetClientRect(h,out inner))throw new Exception("Window geometry failed");
+        if(!MoveWindow(h,outer.left,outer.top,w+outer.right-outer.left-inner.right,height+outer.bottom-outer.top-inner.bottom,true))throw new Exception("Resize failed");
     }
     private delegate bool EnumProc(IntPtr h, IntPtr p);
     [DllImport("user32.dll")] private static extern bool EnumWindows(EnumProc cb, IntPtr p);
@@ -179,7 +196,7 @@ try {
         Send-Key 13
     }
     [void](Wait-Scene {param($s) $s.phase -eq 'Setup'})
-    if(-not $MovementOnly) {
+    if(-not $MovementOnly -and -not $SelectionOnly) {
     Focus-Button 'Start Original surface game'
     [void](Wait-Scene {param($s) Has-Text $s 'Choose research explicitly'})
     Focus-Button 'Save pending choice'
@@ -271,6 +288,13 @@ try {
         Focus-Button 'Load engine checkpoint';Save-Dialog 'movement'
         function Load-Slot([string]$Name) { Send-Chord 76; Save-Dialog $Name }
     }
+    if($SelectionOnly) {
+        [void](New-Item -ItemType Directory -Path $env:TOTENGINE_SAVES -Force)
+        Copy-Item (Join-Path $env:TOTENGINE_SELECTION_FIXTURES 'before.cth') (Join-Path $env:TOTENGINE_SAVES 'selectionbefore.cth')
+        Focus-Button 'Load engine checkpoint';Save-Dialog 'selectionbefore'
+        function Load-Slot([string]$Name) {Send-Chord 76;Save-Dialog $Name}
+    }
+    if($env:TOTENGINE_SELECTION_FIXTURES) { . (Join-Path $PSScriptRoot 'check_client_selection.ps1') }
     if($env:TOTENGINE_MOVEMENT_FIXTURES) {
         $movement=$env:TOTENGINE_MOVEMENT_FIXTURES
         Copy-Item (Join-Path $movement 'before.cth') (Join-Path $env:TOTENGINE_SAVES 'movement.cth')
@@ -317,7 +341,7 @@ try {
             }
         }
     }
-    if(-not $MovementOnly -and $env:TOTENGINE_ENCOUNTER_FIXTURES) {
+    if(-not $MovementOnly -and -not $SelectionOnly -and $env:TOTENGINE_ENCOUNTER_FIXTURES) {
         foreach($name in @('battle','capture')) {
             $actor=if($name -eq 'battle'){1}else{7}
             Copy-Item (Join-Path $env:TOTENGINE_ENCOUNTER_FIXTURES "before-$name.cth") (Join-Path $env:TOTENGINE_SAVES "$name.cth")

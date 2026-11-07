@@ -69,6 +69,10 @@ function drawCanvas() {
         break;
       case "tile":
         ctx.save();ctx.translate(d.x,d.y);ctx.fillStyle=ctx.createPattern(paintedImages.get(d.sprite),"repeat");ctx.fillRect(0,0,d.w,d.h);ctx.restore();break;
+      case "unit_sprite":
+        if (d.blink && Math.floor(performance.now()/500)%2) break;
+        ctx.drawImage(paintedImages.get(d.sprite), d.x, d.y, d.w, d.h);
+        break;
       case "sprite":
         ctx.drawImage(paintedImages.get(d.sprite), d.x, d.y, d.w, d.h);
         break;
@@ -91,7 +95,7 @@ function drawCanvas() {
 }
 // Animation only redraws the canvas. No input, network, DOM editing or game tick.
 setInterval(() => {
-  if (paintedFrame?.draws.some(d => d.kind === "cursor" && d.blink)) drawCanvas();
+  if (paintedFrame?.draws.some(d => (d.kind === "unit_sprite" || d.kind === "cursor") && d.blink)) drawCanvas();
 }, 100);
 let paintSerial = 0;
 async function paint(next) {
@@ -104,7 +108,7 @@ async function paint(next) {
   const serial = ++paintSerial;
   const keys = [
     ...new Set(
-      next.draws.filter((d) => d.kind === "sprite" || d.kind === "tile").map((d) => d.sprite),
+      next.draws.filter((d) => d.kind === "sprite" || d.kind === "unit_sprite" || d.kind === "tile").map((d) => d.sprite),
     ),
   ];
   const images = await Promise.all(keys.map(sprite));

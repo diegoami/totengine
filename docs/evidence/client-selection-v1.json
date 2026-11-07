@@ -6,17 +6,17 @@
   "scope": "Generated Original-profile surface games, two-unit/stack selection and presentation state transitions. No full native layout or complete waiting/fortify/sleep/go-to scheduling parity.",
   "source_sha256": {
     "crates/totui/src/client/selection.rs": "1dedaf6432ebae5f9621369157ccb4571ae00dd928b0d93b1fe997d39db9aa53",
-    "crates/totui/src/client/mod.rs": "001c23e60fc96cf83fe5eefaf15af5494e5d767137a0ebdee3a9467a9a4fbae7",
-    "crates/totui/src/client/play.js": "ca4c74b10964e1a8577e21d65dc730fe597c961d0b572cd2a1c5fe64884ce374",
-    "crates/totui/src/client/desktop.rs": "9e84033bbc1f510aae8b08ae44b3a745227aaa27f527d4af05f541ec5c0c788c",
+    "crates/totui/src/client/mod.rs": "f90d3eb45e58a9f786a23c7044b3eb855263707d244d94e28e13b3892e002884",
+    "crates/totui/src/client/play.js": "7fd276721ab4f4b5285a63d605cb0453684179829e8d1d45bc0e357433686f9c",
+    "crates/totui/src/client/desktop.rs": "8dfffc1a461615d5a5736039fcc96f46038d960b13348cfc4aa0629fb53ececf",
     "crates/totui/src/client/city.rs": "863e653c5a6a104227af4b4d33dc32b65c5ea8b68f0de070c5a62808e359e598",
-    "crates/totui/src/client/tests.rs": "fabe64728ac24267685073390a3e7b66c143dc6bff15a3ffc658b404122bac70"
+    "crates/totui/src/client/tests.rs": "7c4d6fa50bf500f8000684c635695f1925f865be0e811ce589646850fa54cd20"
   },
   "checker_sha256": {
     "tools/check_client_selection.cjs": "e57bf67ff9d324fc9e8b0ddbc09464b6a8f9d70fbfe69282533471cac5000186",
     "tools/check_client_selection.py": "d10fdbfede73b7915fccd559e9d66b31bb1924e2182efca7ff815371a59a21b6",
     "tools/check_client_selection.ps1": "1d86b0b357993adae405f066e70512205eec2754c53ea97f96ba247ebe2ef86e",
-    "tools/check_client_browser.cjs": "4c3000ecea9aac22c183957429f230233ee2fcef6e05d4cbe332d6ab2cbf6894",
+    "tools/check_client_browser.cjs": "e7607b3bd2e7fddb78803c19c7197b5c108b3d3cd5bcd09200fc9a2723cc2e1a",
     "tools/check_client_linux.py": "041c2430d4bdf1cfcb035adb2de6ed004d879ddd42a1b87a9ba4b2bfba83a1f6",
     "tools/check_client_windows.ps1": "d4635cd2f94ccb8ccb952e17c5f133c2485257ab77fee5af96d1ece4a44fba23"
   },
@@ -154,13 +154,13 @@
   },
   "checks": {
     "full_install_make_test": {
-      "rust_passed": 240,
+      "rust_passed": 241,
       "rust_ignored": 5,
       "python_passed": 11,
       "golden": "all outputs match"
     },
     "desktop_client_tests": {
-      "passed": 22,
+      "passed": 23,
       "ignored": 4
     },
     "generated_pair": "passed",
@@ -176,12 +176,12 @@
   },
   "packages": {
     "linux": {
-      "totplay": "d80951c5080399c324e9fe0872f7b4b6300f8634090cb63e93e35a1a55fb0c13",
-      "totdesktop": "d62f80892607beb144df5e0fb8c6d7c5da8867884f45ab1a27c4a8bd4bf6e5ab"
+      "totplay": "a61a6cae78d4c986bf793b9c67cfaa6a4f99a7241c897c60e67a7237e4589de6",
+      "totdesktop": "a2a73e89dff04f9ac71d662c74525e5268d00e2a4a4a0e453310b18b12c94107"
     },
     "windows": {
-      "totplay.exe": "e9033cf6418b99a87dfe8bfed0d08af2d60ef24101eac13b7818a716b294a8f0",
-      "totdesktop.exe": "b69182107b75d65bf84d83f79fcfb0f5d8fdb8e9d86377edb8b0634ef02663f5"
+      "totplay.exe": "faf13b4b68efe2163915d0eecdbe027fcbaf5bdde0e9589554e52b137017acba",
+      "totdesktop.exe": "f7b81265f9f6cf5efc960c2d9593cc7cd9f410fc3d1f27959282b980088cf871"
     }
   },
   "owner_acceptance": {
@@ -191,9 +191,10 @@
     "follow_up": "Owner notes incomplete UI and current production visibility; final follow-up labels existing item and stored shields. Not a claim of full native UI parity."
   },
   "milestone": "11 / #137; candidate prepared after checks; owner launches independent review; no tag before AGREE",
-  "final_validation_scope": "Final packages pass browser/Linux full routes and Windows city/selection/Enter routes. Windows full battle/capture passed with identical final controller before the last five help-text y positions changed. The final package is not falsely labeled as having rerun the long Windows encounter.",
+  "final_validation_scope": "Round-two packages pass full browser/Linux/Windows routes, including city, selection/blink/Enter, pending choices, ten rounds, battle/capture. All 27 checkpoint files in each native adapter match the browser; 18 selection result hashes also match the retained fixture. Browser additionally passes the held-request blur regression. See client-review-r2.json for review fixes and limits.",
   "release_archive_sha256": {
-    "totengine-v0.13.0-linux-x86_64.tar.gz": "0b94f56e898bfcb431e20da22676f39f494328ea29906ce965a4f99673f7e87b",
-    "totengine-v0.13.0-windows-x86_64.zip": "2f25188976e8c3c798193690fb6155bae336b165a0a3f31ee2315584f7b80328"
-  }
+    "totengine-v0.13.0-linux-x86_64.tar.gz": "b966fb9ccaa900a9c1d93b4b6329e077edd6fe23fee8cbc7f1f7ef3f7dca7027",
+    "totengine-v0.13.0-windows-x86_64.zip": "8b494943c3219e9c3e7959f4230961a79db433135f0871f6b75f7358a4fb89e8"
+  },
+  "review_round_two": "#138; round-one BLOCK on df22f33; #139\u2013#144 fixes and verification in client-review-r2.json; owner launches re-review; no tag before AGREE"
 }

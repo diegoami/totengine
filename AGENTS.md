@@ -266,14 +266,18 @@ end-turn remains explicit. New actual browser/Linux/Windows checks cover a
 DIFFERENT unit (no W preselection), sprite-body blink against a stable other unit,
 zoom/resize, stack choice, exhaustion and next turn. Eighteen full checkpoint
 comparisons agree. `client-selection-v1.json` and `docs/v0.13.0-readiness.md`
-record current checks/limits. Full make test: 240 Rust, 11 Python, goldens pass;
+record current checks/limits. Full make test: 241 Rust, 11 Python, goldens pass;
 strict default/desktop Clippy and fmt pass. The 879-input encounter now records
 actor identities in v3 and retains identical battle/capture/final checkpoints.
 The owner confirmed “Yes, both clients and city route pass” on 2026-11-07,
 then noted current production was hard to see. Follow-up labels it explicitly
 and restores visible End-turn focus for Enter when units are exhausted.
-Prepare the independent owner-launched review after final checks; no tag before
-AGREE. Both clients and the full-AI gate remain as agreed.
+Round-one independent review #138 by Kimi K3.1 Pro BLOCKED df22f33 on #140
+(excess entertainers missing from finance/mood) and #143 (same-frame desktop
+city keys lost). Fixes plus follow-ups #139/#141/#142/#144 are prepared for
+owner-launched re-review. See docs/v0.13.0-readiness.md and
+docs/evidence/client-review-r2.json. No tag before AGREE. Both clients and the
+full-AI gate remain as agreed.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

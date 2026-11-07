@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "cases": 4091,
+  "hurry_cases": 1800,
+  "retention_cases": 1024,
+  "sale_cases": 42,
+  "confirmed_buy_cases": 344,
+  "confirmed_sale_cases": 102,
+  "buy_funds_disorder_cases": 125,
+  "standard_sale_gate_cases": 6,
+  "prepared_switch_sequences": 162,
+  "prepared_switch_transitions": 648,
+  "hurry_entry_stop": [
+    "0x4eb474",
+    "0x4eb5fd"
+  ],
+  "capitalization_stop": "0x4eb481",
+  "retention_capture_and_kernel": [
+    "0x4c0ee6",
+    "0x4c0f37"
+  ],
+  "accepted_switch_entry_stop": [
+    "0x4ecd16",
+    "0x4ecdcf"
+  ],
+  "sale_entry_stop": [
+    "0x4e4737",
+    "0x4e4750"
+  ],
+  "confirmed_buy_entry_stop": [
+    "0x4eb7cf",
+    "0x4eb83c"
+  ],
+  "confirmed_sale_entry_stop": [
+    "0x4e4895",
+    "0x4e4909"
+  ],
+  "buy_funds_disorder_entry_stop": [
+    "0x4eb644",
+    "0x4eb6c8"
+  ],
+  "standard_sale_gate_entry_stops": [
+    "0x4e45e1",
+    "0x4e464d",
+    "0x4e4620"
+  ],
+  "ui_substitutions": {
+    "0x411c50": "current city index 0",
+    "0x41f4b8": "omit item-name presentation"
+  },
+  "scope": "Unpatched original arithmetic and confirmed ledger/building/shield writes, including clamp/category/packed-building helpers, on synthetic fields. Separate fragments check treasury/disorder admission and the already-sold gate in ordinary non-editor play. UI access/name formatting are substituted. Commit fragments assume caller confirmation and stop before refresh/render/notifications. Full dialog legality, total refresh and complete city-window baseline lifecycle are not established. Retention takes the captured initial category/shield context; callers must not invent a fresh or client-supplied baseline."
+}

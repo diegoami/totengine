@@ -342,6 +342,27 @@ try {
             }
         }
     }
+    if(-not $MovementOnly -and -not $SelectionOnly -and $env:TOTENGINE_PRODUCTION_FIXTURES) {
+        $routes=Get-Content (Join-Path $env:TOTENGINE_PRODUCTION_FIXTURES 'route.json') -Raw | ConvertFrom-Json
+        foreach($route in $routes) {
+            $name='production'+$route.name
+            Copy-Item (Join-Path $env:TOTENGINE_PRODUCTION_FIXTURES ($route.name+'-before.cth')) (Join-Path $env:TOTENGINE_SAVES ($name+'.cth'))
+            Load-Slot $name
+            foreach($item in $route.inputs) {
+                if($item.type -eq 'click'){Click-At $item.x $item.y}
+                elseif($item.type -eq 'key'){
+                    $vk=@{'ArrowDown'=40;'ArrowUp'=38;'Enter'=13;'Escape'=27}[$item.key]
+                    if(-not $vk){throw ('unsupported production key '+$item.key)}
+                    Send-Key $vk
+                } else {throw 'unsupported production input'}
+            }
+            Send-Chord 83;Save-Dialog ($name+'after')
+            $actual=(Get-FileHash (Join-Path $env:TOTENGINE_SAVES ($name+'after.cth')) -Algorithm SHA256).Hash
+            $expected=(Get-FileHash (Join-Path $env:TOTENGINE_PRODUCTION_FIXTURES ($route.name+'-after.cth')) -Algorithm SHA256).Hash
+            if($actual -ne $expected){throw ('Production checkpoint differs: '+$route.name)}
+            Load-Slot ($name+'after')
+        }
+    }
     if(-not $MovementOnly -and -not $SelectionOnly -and $env:TOTENGINE_ENCOUNTER_FIXTURES) {
         foreach($name in @('battle','capture')) {
             $actor=if($name -eq 'battle'){1}else{7}

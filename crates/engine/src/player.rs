@@ -84,6 +84,22 @@ pub enum Order {
         city: usize,
         item: i8,
     },
+    QuotedProduction {
+        city: usize,
+        quote: crate::city_production::ProductionChangeQuote,
+    },
+    CloseProduction {
+        city: usize,
+        city_id: u32,
+    },
+    BuyProduction {
+        city: usize,
+        quote: crate::city_production::HurryQuote,
+    },
+    SellImprovement {
+        city: usize,
+        quote: crate::city_production::SaleQuote,
+    },
     SetResearch {
         advance: usize,
     },
@@ -119,6 +135,9 @@ pub enum OrderResult {
         razed: bool,
     },
     ProductionSet,
+    ProductionContextClosed,
+    ProductionBought,
+    ImprovementSold(u8),
     ResearchSet,
     /// A city was founded; its index.
     Founded(usize),
@@ -134,6 +153,12 @@ impl fmt::Display for Order {
             Order::Move { unit, to } => write!(f, "move {unit} {} {}", to.0, to.1),
             Order::OccupyCity { unit, city } => write!(f, "occupy {unit} {city}"),
             Order::SetProduction { city, item } => write!(f, "prod {city} {item}"),
+            Order::QuotedProduction { city, quote } => {
+                write!(f, "prod-quoted {city} {}", quote.encode())
+            }
+            Order::CloseProduction { city, city_id } => write!(f, "prod-close {city} {city_id}"),
+            Order::BuyProduction { city, quote } => write!(f, "buy {city} {}", quote.encode()),
+            Order::SellImprovement { city, quote } => write!(f, "sell {city} {}", quote.encode()),
             Order::SetResearch { advance } => write!(f, "research {advance}"),
             Order::FoundCity { unit } => write!(f, "found {unit}"),
             Order::FoundNamedCity { unit, name } => {
@@ -162,6 +187,9 @@ impl fmt::Display for OrderResult {
                 write!(f, "occupied {city} {}", u8::from(*razed))
             }
             OrderResult::ProductionSet => write!(f, "prod-set"),
+            OrderResult::ProductionContextClosed => write!(f, "production-closed"),
+            OrderResult::ProductionBought => write!(f, "production-bought"),
+            OrderResult::ImprovementSold(id) => write!(f, "improvement-sold {id}"),
             OrderResult::ResearchSet => write!(f, "research-set"),
             OrderResult::Founded(c) => write!(f, "founded {c}"),
             OrderResult::TurnEnded => write!(f, "ended"),
@@ -187,6 +215,22 @@ impl Order {
             ["prod", c, i] => Some(Order::SetProduction {
                 city: c.parse().ok()?,
                 item: i.parse().ok()?,
+            }),
+            ["prod-quoted", city, terms @ ..] => Some(Order::QuotedProduction {
+                city: city.parse().ok()?,
+                quote: crate::city_production::ProductionChangeQuote::decode(terms)?,
+            }),
+            ["prod-close", city, id] => Some(Order::CloseProduction {
+                city: city.parse().ok()?,
+                city_id: id.parse().ok()?,
+            }),
+            ["buy", city, terms @ ..] => Some(Order::BuyProduction {
+                city: city.parse().ok()?,
+                quote: crate::city_production::HurryQuote::decode(terms)?,
+            }),
+            ["sell", city, terms @ ..] => Some(Order::SellImprovement {
+                city: city.parse().ok()?,
+                quote: crate::city_production::SaleQuote::decode(terms)?,
             }),
             ["research", a] => Some(Order::SetResearch {
                 advance: a.parse().ok()?,
@@ -583,7 +627,12 @@ impl WorldState {
                     Err(why) => OrderResult::Rejected(why),
                 }
             }
-            Order::EndTurn => OrderResult::TurnEnded,
+            Order::EndTurn => {
+                if self.production_context.is_some_and(|c| c.civ == civ) {
+                    self.production_context = None;
+                }
+                OrderResult::TurnEnded
+            }
             Order::SkipUnit { unit } => {
                 let Some(u) = self
                     .units
@@ -666,6 +715,30 @@ impl WorldState {
                             razed: out.razed,
                         }
                     }
+                    Err(why) => OrderResult::Rejected(why),
+                }
+            }
+            Order::QuotedProduction { city, quote } => {
+                match self.change_quoted_production(rules, civ, city, quote) {
+                    Ok(()) => OrderResult::ProductionSet,
+                    Err(why) => OrderResult::Rejected(why),
+                }
+            }
+            Order::CloseProduction { city, city_id } => {
+                match self.close_production_context(civ, city, city_id) {
+                    Ok(()) => OrderResult::ProductionContextClosed,
+                    Err(why) => OrderResult::Rejected(why),
+                }
+            }
+            Order::BuyProduction { city, quote } => {
+                match self.buy_production(rules, civ, city, quote) {
+                    Ok(()) => OrderResult::ProductionBought,
+                    Err(why) => OrderResult::Rejected(why),
+                }
+            }
+            Order::SellImprovement { city, quote } => {
+                match self.sell_improvement(rules, civ, city, quote) {
+                    Ok(()) => OrderResult::ImprovementSold(quote.improvement),
                     Err(why) => OrderResult::Rejected(why),
                 }
             }

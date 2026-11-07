@@ -121,6 +121,7 @@ fn shared_ui_plays_ten_rounds_and_resumes_required_choices() {
     key(&mut c, "ArrowDown");
     key(&mut c, "Enter");
     assert_eq!(c.status, "prod-set");
+    assert_eq!(c.view().unwrap().production_context_city, None);
     let saved = c.checkpoint().unwrap();
     key(&mut c, "Ctrl+s");
     edit(&mut c, "normal");
@@ -142,6 +143,7 @@ fn shared_ui_plays_ten_rounds_and_resumes_required_choices() {
     edit(&mut c, "normal");
     key(&mut c, "Enter");
     assert_eq!(c.checkpoint().unwrap(), saved);
+    assert!(!c.city_open, "map picker reload must remain on the map");
     key(&mut c, "Ctrl+l");
     edit(&mut c, "pending-name");
     key(&mut c, "Enter");
@@ -660,6 +662,198 @@ fn installed_atlas_matches_retained_numeric_manifest() {
     assert_eq!(
         atlas.sprites.len(),
         65 + resources.rules.unit_names().len().min(80)
+    );
+}
+
+#[test]
+fn production_draft_budget_and_city_lifecycle_resume_without_double_penalty() {
+    let f = Fixture::new();
+    let file = f.0.join("Rules.txt");
+    let mut rules = tot_kit::parse_rules(&fs::read_to_string(&file).unwrap());
+    let cosmic = rules.sections.get_mut("COSMIC").unwrap();
+    cosmic.rows[18] = vec!["50".into()];
+    cosmic.raw_lines[18] = "50 ; authored switching penalty".into();
+    fs::write(&file, tot_kit::emit_rules(&rules)).unwrap();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    for _ in 0..20 {
+        if c.view().unwrap().city_production[0].stored >= 10 {
+            break;
+        }
+        end_round(&mut c);
+    }
+    let initial = c.view().unwrap().city_production[0].stored;
+    assert!(initial >= 10);
+    assert_eq!(c.view().unwrap().production_context_city, None);
+    button(&mut c, "Manage city");
+    let before = c.checkpoint().unwrap();
+    fn select(c: &mut Client, item: i8) {
+        button(c, "Choose production");
+        let at = c
+            .current_choices()
+            .iter()
+            .position(|(id, _)| *id == i32::from(item))
+            .unwrap();
+        for _ in 0..=at {
+            key(c, "ArrowDown");
+        }
+    }
+    select(&mut c, -4);
+    let retained = initial - initial / 2;
+    assert!(c.frame().draws.iter().any(|d| matches!(d,Draw::Text{text,..} if text.contains(&format!("Shields: {initial} → {retained}")))));
+    assert_eq!(
+        before,
+        c.checkpoint().unwrap(),
+        "draft selection only reads its quote"
+    );
+    key(&mut c, "Escape");
+    assert_eq!(before, c.checkpoint().unwrap());
+    select(&mut c, -4);
+    key(&mut c, "Enter");
+    assert_eq!(c.view().unwrap().city_production[0].stored, retained);
+    let active = c.checkpoint().unwrap();
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "budget-active");
+    key(&mut c, "Enter");
+    select(&mut c, 0);
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d,Draw::Text{text,..} if text.contains("restored from city budget"))));
+    key(&mut c, "Escape");
+    assert_eq!(active, c.checkpoint().unwrap());
+    key(&mut c, "Escape");
+    assert_eq!(c.view().unwrap().production_context_city, None);
+    button(&mut c, "Manage city");
+    select(&mut c, 0);
+    let new_retained = retained - retained / 2;
+    assert!(c.frame().draws.iter().any(|d| matches!(d,Draw::Text{text,..} if text.contains(&format!("Shields: {retained} → {new_retained}")))));
+    key(&mut c, "Escape");
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "budget-active");
+    key(&mut c, "Enter");
+    assert!(
+        c.city_open,
+        "active production context restores its city workspace"
+    );
+    assert_eq!(active, c.checkpoint().unwrap());
+    select(&mut c, 0);
+    key(&mut c, "Enter");
+    assert_eq!(c.view().unwrap().city_production[0].stored, initial);
+}
+
+#[test]
+fn quoted_city_purchase_and_sale_confirm_cancel_and_resume() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    button(&mut c, "Manage city");
+    button(&mut c, "Choose production");
+    let at = c
+        .current_choices()
+        .iter()
+        .position(|(id, _)| *id == -4)
+        .unwrap();
+    for _ in 0..=at {
+        key(&mut c, "ArrowDown");
+    }
+    key(&mut c, "Enter");
+    let original = c.checkpoint().unwrap();
+    button(&mut c, "Buy production");
+    assert!(matches!(c.modal, Some(Modal::Purchase { .. })));
+    assert!(
+        !c.buttons()
+            .iter()
+            .any(|b| matches!(b.action, Action::Accept)),
+        "poor purchase has no confirm action"
+    );
+    key(&mut c, "Escape");
+    assert_eq!(original, c.checkpoint().unwrap());
+    let mut expected = None;
+    for _ in 0..80 {
+        let v = c.view().unwrap();
+        assert!(
+            v.observation.city_economy[0].buildings[0] & (1 << 4) == 0,
+            "buy before natural completion"
+        );
+        if let Ok(q) = v.city_production[0].hurry {
+            if q.price <= q.treasury {
+                expected = Some(q);
+                break;
+            }
+        }
+        key(&mut c, "Escape");
+        end_round(&mut c);
+        button(&mut c, "Manage city");
+    }
+    let quote = expected.expect("recorded play must fund the quote");
+    let before = c.checkpoint().unwrap();
+    button(&mut c, "Buy production");
+    key(&mut c, "Escape");
+    assert_eq!(before, c.checkpoint().unwrap(), "cancel is inert");
+    button(&mut c, "Buy production");
+    let old = c.revision;
+    key(&mut c, "Enter");
+    let after = c.checkpoint().unwrap();
+    assert_ne!(after, before);
+    assert_eq!(c.view().unwrap().city_production[0].stored, quote.required);
+    assert_eq!(
+        c.view().unwrap().observation.treasury,
+        quote.treasury - quote.price
+    );
+    assert!(c
+        .input(
+            old,
+            99999,
+            Input::Key {
+                key: "Enter".into()
+            }
+        )
+        .is_err());
+    assert_eq!(after, c.checkpoint().unwrap());
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "bought");
+    key(&mut c, "Enter");
+    key(&mut c, "Escape");
+    end_round(&mut c);
+    button(&mut c, "Manage city");
+    assert!(c.view().unwrap().observation.city_economy[0].buildings[0] & (1 << 4) != 0);
+    fn open_sale(c: &mut Client) {
+        button(c, "Improvements / sell");
+        let at = c
+            .current_choices()
+            .iter()
+            .position(|(id, _)| *id == 4)
+            .unwrap();
+        for _ in 0..=at {
+            key(c, "ArrowDown");
+        }
+        key(c, "Enter");
+        assert!(matches!(c.modal, Some(Modal::Sale { .. })));
+    }
+    let before = c.checkpoint().unwrap();
+    open_sale(&mut c);
+    assert_eq!(before, c.checkpoint().unwrap(), "preview reads a clone");
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d,Draw::Text{text,..} if text.starts_with("Happy:"))));
+    key(&mut c, "Escape");
+    assert_eq!(before, c.checkpoint().unwrap());
+    open_sale(&mut c);
+    key(&mut c, "Enter");
+    assert!(c.view().unwrap().observation.city_economy[0].buildings[0] & (1 << 4) == 0);
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "bought");
+    key(&mut c, "Enter");
+    assert_eq!(
+        after,
+        c.checkpoint().unwrap(),
+        "reload retains purchased shields before creation"
     );
 }
 
@@ -1208,4 +1402,231 @@ fn generated_selection_fixture() {
     )
     .unwrap();
     println!("Two-unit selection fixture: {}", out.display());
+}
+
+#[test]
+#[ignore = "install-backed recorded city production input route"]
+fn generated_city_production_fixture() {
+    let home = std::env::var("CIVTOT_HOME").expect("set CIVTOT_HOME");
+    let out = PathBuf::from(std::env::var("TOTENGINE_PRODUCTION_OUT").expect("set private output"));
+    fs::create_dir_all(&out).unwrap();
+    let mut c = Client::new(home, out.clone());
+    for _ in 0..3 {
+        button(&mut c, "Civilizations");
+    }
+    for _ in 0..2 {
+        button(&mut c, "Difficulty");
+    }
+    start(&mut c);
+    founding(&mut c);
+    fn choose(c: &mut Client, item: i8) {
+        button(c, "Choose production");
+        let at = c
+            .current_choices()
+            .iter()
+            .position(|(id, _)| *id == i32::from(item))
+            .expect("legal target");
+        for _ in 0..=at {
+            key(c, "ArrowDown");
+        }
+        key(c, "Enter");
+    }
+    button(&mut c, "Choose production");
+    let target = c
+        .current_choices()
+        .iter()
+        .find_map(|(id, _)| (-35..=-2).contains(id).then_some(*id as i8))
+        .expect("initial saleable improvement");
+    key(&mut c, "Escape");
+    choose(&mut c, target);
+    let building = (-target) as usize;
+    let mut routes = Vec::new();
+    // Each scenario starts from a genuine recorded checkpoint. Route inputs
+    // are also executed here; actual adapters must reproduce every byte.
+    fn scenario(
+        c: &mut Client,
+        out: &Path,
+        routes: &mut Vec<serde_json::Value>,
+        name: &str,
+        actions: &[(&str, &str)],
+    ) {
+        fs::write(
+            out.join(format!("{name}-before.cth")),
+            c.checkpoint().unwrap(),
+        )
+        .unwrap();
+        let mut inputs = Vec::new();
+        for (kind, value) in actions {
+            if *kind == "button" {
+                let b = c
+                    .buttons()
+                    .into_iter()
+                    .find(|b| b.label == *value)
+                    .unwrap_or_else(|| panic!("missing {value}"));
+                let i = Input::Click {
+                    x: b.x + 12.,
+                    y: b.y + 8.,
+                };
+                input(c, i.clone());
+                inputs.push(i);
+            } else {
+                let i = Input::Key {
+                    key: (*value).into(),
+                };
+                input(c, i.clone());
+                inputs.push(i);
+            }
+        }
+        fs::write(
+            out.join(format!("{name}-after.cth")),
+            c.checkpoint().unwrap(),
+        )
+        .unwrap();
+        routes.push(serde_json::json!({"name":name,"inputs":inputs}));
+    }
+    // Keep starting state outside city: load restores only recorded context.
+    assert!(!c.city_open);
+    assert!(
+        c.view().unwrap().city_production[0]
+            .hurry
+            .as_ref()
+            .unwrap()
+            .price
+            > c.view().unwrap().observation.treasury
+    );
+    scenario(
+        &mut c,
+        &out,
+        &mut routes,
+        "poor",
+        &[
+            ("button", "Manage city"),
+            ("button", "Buy production"),
+            ("key", "Enter"),
+            ("key", "Escape"),
+        ],
+    );
+    // Poor Enter cancels; Escape leaves the city.
+    assert!(!c.city_open);
+    for _ in 0..150 {
+        let v = c.view().unwrap();
+        if let Ok(q) = &v.city_production[0].hurry {
+            if q.price > 0 && q.price <= q.treasury {
+                break;
+            }
+        }
+        assert_eq!(
+            v.observation.city_economy[0].buildings[building / 8] & (1 << (building % 8)),
+            0,
+            "buy before completion"
+        );
+        end_round(&mut c);
+    }
+    let q = c.view().unwrap().city_production[0].hurry.unwrap();
+    assert!(
+        q.price > 0 && q.price <= q.treasury,
+        "normal play funds purchase"
+    );
+    scenario(
+        &mut c,
+        &out,
+        &mut routes,
+        "buycancel",
+        &[
+            ("button", "Manage city"),
+            ("button", "Buy production"),
+            ("key", "Escape"),
+            ("key", "Escape"),
+        ],
+    );
+    scenario(
+        &mut c,
+        &out,
+        &mut routes,
+        "buy",
+        &[
+            ("button", "Manage city"),
+            ("button", "Buy production"),
+            ("key", "Enter"),
+        ],
+    );
+    assert_eq!(c.view().unwrap().city_production[0].stored, q.required);
+    // Save/load of buy-after restores its active city context. Return to map
+    // before advancing to completion, then isolate the sale route.
+    key(&mut c, "Escape");
+    end_round(&mut c);
+    assert_ne!(
+        c.view().unwrap().observation.city_economy[0].buildings[building / 8]
+            & (1 << (building % 8)),
+        0
+    );
+    button(&mut c, "Manage city");
+    button(&mut c, "Improvements / sell");
+    let at = c
+        .current_choices()
+        .iter()
+        .position(|(id, _)| *id == i32::from(-target))
+        .unwrap();
+    key(&mut c, "Escape");
+    key(&mut c, "Escape");
+    // Cancel and acceptance share the same actual picker path.
+    let mut sale = vec![("button", "Manage city"), ("button", "Improvements / sell")];
+    for _ in 0..=at {
+        sale.push(("key", "ArrowDown"));
+    }
+    sale.push(("key", "Enter"));
+    sale.push(("key", "Escape"));
+    sale.push(("key", "Escape"));
+    scenario(&mut c, &out, &mut routes, "salecancel", &sale);
+    let confirm = sale.len() - 2;
+    sale[confirm] = ("key", "Enter");
+    sale.pop();
+    scenario(&mut c, &out, &mut routes, "sale", &sale);
+    assert_eq!(
+        c.view().unwrap().observation.city_economy[0].buildings[building / 8]
+            & (1 << (building % 8)),
+        0
+    );
+    key(&mut c, "Escape");
+    choose(&mut c, 0);
+    for _ in 0..20 {
+        if c.view().unwrap().city_production[0].stored >= 3 {
+            break;
+        }
+        end_round(&mut c);
+    }
+    let initial = c.view().unwrap().city_production[0].stored;
+    assert!(initial >= 3);
+    fn picker(c: &mut Client, item: i8) -> Vec<(&'static str, &'static str)> {
+        button(c, "Choose production");
+        let at = c
+            .current_choices()
+            .iter()
+            .position(|(id, _)| *id == i32::from(item))
+            .unwrap();
+        key(c, "Escape");
+        let mut a = vec![("button", "Choose production")];
+        for _ in 0..=at {
+            a.push(("key", "ArrowDown"));
+        }
+        a.push(("key", "Enter"));
+        a
+    }
+    let mut switch = picker(&mut c, target);
+    switch.insert(0, ("button", "Manage city"));
+    let mut cancel = switch.clone();
+    *cancel.last_mut().unwrap() = ("key", "Escape");
+    cancel.push(("key", "Escape"));
+    scenario(&mut c, &out, &mut routes, "switchcancel", &cancel);
+    scenario(&mut c, &out, &mut routes, "switch", &switch);
+    assert!(c.view().unwrap().city_production[0].stored < initial);
+    let restore = picker(&mut c, 0);
+    scenario(&mut c, &out, &mut routes, "restore", &restore);
+    assert_eq!(c.view().unwrap().city_production[0].stored, initial);
+    scenario(&mut c, &out, &mut routes, "close", &[("key", "Escape")]);
+    fs::write(
+        out.join("route.json"),
+        serde_json::to_string_pretty(&routes).unwrap() + "\n",
+    )
+    .unwrap();
 }

@@ -703,6 +703,248 @@ fn excess_entertainers_count_in_immediate_finance_and_mood() {
 }
 
 #[test]
+fn quoted_production_budget_survives_reload_and_resets_on_close() {
+    let mut custom = rules();
+    let cosmic = custom.sections.get_mut("COSMIC").unwrap();
+    cosmic.rows[18] = vec!["50".into()];
+    cosmic.raw_lines[18] = "50 ; authored switching penalty".into();
+    let mut cfg = config();
+    cfg.difficulty = 2;
+    let mut s = HumanSession::generated(cfg, custom, 1).unwrap();
+    choose(&mut s);
+    let unit = s.view().units[0];
+    send(&mut s, Command::BeginFound { unit });
+    let Some(Decision::Founding { id, .. }) = s.decision else {
+        panic!()
+    };
+    send(
+        &mut s,
+        Command::NameCity {
+            decision: id,
+            name: CityName::new("Budget").unwrap(),
+        },
+    );
+    let city = s.view().cities[0];
+    for _ in 0..40 {
+        if s.view().city_production[0].stored >= 10 {
+            break;
+        }
+        send(&mut s, Command::EndTurn);
+        ready(&mut s, 256);
+        choose(&mut s);
+    }
+    let initial = s.view().city_production[0].stored;
+    assert!(initial >= 10);
+    let quote = s.preview_production(city, -4).unwrap();
+    assert_eq!(quote.retained, initial - initial / 2);
+    let before = s.checkpoint("budget-resources");
+    assert!(s
+        .submit(Request {
+            civ: 1,
+            revision: s.revision,
+            id: 999,
+            command: Command::QuotedProduction {
+                city,
+                quote: crate::city_production::ProductionChangeQuote {
+                    initial_shields: quote.initial_shields + 1,
+                    ..quote
+                }
+            }
+        })
+        .is_err());
+    assert_eq!(before, s.checkpoint("budget-resources"));
+    send(&mut s, Command::QuotedProduction { city, quote });
+    assert_eq!(s.view().production_context_city, Some(city));
+    let checkpoint = s.checkpoint("budget-resources");
+    let mut kept =
+        HumanSession::restore(s.game.rules.clone(), "budget-resources", &checkpoint).unwrap();
+    assert_eq!(checkpoint, kept.checkpoint("budget-resources"));
+    let restored = kept.preview_production(city, 0).unwrap();
+    assert_eq!(restored.retained, initial);
+    send(
+        &mut kept,
+        Command::QuotedProduction {
+            city,
+            quote: restored,
+        },
+    );
+    assert_eq!(kept.view().city_production[0].stored, initial);
+    let turn = s.view().observation.turn;
+    let gold = s.view().observation.treasury;
+    let stored = s.view().city_production[0].stored;
+    send(&mut s, Command::CloseProduction { city });
+    assert_eq!(s.view().production_context_city, None);
+    assert_eq!(s.view().city_production[0].stored, stored);
+    assert_eq!(
+        (s.view().observation.turn, s.view().observation.treasury),
+        (turn, gold)
+    );
+    let reopened = s.preview_production(city, 0).unwrap();
+    assert_eq!(reopened.retained, stored - stored / 2);
+    let checkpoint = s.checkpoint("budget-resources");
+    let resumed =
+        HumanSession::restore(s.game.rules.clone(), "budget-resources", &checkpoint).unwrap();
+    assert_eq!(resumed.preview_production(city, 0).unwrap(), reopened);
+}
+
+#[test]
+fn quoted_buy_and_sale_continue_through_recorded_play_and_checkpoints() {
+    let mut s = session(1);
+    let bogus = crate::city_production::HurryQuote {
+        city_id: 1,
+        item: 0,
+        stored: 0,
+        required: 20,
+        price: 1,
+        treasury: 0,
+    };
+    let before = s.checkpoint("authored-test-resources-v1");
+    assert!(s
+        .submit(Request {
+            civ: 1,
+            revision: s.revision,
+            id: 999,
+            command: Command::Buy {
+                city: Entity { slot: 0, id: 1 },
+                quote: bogus
+            }
+        })
+        .is_err());
+    assert_eq!(before, s.checkpoint("authored-test-resources-v1"));
+    choose(&mut s);
+    let unit = s.view().units[0];
+    send(&mut s, Command::BeginFound { unit });
+    let Some(Decision::Founding { id, .. }) = s.decision else {
+        panic!()
+    };
+    send(
+        &mut s,
+        Command::NameCity {
+            decision: id,
+            name: CityName::new("Production").unwrap(),
+        },
+    );
+    let city = s.view().cities[0];
+    send(&mut s, Command::Production { city, item: -4 });
+    let quote = s.view().city_production[0].hurry.unwrap();
+    assert!(quote.price > quote.treasury);
+    let before = s.checkpoint("authored-test-resources-v1");
+    assert!(s
+        .submit(Request {
+            civ: 1,
+            revision: s.revision,
+            id: 1000,
+            command: Command::Buy { city, quote }
+        })
+        .is_err());
+    assert_eq!(before, s.checkpoint("authored-test-resources-v1"));
+    let mut affordable = None;
+    for _ in 0..80 {
+        let view = s.view();
+        assert!(
+            view.observation
+                .city_economy
+                .iter()
+                .all(|e| e.buildings[0] & (1 << 4) == 0),
+            "must buy before ordinary completion"
+        );
+        if let Ok(q) = view.city_production[0].hurry {
+            if q.price <= q.treasury {
+                affordable = Some(q);
+                break;
+            }
+        }
+        send(&mut s, Command::EndTurn);
+        ready(&mut s, 256);
+        choose(&mut s);
+    }
+    let quote = affordable.expect("normal tax income funds a remaining production quote");
+    let mut resumed = round_trip(&s);
+    let before = s.checkpoint("authored-test-resources-v1");
+    for command in [
+        Command::Buy {
+            city: Entity {
+                id: city.id + 1,
+                ..city
+            },
+            quote,
+        },
+        Command::Buy {
+            city,
+            quote: crate::city_production::HurryQuote {
+                price: quote.price - 1,
+                ..quote
+            },
+        },
+    ] {
+        assert!(s
+            .submit(Request {
+                civ: 1,
+                revision: s.revision,
+                id: 1001,
+                command
+            })
+            .is_err());
+        assert_eq!(before, s.checkpoint("authored-test-resources-v1"));
+    }
+    let turn = s.view().observation.turn;
+    let random = (s.game.world.rng.state(), s.game.world.combat_rng.state());
+    let request = send(&mut s, Command::Buy { city, quote });
+    resumed.submit(request).unwrap();
+    assert_eq!(s.view(), resumed.view());
+    assert_eq!(s.view().observation.turn, turn);
+    assert_eq!(
+        random,
+        (s.game.world.rng.state(), s.game.world.combat_rng.state())
+    );
+    assert!(!s.game.world.cities[city.slot].has_building(4));
+    assert_eq!(s.game.world.cities[city.slot].shield_box, quote.required);
+    assert_eq!(s.view().city_production[0].turns, Some(0));
+    let after = s.checkpoint("authored-test-resources-v1");
+    s.submit(request).unwrap();
+    assert_eq!(after, s.checkpoint("authored-test-resources-v1"));
+    round_trip(&s);
+    send(&mut s, Command::EndTurn);
+    ready(&mut s, 256);
+    choose(&mut s);
+    assert!(
+        s.game.world.cities[city.slot].has_building(4),
+        "purchase completes in the following city phase"
+    );
+    let sale = s.view().city_production[0]
+        .improvements
+        .iter()
+        .find(|(id, _)| *id == 4)
+        .unwrap()
+        .1
+        .unwrap();
+    let mut resumed = round_trip(&s);
+    let request = send(&mut s, Command::Sell { city, quote: sale });
+    resumed.submit(request).unwrap();
+    assert_eq!(s.view(), resumed.view());
+    assert!(!s.game.world.cities[city.slot].has_building(4));
+    assert_eq!(s.view().observation.treasury, sale.treasury + sale.income);
+    let after = s.checkpoint("authored-test-resources-v1");
+    s.submit(request).unwrap();
+    assert_eq!(after, s.checkpoint("authored-test-resources-v1"));
+    assert!(s
+        .submit(Request {
+            civ: 1,
+            revision: s.revision,
+            id: 1002,
+            command: Command::Sell { city, quote: sale }
+        })
+        .is_err());
+    assert_eq!(after, s.checkpoint("authored-test-resources-v1"));
+    let mut resumed = round_trip(&s);
+    let request = send(&mut s, Command::EndTurn);
+    resumed.submit(request).unwrap();
+    ready(&mut s, 256);
+    ready(&mut resumed, 1);
+    assert_eq!(s.view(), resumed.view());
+}
+
+#[test]
 fn explored_tiles_and_foreign_cities_remember_last_sight_without_hidden_updates() {
     let mut s = session(1);
     choose(&mut s);

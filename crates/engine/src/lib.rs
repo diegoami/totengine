@@ -16,6 +16,7 @@ pub mod campaign;
 pub mod capture;
 pub mod citizens;
 pub mod city_phase;
+pub mod city_production;
 pub mod combat;
 pub mod connections;
 pub mod effects;
@@ -228,6 +229,7 @@ impl MapState {
 /// every later transition is a pure function of (state, orders, rng).
 #[derive(Debug, Clone)]
 pub struct WorldState {
+    pub(crate) production_context: Option<city_production::ProductionContext>,
     pub turn: i16,
     pub year: i16,
     pub difficulty: u8,
@@ -318,6 +320,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         })
         .collect();
     WorldState {
+        production_context: None,
         turn: sav.turn,
         year: sav.year,
         difficulty: sav.difficulty,
@@ -531,6 +534,13 @@ impl WorldState {
             self.game_flags,
             self.human_mask
         );
+        if let Some(c) = self.production_context {
+            let _ = write!(
+                buf,
+                "|production-context|{}|{}|{}|{}|{}",
+                c.civ, c.city, c.city_id, c.initial_item, c.initial_shields
+            );
+        }
         mix(&mut h, buf.as_bytes());
         buf.clear();
         for w in self.wonders {

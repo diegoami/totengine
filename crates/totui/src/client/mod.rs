@@ -114,6 +114,19 @@ enum Modal {
     Production {
         city: Entity,
     },
+    Improvements {
+        city: Entity,
+    },
+    Purchase {
+        city: Entity,
+        quote: engine::city_production::HurryQuote,
+        revision: u64,
+    },
+    Sale {
+        city: Entity,
+        preview: engine::city_production::SalePreview,
+        revision: u64,
+    },
     Units {
         at: (u16, u16),
         units: Vec<Entity>,
@@ -147,6 +160,8 @@ enum Action {
     Worker(Entity, u8),
     Specialist(Entity, u8),
     Production(Entity),
+    Buy(Entity),
+    Improvements(Entity),
     Choose(i32),
     Accept,
     Cancel,
@@ -696,11 +711,13 @@ impl Client {
                 self.status = "City inspection. Citizen edits commit immediately.".into();
             }
             Action::CloseCity => {
+                self.close_city_production()?;
                 self.city_open = false;
                 self.focus_button = 0;
                 self.status = "Returned to map; accepted city edits remain committed.".into();
             }
             Action::CityStep(delta) => {
+                self.close_city_production()?;
                 let v = self.view().ok_or("No running game")?;
                 let at = v
                     .cities
@@ -721,6 +738,24 @@ impl Client {
                 self.order(Command::Specialist { city, slot })?;
             }
             Action::Production(city) => self.open(Modal::Production { city }),
+            Action::Improvements(city) => self.open(Modal::Improvements { city }),
+            Action::Buy(city) => {
+                let v = self.view().ok_or("No running game")?;
+                if !v.cities.contains(&city) {
+                    return Err("City selection changed".into());
+                }
+                let quote = v
+                    .city_production
+                    .iter()
+                    .find(|p| p.index == city.slot)
+                    .ok_or("Unsupported city")?
+                    .hurry?;
+                self.open(Modal::Purchase {
+                    city,
+                    quote,
+                    revision: v.revision,
+                });
+            }
             Action::Choose(id) => self.choice = Some(id),
             Action::Slot(name) => self.entry = name,
             Action::Page(delta) => {
@@ -732,6 +767,42 @@ impl Client {
             Action::Accept => {
                 let modal = self.modal.clone().ok_or("No dialog to accept")?;
                 match modal {
+                    Modal::Improvements { city } => {
+                        let id = self.choice.ok_or("Select an improvement explicitly")?;
+                        let improvement = u8::try_from(id).map_err(|_| "Invalid improvement")?;
+                        let l = self.loaded.as_ref().ok_or("No running game")?;
+                        let preview = l.session.preview_sale(city, improvement)?;
+                        let revision = l.session.view().revision;
+                        self.open(Modal::Sale {
+                            city,
+                            preview,
+                            revision,
+                        });
+                        return Ok(());
+                    }
+                    Modal::Purchase {
+                        city,
+                        quote,
+                        revision,
+                    } => {
+                        if self.view().is_none_or(|v| v.revision != revision) {
+                            return Err("The game changed; request a new quote".into());
+                        }
+                        self.order(Command::Buy { city, quote })?;
+                    }
+                    Modal::Sale {
+                        city,
+                        preview,
+                        revision,
+                    } => {
+                        if self.view().is_none_or(|v| v.revision != revision) {
+                            return Err("The game changed; request a new quote".into());
+                        }
+                        self.order(Command::Sell {
+                            city,
+                            quote: preview.quote,
+                        })?;
+                    }
                     Modal::Quit => {
                         self.closed = true;
                         self.modal = None;
@@ -789,10 +860,23 @@ impl Client {
                             .ok_or("Unit selection changed")?;
                         self.action(Action::Unit(entity))?;
                     }
-                    Modal::Production { city } => self.order(Command::Production {
-                        city,
-                        item: self.choice.ok_or("Select a production item explicitly")? as i8,
-                    })?,
+                    Modal::Production { city } => {
+                        let item = self.choice.ok_or("Select a production item explicitly")? as i8;
+                        let quote = self
+                            .loaded
+                            .as_ref()
+                            .ok_or("No running game")?
+                            .session
+                            .preview_production(city, item)?;
+                        self.order(Command::QuotedProduction { city, quote })?;
+                        // The map's quick picker has no continuing city workspace.
+                        // Its captured budget ends with this accepted decision.
+                        if !self.city_open {
+                            let status = self.status.clone();
+                            self.close_city_production()?;
+                            self.status = status;
+                        }
+                    }
                     Modal::Confirm {
                         command, revision, ..
                     } => {
@@ -838,6 +922,10 @@ impl Client {
                         self.active = None;
                         self.city = None;
                         self.refresh();
+                        if let Some(city) = self.view().and_then(|v| v.production_context_city) {
+                            self.city = Some(city);
+                            self.city_open = true;
+                        }
                         self.schedule_unit(None, true);
                         self.center();
                         self.status="Checkpoint restored, including pending decisions. Original SAV import is not supported.".into();
@@ -1205,6 +1293,29 @@ impl Client {
                         .collect()
                 })
                 .unwrap_or_default(),
+            Some(Modal::Improvements { city }) => v
+                .city_production
+                .iter()
+                .find(|p| p.index == city.slot && v.cities.contains(city))
+                .map(|p| {
+                    p.improvements
+                        .iter()
+                        .map(|(id, quote)| {
+                            (
+                                i32::from(*id),
+                                match quote {
+                                    Ok(q) => format!(
+                                        "{} · refund {} gold",
+                                        self.item_name(-(*id as i8)),
+                                        q.income
+                                    ),
+                                    Err(why) => format!("{} · {why}", self.item_name(-(*id as i8))),
+                                },
+                            )
+                        })
+                        .collect()
+                })
+                .unwrap_or_default(),
             _ => Vec::new(),
         }
     }
@@ -1270,7 +1381,10 @@ impl Client {
         };
         if let Some(modal) = &self.modal {
             match modal {
-                Modal::Research | Modal::Production { .. } | Modal::Units { .. } => {
+                Modal::Research
+                | Modal::Production { .. }
+                | Modal::Units { .. }
+                | Modal::Improvements { .. } => {
                     for (row, (id, label)) in self
                         .current_choices()
                         .into_iter()
@@ -1294,8 +1408,8 @@ impl Client {
                             Action::Choose(id),
                         );
                     }
-                    add(212., 535., 120., 32., "Previous".into(), Action::Page(-1));
-                    add(352., 535., 120., 32., "Next page".into(), Action::Page(1));
+                    add(212., 529., 120., 28., "Previous".into(), Action::Page(-1));
+                    add(352., 529., 120., 28., "Next page".into(), Action::Page(1));
                 }
                 Modal::Load => {
                     for (row, name) in storage::list(&self.saves)
@@ -1326,14 +1440,16 @@ impl Client {
                     Action::Save,
                 );
             }
-            add(
-                212.,
-                595.,
-                240.,
-                40.,
-                "Accept [Enter]".into(),
-                Action::Accept,
-            );
+            if !matches!(modal,Modal::Purchase {quote,..} if quote.price > quote.treasury) {
+                add(
+                    212.,
+                    595.,
+                    240.,
+                    40.,
+                    "Accept [Enter]".into(),
+                    Action::Accept,
+                );
+            }
             add(
                 572.,
                 595.,
@@ -1717,6 +1833,9 @@ impl Client {
                 Modal::Name => "Name your city",
                 Modal::Research => "Choose research explicitly",
                 Modal::Production { .. } => "Choose production",
+                Modal::Improvements { .. } => "Improvements — select a building to sell",
+                Modal::Purchase { .. } => "Confirm purchase",
+                Modal::Sale { .. } => "Confirm improvement sale",
                 Modal::Units { .. } => "Activate a unit",
                 Modal::Confirm { label, .. } => label,
                 Modal::Save => "Save engine checkpoint (new name)",
@@ -1725,6 +1844,100 @@ impl Client {
                 Modal::Quit => "Close client? Save first if you want to resume.",
             };
             draws.push(text(212., 125., title, 22, "#fff0b5"));
+            if let (Modal::Production { city }, Some(item), Some(l)) =
+                (modal, self.choice, self.loaded.as_ref())
+            {
+                match l.session.preview_production(*city, item as i8) {
+                    Ok(q) => {
+                        let cost = q.target_cost.map_or_else(
+                            || "no finite shield target".into(),
+                            |n| format!("cost {n} shields"),
+                        );
+                        draws.push(text(
+                            212.,
+                            562.,
+                            &format!("Draft: {} · {cost}", self.item_name(q.item)),
+                            14,
+                            "#fff0b5",
+                        ));
+                        let difference = i32::from(q.retained) - i32::from(q.current_shields);
+                        let effect = if difference < 0 {
+                            format!("{} lost", -difference)
+                        } else if difference > 0 {
+                            format!("{difference} restored from city budget")
+                        } else {
+                            "unchanged".into()
+                        };
+                        draws.push(text(
+                            212.,
+                            580.,
+                            &format!("Shields: {} → {} · {effect}", q.current_shields, q.retained),
+                            12,
+                            "#eee8d4",
+                        ));
+                    }
+                    Err(why) => draws.push(text(212., 570., why, 14, "#ffcf8c")),
+                }
+            }
+            if let Modal::Purchase { quote, .. } = modal {
+                let lines = [
+                    format!("Buy {}", self.item_name(quote.item)),
+                    format!("Cost: {} gold · treasury: {}", quote.price, quote.treasury),
+                    if quote.treasury >= quote.price {
+                        format!("Treasury after purchase: {}", quote.treasury - quote.price)
+                    } else {
+                        format!(
+                            "Need {} more gold",
+                            i64::from(quote.price) - i64::from(quote.treasury)
+                        )
+                    },
+                    format!("Shields: {} → {}", quote.stored, quote.required),
+                    "The item completes during the next production phase.".into(),
+                    if quote.price > quote.treasury {
+                        "Insufficient treasury. Purchase is unavailable."
+                    } else {
+                        "Confirm to pay and fill the shield box."
+                    }
+                    .into(),
+                ];
+                for (i, line) in lines.iter().enumerate() {
+                    draws.push(text(212., 190. + i as f64 * 40., line, 17, "#eee8d4"));
+                }
+            }
+            if let Modal::Sale { preview, .. } = modal {
+                let q = preview.quote;
+                let a = preview.before;
+                let b = preview.after;
+                let lines = [
+                    format!(
+                        "Sell {} · refund {} gold",
+                        self.item_name(-(q.improvement as i8)),
+                        q.income
+                    ),
+                    format!("Treasury: {} → {}", q.treasury, q.treasury + q.income),
+                    "Removes this city's building and its effects.".into(),
+                    format!(
+                        "Food surplus: {:+} → {:+} · shields: {} → {}",
+                        a.food_surplus, b.food_surplus, a.net_shields, b.net_shields
+                    ),
+                    format!(
+                        "Tax: {} → {} · science: {} → {}",
+                        a.taxes, b.taxes, a.science, b.science
+                    ),
+                    format!(
+                        "Luxury: {} → {} · upkeep: {} → {}",
+                        a.luxuries, b.luxuries, a.upkeep, b.upkeep
+                    ),
+                    format!(
+                        "Happy: {} → {} · unhappy: {} → {}",
+                        a.happy, b.happy, a.unhappy, b.unhappy
+                    ),
+                    "Single-city sale. One improvement sale per turn.".into(),
+                ];
+                for (i, line) in lines.iter().enumerate() {
+                    draws.push(text(212., 180. + i as f64 * 40., line, 17, "#eee8d4"));
+                }
+            }
             if matches!(
                 modal,
                 Modal::Confirm {
@@ -1756,7 +1969,10 @@ impl Client {
             }
             if matches!(
                 modal,
-                Modal::Research | Modal::Production { .. } | Modal::Units { .. }
+                Modal::Research
+                    | Modal::Production { .. }
+                    | Modal::Units { .. }
+                    | Modal::Improvements { .. }
             ) {
                 draws.push(text(
                     212.,
@@ -1833,6 +2049,13 @@ impl Client {
             "moved" => "Unit moved".into(),
             "citizens-set" => "Citizen assignment updated immediately.".into(),
             "prod-set" => "Production changed".into(),
+            "production-closed" => "Production workspace closed.".into(),
+            "production-bought" => {
+                "Purchase paid; item completes during the next production phase.".into()
+            }
+            s if s.starts_with("improvement-sold ") => {
+                "Improvement sold; city totals refreshed.".into()
+            }
             "research-set" => "Research selected".into(),
             "ended" => "Your turn ended; opponents are playing".into(),
             "skipped" => "Unit skipped for this turn".into(),

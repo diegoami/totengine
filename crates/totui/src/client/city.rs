@@ -10,6 +10,12 @@ fn spot(k: usize) -> (f64, f64) {
 }
 
 impl Client {
+    pub(super) fn close_city_production(&mut self) -> Result<(), String> {
+        if let Some(city) = self.view().and_then(|v| v.production_context_city) {
+            self.order(Command::CloseProduction { city })?;
+        }
+        Ok(())
+    }
     pub(super) fn city_click(&mut self, x: f64, y: f64) -> Result<(), String> {
         let nearest = (0..21).find(|&k| {
             let (cx, cy) = spot(k);
@@ -87,11 +93,20 @@ impl Client {
         if let Some(city) = self.city {
             add(
                 20.,
-                480.,
+                510.,
                 250.,
                 36.,
                 "Choose production",
                 Action::Production(city),
+            );
+            add(20., 556., 250., 36., "Buy production", Action::Buy(city));
+            add(
+                20.,
+                602.,
+                250.,
+                36.,
+                "Improvements / sell",
+                Action::Improvements(city),
             );
             add(
                 320.,
@@ -221,13 +236,20 @@ impl Client {
                 "#ffffff",
             ));
         }
-        draws.push(text(
-            22.,
-            444.,
-            &format!("Stored shields: {}", c.shield_box.unwrap_or(0)),
-            16,
-            "#eee8d4",
-        ));
+        if let Some(p) = v.city_production.iter().find(|p| p.index == city.slot) {
+            let shields = p.required.map_or_else(
+                || format!("Shields: {}", p.stored),
+                |cost| format!("Shields: {} / {cost}", p.stored),
+            );
+            draws.push(text(22., 444., &shields, 16, "#eee8d4"));
+            let estimate = match (p.remaining, p.turns) {
+                (Some(0), _) => "Funded — next production phase".into(),
+                (Some(n), Some(turns)) => format!("Remaining: {n} (~{turns} turns)"),
+                (Some(n), None) => format!("Remaining: {n}; no current output"),
+                _ => "No finite shield target".into(),
+            };
+            draws.push(text(22., 472., &estimate, 14, "#eee8d4"));
+        }
         draws.push(text(
             305.,
             112.,
@@ -370,11 +392,11 @@ impl Client {
             16,
             "#fff0b5",
         ));
-        draws.push(text(22., 538., "Remove a worker to", 15, "#eee8d4"));
-        draws.push(text(22., 562., "create an entertainer.", 15, "#eee8d4"));
-        draws.push(text(22., 602., "Other roles need size 5.", 15, "#eee8d4"));
-        draws.push(text(22., 646., "Empty tile, no spare:", 15, "#eee8d4"));
-        draws.push(text(22., 670., "automatic reassignment.", 15, "#eee8d4"));
+        draws.push(text(744., 490., "Remove a worker to", 15, "#eee8d4"));
+        draws.push(text(744., 514., "create an entertainer.", 15, "#eee8d4"));
+        draws.push(text(744., 554., "Other roles need size 5.", 15, "#eee8d4"));
+        draws.push(text(744., 598., "Empty tile, no spare:", 15, "#eee8d4"));
+        draws.push(text(744., 622., "automatic reassignment.", 15, "#eee8d4"));
         if v.decision.is_some() {
             draws.push(text(744., 458., "Research/choice required.", 16, "#ffba8a"));
         }

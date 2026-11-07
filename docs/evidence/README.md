@@ -3368,8 +3368,8 @@ contract; original new-game initialization parity is not claimed.
 
 [generated-campaign-v1.json](generated-campaign-v1.json) records Rules hashes,
 setup and validation context. [The full authored-rules checkpoint golden](generated-campaign-v1.ctc)
-is regenerated for engine v0.11.0; only the exact-version header changes from
-the v0.10 fixture, with metadata hash/version refreshed. It still contains every
+is regenerated for engine v0.14.0; only the exact-version header changes from
+the v0.13 fixture, with metadata hash/version refreshed. It still contains every
 order and round fingerprint for 100 rounds of AI v1, including
 the final fingerprint `b22e4340b6ab8bf6`. It reaches 20 cities, 27 population,
 28 units and 35 acquired advances. [The authored trajectory](generated-authored-campaign.tsv)
@@ -3899,3 +3899,45 @@ the unchanged v0.13 release and passes with focus-event epochs, followed by the
 ten-round/pending-choice continuation route. It controls presentation HTTP and
 window events only, not game state; physical OS focus transitions are outside
 this synthetic-event regression. Released v0.13 evidence/tag stays unchanged.
+
+## City production arithmetic and confirmed transactions (v0.14 work)
+
+`city-production-v1.json` / `city-production-vectors.txt` retain 4,091 comparisons
+against unpatched `civ2.bak`: 1,800 hurry prices, 1,024 shield-retention contexts,
+42 sale values, 344 confirmed purchase ledger/shield writes, 102 confirmed sale
+refund/building/flag writes, 125 treasury/disorder admissions and six standard
+already-sold gates, plus 648 accepted transitions across 162 prepared switching
+sequences. Purchases also compare rebasing the captured shield budget. The tool executes the original clamp, category capture and
+packed-building helpers; current-city index and name formatting are explicit
+UI substitutions. Confirmed fragments stop before redraw/refresh/notifications.
+Engine regression checks actual WorldState buy/sale methods, including effects
+on treasury, shield boxes and building masks, plus atomic stale/ownership/funds
+rejections. Human/controller tests cover recorded-play funding, purchase before
+creation, completion next phase, sale, cancel and checkpoint continuation.
+
+This is not complete native city-window/dialog parity. The original retains an
+initial category/shield budget independently of the current production item; its
+engine owns and records this budget, captures on the first accepted switch,
+rebases on buying, clears on close/navigation/turn and restores through replay.
+Controller tests cover draft cancellation and return-to-original restoration.
+Auxiliary native queued-unit fields and complete window lifecycle parity are
+outside these isolated comparisons; actual adapter checks remain a release gate.
+Scope: [v0.14 city production](../ui/city-production-milestone.md). Reproduce:
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn \
+  python3 tools/city_production_check.py --gold /tmp/city-production.json \
+  --vectors /tmp/city-production-vectors.txt
+cargo test -p engine --lib city_production::tests
+```
+
+`client-city-production-v1.json` retains source hashes, authored UI inputs and
+before/after checkpoint hashes for nine generated production scenarios. Actual
+Chromium, Linux SDL/XTest and Windows SDL/SendInput each match all nine expected
+full checkpoint results (27 comparisons). The fixture is generated through
+recorded play, including treasury funding and natural building completion;
+original resources, checkpoints and screenshots stay private. It covers poor
+purchase rejection, buy/sale cancel/accept, category-switch draft cancellation,
+accepted penalty, restoration after active-context reload and city close. New
+owner acceptance remains pending. Reproduction/current gates:
+[v0.14 readiness](../v0.14.0-readiness.md).

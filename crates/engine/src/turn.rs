@@ -39,6 +39,7 @@ pub struct TurnSummary {
 impl WorldState {
     /// Run one full turn; see the module docs for what it covers.
     pub fn run_turn(&mut self, rules: &Rules, events: Option<&mut EventEngine>) -> TurnSummary {
+        self.production_context = None;
         let mut sum = TurnSummary::default();
         let mut food_routes = crate::city_phase::FoodRouteState::default();
         // 0x470aa5..0x470b69: descending city slots within each civ/map.

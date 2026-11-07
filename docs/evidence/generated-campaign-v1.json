@@ -14,10 +14,10 @@
   },
   "golden": {
     "file": "generated-campaign-v1.ctc",
-    "sha256": "8299715058c2834e7cbcc416b692b245553f4de4fe6940e0838346802061a407",
-    "engine_version": "0.13.0",
+    "sha256": "90a585edff036fcddee550e24994fdcca85b75a4a917dcf185445cf9f0e43e9f",
+    "engine_version": "0.14.0",
     "kind": "engine replay checkpoint, not native SAV",
-    "refresh": "v0.13 version-header refresh reproduced the authored 100-round campaign; transcript, fingerprints and results unchanged from v0.12. Historical v0.9 validation remains listed below; current release checks are recorded separately."
+    "refresh": "v0.14 exact-version header refresh reproduced the authored 100-round AI-v1 campaign. All transcript, world fingerprint and result lines are byte-identical to v0.13. Quoted human production contexts do not enter this autonomous policy trajectory; historical v0.9 validation remains below."
   },
   "authored_100_round_result": {
     "round": "100",

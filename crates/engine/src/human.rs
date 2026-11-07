@@ -37,17 +37,59 @@ pub enum Decision {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
-    Worker { city: Entity, tile: u8 },
-    Specialist { city: Entity, slot: u8 },
-    Move { unit: Entity, to: (u16, u16) },
-    Occupy { unit: Entity, city: Entity },
-    Production { city: Entity, item: i8 },
-    BeginFound { unit: Entity },
-    NameCity { decision: u64, name: CityName },
-    CancelFound { decision: u64 },
-    Research { decision: u64, advance: usize },
+    Worker {
+        city: Entity,
+        tile: u8,
+    },
+    Specialist {
+        city: Entity,
+        slot: u8,
+    },
+    Move {
+        unit: Entity,
+        to: (u16, u16),
+    },
+    Occupy {
+        unit: Entity,
+        city: Entity,
+    },
+    Production {
+        city: Entity,
+        item: i8,
+    },
+    QuotedProduction {
+        city: Entity,
+        quote: crate::city_production::ProductionChangeQuote,
+    },
+    CloseProduction {
+        city: Entity,
+    },
+    Buy {
+        city: Entity,
+        quote: crate::city_production::HurryQuote,
+    },
+    Sell {
+        city: Entity,
+        quote: crate::city_production::SaleQuote,
+    },
+    BeginFound {
+        unit: Entity,
+    },
+    NameCity {
+        decision: u64,
+        name: CityName,
+    },
+    CancelFound {
+        decision: u64,
+    },
+    Research {
+        decision: u64,
+        advance: usize,
+    },
     EndTurn,
-    Skip { unit: Entity },
+    Skip {
+        unit: Entity,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -93,6 +135,8 @@ pub struct HumanView {
     /// (visible unit slot, current HP, maximum HP), filtered before transport.
     pub unit_health: Vec<(usize, u32, u32)>,
     pub city_citizens: Vec<crate::citizens::CityCitizens>,
+    pub city_production: Vec<crate::city_production::CityProductionView>,
+    pub production_context_city: Option<Entity>,
 }
 
 /// Owns the game and opponent policies. Adapters cannot bypass recording or
@@ -201,6 +245,28 @@ impl HumanSession {
         view
     }
 
+    pub fn preview_sale(
+        &self,
+        city: Entity,
+        improvement: u8,
+    ) -> Result<crate::city_production::SalePreview, &'static str> {
+        self.city(city, true)?;
+        self.game
+            .world
+            .preview_sale(&self.game.rules, self.human, city.slot, improvement)
+    }
+
+    pub fn preview_production(
+        &self,
+        city: Entity,
+        item: i8,
+    ) -> Result<crate::city_production::ProductionChangeQuote, &'static str> {
+        self.city(city, true)?;
+        self.game
+            .world
+            .quote_production_change(&self.game.rules, self.human, city.slot, item)
+    }
+
     fn build_view(&self) -> HumanView {
         let mut observation =
             self.game
@@ -216,6 +282,21 @@ impl HumanSession {
         );
         observation.cities.sort_by_key(|c| c.index);
         HumanView {
+            production_context_city: self
+                .game
+                .world
+                .production_context_city(self.human)
+                .map(|(slot, id)| Entity { slot, id }),
+            city_production: observation
+                .cities
+                .iter()
+                .filter(|c| c.owner == self.human)
+                .filter_map(|c| {
+                    self.game
+                        .world
+                        .city_production_view(&self.game.rules, self.human, c.index)
+                })
+                .collect(),
             city_citizens: observation
                 .cities
                 .iter()
@@ -462,6 +543,13 @@ impl HumanSession {
         }
         let mut new_decision = None;
         let order = match (&self.decision, request.command) {
+            (_, Command::CloseProduction { city }) => {
+                self.city(city, true)?;
+                Some(Order::CloseProduction {
+                    city: city.slot,
+                    city_id: city.id,
+                })
+            }
             (
                 Some(Decision::Research { id, available }),
                 Command::Research { decision, advance },
@@ -528,9 +616,36 @@ impl HumanSession {
             }
             (None, Command::Production { city, item }) => {
                 self.city(city, true)?;
-                Some(Order::SetProduction {
-                    city: city.slot,
+                let quote = self.game.world.quote_production_change(
+                    &self.game.rules,
+                    self.human,
+                    city.slot,
                     item,
+                )?;
+                Some(Order::QuotedProduction {
+                    city: city.slot,
+                    quote,
+                })
+            }
+            (None, Command::QuotedProduction { city, quote }) => {
+                self.city(city, true)?;
+                Some(Order::QuotedProduction {
+                    city: city.slot,
+                    quote,
+                })
+            }
+            (None, Command::Buy { city, quote }) => {
+                self.city(city, true)?;
+                Some(Order::BuyProduction {
+                    city: city.slot,
+                    quote,
+                })
+            }
+            (None, Command::Sell { city, quote }) => {
+                self.city(city, true)?;
+                Some(Order::SellImprovement {
+                    city: city.slot,
+                    quote,
                 })
             }
             (None, Command::BeginFound { unit }) => {
@@ -551,10 +666,12 @@ impl HumanSession {
         let result = order
             .map(|o| self.game.submit_checked(self.human, o))
             .transpose()?;
-        self.decision = new_decision.map(|unit| {
-            let id = self.allocate_decision();
-            Decision::Founding { id, unit }
-        });
+        if !matches!(request.command, Command::CloseProduction { .. }) {
+            self.decision = new_decision.map(|unit| {
+                let id = self.allocate_decision();
+                Decision::Founding { id, unit }
+            });
+        }
         if let Some(result) = &result {
             self.last_human = Some(result.clone());
         }

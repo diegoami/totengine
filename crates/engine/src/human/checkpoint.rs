@@ -145,6 +145,19 @@ impl Command {
             Self::Production { city, item } => {
                 format!("production {} {} {item}", city.slot, city.id)
             }
+            Self::QuotedProduction { city, quote } => format!(
+                "production-quoted {} {} {}",
+                city.slot,
+                city.id,
+                quote.encode()
+            ),
+            Self::CloseProduction { city } => format!("production-close {} {}", city.slot, city.id),
+            Self::Buy { city, quote } => {
+                format!("buy {} {} {}", city.slot, city.id, quote.encode())
+            }
+            Self::Sell { city, quote } => {
+                format!("sell {} {} {}", city.slot, city.id, quote.encode())
+            }
             Self::BeginFound { unit } => format!("found {} {}", unit.slot, unit.id),
             Self::NameCity { decision, name } => {
                 let hex = name
@@ -207,6 +220,33 @@ impl Command {
                     id: id.parse().ok()?,
                 },
                 item: item.parse().ok()?,
+            }),
+            ["production-quoted", slot, id, terms @ ..] => Some(Self::QuotedProduction {
+                city: Entity {
+                    slot: slot.parse().ok()?,
+                    id: id.parse().ok()?,
+                },
+                quote: crate::city_production::ProductionChangeQuote::decode(terms)?,
+            }),
+            ["production-close", slot, id] => Some(Self::CloseProduction {
+                city: Entity {
+                    slot: slot.parse().ok()?,
+                    id: id.parse().ok()?,
+                },
+            }),
+            ["buy", slot, id, terms @ ..] => Some(Self::Buy {
+                city: Entity {
+                    slot: slot.parse().ok()?,
+                    id: id.parse().ok()?,
+                },
+                quote: crate::city_production::HurryQuote::decode(terms)?,
+            }),
+            ["sell", slot, id, terms @ ..] => Some(Self::Sell {
+                city: Entity {
+                    slot: slot.parse().ok()?,
+                    id: id.parse().ok()?,
+                },
+                quote: crate::city_production::SaleQuote::decode(terms)?,
             }),
             ["found", slot, id] => Some(Self::BeginFound {
                 unit: Entity {

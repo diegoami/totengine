@@ -347,6 +347,7 @@ mod tests {
         }
         let improvements = road.iter().map(|&r| if r { 0x10 } else { 0 }).collect();
         WorldState {
+            production_context: None,
             power_order: [0; 8],
             game_mode: 0,
             ai_state: tot_kit::SavedAiState::default(),

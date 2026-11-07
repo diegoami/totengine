@@ -399,6 +399,7 @@ try {
                 } else {throw 'unsupported panel input'}
                 $draws=(Read-Scene).draws
                 if(@($draws | Where-Object {$_.kind -eq 'text' -and $_.x -eq 744 -and $_.y -eq 193 -and $_.text -eq $step.panel}).Count -ne 1){throw ('Panel transition differs '+$route.name)}
+                if($step.text -and @($draws | Where-Object {$_.text -eq $step.text}).Count -ne 1){throw ('Unit roster count differs '+$route.name)}
                 if($step.modal){
                     if(@($draws | Where-Object {$_.text -eq $step.modal}).Count -ne 1){throw 'Sale confirmation missing'}
                 } else {

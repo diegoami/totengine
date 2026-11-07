@@ -161,7 +161,7 @@ impl Client {
             draws.push(text(
                 if info { 744. } else { 778. },
                 y,
-                &format!("{} #{}", short(&name, 19), u.id),
+                &format!("{} #{}", short(&name, 19), u.slot),
                 14,
                 "#eee8d4",
             ));

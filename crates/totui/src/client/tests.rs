@@ -1710,6 +1710,18 @@ fn city_panels_inspect_without_orders_and_retain_panel_through_navigation_and_re
             assert_eq!(before, c.checkpoint().unwrap());
         }
     }
+    button(&mut c, "Support");
+    let v = c.view().unwrap();
+    let u = &v.city_info[0].supported[0];
+    let name =
+        c.loaded.as_ref().unwrap().resources.rules.unit_names()[u.type_id as usize].to_string();
+    assert!(
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d,Draw::Text{text,..} if text==&format!("{name} #{}",u.slot))),
+        "panel identity must use the same unit number as the map"
+    );
     button(&mut c, "Choose production");
     let at = c
         .current_choices()
@@ -1789,7 +1801,10 @@ fn generated_city_panels_fixture() {
     fn step(c: &Client, inputs: &mut Vec<serde_json::Value>, input: Input) {
         inputs.push(serde_json::json!({"input":input,"panel":c.city_panel.label(),
             "page":c.city_panel_page.min(c.city_panel_pages()-1)+1,"pages":c.city_panel_pages(),
-            "modal":if matches!(c.modal,Some(Modal::Sale{..})){Some("Confirm improvement sale")}else{None}}));
+            "modal":if matches!(c.modal,Some(Modal::Sale{..})){Some("Confirm improvement sale")}else{None},
+            "text":c.view().and_then(|v|c.city.and_then(|city|v.city_info.into_iter().find(|d|d.index==city.slot))).and_then(|d|match c.city_panel {
+                CityPanel::Info=>Some(format!("Own units present: {}",d.present.len())),
+                CityPanel::Support=>Some(format!("Supported units: {}",d.supported.len())),_=>None})}));
     }
     fn click(c: &mut Client, inputs: &mut Vec<serde_json::Value>, label: &str) {
         let b = c
@@ -1894,6 +1909,42 @@ fn generated_city_panels_fixture() {
         finish(&c, &out, &mut routes, name, actions);
     }
     load_city(&mut c, &base.join("encounter/after-capture.cth"));
+    // This generated fixture already has two own cities; the defeated size-one
+    // foreign city was razed. Move the surviving home-city warrior into the
+    // other own city through ordinary recorded keypad orders, with explicit
+    // reselection after exhaustion. Do not inject a visiting-unit state.
+    key(&mut c, "Escape");
+    for direction in ["4", "7"] {
+        if c.view()
+            .unwrap()
+            .observation
+            .units
+            .iter()
+            .find(|u| u.index == 0)
+            .unwrap()
+            .moves_left
+            == 0
+        {
+            end_round(&mut c);
+        }
+        for _ in 0..100 {
+            if c.active.is_some_and(|u| u.slot == 0) {
+                break;
+            }
+            key(&mut c, "w");
+        }
+        assert!(c.active.is_some_and(|u| u.slot == 0));
+        if !c.moving {
+            key(&mut c, "v");
+        }
+        key(&mut c, direction);
+        assert!(
+            c.modal.is_none(),
+            "normal own-city route must not need a combat choice"
+        );
+    }
+    button(&mut c, "Manage city");
+    button(&mut c, "Info");
     assert!(c.view().unwrap().cities.len() >= 2);
     mark(&c, &out, "navigation", "before");
     let unchanged = c.checkpoint().unwrap();
@@ -1903,6 +1954,29 @@ fn generated_city_panels_fixture() {
     press(&mut c, &mut actions, "PageDown");
     assert_ne!(original, c.city);
     assert_eq!(c.city_panel, CityPanel::Support);
+    let v = c.view().unwrap();
+    let home = v
+        .city_info
+        .iter()
+        .find(|d| d.index == original.unwrap().slot)
+        .unwrap();
+    assert!(
+        home.supported
+            .iter()
+            .any(|u| !home.present.iter().any(|p| p.id == u.id)),
+        "navigation fixture must include a supported-away unit"
+    );
+    let visited = v
+        .city_info
+        .iter()
+        .find(|d| d.index == c.city.unwrap().slot)
+        .unwrap();
+    assert!(
+        visited.present.iter().any(|u| u.shields.is_none()),
+        "visited city must contain a unit supported elsewhere or without a home"
+    );
+    click(&mut c, &mut actions, "Info");
+    click(&mut c, &mut actions, "Support");
     press(&mut c, &mut actions, "PageUp");
     assert_eq!(original, c.city);
     assert_eq!(unchanged, c.checkpoint().unwrap());

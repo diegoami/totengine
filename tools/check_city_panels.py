@@ -24,6 +24,8 @@ def run_panels(scene, key, click_at, click_button, save_dialog, load, work, fixt
                 raise RuntimeError('unsupported panel input')
             current = scene()['draws']
             assert any(d.get('kind') == 'text' and d['x'] == 744 and d['y'] == 193 and d['text'] == step['panel'] for d in current), route['name']
+            if step.get('text'):
+                assert any(d.get('text') == step['text'] for d in current), route['name']
             if step['modal']:
                 assert any(d.get('text') == step['modal'] for d in current), route['name']
             else:

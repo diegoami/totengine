@@ -309,9 +309,16 @@ Improvements/Happy tabs are implemented; Info keeps the accepted tile inspector
 and adds present units, commodity workflows stay later. Happy omits unchanged
 rows, tabs do not close production context, city navigation clears it as before.
 Tile arrow/Space shortcuts are active only in Info; no implicit unit-list orders.
-All three adapters pass the initial eight panel checkpoint routes. Stronger
-per-step panel/modal/pagination checks and combined old routes are in progress.
-Both preview packages/new owner acceptance and independent review
+All three adapters pass eight panel checkpoints with per-step panel/modal/page/
+roster assertions plus ninety prior-route checkpoints (114 total). The visiting
+unit case is created by recorded movement between existing own cities. Both
+new previews are ready; owner browser is 8799 and Windows launcher is under
+review-tmp/totengine-owner-v015, with separate practice slots. New acceptance
+was requested and is pending. All owner v0.14 previews remain preserved.
+A final caption-only correction aligns panel unit numbers with map slot numbers;
+its fail-before/pass-after controller test is recorded in client-city-panels-v1.json.
+The running owner preview retains initial captions; preserve its games.
+New owner acceptance and independent review
 remain required; v0.14 acceptance does not accept this slice. Cargo now 0.15.0;
 the exact-version campaign golden was rederived and differs from v0.14 only
 in the version header. Do not overwrite

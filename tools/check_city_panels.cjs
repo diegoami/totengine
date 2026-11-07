@@ -14,6 +14,7 @@ exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out})=>{
    else throw Error('unsupported panel input');
    const current=await state();
    if(!current.draws.some(d=>d.kind==='text'&&d.x===744&&d.y===193&&d.text===step.panel))throw Error('panel transition differs '+route.name);
+   if(step.text&&!current.draws.some(d=>d.text===step.text))throw Error('unit roster count differs '+route.name);
    if(step.modal&&!current.draws.some(d=>d.text===step.modal))throw Error('sale confirmation missing '+route.name);
    if(!step.modal&&current.draws.some(d=>d.text==='Confirm improvement sale'))throw Error('sale confirmation did not close');
    if(!step.modal&&step.pages>1&&!current.draws.some(d=>d.text===`List ${step.page} / ${step.pages}`))throw Error('list pagination differs '+route.name);

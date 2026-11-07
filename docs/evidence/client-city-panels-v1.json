@@ -7,15 +7,17 @@
     "crates/engine/src/happiness.rs": "06ded6fd5277f2d9ad2d4a3f9f3d882244e835babb79276af19b099747f4ee48",
     "crates/engine/src/human.rs": "7db2eddc362419f9fd45aed469ba2e838497daf9e347e72373e1ae55af3159ca",
     "crates/totui/src/client/city.rs": "d20538c2b1a41fc9a56f0847979bfa1a7f7146df2b4b701487cfa414f4b9e61b",
-    "crates/totui/src/client/city_panels.rs": "90448ad88f25abbb2fdf57e2e04007a649452ec505142ab4867b5b1b5e4476d5",
+    "crates/totui/src/client/city_panels.rs": "db48b9096a67162f748684a95eb12026c9a2bb5956ce2967448cf6854660f547",
     "crates/totui/src/client/mod.rs": "eb0e03ce24f096149e9e12e0750808701c592c61b3df0dfe0fe6f46941c79482",
-    "crates/totui/src/client/tests.rs": "faf4795ecdc1548273f7c0ba62a1002589d68c17154e0d69cd16a1f360347918",
+    "crates/totui/src/client/tests.rs": "969bbc58b29a2e22373ece0a7afb7e19612b17fc9b735fdbb0f8d7a78e56d64a",
     "tools/happiness_stages_check.py": "a8d2479521721894baccbac7910fc9455505bc633bd03cc7065163899ab68492",
-    "tools/check_city_panels.cjs": "72ccb07d590ed9bda39de5ff1c6c38cbd8cfdda8b89f64590f5c7265f4ebdd82",
-    "tools/check_city_panels.py": "5a65f2990ca70b480f0d25e95e212b6ba0e5172c899251d64cc332249c2e8614",
+    "tools/check_city_panels.cjs": "6c49aa685ccd9160d6fd7179eebae50687fde2556ec726b22588df27f0891bb5",
+    "tools/check_city_panels.py": "c4d70b667f2707c531c624ec2783d3f776e2dad5b5f5b74f32c12e21b9c6e097",
     "tools/check_client_browser.cjs": "07e9ae1b45fe2fb3b6574fe43b611d4969ef4a0fa58594ff526de9db7a15ed90",
     "tools/check_client_linux.py": "2cd37c6abb69f2df5d58b04c62113806b768b196da82a3b1e0fa1eb30e54af76",
-    "tools/check_client_windows.ps1": "04a1522af0f3bb0a88f5e85467174f6428e8c62f2eeefe906a6a927c0a4cee21"
+    "tools/check_client_windows.ps1": "78dcb4f6e3da3b9179472b69fcd11b599833d94dcb421840bd52e28d9575ab28",
+    "Cargo.toml": "6dbfcb51d58cb1486400f78214cf1b268cd9b7131b7341b87b5de9e3a4ad917a",
+    "Cargo.lock": "82049dccb8b71c043666ca2e5407cb72f9b6d76ce6b9bea185f5b04845586043"
   },
   "native_stages": "happiness-stages-v1.json",
   "reference_panels": "city-panels-study-v1.json",
@@ -32,7 +34,8 @@
           "modal": null,
           "page": 1,
           "pages": 2,
-          "panel": "Support"
+          "panel": "Support",
+          "text": "Supported units: 9"
         },
         {
           "input": {
@@ -43,7 +46,8 @@
           "modal": null,
           "page": 2,
           "pages": 2,
-          "panel": "Support"
+          "panel": "Support",
+          "text": "Supported units: 9"
         },
         {
           "input": {
@@ -54,7 +58,8 @@
           "modal": null,
           "page": 1,
           "pages": 2,
-          "panel": "Support"
+          "panel": "Support",
+          "text": "Supported units: 9"
         },
         {
           "input": {
@@ -65,7 +70,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Improvements"
+          "panel": "Improvements",
+          "text": null
         },
         {
           "input": {
@@ -76,7 +82,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Happy"
+          "panel": "Happy",
+          "text": null
         }
       ],
       "name": "overview",
@@ -97,7 +104,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Happy"
+          "panel": "Happy",
+          "text": null
         },
         {
           "input": {
@@ -108,7 +116,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Happy"
+          "panel": "Happy",
+          "text": null
         }
       ],
       "name": "entertainer",
@@ -129,7 +138,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Happy"
+          "panel": "Happy",
+          "text": null
         },
         {
           "input": {
@@ -140,7 +150,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Happy"
+          "panel": "Happy",
+          "text": null
         },
         {
           "input": {
@@ -151,7 +162,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Happy"
+          "panel": "Happy",
+          "text": null
         },
         {
           "input": {
@@ -162,7 +174,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Happy"
+          "panel": "Happy",
+          "text": null
         }
       ],
       "name": "specialists",
@@ -183,7 +196,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Improvements"
+          "panel": "Improvements",
+          "text": null
         },
         {
           "input": {
@@ -194,7 +208,8 @@
           "modal": "Confirm improvement sale",
           "page": 1,
           "pages": 1,
-          "panel": "Improvements"
+          "panel": "Improvements",
+          "text": null
         },
         {
           "input": {
@@ -204,7 +219,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Improvements"
+          "panel": "Improvements",
+          "text": null
         }
       ],
       "name": "salecancel",
@@ -225,7 +241,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Improvements"
+          "panel": "Improvements",
+          "text": null
         },
         {
           "input": {
@@ -236,7 +253,8 @@
           "modal": "Confirm improvement sale",
           "page": 1,
           "pages": 1,
-          "panel": "Improvements"
+          "panel": "Improvements",
+          "text": null
         },
         {
           "input": {
@@ -246,7 +264,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Improvements"
+          "panel": "Improvements",
+          "text": null
         }
       ],
       "name": "sale",
@@ -267,7 +286,8 @@
           "modal": null,
           "page": 1,
           "pages": 2,
-          "panel": "Support"
+          "panel": "Support",
+          "text": "Supported units: 6"
         },
         {
           "input": {
@@ -277,7 +297,32 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Support"
+          "panel": "Support",
+          "text": "Supported units: 4"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 752.0,
+            "y": 118.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Info",
+          "text": "Own units present: 3"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 118.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Support",
+          "text": "Supported units: 4"
         },
         {
           "input": {
@@ -287,14 +332,15 @@
           "modal": null,
           "page": 1,
           "pages": 2,
-          "panel": "Support"
+          "panel": "Support",
+          "text": "Supported units: 6"
         }
       ],
       "name": "navigation",
       "open_city": true,
       "panel": "Support",
-      "before_sha256": "c8ced00ef35759f6d0d8dc35eacb9756ddf715039533c3c1fe5e3fe8fb1beb70",
-      "after_sha256": "c8ced00ef35759f6d0d8dc35eacb9756ddf715039533c3c1fe5e3fe8fb1beb70"
+      "before_sha256": "6fdd97756e4c79ce4748574555f1b6e69d3cbd4cdf42e3585979f967a303d8d5",
+      "after_sha256": "6fdd97756e4c79ce4748574555f1b6e69d3cbd4cdf42e3585979f967a303d8d5"
     },
     {
       "heading": "Athena \u2014 population 2",
@@ -308,7 +354,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Support"
+          "panel": "Support",
+          "text": "Supported units: 0"
         },
         {
           "input": {
@@ -319,7 +366,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Improvements"
+          "panel": "Improvements",
+          "text": null
         },
         {
           "input": {
@@ -330,7 +378,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Happy"
+          "panel": "Happy",
+          "text": null
         }
       ],
       "name": "budgettabs",
@@ -351,7 +400,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Support"
+          "panel": "Support",
+          "text": "Supported units: 0"
         },
         {
           "input": {
@@ -362,7 +412,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Improvements"
+          "panel": "Improvements",
+          "text": null
         },
         {
           "input": {
@@ -373,7 +424,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Happy"
+          "panel": "Happy",
+          "text": null
         },
         {
           "input": {
@@ -383,7 +435,8 @@
           "modal": null,
           "page": 1,
           "pages": 1,
-          "panel": "Happy"
+          "panel": "Happy",
+          "text": null
         }
       ],
       "name": "budgetnav",
@@ -397,19 +450,97 @@
     "chromium": {
       "result": "PASS",
       "checkpoint_comparisons": 8,
-      "visible_city_panel_assertions": true
+      "per_step_city_panel_page_modal_roster_assertions": true,
+      "step_transitions": 29
     },
     "linux_sdl": {
       "result": "PASS",
       "checkpoint_comparisons": 8,
-      "visible_city_panel_assertions": true
+      "per_step_city_panel_page_modal_roster_assertions": true,
+      "step_transitions": 29
     },
     "windows_sdl": {
-      "result": "PASS: initial route checkpoints and final city/panel assertions",
-      "checkpoint_comparisons": 8
+      "result": "PASS",
+      "checkpoint_comparisons": 8,
+      "per_step_city_panel_page_modal_roster_assertions": true,
+      "step_transitions": 29
     }
   },
-  "windows_validation": "Initial actual Windows route passes all eight checkpoints. Strengthened per-step panel/modal/page assertions and combined prior routes are now running on all three adapters.",
   "owner_acceptance": "pending; v0.14 production acceptance is not reused",
-  "stepwise_validation": "in progress; route metadata now asserts every panel, modal and list page transition"
+  "stepwise_validation": "PASS on all three adapters. Every recorded panel/page/modal/roster transition is checked before the final visible city/panel and full checkpoint comparison.",
+  "visiting_unit_setup": "The generated encounter checkpoint already has two own cities; its size-one foreign target was razed. Two recorded keypad moves, with a normal round/explicit reselection when exhausted, put home-city warrior slot 0 into the other own city before the navigation snapshot. Assertions require a supported-away unit and a present unit supported elsewhere; no world-state injection.",
+  "previous_client_routes": {
+    "scope": "Current-version regenerated production/citizen/selection/navigation/combat/ten-round/pending-choice routes, actual input on all three adapters. Historical release evidence remains unchanged.",
+    "checkpoint_sha256": {
+      "cityentertainer": "36c7ce01822353fa0be19c8e7c82e561470c87cd9a9b8c5974dcf777f42d341c",
+      "citytax": "f3277d22959ed0d8f27a49a26fa5865ecc75e893bae05aa13ab3cdcc52f853a3",
+      "cityscience": "017f3d40da71bf5d86f799c4ea3889cfe704d0b27407b89a018b9da17789425a",
+      "citycycle": "d172eabd31d73351a128e1ddb5df4aafed1a19c377b4457170834edb760dcfe7",
+      "cityresume": "408efeaa8f88afa33c394e8f44f233c41fd825d9e01efeac95a83b8c4317b42f",
+      "selectioninert": "c50eed71e9958cf005b1faa2d24fc72013afa9549dc8b230685ed006b95e38f9",
+      "selectionresized": "c50eed71e9958cf005b1faa2d24fc72013afa9549dc8b230685ed006b95e38f9",
+      "selectionstackinert": "938aa37148aa390e98433245aadf723e57ca43c60112f0681100c182dbfa832d",
+      "selectionmove": "44b0b5b1316b5ee028af58a8d49301a6c9721c5d934903db51bfb2123218e42a",
+      "selectionskip": "9ef03f4ec0ba1364716cf720e9d06eb85ea3d380a84f04c05e136fa8300e53a8",
+      "selectionturn": "cee53b8671230352f653dacb0418fd8ddaa100add4ce406d506e20c570bea776",
+      "battleafter": "8523b1d1a2e66e13623b99c73378071e76502fae22c8b4b33af0a1711e7fcab7",
+      "captureafter": "c8ced00ef35759f6d0d8dc35eacb9756ddf715039533c3c1fe5e3fe8fb1beb70",
+      "citynavigation": "c8ced00ef35759f6d0d8dc35eacb9756ddf715039533c3c1fe5e3fe8fb1beb70",
+      "research": "280f20cf8453c5227d80a18c2e22b747964f23d0cb6aa2a9a74e0e793d332625",
+      "founding": "bc750d9cb199036d5d7012310dd019cc34a894894f38fc4e02cdf99cc9b02a07",
+      "normal": "b53a7779a5e728c267b5ffc110054f1b9a9b5c72ea0d13b1e3473c072b3cb6de",
+      "tenrounds": "5aa303e51e78670023485dfa8cf9a772c9339409340bbeb3126ea3ed18b473bf",
+      "researchnext": "bc750d9cb199036d5d7012310dd019cc34a894894f38fc4e02cdf99cc9b02a07",
+      "foundingnext": "b53a7779a5e728c267b5ffc110054f1b9a9b5c72ea0d13b1e3473c072b3cb6de",
+      "normalnext": "fd26beb444313722f5dea810160e9f5053aaeaf573ae37dbbaab17387c3d41a2",
+      "productionpoorafter": "f7fd17fd614ec3b02f75496410015b52d41ed7708ea7ee68af6637b4d0255acf",
+      "productionbuycancelafter": "32f4edba3da67d2ed3b453060116b1dcb9d6f93f56a7eb6289bf4d80189d1773",
+      "productionbuyafter": "3629df436bb9effac101f6eb0c05d140216bc68f696fc8cce751b4c554186f84",
+      "productionsalecancelafter": "a3636b40bef3b2fd39ab29d598f14cc9ac43fcc2e4b18ca065e91e70e985ce91",
+      "productionsaleafter": "7cbaceae7e2f332423a2199e1aacae4e307a29bf5c1f4a1cff100363ece7aa6a",
+      "productionswitchcancelafter": "00adc6680388283b8fc6e463df0c3e97174f059c7ca1d73c0672d8cdd4654a41",
+      "productionswitchafter": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+      "productionrestoreafter": "285e8eefb87f85f8a6130888cdc54085a043cf651097e1075039636bfdf34c2b",
+      "productioncloseafter": "700328fb1701ac522b2afa9a142f942a1260f4884ff92a398cb7738104e86931"
+    },
+    "platforms": {
+      "chromium": {
+        "result": "PASS",
+        "checkpoint_comparisons": 30
+      },
+      "linux_sdl": {
+        "result": "PASS",
+        "checkpoint_comparisons": 30
+      },
+      "windows_sdl": {
+        "result": "PASS",
+        "checkpoint_comparisons": 30
+      }
+    }
+  },
+  "owner_preview_packages": {
+    "linux": {
+      "verified_manifest_files": 71,
+      "manifest_sha256": "bda3732f8760d3cc738e127f9dbbb6091b1904ebbc8769ece9ab6795a0c23048",
+      "binaries_sha256": {
+        "totplay": "2d9db5b9a579f043991c6907b52050f4ecf3a421d5ba8b6e040f1e74905eea37",
+        "totdesktop": "a516a473ee3b3d7ac57d08b34de6f3be05bb9e6bb833a95926636816144bfd3b"
+      },
+      "scope": "New isolated owner preview with no original assets/fonts. Initial PR160 runtime; later changes strengthen fixture/validation and correct panel unit-number captions to match the map. Game commands and controls are unchanged. Preserve running owner games."
+    },
+    "windows": {
+      "verified_manifest_files": 73,
+      "manifest_sha256": "d92581eada75e8bf36157bcf4a9de3e807ba61cb2f738fe618b35605c0bb6ee0",
+      "binaries_sha256": {
+        "totplay.exe": "142a3e0644c3936d00def6c540729d1e97541c74ded78fd6c8a16a5e3fd57eec",
+        "totdesktop.exe": "a7b6974ccc485631c5847b2b0d96e77856f37dcc61d3b894497dc32f389fda9b"
+      },
+      "scope": "New isolated owner preview with no original assets/fonts. Initial PR160 runtime; later changes strengthen fixture/validation and correct panel unit-number captions to match the map. Game commands and controls are unchanged. Preserve running owner games."
+    }
+  },
+  "unit_label_correction": {
+    "change": "Panel unit numbers now use the same slot number shown on the map; stable entity IDs remain internal validation data.",
+    "regression": "New shared-controller assertion fails on the initial panel implementation and passes after the one-line rendering correction.",
+    "scope": "This caption-only correction followed the 114 actual-input checkpoint comparisons. It changes no orders/checkpoint data or controls. Preview packages below retain the initial captions; existing owner games are not overwritten."
+  }
 }

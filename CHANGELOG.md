@@ -5,23 +5,25 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
-### v0.13.0 preparation — city workers and specialists
+## [0.13.0] — city workers and specialists
 
 - Replace the rejected preview's selection handling with shared render/hit
   selection in both modes, stable stack choices, selected-unit sprite blinking
   and ready/exhausted/new-turn selection transitions. Different-unit actual mouse
   routes and sprite-body pixel checks now cover the missed owner interaction;
-  new owner acceptance remains required.
+  owner confirmed both clients and the new city route pass.
 - Add immediate worker/specialist commands and own-city radius/storage/detail
   views through the recorded human-session boundary (#135). Native packed edit
   branches match 1,548 original-x86 cases; wrong/stale/blocked input is inert.
+- Make current city production explicit and focus End turn for Enter after unit
+  exhaustion, preserving explicit button navigation and stale-input protection.
 - Add a shared city workspace to browser and native desktop: worked-radius
   inspection, citizen roles, food/finance/mood feedback, city navigation,
   production picker and persistent immediate edits (#136).
 - Pass real-input continuation checks in browser and native Windows/Linux,
   including a population-five fixture generated through 72 ordinary recorded
-  turns (#137). Owner
-  acceptance and independent milestone review remain pending.
+  turns (#137). Owner acceptance passed; independent milestone review remains
+  required before tagging.
 
 
 ## [0.12.0] — first playable human turn, browser and desktop

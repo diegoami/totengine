@@ -51,7 +51,7 @@ def run_selection(scene, key, click_at, save_dialog, load, work, fixture, pixel,
     expect(a);assert unit(b)['moves_left']==0;compare('selectionmove','after-move')
     pointer(b);expect(b,False);assert not unit(b)['blink']
     key('v');expect(a);key('space');assert has('End of turn')
-    compare('selectionskip','after-skip');key('Ctrl+n')
+    compare('selectionskip','after-skip');key('Return')
     wait(lambda s:s['phase']=='Human' and any(d.get('text','').startswith('Turn '+str(meta['turn']+1)+' ') for d in s['draws']))
     if has('Choose research explicitly'):key('Down');key('Return')
     assert any(d.get('kind')=='unit_sprite' and d['selected'] and d['blink'] and d['moves_left']>0 for d in scene()['draws'])

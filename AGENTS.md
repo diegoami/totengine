@@ -253,8 +253,8 @@ Manage city opens it, arrows/Space select/toggle tiles, PageUp/Down navigate, ro
 through explicit commands, Escape returns without undo. A generated population-
 five fixture reaches turn 72 through normal recorded play for tax/scientist checks.
 Keep working through the milestone; do not claim v0.12 owner play accepts these
-new controls. New owner acceptance and independent owner-launched review remain
-required. City buying/selling, switching penalties, deeper panels and other full-
+new controls. The owner confirmed both clients and the city route pass on 2026-11-07;
+independent owner-launched review remains required. City buying/selling, switching penalties, deeper panels and other full-
 client packages stay later; complete original-AI work remains gated.
 **Current v0.13 status:** the owner authorized continuation from the rejected
 preview's [replacement contract](docs/ui/selection-and-movement-study.md).
@@ -269,9 +269,11 @@ comparisons agree. `client-selection-v1.json` and `docs/v0.13.0-readiness.md`
 record current checks/limits. Full make test: 240 Rust, 11 Python, goldens pass;
 strict default/desktop Clippy and fmt pass. The 879-input encounter now records
 actor identities in v3 and retains identical battle/capture/final checkpoints.
-New owner movement/blink and city-route acceptance remains pending on #137.
-No milestone review/tag is ready; do not reuse the earlier rejected preview's
-passes as acceptance. Both clients and the full-AI gate remain as agreed.
+The owner confirmed “Yes, both clients and city route pass” on 2026-11-07,
+then noted current production was hard to see. Follow-up labels it explicitly
+and restores visible End-turn focus for Enter when units are exhausted.
+Prepare the independent owner-launched review after final checks; no tag before
+AGREE. Both clients and the full-AI gate remain as agreed.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

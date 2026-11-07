@@ -2,8 +2,11 @@
   "engine_version": "0.13.0",
   "scope": "Generated Original-profile city citizen controls; not full city/native UI/AI parity",
   "owner_acceptance": {
-    "browser": "pending",
-    "desktop": "pending"
+    "date": "2026-11-07",
+    "browser": "pass; explicitly confirmed by owner",
+    "desktop": "pass; explicitly confirmed by owner",
+    "statement": "Yes, both clients and city route pass",
+    "follow_up": "Owner notes incomplete UI and current-production visibility; final follow-up labels the existing production item explicitly. Acceptance does not assert complete city UI parity."
   },
   "mature_setup": "1 2 80 50 47 7 7 2 0",
   "mature_route": {

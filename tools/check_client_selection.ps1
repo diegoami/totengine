@@ -61,7 +61,7 @@ Selection-Pointer $selectionB;Selection-Expect $selectionB $false
 if((Selection-Unit $selectionB).blink){throw 'exhausted unit blinking'}
 Send-Text 'v';Selection-Expect $selectionA;Send-Key 32
 if(-not (Has-Text (Read-Scene) 'End of turn')){throw 'end-of-turn state absent'}
-Selection-Compare 'selectionskip' 'after-skip';Send-Chord 78
+Selection-Compare 'selectionskip' 'after-skip';Send-Key 13
 [void](Wait-Scene {param($s) $s.phase -eq 'Human' -and @($s.draws | Where-Object {$_.text -and $_.text.StartsWith('Turn '+($selectionMeta.turn+1)+' ')}).Count -gt 0})
 Research
 if(@((Read-Scene).draws | Where-Object {$_.kind -eq 'unit_sprite' -and $_.selected -and $_.blink -and $_.moves_left -gt 0}).Count -eq 0){throw 'new turn has no ready selection'}

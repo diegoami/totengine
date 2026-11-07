@@ -379,7 +379,11 @@ impl Client {
         if revision != self.revision {
             return Err("Stale input: inspect the refreshed selection before acting".into());
         }
+        let was_overlay = self.modal.is_some() || self.city_open;
         let result = self.handle(input.clone());
+        if was_overlay && self.modal.is_none() && !self.city_open {
+            self.focus_end_if_idle();
+        }
         // UI errors are shown and acknowledged; retrying one cannot change state.
         if let Err(error) = &result {
             self.status = error.clone();

@@ -121,7 +121,11 @@ New shared regressions and actual browser/Linux/Windows routes test a different
 own unit, stack selection, sprite-body blink versus a stable other unit, hidden-
 phase activation, zoom/resize, exhaustion and next-turn selection. Numeric
 comparisons and scope are in `client-selection-v1.json`; these automated results
-are not the pending new owner play result. No review candidate/tag is ready.
+remain distinct from human acceptance. On 2026-11-07 the owner reported
+“much better” and explicitly confirmed both clients and the city route pass.
+The final follow-up focuses the existing End-turn button when exhausted, so
+Enter follows the directly observed prompt. Independent owner-launched review
+remains required before tagging.
 
 The owner ended the earlier session and later authorized continuation. The
 reference Wine/Xvfb study was stopped cleanly. Existing owner games must be

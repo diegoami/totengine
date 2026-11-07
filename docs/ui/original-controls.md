@@ -87,7 +87,10 @@ Implemented in the shared controller and both adapters:
   revisions, game state or either RNG; hidden sprites remain hittable.
 - Exhaustion advances to a remaining ready unit or Viewing/End of turn. New
   human turns and resolved required choices select a ready unit in Moving.
-  End-turn advancement remains explicit.
+  End-turn advancement remains explicit. With all units exhausted, the existing
+  End-turn button receives visible focus, so Enter activates it; Tab can still
+  choose another button. This also applies when returning from city/dialog
+  inspection with no ready units.
 - Browser keypad decoding uses the physical code, including Num Lock-off
   navigation labels. SDL retains physical keypad keys. Text fields keep normal
   editor/clipboard shortcuts, and dialogs retain their own input priority.

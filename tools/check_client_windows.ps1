@@ -259,6 +259,7 @@ try {
             if($actual -ne $wanted){throw "Citizen checkpoint differs: $Name"}
         }
         Load-Slot 'mature';Focus-Button 'Manage city'
+        if(-not (Has-Text (Read-Scene) 'Currently producing:')){throw 'current production label missing'}
         for($n=0;$n -lt 21;$n++) {if(Has-Text (Read-Scene) ('Tile '+$meta.worker_tile)){break};Send-Key 39}
         Send-Key 32;Compare-Citizens 'cityentertainer' 'after-entertainer'
         Focus-Button '1: Entertainer';Compare-Citizens 'citytax' 'after-tax'

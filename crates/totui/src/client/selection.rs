@@ -46,6 +46,32 @@ impl Client {
             self.inspect = self.active_position();
             self.center();
         }
+        self.focus_end_if_idle();
+    }
+
+    /// Make Enter's default action visible when returning to an exhausted map.
+    /// Called on transitions only, so Tab can still choose another action.
+    pub(super) fn focus_end_if_idle(&mut self) {
+        if self.modal.is_some() || self.city_open {
+            return;
+        }
+        let Some(v) = self.view() else { return };
+        if v.phase == Phase::Human
+            && v.decision.is_none()
+            && !v
+                .observation
+                .units
+                .iter()
+                .any(|u| u.owner == v.observation.civ && u.moves_left > 0)
+        {
+            if let Some(i) = self
+                .buttons()
+                .iter()
+                .position(|b| matches!(b.action, Action::End))
+            {
+                self.focus_button = i;
+            }
+        }
     }
 
     pub(super) fn select_at(&mut self, at: (u16, u16)) -> Result<(), String> {

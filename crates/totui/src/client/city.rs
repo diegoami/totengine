@@ -87,7 +87,7 @@ impl Client {
         if let Some(city) = self.city {
             add(
                 20.,
-                390.,
+                480.,
                 250.,
                 36.,
                 "Choose production",
@@ -201,16 +201,32 @@ impl Client {
             };
             draws.push(text(22., 330., warning, 15, "#ffcf8c"));
         }
+        draws.push(text(22., 358., "Currently producing:", 16, "#fff0b5"));
+        let item = c
+            .building
+            .map(|id| self.item_name(id))
+            .unwrap_or_else(|| "Unavailable".into());
+        // Keep long scenario names inside the left panel without clipping.
+        let mut name: Vec<_> = item.chars().collect();
+        if name.len() > 69 {
+            name.truncate(68);
+            name.push('…');
+        }
+        for (row, chunk) in name.chunks(23).enumerate() {
+            draws.push(text(
+                22.,
+                382. + row as f64 * 19.,
+                &chunk.iter().collect::<String>(),
+                16,
+                "#ffffff",
+            ));
+        }
         draws.push(text(
             22.,
-            365.,
-            &format!(
-                "{} · shields {}",
-                self.item_name(c.building.unwrap_or(0)),
-                c.shield_box.unwrap_or(0)
-            ),
-            14,
-            "#fff0b5",
+            444.,
+            &format!("Stored shields: {}", c.shield_box.unwrap_or(0)),
+            16,
+            "#eee8d4",
         ));
         draws.push(text(
             305.,
@@ -354,11 +370,11 @@ impl Client {
             16,
             "#fff0b5",
         ));
-        draws.push(text(22., 448., "Remove a worker to", 15, "#eee8d4"));
-        draws.push(text(22., 474., "create an entertainer.", 15, "#eee8d4"));
-        draws.push(text(22., 518., "Other roles need size 5.", 15, "#eee8d4"));
-        draws.push(text(22., 562., "Empty tile, no spare:", 15, "#eee8d4"));
-        draws.push(text(22., 588., "automatic reassignment.", 15, "#eee8d4"));
+        draws.push(text(22., 538., "Remove a worker to", 15, "#eee8d4"));
+        draws.push(text(22., 562., "create an entertainer.", 15, "#eee8d4"));
+        draws.push(text(22., 602., "Other roles need size 5.", 15, "#eee8d4"));
+        draws.push(text(22., 646., "Empty tile, no spare:", 15, "#eee8d4"));
+        draws.push(text(22., 670., "automatic reassignment.", 15, "#eee8d4"));
         if v.decision.is_some() {
             draws.push(text(744., 458., "Research/choice required.", 16, "#ffba8a"));
         }

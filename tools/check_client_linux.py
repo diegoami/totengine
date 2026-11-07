@@ -184,6 +184,7 @@ def run():
                         key("Ctrl+s");save_dialog(name)
                         assert (work/"saves"/(name+".cth")).read_bytes()==(fixtures_root/(expected+".cth")).read_bytes(),name
                     load("mature");button("Manage city")
+                    assert has(scene(),"Currently producing:")
                     assert any("population 5" in d.get("text","") for d in scene()["draws"])
                     for _ in range(21):
                         if has(scene(),"Tile "+str(meta["worker_tile"])):break

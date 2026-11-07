@@ -1,22 +1,24 @@
 {
   "schema": 1,
   "engine_version": "0.13.0",
-  "status": "replacement contract implemented; new owner acceptance pending",
+  "status": "replacement contract implemented; owner confirms both-client city route acceptance; independent review required",
   "reference": "docs/ui/selection-and-movement-study.md; ui-selection-study-v1.json; owner requires selected-unit blinking",
   "scope": "Generated Original-profile surface games, two-unit/stack selection and presentation state transitions. No full native layout or complete waiting/fortify/sleep/go-to scheduling parity.",
   "source_sha256": {
-    "crates/totui/src/client/selection.rs": "8f683cb472297619f6fb4d41bff686faed5cc1cd36b83efb2bc61c75b9785ac0",
-    "crates/totui/src/client/mod.rs": "afe784b969389af72715fffd1e62fe698a6079556916fb97de5774b22f74eaf7",
+    "crates/totui/src/client/selection.rs": "1dedaf6432ebae5f9621369157ccb4571ae00dd928b0d93b1fe997d39db9aa53",
+    "crates/totui/src/client/mod.rs": "001c23e60fc96cf83fe5eefaf15af5494e5d767137a0ebdee3a9467a9a4fbae7",
     "crates/totui/src/client/play.js": "ca4c74b10964e1a8577e21d65dc730fe597c961d0b572cd2a1c5fe64884ce374",
-    "crates/totui/src/client/desktop.rs": "9e84033bbc1f510aae8b08ae44b3a745227aaa27f527d4af05f541ec5c0c788c"
+    "crates/totui/src/client/desktop.rs": "9e84033bbc1f510aae8b08ae44b3a745227aaa27f527d4af05f541ec5c0c788c",
+    "crates/totui/src/client/city.rs": "863e653c5a6a104227af4b4d33dc32b65c5ea8b68f0de070c5a62808e359e598",
+    "crates/totui/src/client/tests.rs": "fabe64728ac24267685073390a3e7b66c143dc6bff15a3ffc658b404122bac70"
   },
   "checker_sha256": {
-    "tools/check_client_selection.cjs": "2b820a9fb697babf9fe8b35c1384ec26f7aaeec71cd1a48f24b563fd4b604458",
-    "tools/check_client_selection.py": "40b2eb1151844fcde91f3e1299c266ac2855352ef9cf7a889628e3237219defc",
-    "tools/check_client_selection.ps1": "9ef08037fb0895f5edaabe1336864401f02beb467eab4cc6313bcfd0fc7c1de4",
-    "tools/check_client_browser.cjs": "9e275a7b8aabbaf6672e0a06c717df205c4aa77a93cf14b081e4facd6e2c6ebc",
-    "tools/check_client_linux.py": "fb6fefc4d60f888e735e390fd183e4da8c336684e867e8cdb1803e551a65da3b",
-    "tools/check_client_windows.ps1": "84f28debbae5170f3167d299fa6c627a01ed5dfb5b6d1c0ad8e6b46cf3a9fb7a"
+    "tools/check_client_selection.cjs": "e57bf67ff9d324fc9e8b0ddbc09464b6a8f9d70fbfe69282533471cac5000186",
+    "tools/check_client_selection.py": "d10fdbfede73b7915fccd559e9d66b31bb1924e2182efca7ff815371a59a21b6",
+    "tools/check_client_selection.ps1": "1d86b0b357993adae405f066e70512205eec2754c53ea97f96ba247ebe2ef86e",
+    "tools/check_client_browser.cjs": "4c3000ecea9aac22c183957429f230233ee2fcef6e05d4cbe332d6ab2cbf6894",
+    "tools/check_client_linux.py": "041c2430d4bdf1cfcb035adb2de6ed004d879ddd42a1b87a9ba4b2bfba83a1f6",
+    "tools/check_client_windows.ps1": "d4635cd2f94ccb8ccb952e17c5f133c2485257ab77fee5af96d1ece4a44fba23"
   },
   "fixture": {
     "setup": "seed 7, 80x50, two civilizations, human 1, difficulty 0",
@@ -86,7 +88,9 @@
         "selectionmove": "d88b41f152394683eb6ec3aab469aea314e8f3b565b266e6fc7c0d0d377eba0d",
         "selectionskip": "42384ede522caa4384f55cadc1ba318ee0c251f2b86361786fa49ccb50266a0f",
         "selectionturn": "775f64e2bf6b82fb3a7f68e1a898eeca375f9128b08606f9d074b7f38a29a0f0"
-      }
+      },
+      "enter_ends_exhausted_turn": "pass after save dialog returns to visibly focused End button",
+      "city_current_production_label": "pass; item and stored shields separated; final spacing verified visually in browser"
     },
     "linux": {
       "actual_input": "mouse and keyboard",
@@ -106,7 +110,9 @@
         "selectionmove": "d88b41f152394683eb6ec3aab469aea314e8f3b565b266e6fc7c0d0d377eba0d",
         "selectionskip": "42384ede522caa4384f55cadc1ba318ee0c251f2b86361786fa49ccb50266a0f",
         "selectionturn": "775f64e2bf6b82fb3a7f68e1a898eeca375f9128b08606f9d074b7f38a29a0f0"
-      }
+      },
+      "enter_ends_exhausted_turn": "pass after save dialog returns to visibly focused End button",
+      "city_current_production_label": "pass; item and stored shields separated; final spacing verified visually in browser"
     },
     "windows": {
       "actual_input": "mouse and keyboard",
@@ -126,7 +132,9 @@
         "selectionmove": "d88b41f152394683eb6ec3aab469aea314e8f3b565b266e6fc7c0d0d377eba0d",
         "selectionskip": "42384ede522caa4384f55cadc1ba318ee0c251f2b86361786fa49ccb50266a0f",
         "selectionturn": "775f64e2bf6b82fb3a7f68e1a898eeca375f9128b08606f9d074b7f38a29a0f0"
-      }
+      },
+      "enter_ends_exhausted_turn": "pass after save dialog returns to visibly focused End button",
+      "city_current_production_label": "pass; item and stored shields separated; final spacing verified visually in browser"
     }
   },
   "matching_adapter_checkpoint_comparisons": 18,
@@ -159,21 +167,33 @@
     "generated_encounter_v3": "passed",
     "fmt": "passed",
     "strict_clippy_default_and_desktop": "passed",
-    "script_compile_and_syntax": "passed"
+    "script_compile_and_syntax": "passed",
+    "campaign_suite": {
+      "passed": 7,
+      "seeds_per_policy": 32,
+      "run": "final controller sources, release mode"
+    }
   },
   "packages": {
     "linux": {
-      "totplay": "a444c60315a5af790703933ee452f6e74c557ebfe3a3e611479f35b2c6b4f750",
-      "totdesktop": "a737acbba0730dd968cfa0e231bb8b0c92645238055a51916b52d338b8db93a6"
+      "totplay": "d80951c5080399c324e9fe0872f7b4b6300f8634090cb63e93e35a1a55fb0c13",
+      "totdesktop": "d62f80892607beb144df5e0fb8c6d7c5da8867884f45ab1a27c4a8bd4bf6e5ab"
     },
     "windows": {
-      "totplay.exe": "2d459741b74b9353748f79867bc1a4c94a5a7ee91085cf12f2f5b462338a45c1",
-      "totdesktop.exe": "b109fd5fa47609293ae9a3607daedafdb9bdb8eb5a26605b8d0b93f1df15a0a1"
+      "totplay.exe": "e9033cf6418b99a87dfe8bfed0d08af2d60ef24101eac13b7818a716b294a8f0",
+      "totdesktop.exe": "b69182107b75d65bf84d83f79fcfb0f5d8fdb8e9d86377edb8b0634ef02663f5"
     }
   },
   "owner_acceptance": {
-    "unit_selection_and_blink_both_clients": "pending",
-    "new_city_route_both_clients": "pending"
+    "date": "2026-11-07",
+    "unit_selection_and_blink_both_clients": "owner reports much better; both-client route accepted",
+    "new_city_route_both_clients": "Yes, both clients and city route pass",
+    "follow_up": "Owner notes incomplete UI and current production visibility; final follow-up labels existing item and stored shields. Not a claim of full native UI parity."
   },
-  "milestone": "11 / #137; no review candidate, review launch or tag"
+  "milestone": "11 / #137; candidate prepared after checks; owner launches independent review; no tag before AGREE",
+  "final_validation_scope": "Final packages pass browser/Linux full routes and Windows city/selection/Enter routes. Windows full battle/capture passed with identical final controller before the last five help-text y positions changed. The final package is not falsely labeled as having rerun the long Windows encounter.",
+  "release_archive_sha256": {
+    "totengine-v0.13.0-linux-x86_64.tar.gz": "0b94f56e898bfcb431e20da22676f39f494328ea29906ce965a4f99673f7e87b",
+    "totengine-v0.13.0-windows-x86_64.zip": "2f25188976e8c3c798193690fb6155bae336b165a0a3f31ee2315584f7b80328"
+  }
 }

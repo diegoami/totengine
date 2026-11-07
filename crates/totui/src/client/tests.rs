@@ -234,6 +234,17 @@ fn city_workspace_edits_commit_close_and_resume_without_retargeting() {
     button(&mut c, "Manage city");
     assert!(c.city_open);
     assert_eq!(original, c.checkpoint().unwrap(), "opening is inert");
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::Text{text,..} if text == "Currently producing:")));
+    let current = c.view().unwrap().observation.cities[0].building.unwrap();
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::Text{text,..} if text == &c.item_name(current))));
     let v = c.view().unwrap();
     let k = v.city_citizens[0]
         .radius
@@ -1070,7 +1081,31 @@ fn exhaustion_selects_next_then_end_turn_without_retargeting_queued_input() {
         .any(|d| matches!(d,Draw::Text{text,..} if text=="End of turn")));
     input(&mut c, Input::Tick);
     assert_eq!(c.view().unwrap().observation.turn, turn);
-    end_round(&mut c);
+    assert!(matches!(c.buttons()[c.focus_button].action, Action::End));
+    key(&mut c, "Tab");
+    assert!(!matches!(c.buttons()[c.focus_button].action, Action::End));
+    key(&mut c, "ShiftTab");
+    assert!(matches!(c.buttons()[c.focus_button].action, Action::End));
+    // Returning from city inspection restores the visible end-turn default.
+    button(&mut c, "Manage city");
+    key(&mut c, "Escape");
+    assert!(matches!(c.buttons()[c.focus_button].action, Action::End));
+    let old_revision = c.revision;
+    key(&mut c, "Enter");
+    let ended = c.checkpoint().unwrap();
+    assert!(c
+        .input(
+            old_revision,
+            99998,
+            Input::Key {
+                key: "Enter".into()
+            }
+        )
+        .is_err());
+    assert_eq!(ended, c.checkpoint().unwrap());
+    ready(&mut c);
+    research(&mut c);
+    assert_eq!(c.view().unwrap().observation.turn, turn + 1);
     assert!(c.moving);
     assert!(unit_at(&c, c.active.unwrap()).moves_left > 0);
 }

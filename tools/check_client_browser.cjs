@@ -50,6 +50,7 @@ fs.mkdirSync(out,{recursive:true});
   const meta=JSON.parse(fs.readFileSync(path.join(citizens,'route.json'),'utf8'));
   async function compare(name,expected){await key('Control+s');await save(name);if(!fs.readFileSync(path.join(saves,name+'.cth')).equals(fs.readFileSync(path.join(citizens,expected+'.cth'))))throw Error('citizen checkpoint differs '+name)}
   await load('mature');await click('Manage city');
+  if(!has(await state(),'Currently producing:'))throw Error('current production label missing');
   if(!(await state()).draws.some(d=>d.text?.includes('population 5')))throw Error('mature city missing');
   const x=500+[1,2,1,0,-1,-2,-1,0,2,2,-2,-2,1,3,3,1,-1,-3,-3,-1,0][meta.worker_tile]*45;
   const y=300+[-1,0,1,2,1,0,-1,-2,-2,2,2,-2,-3,-1,1,3,3,1,-1,-3,0][meta.worker_tile]*25;

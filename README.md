@@ -27,8 +27,8 @@ steps for the gitignored oracle binaries, box quirks — lives in
 
 ## Status
 
-The latest released tag is **v0.12.0 — First playable human turn, browser and desktop**, independently reviewed on
-[#134](https://github.com/diegoami/totengine/issues/134). A version counts as
+The latest released tag is **v0.13.0 — City workers and specialists, browser and desktop**, independently reviewed on
+[#138](https://github.com/diegoami/totengine/issues/138). A version counts as
 released once its
 `vX.Y.Z` tag exists
 ([tags](https://github.com/diegoami/totengine/tags); see
@@ -57,9 +57,12 @@ What runs today, headless, against your own ToT install:
 The playable-client track targets **both a browser client and a standalone
 desktop client**, sharing the Rust engine. The first generated-game slice is
 released in `totplay` and `totdesktop`; [launch and controls](docs/playable-clients.md).
-[Windows/Linux downloads](https://github.com/diegoami/totengine/releases/tag/v0.12.0)
+[Windows/Linux downloads](https://github.com/diegoami/totengine/releases/tag/v0.13.0)
 include both programs, runtime/dependency notices and no original game assets.
-Full client delivery continues across later milestones.
+The v0.14 development build adds quoted production switching, buying and
+single-city building sales in both clients; [validation and pending human
+acceptance](docs/v0.14.0-readiness.md). Full client delivery continues across
+later milestones.
 See the [client delivery plan](docs/ui/client-milestones.md).
 
 AI v1 expands, invests in city improvements, researches and handles units

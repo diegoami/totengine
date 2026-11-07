@@ -6,7 +6,8 @@
   v0.8.0 AI v1 + economy depth → v0.9.0 generated-world campaign →
   v0.10.0 original-like built-in AI → v0.11.0 UI discovery, reviewed design
   and client milestone planning → v0.12 first playable turn in both clients →
-  v0.13 city workers/specialists (in progress) → remaining client packages →
+  v0.13 city workers/specialists (released) → v0.14 city production decisions
+  (human acceptance pending) → remaining client packages →
   pluggable AIs (later, version unassigned). Each has one theme
   and a few stories, so every review stays one round (decision 0002).
   The first two client slices are scoped; later milestone count/versions remain unassigned;
@@ -28,7 +29,8 @@ The owner-requested complete original-AI port is scoped in
 A0–A8 delivery gates. Full original-AI reproduction is gated behind the
 playable UI/client work (owner decision, 2026-11-06). The first AI task after
 that gate is inventory/fidelity-boundary story #118. These gates have no
-assigned AI release versions; v0.13 city workers/specialists is the next client slice.
+assigned AI release versions; v0.13 city workers/specialists is released; v0.14 city production decisions
+awaits new both-client human acceptance and owner-launched review.
 
 This file keeps the working conventions only. The story tables it used to
 hold (stories T0-1 … RG-11 with their acceptance and status notes) are in

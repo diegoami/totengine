@@ -307,9 +307,9 @@ impl WorldState {
             content: rules.cosmic_row(7).unwrap_or(7) as i32,
             empire: rules.cosmic_row(8).unwrap_or(14) as i32,
             flags: self.research_settings.flags,
-            specialists: (0..16)
-                .filter(|k| c.specialists >> (2 * k) & 3 != 0)
-                .count() as i32,
+            specialists: crate::citizens::specialist_counts(c.worked, c.specialists)
+                .iter()
+                .sum(),
             luxuries,
             garrison,
             away,

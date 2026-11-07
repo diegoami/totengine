@@ -2,6 +2,20 @@
 use crate::{player::TileView, yields, WorldState};
 use tot_kit::Rules;
 
+/// Stored role counts plus the fixed entertainers beyond the sixteen packed
+/// slots. Keep finance and mood consistent with the citizen view at large sizes.
+pub(crate) fn specialist_counts(worked: u32, packed: u32) -> [i32; 3] {
+    let mut counts = [0; 3];
+    for slot in 0..16 {
+        let role = (packed >> (2 * slot)) & 3;
+        if role != 0 {
+            counts[role as usize - 1] += 1;
+        }
+    }
+    counts[0] += (worked >> 26).saturating_sub(16) as i32;
+    counts
+}
+
 /// Raw original tile-click transition, before allocation/totals refresh.
 pub fn toggle_worker(worked: u32, tile: u8, blocked: bool) -> Result<u32, &'static str> {
     if tile > 20 {

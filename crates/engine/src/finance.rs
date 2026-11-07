@@ -66,14 +66,11 @@ impl WorldState {
             science += luxuries;
             luxuries = 0;
         }
-        let count = |kind| {
-            (0..16)
-                .filter(|k| city.specialists >> (2 * k) & 3 == kind)
-                .count() as i32
-        };
-        luxuries += 2 * count(1);
-        taxes += 3 * count(2);
-        science += 3 * count(3);
+        let [entertainers, collectors, scientists] =
+            crate::citizens::specialist_counts(city.worked, city.specialists);
+        luxuries += 2 * entertainers;
+        taxes += 3 * collectors;
+        science += 3 * scientists;
         if fundamentalist {
             science -= science * rules.cosmic_row(17).unwrap_or(50) as i32 / 100;
         }

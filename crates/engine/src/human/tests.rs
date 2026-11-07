@@ -613,6 +613,96 @@ fn authored_city_roles_blocked_tiles_and_food_debt_refresh_without_a_round() {
 }
 
 #[test]
+fn excess_entertainers_count_in_immediate_finance_and_mood() {
+    let mut s = session(1);
+    choose(&mut s);
+    let unit = s.view().units[0];
+    send(&mut s, Command::BeginFound { unit });
+    let Some(Decision::Founding { id, .. }) = s.decision else {
+        panic!()
+    };
+    send(
+        &mut s,
+        Command::NameCity {
+            decision: id,
+            name: CityName::new("Large city").unwrap(),
+        },
+    );
+    // Authored large-city boundary, not a claimed naturally grown campaign.
+    let w = &mut s.game.world;
+    let rules = &s.game.rules;
+    for count in [16, 17, 20, 30, 63] {
+        w.cities[0].size = count;
+        w.cities[0].worked = u32::from(count) << 26;
+        w.cities[0].specialists = 0x55555555;
+        let totals = w.refresh_city_totals(rules, 0, false).unwrap();
+        assert_eq!(
+            w.city_citizens(rules, 1, 0).unwrap().specialists,
+            vec![1; count as usize]
+        );
+        assert_eq!(
+            w.split_city_trade(rules, 0, 0, 0).luxuries,
+            2 * i32::from(count)
+        );
+        assert_eq!(
+            totals.mood,
+            crate::happiness::Happiness::default(),
+            "all citizens are specialists"
+        );
+        let at = w
+            .city_citizens(rules, 1, 0)
+            .unwrap()
+            .radius
+            .iter()
+            .take(20)
+            .position(|t| t.available)
+            .unwrap() as u8;
+        let turn = w.turn;
+        let rng = (w.rng.state(), w.combat_rng.state());
+        let treasury = w.treasury;
+        let storage = (w.cities[0].shield_box, w.cities[0].building);
+        // Cross the excess boundary in both directions through real edits.
+        w.edit_citizen(rules, 1, 0, at, false).unwrap();
+        assert_eq!(
+            w.city_citizens(rules, 1, 0).unwrap().specialists.len(),
+            count as usize - 1
+        );
+        assert_eq!(
+            w.split_city_trade(rules, 0, 0, 0).luxuries,
+            2 * (i32::from(count) - 1)
+        );
+        w.edit_citizen(rules, 1, 0, at, false).unwrap();
+        assert_eq!(
+            w.city_citizens(rules, 1, 0).unwrap().specialists.len(),
+            count as usize
+        );
+        assert_eq!(w.city_finance(rules, 0).luxuries, totals.finance.luxuries);
+        assert_eq!(
+            w.city_happiness_with_luxuries(rules, 0, totals.finance.luxuries),
+            crate::happiness::Happiness::default()
+        );
+        // Packed roles can change, excess citizens remain entertainers.
+        w.edit_citizen(rules, 1, 0, 0, true).unwrap();
+        assert_eq!(
+            w.split_city_trade(rules, 0, 0, 0).luxuries,
+            2 * (i32::from(count) - 1)
+        );
+        assert_eq!(w.split_city_trade(rules, 0, 0, 0).taxes, 3);
+        assert_eq!(
+            (
+                w.turn,
+                w.treasury,
+                w.rng.state(),
+                w.combat_rng.state(),
+                w.cities[0].shield_box,
+                w.cities[0].building
+            ),
+            (turn, treasury, rng.0, rng.1, storage.0, storage.1)
+        );
+    }
+}
+
+#[test]
 fn explored_tiles_and_foreign_cities_remember_last_sight_without_hidden_updates() {
     let mut s = session(1);
     choose(&mut s);

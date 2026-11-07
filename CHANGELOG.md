@@ -15,6 +15,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 - Add immediate worker/specialist commands and own-city radius/storage/detail
   views through the recorded human-session boundary (#135). Native packed edit
   branches match 1,548 original-x86 cases; wrong/stale/blocked input is inert.
+- Address first-review findings: include excess entertainers in finance/mood,
+  preserve same-city keyboard input within SDL batches and browser focus while
+  busy, move the Viewing cursor visibly, and correct acceptance/reference docs.
 - Make current city production explicit and focus End turn for Enter after unit
   exhaustion, preserving explicit button navigation and stale-input protection.
 - Add a shared city workspace to browser and native desktop: worked-radius

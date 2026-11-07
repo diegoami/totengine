@@ -10,6 +10,50 @@ use sdl2::{
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
+
+/// Input may continue within the received dialog/city, but must never follow a
+/// queued navigation/close/load into a different city or a new map actor.
+struct InputBatch {
+    revision: u64,
+    modal: u64,
+    in_modal: bool,
+    city: Option<engine::human::Entity>,
+}
+impl InputBatch {
+    fn new(client: &Client) -> Self {
+        Self {
+            revision: client.revision,
+            modal: client.modal_id,
+            in_modal: client.modal.is_some(),
+            city: client
+                .city
+                .filter(|_| client.city_open && client.modal.is_none()),
+        }
+    }
+
+    fn submit(
+        &self,
+        client: &mut Client,
+        id: u64,
+        mut revision: u64,
+        input: Input,
+    ) -> Result<(), String> {
+        let same_dialog = self.in_modal && client.modal.is_some() && client.modal_id == self.modal;
+        let same_city = self.city.is_some()
+            && client.city_open
+            && client.city == self.city
+            && client.modal.is_none()
+            && client.modal_id == self.modal;
+        if matches!(&input, Input::Focus { .. })
+            || matches!(&input, Input::Key { key } if key == "Tab" || key == "ShiftTab")
+            || (same_dialog && matches!(&input, Input::Key { .. } | Input::Edit { .. }))
+            || (same_city && matches!(&input, Input::Key { .. }))
+        {
+            revision = client.revision;
+        }
+        client.input(revision, id, input)
+    }
+}
 fn color(s: &str) -> Color {
     let n = u32::from_str_radix(s.trim_start_matches('#'), 16).unwrap_or(0);
     Color::RGB((n >> 16) as u8, (n >> 8) as u8, n as u8)
@@ -132,9 +176,8 @@ pub fn run(mut client: Client) -> Result<(), String> {
         if let Some(entry) = &before.entry {
             editor.sync(entry);
         }
-        let batch_revision = before.revision;
-        let modal_before = client.modal_id;
-        let in_modal = client.modal.is_some();
+        let batch = InputBatch::new(&client);
+        let batch_revision = batch.revision;
         let original_field = before.entry.as_ref().map(|e| e.id.clone());
         if before.entry.is_some() {
             video.text_input().start()
@@ -273,22 +316,8 @@ pub fn run(mut client: Client) -> Result<(), String> {
                 _ => None,
             };
             if let Some(input) = input {
-                // Focus/tab edits and input inside the same dialog do not
-                // retarget a unit. Map orders retain their received revision.
-                if matches!(&input, Input::Focus { .. })
-                    || matches!(&input,Input::Key{key} if key=="Tab"||key=="ShiftTab")
-                {
-                    revision = client.frame().revision;
-                }
-                if in_modal
-                    && client.modal.is_some()
-                    && client.modal_id == modal_before
-                    && matches!(&input, Input::Key { .. } | Input::Edit { .. })
-                {
-                    revision = client.frame().revision;
-                }
                 id += 1;
-                let _ = client.input(revision, id, input);
+                let _ = batch.submit(&mut client, id, revision, input);
             }
         }
         if client.frame().phase == "Opponents" && client.frame().advancing {
@@ -512,6 +541,85 @@ pub fn run(mut client: Client) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn city_keys_in_one_sdl_batch_are_preserved_without_crossing_workspace() {
+        let fixture = super::super::tests::Fixture::new();
+        let mut client = fixture.client();
+        super::super::tests::start(&mut client);
+        super::super::tests::founding(&mut client);
+        client.action(super::super::Action::OpenCity).unwrap();
+        // Locate a worked tile, then queue two arrows and Space before polling.
+        let tile = client.view().unwrap().city_citizens[0]
+            .radius
+            .iter()
+            .take(20)
+            .position(|t| t.worked)
+            .unwrap() as u8;
+        client.city_tile = (tile + 19) % 21;
+        let sdl = sdl2::init().unwrap();
+        let events = sdl.event().unwrap();
+        let mut pump = sdl.event_pump().unwrap();
+        let batch = InputBatch::new(&client);
+        for code in [Keycode::Right, Keycode::Right, Keycode::Space] {
+            events
+                .push_event(Event::KeyDown {
+                    timestamp: 0,
+                    window_id: 0,
+                    keycode: Some(code),
+                    scancode: None,
+                    keymod: Mod::NOMOD,
+                    repeat: false,
+                })
+                .unwrap();
+        }
+        let mut id = 1000;
+        let mut consumed = 0;
+        for event in pump.poll_iter() {
+            if let Event::KeyDown {
+                keycode: Some(code),
+                ..
+            } = event
+            {
+                id += 1;
+                batch
+                    .submit(
+                        &mut client,
+                        id,
+                        batch.revision,
+                        Input::Key {
+                            key: key(code, false, false).unwrap(),
+                        },
+                    )
+                    .unwrap();
+                consumed += 1;
+            }
+        }
+        assert_eq!(consumed, 3);
+        assert_eq!(client.city_tile, tile);
+        assert!(!client.view().unwrap().city_citizens[0].radius[tile as usize].worked);
+        let changed = client.checkpoint().unwrap();
+        batch
+            .submit(
+                &mut client,
+                1004,
+                batch.revision,
+                Input::Key {
+                    key: "Escape".into(),
+                },
+            )
+            .unwrap();
+        assert!(!client.city_open);
+        assert!(batch
+            .submit(
+                &mut client,
+                1005,
+                batch.revision,
+                Input::Key { key: "6".into() }
+            )
+            .is_err());
+        assert_eq!(changed, client.checkpoint().unwrap());
+    }
+
     #[test]
     fn original_keys_and_modifiers_are_preserved() {
         for (k, want) in [

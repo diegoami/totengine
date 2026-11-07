@@ -1,8 +1,8 @@
 # Selection and movement: reference study after the rejected preview
 
 Status: reference study and replacement interaction contract. The resumed
-implementation now follows this contract in both clients; **new owner acceptance
-is pending**. Verification is recorded in `client-selection-v1.json`. The owner rejected the v0.13 controls preview after reporting that
+implementation now follows this contract in both clients; **the owner confirmed
+both clients and the city route pass on 2026-11-07**. Verification is recorded in `client-selection-v1.json`. The owner rejected the v0.13 controls preview after reporting that
 unit selection had become worse, and required blinking of the selected unit.
 The owner then asked for more time studying the game/manual before more UI work.
 Client changes were paused for this study and subsequently resumed at the

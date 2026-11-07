@@ -3941,3 +3941,8 @@ purchase rejection, buy/sale cancel/accept, category-switch draft cancellation,
 accepted penalty, restoration after active-context reload and city close. New
 owner acceptance remains pending. Reproduction/current gates:
 [v0.14 readiness](../v0.14.0-readiness.md).
+
+The same v0.14 artifact also records 63 expanded previous-route checkpoint
+comparisons: 21 each on Chromium, Linux and Windows, covering citizens, two-city
+navigation, selection/resize/exhaustion, battle/capture and ten-round/pending
+choice continuation. Historical v0.13 evidence is retained unchanged.

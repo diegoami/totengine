@@ -3975,3 +3975,12 @@ cargo test -p engine --lib happiness
 ```
 
 Scope and remaining acceptance: [city information milestone](../ui/city-information-milestone.md).
+
+`city-double-click-v1.json` records the own-city entry follow-up: 118 full
+checkpoint comparisons across actual Chromium/Linux SDL/Windows SDL input,
+including a delayed first browser click at a scaled viewport. Source hashes
+and the final third-click guard's separate shared/SDL test scope are explicit.
+Generate the citizens mature fixture as above and pass it through
+`TOTENGINE_CITY_OPEN_FIXTURE` to each client input checker. No original saves,
+assets or screenshots are retained in Git. Owner panel approval is recorded
+separately from automated double-click validation.

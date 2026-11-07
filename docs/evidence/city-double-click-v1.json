@@ -1,0 +1,50 @@
+{
+  "schema": 1,
+  "engine_version": "0.15.0",
+  "scope": "Own-city double-click entry correction requested by owner; no original UI layout/art or full-client parity claim.",
+  "source_sha256": {
+    "crates/totui/src/client/mod.rs": "b6f4afb05d225430a926da205ae6061f468cb7ae9270706b00ab5fb2ff04ff67",
+    "crates/totui/src/client/selection.rs": "215a7ca8a4d43b31ec05bf1b8fbf5c90bd821fee23143de29bd1f26a6ef79f29",
+    "crates/totui/src/client/desktop.rs": "46327b28446b30f4c6fdeebad2776440cfcd2e45d633f83f98ac8545e6412a45",
+    "crates/totui/src/client/play.js": "87a02a18af4e319d85bc0a5811dd5290c848ef0b9a5b4211f7e0fed1a578533a",
+    "crates/totui/src/client/tests.rs": "57cce59c20d14b63743ff771887d9741466c99f3b88df80b03d2b5778618528f",
+    "tools/check_client_browser.cjs": "00f95107e032e4787d2a850dabd16c3b4d5643745854ae2e5388d18a415890b0",
+    "tools/check_client_linux.py": "1ee22de8e97980aa221e09c185eab0f8111605211452ed3a56b8685d8394c0de",
+    "tools/check_client_windows.ps1": "9e3349af0f10a591389e567ee4929e1fdc74770760e3ed1df2c1eeb7dbaa268f",
+    "tools/check_city_open.cjs": "17988d194f6dfacbb29b1529233c06967cb3681f52f709cd996f2a648ccbf221",
+    "tools/check_city_open.py": "9d40a9308f777e4f299e596ef80101bb78b85f6ff748d61f620d716e4343bc46"
+  },
+  "contract": [
+    "First own-city click inspects/selects and never moves; normal garrison selection remains available. Keyboard movement into cities remains available.",
+    "Second click binds to the first request ID, same live owned stable city entity/session revision, pointer within six logical pixels and active focus. Unrelated intents/dialogs invalidate it.",
+    "Browser queues only the bound second click while its first POST is pending. SDL rebases only the validated same-city gesture across one event batch.",
+    "Consumed gesture remains until another intent, so a third mouse-down cannot become a worker edit."
+  ],
+  "expected_city_checkpoint_sha256": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+  "platforms": {
+    "chromium": {
+      "result": "PASS",
+      "full_checkpoint_comparisons": 40,
+      "actual_mouse_city_double_click": true
+    },
+    "linux_sdl": {
+      "result": "PASS",
+      "full_checkpoint_comparisons": 39,
+      "actual_mouse_city_double_click": true
+    },
+    "windows_sdl": {
+      "result": "PASS",
+      "full_checkpoint_comparisons": 39,
+      "actual_mouse_city_double_click": true
+    }
+  },
+  "checks": {
+    "desktop_feature_suite": "27 passed; six fixture authors ignored here (run separately for panel validation)",
+    "strict_clippy": "PASS",
+    "browser_busy": "PASS: actual mouse dblclick at 1440x1000 with first click POST held, then released; full checkpoint unchanged",
+    "triple_guard": "Shared repeated-double-click regression and pushed SDL mouse-downs [1,2,3] in one event batch preserve full checkpoint; following stale movement key rejected."
+  },
+  "provenance": "All 118 actual-input comparisons include corrected unit-slot captions and the city-entry implementation. They precede a final consumed-gesture retention guard, which changes only third-click handling; final shared/SDL tests cover that guard. Source hashes describe final follow-up sources. Panel evidence retains its earlier source hashes.",
+  "owner_acceptance": "Owner approved the requested both-client panel route: \u201cok found it, approved, let us move on\u201d (2026-11-07). This precedes the double-click correction; no manual double-click acceptance is claimed.",
+  "resources": "Fixtures generated through recorded normal gameplay; no original assets, saves or screenshots committed. Existing owner previews/games preserved."
+}

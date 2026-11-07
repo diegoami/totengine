@@ -127,7 +127,7 @@ def run():
                 motion=bind(xt,"XTestFakeMotionEvent",c.c_int,ptr,c.c_int,c.c_int,c.c_int,ul)
                 mouse=bind(xt,"XTestFakeButtonEvent",c.c_int,ptr,ui,c.c_int,ul)
                 translate=bind(x,"XTranslateCoordinates",c.c_int,ptr,ul,ul,c.c_int,c.c_int,c.POINTER(c.c_int),c.POINTER(c.c_int),c.POINTER(ul))
-                def click_at(xpos,ypos):
+                def click_at(xpos,ypos,clicks=1):
                     old=scene()["revision"]
                     attr=Attributes();get_attributes(display,window,c.byref(attr))
                     # SDL uses a centered logical 1024x768 viewport on resize.
@@ -135,7 +135,9 @@ def run():
                     xx=c.c_int();yy=c.c_int();child=ul()
                     translate(display,window,root,0,0,c.byref(xx),c.byref(yy),c.byref(child))
                     motion(display,-1,xx.value+int((attr.width-1024*scale)/2+xpos*scale),yy.value+int((attr.height-768*scale)/2+ypos*scale),0)
-                    mouse(display,1,1,0);mouse(display,1,0,0);sync(display,0)
+                    for n in range(clicks):
+                        mouse(display,1,1,0);mouse(display,1,0,0);sync(display,0)
+                        if n+1<clicks:time.sleep(.07)
                     wait(lambda s:s["revision"]>old)
                 def click_button(label):
                     t=next(d for d in scene()["draws"] if d.get("kind")=="text" and d.get("text")==label)
@@ -305,6 +307,10 @@ def run():
                 if panels:
                     from check_city_panels import run_panels
                     run_panels(scene,key,click_at,click_button,save_dialog,load,work,panels)
+                city_open=os.environ.get("TOTENGINE_CITY_OPEN_FIXTURE")
+                if city_open:
+                    from check_city_open import run_city_open
+                    run_city_open(scene,key,lambda x,y:click_at(x,y,2),save_dialog,load,wait,work,city_open)
                 resize(display,window,1440,1000);sync(display,0);time.sleep(.3)
                 focus(display,root,2,0);sync(display,0);time.sleep(.2);focus(display,window,2,0);sync(display,0);time.sleep(.2)
                 button("Close client");key("Return")

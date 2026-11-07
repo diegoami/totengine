@@ -11,6 +11,9 @@ let frame = null,
   editPending = false,
   pendingKey = null,
   pendingFocus = null,
+  pendingDoubleClick = null,
+  inFlight = null,
+  lastClick = null,
   assets = "",
   sprites = new Map(),
   counter = 0,
@@ -146,10 +149,12 @@ async function refresh() {
   if (!r.ok) throw Error("Host unavailable");
   await paint(await r.json());
 }
-async function send(input) {
+async function send(input, requestId = id()) {
   if (!frame) return;
   if (busy) {
     if (input.type === "focus") pendingFocus = input.focused;
+    else if (input.type === "double_click" && inFlight?.id === input.first_click && inFlight.input.type === "click")
+      pendingDoubleClick = input;
     else if (input.type === "edit") editPending = true;
     else if (input.type === "key" && !entry.hidden)
       pendingKey = { input, field: entry.dataset.field };
@@ -157,7 +162,8 @@ async function send(input) {
     return;
   }
   busy = true;
-  const request = { revision: frame.revision, id: id(), input };
+  const request = { revision: frame.revision, id: requestId, input };
+  inFlight = request;
   try {
     let r; // A network retry keeps the identical ID, revision and payload.
     for (let n = 0; n < 2; n++) {
@@ -188,12 +194,19 @@ async function send(input) {
     showError(e.message + " — reconnect to retrieve the pending decision");
   } finally {
     busy = false;
+    inFlight = null;
+    if (pendingDoubleClick && frame.city_click !== pendingDoubleClick.first_click)
+      pendingDoubleClick = null;
     if (pendingFocus !== null) {
       const focused = pendingFocus;
       pendingFocus = null;
       // Begin immediately: a newer focus event must not be overtaken by an
       // older transition waiting in a timer callback.
       send({ type: "focus", focused });
+    } else if (pendingDoubleClick) {
+      const pending = pendingDoubleClick;
+      pendingDoubleClick = null;
+      if (frame.city_click === pending.first_click) send(pending);
     } else if (editPending && !entry.hidden) {
       editPending = false;
       const field = entry.dataset.field,
@@ -209,11 +222,13 @@ async function send(input) {
 }
 canvas.addEventListener("click", (e) => {
   const r = canvas.getBoundingClientRect();
-  send({
-    type: "click",
-    x: (e.clientX - r.left) / scale,
-    y: (e.clientY - r.top) / scale,
-  });
+  const x = (e.clientX - r.left) / scale, y = (e.clientY - r.top) / scale;
+  if (e.detail > 1 && lastClick && (frame.city_click === lastClick || inFlight?.id === lastClick)) {
+    send({type:"double_click", x, y, first_click:lastClick});
+  } else {
+    lastClick = id();
+    send({type:"click", x, y}, lastClick);
+  }
 });
 entry.addEventListener("input", () => {
   editPending = true;

@@ -41,6 +41,9 @@ public static class SpikeWindow {
         var up=new INPUT();up.type=0;up.value.mouse.flags=4;
         if(SendInput(2,new[]{down,up},Marshal.SizeOf(typeof(INPUT)))!=2)throw new Exception("Mouse SendInput failed");
     }
+    public static void DoubleClick(IntPtr h,uint pid,double x,double y) {
+        Click(h,pid,x,y);System.Threading.Thread.Sleep(60);Click(h,pid,x,y);
+    }
     [DllImport("user32.dll")] private static extern IntPtr GetDC(IntPtr h);
     [DllImport("user32.dll")] private static extern int ReleaseDC(IntPtr h,IntPtr dc);
     [DllImport("gdi32.dll")] private static extern uint GetPixel(IntPtr dc,int x,int y);
@@ -419,6 +422,18 @@ try {
             if($actual -ne $expected){throw ('Panel checkpoint differs: '+$route.name)}
             Load-Slot ($name+'after')
         }
+        Send-Key 27
+    }
+    if(-not $MovementOnly -and -not $SelectionOnly -and $env:TOTENGINE_CITY_OPEN_FIXTURE) {
+        Copy-Item $env:TOTENGINE_CITY_OPEN_FIXTURE (Join-Path $env:TOTENGINE_SAVES 'cityopen.cth')
+        Load-Slot 'cityopen'
+        if(Has-Text (Read-Scene) 'Return to map [Esc]'){Send-Key 27}
+        $city=@((Read-Scene).draws | Where-Object {$_.kind -eq 'sprite' -and $_.sprite.StartsWith('city-')})[0]
+        if(-not $city){throw 'city sprite absent'}
+        [SpikeWindow]::DoubleClick($window,$app.Id,($city.x+$city.w/2),($city.y+$city.h*0.6))
+        [void](Wait-Scene {param($s) @($s.draws | Where-Object {$_.kind -eq 'text' -and $_.x -eq 18 -and $_.y -eq 14 -and $_.text.Contains('population')}).Count -gt 0})
+        Send-Chord 83;Save-Dialog 'citydouble'
+        if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES 'citydouble.cth')).Hash -ne (Get-FileHash $env:TOTENGINE_CITY_OPEN_FIXTURE).Hash){throw 'double click changed gameplay'}
         Send-Key 27
     }
     Focus-Button 'Close client'

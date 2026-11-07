@@ -15,6 +15,10 @@ fs.mkdirSync(out,{recursive:true});
  function has(f,t){return f.draws.some(d=>d.kind==='text'&&d.text===t)}
  async function research(){if(has(await state(),'Choose research explicitly')){await key('ArrowDown');await key('Enter');await page.waitForFunction(()=>frame.status==='research-set')}}
  async function save(name){await fill(name);await key('Enter')}
+ async function restoreFocus(){
+  const posted=page.waitForRequest(request=>request.url().endsWith('/input')&&request.method()==='POST'&&request.postDataJSON()?.input?.type==='focus'&&request.postDataJSON().input.focused===true);
+  await page.evaluate(()=>dispatchEvent(new Event('focus')));await posted;await idle();
+ }
  // Hold an actual request, then blur while busy. The focus transition must
  // reach the controller after the request instead of being dropped.
  await idle();
@@ -31,8 +35,32 @@ fs.mkdirSync(out,{recursive:true});
  await page.waitForFunction(()=>!busy&&pendingFocus===null);
  await key('Tab');
  if((await state()).status!=='Window is unfocused; input ignored')throw Error('busy blur did not reach controller');
- await page.evaluate(()=>dispatchEvent(new Event('focus')));
- await idle();
+ await restoreFocus();
+ // An older focus /state response must not overwrite a later busy blur (#146).
+ let releasePost,postStarted,releaseState,stateStarted;
+ const postReady=new Promise(resolve=>{postStarted=resolve}),postHeld=new Promise(resolve=>{releasePost=resolve});
+ const stateReady=new Promise(resolve=>{stateStarted=resolve}),stateHeld=new Promise(resolve=>{releaseState=resolve});
+ let postCaptured=false,stateCaptured=false;
+ const holdFocusRequests=async route=>{
+  if(route.request().url().endsWith('/input')&&!postCaptured){postCaptured=true;postStarted();await postHeld;await route.continue()}
+  else if(route.request().url().endsWith('/state')&&!stateCaptured){stateCaptured=true;const response=await route.fetch();stateStarted();await stateHeld;await route.fulfill({response})}
+  else await route.continue();
+ };
+ await page.route('**/*',holdFocusRequests);
+ await page.evaluate(()=>{send({type:'focus',focused:true})});await postReady;
+ await page.evaluate(()=>dispatchEvent(new Event('focus')));await stateReady;
+ const latestBlurPosted=page.waitForRequest(request=>request.url().endsWith('/input')&&request.method()==='POST'&&request.postDataJSON()?.input?.type==='focus'&&request.postDataJSON().input.focused===false,{timeout:3000});
+ await page.evaluate(()=>dispatchEvent(new Event('blur')));
+ if(!await page.evaluate(()=>pendingFocus===false))throw Error('later blur was not queued');
+ const stateDone=page.waitForResponse(response=>response.url().endsWith('/state'));
+ releaseState();await stateDone;
+ await page.evaluate(()=>new Promise(resolve=>setTimeout(resolve,0)));
+ releasePost();await latestBlurPosted;await page.waitForFunction(()=>!busy&&pendingFocus===null);
+ const setupPhase=(await state()).phase;
+ await click('Start Original surface game');
+ if((await state()).phase!==setupPhase||(await state()).status!=='Window is unfocused; input ignored')throw Error('delayed focus defeated newer blur');
+ await page.unroute('**/*',holdFocusRequests);
+ await restoreFocus();
  await idle();await click('Start Original surface game');
  await click('Save pending choice');await save('research');await research();
  await key('b');await click('Save pending choice');await save('founding');await fill('athenx');await page.keyboard.press('Backspace');await page.keyboard.type('a');await page.waitForFunction(()=>frame.entry?.value==='athena'&&!busy);await key('Enter');

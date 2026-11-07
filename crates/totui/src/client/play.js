@@ -245,10 +245,20 @@ addEventListener("keydown", (e) => {
     send({ type: "key", key });
   }
 });
-addEventListener("blur", () => send({ type: "focus", focused: false }));
+let focusEpoch = 0;
+addEventListener("blur", () => {
+  ++focusEpoch;
+  send({ type: "focus", focused: false });
+});
 addEventListener("focus", async () => {
-  await refresh();
-  send({ type: "focus", focused: true });
+  const epoch = ++focusEpoch;
+  try {
+    await refresh();
+    // A later blur (or focus) owns the state even if this refresh finishes last.
+    if (epoch === focusEpoch) send({ type: "focus", focused: true });
+  } catch (e) {
+    if (epoch === focusEpoch) showError(e.message);
+  }
 });
 setInterval(() => {
   if (frame?.phase !== "Closed" && !busy && !editPending)

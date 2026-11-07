@@ -1,6 +1,6 @@
 # Playable browser and desktop clients
 
-The v0.14 development clients support generated Original-profile surface games,
+The v0.14 clients support generated Original-profile surface games,
 one human civilization and the existing built-in opponents. Both clients use
 the same validated human session, presentation, owned artwork and checkpoints.
 

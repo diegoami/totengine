@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "release": "v0.14.0",
+  "review_issue": 155,
+  "reviewer": "Kimi K3.1 Pro",
+  "verdict": "AGREE",
+  "rounds": 1,
+  "reviewed_and_tagged_sha": "5e3be851782a5b4b9bc253d127f1b27212dad50a",
+  "findings": 0,
+  "release_url": "https://github.com/diegoami/totengine/releases/tag/v0.14.0",
+  "archives_sha256": {
+    "SHA256SUMS": "a5b19241caf1f6b224f87713c66bf60de18e5386a4e15fb5621036b121d78117",
+    "totengine-v0.14.0-linux-x86_64.tar.gz": "d528f573cbe63505c1069a6c3aee65b1d104b4d4efcb05576bd864e147ff529e",
+    "totengine-v0.14.0-windows-x86_64.zip": "f26e5eba85365f75f40d9da520a389f600cfeb8407bc02b4b0652523266f9732"
+  },
+  "final_package_input": {
+    "chromium": "PASS: ten rounds, pending-choice continuation and nine production checkpoint comparisons",
+    "linux_sdl": "PASS: ten rounds, pending-choice continuation and nine production checkpoint comparisons",
+    "windows_sdl": "Window launch PASS; input rerun blocked before first input on two attempts: owned window could not acquire initial focus. No foreground/PID guard was bypassed. Earlier retained Windows input and owner acceptance passed; reviewer did not repeat Windows."
+  },
+  "scope": "Release packages built from exact reviewed checkout, notices and platform runtimes only. No original game assets/fonts. Original install and generated installed-resource checkpoints stay private. Accepted owner previews remain preserved.",
+  "linux_manifest_sha256": "95a27d1670d9171cdaa18580081e6bd6a954c5ea80ee82d76d6b7f1d19d3b5d4",
+  "windows_manifest_sha256": "f834b9a4b9e0829db693f4e1d2fdac922795f1df5375cb930901c841b87741a7"
+}

@@ -166,14 +166,14 @@ Buying/selling and production-switch penalties remain separate prerequisites to
 complete city management. Existing v0.12 owner acceptance does not pass the new
 citizen-management acceptance route. Full original AI remains gated.
 
-## Current slice: v0.14 city production decisions
+## Released slice: v0.14 city production decisions
 
 Milestone 12 / #148–#151 selects buying, single-city building sale and
 category-switch shield budgets from the reviewed city contract. Both clients
 are implemented through #152; native comparisons and actual Windows/Linux/
 browser inputs pass. [Scope](city-production-milestone.md) and
 [readiness](../v0.14.0-readiness.md) retain the evidence and limits. The owner accepted the new both-client production routes on 2026-11-07;
-owner-launched independent review remains required before release. Deeper city panels and the packages below remain separate work; full
+first-round independent AGREE on #155 is complete and v0.14.0 is released. Deeper city panels and the packages below remain separate work; full
 original AI and pluggable AI stay behind complete playable-client delivery.
 
 ## Dependencies and acceptance

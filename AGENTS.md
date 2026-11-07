@@ -272,38 +272,31 @@ required. Buying/selling, shield-switch penalties, deeper panels and remaining
 full-client packages are not shipped by v0.13. Complete original-AI and pluggable
 AI work remain gated behind full playable-client delivery. New milestone review
 is owner-launched only; no automatic review or tag.
-**Current v0.14 work:** milestone 12, #148 native evidence, #149 validated quotes/
-replay, #150 shared UI, #151 real-input/owner acceptance. Scope is
-docs/ui/city-production-milestone.md. #146 was fixed and merged through #147
-at 4c9a755 (focus event epochs; actual browser regression fails on v0.13 and
-passes on the fix). #148–#150 shipped through #152 at 0789b61; #151 remains
-open. New production
-module, checker and 4,091 native comparisons cover prices, refunds, retained
-shields, confirmed writes, admission gates and 162 repeated-switch sequences.
-WorldState buy/sale/switch quotes are re-derived, city-ID bound and atomic.
-Human commands/logs/checkpoints are wired; readonly progress and clone-based
-sale-effect previews feed both adapters. The engine owns captured switch budgets:
-first accepted switch captures, purchase rebases, close/navigation/end clears,
-and checkpoint replay restores the context and reopens its city. Views/drafts
-never capture. Legacy autonomous SetProduction is unchanged. Normal recorded-play
-engine/controller tests cover purchase, next-phase completion, sale, cancel,
-switch restoration and reload. Cargo/checkpoints now use 0.14.0; the authored
-campaign golden differs only in its version header. These changes are not yet
-released. Owner accepted the requested both-client production routes on
-2026-11-07: “great, it works, let us continue”. Full make test/fmt/Clippy passes (248 Rust, 11 Python,
-golden); desktop suite 25 passes, strict desktop Clippy and seven 32-seed campaign
-tests pass. Actual Chromium/Linux/Windows production routes match 27 checkpoints,
-and prior citizen/selection/navigation/combat/continuation routes match 63 more.
-Both preview packages are accepted; preserve them and their practice saves.
-The owner's acceptance supersedes the earlier “I will look at it later”. See
-docs/v0.14.0-readiness.md and client-city-production-v1.json. Current owner browser
-is port 8797; Windows launcher is under review-tmp/totengine-owner-v014. Prepare
-the v0.14 candidate release notes and owner-launched milestone review. Once the
-review issue is opened, main takes only review fixes until the exact AGREE SHA
-is tagged. Do not launch the review or begin a new runtime milestone while this
-candidate awaits review. Native accepted-picker fragment is 0x4ecd16..0x4ecdcf
-(end exclusive), capture 0x4c0ee6, retention 0x4c0f37. Full-client/full-AI gates
-remain unchanged.
+**v0.14.0 “city production decisions” is released**, exactly at reviewed SHA
+`5e3be851782a5b4b9bc253d127f1b27212dad50a` (Kimi K3.1 Pro AGREE on #155,
+one round, no findings). Milestone 12 and #148–#151/#155 are closed. #146's focus
+ordering follow-up shipped through #147. #152 implements immutable own-city
+quotes, validated buy/sale and authoritative captured switch budgets with replay;
+#153/#154 record validation and new owner acceptance. Both clients show production
+progress, shield consequences and confirmed transactions. Native corpus: 4,091
+comparisons. Owner accepted both-client purchase/sale/switch/reload routes.
+The reviewer reproduced 248 Rust, 11 Python, golden/fmt/Clippy, 25 desktop tests,
+seven 32-seed campaign tests, all native vectors/fixture authors and actual
+Chromium/Linux routes. Retained Windows input also passed before review.
+Final reviewed-SHA Windows/Linux packages and checksums are on the release.
+Final Chromium/Linux package input passes; Windows SDL opens but two release-time
+input reruns were blocked by the owned-window initial focus guard. This is
+explicit in release notes and docs/evidence/client-v014-release.json; do not
+claim those final Windows input reruns passed. Preserve all owner previews/games:
+current accepted browser is port 8797; Windows launcher is under
+review-tmp/totengine-owner-v014. Readiness: docs/v0.14.0-readiness.md.
+**Current continuation:** the owner directed “ok when done continue”. Next scope
+is city Info/Support/Improvements/Happiness panels from the reviewed screen
+contract, including faithful panel roles and retained panel across city navigation.
+Inspect retained original captures before implementation. Separate own-city filtered
+views from rendering; lists do not invent wake/activate actions. Both clients and
+new owner acceptance/review remain required. Complete original AI/pluggable AI
+remain gated behind complete playable-client delivery.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

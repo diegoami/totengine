@@ -241,43 +241,37 @@ scoped playable-client package from `docs/ui/client-milestones.md`; deeper city
 management and input polish are natural next candidates. No next release version
 or fixed remaining milestone count is implied. Full original-AI work remains
 gated behind complete playable-client delivery.
-The owner then directed the next milestone: **v0.13.0 city workers and specialists**,
-GitHub milestone 11, #135 (validated edits/views), #136 (shared city workspace),
-#137 (continuation/real-input/owner acceptance). Scope/design:
-`docs/ui/city-citizens-milestone.md`. Implementation is in progress, not released.
-Native raw edit branches match 1,548 original-x86 cases; citizen commands are
-recorded/replayed by HumanSession and immediate totals reuse existing kernels.
-Named human founding now allocates citizens through the totals kernel; autonomous
-FoundCity behavior is unchanged. Both adapters share the new own-city workspace;
-Manage city opens it, arrows/Space select/toggle tiles, PageUp/Down navigate, roles cycle
-through explicit commands, Escape returns without undo. A generated population-
-five fixture reaches turn 72 through normal recorded play for tax/scientist checks.
-Keep working through the milestone; do not claim v0.12 owner play accepts these
-new controls. The owner confirmed both clients and the city route pass on 2026-11-07;
-independent owner-launched review remains required. City buying/selling, switching penalties, deeper panels and other full-
-client packages stay later; complete original-AI work remains gated.
-**Current v0.13 status:** the owner authorized continuation from the rejected
-preview's [replacement contract](docs/ui/selection-and-movement-study.md).
-It is implemented in the shared selection module and both renderers: own-unit
-clicks select in either mode, stable stack choices spend no movement, the ready
-selected sprite blinks and stays hittable while hidden, exhaustion advances to
-another ready unit or Viewing, and new human turns select a ready unit. Human
-end-turn remains explicit. New actual browser/Linux/Windows checks cover a
-DIFFERENT unit (no W preselection), sprite-body blink against a stable other unit,
-zoom/resize, stack choice, exhaustion and next turn. Eighteen full checkpoint
-comparisons agree. `client-selection-v1.json` and `docs/v0.13.0-readiness.md`
-record current checks/limits. Full make test: 241 Rust, 11 Python, goldens pass;
-strict default/desktop Clippy and fmt pass. The 879-input encounter now records
-actor identities in v3 and retains identical battle/capture/final checkpoints.
-The owner confirmed “Yes, both clients and city route pass” on 2026-11-07,
-then noted current production was hard to see. Follow-up labels it explicitly
-and restores visible End-turn focus for Enter when units are exhausted.
-Round-one independent review #138 by Kimi K3.1 Pro BLOCKED df22f33 on #140
-(excess entertainers missing from finance/mood) and #143 (same-frame desktop
-city keys lost). Fixes plus follow-ups #139/#141/#142/#144 are prepared for
-owner-launched re-review. See docs/v0.13.0-readiness.md and
-docs/evidence/client-review-r2.json. No tag before AGREE. Both clients and the
-full-AI gate remain as agreed.
+**v0.13.0 “city workers and specialists” is released**, exactly at reviewed SHA
+`3be920940e87d7b647f9153f21f83b30eca1e495` (Kimi K3.1 Pro, AGREE on #138,
+round two). Browser and standalone desktop both ship; owner confirmed both new
+city routes pass on 2026-11-07. Milestone 11 and #135–#138 are closed. Windows/
+Linux packages and checksums are attached to the GitHub release, with no game
+assets/fonts. Native packed citizen edits retain 1,548 original-x86 comparisons.
+Shared city workspace supplies immediate worker/role edits, outputs/mood,
+explicit current production, navigation and checkpoints; it is not the full
+original city UI. Selection follows the reference study (own-unit hits in either
+mode, stable stack identities, ready selected unit sprite blinking and hit
+handling while hidden, exhaustion/new-turn transitions). Enter visibly defaults
+to End turn when exhausted; Viewing keypad moves its visible cursor and scrolls
+only to keep it visible. Original control conventions and explicit context
+limits remain in docs/ui/original-controls.md and the selection study.
+Round-one findings #139–#144 were fixed through #145: excess entertainers enter
+finance/mood; SDL batches preserve same-city keys without retargeting; browser
+busy blur, visible inspection movement and stale docs were corrected. The
+reviewer reproduced 241 Rust tests, eleven Python, goldens/fmt/default+desktop
+Clippy, 23 desktop-feature tests, seven 32-seed campaign tests, all 1,548 native
+vectors and real browser/Linux input with 27 identical checkpoints. Main also
+verified final Windows input and package hashes. Evidence/readiness:
+docs/evidence/client-review-r2.json, client-selection-v1.json and
+docs/v0.13.0-readiness.md. #146 is a non-blocking asynchronous focus→blur ordering
+follow-up discovered in round two; retain the released SHA and fix afterwards.
+The owner explicitly directed “after that merge and continue as long as you can”.
+Continue with #146, then the next scoped city/production client package from
+reviewed screen contracts and docs/ui/client-milestones.md. Both clients remain
+required. Buying/selling, shield-switch penalties, deeper panels and remaining
+full-client packages are not shipped by v0.13. Complete original-AI and pluggable
+AI work remain gated behind full playable-client delivery. New milestone review
+is owner-launched only; no automatic review or tag.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

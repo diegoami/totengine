@@ -25,8 +25,8 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   production picker and persistent immediate edits (#136).
 - Pass real-input continuation checks in browser and native Windows/Linux,
   including a population-five fixture generated through 72 ordinary recorded
-  turns (#137). Owner acceptance passed; independent milestone review remains
-  required before tagging.
+  turns (#137). Owner acceptance passed; independent milestone review agreed in round two
+  on #138 at the exact tagged SHA.
 
 
 ## [0.12.0] — first playable human turn, browser and desktop

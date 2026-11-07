@@ -293,7 +293,7 @@ review-tmp/totengine-owner-v014. Readiness: docs/v0.14.0-readiness.md.
 **Current v0.15 work:** the owner directed “ok when done continue”. Milestone 13
 “City information panels: browser and desktop” is live: #157 reference/filtered
 views, #158 shared panels, #159 real-input/owner acceptance. Scope:
-docs/ui/city-information-milestone.md. Work branch: feat/city-information-panels.
+docs/ui/city-information-milestone.md. Panel implementation merged in PR160; city entry follow-up: fix/city-double-click.
 New private original study is complete: eleven captures, native Happy suppresses
 unchanged stages, Roma/Rhegium navigation retains the chosen panel. No original
 images/assets committed. Only the new copied prefix/display was driven; owned
@@ -313,13 +313,14 @@ All three adapters pass eight panel checkpoints with per-step panel/modal/page/
 roster assertions plus ninety prior-route checkpoints (114 total). The visiting
 unit case is created by recorded movement between existing own cities. Both
 new previews are ready; owner browser is 8799 and Windows launcher is under
-review-tmp/totengine-owner-v015, with separate practice slots. New acceptance
-was requested and is pending. All owner v0.14 previews remain preserved.
+review-tmp/totengine-owner-v015, with separate practice slots. Owner approved the requested both-client panel route on 2026-11-07:
+“ok found it, approved, let us move on”. All owner v0.14 previews remain preserved.
 A final caption-only correction aligns panel unit numbers with map slot numbers;
 its fail-before/pass-after controller test is recorded in client-city-panels-v1.json.
 The running owner preview retains initial captions; preserve its games.
-New owner acceptance and independent review
-remain required; v0.14 acceptance does not accept this slice. Cargo now 0.15.0;
+New panel owner acceptance is satisfied. Independent owner-launched review
+remains required; no manual acceptance of the subsequent double-click correction
+is claimed. The correction is covered by shared/SDL and actual-input checks. Cargo now 0.15.0;
 the exact-version campaign golden was rederived and differs from v0.14 only
 in the version header. Do not overwrite
 accepted v0.14 previews or released packages. Complete original AI/pluggable AI

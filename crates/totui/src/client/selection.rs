@@ -116,6 +116,41 @@ impl Client {
         units
     }
 
+    pub(super) fn hit_own_city<'a>(
+        &self,
+        v: &'a HumanView,
+        x: f64,
+        y: f64,
+    ) -> Option<&'a engine::player::CityView> {
+        for c in v
+            .observation
+            .cities
+            .iter()
+            .rev()
+            .filter(|c| c.owner == v.observation.civ)
+        {
+            let px = self.pan.0 + f64::from(c.x) * 32. * self.zoom;
+            let py = self.pan.1 + f64::from(c.y) * 16. * self.zoom;
+            if !(44.0..720.0).contains(&px) || !(150.0..640.0).contains(&py) {
+                continue;
+            }
+            let sx = (x - (px - 32. * self.zoom)) / (64. * self.zoom);
+            let sy = (y - (py - 34. * self.zoom)) / (48. * self.zoom);
+            if !(0.0..1.0).contains(&sx) || !(0.0..1.0).contains(&sy) {
+                continue;
+            }
+            let sprite = self
+                .atlas()?
+                .sprites
+                .get(&format!("city-{}", u8::from(c.size > 4)))?;
+            let col = (sx * f64::from(sprite.w)) as usize;
+            let row = (sy * f64::from(sprite.h)) as usize;
+            if sprite.rgba[(row * sprite.w as usize + col) * 4 + 3] > 0 {
+                return Some(c);
+            }
+        }
+        None
+    }
     pub(super) fn hit_unit<'a>(&self, v: &'a HumanView, x: f64, y: f64) -> Option<&'a UnitView> {
         for u in self.display_units(v).into_iter().rev() {
             let px = self.pan.0 + f64::from(u.x) * 32. * self.zoom;

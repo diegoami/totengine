@@ -466,7 +466,7 @@
       "step_transitions": 29
     }
   },
-  "owner_acceptance": "pending; v0.14 production acceptance is not reused",
+  "owner_acceptance": "Owner approved the requested both-client panel route: \u201cok found it, approved, let us move on\u201d (2026-11-07). This precedes the double-click correction; no manual double-click acceptance is claimed.",
   "stepwise_validation": "PASS on all three adapters. Every recorded panel/page/modal/roster transition is checked before the final visible city/panel and full checkpoint comparison.",
   "visiting_unit_setup": "The generated encounter checkpoint already has two own cities; its size-one foreign target was razed. Two recorded keypad moves, with a normal round/explicit reselection when exhausted, put home-city warrior slot 0 into the other own city before the navigation snapshot. Assertions require a supported-away unit and a present unit supported elsewhere; no world-state injection.",
   "previous_client_routes": {
@@ -542,5 +542,6 @@
     "change": "Panel unit numbers now use the same slot number shown on the map; stable entity IDs remain internal validation data.",
     "regression": "New shared-controller assertion fails on the initial panel implementation and passes after the one-line rendering correction.",
     "scope": "This caption-only correction followed the 114 actual-input checkpoint comparisons. It changes no orders/checkpoint data or controls. Preview packages below retain the initial captions; existing owner games are not overwritten."
-  }
+  },
+  "double_click_followup": "city-double-click-v1.json records later actual-input reruns including the corrected slot captions. Source hashes here retain the original panel validation provenance."
 }

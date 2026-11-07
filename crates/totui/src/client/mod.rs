@@ -26,6 +26,7 @@ pub const HEIGHT: u32 = 768;
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Input {
     Click { x: f64, y: f64 },
+    DoubleClick { x: f64, y: f64, first_click: u64 },
     Key { key: String },
     Edit { field: String, value: String },
     Focus { focused: bool },
@@ -105,6 +106,7 @@ pub struct Frame {
     pub revision: u64,
     pub phase: String,
     pub advancing: bool,
+    pub city_click: Option<u64>,
     pub draws: Vec<Draw>,
     pub entry: Option<Entry>,
     pub status: String,
@@ -209,6 +211,14 @@ struct Loaded {
     identity: String,
 }
 
+#[derive(Clone, Copy)]
+struct CityClick {
+    first: u64,
+    city: Entity,
+    x: f64,
+    y: f64,
+    session_revision: u64,
+}
 pub struct Client {
     loaded: Option<Loaded>,
     pub closed: bool,
@@ -235,6 +245,7 @@ pub struct Client {
     city: Option<Entity>,
     city_open: bool,
     city_tile: u8,
+    pending_city_click: Option<CityClick>,
     city_panel: CityPanel,
     city_panel_page: usize,
     inspect: Option<(u16, u16)>,
@@ -274,6 +285,7 @@ impl Client {
             city: None,
             city_open: false,
             city_tile: 20,
+            pending_city_click: None,
             city_panel: CityPanel::Info,
             city_panel_page: 0,
             inspect: None,
@@ -405,7 +417,10 @@ impl Client {
             return Err("Stale input: inspect the refreshed selection before acting".into());
         }
         let was_overlay = self.modal.is_some() || self.city_open;
-        let result = self.handle(input.clone());
+        if !matches!(input, Input::DoubleClick { .. }) {
+            self.pending_city_click = None;
+        }
+        let result = self.handle(input.clone(), id);
         if was_overlay && self.modal.is_none() && !self.city_open {
             self.focus_end_if_idle();
         }
@@ -432,7 +447,7 @@ impl Client {
         }
         Ok(())
     }
-    fn handle(&mut self, input: Input) -> Result<(), String> {
+    fn handle(&mut self, input: Input, id: u64) -> Result<(), String> {
         match input {
             Input::Focus { focused } => {
                 self.focused = focused;
@@ -472,6 +487,17 @@ impl Client {
                 }
                 Ok(())
             }
+            Input::DoubleClick { x, y, first_click } => {
+                if self.can_open_double_click(first_click, x, y) {
+                    // Keep the consumed gesture until a new intent arrives, so a
+                    // third mouse-down cannot become a city worker edit.
+                    let gesture = self.pending_city_click.unwrap();
+                    self.modal = None;
+                    self.city = Some(gesture.city);
+                    self.action(Action::OpenCity)?;
+                }
+                Ok(())
+            }
             Input::Click { x, y } => {
                 if !x.is_finite() || !y.is_finite() {
                     return Err("Invalid pointer position".into());
@@ -488,7 +514,7 @@ impl Client {
                     && (12.0..752.0).contains(&x)
                     && (100.0..680.0).contains(&y)
                 {
-                    self.map_click(x, y)
+                    self.map_click(x, y, id)
                 } else {
                     Ok(())
                 }
@@ -1200,8 +1226,40 @@ impl Client {
             self.order(command)
         }
     }
-    fn map_click(&mut self, x: f64, y: f64) -> Result<(), String> {
+    fn can_open_double_click(&self, first: u64, x: f64, y: f64) -> bool {
+        let Some(g) = self.pending_city_click else {
+            return false;
+        };
+        if !self.focused
+            || self.city_open
+            || !x.is_finite()
+            || !y.is_finite()
+            || g.first != first
+            || (g.x - x).abs() > 6.
+            || (g.y - y).abs() > 6.
+        {
+            return false;
+        }
+        let Some(v) = self.view() else { return false };
+        if v.revision != g.session_revision
+            || !v.cities.contains(&g.city)
+            || !v.city_citizens.iter().any(|d| d.index == g.city.slot)
+        {
+            return false;
+        }
+        match &self.modal {
+            None => true,
+            Some(Modal::Units { at, .. }) => v
+                .observation
+                .cities
+                .iter()
+                .any(|c| c.index == g.city.slot && (c.x, c.y) == *at),
+            _ => false,
+        }
+    }
+    fn map_click(&mut self, x: f64, y: f64, id: u64) -> Result<(), String> {
         let v = self.view().ok_or("Start a game first")?;
+        let pointer = (x, y);
         let logical = (
             (x - self.pan.0) / (32. * self.zoom),
             (y - self.pan.1) / (16. * self.zoom),
@@ -1222,6 +1280,8 @@ impl Client {
         }
         if let Some(u) = self.hit_unit(&v, x, y) {
             best = Some((u.x, u.y, 0.));
+        } else if let Some(c) = self.hit_own_city(&v, x, y) {
+            best = Some((c.x, c.y, 0.));
         }
         if let Some((x, y, _)) = best {
             self.inspect = Some((x, y));
@@ -1247,14 +1307,32 @@ impl Client {
                     )
                 },
             );
+            let own_city = v
+                .observation
+                .cities
+                .iter()
+                .find(|c| c.owner == v.observation.civ && (c.x, c.y) == (x, y))
+                .and_then(|c| v.cities.iter().find(|e| e.slot == c.index))
+                .copied();
             if v.observation
                 .units
                 .iter()
                 .any(|u| u.owner == v.observation.civ && (u.x, u.y) == (x, y))
             {
                 self.select_at((x, y))?;
-            } else if self.moving {
+            } else if self.moving && own_city.is_none() {
                 self.move_to((x, y))?;
+            }
+            if let Some(city) = own_city {
+                self.city = Some(city);
+                self.pending_city_click = Some(CityClick {
+                    first: id,
+                    city,
+                    x: pointer.0,
+                    y: pointer.1,
+                    session_revision: v.revision,
+                });
+                self.status = "Own city selected; double-click to manage.".into();
             }
             if let Some(c) = v
                 .observation
@@ -1663,6 +1741,7 @@ impl Client {
                 revision: self.revision,
                 phase: "Closed".into(),
                 advancing: false,
+                city_click: None,
                 draws: vec![
                     rect(0., 0., 1024., 768., "#20251f"),
                     text(
@@ -2069,6 +2148,7 @@ impl Client {
             "#fff0c6",
         ));
         Frame {
+            city_click: self.pending_city_click.map(|g| g.first),
             revision: self.revision,
             advancing: self.advancing,
             phase: view.map_or_else(|| "Setup".into(), |v| format!("{:?}", v.phase)),

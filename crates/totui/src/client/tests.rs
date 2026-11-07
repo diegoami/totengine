@@ -2007,3 +2007,138 @@ fn generated_city_panels_fixture() {
     )
     .unwrap();
 }
+
+#[test]
+fn city_double_click_is_bound_to_an_inert_own_city_click() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    let city = c.view().unwrap().observation.cities[0].clone();
+    c.pan = (
+        380. - f64::from(city.x) * 32.,
+        390. - f64::from(city.y) * 16.,
+    );
+    c.moving = true;
+    let before = c.checkpoint().unwrap();
+    let first = c.receipts.len() as u64 + 1;
+    input(&mut c, Input::Click { x: 380., y: 370. });
+    assert_eq!(
+        c.frame().city_click,
+        Some(first),
+        "city roof and base share the rendered sprite hit area"
+    );
+    assert!(c.status.contains("double-click"));
+    assert_eq!(
+        before,
+        c.checkpoint().unwrap(),
+        "first city click cannot move even in Moving mode"
+    );
+    input(
+        &mut c,
+        Input::DoubleClick {
+            x: 380.,
+            y: 370.,
+            first_click: first + 999,
+        },
+    );
+    assert!(!c.city_open);
+    key(&mut c, "v");
+    input(
+        &mut c,
+        Input::DoubleClick {
+            x: 380.,
+            y: 370.,
+            first_click: first,
+        },
+    );
+    assert!(!c.city_open, "intervening input invalidates the gesture");
+    let first = c.receipts.len() as u64 + 1;
+    input(&mut c, Input::Click { x: 380., y: 370. });
+    input(
+        &mut c,
+        Input::DoubleClick {
+            x: 380.,
+            y: 370.,
+            first_click: first,
+        },
+    );
+    assert!(c.city_open);
+    assert_eq!(c.city.unwrap().slot, city.index);
+    assert_eq!(before, c.checkpoint().unwrap(), "opening is read-only");
+    input(
+        &mut c,
+        Input::DoubleClick {
+            x: 500.,
+            y: 300.,
+            first_click: first,
+        },
+    );
+    assert_eq!(
+        before,
+        c.checkpoint().unwrap(),
+        "a repeated double click cannot turn into a worker edit"
+    );
+    key(&mut c, "Escape");
+    let first = c.receipts.len() as u64 + 1;
+    input(&mut c, Input::Click { x: 380., y: 370. });
+    input(&mut c, Input::Focus { focused: false });
+    input(&mut c, Input::Focus { focused: true });
+    input(
+        &mut c,
+        Input::DoubleClick {
+            x: 380.,
+            y: 370.,
+            first_click: first,
+        },
+    );
+    assert!(!c.city_open);
+    assert_eq!(before, c.checkpoint().unwrap());
+    button(&mut c, "Choose production");
+    let at = c
+        .current_choices()
+        .iter()
+        .position(|(id, _)| {
+            *id >= 0
+                && c.loaded
+                    .as_ref()
+                    .unwrap()
+                    .resources
+                    .rules
+                    .unit_role(*id as usize)
+                    != Some(5)
+        })
+        .unwrap();
+    for _ in 0..=at {
+        key(&mut c, "ArrowDown");
+    }
+    key(&mut c, "Enter");
+    for _ in 0..40 {
+        if c.view().unwrap().units.len() >= 2 {
+            break;
+        }
+        end_round(&mut c);
+    }
+    assert!(c.view().unwrap().units.len() >= 2);
+    c.pan = (
+        380. - f64::from(city.x) * 32.,
+        390. - f64::from(city.y) * 16.,
+    );
+    let before = c.checkpoint().unwrap();
+    let first = c.receipts.len() as u64 + 1;
+    input(&mut c, Input::Click { x: 380., y: 370. });
+    assert!(
+        matches!(c.modal, Some(Modal::Units { .. })),
+        "first garrison click keeps explicit stack choice"
+    );
+    input(
+        &mut c,
+        Input::DoubleClick {
+            x: 380.,
+            y: 370.,
+            first_click: first,
+        },
+    );
+    assert!(c.city_open && c.modal.is_none());
+    assert_eq!(before, c.checkpoint().unwrap());
+}

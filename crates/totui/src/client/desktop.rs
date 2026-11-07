@@ -44,7 +44,8 @@ impl InputBatch {
             && client.city == self.city
             && client.modal.is_none()
             && client.modal_id == self.modal;
-        if matches!(&input, Input::Focus { .. })
+        if matches!(&input, Input::DoubleClick{x,y,first_click} if client.can_open_double_click(*first_click,*x,*y))
+            || matches!(&input, Input::Focus { .. })
             || matches!(&input, Input::Key { key } if key == "Tab" || key == "ShiftTab")
             || (same_dialog && matches!(&input, Input::Key { .. } | Input::Edit { .. }))
             || (same_city && matches!(&input, Input::Key { .. }))
@@ -52,6 +53,21 @@ impl InputBatch {
             revision = client.revision;
         }
         client.input(revision, id, input)
+    }
+}
+fn pointer_input(client: &Client, x: i32, y: i32, clicks: u8) -> Input {
+    if clicks > 1 {
+        if let Some(g) = client.pending_city_click {
+            return Input::DoubleClick {
+                x: f64::from(x),
+                y: f64::from(y),
+                first_click: g.first,
+            };
+        }
+    }
+    Input::Click {
+        x: f64::from(x),
+        y: f64::from(y),
     }
 }
 fn color(s: &str) -> Color {
@@ -219,11 +235,9 @@ pub fn run(mut client: Client) -> Result<(), String> {
                     x,
                     y,
                     mouse_btn: sdl2::mouse::MouseButton::Left,
+                    clicks,
                     ..
-                } => Some(Input::Click {
-                    x: f64::from(x),
-                    y: f64::from(y),
-                }),
+                } => Some(pointer_input(&client, x, y, clicks)),
                 Event::TextInput { text, .. } => {
                     let entry = client
                         .frame()
@@ -618,6 +632,53 @@ mod tests {
             )
             .is_err());
         assert_eq!(changed, client.checkpoint().unwrap());
+        // Two native mouse-downs may arrive before the next painted frame.
+        // Rebase only the second half of the same validated own-city gesture.
+        let f2 = super::super::tests::Fixture::new();
+        let mut client = f2.client();
+        super::super::tests::start(&mut client);
+        super::super::tests::founding(&mut client);
+        let c = client.view().unwrap().observation.cities[0].clone();
+        client.pan = (380. - f64::from(c.x) * 32., 390. - f64::from(c.y) * 16.);
+        let before = client.checkpoint().unwrap();
+        for clicks in [1, 2, 3] {
+            events
+                .push_event(Event::MouseButtonDown {
+                    timestamp: 0,
+                    window_id: 0,
+                    which: 0,
+                    mouse_btn: sdl2::mouse::MouseButton::Left,
+                    clicks,
+                    x: 380,
+                    y: 370,
+                })
+                .unwrap();
+        }
+        let batch = InputBatch::new(&client);
+        let mut id = 5000;
+        for event in pump.poll_iter() {
+            if let Event::MouseButtonDown { x, y, clicks, .. } = event {
+                let input = pointer_input(&client, x, y, clicks);
+                id += 1;
+                let result = batch.submit(&mut client, id, batch.revision, input);
+                if clicks == 3 {
+                    assert!(result.is_err());
+                } else {
+                    result.unwrap();
+                }
+            }
+        }
+        assert!(client.city_open);
+        assert_eq!(before, client.checkpoint().unwrap());
+        assert!(batch
+            .submit(
+                &mut client,
+                5004,
+                batch.revision,
+                Input::Key { key: "6".into() }
+            )
+            .is_err());
+        assert_eq!(before, client.checkpoint().unwrap());
     }
 
     #[test]

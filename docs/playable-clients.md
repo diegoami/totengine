@@ -47,7 +47,9 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   standard zoom. The **+ / -** buttons and keys remain available as conveniences.
 - **B** opens founding for an eligible settler. Type the name and accept;
   Escape cancels without consuming the settler. **Cities** cycles own cities.
-- **Manage city** opens the selected own city's workspace. Click a radius tile
+- **Double-click an own city on the map** (including its garrison) or use
+  **Manage city** to open its workspace. The first city click only selects or
+  inspects; use movement keys to move into an own city. Click a radius tile
   to remove/assign its worker; arrows select a tile and **Space** changes it.
   Removing a worker creates an entertainer. Click a specialist to cycle
   entertainer → tax collector → scientist; tax/scientist roles need population
@@ -59,7 +61,7 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   sale rows retain explicit confirmation. Happy omits unchanged stages. The
   selected panel stays across city navigation; viewing a list never orders a
   unit. Tile arrow/Space keys apply only in Info; radius mouse edits remain
-  immediate in every panel. These panels still require new owner acceptance.
+  immediate in every panel. The owner approved these panels in both clients; independent review is pending.
 - **Auto workers**, or the centre tile, requests automatic allocation. An empty
   tile clicked without a spare specialist also requests automatic allocation,
   following the original transition. First remove a worker when you want to

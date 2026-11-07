@@ -152,17 +152,30 @@ and explicit exclusions. All six stories shipped in the first-slice milestone
 with both clients. This does not assign a fixed count of releases for the whole
 client track or a version for the next package. Subsequent packages below retain their own discovery and scope gates.
 
-## Next slice: v0.13 city workers and specialists
+## Released slice: v0.13 city workers and specialists
 
 The owner requested the next milestone after the v0.12 release. Milestone 11
 selects the citizen-management portion of the reviewed city design, delivering
 both clients together. Stories #135–#137 cover validated commands/own-city
 views, the shared workspace and assembled continuation/human acceptance.
-[Scope and evidence plan](city-citizens-milestone.md). Work is in progress;
-subsequent release versions and the remaining milestone count stay unassigned.
+[Scope and evidence plan](city-citizens-milestone.md). v0.13.0 is released after
+both-client owner acceptance and round-two independent AGREE on #138.
+The next scoped package is v0.14 below; further versions and the remaining
+milestone count stay unassigned.
 Buying/selling and production-switch penalties remain separate prerequisites to
 complete city management. Existing v0.12 owner acceptance does not pass the new
 citizen-management acceptance route. Full original AI remains gated.
+
+## Current slice: v0.14 city production decisions
+
+Milestone 12 / #148–#151 selects buying, single-city building sale and
+category-switch shield budgets from the reviewed city contract. Both clients
+are implemented through #152; native comparisons and actual Windows/Linux/
+browser inputs pass. [Scope](city-production-milestone.md) and
+[readiness](../v0.14.0-readiness.md) retain the evidence and limits. New both-client
+owner acceptance and owner-launched independent review remain required before
+release. Deeper city panels and the packages below remain separate work; full
+original AI and pluggable AI stay behind complete playable-client delivery.
 
 ## Dependencies and acceptance
 

@@ -276,7 +276,8 @@ is owner-launched only; no automatic review or tag.
 replay, #150 shared UI, #151 real-input/owner acceptance. Scope is
 docs/ui/city-production-milestone.md. #146 was fixed and merged through #147
 at 4c9a755 (focus event epochs; actual browser regression fails on v0.13 and
-passes on the fix). Work branch: feat/city-production-decisions. New production
+passes on the fix). #148–#150 shipped through #152 at 0789b61; #151 remains
+open. New production
 module, checker and 4,091 native comparisons cover prices, refunds, retained
 shields, confirmed writes, admission gates and 162 repeated-switch sequences.
 WorldState buy/sale/switch quotes are re-derived, city-ID bound and atomic.
@@ -288,8 +289,17 @@ never capture. Legacy autonomous SetProduction is unchanged. Normal recorded-pla
 engine/controller tests cover purchase, next-phase completion, sale, cancel,
 switch restoration and reload. Cargo/checkpoints now use 0.14.0; the authored
 campaign golden differs only in its version header. These changes are not yet
-released or owner accepted. Actual browser/Linux/Windows input checks, packages
-and new both-client acceptance remain. Native accepted-picker fragment is
+released or owner accepted. Full make test/fmt/Clippy passes (248 Rust, 11 Python,
+golden); desktop suite 25 passes, strict desktop Clippy and seven 32-seed campaign
+tests pass. Actual Chromium/Linux/Windows production routes match 27 checkpoints,
+and prior citizen/selection/navigation/combat/continuation routes match 63 more.
+Both packages and fresh owner previews are ready; new both-client human acceptance
+was requested; owner replied “Ok I will look at it later” (2026-11-07). This is
+not acceptance. Preserve the previews/practice slots and await actual results.
+See docs/v0.14.0-readiness.md and
+client-city-production-v1.json. Preserve prior owner previews/games. Current
+owner browser is port 8797; Windows launcher is under review-tmp/totengine-owner-v014.
+No candidate review/tag is ready until acceptance. Native accepted-picker fragment is
 0x4ecd16..0x4ecdcf (end exclusive), capture 0x4c0ee6, retention 0x4c0f37. Keep
 working through the milestone, with both clients and new owner acceptance, then
 stop only at the owner-launched review gate.

@@ -276,5 +276,65 @@
       "after_sha256": "735debe794fec0234c4d535af09a2e9b09c2b19d7b3678937953b52bb15a8c63"
     }
   ],
-  "owner_acceptance": "pending; v0.13 citizen acceptance is not reused"
+  "owner_acceptance": "pending; owner replied \"Ok I will look at it later\" on 2026-11-07. No production-route pass claimed. v0.13 citizen acceptance is not reused.",
+  "previous_client_routes": {
+    "scope": "Current-version fixtures regenerated through recorded play. Actual browser, Linux and Windows routes check citizens, two-city navigation, different-unit selection/blink/resize/exhaustion, battle/capture and ten-round/pending-choice continuation. This supplements historical v0.13 evidence without changing it.",
+    "checkpoint_sha256": {
+      "cityentertainer": "32d19db5b62e901d32a5b71b6ecb06562294dcc3f800f83c3fdec444ef104b02",
+      "citytax": "1eaf04ceb11409694ac3036c1249aace76a5052937891d00e6c37f2f4d0a3a4d",
+      "cityscience": "189f0f96c9f215d5dafe1630710765464d862ecffe87609fac5e38556bb4f77c",
+      "citycycle": "04e7d205aed318407923c2d8ebedf14ce0070a44f5848fa0006d260fd5d65352",
+      "cityresume": "7ec91c84610f9931d41ed3d2d396e005e157a21b1edc5f3de357b8fd4fb04282",
+      "selectioninert": "6c12d7c360215279d8fb5b9e1c8f213070333eccdb6cbe58ae935d2b0b6eb4d2",
+      "selectionresized": "6c12d7c360215279d8fb5b9e1c8f213070333eccdb6cbe58ae935d2b0b6eb4d2",
+      "selectionstackinert": "ff79de31606ec224bab6b24496075fa7cb44835906b733574fab9f27000605fd",
+      "selectionmove": "a5f687d6885b75d2ec7d1dd8bfccf6edadc90697a428c5fa903f03e1bfed5847",
+      "selectionskip": "e61fe11091217b0e8827a7e2bc4482ee67f9885d3a3a69198672f59c3279d6ee",
+      "selectionturn": "74f9bbcb0cd6b7b31d5c10f682f7740712714ec2502d5160a65be42e8e4b6d5c",
+      "battleafter": "d16018cb59fd4d67ac3234719a1a2973a57f6d81533f9a01750dc8db44764104",
+      "captureafter": "2df6e0ff0c1abc2facfea4c5769ecc3098acdc540acdd6cf3526092448edda82",
+      "citynavigation": "2df6e0ff0c1abc2facfea4c5769ecc3098acdc540acdd6cf3526092448edda82",
+      "research": "c61206090851ba50a702b09cd79f521546cdd936e5c74cae891b38dbfd5026dd",
+      "founding": "dc2ef20bd7c5bba89a9be830740930c1d85f5ba24668a154e6b9b4eb90a56970",
+      "normal": "c76bc016cea28e74882d45dc8b32bdd9002a3b2fd9a1a192a3e10d96623467e7",
+      "tenrounds": "8f88212793403ce9c17852fb0e6f34af062a1420f424f09f01f855b992562d9b",
+      "researchnext": "dc2ef20bd7c5bba89a9be830740930c1d85f5ba24668a154e6b9b4eb90a56970",
+      "foundingnext": "c76bc016cea28e74882d45dc8b32bdd9002a3b2fd9a1a192a3e10d96623467e7",
+      "normalnext": "fe5b4b96bbd9ad782884f057282fbe831e9a606f7cabdd750806eeb9b550a308"
+    },
+    "platforms": {
+      "chromium": {
+        "result": "PASS",
+        "checkpoint_comparisons": 21
+      },
+      "linux_sdl": {
+        "result": "PASS",
+        "checkpoint_comparisons": 21
+      },
+      "windows_sdl": {
+        "result": "PASS",
+        "checkpoint_comparisons": 21
+      }
+    }
+  },
+  "owner_preview_packages": {
+    "linux": {
+      "manifest_sha256": "093032fe4ff2110481102b824a3e772026838235514166fda2199fba8e5a3334",
+      "verified_manifest_files": 71,
+      "binaries_sha256": {
+        "totplay": "338a17e4192f5e8231f95cf1cd3818d069ab0cc2531d598090478001ca15d537",
+        "totdesktop": "75cee10f24eb5697a928a39f15924f2d36a8a79a67d3308f00b2ea30ecb67ab4"
+      },
+      "scope": "Owner preview using the tested runtime code. Notices and platform runtimes included; no original game assets or fonts. Preserve this package while human acceptance is pending. Final release packages require the independently reviewed candidate."
+    },
+    "windows": {
+      "manifest_sha256": "eac1eddfd8c127af3d8ab959d1c15de31884e09dfdc6c970b6dfe1bfc9526bb5",
+      "verified_manifest_files": 73,
+      "binaries_sha256": {
+        "totplay.exe": "00d4f3b3f47d3abcaf7abbfe23edfed1380c555b5b74bca8ab776c6005863541",
+        "totdesktop.exe": "634c5f5e24a72f4919286643bd4fc7bd2709354e9744cf828f766730df7c9353"
+      },
+      "scope": "Owner preview using the tested runtime code. Notices and platform runtimes included; no original game assets or fonts. Preserve this package while human acceptance is pending. Final release packages require the independently reviewed candidate."
+    }
+  }
 }

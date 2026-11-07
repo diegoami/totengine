@@ -10,6 +10,7 @@ let frame = null,
   busy = false,
   editPending = false,
   pendingKey = null,
+  pendingFocus = null,
   assets = "",
   sprites = new Map(),
   counter = 0,
@@ -148,7 +149,8 @@ async function refresh() {
 async function send(input) {
   if (!frame) return;
   if (busy) {
-    if (input.type === "edit") editPending = true;
+    if (input.type === "focus") pendingFocus = input.focused;
+    else if (input.type === "edit") editPending = true;
     else if (input.type === "key" && !entry.hidden)
       pendingKey = { input, field: entry.dataset.field };
     else showError("Input is pending; wait for the refreshed selection");
@@ -186,7 +188,13 @@ async function send(input) {
     showError(e.message + " — reconnect to retrieve the pending decision");
   } finally {
     busy = false;
-    if (editPending && !entry.hidden) {
+    if (pendingFocus !== null) {
+      const focused = pendingFocus;
+      pendingFocus = null;
+      // Begin immediately: a newer focus event must not be overtaken by an
+      // older transition waiting in a timer callback.
+      send({ type: "focus", focused });
+    } else if (editPending && !entry.hidden) {
       editPending = false;
       const field = entry.dataset.field,
         value = entry.value;

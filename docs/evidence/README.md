@@ -3861,8 +3861,10 @@ real-input checkpoints across browser/Linux/Windows, and presentation-only
 blinking checks. `client-input-route-v2.json` translates the older UI shortcuts
 without changing its generated engine trajectory; the v1 artifact stays intact.
 Sources and limits: [original controls](../ui/original-controls.md). Reproduction:
-[v0.13 readiness](../v0.13.0-readiness.md#movementcontrol-corrections-after-owner-feedback).
-Owner retesting remains pending; these checks do not complete the human gate.
+[v0.13 readiness](../v0.13.0-readiness.md#reproduction).
+Historical status of the rejected preview: owner retesting was pending; these
+checks did not complete the human gate. The replacement build subsequently
+received the separate owner acceptance recorded below.
 
 ## Original selection study after rejected preview
 
@@ -3885,6 +3887,6 @@ next-turn results match across all adapters. Sprite-body pixels, rather than an
 arbitrary marker, verify selected-unit blinking and hidden-phase activation.
 `client-input-route-v3.json` adds explicit actor identities to the historical
 879-input route and reproduces the same battle/capture/final game checkpoints.
-Reproduction and pending owner gate: [v0.13 readiness](../v0.13.0-readiness.md).
+Reproduction and 2026-11-07 both-client owner acceptance: [v0.13 readiness](../v0.13.0-readiness.md).
 The reference-study facts and configured-ToTPP limits remain unchanged; the new
 automated checks are not human acceptance or a claim of full original UI parity.

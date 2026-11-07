@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "engine_version": "0.13.0",
+  "review_issue": 138,
+  "round_one_candidate": "df22f33b993a73e8355ef56c94e38d3df21963d1",
+  "round_one_verdict": "BLOCK; Kimi K3.1 Pro; two MUST-FIX and four follow-ups",
+  "findings": {
+    "140": {
+      "fix": "Shared specialist role counts add fixed entertainers beyond sixteen packed slots to finance and happiness.",
+      "test": "human::tests::excess_entertainers_count_in_immediate_finance_and_mood",
+      "population_cases": [
+        16,
+        17,
+        20,
+        30,
+        63
+      ],
+      "expected_twenty_entertainers": {
+        "luxuries_without_trade_or_multipliers": 40,
+        "happy": 0,
+        "unhappy": 0,
+        "angry": 0
+      },
+      "scope": "Authored API fixture with immediate edits and inert turn/RNG/treasury/production; not native large-city total parity or naturally grown campaign/checkpoint evidence."
+    },
+    "143": {
+      "fix": "SDL batch refreshes revisions for keyboard input only while the received city and modal identities still match; map orders retain received revisions.",
+      "test": "client::desktop::tests::city_keys_in_one_sdl_batch_are_preserved_without_crossing_workspace",
+      "input": "Three SDL KeyDown events pushed before poll_iter: Right, Right, Space; all apply. After Escape, queued map key is stale and gameplay checkpoint is unchanged."
+    },
+    "139": {
+      "fix": "Current owner-acceptance wording records 2026-11-07 confirmation; rejected-preview pending wording explicitly historical."
+    },
+    "141": {
+      "fix": "Evidence README reproduction link points to existing readiness #reproduction heading."
+    },
+    "142": {
+      "fix": "Busy browser input retains latest focus transition and drains it before pending edits/keys.",
+      "test": "Real Chromium route holds a POST, blurs while busy, releases it, verifies focus=false POST and controller rejection of unfocused input."
+    },
+    "144": {
+      "fix": "Viewing cursor moves visibly; map pans only to keep its diamond visible. Exact scroll thresholds are client presentation policy.",
+      "test": "client::tests::original_bindings_activation_mouse_stacking_and_blink_are_inert_or_validated asserts projected cursor displacement and unchanged checkpoint."
+    }
+  },
+  "source_sha256": {
+    "crates/engine/src/citizens.rs": "7ca0b95fbbe53d57c761cdf76067f9250165ce4f07e69fab89b4ca37836803b0",
+    "crates/engine/src/finance.rs": "4682c320e0c48741cfc32698d1d8538050049e7252f42e9904620e4f02cc4ecb",
+    "crates/engine/src/happiness.rs": "813d24480257b9d5bad84365421eab3e6fbbebffc8e640552b87f33d0ab99fd8",
+    "crates/engine/src/human/tests.rs": "3c56c427f2212f3adc74ed2bf554c4372608f3816c2ce9668f50695cee1d6815",
+    "crates/totui/src/client/desktop.rs": "8dfffc1a461615d5a5736039fcc96f46038d960b13348cfc4aa0629fb53ececf",
+    "crates/totui/src/client/mod.rs": "f90d3eb45e58a9f786a23c7044b3eb855263707d244d94e28e13b3892e002884",
+    "crates/totui/src/client/play.js": "7fd276721ab4f4b5285a63d605cb0453684179829e8d1d45bc0e357433686f9c",
+    "crates/totui/src/client/tests.rs": "7c4d6fa50bf500f8000684c635695f1925f865be0e811ce589646850fa54cd20",
+    "tools/check_client_browser.cjs": "e7607b3bd2e7fddb78803c19c7197b5c108b3d3cd5bcd09200fc9a2723cc2e1a"
+  },
+  "validation": {
+    "engine_library_passed": 133,
+    "desktop_feature_library_passed": 23,
+    "desktop_fixture_authors_ignored": 4,
+    "release_campaign_suite_passed": 7,
+    "seeds_per_policy": 32,
+    "browser_actual_input": "passed full actual input route and held-request blur regression on final package",
+    "linux_actual_input": "passed full actual input route on final package",
+    "windows_actual_input": "passed full actual OS input route on final package binary",
+    "full_install_make_test": {
+      "rust_passed": 241,
+      "rust_ignored": 5,
+      "python_passed": 11,
+      "golden": "all corpus outputs match",
+      "sequence": "Full install suite passed after engine and SDL fixes; final browser focus draining was then tightened to immediate dispatch. Final client-library and all three actual-input package routes repeated afterward; engine/campaign sources unchanged."
+    },
+    "cross_adapter_checkpoint_files": 27,
+    "selection_checkpoint_comparisons": 18,
+    "final_client_library_passed": 23
+  },
+  "limits": "No new original-game assets or native screenshots/saves. Owner acceptance remains the recorded pre-review result; main never launches independent re-review.",
+  "package_binaries": {
+    "linux": {
+      "totplay": "a61a6cae78d4c986bf793b9c67cfaa6a4f99a7241c897c60e67a7237e4589de6",
+      "totdesktop": "a2a73e89dff04f9ac71d662c74525e5268d00e2a4a4a0e453310b18b12c94107"
+    },
+    "windows": {
+      "totplay.exe": "faf13b4b68efe2163915d0eecdbe027fcbaf5bdde0e9589554e52b137017acba",
+      "totdesktop.exe": "f7b81265f9f6cf5efc960c2d9593cc7cd9f410fc3d1f27959282b980088cf871"
+    }
+  },
+  "release_archive_sha256": {
+    "totengine-v0.13.0-linux-x86_64.tar.gz": "b966fb9ccaa900a9c1d93b4b6329e077edd6fe23fee8cbc7f1f7ef3f7dca7027",
+    "totengine-v0.13.0-windows-x86_64.zip": "8b494943c3219e9c3e7959f4230961a79db433135f0871f6b75f7358a4fb89e8"
+  },
+  "code_commit": "d1aeac3a3b079f725282a556def230a3f5f03db4",
+  "fix_pr": 145
+}

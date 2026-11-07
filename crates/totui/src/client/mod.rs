@@ -982,8 +982,12 @@ impl Client {
                 return Err("Inspection cursor reached the map edge".into());
             }
             self.inspect = Some((x as u16, y as u16));
-            self.pan.0 -= f64::from(dx) * 32. * self.zoom;
-            self.pan.1 -= f64::from(dy) * 16. * self.zoom;
+            // Move the inspection cursor across the map; scroll only when its
+            // diamond would leave the visible workspace.
+            let px = self.pan.0 + f64::from(x) * 32. * self.zoom;
+            let py = self.pan.1 + f64::from(y) * 16. * self.zoom;
+            self.pan.0 += px.clamp(44. + 32. * self.zoom, 720. - 32. * self.zoom) - px;
+            self.pan.1 += py.clamp(150. + 16. * self.zoom, 639. - 16. * self.zoom) - py;
             self.status = format!("Viewing ({x}, {y}); A activates an own unit, V changes mode.");
             return Ok(());
         }

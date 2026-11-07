@@ -1,9 +1,9 @@
 use super::*;
 use std::fs;
 use std::sync::atomic::{AtomicU64, Ordering};
-struct Fixture(PathBuf);
+pub(super) struct Fixture(PathBuf);
 impl Fixture {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         static NEXT: AtomicU64 = AtomicU64::new(0);
         let p = std::env::temp_dir().join(format!(
             "tot-client-{}-{}",
@@ -26,7 +26,7 @@ impl Fixture {
         }
         Self(p)
     }
-    fn client(&self) -> Client {
+    pub(super) fn client(&self) -> Client {
         Client::new(self.0.to_str().unwrap().into(), self.0.join("saves"))
     }
 }
@@ -85,12 +85,12 @@ fn ready(c: &mut Client) {
     }
     panic!("no human turn")
 }
-fn start(c: &mut Client) {
+pub(super) fn start(c: &mut Client) {
     button(c, "Start Original");
     assert!(c.loaded.is_some(), "{}", c.status);
     research(c);
 }
-fn founding(c: &mut Client) {
+pub(super) fn founding(c: &mut Client) {
     key(c, "b");
     assert!(matches!(c.modal, Some(Modal::Name)));
     edit(c, "Athena");
@@ -707,7 +707,22 @@ fn original_bindings_activation_mouse_stacking_and_blink_are_inert_or_validated(
     );
     key(&mut c, "v");
     assert!(!c.moving);
+    let cursor = |c: &Client| {
+        c.frame()
+            .draws
+            .iter()
+            .find_map(|d| match d {
+                Draw::Cursor { x, y, .. } => Some((*x, *y)),
+                _ => None,
+            })
+            .unwrap()
+    };
+    let before_cursor = cursor(&c);
     key(&mut c, "6");
+    assert_eq!(
+        cursor(&c),
+        (before_cursor.0 + 64. * c.zoom, before_cursor.1)
+    );
     assert_eq!(c.inspect, Some((origin.0 + 2, origin.1)));
     assert_eq!(
         c.checkpoint().unwrap(),

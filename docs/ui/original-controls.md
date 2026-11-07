@@ -9,8 +9,8 @@ The previous preview was owner rejected. The subsequent
 [selection and movement study](selection-and-movement-study.md) identified its
 selection precedence and blink/test gaps. The resumed implementation now selects
 own units in both modes, blinks the selected sprite and handles ready/exhausted
-selection transitions. `client-selection-v1.json` records the new checks; owner
-acceptance remains pending. The reference study's ToTPP configuration limits
+selection transitions. `client-selection-v1.json` records the new checks; the owner
+confirmed both clients and the city route pass on 2026-11-07. The reference study's ToTPP configuration limits
 still apply, and full original UI parity is not claimed.
 
 ## Publisher manual
@@ -47,7 +47,7 @@ The owner's `Original/Menu.txt` independently declares:
 | Found city | B |
 | Center view | C |
 | Wait / skip turn | W / Space |
-| End player turn | Ctrl+N |
+| End player turn | Ctrl+N; Enter activates the visibly focused End button when exhausted |
 | Save / load | Ctrl+S / Ctrl+L |
 | Zoom in / out | Z / X |
 | Standard zoom | Shift+Z |
@@ -106,8 +106,8 @@ Owner testing found the original preview blocker: click unit â†’ Activate unit â
 terrain only inspected because activation failed to enter Moving. Automated
 regressions now cover that exact route with a generated warrior and byte-exact
 checkpoint comparisons. The replacement contract and different-unit/sprite checks now supersede that
-limited route. New owner acceptance in #137 remains pending; earlier passing
-turn/city automation did not waive the reported blocker.
+limited route. New owner acceptance in #137 passed on 2026-11-07; earlier passing
+turn/city automation did not waive the then-reported blocker.
 
 The mouse preference interface, native edge-arrow mouse movement, complete
 unit scheduling, full advisor/menu layouts and unimplemented orders remain
@@ -125,3 +125,8 @@ original artwork, window/panel roles, command names, contextual availability and
 immediate city-edit behavior are the baseline. Differences need explicit scope
 and tracking, rather than silently becoming new conventions. This does not
 claim that the current toolbar/panels already reproduce the original layout.
+
+Viewing keypad input moves the inspection cursor across the visible map. The
+map pans only when necessary to keep its diamond inside the workspace. This
+visibility rule is client presentation policy, not a claim of exact native scroll
+thresholds. Inspection remains inert and never selects a new movement actor.

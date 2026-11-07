@@ -15,6 +15,24 @@ fs.mkdirSync(out,{recursive:true});
  function has(f,t){return f.draws.some(d=>d.kind==='text'&&d.text===t)}
  async function research(){if(has(await state(),'Choose research explicitly')){await key('ArrowDown');await key('Enter');await page.waitForFunction(()=>frame.status==='research-set')}}
  async function save(name){await fill(name);await key('Enter')}
+ // Hold an actual request, then blur while busy. The focus transition must
+ // reach the controller after the request instead of being dropped.
+ await idle();
+ let releaseRequest, requestStarted;
+ const started=new Promise(resolve=>{requestStarted=resolve});
+ const held=new Promise(resolve=>{releaseRequest=resolve});
+ await page.route('**/input',async route=>{requestStarted();await held;await route.continue()},{times:1});
+ await page.evaluate(()=>{send({type:'focus',focused:true})});
+ await started;
+ const blurPosted=page.waitForRequest(request=>request.url().endsWith('/input')&&request.method()==='POST'&&request.postDataJSON()?.input?.type==='focus'&&request.postDataJSON().input.focused===false);
+ await page.evaluate(()=>dispatchEvent(new Event('blur')));
+ releaseRequest();
+ await blurPosted;
+ await page.waitForFunction(()=>!busy&&pendingFocus===null);
+ await key('Tab');
+ if((await state()).status!=='Window is unfocused; input ignored')throw Error('busy blur did not reach controller');
+ await page.evaluate(()=>dispatchEvent(new Event('focus')));
+ await idle();
  await idle();await click('Start Original surface game');
  await click('Save pending choice');await save('research');await research();
  await key('b');await click('Save pending choice');await save('founding');await fill('athenx');await page.keyboard.press('Backspace');await page.keyboard.type('a');await page.waitForFunction(()=>frame.entry?.value==='athena'&&!busy);await key('Enter');

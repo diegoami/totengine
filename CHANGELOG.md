@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Preserve browser focus-event order when an older asynchronous state refresh
+  completes after a newer blur (#146); retain the v0.13.0 tag unchanged.
+
 ## [0.13.0] — city workers and specialists
 
 - Replace the rejected preview's selection handling with shared render/hit

@@ -3890,3 +3890,12 @@ arbitrary marker, verify selected-unit blinking and hidden-phase activation.
 Reproduction and 2026-11-07 both-client owner acceptance: [v0.13 readiness](../v0.13.0-readiness.md).
 The reference-study facts and configured-ToTPP limits remain unchanged; the new
 automated checks are not human acceptance or a claim of full original UI parity.
+
+## Post-v0.13 asynchronous browser focus ordering
+
+`client-focus-order-v1.json` records #146: delayed older focus refreshes may not
+overwrite newer blur. Its controlled Chromium request/event route fails against
+the unchanged v0.13 release and passes with focus-event epochs, followed by the
+ten-round/pending-choice continuation route. It controls presentation HTTP and
+window events only, not game state; physical OS focus transitions are outside
+this synthetic-event regression. Released v0.13 evidence/tag stays unchanged.

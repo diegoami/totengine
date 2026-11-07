@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "issue": 146,
+  "released_baseline": "3be920940e87d7b647f9153f21f83b30eca1e495",
+  "scope": "Post-v0.13 browser focus event sequencing; no engine, desktop or released-tag changes",
+  "fix": "A monotonic event epoch invalidates older asynchronous focus refreshes after any newer focus/blur. State refresh is retained for reconnect handling.",
+  "source_sha256": {
+    "crates/totui/src/client/play.js": "992c1be9f667aea56c85bf1f876f589ce647e4cffd010312ec5dc6031d590055",
+    "tools/check_client_browser.cjs": "a4fa01b9b611f941a03ad01433d60003a936c1b78f224d158d0292ca364140e7"
+  },
+  "regression": {
+    "input": "Hold one POST and the older focus state refresh using one Playwright route interceptor; enqueue a later blur, release state then POST. Verify focus=false reaches the controller and Start is rejected while unfocused. Restore focus, complete ten rounds and required-choice save/resume.",
+    "released_baseline": "FAIL: no focus=false POST reaches controller within the controlled ordering timeout",
+    "fixed_browser": "PASS: both busy-blur and delayed-focus\u2192blur tests, ten rounds and pending-choice continuation",
+    "fixture_input": "Real browser events/HTTP response ordering only; no game-state mutation or injected private state",
+    "limits": "Synthetic window events exercise event handlers and controller guard, not physical operating-system window-manager focus transitions."
+  }
+}

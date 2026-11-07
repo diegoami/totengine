@@ -113,7 +113,11 @@ impl Client {
                 440.,
                 380.,
                 36.,
-                "Toggle selected tile [Space]",
+                if self.city_panel == CityPanel::Info {
+                    "Toggle selected tile [Space]"
+                } else {
+                    "Toggle selected tile"
+                },
                 Action::Worker(city, self.city_tile),
             );
             add(

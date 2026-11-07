@@ -3939,7 +3939,8 @@ recorded play, including treasury funding and natural building completion;
 original resources, checkpoints and screenshots stay private. It covers poor
 purchase rejection, buy/sale cancel/accept, category-switch draft cancellation,
 accepted penalty, restoration after active-context reload and city close. The owner accepted the requested both-client production routes on 2026-11-07
-(“great, it works, let us continue”); independent review is pending.
+(“great, it works, let us continue”). Independent review #155 returned AGREE;
+v0.14.0 was released at exactly `5e3be851782a5b4b9bc253d127f1b27212dad50a`.
 Reproduction/current gates:
 [v0.14 readiness](../v0.14.0-readiness.md).
 
@@ -3984,3 +3985,12 @@ Generate the citizens mature fixture as above and pass it through
 `TOTENGINE_CITY_OPEN_FIXTURE` to each client input checker. No original saves,
 assets or screenshots are retained in Git. Owner panel approval is recorded
 separately from automated double-click validation.
+
+First independent review #162 blocked that candidate on browser races #166/#167
+and recorded five follow-ups. `client-v015-review-r2.json` records all seven
+fixes, source hashes and validation: 45 current Chromium / 39 Linux full
+checkpoint comparisons, controlled busy-input/opponent-timer regressions,
+discriminating ready-unit and eleven-to-ten sale tests. Windows results remain
+pre-review evidence. The browser checker automatically includes the new race
+helper when `TOTENGINE_CITY_OPEN_FIXTURE` is set. Original source hashes/counts
+above stay historical; independent owner-launched re-review is required.

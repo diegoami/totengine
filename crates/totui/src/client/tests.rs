@@ -1695,6 +1695,15 @@ fn city_panels_inspect_without_orders_and_retain_panel_through_navigation_and_re
         button(&mut c, label);
         assert_eq!(c.city_panel, panel);
         assert_eq!(
+            c.buttons().iter().any(|b| b.label.contains("[Space]")),
+            panel == CityPanel::Info,
+            "only Info advertises the tile keyboard shortcut"
+        );
+        assert!(c
+            .buttons()
+            .iter()
+            .any(|b| matches!(b.action, Action::Worker(_, _))));
+        assert_eq!(
             before,
             c.checkpoint().unwrap(),
             "panel inspection cannot issue an order"
@@ -2019,7 +2028,6 @@ fn city_double_click_is_bound_to_an_inert_own_city_click() {
         380. - f64::from(city.x) * 32.,
         390. - f64::from(city.y) * 16.,
     );
-    c.moving = true;
     let before = c.checkpoint().unwrap();
     let first = c.receipts.len() as u64 + 1;
     input(&mut c, Input::Click { x: 380., y: 370. });
@@ -2032,7 +2040,7 @@ fn city_double_click_is_bound_to_an_inert_own_city_click() {
     assert_eq!(
         before,
         c.checkpoint().unwrap(),
-        "first city click cannot move even in Moving mode"
+        "first city inspection is read-only"
     );
     input(
         &mut c,
@@ -2043,6 +2051,44 @@ fn city_double_click_is_bound_to_an_inert_own_city_click() {
         },
     );
     assert!(!c.city_open);
+    assert_eq!(c.frame().city_click, None);
+    input(
+        &mut c,
+        Input::DoubleClick {
+            x: 380.,
+            y: 370.,
+            first_click: first,
+        },
+    );
+    assert!(
+        !c.city_open,
+        "invalid second click consumes the first gesture"
+    );
+    let first = c.receipts.len() as u64 + 1;
+    input(&mut c, Input::Click { x: 380., y: 370. });
+    input(
+        &mut c,
+        Input::DoubleClick {
+            x: 480.,
+            y: 370.,
+            first_click: first,
+        },
+    );
+    assert_eq!(c.frame().city_click, None);
+    input(
+        &mut c,
+        Input::DoubleClick {
+            x: 380.,
+            y: 370.,
+            first_click: first,
+        },
+    );
+    assert!(
+        !c.city_open,
+        "an out-of-range second click cannot be repaired"
+    );
+    let first = c.receipts.len() as u64 + 1;
+    input(&mut c, Input::Click { x: 380., y: 370. });
     key(&mut c, "v");
     input(
         &mut c,
@@ -2140,5 +2186,129 @@ fn city_double_click_is_bound_to_an_inert_own_city_click() {
         },
     );
     assert!(c.city_open && c.modal.is_none());
+    assert_eq!(before, c.checkpoint().unwrap());
+}
+
+#[test]
+fn moving_unit_cannot_enter_an_empty_own_city_by_inspection_click() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    build_pair(&mut c);
+    let city = c.view().unwrap().observation.cities[0].clone();
+    let units = c.view().unwrap().units;
+    for &u in &units {
+        c.action(Action::Unit(u)).unwrap();
+        let (dx, dy) = land_step(&c, u);
+        c.step(dx, dy).unwrap();
+    }
+    end_round(&mut c);
+    assert!(c.view().unwrap().city_info[0].present.is_empty());
+    let actor = units[0];
+    let p = point(&c, actor, -20.);
+    click_point(&mut c, p);
+    assert_eq!(c.active, Some(actor));
+    assert!(c.moving && unit_at(&c, actor).moves_left > 0);
+    let before = c.checkpoint().unwrap();
+    let city_point = (
+        c.pan.0 + f64::from(city.x) * 32. * c.zoom,
+        c.pan.1 + f64::from(city.y) * 16. * c.zoom,
+    );
+    click_point(&mut c, city_point);
+    assert!(c.frame().city_click.is_some());
+    assert_eq!(c.active, Some(actor));
+    assert_eq!(
+        before,
+        c.checkpoint().unwrap(),
+        "city click cannot spend the ready external unit"
+    );
+    // Countercheck: this same unit can really enter that city through the
+    // accepted keyboard path. Removing the own-city mouse guard fails above.
+    let u = unit_at(&c, actor);
+    let (dx, dy) = (
+        i32::from(city.x) - i32::from(u.x),
+        i32::from(city.y) - i32::from(u.y),
+    );
+    let digit = match (dx, dy) {
+        (-1, -1) => "7",
+        (0, -2) => "8",
+        (1, -1) => "9",
+        (-2, 0) => "4",
+        (2, 0) => "6",
+        (-1, 1) => "1",
+        (0, 2) => "2",
+        (1, 1) => "3",
+        _ => panic!("external unit must be adjacent"),
+    };
+    key(&mut c, digit);
+    assert_eq!(
+        (unit_at(&c, actor).x, unit_at(&c, actor).y),
+        (city.x, city.y)
+    );
+    assert_ne!(before, c.checkpoint().unwrap());
+}
+
+#[test]
+fn city_list_previous_uses_the_visible_page_after_a_boundary_sale() {
+    let f = Fixture::new();
+    // Authored cheap, upkeep-free buildings make eleven real completions
+    // practical. No world or view is patched to fabricate the sale boundary.
+    let file = f.0.join("Rules.txt");
+    let mut rules = tot_kit::parse_rules(&fs::read_to_string(&file).unwrap());
+    let improvements = rules.sections.get_mut("IMPROVE").unwrap();
+    for row in 2..36 {
+        improvements.rows[row][1] = "1".into();
+        improvements.rows[row][2] = "0".into();
+        improvements.raw_lines[row] = improvements.rows[row].join(", ");
+    }
+    fs::write(file, tot_kit::emit_rules(&rules)).unwrap();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    while c.view().unwrap().city_info[0].improvements.len() < 11 {
+        button(&mut c, "Choose production");
+        let id = c
+            .current_choices()
+            .into_iter()
+            .find(|(id, _)| (-35..=-2).contains(id))
+            .unwrap()
+            .0;
+        c.action(Action::Choose(id)).unwrap();
+        key(&mut c, "Enter");
+        let count = c.view().unwrap().city_info[0].improvements.len();
+        for _ in 0..30 {
+            end_round(&mut c);
+            if c.view().unwrap().city_info[0].improvements.len() > count {
+                break;
+            }
+        }
+        assert_eq!(c.view().unwrap().city_info[0].improvements.len(), count + 1);
+    }
+    button(&mut c, "Manage city");
+    button(&mut c, "Improvements");
+    button(&mut c, "Next list");
+    button(&mut c, "Next list");
+    assert_eq!(c.city_panel_page, 2);
+    assert_eq!(c.city_panel_pages(), 3);
+    let sale = c
+        .buttons()
+        .into_iter()
+        .find(|b| matches!(b.action, Action::InspectSale(_, _)))
+        .unwrap();
+    click_point(&mut c, (sale.x + 3., sale.y + 3.));
+    assert!(matches!(c.modal, Some(Modal::Sale { .. })));
+    key(&mut c, "Enter");
+    assert_eq!(c.view().unwrap().city_info[0].improvements.len(), 10);
+    assert_eq!(c.city_panel_pages(), 2);
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::Text { text, .. } if text == "List 2 / 2")));
+    let before = c.checkpoint().unwrap();
+    button(&mut c, "Previous list");
+    assert_eq!(
+        c.city_panel_page, 0,
+        "one Previous click reaches the preceding visible page"
+    );
     assert_eq!(before, c.checkpoint().unwrap());
 }

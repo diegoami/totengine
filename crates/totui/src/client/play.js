@@ -149,8 +149,23 @@ async function refresh() {
   if (!r.ok) throw Error("Host unavailable");
   await paint(await r.json());
 }
+let opponentTimer = null;
+function resumeOpponents() {
+  if (opponentTimer !== null || frame?.phase !== "Opponents" || !frame.advancing) return;
+  opponentTimer = setTimeout(() => {
+    opponentTimer = null;
+    // The active request's finally block will rearm this if it is still busy.
+    if (!busy && frame?.phase === "Opponents" && frame.advancing) send({ type: "tick" });
+  }, 20);
+}
 async function send(input, requestId = id()) {
   if (!frame) return;
+  // Locally rejected input is still newer intent. It must cancel an older
+  // queued gesture even though it cannot safely act on the pending selection.
+  if (!["double_click", "tick"].includes(input.type)) {
+    pendingDoubleClick = null;
+    if (input.type !== "click") lastClick = null;
+  }
   if (busy) {
     if (input.type === "focus") pendingFocus = input.focused;
     else if (input.type === "double_click" && inFlight?.id === input.first_click && inFlight.input.type === "click")
@@ -158,12 +173,13 @@ async function send(input, requestId = id()) {
     else if (input.type === "edit") editPending = true;
     else if (input.type === "key" && !entry.hidden)
       pendingKey = { input, field: entry.dataset.field };
-    else showError("Input is pending; wait for the refreshed selection");
+    else if (input.type !== "tick") showError("Input is pending; wait for the refreshed selection");
     return;
   }
   busy = true;
   const request = { revision: frame.revision, id: requestId, input };
   inFlight = request;
+  let receivedFrame = false;
   try {
     let r; // A network retry keeps the identical ID, revision and payload.
     for (let n = 0; n < 2; n++) {
@@ -185,10 +201,11 @@ async function send(input, requestId = id()) {
     if (!r.ok) {
       showError(data.error || "Input rejected");
       await refresh();
+      receivedFrame = true;
     } else {
       showError("");
       await paint(data);
-      if (data.phase === "Opponents" && data.advancing && ["click","key","tick"].includes(input.type)) setTimeout(()=>send({type:"tick"}),20);
+      receivedFrame = true;
     }
   } catch (e) {
     showError(e.message + " — reconnect to retrieve the pending decision");
@@ -218,6 +235,9 @@ async function send(input, requestId = id()) {
       if (!entry.hidden && entry.dataset.field === pending.field)
         setTimeout(() => send(pending.input), 0);
     }
+    // Every acknowledged response can be the last request before opponents
+    // need another tick, including a queued double click or focus transition.
+    if (receivedFrame) resumeOpponents();
   }
 }
 canvas.addEventListener("click", (e) => {

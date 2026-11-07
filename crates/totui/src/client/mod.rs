@@ -495,6 +495,9 @@ impl Client {
                     self.modal = None;
                     self.city = Some(gesture.city);
                     self.action(Action::OpenCity)?;
+                } else if !self.city_open {
+                    // A failed second click cannot be repaired by a third event.
+                    self.pending_city_click = None;
                 }
                 Ok(())
             }
@@ -762,6 +765,7 @@ impl Client {
             Action::CityPanelPage(delta) => {
                 self.city_panel_page = self
                     .city_panel_page
+                    .min(self.city_panel_pages().saturating_sub(1))
                     .saturating_add_signed(delta as isize)
                     .min(self.city_panel_pages().saturating_sub(1));
             }

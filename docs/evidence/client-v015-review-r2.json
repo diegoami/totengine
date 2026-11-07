@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "engine_version": "0.15.0",
+  "review_issue": 162,
+  "round_one_candidate": "dd26b450bd9df2660fc113da5d05f6e1b38be5d2",
+  "round_one_verdict": "BLOCK; Kimi K3.1 Pro; two MUST-FIX and five follow-ups",
+  "findings": {
+    "163": {
+      "fix": "Evidence index records AGREE #155 and exact v0.14.0 tag SHA."
+    },
+    "164": {
+      "fix": "Space hint appears only on Info; mouse tile actions remain on every panel.",
+      "test": "city_panels_inspect_without_orders_and_retain_panel_through_navigation_and_reload"
+    },
+    "165": {
+      "fix": "Previous/Next apply their delta to the currently clamped visible page.",
+      "test": "city_list_previous_uses_the_visible_page_after_a_boundary_sale",
+      "fixture": "Authored cheap upkeep-free rules; eleven actual building completions through recorded play, explicit sale of final row reduces 11 to 10, one Previous reaches page 1 from visible page 2."
+    },
+    "166": {
+      "fix": "One opponent timer is rearmed after every acknowledged response, including double clicks/focus. A timer during a busy request defers to its completion; callback checks current advancing phase.",
+      "test": "check_city_gesture_races.cjs holds first and second POST responses in Opponents; fires sole tick while second is busy; automatic continuation reaches same full checkpoint as ordinary next round."
+    },
+    "167": {
+      "fix": "Newer locally rejected non-gesture input cancels pending double click and invalidates adapter click identity.",
+      "test": "Actual mouse dblclick with first POST held, then newer V key or ordinary map click; queue canceled, city stays closed, full checkpoint unchanged."
+    },
+    "168": {
+      "fix": "Failed second click clears unconsumed first marker; successful consumed marker remains while city is open to guard repeated events.",
+      "test": "Shared wrong-ID and distant-pointer then valid-third sequences with no intervening key; Chromium detail 1/2/3 out-of-range sequence."
+    },
+    "169": {
+      "fix": "Discriminating regression produces two actual units, moves both outside city, refreshes moves, and selects external ready unit through map click.",
+      "test": "moving_unit_cannot_enter_an_empty_own_city_by_inspection_click",
+      "countercheck": "City click preserves active identity and full checkpoint; keyboard movement of the same unit into that city succeeds."
+    }
+  },
+  "source_sha256": {
+    "crates/totui/src/client/mod.rs": "e9dbf89cdf56f1a19cce12c7dd7d16364932704912c13102129d038e4fbf1eb7",
+    "crates/totui/src/client/city.rs": "846df6f30f1f6c5e0aec569af3516a2c854a5854c1584cd4ce3137dd3bc45dcf",
+    "crates/totui/src/client/city_panels.rs": "db48b9096a67162f748684a95eb12026c9a2bb5956ce2967448cf6854660f547",
+    "crates/totui/src/client/selection.rs": "215a7ca8a4d43b31ec05bf1b8fbf5c90bd821fee23143de29bd1f26a6ef79f29",
+    "crates/totui/src/client/desktop.rs": "46327b28446b30f4c6fdeebad2776440cfcd2e45d633f83f98ac8545e6412a45",
+    "crates/totui/src/client/play.js": "6621acb2652b9c687638c21624369cad604599a939d741d4c158fde6f9d5560d",
+    "crates/totui/src/client/tests.rs": "e37c626e44f6192191f6ae5c609f2f723c6db7d4595b76269395dfd19b2286f7",
+    "tools/check_client_browser.cjs": "e5c0a4ae3be54e2c5bb8de3496a098cf4dd733171a99c030cf6632f2236e50f8",
+    "tools/check_city_gesture_races.cjs": "3769f0777e1f145d229d95651d372b0e35de6b45f426024de16b0096f422810f"
+  },
+  "validation": {
+    "install_backed_make_test_fmt_clippy": {
+      "rust_passed": 254,
+      "python_passed": 11,
+      "golden": "all corpus outputs match",
+      "fmt": "PASS",
+      "strict_workspace_clippy": "PASS"
+    },
+    "desktop_feature_passed": 29,
+    "fixture_authors_ignored": 6,
+    "strict_desktop_clippy": "PASS",
+    "actual_input": {
+      "chromium": {
+        "result": "PASS",
+        "full_checkpoint_comparisons": 45
+      },
+      "linux_sdl": {
+        "result": "PASS",
+        "full_checkpoint_comparisons": 39
+      }
+    },
+    "windows_sdl": "Not rerun for these review fixes; 39 retained pre-review comparisons in city-double-click-v1.json, not a final-fix Windows claim.",
+    "native_happiness": "Engine unchanged; first independent review reproduced all 1280 snapshots byte-identically.",
+    "regression_sensitivity": {
+      "browser_167": "Removing newer-intent cancellation from test-page script produces newer key retained older gesture.",
+      "browser_166": "Restoring response-type filter in test-page script produces opponent progression lost its continuation tick.",
+      "shared": "Temporarily removing own-city move guard, invalid-second clearing, visible-page clamp and conditional Space hint causes exactly the four corresponding tests to fail; originals restored and final desktop suite passes."
+    }
+  },
+  "checkpoint_sha256": {
+    "mature": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+    "ordinary_next_round": "523864d07299b3988b05c896667843dca7708c2cd3e78789d86bd58fcd738e4d",
+    "raced_next_round": "523864d07299b3988b05c896667843dca7708c2cd3e78789d86bd58fcd738e4d"
+  },
+  "provenance": "Historical panel/city-double-click evidence keeps its original hashes. New Chromium run uses final JS and controller. Linux run uses same final shared Rust/SDL implementation and precedes only the browser-only timer phase recheck; no native logic changed afterward. Four browser races use controlled POST completion/timer delivery against the actual host; only detail-1/2/3 invalid-pointer sequence uses synthetic DOM click events. Baseline and raced rounds each save/compare full checkpoints. Guard-removal checks are test mutations, not shipped code.",
+  "limits": "No new manual acceptance claimed. Recorded owner panel approval remains valid; owner-launched independent re-review gates release. No original game assets/saves/screenshots retained; owner previews/games untouched."
+}

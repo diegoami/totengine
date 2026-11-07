@@ -46,5 +46,6 @@
   },
   "provenance": "All 118 actual-input comparisons include corrected unit-slot captions and the city-entry implementation. They precede a final consumed-gesture retention guard, which changes only third-click handling; final shared/SDL tests cover that guard. Source hashes describe final follow-up sources. Panel evidence retains its earlier source hashes.",
   "owner_acceptance": "Owner approved the requested both-client panel route: \u201cok found it, approved, let us move on\u201d (2026-11-07). This precedes the double-click correction; no manual double-click acceptance is claimed.",
-  "resources": "Fixtures generated through recorded normal gameplay; no original assets, saves or screenshots committed. Existing owner previews/games preserved."
+  "resources": "Fixtures generated through recorded normal gameplay; no original assets, saves or screenshots committed. Existing owner previews/games preserved.",
+  "review_followup": "First independent review #162 blocked this historical candidate on browser races #166/#167 and recorded five follow-ups. Current fixes, tests and exact provenance: client-v015-review-r2.json. The hashes/results above retain pre-review provenance; they do not approve the blocked SHA."
 }

@@ -17,6 +17,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 - Open own cities by double-clicking their map sprite or garrison in both
   clients. Bind the gesture to its inert first click, including delayed browser
   responses and multiple SDL events in one frame.
+- Resume opponent turns across delayed browser gestures, cancel queued gestures
+  on newer input, and consume invalid second clicks. Correct city-list paging
+  after sales and show tile shortcut hints only where the keys apply (#163–#169).
 
 ## [0.14.0] — city production decisions
 

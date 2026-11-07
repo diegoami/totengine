@@ -293,7 +293,15 @@ review-tmp/totengine-owner-v014. Readiness: docs/v0.14.0-readiness.md.
 **Current v0.15 work:** the owner directed “ok when done continue”. Milestone 13
 “City information panels: browser and desktop” is live: #157 reference/filtered
 views, #158 shared panels, #159 real-input/owner acceptance. Scope:
-docs/ui/city-information-milestone.md. Panel implementation merged in PR160; city entry follow-up: fix/city-double-click.
+docs/ui/city-information-milestone.md. Panel implementation merged in PR160;
+city entry merged in PR161. First independent review #162 (Kimi K3.1 Pro)
+returned BLOCK on browser races #166/#167 and follow-ups #163–#165/#168/#169.
+Review fixes: fix/v015-review-round-one; evidence client-v015-review-r2.json.
+Final checks: 254 Rust / eleven Python / full goldens / fmt / strict Clippy;
+29 desktop-feature tests; 45 current Chromium and 39 Linux checkpoint comparisons.
+Windows input remains pre-review evidence, not rerun for these fixes.
+Re-review is owner-launched;
+do not tag the blocked candidate or begin unrelated milestone work.
 New private original study is complete: eleven captures, native Happy suppresses
 unchanged stages, Roma/Rhegium navigation retains the chosen panel. No original
 images/assets committed. Only the new copied prefix/display was driven; owned

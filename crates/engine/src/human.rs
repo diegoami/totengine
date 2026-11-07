@@ -135,6 +135,7 @@ pub struct HumanView {
     /// (visible unit slot, current HP, maximum HP), filtered before transport.
     pub unit_health: Vec<(usize, u32, u32)>,
     pub city_citizens: Vec<crate::citizens::CityCitizens>,
+    pub city_info: Vec<crate::city_info::CityInfo>,
     pub city_production: Vec<crate::city_production::CityProductionView>,
     pub production_context_city: Option<Entity>,
 }
@@ -295,6 +296,16 @@ impl HumanSession {
                     self.game
                         .world
                         .city_production_view(&self.game.rules, self.human, c.index)
+                })
+                .collect(),
+            city_info: observation
+                .cities
+                .iter()
+                .filter(|c| c.owner == self.human)
+                .filter_map(|c| {
+                    self.game
+                        .world
+                        .city_info(&self.game.rules, self.human, c.index)
                 })
                 .collect(),
             city_citizens: observation

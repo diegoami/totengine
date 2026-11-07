@@ -3368,8 +3368,8 @@ contract; original new-game initialization parity is not claimed.
 
 [generated-campaign-v1.json](generated-campaign-v1.json) records Rules hashes,
 setup and validation context. [The full authored-rules checkpoint golden](generated-campaign-v1.ctc)
-is regenerated for engine v0.14.0; only the exact-version header changes from
-the v0.13 fixture, with metadata hash/version refreshed. It still contains every
+is regenerated for engine v0.15.0; only the exact-version header changes from
+the v0.14 fixture, with metadata hash/version refreshed. It still contains every
 order and round fingerprint for 100 rounds of AI v1, including
 the final fingerprint `b22e4340b6ab8bf6`. It reaches 20 cities, 27 population,
 28 units and 35 acquired advances. [The authored trajectory](generated-authored-campaign.tsv)
@@ -3947,3 +3947,31 @@ The same v0.14 artifact also records 63 expanded previous-route checkpoint
 comparisons: 21 each on Chromium, Linux and Windows, covering citizens, two-city
 navigation, selection/resize/exhaustion, battle/capture and ten-round/pending
 choice continuation. Historical v0.13 evidence is retained unchanged.
+
+## City information panel study and happiness stages (v0.15 work)
+
+`city-panels-study-v1.json` records eleven private capture identities, source
+hashes and five bounded observations of original Info/Support/Improvements/Happy
+panels. A new copied install/prefix ran on an authenticated private X display;
+no owner game or original install was driven. Happy omits unchanged stages;
+Roma → Rhegium retained Happy and the return retained Improvements. Info's
+commodity text and native unit-list actions remain explicit later work. Images
+stay outside Git; native ToTPP UI is not claimed as unpatched equivalence.
+
+`happiness-stages-v1.json` / `happiness-stages-vectors.txt` retain 1,280 original
+normalized snapshots across 256 contexts, 240 with stage changes. The original
+five normalization calls return base/luxury/building/military/wonder results.
+The engine's final result now reuses the same five-stage kernel and still
+matches the previous final arithmetic. The existing probe's garrison-input
+substitution boundary remains explicit; map lookup and icon interpretation are
+not established by these numeric snapshots. Reproduce with Unicorn available:
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn \
+  python3 tools/happiness_stages_check.py --gold /tmp/stages.json --vectors /tmp/stages.txt
+cmp docs/evidence/happiness-stages-v1.json /tmp/stages.json
+cmp docs/evidence/happiness-stages-vectors.txt /tmp/stages.txt
+cargo test -p engine --lib happiness
+```
+
+Scope and remaining acceptance: [city information milestone](../ui/city-information-milestone.md).

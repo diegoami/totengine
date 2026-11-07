@@ -14,10 +14,10 @@
   },
   "golden": {
     "file": "generated-campaign-v1.ctc",
-    "sha256": "90a585edff036fcddee550e24994fdcca85b75a4a917dcf185445cf9f0e43e9f",
-    "engine_version": "0.14.0",
+    "sha256": "a615892ab7336ca3ffeeefb8edbd8bd30cb05c104099d4fa1cccd7816e42cc5b",
+    "engine_version": "0.15.0",
     "kind": "engine replay checkpoint, not native SAV",
-    "refresh": "v0.14 exact-version header refresh reproduced the authored 100-round AI-v1 campaign. All transcript, world fingerprint and result lines are byte-identical to v0.13. Quoted human production contexts do not enter this autonomous policy trajectory; historical v0.9 validation remains below."
+    "refresh": "v0.15 exact-version header refresh reproduced the authored 100-round AI-v1 campaign. All transcript, world fingerprint and result lines after that header are byte-identical to v0.14. Exposing the same final happiness kernel through stage snapshots and adding immutable city information views do not change the autonomous trajectory; historical v0.9 validation remains below."
   },
   "authored_100_round_result": {
     "round": "100",

@@ -57,6 +57,13 @@ fn normalize(h: &mut Happiness, size: i32, specialists: i32) {
 }
 
 pub fn calculate_happiness(v: &HappinessInput) -> Happiness {
+    calculate_happiness_stages(v)[4]
+}
+
+/// Original normalized stages: base, luxuries, buildings, military, wonders.
+/// The final stage is exactly the ordinary happiness result.
+pub fn calculate_happiness_stages(v: &HappinessInput) -> [Happiness; 5] {
+    let mut stages = [Happiness::default(); 5];
     let has = |i: usize| v.buildings & (1u64 << i) != 0u64;
     let knows = |i: usize| (v.techs & (1u128 << i) != 0u128) as i32;
     let holds = |i: usize| v.own & (1u32 << i) != 0u32;
@@ -86,8 +93,10 @@ pub fn calculate_happiness(v: &HappinessInput) -> Happiness {
         unhappy: unhappy.min(v.size),
     };
     normalize(&mut h, v.size, v.specialists);
+    stages[0] = h;
     h.happy = v.luxuries >> 1;
     normalize(&mut h, v.size, v.specialists);
+    stages[1] = h;
     if has(14) {
         h.unhappy -= 3 + knows(24);
     }
@@ -101,6 +110,7 @@ pub fn calculate_happiness(v: &HappinessInput) -> Happiness {
         h.happy += 1;
     }
     normalize(&mut h, v.size, v.specialists);
+    stages[2] = h;
     if gov == 4 {
         h.unhappy = 0;
         h.angry = 0;
@@ -112,6 +122,7 @@ pub fn calculate_happiness(v: &HappinessInput) -> Happiness {
         h.unhappy += (v.away - (gov == 5 && v.away != 0) as i32) * penalty;
     }
     normalize(&mut h, v.size, v.specialists);
+    stages[3] = h;
     if holds(1) {
         h.happy += 1 + 2 * here(1) as i32;
     }
@@ -125,7 +136,8 @@ pub fn calculate_happiness(v: &HappinessInput) -> Happiness {
         h.unhappy -= 2;
     }
     normalize(&mut h, v.size, v.specialists);
-    h
+    stages[4] = h;
+    stages
 }
 
 /// End-of-city mood transition (`0x4c998e`), after production and final totals.
@@ -222,8 +234,18 @@ impl WorldState {
         idx: usize,
         luxuries: i32,
     ) -> Happiness {
+        self.city_happiness_stages_with_luxuries(rules, idx, luxuries)[4]
+    }
+
+    /// Read-only normalized happiness stages for the city information panel.
+    pub fn city_happiness_stages_with_luxuries(
+        &self,
+        rules: &Rules,
+        idx: usize,
+        luxuries: i32,
+    ) -> [Happiness; 5] {
         let Some(c) = self.cities.get(idx) else {
-            return Happiness::default();
+            return [Happiness::default(); 5];
         };
         let civ = (c.owner & 15) as usize;
         let mut own = 0;
@@ -297,7 +319,7 @@ impl WorldState {
                 }
             }
         }
-        calculate_happiness(&HappinessInput {
+        calculate_happiness_stages(&HappinessInput {
             index: idx as i32,
             size: c.size as i32,
             government: self.governments[civ],
@@ -488,5 +510,53 @@ mod tests {
             count += 1;
         }
         assert_eq!(count, 128);
+    }
+    #[test]
+    fn normalized_stages_match_original_x86() {
+        let mut contexts = 0;
+        for line in include_str!("../../../docs/evidence/happiness-stages-vectors.txt")
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+        {
+            let v: Vec<i128> = line
+                .split_whitespace()
+                .map(|s| s.parse().unwrap())
+                .collect();
+            let input = HappinessInput {
+                index: v[0] as i32,
+                size: v[1] as i32,
+                government: v[2] as u8,
+                difficulty: v[3] as u8,
+                human: v[4] != 0,
+                cities: v[5] as i32,
+                content: v[6] as i32,
+                empire: v[7] as i32,
+                flags: v[8] as u16,
+                specialists: v[9] as i32,
+                luxuries: v[10] as i32,
+                garrison: v[11] as i32,
+                away: v[12] as i32,
+                home: v[13] as i32,
+                buildings: v[14] as u64,
+                techs: v[15] as u128,
+                own: v[16] as u32,
+                local: v[17] as u32,
+            };
+            let stages = calculate_happiness_stages(&input);
+            for (i, stage) in stages.iter().enumerate() {
+                assert_eq!(
+                    *stage,
+                    Happiness {
+                        happy: v[18 + i * 3] as i32,
+                        unhappy: v[19 + i * 3] as i32,
+                        angry: v[20 + i * 3] as i32
+                    },
+                    "stage {i}: {line}"
+                );
+            }
+            assert_eq!(calculate_happiness(&input), stages[4]);
+            contexts += 1;
+        }
+        assert_eq!(contexts, 256);
     }
 }

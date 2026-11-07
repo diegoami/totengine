@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "date": "2026-11-07",
+  "issue": 157,
+  "reference": "ToTPP-patched Test of Time 1.1 on Wine; fresh private copied install and prefix; authenticated private Xvfb TCP display; no RAM writes or quiet presentation hooks. Original owner install, existing reference copy and running clients were not driven.",
+  "source_sha256": {
+    "civ2.exe": "dbbd24d8b72fd1ac56d81adf3a16273affc6ae3294dd5ad4a2c59d4d781c00b4",
+    "civ2.bak": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+    "TOTPP.ini": "e07e88ac8a2dee420a0ba00ccdc38b0883be95ed0e0c314cdabe7ec8dace0910",
+    "Original/ui-warrior-baseline.sav": "8036989b814100a7dcc81d5b793d9d3869b9fbc905665051bb35a5e9ca5cb905",
+    "FallRome/ROMFALL.scn": "394449e92f7b2d73fcfe6cd21e5d688213619dad6b4bad5f836fe0f79a942d07"
+  },
+  "captures_sha256": {
+    "12-city-info.png": "02b976c26469b1c26f5744cdd8caff1edb7948127bea1986560eab29bfe29ee0",
+    "13-city-support.png": "baf3f795797773eda58fb49583e58ac5f56bd55c986406a625139be954cddc66",
+    "14-city-happy.png": "270d75257cc791c79fad265f777ee5358ec2a71545edda9d50429629ae936c4a",
+    "15-city-improvements.png": "a2e9b8efd1f56e6d0d58d674751379d84044facfbe93b97a38a45146537b8894",
+    "19-roma-info.png": "a0855d6967b0d24034615ed35dbafadb1d0fb6e19703123d625c9a962726459f",
+    "20-roma-happy.png": "47988928d02a45d1f1c737835e7ef8523e90bde541b37397209b5c15046e6744",
+    "21-next-city-happy.png": "fd791264a9a247d318e8bd638c0e94889f387484f514cd2cf7bd56ec553f95c9",
+    "22-rhegium-support.png": "fc6263501ce992b9d12e13ecbaeec8df04d36faa0b5c58354cb4d5a9a1e8fc0a",
+    "23-rhegium-improvements.png": "3fe536906814f0c5681c986eed551ac4899aff9011e1a70e432e987a4143583e",
+    "24-roma-improvements-retained.png": "05c6f09590f3dad4e8d53e8eb06c4bbb9e3393cd37f30bb2c91e2b4092da5d2f",
+    "25-roma-support.png": "a0749d2ed3961262308f999f0286888915ac87f9020d9e58a3268ef0ce9f87e5"
+  },
+  "original_images_committed": false,
+  "observations": [
+    {
+      "id": "P01",
+      "captures": [
+        "12-city-info",
+        "19-roma-info"
+      ],
+      "observed": "Native city workspace keeps resources/build/buy at left, radius central, selector and chosen panel at right, citizens bottom, food storage lower right. Info is empty in the early standard city; Roma Info shows supply/demand text and present-unit icons.",
+      "limit": "Current client keeps its accepted layout/tile inspector and adds own present units. Commodity workflows are explicitly deferred."
+    },
+    {
+      "id": "P02",
+      "captures": [
+        "13-city-support",
+        "22-rhegium-support",
+        "25-roma-support"
+      ],
+      "observed": "Support shows unit icons and shield-cost markers. Standard city shows one warrior; Rhegium has five icons, Roma has seven. No unit icon was activated or disbanded.",
+      "limit": "No native list wake/disband/selection semantics or cross-map roster parity claim."
+    },
+    {
+      "id": "P03",
+      "captures": [
+        "15-city-improvements",
+        "23-rhegium-improvements",
+        "24-roma-improvements-retained"
+      ],
+      "observed": "Improvements shows named building icons with coin upkeep markers. Standard city has Palace; Rhegium has eight named improvements; Roma has a longer list and (More).",
+      "limit": "No new bulk sale, list scroll/paging convention or wonder expiry UI observation."
+    },
+    {
+      "id": "P04",
+      "captures": [
+        "14-city-happy",
+        "20-roma-happy",
+        "21-next-city-happy"
+      ],
+      "observed": "Happy shows staged citizen rows with effect icons/separators, omitting stages that leave mood unchanged. Standard city shows one row; Roma shows four rows; Rhegium shows three, ending with Wonders.",
+      "limit": "Counts/art are visually observed in those contexts, not a general citizen icon decoding claim. Five underlying normalized stages have separate original-x86 numeric evidence."
+    },
+    {
+      "id": "P05",
+      "captures": [
+        "20-roma-happy",
+        "21-next-city-happy",
+        "23-rhegium-improvements",
+        "24-roma-improvements-retained"
+      ],
+      "observed": "The city down arrow moves Roma to Rhegium while retaining Happy. The up arrow returns Rhegium to Roma while retaining Improvements. Names/resources/citizens/build/food all repaint.",
+      "limit": "Two navigation transitions only; exact general sorting/order is not established."
+    }
+  ],
+  "method_notes": [
+    "Load standard original-written warrior save via explicit filename focus; accept summary; resize the owned native main window with MoveWindow because XResizeWindow alone left a clipped Wine client. Open city through documented F1 report and visually verified row double click.",
+    "An initial Ctrl+VK99 input before the standard panel captures moved the private warrior southeast and spent movement; it was not treated as a city shortcut. No map navigation inference or treasury/turn-transition claim depends on that input.",
+    "Load the copied FallRome/ROMFALL.scn through Ctrl+L with explicit filename field focus. The native summary identifies Deity, West Romans, Dec 429. Inspect Roma/Rhegium by normal visible panel/city controls. No native save was overwritten.",
+    "The first Xvfb Unix-socket attempt failed in this environment; the successful run used authenticated private TCP X11. Process cleanup targets only this newly copied prefix/display."
+  ]
+}

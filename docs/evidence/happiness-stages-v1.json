@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "contexts": 256,
+  "stage_snapshots": 1280,
+  "contexts_with_stage_changes": 240,
+  "native_normalize_return_addresses": [
+    "0x4c4b1b",
+    "0x4c4b36",
+    "0x4c4cc4",
+    "0x4c4f0c",
+    "0x4c4fa6"
+  ],
+  "stages": [
+    "base",
+    "luxuries",
+    "buildings",
+    "military",
+    "wonders"
+  ],
+  "fields": [
+    "happy",
+    "unhappy",
+    "angry"
+  ],
+  "scope": "Unmodified original arithmetic and normalization with numeric synthetic inputs. Existing OriginalHappiness setup supplies government<4 garrison count and skips its map enumeration; wonders/tech/building helpers execute original code. This is not full map-input derivation, original citizen icon interpretation or complete city UI parity."
+}

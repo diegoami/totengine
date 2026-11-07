@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Add own-city Info/Support/Improvements/Happy panels to both development clients
+  (#157–#159). Filter supported/present units, show actual support/upkeep and
+  normalized mood stages, retain panel choice across city navigation and route
+  building sales through the existing explicit confirmation.
+- Retain a fresh original UI panel study and 1,280 original happiness-stage
+  snapshots. New both-client panel acceptance and independent review are pending.
+
 ## [0.14.0] — city production decisions
 
 - Add city production progress, current-output estimates and quoted category

@@ -1,0 +1,415 @@
+{
+  "schema": 1,
+  "engine_version": "0.15.0",
+  "scope": "Recorded-play installed-resource fixtures; actual browser canvas/keyboard and native SDL input, with explicit final visible city/panel checks plus full checkpoint comparisons. Source checkpoints and screenshots stay private. Not original UI/art parity or full-client acceptance.",
+  "source_sha256": {
+    "crates/engine/src/city_info.rs": "f96a018300f0b460c9303eef20415c330778bcacdfd028f53031b5dc3a7db8b9",
+    "crates/engine/src/happiness.rs": "06ded6fd5277f2d9ad2d4a3f9f3d882244e835babb79276af19b099747f4ee48",
+    "crates/engine/src/human.rs": "7db2eddc362419f9fd45aed469ba2e838497daf9e347e72373e1ae55af3159ca",
+    "crates/totui/src/client/city.rs": "d20538c2b1a41fc9a56f0847979bfa1a7f7146df2b4b701487cfa414f4b9e61b",
+    "crates/totui/src/client/city_panels.rs": "90448ad88f25abbb2fdf57e2e04007a649452ec505142ab4867b5b1b5e4476d5",
+    "crates/totui/src/client/mod.rs": "eb0e03ce24f096149e9e12e0750808701c592c61b3df0dfe0fe6f46941c79482",
+    "crates/totui/src/client/tests.rs": "faf4795ecdc1548273f7c0ba62a1002589d68c17154e0d69cd16a1f360347918",
+    "tools/happiness_stages_check.py": "a8d2479521721894baccbac7910fc9455505bc633bd03cc7065163899ab68492",
+    "tools/check_city_panels.cjs": "72ccb07d590ed9bda39de5ff1c6c38cbd8cfdda8b89f64590f5c7265f4ebdd82",
+    "tools/check_city_panels.py": "5a65f2990ca70b480f0d25e95e212b6ba0e5172c899251d64cc332249c2e8614",
+    "tools/check_client_browser.cjs": "07e9ae1b45fe2fb3b6574fe43b611d4969ef4a0fa58594ff526de9db7a15ed90",
+    "tools/check_client_linux.py": "2cd37c6abb69f2df5d58b04c62113806b768b196da82a3b1e0fa1eb30e54af76",
+    "tools/check_client_windows.ps1": "04a1522af0f3bb0a88f5e85467174f6428e8c62f2eeefe906a6a927c0a4cee21"
+  },
+  "native_stages": "happiness-stages-v1.json",
+  "reference_panels": "city-panels-study-v1.json",
+  "routes": [
+    {
+      "heading": "Athena \u2014 population 5",
+      "inputs": [
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 118.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 2,
+          "panel": "Support"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 518.0
+          },
+          "modal": null,
+          "page": 2,
+          "pages": 2,
+          "panel": "Support"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 752.0,
+            "y": 518.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 2,
+          "panel": "Support"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 752.0,
+            "y": 158.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Improvements"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 158.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Happy"
+        }
+      ],
+      "name": "overview",
+      "open_city": true,
+      "panel": "Happy",
+      "before_sha256": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+      "after_sha256": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b"
+    },
+    {
+      "heading": "Athena \u2014 population 5",
+      "inputs": [
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 158.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Happy"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 545.0,
+            "y": 275.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Happy"
+        }
+      ],
+      "name": "entertainer",
+      "open_city": true,
+      "panel": "Happy",
+      "before_sha256": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+      "after_sha256": "36c7ce01822353fa0be19c8e7c82e561470c87cd9a9b8c5974dcf777f42d341c"
+    },
+    {
+      "heading": "Athena \u2014 population 5",
+      "inputs": [
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 158.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Happy"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 312.0,
+            "y": 588.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Happy"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 312.0,
+            "y": 588.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Happy"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 312.0,
+            "y": 588.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Happy"
+        }
+      ],
+      "name": "specialists",
+      "open_city": true,
+      "panel": "Happy",
+      "before_sha256": "36c7ce01822353fa0be19c8e7c82e561470c87cd9a9b8c5974dcf777f42d341c",
+      "after_sha256": "d172eabd31d73351a128e1ddb5df4aafed1a19c377b4457170834edb760dcfe7"
+    },
+    {
+      "heading": "Athena \u2014 population 2",
+      "inputs": [
+        {
+          "input": {
+            "type": "click",
+            "x": 752.0,
+            "y": 158.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Improvements"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 933.0,
+            "y": 279.0
+          },
+          "modal": "Confirm improvement sale",
+          "page": 1,
+          "pages": 1,
+          "panel": "Improvements"
+        },
+        {
+          "input": {
+            "key": "Escape",
+            "type": "key"
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Improvements"
+        }
+      ],
+      "name": "salecancel",
+      "open_city": true,
+      "panel": "Improvements",
+      "before_sha256": "a3636b40bef3b2fd39ab29d598f14cc9ac43fcc2e4b18ca065e91e70e985ce91",
+      "after_sha256": "a3636b40bef3b2fd39ab29d598f14cc9ac43fcc2e4b18ca065e91e70e985ce91"
+    },
+    {
+      "heading": "Athena \u2014 population 2",
+      "inputs": [
+        {
+          "input": {
+            "type": "click",
+            "x": 752.0,
+            "y": 158.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Improvements"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 933.0,
+            "y": 279.0
+          },
+          "modal": "Confirm improvement sale",
+          "page": 1,
+          "pages": 1,
+          "panel": "Improvements"
+        },
+        {
+          "input": {
+            "key": "Enter",
+            "type": "key"
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Improvements"
+        }
+      ],
+      "name": "sale",
+      "open_city": true,
+      "panel": "Improvements",
+      "before_sha256": "a3636b40bef3b2fd39ab29d598f14cc9ac43fcc2e4b18ca065e91e70e985ce91",
+      "after_sha256": "7cbaceae7e2f332423a2199e1aacae4e307a29bf5c1f4a1cff100363ece7aa6a"
+    },
+    {
+      "heading": "c0 \u2014 population 2",
+      "inputs": [
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 118.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 2,
+          "panel": "Support"
+        },
+        {
+          "input": {
+            "key": "PageDown",
+            "type": "key"
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Support"
+        },
+        {
+          "input": {
+            "key": "PageUp",
+            "type": "key"
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 2,
+          "panel": "Support"
+        }
+      ],
+      "name": "navigation",
+      "open_city": true,
+      "panel": "Support",
+      "before_sha256": "c8ced00ef35759f6d0d8dc35eacb9756ddf715039533c3c1fe5e3fe8fb1beb70",
+      "after_sha256": "c8ced00ef35759f6d0d8dc35eacb9756ddf715039533c3c1fe5e3fe8fb1beb70"
+    },
+    {
+      "heading": "Athena \u2014 population 2",
+      "inputs": [
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 118.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Support"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 752.0,
+            "y": 158.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Improvements"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 158.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Happy"
+        }
+      ],
+      "name": "budgettabs",
+      "open_city": true,
+      "panel": "Happy",
+      "before_sha256": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+      "after_sha256": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03"
+    },
+    {
+      "heading": "Athena \u2014 population 2",
+      "inputs": [
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 118.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Support"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 752.0,
+            "y": 158.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Improvements"
+        },
+        {
+          "input": {
+            "type": "click",
+            "x": 886.0,
+            "y": 158.0
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Happy"
+        },
+        {
+          "input": {
+            "key": "PageDown",
+            "type": "key"
+          },
+          "modal": null,
+          "page": 1,
+          "pages": 1,
+          "panel": "Happy"
+        }
+      ],
+      "name": "budgetnav",
+      "open_city": true,
+      "panel": "Happy",
+      "before_sha256": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+      "after_sha256": "7f47e7710b3e230e8952538f95fa7b206f85cd563880598ec5a6c70ba1eaaae5"
+    }
+  ],
+  "platforms": {
+    "chromium": {
+      "result": "PASS",
+      "checkpoint_comparisons": 8,
+      "visible_city_panel_assertions": true
+    },
+    "linux_sdl": {
+      "result": "PASS",
+      "checkpoint_comparisons": 8,
+      "visible_city_panel_assertions": true
+    },
+    "windows_sdl": {
+      "result": "PASS: initial route checkpoints and final city/panel assertions",
+      "checkpoint_comparisons": 8
+    }
+  },
+  "windows_validation": "Initial actual Windows route passes all eight checkpoints. Strengthened per-step panel/modal/page assertions and combined prior routes are now running on all three adapters.",
+  "owner_acceptance": "pending; v0.14 production acceptance is not reused",
+  "stepwise_validation": "in progress; route metadata now asserts every panel, modal and list page transition"
+}

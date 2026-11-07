@@ -276,7 +276,7 @@
       "after_sha256": "735debe794fec0234c4d535af09a2e9b09c2b19d7b3678937953b52bb15a8c63"
     }
   ],
-  "owner_acceptance": "pending; owner replied \"Ok I will look at it later\" on 2026-11-07. No production-route pass claimed. v0.13 citizen acceptance is not reused.",
+  "owner_acceptance": "Accepted on 2026-11-07: after the explicit request to test productionpractice, salepractice and switchpractice in both browser and desktop, the owner replied \"great, it works, let us continue\". Supersedes the earlier deferred check; no full-client/native parity or broader campaign acceptance claimed.",
   "previous_client_routes": {
     "scope": "Current-version fixtures regenerated through recorded play. Actual browser, Linux and Windows routes check citizens, two-city navigation, different-unit selection/blink/resize/exhaustion, battle/capture and ten-round/pending-choice continuation. This supplements historical v0.13 evidence without changing it.",
     "checkpoint_sha256": {
@@ -325,7 +325,7 @@
         "totplay": "338a17e4192f5e8231f95cf1cd3818d069ab0cc2531d598090478001ca15d537",
         "totdesktop": "75cee10f24eb5697a928a39f15924f2d36a8a79a67d3308f00b2ea30ecb67ab4"
       },
-      "scope": "Owner preview using the tested runtime code. Notices and platform runtimes included; no original game assets or fonts. Preserve this package while human acceptance is pending. Final release packages require the independently reviewed candidate."
+      "scope": "Owner preview using the tested runtime code. Notices and platform runtimes included; no original game assets or fonts. Preserve this package as the accepted human-test preview. Final release packages require the independently reviewed candidate."
     },
     "windows": {
       "manifest_sha256": "eac1eddfd8c127af3d8ab959d1c15de31884e09dfdc6c970b6dfe1bfc9526bb5",
@@ -334,7 +334,7 @@
         "totplay.exe": "00d4f3b3f47d3abcaf7abbfe23edfed1380c555b5b74bca8ab776c6005863541",
         "totdesktop.exe": "634c5f5e24a72f4919286643bd4fc7bd2709354e9744cf828f766730df7c9353"
       },
-      "scope": "Owner preview using the tested runtime code. Notices and platform runtimes included; no original game assets or fonts. Preserve this package while human acceptance is pending. Final release packages require the independently reviewed candidate."
+      "scope": "Owner preview using the tested runtime code. Notices and platform runtimes included; no original game assets or fonts. Preserve this package as the accepted human-test preview. Final release packages require the independently reviewed candidate."
     }
   }
 }

@@ -5,14 +5,17 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+## [0.14.0] — city production decisions
+
 - Add city production progress, current-output estimates and quoted category
   switching with captured shield budgets, restoration and checkpoint continuation
-  (#148–#150, v0.14 in development).
+  (#148–#150).
 - Add explicit purchases and single-city improvement sales to both clients,
   with treasury/refund/effect previews and stale/ownership/funds guards. Paid
   items complete in the next production phase; sale effects refresh immediately.
 - Retain 4,091 original-executable comparisons and recorded-play regression
-  routes. New owner acceptance and independent review remain pending (#151).
+  routes. The owner confirmed the requested both-client production routes work
+  (#151); independent review gates publication.
 
 - Preserve browser focus-event order when an older asynchronous state refresh
   completes after a newer blur (#146); retain the v0.13.0 tag unchanged.

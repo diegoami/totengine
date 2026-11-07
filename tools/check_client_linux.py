@@ -111,7 +111,11 @@ def run():
                 def key(name,down=True,up=True):
                     before=scene(); old=before["revision"] if before else -1
                     closing=before and any(d.get("text")=="Close client? Save first if you want to resume." for d in before["draws"]) and name=="Return"
-                    rawkey(name,down,up)
+                    if name.startswith("Ctrl+"):
+                        rawkey("Control_L",True,False)
+                        rawkey(name[5:],down,up)
+                        rawkey("Control_L",False,True)
+                    else:rawkey(name,down,up)
                     if down and up and not closing: wait(lambda s:s["revision"]>old)
                 def has(s,label):return any(d.get("text")==label for d in s["draws"])
                 def button(label):
@@ -120,6 +124,22 @@ def run():
                         if any(d.get("kind")=="rect" and d["x"]==t["x"]-7 and d["y"]==t["y"]-7 and d["color"]=="#6b7057" for d in s["draws"]):key("Return");return
                         key("Tab")
                     raise RuntimeError("button could not focus: "+label)
+                motion=bind(xt,"XTestFakeMotionEvent",c.c_int,ptr,c.c_int,c.c_int,c.c_int,ul)
+                mouse=bind(xt,"XTestFakeButtonEvent",c.c_int,ptr,ui,c.c_int,ul)
+                translate=bind(x,"XTranslateCoordinates",c.c_int,ptr,ul,ul,c.c_int,c.c_int,c.POINTER(c.c_int),c.POINTER(c.c_int),c.POINTER(ul))
+                def click_at(xpos,ypos):
+                    old=scene()["revision"]
+                    attr=Attributes();get_attributes(display,window,c.byref(attr))
+                    # SDL uses a centered logical 1024x768 viewport on resize.
+                    scale=min(attr.width/1024,attr.height/768)
+                    xx=c.c_int();yy=c.c_int();child=ul()
+                    translate(display,window,root,0,0,c.byref(xx),c.byref(yy),c.byref(child))
+                    motion(display,-1,xx.value+int((attr.width-1024*scale)/2+xpos*scale),yy.value+int((attr.height-768*scale)/2+ypos*scale),0)
+                    mouse(display,1,1,0);mouse(display,1,0,0);sync(display,0)
+                    wait(lambda s:s["revision"]>old)
+                def click_button(label):
+                    t=next(d for d in scene()["draws"] if d.get("kind")=="text" and d.get("text")==label)
+                    click_at(t["x"]+12,t["y"]+8)
                 def research():
                     if has(scene(),"Choose research explicitly"):
                         key("Down");key("Return");wait(lambda s:s["status"]=="research-set")
@@ -128,32 +148,32 @@ def run():
                 wait(lambda s:s["phase"]=="Setup")
                 button("Start Original surface game")
                 wait(lambda s:has(s,"Choose research explicitly"));button("Save pending choice");save_dialog("research");research()
-                key("f");wait(lambda s:has(s,"Name your city"));button("Save pending choice");save_dialog("founding")
+                key("b");wait(lambda s:has(s,"Name your city"));button("Save pending choice");save_dialog("founding")
                 wait(lambda s:has(s,"Name your city"));write("athenx");key("BackSpace");key("a");key("Return");wait(lambda s:s["status"]=="founded 0")
                 button("Choose production")
                 for _ in range(80):
                     key("Down")
                     if any(d.get("text","").startswith("●") and "Warriors" in d["text"] for d in scene()["draws"]):break
-                key("Return");wait(lambda s:s["status"]=="prod-set");key("s");save_dialog("normal")
+                key("Return");wait(lambda s:s["status"]=="prod-set");key("Ctrl+s");save_dialog("normal")
                 for _ in range(10):
                     research();s=scene();turn=int(next(d["text"] for d in s["draws"] if d.get("text","").startswith("Turn ")).split()[1])
-                    key("e")
+                    key("Ctrl+n")
                     if has(scene(),"End your turn with movable units?"):key("Return")
                     wait(lambda s:s["phase"]=="Human" and any(d.get("text","").startswith("Turn "+str(turn+1)+" ") for d in s["draws"]))
-                research();key("s");save_dialog("tenrounds");wait(lambda s:s["status"]=="Engine checkpoint saved: tenrounds")
+                research();key("Ctrl+s");save_dialog("tenrounds");wait(lambda s:s["status"]=="Engine checkpoint saved: tenrounds")
                 def load(name):
-                    key("l");save_dialog(name)
-                load("research");research();key("f");button("Save pending choice");save_dialog("researchnext")
+                    key("Ctrl+l");save_dialog(name)
+                load("research");research();key("b");button("Save pending choice");save_dialog("researchnext")
                 key("Escape");load("founding");write("athena");key("Return")
                 button("Choose production")
                 for _ in range(80):
                     key("Down")
                     if any(d.get("text","").startswith("●") and "Warriors" in d["text"] for d in scene()["draws"]):break
-                key("Return");key("s");save_dialog("foundingnext")
-                load("normal");key("e")
+                key("Return");key("Ctrl+s");save_dialog("foundingnext")
+                load("normal");key("Ctrl+n")
                 if has(scene(),"End your turn with movable units?"):key("Return")
                 wait(lambda s:s["phase"]=="Human" and any(d.get("text","").startswith("Turn 2 ") for d in s["draws"]))
-                research();key("s");save_dialog("normalnext")
+                research();key("Ctrl+s");save_dialog("normalnext")
                 citizens=os.environ.get("TOTENGINE_CITIZENS_FIXTURES")
                 if citizens:
                     import shutil
@@ -161,9 +181,9 @@ def run():
                     shutil.copyfile(fixtures_root/"mature.cth",work/"saves/mature.cth")
                     meta=json.loads((fixtures_root/"route.json").read_text())
                     def compare(name,expected):
-                        key("s");save_dialog(name)
+                        key("Ctrl+s");save_dialog(name)
                         assert (work/"saves"/(name+".cth")).read_bytes()==(fixtures_root/(expected+".cth")).read_bytes(),name
-                    load("mature");key("o")
+                    load("mature");button("Manage city")
                     assert any("population 5" in d.get("text","") for d in scene()["draws"])
                     for _ in range(21):
                         if has(scene(),"Tile "+str(meta["worker_tile"])):break
@@ -178,16 +198,62 @@ def run():
                         if has(scene(),"Tile "+str(meta["worker_tile"])):break
                         key("Right")
                     key("space");compare("cityresume","after-resume")
-                    key("Escape");key("o")
+                    key("Escape");button("Manage city")
                     navigation=os.environ.get("TOTENGINE_NAVIGATION_FIXTURE")
                     if navigation:
                         shutil.copyfile(navigation,work/"saves/navigation.cth");load("navigation")
                         first=next(d["text"] for d in scene()["draws"] if " — population " in d.get("text",""))
                         key("Next")
                         assert next(d["text"] for d in scene()["draws"] if " — population " in d.get("text",""))!=first
-                        key("Prior");key("s");save_dialog("citynavigation")
+                        key("Prior");key("Ctrl+s");save_dialog("citynavigation")
                         assert (work/"saves/citynavigation.cth").read_bytes()==Path(navigation).read_bytes()
                     key("Escape")
+                movement=os.environ.get("TOTENGINE_MOVEMENT_FIXTURES")
+                if movement:
+                    import shutil
+                    movement=Path(movement);route=json.loads((movement/"route.json").read_text())
+                    shutil.copyfile(movement/"before.cth",work/"saves/movement.cth")
+                    def select_actor():
+                        for _ in range(100):
+                            if any(d.get("text","").endswith(" #"+str(route["actor"])) for d in scene()["draws"]):return
+                            key("w")
+                        raise RuntimeError("movement actor absent")
+                    load("movement");select_actor()
+                    if has(scene(),"Moving [V]"):key("v")
+                    key("c");click_at(380,365);click_button("Activate unit "+str(route["actor"]))
+                    if not has(scene(),"Moving [V]"):raise RuntimeError("Activate did not enter Moving")
+                    get_image=bind(x,"XGetImage",ptr,ptr,ul,c.c_int,c.c_int,ui,ui,ul,c.c_int)
+                    get_pixel=bind(x,"XGetPixel",ul,ptr,c.c_int,c.c_int)
+                    destroy_image=bind(x,"XDestroyImage",c.c_int,ptr)
+                    revision=scene()["revision"];pixels=set()
+                    for _ in range(8):
+                        attr=Attributes();get_attributes(display,window,c.byref(attr));scale=min(attr.width/1024,attr.height/768)
+                        image=get_image(display,window,int((attr.width-1024*scale)/2+380*scale),int((attr.height-768*scale)/2+374*scale),1,1,ul(-1).value,2)
+                        if not image:raise RuntimeError("cannot read own marker pixel")
+                        try:pixels.add(get_pixel(image,0,0))
+                        finally:destroy_image(image)
+                        time.sleep(.12)
+                    if len(pixels)<2:raise RuntimeError("native selection square did not blink")
+                    if scene()["revision"]!=revision:raise RuntimeError("native blink generated input")
+                    click_at(380+route["dx"]*32,390+route["dy"]*16)
+                    if scene()["status"]!="moved":raise RuntimeError("mouse movement failed: "+scene()["status"])
+                    key("Ctrl+s");save_dialog("movementafter")
+                    expected=(movement/"after.cth").read_bytes()
+                    if (work/"saves/movementafter.cth").read_bytes()!=expected:raise RuntimeError("mouse checkpoint differs")
+                    digit={(-1,-1):"7",(0,-2):"8",(1,-1):"9",(-2,0):"4",(2,0):"6",(-1,1):"1",(0,2):"2",(1,1):"3"}[(route["dx"],route["dy"])]
+                    for mode in ["on","off","arrows"]:
+                        load("movement");select_actor()
+                        if has(scene(),"Viewing [V]"):key("v")
+                        # XTest uses the physical keypad keycode; toggling Num Lock
+                        # exercises SDL keypad dispatch in both states.
+                        state=c.c_uint()
+                        bind(x,"XkbGetIndicatorState",c.c_int,ptr,ui,c.POINTER(ui))(display,0x100,c.byref(state))
+                        if mode=="arrows":key({"4":"Left","6":"Right","8":"Up","2":"Down"}[digit])
+                        else:
+                            if bool(state.value&1)!=(mode=="on"):rawkey("Num_Lock")
+                            key("KP_"+digit)
+                        key("Ctrl+s");save_dialog("movementkeypad"+mode)
+                        if (work/("saves/movementkeypad"+mode+".cth")).read_bytes()!=expected:raise RuntimeError("keypad checkpoint differs "+mode)
                 fixtures=os.environ.get("TOTENGINE_ENCOUNTER_FIXTURES")
                 if fixtures:
                     import shutil
@@ -198,11 +264,11 @@ def run():
                             if any(d.get("text","").endswith(" #"+str(actor)) for d in scene()["draws"]):break
                             key("w")
                         else:raise RuntimeError("combat actor absent")
-                        if has(scene(),"Viewing [M]"):key("m")
+                        if has(scene(),"Viewing [V]"):key("v")
                         key("8")
                         wait(lambda s:any(d.get("text","").startswith("Confirm ") and d["text"].endswith("?") for d in s["draws"]))
                         key("Escape");key("8");key("Return")
-                        key("s");save_dialog(name+"after")
+                        key("Ctrl+s");save_dialog(name+"after")
                         assert (work/"saves"/(name+"after.cth")).read_bytes()==(Path(fixtures)/("after-"+name+".cth")).read_bytes(),name
                 resize(display,window,1440,1000);sync(display,0);time.sleep(.3)
                 focus(display,root,2,0);sync(display,0);time.sleep(.2);focus(display,window,2,0);sync(display,0);time.sleep(.2)

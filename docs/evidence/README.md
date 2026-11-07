@@ -3852,3 +3852,14 @@ role/continuation/navigation checkpoint hashes, actual browser/Linux input
 comparisons and explicit remaining platform/manual gates. All retained data is
 numeric or authored input; original screenshots, sprites, maps and saves stay
 private. Scope, exact commands and limits: [v0.13 readiness](../v0.13.0-readiness.md).
+
+## Playable-client control corrections (v0.13 preparation)
+
+`client-controls-v1.json` records the generated-warrior activation/movement
+regression, original manual and installed-menu source identities, twelve matching
+real-input checkpoints across browser/Linux/Windows, and presentation-only
+blinking checks. `client-input-route-v2.json` translates the older UI shortcuts
+without changing its generated engine trajectory; the v1 artifact stays intact.
+Sources and limits: [original controls](../ui/original-controls.md). Reproduction:
+[v0.13 readiness](../v0.13.0-readiness.md#movementcontrol-corrections-after-owner-feedback).
+Owner retesting remains pending; these checks do not complete the human gate.

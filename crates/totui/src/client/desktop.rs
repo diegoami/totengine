@@ -9,55 +9,75 @@ use sdl2::{
 };
 use std::collections::BTreeMap;
 use std::path::PathBuf;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 fn color(s: &str) -> Color {
     let n = u32::from_str_radix(s.trim_start_matches('#'), 16).unwrap_or(0);
     Color::RGB((n >> 16) as u8, (n >> 8) as u8, n as u8)
 }
-fn key(k: Keycode, shift: bool) -> Option<String> {
-    Some(
-        match k {
-            Keycode::Return => "Enter",
-            Keycode::Escape => "Escape",
-            Keycode::Tab => {
-                if shift {
-                    "ShiftTab"
-                } else {
-                    "Tab"
-                }
-            }
-            Keycode::Backspace => "Backspace",
-            Keycode::Home => "Home",
-            Keycode::PageDown => "PageDown",
-            Keycode::PageUp => "PageUp",
-            Keycode::Left => "ArrowLeft",
-            Keycode::Right => "ArrowRight",
-            Keycode::Up => "ArrowUp",
-            Keycode::Down => "ArrowDown",
-            Keycode::Space => " ",
-            Keycode::Plus | Keycode::Equals => "+",
-            Keycode::Minus => "-",
-            Keycode::F => "f",
-            Keycode::R => "r",
-            Keycode::C => "c",
-            Keycode::O => "o",
-            Keycode::M => "m",
-            Keycode::E => "e",
-            Keycode::W => "w",
-            Keycode::S => "s",
-            Keycode::L => "l",
-            Keycode::Num1 | Keycode::Kp1 => "1",
-            Keycode::Num2 | Keycode::Kp2 => "2",
-            Keycode::Num3 | Keycode::Kp3 => "3",
-            Keycode::Num4 | Keycode::Kp4 => "4",
-            Keycode::Num6 | Keycode::Kp6 => "6",
-            Keycode::Num7 | Keycode::Kp7 => "7",
-            Keycode::Num8 | Keycode::Kp8 => "8",
-            Keycode::Num9 | Keycode::Kp9 => "9",
-            _ => return None,
+fn key(k: Keycode, shift: bool, ctrl: bool) -> Option<String> {
+    if ctrl {
+        if shift {
+            return None;
         }
-        .into(),
-    )
+        return match k {
+            Keycode::S => Some("Ctrl+s".into()),
+            Keycode::L => Some("Ctrl+l".into()),
+            Keycode::N => Some("Ctrl+n".into()),
+            _ => None,
+        };
+    }
+    if shift && k == Keycode::Z {
+        return Some("Shift+z".into());
+    }
+    let name = match k {
+        Keycode::Return => "Enter",
+        Keycode::Escape => "Escape",
+        Keycode::Tab => {
+            if shift {
+                "ShiftTab"
+            } else {
+                "Tab"
+            }
+        }
+        Keycode::Backspace => "Backspace",
+        Keycode::Home => "Home",
+        Keycode::PageDown => "PageDown",
+        Keycode::PageUp => "PageUp",
+        Keycode::Left => "ArrowLeft",
+        Keycode::Right => "ArrowRight",
+        Keycode::Up => "ArrowUp",
+        Keycode::Down => "ArrowDown",
+        Keycode::Space => " ",
+        Keycode::Plus | Keycode::Equals => "+",
+        Keycode::Minus => "-",
+        Keycode::A => "a",
+        Keycode::B => "b",
+        Keycode::V => "v",
+        Keycode::Z => "z",
+        Keycode::X => "x",
+        Keycode::F => "f",
+        Keycode::R => "r",
+        Keycode::C => "c",
+        Keycode::O => "o",
+        Keycode::M => "m",
+        Keycode::E => "e",
+        Keycode::W => "w",
+        Keycode::S => "s",
+        Keycode::L => "l",
+        Keycode::Num1 | Keycode::Kp1 => "1",
+        Keycode::Num2 | Keycode::Kp2 => "2",
+        Keycode::Num3 | Keycode::Kp3 => "3",
+        Keycode::Num4 | Keycode::Kp4 => "4",
+        Keycode::Num6 | Keycode::Kp6 => "6",
+        Keycode::Num7 | Keycode::Kp7 => "7",
+        Keycode::Num8 | Keycode::Kp8 => "8",
+        Keycode::Num9 | Keycode::Kp9 => "9",
+        _ => return None,
+    };
+    if shift && name.len() == 1 && name.as_bytes()[0].is_ascii_alphabetic() {
+        return None;
+    }
+    Some(name.into())
 }
 fn font_path() -> PathBuf {
     if let Some(p) = std::env::var_os("TOTENGINE_FONT") {
@@ -81,6 +101,7 @@ pub fn run(mut client: Client) -> Result<(), String> {
         fontdue::FontSettings::default(),
     )
     .map_err(str::to_owned)?;
+    let animation_start = Instant::now();
     let sdl = sdl2::init()?;
     let video = sdl.video()?;
     let window = video
@@ -228,7 +249,7 @@ pub fn run(mut client: Client) -> Result<(), String> {
                                 value: entry.value,
                             })
                         } else if !repeat {
-                            key(k, shift)
+                            key(k, shift, ctrl)
                                 .filter(|s| {
                                     matches!(s.as_str(), "Enter" | "Escape" | "Tab" | "ShiftTab")
                                 })
@@ -236,9 +257,15 @@ pub fn run(mut client: Client) -> Result<(), String> {
                         } else {
                             None
                         }
-                    } else if !repeat {
-                        key(k, keymod.intersects(Mod::LSHIFTMOD | Mod::RSHIFTMOD))
-                            .map(|key| Input::Key { key })
+                    } else if !repeat && !keymod.intersects(Mod::LALTMOD | Mod::RALTMOD) {
+                        key(
+                            k,
+                            keymod.intersects(Mod::LSHIFTMOD | Mod::RSHIFTMOD),
+                            keymod.intersects(
+                                Mod::LCTRLMOD | Mod::RCTRLMOD | Mod::LGUIMOD | Mod::RGUIMOD,
+                            ),
+                        )
+                        .map(|key| Input::Key { key })
                     } else {
                         None
                     }
@@ -297,6 +324,31 @@ pub fn run(mut client: Client) -> Result<(), String> {
                 } => {
                     canvas.set_draw_color(color(&s));
                     canvas.fill_rect(Rect::new(x as i32, y as i32, w as u32, h as u32))?;
+                }
+                Draw::Cursor {
+                    x,
+                    y,
+                    w,
+                    h,
+                    color: s,
+                    blink,
+                } => {
+                    if !blink || (animation_start.elapsed().as_millis() / 500).is_multiple_of(2) {
+                        canvas.set_draw_color(color(&s));
+                        let points = [
+                            (x - w / 2., y),
+                            (x, y - h / 2.),
+                            (x + w / 2., y),
+                            (x, y + h / 2.),
+                            (x - w / 2., y),
+                        ];
+                        for pair in points.windows(2) {
+                            canvas.draw_line(
+                                (pair[0].0 as i32, pair[0].1 as i32),
+                                (pair[1].0 as i32, pair[1].1 as i32),
+                            )?;
+                        }
+                    }
                 }
                 Draw::Line {
                     x,
@@ -447,4 +499,27 @@ pub fn run(mut client: Client) -> Result<(), String> {
         std::thread::sleep(Duration::from_millis(16));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn original_keys_and_modifiers_are_preserved() {
+        for (k, want) in [
+            (Keycode::A, "a"),
+            (Keycode::B, "b"),
+            (Keycode::V, "v"),
+            (Keycode::Kp8, "8"),
+        ] {
+            assert_eq!(key(k, false, false).as_deref(), Some(want));
+        }
+        assert_eq!(key(Keycode::N, false, true).as_deref(), Some("Ctrl+n"));
+        assert_eq!(key(Keycode::S, false, true).as_deref(), Some("Ctrl+s"));
+        assert_eq!(key(Keycode::L, false, true).as_deref(), Some("Ctrl+l"));
+        assert_eq!(key(Keycode::Z, true, false).as_deref(), Some("Shift+z"));
+        assert_eq!(key(Keycode::B, false, true), None);
+        assert_eq!(key(Keycode::B, true, false), None);
+        assert_eq!(key(Keycode::S, true, true), None);
+    }
 }

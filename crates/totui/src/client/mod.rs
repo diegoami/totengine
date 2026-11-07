@@ -58,6 +58,14 @@ pub enum Draw {
         h: f64,
         sprite: String,
     },
+    Cursor {
+        x: f64,
+        y: f64,
+        w: f64,
+        h: f64,
+        color: String,
+        blink: bool,
+    },
     Line {
         x: f64,
         y: f64,
@@ -92,6 +100,9 @@ enum Modal {
     Research,
     Production {
         city: Entity,
+    },
+    Units {
+        at: (u16, u16),
     },
     Confirm {
         command: Command,
@@ -138,6 +149,7 @@ enum Action {
     Page(i32),
     Slot(String),
     Unit(Entity),
+    Activate,
     Home,
     Seed,
 }
@@ -497,19 +509,26 @@ impl Client {
             self.city_key(key)
         } else {
             match key {
-                "o" => self.action(Action::OpenCity),
-                "f" => self.action(Action::Found),
-                "r" => self.action(Action::Research),
-                "c" => self.action(Action::City),
-                "m" => self.action(Action::Mode),
-                "e" => self.action(Action::End),
+                "b" => self.action(Action::Found),
+                "v" => self.action(Action::Mode),
+                "a" => self.action(Action::Activate),
+                "c" => self.action(Action::Center),
+                "Ctrl+n" => self.action(Action::End),
                 "w" => self.action(Action::Wait),
                 " " => self.action(Action::Skip),
-                "s" => self.action(Action::Save),
-                "l" => self.action(Action::Load),
-                "Home" => self.action(Action::Center),
-                "+" | "=" => self.action(Action::Zoom(1.25)),
-                "-" => self.action(Action::Zoom(0.8)),
+                "Ctrl+s" => self.action(Action::Save),
+                "Ctrl+l" => self.action(Action::Load),
+                "z" | "+" | "=" => self.action(Action::Zoom(1.25)),
+                "x" | "-" => self.action(Action::Zoom(0.8)),
+                "Shift+z" => {
+                    self.zoom = 1.;
+                    self.center();
+                    Ok(())
+                }
+                "ArrowLeft" if self.moving => self.step(-2, 0),
+                "ArrowRight" if self.moving => self.step(2, 0),
+                "ArrowUp" if self.moving => self.step(0, -2),
+                "ArrowDown" if self.moving => self.step(0, 2),
                 "ArrowLeft" => self.action(Action::Pan(64., 0.)),
                 "ArrowRight" => self.action(Action::Pan(-64., 0.)),
                 "ArrowUp" => self.action(Action::Pan(0., 32.)),
@@ -522,6 +541,9 @@ impl Client {
                 "7" => self.step(-1, -1),
                 "8" => self.step(0, -2),
                 "9" => self.step(1, -1),
+                "f" | "r" | "m" | "o" | "e" | "s" | "l" => {
+                    Err("That original unit order is not implemented in this client yet.".into())
+                }
                 _ => Ok(()),
             }
         }
@@ -588,7 +610,27 @@ impl Client {
                 self.advancing = !self.advancing;
             }
             Action::Mode => {
+                if !self.moving
+                    && !self.view().is_some_and(|v| {
+                        v.observation
+                            .units
+                            .iter()
+                            .any(|u| u.owner == v.observation.civ && u.moves_left > 0)
+                    })
+                {
+                    return Err("No units have moves remaining. Viewing only.".into());
+                }
                 self.moving = !self.moving;
+                if !self.moving {
+                    self.inspect = self.active.and_then(|e| {
+                        self.view()?
+                            .observation
+                            .units
+                            .iter()
+                            .find(|u| u.index == e.slot)
+                            .map(|u| (u.x, u.y))
+                    });
+                }
                 self.status = if self.moving {
                     "Moving: click an adjacent tile; attacks/capture require confirmation."
                 } else {
@@ -712,6 +754,23 @@ impl Client {
                             advance: self.choice.ok_or("Select a research topic explicitly")?
                                 as usize,
                         })?;
+                    }
+                    Modal::Units { at } => {
+                        let slot = self.choice.ok_or("Choose a unit explicitly")? as usize;
+                        let v = self.view().ok_or("No running game")?;
+                        let entity = v
+                            .units
+                            .iter()
+                            .find(|e| e.slot == slot)
+                            .copied()
+                            .filter(|_| {
+                                v.observation
+                                    .units
+                                    .iter()
+                                    .any(|u| u.index == slot && (u.x, u.y) == at)
+                            })
+                            .ok_or("Unit selection changed")?;
+                        self.action(Action::Unit(entity))?;
                     }
                     Modal::Production { city } => self.order(Command::Production {
                         city,
@@ -858,18 +917,88 @@ impl Client {
             Action::Load => self.open(Modal::Load),
             Action::NewGame => self.open(Modal::NewGame),
             Action::Quit => self.open(Modal::Quit),
+            Action::Activate => {
+                let v = self.view().ok_or("Start a game first")?;
+                let at = if self.moving {
+                    self.active.and_then(|e| {
+                        v.observation
+                            .units
+                            .iter()
+                            .find(|u| u.index == e.slot)
+                            .map(|u| (u.x, u.y))
+                    })
+                } else {
+                    self.inspect
+                }
+                .ok_or("Inspect an own unit first")?;
+                let own: Vec<_> = v
+                    .units
+                    .iter()
+                    .filter(|e| {
+                        v.observation
+                            .units
+                            .iter()
+                            .any(|u| u.index == e.slot && (u.x, u.y) == at)
+                    })
+                    .copied()
+                    .collect();
+                match own.as_slice() {
+                    [unit] => self.action(Action::Unit(*unit))?,
+                    [] => return Err("No own unit at the inspection cursor".into()),
+                    _ => self.open(Modal::Units { at }),
+                }
+            }
             Action::Unit(unit) => {
+                let v = self.view().ok_or("Start a game first")?;
+                if !v.units.contains(&unit) {
+                    return Err("Unit selection changed".into());
+                }
+                let u = v
+                    .observation
+                    .units
+                    .iter()
+                    .find(|u| u.index == unit.slot)
+                    .ok_or("Unit disappeared")?;
                 self.active = Some(unit);
+                self.inspect = Some((u.x, u.y));
+                self.moving = u.moves_left > 0;
                 self.center();
+                self.status = if self.moving {
+                    "Unit activated. Moving: keypad, cursor arrows or adjacent terrain click."
+                } else {
+                    "Unit selected; no moves remaining this turn. Viewing only."
+                }
+                .into();
             }
         }
         Ok(())
     }
     fn step(&mut self, dx: i32, dy: i32) -> Result<(), String> {
-        if !self.moving {
-            return Err("Viewing never moves units. Select Moving first.".into());
-        }
         let v = self.view().ok_or("Start a game first")?;
+        if !self.moving {
+            let origin = self
+                .inspect
+                .or_else(|| {
+                    self.active.and_then(|e| {
+                        v.observation
+                            .units
+                            .iter()
+                            .find(|u| u.index == e.slot)
+                            .map(|u| (u.x, u.y))
+                    })
+                })
+                .ok_or("Inspect a tile first")?;
+            let (x, y) = (i32::from(origin.0) + dx, i32::from(origin.1) + dy);
+            if x < 0 || y < 0 || x >= i32::from(v.observation.w2) || y >= i32::from(v.observation.h)
+            {
+                return Err("Inspection cursor reached the map edge".into());
+            }
+            self.inspect = Some((x as u16, y as u16));
+            self.pan.0 -= f64::from(dx) * 32. * self.zoom;
+            self.pan.1 -= f64::from(dy) * 16. * self.zoom;
+            self.status = format!("Viewing ({x}, {y}); A activates an own unit, V changes mode.");
+            return Ok(());
+        }
         let active = self.active.ok_or("Select an own unit")?;
         let u = v
             .observation
@@ -977,6 +1106,27 @@ impl Client {
                 best = Some((col as u16, row as u16, distance));
             }
         }
+        if !self.moving {
+            for u in v.observation.units.iter().rev() {
+                let px = self.pan.0 + f64::from(u.x) * 32. * self.zoom;
+                let py = self.pan.1 + f64::from(u.y) * 16. * self.zoom;
+                let sx = (x - (px - 32. * self.zoom)) / self.zoom;
+                let sy = (y - (py - 48. * self.zoom)) / self.zoom;
+                if let Some(sprite) = self
+                    .atlas()
+                    .and_then(|a| a.sprites.get(&format!("unit-{}", u.type_id)))
+                {
+                    if sx >= 0. && sy >= 0. && sx < 64. && sy < 64. {
+                        let col = (sx * f64::from(sprite.w) / 64.) as usize;
+                        let row = (sy * f64::from(sprite.h) / 64.) as usize;
+                        if sprite.rgba[(row * sprite.w as usize + col) * 4 + 3] > 0 {
+                            best = Some((u.x, u.y, 0.));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         if let Some((x, y, _)) = best {
             self.inspect = Some((x, y));
             let at = usize::from(y) * (usize::from(v.observation.w2) / 2) + usize::from(x) / 2;
@@ -1009,7 +1159,16 @@ impl Client {
                 .filter_map(|u| v.units.iter().find(|e| e.slot == u.index))
                 .copied()
                 .collect();
-            if !own.is_empty() {
+            let active_at = self.active.and_then(|e| {
+                v.observation
+                    .units
+                    .iter()
+                    .find(|u| u.index == e.slot)
+                    .map(|u| (u.x, u.y))
+            });
+            if self.moving && active_at != Some((x, y)) {
+                self.move_to((x, y))?;
+            } else if !own.is_empty() {
                 let n = own
                     .iter()
                     .position(|e| Some(*e) == self.active)
@@ -1053,6 +1212,23 @@ impl Client {
                     Vec::new()
                 }
             }
+            Some(Modal::Units { at }) => v
+                .observation
+                .units
+                .iter()
+                .filter(|u| (u.x, u.y) == *at && v.units.iter().any(|e| e.slot == u.index))
+                .map(|u| {
+                    (
+                        u.index as i32,
+                        format!(
+                            "{} #{} · moves {}",
+                            self.item_name(u.type_id as i8),
+                            u.index,
+                            u.moves_left
+                        ),
+                    )
+                })
+                .collect(),
             Some(Modal::Production { city }) => v
                 .production_choices
                 .iter()
@@ -1132,7 +1308,7 @@ impl Client {
         };
         if let Some(modal) = &self.modal {
             match modal {
-                Modal::Research | Modal::Production { .. } => {
+                Modal::Research | Modal::Production { .. } | Modal::Units { .. } => {
                     for (row, (id, label)) in self
                         .current_choices()
                         .into_iter()
@@ -1276,26 +1452,26 @@ impl Client {
         for (i, (label, action)) in [
             (
                 if self.moving {
-                    "Moving [M]"
+                    "Moving [V]"
                 } else {
-                    "Viewing [M]"
+                    "Viewing [V]"
                 },
                 Action::Mode,
             ),
-            ("Found [F]", Action::Found),
-            ("Research [R]", Action::Research),
-            ("City [C]", Action::City),
+            ("Found [B]", Action::Found),
+            ("Research", Action::Research),
+            ("Cities", Action::City),
             ("Wait [W]", Action::Wait),
             ("Skip [Space]", Action::Skip),
-            ("Save [S]", Action::Save),
-            ("Load [L]", Action::Load),
+            ("Save [Ctrl+S]", Action::Save),
+            ("Load [Ctrl+L]", Action::Load),
         ]
         .into_iter()
         .enumerate()
         {
             add(12. + i as f64 * 126., 48., 120., 38., label.into(), action);
         }
-        add(770., 622., 240., 50., "End turn [E]".into(), Action::End);
+        add(770., 622., 240., 50., "End [Ctrl+N]".into(), Action::End);
         add(770., 574., 115., 36., "Center".into(), Action::Center);
         add(895., 574., 52., 36., "+".into(), Action::Zoom(1.25));
         add(955., 574., 55., 36., "−".into(), Action::Zoom(0.8));
@@ -1315,7 +1491,7 @@ impl Client {
                 685.,
                 336.,
                 30.,
-                "Manage city [O]".into(),
+                "Manage city".into(),
                 Action::OpenCity,
             );
         }
@@ -1568,6 +1744,7 @@ impl Client {
                 Modal::Name => "Name your city",
                 Modal::Research => "Choose research explicitly",
                 Modal::Production { .. } => "Choose production",
+                Modal::Units { .. } => "Activate a unit",
                 Modal::Confirm { label, .. } => label,
                 Modal::Save => "Save engine checkpoint (new name)",
                 Modal::Load => "Load engine checkpoint (same resources)",
@@ -1604,7 +1781,10 @@ impl Client {
                     "#eee8d4",
                 ));
             }
-            if matches!(modal, Modal::Research | Modal::Production { .. }) {
+            if matches!(
+                modal,
+                Modal::Research | Modal::Production { .. } | Modal::Units { .. }
+            ) {
                 draws.push(text(
                     212.,
                     151.,
@@ -1772,7 +1952,16 @@ impl Client {
             draws.push(rect(px - 5., py - 30., 10., 8., color(c.owner)));
             draws.push(text(px - 30., py + 20., &c.name, 14, color(c.owner)));
         }
-        for u in &o.units {
+        for u in o
+            .units
+            .iter()
+            .filter(|u| !self.active.is_some_and(|e| e.slot == u.index))
+            .chain(
+                o.units
+                    .iter()
+                    .filter(|u| self.active.is_some_and(|e| e.slot == u.index)),
+            )
+        {
             let (px, py) = point(u.x, u.y);
             if !(44.0..720.0).contains(&px) || !(150.0..640.0).contains(&py) {
                 continue;
@@ -1802,14 +1991,27 @@ impl Client {
                     },
                 ));
             }
-            if self.active.is_some_and(|e| e.slot == u.index) {
-                draws.push(Draw::Line {
-                    x: px - 20.,
-                    y: py + 17.,
-                    x2: px + 20.,
-                    y2: py + 17.,
-                    color: "#ffff8c".into(),
-                    width: 3.,
+        }
+        let cursor = if self.moving {
+            self.active.and_then(|e| {
+                o.units
+                    .iter()
+                    .find(|u| u.index == e.slot)
+                    .map(|u| (u.x, u.y))
+            })
+        } else {
+            self.inspect
+        };
+        if let Some((x, y)) = cursor {
+            let (px, py) = point(x, y);
+            if (44.0..720.0).contains(&px) && (150.0..640.0).contains(&py) {
+                draws.push(Draw::Cursor {
+                    x: px,
+                    y: py,
+                    w: 64. * self.zoom,
+                    h: 32. * self.zoom,
+                    color: if self.moving { "#ffff8c" } else { "#f0eee0" }.into(),
+                    blink: self.focused && self.modal.is_none() && v.phase == Phase::Human,
                 });
             }
         }

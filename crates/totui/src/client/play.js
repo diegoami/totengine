@@ -51,6 +51,48 @@ async function sprite(key) {
   sprites.set(key, promise);
   return promise;
 }
+let paintedFrame = null, paintedImages = new Map();
+function drawCanvas() {
+  if (!paintedFrame) return;
+  ctx.imageSmoothingEnabled = false;
+  for (const d of paintedFrame.draws) {
+    switch (d.kind) {
+      case "rect":
+        ctx.fillStyle = d.color;
+        ctx.fillRect(d.x, d.y, d.w, d.h);
+        break;
+      case "text":
+        ctx.fillStyle = d.color;
+        ctx.font = `${d.size}px Georgia,serif`;
+        ctx.textBaseline = "top";
+        ctx.fillText(d.text, d.x, d.y);
+        break;
+      case "tile":
+        ctx.save();ctx.translate(d.x,d.y);ctx.fillStyle=ctx.createPattern(paintedImages.get(d.sprite),"repeat");ctx.fillRect(0,0,d.w,d.h);ctx.restore();break;
+      case "sprite":
+        ctx.drawImage(paintedImages.get(d.sprite), d.x, d.y, d.w, d.h);
+        break;
+      case "cursor":
+        if (d.blink && Math.floor(performance.now()/500)%2) break;
+        ctx.strokeStyle = d.color; ctx.lineWidth = 1;
+        ctx.beginPath();ctx.moveTo(d.x-d.w/2,d.y);ctx.lineTo(d.x,d.y-d.h/2);
+        ctx.lineTo(d.x+d.w/2,d.y);ctx.lineTo(d.x,d.y+d.h/2);ctx.closePath();ctx.stroke();
+        break;
+      case "line":
+        ctx.strokeStyle = d.color;
+        ctx.lineWidth = d.width;
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x2, d.y2);
+        ctx.stroke();
+        break;
+    }
+  }
+}
+// Animation only redraws the canvas. No input, network, DOM editing or game tick.
+setInterval(() => {
+  if (paintedFrame?.draws.some(d => d.kind === "cursor" && d.blink)) drawCanvas();
+}, 100);
 let paintSerial = 0;
 async function paint(next) {
   if (frame && next.revision < frame.revision) return;
@@ -68,34 +110,9 @@ async function paint(next) {
   const images = await Promise.all(keys.map(sprite));
   const ready = new Map(keys.map((k, i) => [k, images[i]]));
   if (serial !== paintSerial) return;
-  ctx.imageSmoothingEnabled = false;
-  for (const d of next.draws) {
-    switch (d.kind) {
-      case "rect":
-        ctx.fillStyle = d.color;
-        ctx.fillRect(d.x, d.y, d.w, d.h);
-        break;
-      case "text":
-        ctx.fillStyle = d.color;
-        ctx.font = `${d.size}px Georgia,serif`;
-        ctx.textBaseline = "top";
-        ctx.fillText(d.text, d.x, d.y);
-        break;
-      case "tile":
-        ctx.save();ctx.translate(d.x,d.y);ctx.fillStyle=ctx.createPattern(ready.get(d.sprite),"repeat");ctx.fillRect(0,0,d.w,d.h);ctx.restore();break;
-      case "sprite":
-        ctx.drawImage(ready.get(d.sprite), d.x, d.y, d.w, d.h);
-        break;
-      case "line":
-        ctx.strokeStyle = d.color;
-        ctx.lineWidth = d.width;
-        ctx.beginPath();
-        ctx.moveTo(d.x, d.y);
-        ctx.lineTo(d.x2, d.y2);
-        ctx.stroke();
-        break;
-    }
-  }
+  paintedFrame = next;
+  paintedImages = ready;
+  drawCanvas();
   const meta = next.entry;
   if (meta) {
     if (entry.dataset.field !== meta.id) {
@@ -194,30 +211,24 @@ entry.addEventListener("input", () => {
   }
 });
 addEventListener("keydown", (e) => {
-  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.repeat || e.altKey) return;
   const editing = document.activeElement === entry;
   if (editing && !["Enter", "Escape", "Tab"].includes(e.key)) return;
-  const key = e.key === "Tab" && e.shiftKey ? "ShiftTab" :
+  const modified = e.ctrlKey || e.metaKey;
+  let key = e.key === "Tab" && e.shiftKey ? "ShiftTab" :
     e.key.length === 1 ? e.key.toLowerCase() : e.key;
-  if (
-    [
-      "Enter",
-      "Escape",
-      "Tab",
-      "ArrowLeft",
-      "ArrowRight",
-      "ArrowUp",
-      "ArrowDown",
-      "PageUp",
-      "PageDown",
-      "Home",
-      " ",
-      "+",
-      "-",
-      "=",
-    ].includes(e.key) ||
-    (!editing && /^[fcrmewosl12346789]$/.test(key))
-  ) {
+  // Physical keypad position works with Num Lock either on or off. Do not
+  // translate these while a text field owns input or a modifier is held.
+  if (!editing && !modified && /^Numpad[1-9]$/.test(e.code)) key = e.code.slice(6);
+  if (modified) {
+    if (editing || !["s", "l", "n"].includes(key) || e.shiftKey) return;
+    key = "Ctrl+" + key;
+  } else if (e.shiftKey && key === "z") key = "Shift+z";
+  else if (e.shiftKey && /^[a-z]$/.test(key)) return;
+  if (["Enter", "Escape", "Tab", "ShiftTab", "ArrowLeft", "ArrowRight",
+       "ArrowUp", "ArrowDown", "PageUp", "PageDown", " ", "+", "-", "=",
+       "Ctrl+s", "Ctrl+l", "Ctrl+n", "Shift+z"].includes(key) ||
+      (!editing && /^[abvcwzxfremosl123456789]$/.test(key))) {
     e.preventDefault();
     send({ type: "key", key });
   }

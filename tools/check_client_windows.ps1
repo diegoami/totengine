@@ -1,5 +1,5 @@
 # Real OS input only; traces are private test instrumentation, never endpoints.
-param([string]$Binary = "$PSScriptRoot\..\target\x86_64-pc-windows-gnullvm\debug\totdesktop.exe", [string]$Work = "$PSScriptRoot\..\target\client-windows-check")
+param([string]$Binary = "$PSScriptRoot\..\target\x86_64-pc-windows-gnullvm\debug\totdesktop.exe", [string]$Work = "$PSScriptRoot\..\target\client-windows-check", [switch]$MovementOnly)
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type @'
@@ -21,6 +21,37 @@ public static class SpikeWindow {
         i.value.key.scan = (ushort)(scan & 255u);
         i.value.key.flags = (up ? 2u : 0u) | ((vk >= 33u && vk <= 46u) ? 1u : 0u);
         if (SendInput(1, new[] { i }, Marshal.SizeOf(typeof(INPUT))) != 1) throw new Exception("SendInput failed: " + Marshal.GetLastWin32Error());
+    }
+    [StructLayout(LayoutKind.Sequential)] public struct POINT { public int x,y; }
+    [StructLayout(LayoutKind.Sequential)] public struct RECT { public int left,top,right,bottom; }
+    [DllImport("user32.dll")] private static extern bool ClientToScreen(IntPtr h, ref POINT p);
+    [DllImport("user32.dll")] private static extern bool GetClientRect(IntPtr h, out RECT r);
+    [DllImport("user32.dll")] private static extern bool SetCursorPos(int x,int y);
+    [DllImport("user32.dll")] public static extern short GetKeyState(int vk);
+    public static void Click(IntPtr h,uint pid,double x,double y) {
+        uint owner; GetWindowThreadProcessId(h,out owner);
+        if(owner!=pid || GetForegroundWindow()!=h)throw new Exception("No mouse input: owned window is not foreground");
+        RECT r; if(!GetClientRect(h,out r))throw new Exception("GetClientRect failed");
+        double scale=Math.Min((r.right-r.left)/1024.0,(r.bottom-r.top)/768.0);
+        POINT p=new POINT();p.x=(int)(((r.right-r.left)-1024*scale)/2+x*scale);p.y=(int)(((r.bottom-r.top)-768*scale)/2+y*scale);
+        if(!ClientToScreen(h,ref p) || !SetCursorPos(p.x,p.y))throw new Exception("Mouse positioning failed");
+        // Let SDL consume the cursor motion before delivering the button event.
+        System.Threading.Thread.Sleep(80);
+        var down=new INPUT();down.type=0;down.value.mouse.flags=2;
+        var up=new INPUT();up.type=0;up.value.mouse.flags=4;
+        if(SendInput(2,new[]{down,up},Marshal.SizeOf(typeof(INPUT)))!=2)throw new Exception("Mouse SendInput failed");
+    }
+    [DllImport("user32.dll")] private static extern IntPtr GetDC(IntPtr h);
+    [DllImport("user32.dll")] private static extern int ReleaseDC(IntPtr h,IntPtr dc);
+    [DllImport("gdi32.dll")] private static extern uint GetPixel(IntPtr dc,int x,int y);
+    public static uint MarkerPixel(IntPtr h,uint pid) {
+        uint owner;GetWindowThreadProcessId(h,out owner);
+        if(owner!=pid || GetForegroundWindow()!=h)throw new Exception("Only read our foreground marker");
+        RECT r;if(!GetClientRect(h,out r))throw new Exception("GetClientRect failed");
+        double scale=Math.Min((r.right-r.left)/1024.0,(r.bottom-r.top)/768.0);
+        var dc=GetDC(h);
+        try {return GetPixel(dc,(int)(((r.right-r.left)-1024*scale)/2+380*scale),(int)(((r.bottom-r.top)-768*scale)/2+374*scale));}
+        finally {ReleaseDC(h,dc);}
     }
     private delegate bool EnumProc(IntPtr h, IntPtr p);
     [DllImport("user32.dll")] private static extern bool EnumWindows(EnumProc cb, IntPtr p);
@@ -102,6 +133,24 @@ try {
         }
         Start-Sleep -Milliseconds 50
     }
+    function Send-Chord([uint32]$Key) {
+        if([SpikeWindow]::GetForegroundWindow() -ne $window){throw 'our client lost foreground; no input sent'}
+        $oldRevision=(Read-Scene).revision
+        [SpikeWindow]::Key(17,$false)
+        try {[SpikeWindow]::Key($Key,$false);[SpikeWindow]::Key($Key,$true)}
+        finally {[SpikeWindow]::Key(17,$true)}
+        [void](Wait-Scene {param($s) $s.revision -gt $oldRevision})
+    }
+    function Click-At([double]$X,[double]$Y) {
+        $oldRevision=(Read-Scene).revision
+        [SpikeWindow]::Click($window,$app.Id,$X,$Y)
+        [void](Wait-Scene {param($s) $s.revision -gt $oldRevision})
+    }
+    function Click-Button([string]$Label) {
+        $t=@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.text -eq $Label})[0]
+        if(-not $t){throw "Button absent: $Label"}
+        Click-At ($t.x+12) ($t.y+8)
+    }
     function Send-Text([string]$Text) {
         foreach($ch in $Text.ToCharArray()) {Send-Key ([uint32][char]([string]$ch).ToUpperInvariant())}
     }
@@ -130,13 +179,14 @@ try {
         Send-Key 13
     }
     [void](Wait-Scene {param($s) $s.phase -eq 'Setup'})
+    if(-not $MovementOnly) {
     Focus-Button 'Start Original surface game'
     [void](Wait-Scene {param($s) Has-Text $s 'Choose research explicitly'})
     Focus-Button 'Save pending choice'
     Save-Dialog 'research'
     [void](Wait-Scene {param($s) Has-Text $s 'Choose research explicitly'})
     Research
-    Send-Text 'f'
+    Send-Text 'b'
     [void](Wait-Scene {param($s) Has-Text $s 'Name your city'})
     Focus-Button 'Save pending choice'
     Save-Dialog 'founding'
@@ -153,22 +203,22 @@ try {
     }
     Send-Key 13
     [void](Wait-Scene {param($s) $s.status -eq 'prod-set'})
-    Send-Text 's';Save-Dialog 'normal'
+    Send-Chord 83;Save-Dialog 'normal'
     for($round=0;$round -lt 10;$round++) {
         Research
         $s=Read-Scene
         $turnText=@($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text -match '^Turn ([0-9]+) '})[0].text
         [void]($turnText -match '^Turn ([0-9]+) ');$turn=[int]$Matches[1]
-        Send-Text 'e'
+        Send-Chord 78
         Start-Sleep -Milliseconds 150
         if(Has-Text (Read-Scene) 'End your turn with movable units?'){Send-Key 13}
         [void](Wait-Scene {param($s) $s.phase -eq 'Human' -and @($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text -match ('^Turn '+($turn+1)+' ')}).Count -gt 0})
     }
     Research
-    Send-Text 's';Save-Dialog 'tenrounds'
+    Send-Chord 83;Save-Dialog 'tenrounds'
     [void](Wait-Scene {param($s) $s.status -eq 'Engine checkpoint saved: tenrounds'})
-    function Load-Slot([string]$Name) { Send-Text 'l'; Save-Dialog $Name }
-    Load-Slot 'research';Research;Send-Text 'f';Focus-Button 'Save pending choice';Save-Dialog 'researchnext'
+    function Load-Slot([string]$Name) { Send-Chord 76; Save-Dialog $Name }
+    Load-Slot 'research';Research;Send-Text 'b';Focus-Button 'Save pending choice';Save-Dialog 'researchnext'
     Send-Key 27;Load-Slot 'founding';Send-Text 'athena';Send-Key 13
     Focus-Button 'Choose production'
     for($n=0;$n -lt 80;$n++) {
@@ -176,22 +226,22 @@ try {
         $s=Read-Scene
         if(@($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith([string][char]0x25cf) -and $_.text.Contains('Warriors')}).Count -gt 0){break}
     }
-    Send-Key 13;Send-Text 's';Save-Dialog 'foundingnext'
-    Load-Slot 'normal';Send-Text 'e'
+    Send-Key 13;Send-Chord 83;Save-Dialog 'foundingnext'
+    Load-Slot 'normal';Send-Chord 78
     if(Has-Text (Read-Scene) 'End your turn with movable units?'){Send-Key 13}
     [void](Wait-Scene {param($s) $s.phase -eq 'Human' -and @($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith('Turn 2 ')}).Count -gt 0})
-    Research;Send-Text 's';Save-Dialog 'normalnext'
+    Research;Send-Chord 83;Save-Dialog 'normalnext'
     if($env:TOTENGINE_CITIZENS_FIXTURES) {
         $citizens=$env:TOTENGINE_CITIZENS_FIXTURES
         Copy-Item (Join-Path $citizens 'mature.cth') (Join-Path $env:TOTENGINE_SAVES 'mature.cth')
         $meta=Get-Content -Encoding UTF8 (Join-Path $citizens 'route.json') -Raw | ConvertFrom-Json
         function Compare-Citizens([string]$Name,[string]$Expected) {
-            Send-Text 's';Save-Dialog $Name
+            Send-Chord 83;Save-Dialog $Name
             $actual=(Get-FileHash (Join-Path $env:TOTENGINE_SAVES ($Name+'.cth')) -Algorithm SHA256).Hash
             $wanted=(Get-FileHash (Join-Path $citizens ($Expected+'.cth')) -Algorithm SHA256).Hash
             if($actual -ne $wanted){throw "Citizen checkpoint differs: $Name"}
         }
-        Load-Slot 'mature';Send-Text 'o'
+        Load-Slot 'mature';Focus-Button 'Manage city'
         for($n=0;$n -lt 21;$n++) {if(Has-Text (Read-Scene) ('Tile '+$meta.worker_tile)){break};Send-Key 39}
         Send-Key 32;Compare-Citizens 'cityentertainer' 'after-entertainer'
         Focus-Button '1: Entertainer';Compare-Citizens 'citytax' 'after-tax'
@@ -201,7 +251,7 @@ try {
         Focus-Button 'Auto workers (centre tile)';Load-Slot 'citycycle'
         for($n=0;$n -lt 21;$n++) {if(Has-Text (Read-Scene) ('Tile '+$meta.worker_tile)){break};Send-Key 39}
         Send-Key 32;Compare-Citizens 'cityresume' 'after-resume'
-        Send-Key 27;Send-Text 'o'
+        Send-Key 27;Focus-Button 'Manage city'
         if($env:TOTENGINE_NAVIGATION_FIXTURE) {
             Copy-Item $env:TOTENGINE_NAVIGATION_FIXTURE (Join-Path $env:TOTENGINE_SAVES 'navigation.cth')
             Load-Slot 'navigation'
@@ -209,12 +259,65 @@ try {
             Send-Key 34
             $next=@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.text.Contains('population')})[0].text
             if($first -eq $next){throw 'city navigation did not change city'}
-            Send-Key 33;Send-Text 's';Save-Dialog 'citynavigation'
+            Send-Key 33;Send-Chord 83;Save-Dialog 'citynavigation'
             if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES 'citynavigation.cth')).Hash -ne (Get-FileHash $env:TOTENGINE_NAVIGATION_FIXTURE).Hash){throw 'city navigation changed gameplay'}
         }
         Send-Key 27
     }
-    if($env:TOTENGINE_ENCOUNTER_FIXTURES) {
+    }
+    if($MovementOnly) {
+        [void](New-Item -ItemType Directory -Path $env:TOTENGINE_SAVES -Force)
+        Copy-Item (Join-Path $env:TOTENGINE_MOVEMENT_FIXTURES 'before.cth') (Join-Path $env:TOTENGINE_SAVES 'movement.cth')
+        Focus-Button 'Load engine checkpoint';Save-Dialog 'movement'
+        function Load-Slot([string]$Name) { Send-Chord 76; Save-Dialog $Name }
+    }
+    if($env:TOTENGINE_MOVEMENT_FIXTURES) {
+        $movement=$env:TOTENGINE_MOVEMENT_FIXTURES
+        Copy-Item (Join-Path $movement 'before.cth') (Join-Path $env:TOTENGINE_SAVES 'movement.cth')
+        $route=Get-Content -Encoding UTF8 (Join-Path $movement 'route.json') -Raw | ConvertFrom-Json
+        function Select-Actor {
+            for($n=0;$n -lt 100;$n++) {
+                if(@((Read-Scene).draws | Where-Object {$_.text -and $_.text.EndsWith(' #'+$route.actor)}).Count -gt 0){return}
+                Send-Text 'w'
+            }
+            throw 'movement actor absent'
+        }
+        Load-Slot 'movement';Select-Actor
+        if(Has-Text (Read-Scene) 'Moving [V]'){Send-Text 'v'}
+        Send-Text 'c';Click-At 380 365;Click-Button ('Activate unit '+$route.actor)
+        if(-not (Has-Text (Read-Scene) 'Moving [V]')){throw 'Activate did not enter Moving'}
+        $revision=(Read-Scene).revision;$pixels=@{}
+        for($n=0;$n -lt 8;$n++) {$pixels[[string][SpikeWindow]::MarkerPixel($window,$app.Id)]=$true;Start-Sleep -Milliseconds 120}
+        if($pixels.Count -lt 2){throw 'native selection square did not blink'}
+        if((Read-Scene).revision -ne $revision){throw 'native blink generated input'}
+        Click-At (380+$route.dx*32) (390+$route.dy*16)
+        if((Read-Scene).status -ne 'moved'){throw ('mouse movement failed: '+(Read-Scene).status)}
+        Send-Chord 83;Save-Dialog 'movementafter'
+        $expected=(Get-FileHash (Join-Path $movement 'after.cth')).Hash
+        if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES 'movementafter.cth')).Hash -ne $expected){throw 'mouse movement checkpoint differs'}
+        $digit=@{'-1,-1'=7;'0,-2'=8;'1,-1'=9;'-2,0'=4;'2,0'=6;'-1,1'=1;'0,2'=2;'1,1'=3}[([string]$route.dx+','+$route.dy)]
+        $originalNumLock=([SpikeWindow]::GetKeyState(144) -band 1) -ne 0
+        try {
+            foreach($mode in @('on','off','arrows')) {
+                Load-Slot 'movement';Select-Actor
+                if(Has-Text (Read-Scene) 'Viewing [V]'){Send-Text 'v'}
+                $numLock=([SpikeWindow]::GetKeyState(144) -band 1) -ne 0
+                if($numLock -ne ($mode -eq 'on')) {
+                    if([SpikeWindow]::GetForegroundWindow() -ne $window){throw 'no Num Lock input: client lost foreground'}
+                    [SpikeWindow]::Key(144,$false);[SpikeWindow]::Key(144,$true);Start-Sleep -Milliseconds 80
+                }
+                if($mode -eq 'arrows') {Send-Key (@{2=40;4=37;6=39;8=38}[[int]$digit])}
+                else {Send-Key (96+$digit)}
+                Send-Chord 83;Save-Dialog ('movementkeypad'+$mode)
+                if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES ('movementkeypad'+$mode+'.cth'))).Hash -ne $expected){throw ('keypad checkpoint differs '+$mode)}
+            }
+        } finally {
+            if((([SpikeWindow]::GetKeyState(144) -band 1) -ne 0) -ne $originalNumLock -and [SpikeWindow]::GetForegroundWindow() -eq $window) {
+                [SpikeWindow]::Key(144,$false);[SpikeWindow]::Key(144,$true)
+            }
+        }
+    }
+    if(-not $MovementOnly -and $env:TOTENGINE_ENCOUNTER_FIXTURES) {
         foreach($name in @('battle','capture')) {
             $actor=if($name -eq 'battle'){1}else{7}
             Copy-Item (Join-Path $env:TOTENGINE_ENCOUNTER_FIXTURES "before-$name.cth") (Join-Path $env:TOTENGINE_SAVES "$name.cth")
@@ -224,9 +327,9 @@ try {
                 Send-Text 'w'
             }
             if($n -eq 80){throw 'combat actor absent'}
-            if(Has-Text (Read-Scene) 'Viewing [M]'){Send-Text 'm'}
+            if(Has-Text (Read-Scene) 'Viewing [V]'){Send-Text 'v'}
             Send-Text '8';Send-Key 27;Send-Text '8';Send-Key 13
-            Send-Text 's';Save-Dialog ($name+'after')
+            Send-Chord 83;Save-Dialog ($name+'after')
             $actual=(Get-FileHash (Join-Path $env:TOTENGINE_SAVES ($name+'after.cth')) -Algorithm SHA256).Hash
             $expected=(Get-FileHash (Join-Path $env:TOTENGINE_ENCOUNTER_FIXTURES "after-$name.cth") -Algorithm SHA256).Hash
             if($actual -ne $expected){throw "Encounter checkpoint differs: $name"}

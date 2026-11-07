@@ -33,16 +33,14 @@ impl Client {
                 self.city_tile = (self.city_tile + 20) % 21;
                 Ok(())
             }
-            "PageDown" | "c" => self.action(Action::CityStep(1)),
+            "PageDown" => self.action(Action::CityStep(1)),
             "PageUp" => self.action(Action::CityStep(-1)),
-            "o" => self.action(Action::CloseCity),
             " " => self.action(Action::Worker(
                 self.city.ok_or("Select an own city first")?,
                 self.city_tile,
             )),
-            "s" => self.action(Action::Save),
-            "l" => self.action(Action::Load),
-            "r" => self.action(Action::Research),
+            "Ctrl+s" => self.action(Action::Save),
+            "Ctrl+l" => self.action(Action::Load),
             _ => Ok(()),
         }
     }
@@ -83,9 +81,9 @@ impl Client {
             "Next city [PgDn]",
             Action::CityStep(1),
         );
-        add(632., 48., 120., 38., "Save [S]", Action::Save);
-        add(764., 48., 120., 38., "Load [L]", Action::Load);
-        add(896., 48., 116., 38., "Research [R]", Action::Research);
+        add(632., 48., 120., 38., "Save [Ctrl+S]", Action::Save);
+        add(764., 48., 120., 38., "Load [Ctrl+L]", Action::Load);
+        add(896., 48., 116., 38., "Research", Action::Research);
         if let Some(city) = self.city {
             add(
                 20.,

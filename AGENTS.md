@@ -249,13 +249,21 @@ Native raw edit branches match 1,548 original-x86 cases; citizen commands are
 recorded/replayed by HumanSession and immediate totals reuse existing kernels.
 Named human founding now allocates citizens through the totals kernel; autonomous
 FoundCity behavior is unchanged. Both adapters share the new own-city workspace;
-O opens it, arrows/Space select/toggle tiles, PageUp/Down navigate, roles cycle
+Manage city opens it, arrows/Space select/toggle tiles, PageUp/Down navigate, roles cycle
 through explicit commands, Escape returns without undo. A generated population-
 five fixture reaches turn 72 through normal recorded play for tax/scientist checks.
 Keep working through the milestone; do not claim v0.12 owner play accepts these
 new controls. New owner acceptance and independent owner-launched review remain
 required. City buying/selling, switching penalties, deeper panels and other full-
 client packages stay later; complete original-AI work remains gated.
+Owner testing then found movement/activation and keyboard-fidelity blockers.
+The corrected v0.13 preview adopts original B/V/A/C, Ctrl+N, Ctrl+S/L and Z/X,
+removes conflicting custom unit keys, enters Moving on activation, and blinks
+the selection square using rendering time only. Both adapters/checkers now
+exercise real warrior mouse movement and keypad Num Lock variants. Sources,
+remaining gaps and the owner's direction for more faithful subsequent UI:
+`docs/ui/original-controls.md`. New owner retesting remains required; no review
+candidate or milestone acceptance is implied by automated checks.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

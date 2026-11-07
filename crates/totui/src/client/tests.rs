@@ -91,7 +91,7 @@ fn start(c: &mut Client) {
     research(c);
 }
 fn founding(c: &mut Client) {
-    key(c, "f");
+    key(c, "b");
     assert!(matches!(c.modal, Some(Modal::Name)));
     edit(c, "Athena");
     key(c, "Enter");
@@ -109,7 +109,7 @@ fn shared_ui_plays_ten_rounds_and_resumes_required_choices() {
     key(&mut c, "Enter");
     assert!(f.0.join("saves/initial-research.cth").exists());
     research(&mut c);
-    key(&mut c, "f");
+    key(&mut c, "b");
     button(&mut c, "Save pending");
     edit(&mut c, "pending-name");
     key(&mut c, "Enter");
@@ -122,13 +122,13 @@ fn shared_ui_plays_ten_rounds_and_resumes_required_choices() {
     key(&mut c, "Enter");
     assert_eq!(c.status, "prod-set");
     let saved = c.checkpoint().unwrap();
-    key(&mut c, "s");
+    key(&mut c, "Ctrl+s");
     edit(&mut c, "normal");
     key(&mut c, "Enter");
     assert_eq!(storage::load(&c.saves, "normal").unwrap(), saved);
     for _ in 0..10 {
         research(&mut c);
-        key(&mut c, "e");
+        key(&mut c, "Ctrl+n");
         if matches!(c.modal, Some(Modal::Confirm { .. })) {
             key(&mut c, "Enter");
         }
@@ -138,11 +138,11 @@ fn shared_ui_plays_ten_rounds_and_resumes_required_choices() {
     research(&mut c);
     let advanced = c.checkpoint().unwrap();
     assert_ne!(advanced, saved);
-    key(&mut c, "l");
+    key(&mut c, "Ctrl+l");
     edit(&mut c, "normal");
     key(&mut c, "Enter");
     assert_eq!(c.checkpoint().unwrap(), saved);
-    key(&mut c, "l");
+    key(&mut c, "Ctrl+l");
     edit(&mut c, "pending-name");
     key(&mut c, "Enter");
     assert!(matches!(c.modal, Some(Modal::Name)));
@@ -150,7 +150,7 @@ fn shared_ui_plays_ten_rounds_and_resumes_required_choices() {
     edit(&mut c, "Athena");
     key(&mut c, "Enter");
     assert_eq!(c.view().unwrap().cities[0], city);
-    key(&mut c, "l");
+    key(&mut c, "Ctrl+l");
     edit(&mut c, "initial-research");
     key(&mut c, "Enter");
     assert!(matches!(c.modal, Some(Modal::Research)));
@@ -163,7 +163,7 @@ fn stale_duplicate_focus_and_cancellation_cannot_retarget_a_unit() {
     let before = c.checkpoint().unwrap();
     let revision = c.revision;
     let id = 9000;
-    let event = Input::Key { key: "m".into() };
+    let event = Input::Key { key: "v".into() };
     c.input(revision, id, event.clone()).unwrap();
     let mode = c.moving;
     c.input(revision, id, event).unwrap();
@@ -176,14 +176,14 @@ fn stale_duplicate_focus_and_cancellation_cannot_retarget_a_unit() {
     key(&mut c, "6");
     assert_eq!(c.checkpoint().unwrap(), before);
     input(&mut c, Input::Focus { focused: true });
-    key(&mut c, "f");
+    key(&mut c, "b");
     key(&mut c, "Escape");
     assert_eq!(
         c.checkpoint().unwrap().lines().nth(7),
         before.lines().nth(7)
     );
     let old = c.entry_meta();
-    key(&mut c, "f");
+    key(&mut c, "b");
     let field = c.entry_meta().unwrap().id;
     key(&mut c, "Escape");
     input(
@@ -211,7 +211,7 @@ fn invalid_load_and_existing_slot_cannot_destroy_the_running_game() {
     assert!(storage::save(&c.saves, "keep", "bad").is_err());
     assert_eq!(storage::load(&c.saves, "keep").unwrap(), before);
     fs::write(c.saves.join("broken.cth"), "truncated").unwrap();
-    key(&mut c, "l");
+    key(&mut c, "Ctrl+l");
     edit(&mut c, "broken");
     key(&mut c, "Enter");
     assert_eq!(c.checkpoint().unwrap(), before);
@@ -231,7 +231,7 @@ fn city_workspace_edits_commit_close_and_resume_without_retargeting() {
     start(&mut c);
     founding(&mut c);
     let original = c.checkpoint().unwrap();
-    key(&mut c, "o");
+    button(&mut c, "Manage city");
     assert!(c.city_open);
     assert_eq!(original, c.checkpoint().unwrap(), "opening is inert");
     let v = c.view().unwrap();
@@ -274,13 +274,13 @@ fn city_workspace_edits_commit_close_and_resume_without_retargeting() {
         c.checkpoint().unwrap(),
         "closing keeps immediate edits"
     );
-    key(&mut c, "s");
+    key(&mut c, "Ctrl+s");
     edit(&mut c, "citizens");
     key(&mut c, "Enter");
-    key(&mut c, "o");
+    button(&mut c, "Manage city");
     button(&mut c, "Auto workers");
     assert_ne!(edited, c.checkpoint().unwrap());
-    key(&mut c, "l");
+    key(&mut c, "Ctrl+l");
     edit(&mut c, "citizens");
     key(&mut c, "Enter");
     assert_eq!(edited, c.checkpoint().unwrap());
@@ -361,7 +361,7 @@ fn generated_population_five_city_fixture() {
                 .take(20)
                 .position(|t| t.worked)
                 .unwrap() as u8;
-            key(&mut c, "o");
+            button(&mut c, "Manage city");
             for _ in 0..21 {
                 if c.city_tile == tile {
                     break;
@@ -381,11 +381,11 @@ fn generated_population_five_city_fixture() {
             let edited = c.checkpoint().unwrap();
             fs::write(out.join("after-cycle.cth"), &edited).unwrap();
             let save_name = format!("edited{}", storage::nonce().unwrap());
-            key(&mut c, "s");
+            key(&mut c, "Ctrl+s");
             edit(&mut c, &save_name);
             key(&mut c, "Enter");
             button(&mut c, "Auto workers");
-            key(&mut c, "l");
+            key(&mut c, "Ctrl+l");
             edit(&mut c, &save_name);
             key(&mut c, "Enter");
             assert_eq!(edited, c.checkpoint().unwrap());
@@ -397,7 +397,7 @@ fn generated_population_five_city_fixture() {
             return;
         }
         assert_eq!(v.phase, Phase::Human, "{}", c.status);
-        key(&mut c, "e");
+        key(&mut c, "Ctrl+n");
         if matches!(c.modal, Some(Modal::Confirm { .. })) {
             key(&mut c, "Enter");
         }
@@ -448,7 +448,7 @@ fn viewing_movement_skip_and_partial_checkpoint_resume_use_validated_orders() {
     let before = c.checkpoint().unwrap();
     key(&mut c, "6");
     assert_eq!(c.checkpoint().unwrap(), before);
-    key(&mut c, "m");
+    key(&mut c, "v");
     let v = c.view().unwrap();
     let unit = c.active.unwrap();
     let u = v
@@ -497,7 +497,7 @@ fn viewing_movement_skip_and_partial_checkpoint_resume_use_validated_orders() {
             .moves_left,
         0
     );
-    key(&mut c, "e");
+    key(&mut c, "Ctrl+n");
     if matches!(c.modal, Some(Modal::Confirm { .. })) {
         key(&mut c, "Enter");
     }
@@ -505,7 +505,7 @@ fn viewing_movement_skip_and_partial_checkpoint_resume_use_validated_orders() {
     let l = c.loaded.as_ref().unwrap();
     let text = l.session.checkpoint(&l.identity);
     storage::save(&c.saves, "partial", &text).unwrap();
-    key(&mut c, "l");
+    key(&mut c, "Ctrl+l");
     edit(&mut c, "partial");
     key(&mut c, "Enter");
     assert!(!c.advancing);
@@ -528,7 +528,7 @@ fn generated_land_encounter_through_shared_ui() {
         PathBuf::from(std::env::var("TOTENGINE_ENCOUNTER_OUT").expect("set private output folder"));
     fs::create_dir_all(&out).unwrap();
     let inputs: Vec<Input> = serde_json::from_str(include_str!(
-        "../../../../docs/evidence/client-input-route-v1.json"
+        "../../../../docs/evidence/client-input-route-v2.json"
     ))
     .unwrap();
     let mut c = Client::new(home, out.clone());
@@ -625,4 +625,206 @@ fn installed_atlas_matches_retained_numeric_manifest() {
         atlas.sprites.len(),
         65 + resources.rules.unit_names().len().min(80)
     );
+}
+
+#[test]
+fn original_bindings_activation_mouse_stacking_and_blink_are_inert_or_validated() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    let before = c.checkpoint().unwrap();
+    for reserved in ["f", "r", "m", "o", "e", "s", "l"] {
+        key(&mut c, reserved);
+        assert!(
+            c.modal.is_none(),
+            "{reserved} must not open an unrelated action"
+        );
+        assert_eq!(c.checkpoint().unwrap(), before);
+    }
+    let v = c.view().unwrap();
+    let entity = c.active.unwrap();
+    let u = v
+        .observation
+        .units
+        .iter()
+        .find(|u| u.index == entity.slot)
+        .unwrap();
+    let origin = (u.x, u.y);
+    // Click the visible upper half of the unit, above its ground diamond.
+    input(&mut c, Input::Click { x: 380., y: 350. });
+    assert_eq!(c.inspect, Some(origin));
+    button(&mut c, &format!("Activate unit {}", entity.slot));
+    assert!(
+        c.moving,
+        "the owner's Activate button route must enter Moving"
+    );
+    assert_eq!(c.active, Some(entity));
+    assert_eq!(c.checkpoint().unwrap(), before);
+    let frame = serde_json::to_string(&c.frame()).unwrap();
+    assert!(frame.contains("\"kind\":\"cursor\""));
+    assert!(frame.contains("\"blink\":true"));
+    assert_eq!(frame, serde_json::to_string(&c.frame()).unwrap());
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "rendering never advances game state"
+    );
+    key(&mut c, "v");
+    assert!(!c.moving);
+    key(&mut c, "6");
+    assert_eq!(c.inspect, Some((origin.0 + 2, origin.1)));
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "Viewing keypad only moves its cursor"
+    );
+    // A activates the inspected stack without requiring a mode toggle.
+    c.inspect = Some(origin);
+    key(&mut c, "a");
+    if matches!(c.modal, Some(Modal::Units { .. })) {
+        key(&mut c, "ArrowDown");
+        key(&mut c, "Enter");
+    }
+    assert!(c.moving);
+    assert!(c.modal.is_none());
+    key(&mut c, "c");
+    let v = c.view().unwrap();
+    let selected = c.active.unwrap();
+    let u = v
+        .observation
+        .units
+        .iter()
+        .find(|u| u.index == selected.slot)
+        .unwrap();
+    let (dx, dy) = [
+        (2, 0),
+        (-2, 0),
+        (0, -2),
+        (0, 2),
+        (1, -1),
+        (-1, -1),
+        (1, 1),
+        (-1, 1),
+    ]
+    .into_iter()
+    .find(|(dx, dy)| {
+        let (x, y) = (i32::from(u.x) + dx, i32::from(u.y) + dy);
+        x >= 0
+            && y >= 0
+            && x < i32::from(v.observation.w2)
+            && y < i32::from(v.observation.h)
+            && v.observation.seen[y as usize * (v.observation.w2 as usize / 2) + x as usize / 2]
+                .is_some_and(|t| t.terrain != 10)
+    })
+    .unwrap();
+    input(
+        &mut c,
+        Input::Click {
+            x: 380. + f64::from(dx) * 32.,
+            y: 390. + f64::from(dy) * 16.,
+        },
+    );
+    assert_eq!(c.status, "moved");
+    let u = c
+        .view()
+        .unwrap()
+        .observation
+        .units
+        .into_iter()
+        .find(|u| u.index == selected.slot)
+        .unwrap();
+    assert_eq!(
+        (u.x, u.y),
+        (
+            (i32::from(origin.0) + dx) as u16,
+            (i32::from(origin.1) + dy) as u16
+        )
+    );
+    assert_ne!(c.checkpoint().unwrap(), before);
+}
+
+#[test]
+#[ignore = "install-backed mouse movement fixture from the generated warrior encounter"]
+fn generated_warrior_mouse_fixture() {
+    let home = std::env::var("CIVTOT_HOME").unwrap();
+    let before = fs::read_to_string(std::env::var("TOTENGINE_MOVEMENT_SOURCE").unwrap()).unwrap();
+    let out = PathBuf::from(std::env::var("TOTENGINE_MOVEMENT_OUT").unwrap());
+    fs::create_dir_all(&out).unwrap();
+    let mut c = Client::new(home, out.clone());
+    storage::save(&out, "source", &before).unwrap();
+    button(&mut c, "Load engine checkpoint");
+    edit(&mut c, "source");
+    key(&mut c, "Enter");
+    // Warrior #1 is reached through ordinary selection, never a world mutation.
+    for _ in 0..100 {
+        if c.active.is_some_and(|e| e.slot == 1) {
+            break;
+        }
+        key(&mut c, "w");
+    }
+    let v = c.view().unwrap();
+    let actor = c.active.unwrap();
+    assert_eq!(actor.slot, 1);
+    let u = v
+        .observation
+        .units
+        .iter()
+        .find(|u| u.index == actor.slot)
+        .unwrap();
+    let (x, y) = (u.x, u.y);
+    assert!(u.moves_left > 0);
+    let (dx, dy) = [
+        (2, 0),
+        (-2, 0),
+        (0, -2),
+        (0, 2),
+        (1, -1),
+        (-1, -1),
+        (1, 1),
+        (-1, 1),
+    ]
+    .into_iter()
+    .find(|(dx, dy)| {
+        let (tx, ty) = (i32::from(x) + dx, i32::from(y) + dy);
+        tx >= 0
+            && ty >= 0
+            && tx < i32::from(v.observation.w2)
+            && ty < i32::from(v.observation.h)
+            && v.observation.seen[ty as usize * (v.observation.w2 as usize / 2) + tx as usize / 2]
+                .is_some_and(|t| t.terrain != 10)
+            && !v
+                .observation
+                .units
+                .iter()
+                .any(|u| i32::from(u.x) == tx && i32::from(u.y) == ty)
+            && !v
+                .observation
+                .cities
+                .iter()
+                .any(|u| i32::from(u.x) == tx && i32::from(u.y) == ty)
+    })
+    .unwrap();
+    fs::write(out.join("before.cth"), c.checkpoint().unwrap()).unwrap();
+    c.moving = false;
+    c.center();
+    input(&mut c, Input::Click { x: 380., y: 390. });
+    button(&mut c, &format!("Activate unit {}", actor.slot));
+    assert!(c.moving);
+    input(
+        &mut c,
+        Input::Click {
+            x: 380. + f64::from(dx) * 32.,
+            y: 390. + f64::from(dy) * 16.,
+        },
+    );
+    assert_eq!(c.status, "moved");
+    fs::write(out.join("after.cth"), c.checkpoint().unwrap()).unwrap();
+    fs::write(
+        out.join("route.json"),
+        serde_json::to_string_pretty(
+            &serde_json::json!({"actor":actor.slot,"x":x,"y":y,"dx":dx,"dy":dy}),
+        )
+        .unwrap(),
+    )
+    .unwrap();
 }

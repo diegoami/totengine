@@ -1,0 +1,103 @@
+{
+  "engine_version": "0.13.0",
+  "scope": "Supported map controls, activation and presentation-only blinking; not full original UI, scheduling, mouse-preference or AI parity",
+  "sources": {
+    "manual": "https://manuals.plus/m/0a903e975f22c7da36286b990be87bba1bd2c491a617c786f0280d99353c5fa8.pdf",
+    "printed_pages": [
+      5,
+      9,
+      67,
+      68,
+      69,
+      70,
+      97,
+      98
+    ],
+    "installed_original_menu_sha256": "b86fd8b92749b47efedbb63274970a925f3839813a635720af905388b0b4f3f3",
+    "observed_original_route": "docs/ui/discovery.md U30"
+  },
+  "owner_report": "Activate unit selected/centered without entering Moving; terrain click only inspected. Owner also rejected conflicting custom shortcuts.",
+  "movement_fixture": {
+    "source": "Generated seed-2 Original-profile encounter; warrior 1 before retained battle, no world/RNG injection",
+    "route": {
+      "actor": 1,
+      "dx": 2,
+      "dy": 0,
+      "x": 9,
+      "y": 9
+    },
+    "before_sha256": "ff85efb981fb048dcde7ef17bdce154796ed4351b030232ec1bccce8a4dd81e5",
+    "after_sha256": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1"
+  },
+  "runtime": {
+    "browser": {
+      "mouse": "pass: click visible warrior, Activate unit, adjacent empty terrain",
+      "keypad_num_lock_on": "pass",
+      "keypad_num_lock_off": "pass",
+      "cursor_arrows": "pass",
+      "blink_pixels_change_without_input_or_revision_change": "pass",
+      "checkpoint_sha256": {
+        "movementafter": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1",
+        "movementkeypadon": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1",
+        "movementkeypadoff": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1",
+        "movementkeypadarrows": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1"
+      }
+    },
+    "linux": {
+      "mouse": "pass: click visible warrior, Activate unit, adjacent empty terrain",
+      "keypad_num_lock_on": "pass",
+      "keypad_num_lock_off": "pass",
+      "cursor_arrows": "pass",
+      "blink_pixels_change_without_input_or_revision_change": "pass",
+      "checkpoint_sha256": {
+        "movementafter": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1",
+        "movementkeypadon": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1",
+        "movementkeypadoff": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1",
+        "movementkeypadarrows": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1"
+      }
+    },
+    "windows": {
+      "mouse": "pass: click visible warrior, Activate unit, adjacent empty terrain",
+      "keypad_num_lock_on": "pass",
+      "keypad_num_lock_off": "pass",
+      "cursor_arrows": "pass",
+      "blink_pixels_change_without_input_or_revision_change": "pass",
+      "checkpoint_sha256": {
+        "movementafter": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1",
+        "movementkeypadon": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1",
+        "movementkeypadoff": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1",
+        "movementkeypadarrows": "d64090a1538c2d24615a49294502bc759f978cb44084ba512ac4c5a562232fa1"
+      }
+    }
+  },
+  "ui_input_route_v2": {
+    "path": "docs/evidence/client-input-route-v2.json",
+    "sha256": "948208eeb21f72f8078ec79f0dbb3590feaf5dfebb2c306e2b6e22c0c92be188",
+    "inputs": 879,
+    "translation": "old f/m/e/s/l become B/V/Ctrl+N/Ctrl+S/Ctrl+L; old C city cycle becomes explicit Cities-button click",
+    "rederived_encounter_checkpoints_match_v1": true
+  },
+  "checks": [
+    "20 desktop-feature client tests passed, three deliberately ignored",
+    "Generated warrior movement fixture passed",
+    "Generated 879-input land encounter rederived; before/after battle/capture and final checkpoint bytes unchanged",
+    "Chromium and Linux full ten-round, pending choices, citizen roles/navigation, battle/capture routes passed",
+    "Windows full continuation route passed; final build additionally passes focused mouse/arrows/keypad/blinking checks",
+    "Strict desktop Clippy, fmt, JS syntax and Python compile passed"
+  ],
+  "packages": {
+    "linux": {
+      "totplay": "eda9ad0e4c294f31613aece43997a6ade45d29a81031aa936bcab7394604ad6d",
+      "totdesktop": "19045070874f40ea43eb0e10447ef63c6e3a5d2eebd47bceb960fa9056e8fad9"
+    },
+    "windows": {
+      "totplay.exe": "ba7adeda70ad48d5ae1f1b089f70ab8f1e31d98e9ead2f2b350c726704b2211f",
+      "totdesktop.exe": "f354c85d7ed40405150ad59bdf931f661f968d4310ad93d6c8dd192dc0d10b09"
+    }
+  },
+  "owner_retest": {
+    "browser": "pending",
+    "desktop": "pending"
+  },
+  "milestone": "11 / #137; no review candidate or release"
+}

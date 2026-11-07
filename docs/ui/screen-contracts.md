@@ -15,6 +15,15 @@ play separately. Browser file access/hosting and desktop packaging/windowing
 need explicit implementation plans. The existing observer and simulated design
 prototype are not the playable browser client, and do not replace desktop work.
 
+## Original interface baseline
+
+The owner explicitly requires a more faithful UI after locating the publisher's
+manual. [Original controls](original-controls.md) records the manual/page references,
+installed menu declarations, observed behavior, corrected bindings and remaining
+UI differences. Use these sources alongside discovery captures when refining
+screen contracts; the authored prototype does not authorize conflicting key
+meanings or replacement native workflows. Both client surfaces share this basis.
+
 ## Input ownership and pending decisions
 
 A human session needs more states than the current synchronous `Player::act`

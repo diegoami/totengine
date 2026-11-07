@@ -24,22 +24,31 @@ owned TTF if required.
 
 ## Controls
 
-- Click to inspect a tile in Viewing mode. **M** toggles Moving. In Moving,
-  click an adjacent tile to move the active unit; enemy attacks and supported
-  city occupation require confirmation. Optional Confirm all moves also
-  confirms empty-tile movement. Keyboard directions: **7 8 9 / 4 6 / 1 2 3**.
+The supported map commands follow the original Test of Time manual and installed
+menu; [reference and remaining differences](ui/original-controls.md).
+
+- Click to inspect in Viewing mode. **V** toggles Moving/Viewing. Choose
+  **Activate unit**, or press **A** at the inspection cursor, to enter Moving
+  with that unit. A offers a chooser for a stack. The selected square blinks;
+  the selected unit appears above other units in its stack.
+- In Moving, click adjacent terrain to move, or use **7 8 9 / 4 6 / 1 2 3**
+  on the keypad. The keypad works with Num Lock on or off. Cursor arrows also
+  move in Moving; in Viewing they pan. Viewing keypad keys move only the
+  inspection cursor. Enemy attacks and supported city occupation require
+  confirmation; Confirm all moves also confirms empty-tile movement.
 - **W** cycles movable units; **Space** skips the active unit's remaining moves.
-  Inspect a stack and choose Activate unit to select a member.
-- Arrow keys pan, **Home** centers, **+ / -** zoom. Center/+/- also have buttons.
-- **F** opens founding for an eligible settler. Type the city name and accept;
-  Escape cancels without consuming the settler. **C** cycles your map cities.
-- **O / Manage city** opens the selected own city's workspace. Click a radius
-  tile to remove/assign its worker; arrows select a tile and **Space** changes
-  it. Removing a worker creates an entertainer. Click a specialist to cycle
+  A selected exhausted unit reports that it has no moves left.
+- **C** centers on the active unit. **Z / X** zoom in/out; **Shift+Z** restores
+  standard zoom. The **+ / -** buttons and keys remain available as conveniences.
+- **B** opens founding for an eligible settler. Type the name and accept;
+  Escape cancels without consuming the settler. **Cities** cycles own cities.
+- **Manage city** opens the selected own city's workspace. Click a radius tile
+  to remove/assign its worker; arrows select a tile and **Space** changes it.
+  Removing a worker creates an entertainer. Click a specialist to cycle
   entertainer → tax collector → scientist; tax/scientist roles need population
   five. Outputs/mood refresh immediately, without collecting income or ending
   the turn. **PageUp/PageDown** navigate your cities; **Escape** returns to the
-  map and keeps accepted edits. **S/L** work inside the city too.
+  map and keeps accepted edits. **Ctrl+S / Ctrl+L** save/load inside the city too.
 - **Auto workers**, or the centre tile, requests automatic allocation. An empty
   tile clicked without a spare specialist also requests automatic allocation,
   following the original transition. First remove a worker when you want to
@@ -48,14 +57,17 @@ owned TTF if required.
   Escape cancels. Switching currently retains the shield box; native switching
   penalties are not implemented. Buying/selling and deeper city panels remain
   later city-management work.
-- **R** opens required research. Select explicitly and accept. Escape permits
+- **Research** opens the required research choice. Select explicitly and accept. Escape permits
   inspection while the choice still blocks gameplay; it never auto-selects.
-- **E** ends the human turn, confirming if movable units remain. Opponents run
+- **Ctrl+N** ends the human turn, confirming if movable units remain. Opponents run
   in bounded steps and then return control. Pause/Continue controls that work.
   Loading a checkpoint during opponents requires explicit Continue.
-- **S / L** save/load an engine checkpoint. Save pending choice preserves
+- **Ctrl+S / Ctrl+L** save/load an engine checkpoint. Save pending choice preserves
   research and unfinished city naming. Tab/Shift-Tab and Enter navigate buttons;
-  text fields support normal editing and clipboard shortcuts.
+  text fields support normal editing and clipboard shortcuts. Original orders
+  not yet supported (such as F fortification, R roads and S sleep) are not
+  reassigned to unrelated actions. Research and city controls remain explicit
+  buttons until their fuller original workflows are implemented.
 
 ## Saving and scope
 

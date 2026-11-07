@@ -114,3 +114,10 @@ human acceptance or proof of selection/blink fidelity. There is no new client
 build from this study and no further retest is requested until the replacement
 selection behavior is implemented and checked against this contract. Do not
 propose a milestone review while the owner-reported blocker remains.
+
+The owner ended the session on 2026-11-07 and deferred continuation. Resume with
+this contract before changing either client; the study is complete, while the
+selection/blink/state-transition implementation is unfinished. The reference
+Wine/Xvfb study was stopped cleanly. Do not close or replace existing owner
+client sessions without preserving their games. No acceptance of the rejected
+preview, new scope approval or milestone review was obtained on departure.

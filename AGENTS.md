@@ -256,24 +256,14 @@ Keep working through the milestone; do not claim v0.12 owner play accepts these
 new controls. New owner acceptance and independent owner-launched review remain
 required. City buying/selling, switching penalties, deeper panels and other full-
 client packages stay later; complete original-AI work remains gated.
-Owner testing then found movement/activation and keyboard-fidelity blockers.
-The corrected v0.13 preview adopts original B/V/A/C, Ctrl+N, Ctrl+S/L and Z/X,
-removes conflicting custom unit keys, enters Moving on activation, and blinks
-the selection square using rendering time only. Both adapters/checkers now
-exercise real warrior mouse movement and keypad Num Lock variants. Sources,
-remaining gaps and the owner's direction for more faithful subsequent UI:
-`docs/ui/original-controls.md`. New owner retesting remains required; no review
-candidate or milestone acceptance is implied by automated checks.
-The owner **rejected** that controls preview: selection was worse and the unit,
-not merely a tile, must blink. The owner asked for deeper reference study before
-more UI implementation. No client code changed during the new study; next entry:
-`docs/ui/selection-and-movement-study.md` and its replacement contract, numeric
-`docs/evidence/ui-selection-study-v1.json`. Nine observations cover a naturally
-produced standard-game warrior, direct click activation, exhaustion/turn options,
-next-turn mode and the limits of configured ToTPP blink observations. The tests
-had preselected via W and missed clicking a different unit in Moving. Keep #137
-and the milestone blocked on fixing this and new human acceptance; do not repeat
-an automated-pass claim as owner acceptance or ask to retest the same preview.
+**Current resume entry (owner ended the session, 2026-11-07):** read
+`docs/ui/selection-and-movement-study.md` before further client implementation.
+It records the rejected preview, directly observed reference behavior, why the
+previous tests missed selection, and the replacement contract/required tests.
+This supersedes earlier automated-pass language as a statement of readiness.
+Implement and verify that contract before another owner retest; #137 remains
+open and no milestone review/tag is ready. Both clients and the full-AI gate
+remain as agreed.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

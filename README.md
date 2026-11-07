@@ -60,8 +60,8 @@ released in `totplay` and `totdesktop`; [launch and controls](docs/playable-clie
 [Windows/Linux downloads](https://github.com/diegoami/totengine/releases/tag/v0.13.0)
 include both programs, runtime/dependency notices and no original game assets.
 The v0.14 development build adds quoted production switching, buying and
-single-city building sales in both clients; [validation and pending human
-acceptance](docs/v0.14.0-readiness.md). Full client delivery continues across
+single-city building sales in both clients; [validation and accepted human
+routes](docs/v0.14.0-readiness.md). Full client delivery continues across
 later milestones.
 See the [client delivery plan](docs/ui/client-milestones.md).
 

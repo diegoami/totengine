@@ -3938,8 +3938,9 @@ full checkpoint results (27 comparisons). The fixture is generated through
 recorded play, including treasury funding and natural building completion;
 original resources, checkpoints and screenshots stay private. It covers poor
 purchase rejection, buy/sale cancel/accept, category-switch draft cancellation,
-accepted penalty, restoration after active-context reload and city close. New
-owner acceptance remains pending. Reproduction/current gates:
+accepted penalty, restoration after active-context reload and city close. The owner accepted the requested both-client production routes on 2026-11-07
+(“great, it works, let us continue”); independent review is pending.
+Reproduction/current gates:
 [v0.14 readiness](../v0.14.0-readiness.md).
 
 The same v0.14 artifact also records 63 expanded previous-route checkpoint

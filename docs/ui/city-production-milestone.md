@@ -45,8 +45,9 @@ cancellation remain immutable. Buying rebases it, closing/navigation/end-turn
 clear it (the map quick picker closes on acceptance), and checkpoint replay restores it and reopens the owning city. Tests
 cover repeated switches, budget restoration, close/reopen, buy and replay. The
 legacy autonomous production order is unchanged. Actual Chromium/Linux/Windows
-checks now match all nine production scenario checkpoints. New owner acceptance
-and independent review remain required before release.
+checks now match all nine production scenario checkpoints. The owner accepted
+the requested both-client production routes on 2026-11-07 (“great, it works, let
+us continue”). Independent review remains required before release.
 
 ## Acceptance and later work
 

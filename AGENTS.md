@@ -289,20 +289,21 @@ never capture. Legacy autonomous SetProduction is unchanged. Normal recorded-pla
 engine/controller tests cover purchase, next-phase completion, sale, cancel,
 switch restoration and reload. Cargo/checkpoints now use 0.14.0; the authored
 campaign golden differs only in its version header. These changes are not yet
-released or owner accepted. Full make test/fmt/Clippy passes (248 Rust, 11 Python,
+released. Owner accepted the requested both-client production routes on
+2026-11-07: “great, it works, let us continue”. Full make test/fmt/Clippy passes (248 Rust, 11 Python,
 golden); desktop suite 25 passes, strict desktop Clippy and seven 32-seed campaign
 tests pass. Actual Chromium/Linux/Windows production routes match 27 checkpoints,
 and prior citizen/selection/navigation/combat/continuation routes match 63 more.
-Both packages and fresh owner previews are ready; new both-client human acceptance
-was requested; owner replied “Ok I will look at it later” (2026-11-07). This is
-not acceptance. Preserve the previews/practice slots and await actual results.
-See docs/v0.14.0-readiness.md and
-client-city-production-v1.json. Preserve prior owner previews/games. Current
-owner browser is port 8797; Windows launcher is under review-tmp/totengine-owner-v014.
-No candidate review/tag is ready until acceptance. Native accepted-picker fragment is
-0x4ecd16..0x4ecdcf (end exclusive), capture 0x4c0ee6, retention 0x4c0f37. Keep
-working through the milestone, with both clients and new owner acceptance, then
-stop only at the owner-launched review gate.
+Both preview packages are accepted; preserve them and their practice saves.
+The owner's acceptance supersedes the earlier “I will look at it later”. See
+docs/v0.14.0-readiness.md and client-city-production-v1.json. Current owner browser
+is port 8797; Windows launcher is under review-tmp/totengine-owner-v014. Prepare
+the v0.14 candidate release notes and owner-launched milestone review. Once the
+review issue is opened, main takes only review fixes until the exact AGREE SHA
+is tagged. Do not launch the review or begin a new runtime milestone while this
+candidate awaits review. Native accepted-picker fragment is 0x4ecd16..0x4ecdcf
+(end exclusive), capture 0x4c0ee6, retention 0x4c0f37. Full-client/full-AI gates
+remain unchanged.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

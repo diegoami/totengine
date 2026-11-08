@@ -1,5 +1,10 @@
 # Decision 0002 — players behind an interface; observing and playing as the two main goals
 
+Current mission/roadmap: [decision 0008](0008-scenario-platform.md), accepted
+2026-11-08. Historical release scope below remains recorded; its future schedule
+is superseded where inconsistent. Both-client UI fidelity and client-first AI
+implementation gates remain; native-AI reproduction is not the only AI route.
+
 *Status: accepted (owner decision, 2026-11-04; amended the same day: observing and playing are both main goals — observation is one of the main reasons the project exists; release ladder: GitHub milestones v0.5.0–v0.11.0).*
 
 ## Context

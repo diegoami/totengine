@@ -4,19 +4,22 @@ Owner clarification, 2026-11-08: **ToT scenario compatibility is the product
 niche**. Evaluate potentially stronger Freeciv/C-evo AI, clients and UI workflows
 as adoption candidates; exact original AI is not the only approach to assess.
 [Source assessment and adapter requirements](ai-client-reuse-assessment.md).
-This document still defines what a claimed original-AI reproduction must prove;
-the clarification is not a claim that another game's AI implements these gates
-or that program #117 has been cancelled. No implementation or licensing change
+The [mission](mission.md), [delivery plan](plan.md) and
+[decision 0008](decisions/0008-scenario-platform.md) make AI choice a product
+target. A0 #118 is first within this original-fidelity program, not a prerequisite
+for every AI alternative. This document defines what a claimed reproduction
+must prove; the clarification does not claim that another game's AI implements
+these gates or that program #117 has been cancelled. No implementation or licensing change
 is authorized merely by the assessment, and no AI port was started here.
 
 Status: scoped proposal, 2026-11-06, requested by the owner after the v0.10
 candidate. Tracking: [program #117](https://github.com/diegoami/totengine/issues/117).
 Baseline: 8f6b57feb44a834a2a452a73e70664ee4895b81a.
 Owner scheduling decision: **complete original-AI reproduction is gated behind
-completion of the playable UI/client work**. v0.11 UI discovery/design comes
-first. The gates below are the sequence for after that UI gate, not the next
-implementation milestones. Read-only scoping/binary questions do not start the
-port. This document assigns no release number or calendar date.
+completion of the playable UI/client work**. v0.11 discovery/design is
+released; the complete client remains unfinished. The gates below follow that
+UI gate; they are not the next implementation milestones. Read-only scoping/
+binary questions do not start the port. This document assigns no release number or calendar date.
 
 ## What we are delivering
 
@@ -288,7 +291,7 @@ basis for estimating person-days/ranges for the remaining gates; a calendar
 date before that would be invented. Record that estimate and assumptions on the
 program issue when A0 exits, and revise it after the first full planner port A1.
 
-v0.11 UI discovery/design remains next in the accepted release roadmap.
+v0.11 UI discovery/design is released. Current sequencing is in [plan.md](plan.md).
 **The complete original-AI program waits for the playable UI/client gate.**
 Later client and AI release versions remain unassigned; this scope does not
 schedule A0 before that gate or implement its proposed architecture amendment.

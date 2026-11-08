@@ -1,5 +1,11 @@
 # Playable browser and desktop clients
 
+The current [mission](mission.md) and [delivery plan](plan.md) target the full
+ToT interface and scenario play on both clients using original resources. The
+routes below describe shipped behavior and explicitly labeled candidates.
+Optional queues/rally points are planned under #188–#190; session recording is
+#186. Neither feature set is implied by the existing controls/checkpoints.
+
 Unreleased candidate: an optional [Isotrident artwork pack](ui/freeciv-assessment.md)
 supports both clients when ToT artwork is unavailable. Leave setup's ToT path
 blank for the independently authored **Open demo**, or provide a ToT directory/

@@ -1,5 +1,12 @@
 # Generated-world campaigns
 
+This command's generated-world scope remains as documented below. The broader
+[mission](mission.md) adds headless scenario parameter experiments under
+[#184](https://github.com/diegoami/totengine/issues/184), dependent on admitted
+scenario support [#183](https://github.com/diegoami/totengine/issues/183), with
+observation/recording through #185/#186. A campaign checkpoint is an existing
+foundation, not a claim that these scenario/recording packages are implemented.
+
 `totctl campaign` boots an engine-designed surface world directly from a
 seed and Rules. It uses no reference save. The v0.10 `builtin-1` opponent
 drives every civilization; `--policy ai-v1` selects the legacy policy.

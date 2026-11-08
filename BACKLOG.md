@@ -1,80 +1,99 @@
-# Backlog
+# Backlog and delivery conventions
 
-**The backlog lives on GitHub** (owner decision, 2026-11-04):
-- **Releases** are [milestones](https://github.com/diegoami/totengine/milestones):
-  v0.5.0 player interface → v0.6.0 AI v0 → v0.7.0 browser observer →
-  v0.8.0 AI v1 + economy depth → v0.9.0 generated-world campaign →
-  v0.10.0 original-like built-in AI → v0.11.0 UI discovery, reviewed design
-  and client milestone planning → v0.12 first playable turn in both clients →
-  v0.13 city workers/specialists (released) → v0.14 city production decisions
-  (released) → v0.15 city information panels (in progress) → remaining client packages →
-  pluggable AIs (later, version unassigned). Each has one theme
-  and a few stories, so every review stays one round (decision 0002).
-  The first two client slices are scoped; later milestone count/versions remain unassigned;
-  [decision 0005](docs/decisions/0005-playable-client-planning.md) requires
-  inspecting the original UI and reviewing concrete designs first.
-- **Stories** are [issues](https://github.com/diegoami/totengine/issues). The
-  story ID (`T1-4`, `RG-8`, `OB-2`, …) is in the title; the body holds the
-  acceptance criteria. Issues without a milestone are "later".
-- **Epics:**
-  [#19 T0](https://github.com/diegoami/totengine/issues/19) ·
-  [#20 T1](https://github.com/diegoami/totengine/issues/20) ·
-  [#21 T2](https://github.com/diegoami/totengine/issues/21) ·
-  [#22 T3](https://github.com/diegoami/totengine/issues/22) ·
-  [#23 RG](https://github.com/diegoami/totengine/issues/23).
+**GitHub issues are the live queue; GitHub milestones are scoped releases.**
+This file maps programs and records working conventions, not a second story
+status database. [Mission](docs/mission.md) · [Delivery plan](docs/plan.md) ·
+[Decision 0008](docs/decisions/0008-scenario-platform.md).
 
-The owner-requested complete original-AI port is scoped in
-[docs/original-ai-scope.md](docs/original-ai-scope.md) and tracked by
-[program #117](https://github.com/diegoami/totengine/issues/117), with ordered
-A0–A8 delivery gates. Full original-AI reproduction is gated behind the
-playable UI/client work (owner decision, 2026-11-06). The first AI task after
-that gate is inventory/fidelity-boundary story #118. These gates have no
-assigned AI release versions; v0.13 city workers/specialists is released; v0.14 city production decisions
-is released after new both-client acceptance and first-round independent AGREE.
+## Program map
 
-This file keeps the working conventions only. The story tables it used to
-hold (stories T0-1 … RG-11 with their acceptance and status notes) are in
-git history up to tag `v0.4.0`; [docs/plan.md](docs/plan.md) holds the
-strategic context.
+| Product target | Live program / stories | Planning position |
+| --- | --- | --- |
+| Native desktop and playable browser, complete original UI | [#21](https://github.com/diegoami/totengine/issues/21), desktop [#94](https://github.com/diegoami/totengine/issues/94), browser [#125](https://github.com/diegoami/totengine/issues/125) | Continue small both-client packages from reviewed contracts; retain human acceptance for each new route |
+| Scenario opening, compatibility and creation assistance | [#183](https://github.com/diegoami/totengine/issues/183), classic engine [#20](https://github.com/diegoami/totengine/issues/20), macro events [#16](https://github.com/diegoami/totengine/issues/16), ToTPP/Lua [#22](https://github.com/diegoami/totengine/issues/22) | Capability matrix and bounded import first; diagnostics/test-run tools grow toward safe editing/export and authoring |
+| Headless all-AI scenario experiments and parameter sweeps | [#184](https://github.com/diegoami/totengine/issues/184), standard campaigns [#23](https://github.com/diegoami/totengine/issues/23) | Build on existing policies; declare supported scenarios, changed parameters and reproducibility |
+| Scenario-aware observation | [#185](https://github.com/diegoami/totengine/issues/185) | Extend released observer with scenario events/objectives/maps, comparison and replay navigation |
+| Game and observation session recording | [#186](https://github.com/diegoami/totengine/issues/186) | Manifest/order/event/checkpoint foundation, presentation/notes, recovery; later audio/video/clips |
+| Optional QoL and alternative UI settings | [#188](https://github.com/diegoami/totengine/issues/188), city queues [#189](https://github.com/diegoami/totengine/issues/189), rally points [#190](https://github.com/diegoami/totengine/issues/190) | Faithful baseline remains available; scope each workflow with actual engine dependencies and both-client acceptance |
+| AI selection, reuse and plugins | [#187](https://github.com/diegoami/totengine/issues/187), protocol [#92](https://github.com/diegoami/totengine/issues/92), tournaments [#93](https://github.com/diegoami/totengine/issues/93) | Source/API/license assessment now; full ports/plugins after complete playable clients |
+| Exact original-AI fidelity | [#117](https://github.com/diegoami/totengine/issues/117), A0 [#118](https://github.com/diegoami/totengine/issues/118), existing A1–A8 stories | Separate gated fidelity program; A0 is first within it, not a prerequisite for every alternative AI |
 
-Labels: `p0`/`p1`/`p2` priority, `diff-easy`/`diff-hard` difficulty (below),
-`t0`…`t3` tier.
+Shared mechanics remain real dependencies: diplomacy [#96](https://github.com/diegoami/totengine/issues/96),
+endgame/scoring [#97](https://github.com/diegoami/totengine/issues/97), capture
+[#113](https://github.com/diegoami/totengine/issues/113), and measured domain/map/
+event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 
-## Assigning work: difficulty and agents
+## Near-term selection
 
-Two difficulty levels — a ToTEngine-local convention for picking the agent and its
-effort level. It is deliberately independent of the review process being adopted;
-when stories become harness tasks, the difficulty decides the assignment, the
-harness decides the review.
+1. Reconcile the separate pending candidates: Isotrident [#181](https://github.com/diegoami/totengine/pull/181)
+   and client fixes [#182](https://github.com/diegoami/totengine/pull/182), which
+   addresses #176–#179. Keep artwork, fixes and planning independently reviewable.
+2. Select the next bounded both-client package from
+   [client milestones](docs/ui/client-milestones.md). Science/rates/government and
+   original-save/scenario entry are scope candidates; finish reference/API gaps
+   before assigning a release. Complete remaining original features in further
+   coherent slices, not a single optimistic full-client milestone.
+3. Scope the scenario capability corpus/import dependencies (#183), headless
+   manifest/reporting (#184), observation (#185) and recording foundation (#186)
+   as related packages. Existing policies permit useful scenario tests before
+   external plugins. Parsing Roman Civil Wars is not a campaign pass.
+4. Evaluate Freeciv/C-evo workflows and optional enhancements against the ToT
+   baseline; retain #187 source assessment now. Do not launch full AI ports or
+   the external plugin implementation before the client gate.
 
-| Diff | Meaning | Agent assignment |
-|------|---------|------------------|
-| **E** | Low uncertainty: mechanical, well-specified, tooling or docs. Format known, acceptance testable in one pass. | `general` agent, standard effort — or `explore` (medium) for pure-research stories. One review pass. |
-| **H** | Reverse-engineering, parity-sensitive engine work, or architectural. Unknowns that only the oracle/experiments resolve. | `general` agent at **high effort**, design note agreed before code. Cross-model review; second opinion on milestone-critical stories. |
+No new version, calendar schedule or fixed milestone count is assigned. A program
+issue without a release milestone is planned scope, not necessarily the next
+implementation task. Older T0–T4/RG identifiers remain useful history; they no
+longer impose the old sequence or defer all authoring/QoL to T4.
 
-Rules of thumb: anything gated by *oracle parity* is H regardless of size; anything
-whose acceptance is "it parses/renders and tests pass" is E unless the format itself
-is unknown. An H story that grows two failed attempts gets split before a third.
+## Story contract
 
-## Releases & milestone reviews
+Before selecting implementation work, an issue must name:
 
-Releases are tags `vX.Y.Z` on `main`, gated by an independent milestone
-review before the tag: one big review per release by a model family that
-implemented none of it, verdict AGREE/BLOCK on a milestone issue, findings
-as ordinary issues, tag on exactly the reviewed SHA. The process:
-[docs/milestone-review.md](docs/milestone-review.md).
+- The user route and both delivery surfaces where applicable.
+- Its admitted fixture/profile and original-reference or source provenance.
+- Engine/API, event, map, resource and other story dependencies.
+- Confirm/cancel, invalid/stale input, unsupported feature and recovery behavior.
+- Checkpoint/replay/recording effects and meaningful acceptance checks.
+- Material exclusions and which claim it establishes: parse, simulate, observe,
+  human play, export, AI strength or native fidelity.
 
-Released:
-- `v0.1.0`: Tier 0 complete (2026-11-02, 5 review rounds);
-- `v0.2.0`: headless game loop (2 rounds);
-- `v0.3.0`: reproducible new game (1 round);
-- `v0.4.0`: minimal production (1 round).
+A source study is not a port; a deterministic run is not proof of strong AI;
+a checkpoint is not an original SAV export. Source availability does not change
+our [reuse policy](docs/prior-art.md). Define optional automation/settings rather
+than silently changing original rules, controls or scenario logic.
 
-## Standing tasks
+## Difficulty, priorities and delegation
 
-- Keep `docs/evidence/` regenerated on every format-affecting change (T0-9 makes
-  this automatic).
-- Every format claim gets an evidence artifact or oracle test — no folklore.
-- No original game assets in the repo, ever.
-- Difficulty is re-assessed when a story starts; a wrong guess is a finding, not a
-  failure — record it on the story.
+Existing labels remain: `p0` urgent, `p1` next-candidate, `p2` later;
+`diff-easy` / `diff-hard`; `t0`…`t3` and `epic` for historical grouping.
+Dependencies and explicit milestone scope decide actual scheduling; labels are
+not a promise that every p1 program runs at once.
+
+| Difficulty | Meaning | Required preparation |
+| --- | --- | --- |
+| E | Low uncertainty: mechanical/tooling/docs, format known, acceptance testable | Focused validation and ordinary review |
+| H | Reverse-engineering, parity-sensitive work or architecture with unresolved assumptions | Evidence/design note before code, high-effort investigation and independent milestone review |
+
+Oracle parity is H regardless of line count. Reassess when work starts. Split
+an H story after two failed approaches before trying a third; record unknowns.
+This convention does not authorize spawning agents. Use delegation only when
+the owner or applicable instructions request it.
+
+## Releases and standing work
+
+Latest released tag: **v0.15.0**, both clients with city information panels.
+[Changelog](CHANGELOG.md) and [release readiness](docs/v0.15.0-readiness.md)
+record earlier slices; [GitHub milestones](https://github.com/diegoami/totengine/milestones)
+and issues carry current state.
+
+Release small, coherent themes, with the applicable human routes on both clients,
+then independent owner-launched review. The main session prepares the candidate,
+evidence and review prompt; it never launches milestone review. Tag exactly the
+agreed SHA per [milestone-review.md](docs/milestone-review.md). Do not guarantee
+one review round or close a story because its plan was rewritten.
+
+Keep format evidence regenerated after intentional format changes. Never commit
+original assets/scenarios/saves. Preserve owner previews and games. Downloaded
+community scenarios are installed in individual folders in the real CIVTOT
+Scenario directory, without overwriting existing resources.

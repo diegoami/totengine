@@ -7,6 +7,16 @@ adoption. Reproducing the original opponent is not the only approach to assess.
 Neither competitor has been benchmarked against ToT here. No AI/client port or
 runtime change is included in this assessment.
 
+## Roadmap integration
+
+The owner's seven product targets are now recorded in [mission.md](mission.md),
+[plan.md](plan.md) and decision 0008. Live programs: AI adoption/evaluation
+[#187](https://github.com/diegoami/totengine/issues/187), optional workflows
+[#188](https://github.com/diegoami/totengine/issues/188), and scenario compatibility
+[#183](https://github.com/diegoami/totengine/issues/183). These organize this
+assessment into delivery work; they do not start a port, change licensing or
+remove the complete-client gate for full-AI/plugin implementation.
+
 ## Downloaded reference and scope
 
 C-evo-x is checked out at

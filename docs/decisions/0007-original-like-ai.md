@@ -1,5 +1,10 @@
 # v0.10.0 — original-like built-in AI
 
+Current mission/roadmap: [decision 0008](0008-scenario-platform.md), accepted
+2026-11-08. Historical release scope below remains recorded; its future schedule
+is superseded where inconsistent. Both-client UI fidelity and client-first AI
+implementation gates remain; native-AI reproduction is not the only AI route.
+
 Issue #106 is the acceptance authority. The target is a recognizable original
 opponent, backed by controlled comparisons, in generated campaigns and the
 browser observer. AI v1 is the baseline, not the acceptance result. UI design

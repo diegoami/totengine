@@ -1,10 +1,12 @@
 # Playable client: accepted first slice and delivery breakdown
 
 Owner-reviewed delivery plan, #107 / v0.11. The owner accepted design
-revision 02 as a prototype and the first-slice scope on 2026-11-06. **The first playable milestone is assigned; later release versions and the
-remaining milestone count are not.** These are dependent work packages; their release
-boundaries must be chosen from the reviewed design. They are not a promise of
-one release per row or a complete client in one milestone.
+revision 02 as a prototype and the first-slice scope on 2026-11-06. v0.12–v0.15
+are released client slices; the complete clients remain unfinished. Later
+versions and the remaining milestone count are unassigned. The packages below
+are dependencies, not one release per row or a promise of a complete client in
+one milestone. Current direction: [mission](../mission.md), [delivery plan](../plan.md)
+and [decision 0008](../decisions/0008-scenario-platform.md).
 
 Inputs: [design proposal](client-design.md), [screen contracts](screen-contracts.md)
 and [reference inventory/gaps](discovery.md). The [implementation audit and
@@ -187,6 +189,34 @@ third-round independent AGREE on #162 are complete; v0.15.0 is released at exact
 #176–#179 remain open for subsequent work.
 [Scope](city-information-milestone.md), [readiness](../v0.15.0-readiness.md).
 Further versions/counts and the complete client/AI gates remain unchanged.
+
+## Mission additions: scenarios, recording and optional workflows
+
+The faithful original UI remains the baseline. Coverage must include original
+screens/controls, reports/help, sound, advanced unit/city orders, scenario dialogs
+and actual supported map modes; the released city panels are only a slice.
+Keep the existing prototype acceptance and reviewed screen contracts as the
+basis, then inspect remaining reference branches before implementing them.
+
+Scenario opening/compatibility and creation assistance are program
+[#183](https://github.com/diegoami/totengine/issues/183). Use a declared profile
+and shared import/resource/decision contract for both clients. Headless testing
+[#184](https://github.com/diegoami/totengine/issues/184), observation
+[#185](https://github.com/diegoami/totengine/issues/185) and recordings
+[#186](https://github.com/diegoami/totengine/issues/186) must agree on that profile.
+Record gameplay and presentation separately; a screenshot or order log alone
+does not deliver the whole session recorder.
+
+Optional QoL/settings are program [#188](https://github.com/diegoami/totengine/issues/188):
+city production queues [#189](https://github.com/diegoami/totengine/issues/189)
+and rally points [#190](https://github.com/diegoami/totengine/issues/190) are explicit
+candidates. Study Freeciv/C-evo workflows and whole-client feasibility without
+replacing ToT rules or losing either client surface. Each enhancement needs
+reviewed controls, legal automation, cancel/error behavior and checkpoint/
+recording semantics; classic behavior remains available. Do not defer every
+QoL package to an undefined final T4, or count it as missing original coverage.
+Full-AI/plugin implementation remains behind complete clients; source/API
+assessment can proceed now under [#187](https://github.com/diegoami/totengine/issues/187).
 
 ## Dependencies and acceptance
 

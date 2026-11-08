@@ -29,7 +29,8 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 1. v0.16.0 / milestone 14 is released after explicit both-client owner acceptance
    #210 and independent AGREE #216. Post-tag follow-ups #217–#219 are fixed on
    main without moving the tag. [Release record](docs/v0.16.0-readiness.md).
-   Current milestone 15 implements [inspection](docs/scenario-inspection.md) and
+   Current milestone 15 prepares the v0.17.0 tooling/contract candidate, with
+   [inspection](docs/scenario-inspection.md) and
    the [conditional first-entry contract](docs/scenario-entry-contract.md), not
    playable imports. None of the reference corpus is admitted for full simulation.
 2. Select the next bounded both-client package from

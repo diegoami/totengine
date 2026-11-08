@@ -3379,8 +3379,8 @@ contract; original new-game initialization parity is not claimed.
 
 [generated-campaign-v1.json](generated-campaign-v1.json) records Rules hashes,
 setup and validation context. [The full authored-rules checkpoint golden](generated-campaign-v1.ctc)
-is regenerated for engine v0.16.0; only the exact-version header changes from
-the v0.15 fixture, with metadata hash/version refreshed. It still contains every
+is regenerated for engine v0.17.0; only the exact-version header changes from
+the v0.16 fixture, with metadata hash/version refreshed. It still contains every
 order and round fingerprint for 100 rounds of AI v1, including
 the final fingerprint `b22e4340b6ab8bf6`. It reaches 20 cities, 27 population,
 28 units and 35 acquired advances. [The authored trajectory](generated-authored-campaign.tsv)
@@ -4116,3 +4116,14 @@ partial, and Warring States requires unimplemented Lua/extended state. These are
 current coverage findings, not newly verified native behavior or a game port.
 The existing format golden corpus remains byte-identical after snapshot-helper
 extraction, including CR/LF and Latin-1 line handling.
+
+## v0.17.0 scenario-inspection candidate
+
+[scenario-v017-candidate.json](scenario-v017-candidate.json) and
+[readiness](../v0.17.0-readiness.md) separate the read-only tool/conditional
+contract from runtime admission. Nineteen new + thirteen existing Python tests,
+265 install-backed release-mode Rust tests, full unchanged format goldens,
+strict Clippy and 32 seeds/policy pass. No new GUI-package or native-gameplay
+claim follows. The rederived campaign changes only its engine-version header;
+old owner binaries/saves remain preserved. Direct new-suite CI wiring requires
+workflow-scoped credentials (#221); make test runs the suite locally.

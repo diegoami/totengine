@@ -5,6 +5,8 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+## [0.17.0] — scenario inspection and entry boundary
+
 - Add a bounded read-only scenario/corpus inspector with pinned input/resource
   hashes, distinct support levels, macro line diagnostics and compact evidence.
   Freeze a conditional first native-entry contract; no gameplay import or

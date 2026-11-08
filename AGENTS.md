@@ -65,22 +65,33 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
-Milestone 15 work in progress on `feat/scenario-admission`, worktree
-`/home/diego/review-tmp/totengine-scenario-admission`: read-only
-`tools/scenario_inventory.py`, five-entry private corpus manifest, source-pinned
-engine coverage audit, reproducible compact evidence and conditional
-`classic-surface-032-v1` entry contract (#192/#193). Nineteen new authored safety
-tests pass; old format goldens are unchanged. The first reference is
-Original/Ph_Auto2.SAV, not an admitted runtime: all five entries remain blocked
-for simulation/human import. Native active phase/spent moves/fog, complete event
-semantics, dependency closure and import checkpoint initialization are explicit
-#197/#198 gates. Macro GIVETECHNOLOGY is emitted but skipped; Original events
-contain compound/endgame logic; Midgard/Warring are partial map/extended/Lua
-cases. No scripts/original game executed, originals modified, UI importer or AI
-port implemented. Full private reports are in
-`review-tmp/totengine-scenario-admission-evidence`; compact derived metadata only
-is committed. Owner previews/games remain untouched. No next version assigned
-by this implementation alone; release review stays owner-launched.
+Milestone 15 / v0.17.0 tooling candidate preparation: #222's read-only
+inspector, pinned five-entry corpus, source-audited coverage and conditional
+classic-surface-032-v1 entry contract are merged. #192/#193 remain open for the
+release-review gate. No current input is admitted for simulation/human import;
+phase/movement/fog, required events, dependency closure and native-import
+initializer remain explicit #197/#198 blockers. Sources/docs:
+`tools/scenario_inventory.py`, `docs/scenario-inspection.md`,
+`docs/scenario-entry-contract.md`, `docs/evidence/scenario-inventory-v1.json`.
+
+Release-preparation worktree `review-tmp/totengine-v017-candidate` on
+`release/v0.17.0` updates workspace metadata and rederived campaign header only;
+all other campaign bytes/fingerprint remain identical to v0.16. Actual checks:
+265 install-backed Rust tests in release mode with desktop, 19 new + 13 existing
+Python tests, full goldens/fmt/strict default+desktop Clippy and seven campaigns
+including 32 seeds/policy pass. Six client fixture authors were not rerun for
+this non-UI slice. Real full/compact corpus output reproduces byte-for-byte.
+Readiness: `docs/v0.17.0-readiness.md`; candidate evidence:
+`docs/evidence/scenario-v017-candidate.json`.
+
+GitHub rejected a workflow-file edit because its OAuth credential lacks workflow
+scope. That edit was removed from the unpushed commit; no permission bypass was
+attempted. New tests run through make test/explicit commands, not claimed in
+existing CI; #221 tracks direct CI wiring. Before release, land notes/version,
+create the exact-main-SHA review issue and PRINT the owner-launched review prompt
+per `docs/milestone-review.md`, then stop. No review/tag is started by preparation.
+This tool/contract does not activate a native client, Lua, map simulation or AI
+port. Existing owner previews/saves and v0.16 artifacts remain preserved.
 
 v0.16.0 is RELEASED at exactly reviewed/tagged SHA
 `2f37ab49a56dbcb2091977162518604ae3b6ea0b` (Kimi K3.1 Pro AGREE on #216,

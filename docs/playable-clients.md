@@ -6,7 +6,7 @@ routes below describe shipped behavior and explicitly labeled candidates.
 Optional queues/rally points are planned under #188–#190; session recording is
 #186. Neither feature set is implied by the existing controls/checkpoints.
 
-Unreleased candidate: an optional [Isotrident artwork pack](ui/freeciv-assessment.md)
+An optional [Isotrident artwork pack](ui/freeciv-assessment.md)
 supports both clients when ToT artwork is unavailable. Leave setup's ToT path
 blank for the independently authored **Open demo**, or provide a ToT directory/
 Rules.txt to keep your own rules with fallback graphics. The demo is a small
@@ -39,6 +39,13 @@ Missing/incompatible resources produce an error without replacing your game.
 No original artwork, Rules, saves or fonts are included. Desktop reads a system
 DejaVu Sans font on Linux or Arial on Windows; `TOTENGINE_FONT` selects another
 owned TTF if required.
+
+## Checkpoint versions
+
+Engine checkpoints are version-bound. The v0.16 candidate loads v0.16 engine
+checkpoints; v0.15 preview checkpoints require their preserved preview binaries.
+Demo display-name changes keep Rules/art identity unchanged within an engine
+version. Original SAV/SCN import remains a separate, unimplemented client route.
 
 ## Quick Start and reproducible seeds
 

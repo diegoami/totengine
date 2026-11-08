@@ -28,9 +28,10 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 
 1. Complete milestone 14 acceptance/readiness: artwork #181, recovery #182 and
    planning #191 are merged and combined packaged checks pass. Human acceptance
-   [#210](https://github.com/diegoami/totengine/issues/210) is deferred by the owner;
-   [#211](https://github.com/diegoami/totengine/issues/211) retains candidate/review
-   preparation. [Evidence/previews](docs/client-foundation-readiness.md).
+   [#210](https://github.com/diegoami/totengine/issues/210) is explicitly accepted
+   for both clients/resources; [#211](https://github.com/diegoami/totengine/issues/211)
+   prepares the v0.16.0 candidate and independent review.
+   [Candidate record](docs/v0.16.0-readiness.md).
 2. Select the next bounded both-client package from
    [client milestones](docs/ui/client-milestones.md). Science/rates/government and
    original-save/scenario entry are scope candidates; finish reference/API gaps
@@ -46,8 +47,9 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 
 Named planning milestones 14–29 now carry bounded stories from this backlog;
 [the package map](docs/milestones.md) records their dependencies and AI gates.
-No numeric release version, calendar schedule or fixed remaining milestone count
-is assigned. Umbrella programs link to their child milestones and remain open
+Only milestone 14 now has the proposed v0.16.0 release version, after owner
+acceptance. No future versions, calendar schedule or fixed remaining release
+count are assigned. Umbrella programs link to their child milestones and remain open
 across slices; an unassigned program is not an abandoned target. Older T0–T4/RG identifiers remain useful history; they no
 longer impose the old sequence or defer all authoring/QoL to T4.
 

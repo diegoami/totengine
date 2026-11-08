@@ -46,8 +46,9 @@ resources. See [launch/controls](docs/playable-clients.md),
 
 Unreleased artwork/recovery and planning PRs #181/#182/#191 are merged to main.
 Combined packaged Chromium/Linux/Windows checks pass; milestone 14 remains open
-for [owner acceptance #210](https://github.com/diegoami/totengine/issues/210) and
-release readiness. [Current evidence and previews](docs/client-foundation-readiness.md).
+for independent review after explicit
+[owner acceptance #210](https://github.com/diegoami/totengine/issues/210).
+[Proposed v0.16.0 scope and checks](docs/v0.16.0-readiness.md).
 The approved Isotrident artwork fallback is optional and separately licensed;
 Open demo is a small authored demonstration, not full redistributable ToT rules.
 Public hosting and a complete independent rules profile remain separate scope.

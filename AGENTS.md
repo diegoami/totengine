@@ -65,47 +65,43 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
-Owner follow-up fixes, 2026-11-08: branch `fix/client-demo-labels-random-seed`
-adds a prominent Quick Start, random setup/confirmed-new-game seeds, editable
-fixed-seed starts, and presentation-only Open demo technology names/current
-topic. Underlying demo Rules/resource identities are unchanged; the owner's
-active browser demo was checkpointed and restored after host update.
-Shared/desktop tests (36 pass), legacy-demo restoration, real-pack integration,
-strict desktop Clippy and actual Chromium Quick Start/labels/old-save routes
-pass. The existing checkpoint input checkers now explicitly type seed 7.
-Updated owner hosts remain 8816/8820, backed by
-`review-tmp/tot-client-quick-start-linux`. Windows rebuilt package is
-`review-tmp/tot-client-quick-start-windows`; it was opened/activated at owner
-request (PID 1868). Windows launch helper uses direct ProcessStartInfo, as in
-validated tests; earlier ShellExecute reopen was canceled by Windows.
-Original owner saves remain in `review-tmp/totengine-owner-client-foundation`;
-launchers point to the rebuilt package. Browser update backup is
-`browser-demo-saves/before-ui-update-cb13618e.cth`. Refresh the demo browser tab
-if it still has a frame revision from the previous host. #213 tracks these
-feedback fixes inside milestone 14; #210/#211 remain open, with no human pass or
-release claimed. The previous combined foundation record below is historical
-validation before these feedback changes.
+v0.16.0 candidate preparation, milestone 14, 2026-11-08: #181/#182/#191/#212
+and setup-feedback #214 are merged; #176–#179/#213 are closed. Owner explicitly
+confirmed “Yes, both clients and resource routes pass” for #210, now closed.
+This is narrow client-resource/recovery acceptance, not full clients, ruleset
+balance or independent review. Source/claims: `docs/v0.16.0-readiness.md` and
+`docs/evidence/client-v016-candidate.json`. Only v0.15.0 is released so far.
 
-Milestone 14 integration complete, 2026-11-08: #181/#191/#182 are merged;
-main runtime baseline `71f7d9fb4e20db250348ddac3b3da2021c5e1124` passed push CI.
-34 shared/desktop tests, real-pack integration and pack preparer checks pass.
-Actual packaged Chromium/Linux/Windows runs pass with 26 original-resource and
-seven demo output checkpoints identical across all three. Code in owner preview
-packages is `7ad1e9302566836ca643dd62c12a102a938b0f53`; integrated crate/Cargo
-content is identical. `89c7c1d0045420571ed980e00696dc58b56a9b6d` adds only the
-Windows checker test and passed CI/autoplay. New combined record:
-`docs/evidence/client-foundation-v1.json`; readiness/launch details:
-`docs/client-foundation-readiness.md`.
+Preparation rederived the version-bound campaign golden (only engine header
+changed; fingerprint b22e4340b6ab8bf6), six fixture authors, all 264 install-backed
+Rust tests with desktop, 13 Python, goldens/fmt/strict default+desktop Clippy and
+all seven campaign tests including 32 seeds per policy. Versioned Chromium/Linux/Windows packages pass all input routes; 53 original
+and seven demo newly written outputs match across all three. Fresh Windows
+candidate input retained/passed its foreground guard after observing the owner
+desktop closed. Final packages are `review-tmp/tot-v016-final-{linux,windows}`;
+all manifests verify and binaries match tested copies. Versioned Quick Start and
+wrong-version rejection checks pass without changing the active test game.
 
-Human check #210 remains OPEN: owner replied “I’ll test them later”. Readiness
-#211 is open. No new version/candidate, human acceptance, independent review or
-tag is claimed. Next step: inspect actual owner results; fix blockers, then
-prepare the exact candidate and owner-launched review only when gates pass.
-Keep owner hosts 8816 (Original) / 8820 (demo) RUNNING, save/launcher folder
-`/home/diego/review-tmp/totengine-owner-client-foundation`. QA hosts 8817/8818
-and native checker apps/displays are stopped. Private packages remain under
-`review-tmp/tot-client-foundation-{linux,windows}-7ad1e93`. All older owner
-previews/games are preserved. Current readiness branch is documentation-only.
+The release-preparation branch is `release/v0.16.0`, worktree
+`/home/diego/review-tmp/totengine-v016-candidate`. After candidate notes/version
+land on main, create the exact-SHA independent milestone issue and print the
+review prompt per `docs/milestone-review.md`; the owner launches it. No review
+or tag is authorized merely by human acceptance. Once candidate main is frozen,
+only fixes for that milestone land until its release. #211 tracks readiness.
+Find the live milestone review issue for the authoritative candidate SHA.
+
+Preserve owner hosts 8816 (Original) / 8820 (demo), updated Quick Start packages
+`review-tmp/tot-client-quick-start-{linux,windows}`, launchers and saves under
+`review-tmp/totengine-owner-client-foundation`. The active browser demo was
+checkpointed/restored at `browser-demo-saves/before-ui-update-cb13618e.cth`.
+Owner preview metadata remains v0.15; v0.16 checkpoints are version-bound, so do
+not replace their binaries or saves. The owner desktop PID 1868 was observed
+closed before final Windows validation. Earlier preview/combined records are
+historical snapshots. Scenario-admission worktree/branch exists at
+`review-tmp/totengine-scenario-admission` / `feat/scenario-admission`, still
+unmodified: source audit found GIVETECHNOLOGY emitted but skipped, and Original
+Events.txt includes compound/endgame constructs; no scenario inspector or AI
+port has been implemented. #192/#193 remain future work after the review gate.
 
 Owner mission/roadmap reorganization, 2026-11-08: `docs/mission.md` and decision
 0008 define the seven product targets; `docs/plan.md` replaces the stale T0–T4

@@ -56,6 +56,21 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+Session close, 2026-11-08: [PR #181](https://github.com/diegoami/totengine/pull/181)
+(Isotrident fallback, head `de0bca17a4a1fa1df963af79203d130a67ebed9a`)
+is **open; all four GitHub checks passed** (Rust, Python, autoplay, GitGuardian).
+It is not merged/released or independently milestone-reviewed. Current branch
+`docs/c-evo-source-assessment` is pushed and **stacked on that feature commit**;
+its later commits are documentation/source-study only. Keep the Isotrident PR
+separate when integrating these notes. Next session: read
+`docs/ai-client-reuse-assessment.md` and `docs/ui/freeciv-assessment.md`, then
+inspect current review/PR status before choosing the next scoped package.
+The Open demo was an assistant-authored validation baseline; the owner approved
+Isotrident artwork, not a complete alternative gameplay ruleset. Public hosting,
+full redistributable rules, AI adoption benchmarks and whole-client adoption
+are unfinished. #176–#179 remain separate follow-ups. No new milestone/version
+was assigned, and no AI/client port or public deployment was started.
+
 2026-11-08 owner direction: ToT **scenario compatibility is the niche**; evaluate
 stronger Freeciv/C-evo AI, whole clients and UI workflows as real adoption
 candidates. Do not assume exact original-AI reproduction is the sole acceptable

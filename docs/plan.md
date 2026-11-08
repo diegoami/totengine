@@ -33,7 +33,8 @@ T0–T4 schedule; historical evidence and released tags remain unchanged.
 Latest release: **v0.15.0**, independently reviewed at
 `948b0d2b94d22315190c664340d080062629c8ea`. See
 [readiness](v0.15.0-readiness.md) and [release evidence](evidence/client-v015-release.json).
-This plan does not designate a new release.
+Milestone 14 now prepares v0.16.0 after owner acceptance; the release still
+requires independent owner-launched review.
 
 | Capability | Available foundation | Remaining target |
 | --- | --- | --- |
@@ -46,8 +47,8 @@ This plan does not designate a new release.
 
 Unreleased artwork/recovery and planning PRs #181/#182/#191 are integrated.
 Combined packaged Chromium/Linux/Windows routes and CI pass. Milestone 14 is
-awaiting new owner acceptance #210 and readiness #211, with no release/candidate
-assigned. [Current evidence and previews](client-foundation-readiness.md). Roman Civil Wars is
+preparing v0.16.0 after owner acceptance #210, with readiness #211 retaining the
+independent-review gate. [Candidate record](v0.16.0-readiness.md). Roman Civil Wars is
 installed and statically parsed; no playable/native acceptance is claimed.
 
 ## Workstreams and live programs

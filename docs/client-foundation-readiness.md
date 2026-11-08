@@ -1,10 +1,11 @@
 # Client resources and recovery — milestone 14 readiness
 
-Status, 2026-11-08: **code integrated and automated routes pass; owner human
-acceptance is pending**. The owner replied “I’ll test them later” on the new
-check. [Acceptance #210](https://github.com/diegoami/totengine/issues/210) and
-[readiness #211](https://github.com/diegoami/totengine/issues/211) remain open.
-No numeric release version, frozen candidate or independent review is assigned.
+Historical integration record, updated 2026-11-08: the owner subsequently
+confirmed “Yes, both clients and resource routes pass” on #210. Current
+v0.16.0 candidate preparation and review gates are in
+[v0.16.0-readiness.md](v0.16.0-readiness.md). Earlier pending statuses and
+version-0.15 preview artifacts below remain historical; no independent review
+or release approval is inferred from the human acceptance.
 
 ## Owner feedback update: Quick Start and demo names
 

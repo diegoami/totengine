@@ -5,6 +5,8 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+## [0.16.0] — client resources and recovery
+
 - Add a prominent Quick Start button and fresh random setup/new-game seeds,
   retaining editable fixed seeds and deterministic checkpoints.
 - Give Open demo research readable presentation names and show the current

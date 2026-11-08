@@ -1,0 +1,228 @@
+{
+  "schema": 1,
+  "candidate_version": "0.16.0",
+  "milestone": 14,
+  "previous_tag": "v0.15.0",
+  "previous_tag_sha": "948b0d2b94d22315190c664340d080062629c8ea",
+  "base_sha": "bd5a1dd674f4f242ba71d9c1a73e1d955d8e3e4f",
+  "date": "2026-11-08",
+  "scope_prs": [
+    181,
+    182,
+    191,
+    212,
+    214
+  ],
+  "candidate_changes": "Workspace package versions, rederived campaign header, release notes/readiness only; production Rust implementation matches accepted feedback code.",
+  "validation": {
+    "install_backed_workspace_with_desktop": {
+      "passed": 264,
+      "ignored": 7,
+      "log": "/home/diego/review-tmp/tot-v016-validation/workspace-tests.log"
+    },
+    "python_tests": 13,
+    "goldens": "PASS",
+    "fmt": "PASS",
+    "clippy_default": "PASS",
+    "clippy_desktop": "PASS",
+    "fixture_authors": {
+      "count": 6,
+      "result": "PASS",
+      "root": "/home/diego/review-tmp/tot-v016-validation/fixtures"
+    },
+    "autoplay": {
+      "tests": 7,
+      "seeds_per_policy": 32,
+      "policies": [
+        "ai-v1",
+        "builtin-1"
+      ],
+      "result": "PASS"
+    },
+    "campaign_golden": {
+      "rounds": 100,
+      "final_world": "b22e4340b6ab8bf6",
+      "only_engine_header_changed": true,
+      "sha256": "6fb5957adf92b752b86d5cdb997820bc24e1c11f581f85ab062e2541cc4f7d40"
+    },
+    "versioned_quick_start": "PASS: visible button, fresh seed, named research, same-version old-demo checkpoint restored",
+    "wrong_engine_version_rejection": {
+      "result": "PASS",
+      "old_engine": "0.15.0",
+      "current_engine": "0.16.0",
+      "gameplay_checkpoint_unchanged_after_rejection": true
+    }
+  },
+  "fresh_packaged_input": {
+    "chromium_original": {
+      "result": "PASS",
+      "report": "/home/diego/review-tmp/tot-v016-validation/browser-original/report",
+      "saves": "/home/diego/review-tmp/tot-v016-validation/browser-original/saves",
+      "includes": "Full production/citizen/selection/movement/encounter/panel/double-click/request-race routes"
+    },
+    "linux_original": {
+      "result": "PASS",
+      "work": "/home/diego/review-tmp/tot-client-linux-qf9vdrjk"
+    },
+    "chromium_demo": {
+      "result": "PASS",
+      "saves": "/home/diego/review-tmp/tot-v016-validation/browser-demo/saves"
+    },
+    "linux_demo": {
+      "result": "PASS",
+      "work": "/home/diego/review-tmp/tot-client-linux-lmmv1lfl"
+    },
+    "cross_surface_output_checkpoints": {
+      "original": {
+        "outputs": 53,
+        "sha256": {
+          "battleafter.cth": "00938208da98e779191ff65a6dd76e6c84f44f8f32d558baa6415ab029c1aee2",
+          "captureafter.cth": "ec0c05b61aec5692341587509a8b0e47d3b7daf18cfa895eb9601c8096f8cb5c",
+          "citycycle.cth": "a879d877230e98da8cb1b4a5e1691f2142917d02b99632e754359b936d46ef51",
+          "citydouble.cth": "c6f100d6cd074ff028e024d74df6704d05c5b43f87f64b71c45f2313905b8045",
+          "cityentertainer.cth": "ce0d4f992a7f27be414cc35e65efe7f9f4f0794da19bd79e461131bbd9b254d3",
+          "citynavigation.cth": "540a4f5ff204e20e23bb5cb854a3d83cd7e5f0f2c6f5d568a931a937558da8b2",
+          "cityresume.cth": "4331e84f1cc57150db178d3a04cef528943d07294794e33ed8a0460cffced107",
+          "cityscience.cth": "bfcc56932d55192781373c27413bc90ec23c0045efa3744d79df3674791961d7",
+          "citytax.cth": "4b0fdffc7ab4fd693e91590ed7f2567a06c521510b17f0e5f8bec842f8b6f5fa",
+          "founding.cth": "170585054cc1513927a963ea8a9a77f10b7bcaee60c8062ed86111a38ec6b85b",
+          "foundingnext.cth": "2b03d3a0532cf02a9681332f2e889295d5714f15191bb0965193bdfb7ff7627e",
+          "movementafter.cth": "0cda86659a817ad991f2e4ffcf410077e43cdcc4de3f87f7320a902339403e95",
+          "movementkeypadarrows.cth": "0cda86659a817ad991f2e4ffcf410077e43cdcc4de3f87f7320a902339403e95",
+          "movementkeypadoff.cth": "0cda86659a817ad991f2e4ffcf410077e43cdcc4de3f87f7320a902339403e95",
+          "movementkeypadon.cth": "0cda86659a817ad991f2e4ffcf410077e43cdcc4de3f87f7320a902339403e95",
+          "normal.cth": "2b03d3a0532cf02a9681332f2e889295d5714f15191bb0965193bdfb7ff7627e",
+          "normalnext.cth": "4a24fd77b0f36ec9d55560b4a47765f86840f2aabecdb6dac9ae36f45911bdf3",
+          "panelbudgetnavafter.cth": "51906a4b71a9d8855505fd2952f74f9b6566972146544ffbcb386b24629870e9",
+          "panelbudgetnavreload.cth": "51906a4b71a9d8855505fd2952f74f9b6566972146544ffbcb386b24629870e9",
+          "panelbudgettabsafter.cth": "5748e04e4032b1453599962bf83300cefa7f956cec29828d1006cf5928abc2c9",
+          "panelbudgettabsreload.cth": "5748e04e4032b1453599962bf83300cefa7f956cec29828d1006cf5928abc2c9",
+          "panelentertainerafter.cth": "ce0d4f992a7f27be414cc35e65efe7f9f4f0794da19bd79e461131bbd9b254d3",
+          "panelentertainerreload.cth": "ce0d4f992a7f27be414cc35e65efe7f9f4f0794da19bd79e461131bbd9b254d3",
+          "panelnavigationafter.cth": "3027bd97388ddef6b2fda8762678bda41868edb496a73d23e8ade751dc2e1b09",
+          "panelnavigationreload.cth": "3027bd97388ddef6b2fda8762678bda41868edb496a73d23e8ade751dc2e1b09",
+          "panelnewsession.cth": "5748e04e4032b1453599962bf83300cefa7f956cec29828d1006cf5928abc2c9",
+          "panelnewsessionreload.cth": "5748e04e4032b1453599962bf83300cefa7f956cec29828d1006cf5928abc2c9",
+          "paneloverviewafter.cth": "c6f100d6cd074ff028e024d74df6704d05c5b43f87f64b71c45f2313905b8045",
+          "paneloverviewreload.cth": "c6f100d6cd074ff028e024d74df6704d05c5b43f87f64b71c45f2313905b8045",
+          "panelsaleafter.cth": "830ff6dec16dd356772263ecd8fc24825341d7a1ede4822806fca3d7873b9a64",
+          "panelsalecancelafter.cth": "e9bbc8fade8302378ab3466d1739d748eea2932b3ad08dfe570e5ba0d3883840",
+          "panelsalecancelreload.cth": "e9bbc8fade8302378ab3466d1739d748eea2932b3ad08dfe570e5ba0d3883840",
+          "panelsalereload.cth": "830ff6dec16dd356772263ecd8fc24825341d7a1ede4822806fca3d7873b9a64",
+          "panelspecialistsafter.cth": "a879d877230e98da8cb1b4a5e1691f2142917d02b99632e754359b936d46ef51",
+          "panelspecialistsreload.cth": "a879d877230e98da8cb1b4a5e1691f2142917d02b99632e754359b936d46ef51",
+          "productionbuyafter.cth": "a1670a5899c350d42e60430ecf71069959889acea551a4e96a0ddb8ddc32cd54",
+          "productionbuycancelafter.cth": "fcc1e16b69337d7ae967252f25c0f4a4fcc622f71d7f9961ee3b1b021d928e91",
+          "productioncloseafter.cth": "65772248bae8ff2033970ca2742aad8731ab7cd04c36f357e217839c46bfb9ce",
+          "productionpoorafter.cth": "8c5d74bd6d586c8126eba257ea353a95e684fdd0fe2f3affe76162f5d2696061",
+          "productionrestoreafter.cth": "4f06e94d1a3b8ecaf83767524141f68e6536b85ea9e28de591a49cb20cb640e9",
+          "productionsaleafter.cth": "830ff6dec16dd356772263ecd8fc24825341d7a1ede4822806fca3d7873b9a64",
+          "productionsalecancelafter.cth": "e9bbc8fade8302378ab3466d1739d748eea2932b3ad08dfe570e5ba0d3883840",
+          "productionswitchafter.cth": "5748e04e4032b1453599962bf83300cefa7f956cec29828d1006cf5928abc2c9",
+          "productionswitchcancelafter.cth": "24936feb1e4b11316e0b610ffa690f71ae06b4abac2ef61a9f111995ad4af05f",
+          "research.cth": "104dba69d1a48552f9e5bb274752544b8b11b37edea33d0fd2f62e928e5e2e1f",
+          "researchnext.cth": "170585054cc1513927a963ea8a9a77f10b7bcaee60c8062ed86111a38ec6b85b",
+          "selectioninert.cth": "81a66eae51c72ab1797356098f2f63659edf3fbc2010130a1a6f52fa30e4d57e",
+          "selectionmove.cth": "74b4e7427fb1c1836507dda5edda07c4227d945d8c611738472851fabf53d6d5",
+          "selectionresized.cth": "81a66eae51c72ab1797356098f2f63659edf3fbc2010130a1a6f52fa30e4d57e",
+          "selectionskip.cth": "4eff723af11dbd14df156cda0b0d3a25945cf4a8a418aa1e586993be05b3d82b",
+          "selectionstackinert.cth": "6def8018e2ad303a775b5af0257cbd8552d871a6768792fcd77820b14752a53d",
+          "selectionturn.cth": "75a2be21a2ef098beb1d37a30eda7b8635f58dc81e051b205bd2256f72759231",
+          "tenrounds.cth": "58ad9c1be042ac117c24fce20cefe6c8cdce9f86a2ef7c20b0921a07eb778a81"
+        }
+      },
+      "demo": {
+        "outputs": 7,
+        "sha256": {
+          "founding.cth": "49fab391f8aaf88d005fc649613e4d9491b6a2bbcccba39eadbba840bbef67f2",
+          "foundingnext.cth": "01faaafcb1afc02cd635631920aa9a87db2420c121806662c54c4fdb7805f29d",
+          "normal.cth": "01faaafcb1afc02cd635631920aa9a87db2420c121806662c54c4fdb7805f29d",
+          "normalnext.cth": "8a457dd3adefbc222fafa00df316fced58907741d48b7760c616e10327332e6e",
+          "research.cth": "cd136605eabdca823e89a8b63d0696f494e92dbaf74e8e6b3777621864e31d95",
+          "researchnext.cth": "49fab391f8aaf88d005fc649613e4d9491b6a2bbcccba39eadbba840bbef67f2",
+          "tenrounds.cth": "c3cab303ab5ec00e710756a1d3c41c1b4dc4460b223ea2dec358c98eac5d4626"
+        }
+      },
+      "surfaces": [
+        "Chromium",
+        "Linux SDL",
+        "Windows SDL"
+      ]
+    },
+    "windows_original": {
+      "result": "PASS",
+      "saves": "/home/diego/review-tmp/tot-v016-validation/windows-original-input/79b7e241aebd40208ee8f78a573eb2dd/saves",
+      "output_checkpoint_comparisons": 53,
+      "foreground_guard": "retained and passed"
+    },
+    "windows_demo": {
+      "result": "PASS",
+      "saves": "/home/diego/review-tmp/tot-v016-validation/windows-demo-input/5476b598c9ec412eaffc833bdfabd2e8/saves",
+      "output_checkpoint_comparisons": 7,
+      "foreground_guard": "retained and passed"
+    }
+  },
+  "packages": {
+    "linux": {
+      "path": "/home/diego/review-tmp/tot-v016-final-linux",
+      "manifest_sha256": "6734d6d6a5261b6f787b20fcdd0a3de7ce4d28c108fb80ed054bd9d5c919ff20",
+      "verified_files": 98,
+      "binary_sha256": {
+        "totplay": "4791c351f192f6f093575cb7fdf2a78ab0cd44e2bd1135fa89ff9b14c033714b",
+        "totdesktop": "dc1d9f6dc0ebf4bd4756c903898b7bad60de9306957aa691f48610e05c026929"
+      }
+    },
+    "windows": {
+      "path": "/home/diego/review-tmp/tot-v016-final-windows",
+      "manifest_sha256": "673e69178a76490fce29408e77f24c0aa6d2d3e61bc4d86422df968092f02b53",
+      "verified_files": 100,
+      "binary_sha256": {
+        "totplay.exe": "51fd72810f67a7e3870e4bfc672c481b7d5ea9c9930d4aa404906cf02f8d025d",
+        "totdesktop.exe": "e59c70400442f20914c838ee8751eb404fe00749df7c43ff5ad60751984d1d69"
+      }
+    }
+  },
+  "owner_acceptance": {
+    "issue": 210,
+    "result": "PASS",
+    "response": "Yes, both clients and resource routes pass",
+    "scope": "Browser and desktop, original and fallback resources, movement/save-reload, panelpractice open-workspace retention and map-load Info default. Accepted feedback preview metadata is v0.15; candidate v0.16 differs in version metadata only."
+  },
+  "compatibility": {
+    "engine_checkpoints": "Version-bound: v0.15 preview saves require preserved preview binaries; no cross-version migration claimed.",
+    "same_version_demo_identity": "Presentation labels do not alter demo Rules/art identities.",
+    "original_resources": "Preferred; never shipped. Explicit invalid home does not silently switch rules.",
+    "artwork": "Separate GPL-2.0-or-later PNG/spec/source/credits pack; engine code remains MIT.",
+    "demo": "Three units, seven enabled improvement slots, twelve research choices; no full original balance or Freeciv ruleset."
+  },
+  "gates": {
+    "human_acceptance": "Passed #210",
+    "independent_review": "Not launched; owner-run exact-main-SHA review required",
+    "tag": "Not created",
+    "readiness_issue": 211
+  },
+  "preservation": "Owner hosts 8816/8820, Windows desktop, old preview packages and saves remain untouched. Candidate QA hosts are stopped after validation.",
+  "limits": [
+    "No original-save/scenario client import, native SAV export, full native UI/AI, external plugins, public hosting or complete redistributable standard rules.",
+    "No new native mechanics/format algorithm or fresh live-Wine comparison claim.",
+    "Historical native evidence and earlier Windows runs remain distinguished from new candidate checks."
+  ],
+  "windows_validation": {
+    "fresh_candidate_original": "PASS: all 53 outputs match browser/Linux",
+    "fresh_candidate_demo": "PASS: all seven outputs match browser/Linux",
+    "foreground_guard": "Retained and passed; original owner desktop was observed closed before testing.",
+    "historical_references": [
+      "client-foundation-v1.json",
+      "client-quick-start-v1.json"
+    ]
+  },
+  "source_sha256": {
+    "Cargo.toml": "8847790ac506194f9fbe3e2ca351c12ab3dc59f76b4b16d4ca20458afe43c170",
+    "Cargo.lock": "572a3b8f824f6fc57702b9832ee3efa2c94a0570339dcbf02cae139579b9eb02",
+    "crates/totui/src/client/mod.rs": "7341f1fd34a2fe572303cffaa436f20b9edbe340b4d3f0ca71f79b54fc0344cc",
+    "crates/totui/src/client/play.js": "3dc95e3d1ad01ab266fca5cd2653ed880873103cdcba0c21b6cc552585a125a2",
+    "crates/totui/data/open-demo-rules.txt": "e3660a02b7fac84b27ca2e802aac70519152983fa88e038dda6f16e2a8b611f4",
+    "tools/prepare_isotrident.py": "29e721ac2da803cbcfa8493f043800990e6abab3cbe9b1aa4495bf52b0132dbc",
+    "tools/check_client_windows.ps1": "becef8db72c9182b22879c078b2cc8af4842f8104daf9215ebbbbc84599a1239"
+  }
+}

@@ -4071,3 +4071,16 @@ presentation aliases; original rules, demo rules and checkpoint identities are
 preserved. Owner preview hosts and launchers use the rebuilt packages. Earlier
 combined foundation evidence remains a historical snapshot, not acceptance of
 these later feedback changes. Human/release gates #210/#211 remain open.
+
+## v0.16.0 candidate: resources and recovery
+
+[client-v016-candidate.json](client-v016-candidate.json) and
+[readiness](../v0.16.0-readiness.md) record the versioned candidate checks,
+rederived fixtures/campaign, package hashes and explicit owner acceptance #210.
+The campaign golden was regenerated at v0.16: only its engine-version header
+changed, with all other bytes and final fingerprint unchanged. Versioned
+checkpoints do not imply cross-version migration or native SAV import/export.
+The exact candidate SHA and independent verdict are authoritative on the live
+milestone review issue; neither human acceptance nor this evidence launches a
+review or creates a tag. Earlier client-foundation and Quick Start records
+remain historical preview validation.

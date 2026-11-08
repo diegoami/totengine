@@ -11,6 +11,9 @@ pub struct Atlas {
 }
 impl Atlas {
     pub fn load(resources: &Resources) -> Result<Self, String> {
+        if resources.isotrident.is_some() {
+            return super::isotrident::atlas(resources);
+        }
         let mut sprites = BTreeMap::new();
         let mut add = |name: String, sheet: &str, rect: Rect, mask: Mask| -> Result<(), String> {
             let image = resources

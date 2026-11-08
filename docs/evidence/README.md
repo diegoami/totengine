@@ -1,5 +1,10 @@
 # Tier-0 Evidence — first format probe results (2026-11-01)
 
+Unreleased client artwork study: [Isotrident fallback](isotrident-fallback-v1.json)
+records Freeciv 3.2.7 source/pack identities and install-free browser/Linux/Windows
+routes with seven identical checkpoints. This is artwork integration evidence,
+not original ToT rule parity; [assessment and limits](../ui/freeciv-assessment.md).
+
 Artifacts produced by `tools/totctl.py` (Python reference probe) against the local
 install `/mnt/d/games/CIVTOT`. These validate the feasibility claims in
 [../feasibility.md](../feasibility.md) with measured data.

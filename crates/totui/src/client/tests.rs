@@ -1,6 +1,256 @@
 use super::*;
 use std::fs;
 use std::sync::atomic::{AtomicU64, Ordering};
+
+fn fallback_pack(root: &std::path::Path) -> PathBuf {
+    let pack = root.join("isotrident");
+    fs::create_dir_all(&pack).unwrap();
+    let image = image::RgbaImage::from_fn(64, 64, |x, y| {
+        image::Rgba([x as u8, y as u8, 120, if x < 4 { 0 } else { 255 }])
+    });
+    image.save(pack.join("sheet.png")).unwrap();
+    let mut sprites = serde_json::Map::new();
+    for tag in [
+        "desert",
+        "plains",
+        "grassland",
+        "forest",
+        "hills",
+        "mountains",
+        "tundra",
+        "arctic",
+        "swamp",
+        "jungle",
+    ] {
+        sprites.insert(
+            format!("t.l0.{tag}1"),
+            serde_json::json!({"sheet":"sheet.png", "rect":[0,0,64,32]}),
+        );
+    }
+    for tag in ["u", "r", "l", "d"] {
+        sprites.insert(
+            format!("t.l0.coast_cell_{tag}000"),
+            serde_json::json!({"sheet":"sheet.png", "rect":[0,0,32,16]}),
+        );
+    }
+    for tag in [
+        "city.european_city_0",
+        "city.european_city_2",
+        "citizen.content_0",
+        "specialist.entertainer_0",
+        "specialist.taxman_0",
+        "specialist.scientist_0",
+        "u.settlers_Idle",
+        "u.explorer_Idle",
+        "u.phalanx_Idle",
+    ] {
+        sprites.insert(
+            tag.into(),
+            serde_json::json!({"sheet":"sheet.png", "rect":[0,0,30,30]}),
+        );
+    }
+    fs::write(pack.join("atlas.json"), serde_json::to_vec(&serde_json::json!({"version":1,"upstream":"Freeciv 3.2.7","license":"GPL-2.0-or-later","source":"test fixture","sprites":sprites})).unwrap()).unwrap();
+    pack
+}
+
+#[test]
+fn fallback_standalone_and_rules_only_reload_without_install() {
+    let root = tempfile::tempdir().unwrap();
+    let pack = fallback_pack(root.path());
+    let mut c = Client::with_fallback(String::new(), root.path().join("saves"), Some(pack.clone()));
+    button(&mut c, "Start open demo");
+    let loaded = c.loaded.as_ref().unwrap_or_else(|| panic!("{}", c.status));
+    assert_eq!(loaded.resources.profile, "Open demo + Isotrident");
+    assert_eq!(
+        loaded.resources.rules.unit_names(),
+        ["Pioneers", "Runners", "Guards"]
+    );
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::Text{text,..} if text.contains("Open demo / Isotrident"))));
+    let checkpoint = loaded.session.checkpoint(&loaded.identity);
+    let rules_path = root.path().join("rules.txt");
+    fs::write(
+        &rules_path,
+        include_bytes!("../../data/open-demo-rules.txt"),
+    )
+    .unwrap();
+    let r = Resources::load_isotrident(&pack, Some(&rules_path)).unwrap();
+    assert!(
+        HumanSession::restore(r.rules.clone(), &r.identity(), &checkpoint).is_err(),
+        "different profile must not silently replace gameplay identity"
+    );
+    let r = Resources::load_isotrident(&pack, None).unwrap();
+    assert_eq!(
+        HumanSession::restore(r.rules.clone(), &r.identity(), &checkpoint)
+            .unwrap()
+            .checkpoint(&r.identity()),
+        checkpoint
+    );
+    let c = Client::with_fallback(
+        rules_path.to_string_lossy().into(),
+        root.path().join("saves2"),
+        Some(pack.clone()),
+    );
+    assert!(c
+        .load_resources()
+        .unwrap()
+        .0
+        .profile
+        .starts_with("ToT rules"));
+    let c = Client::with_fallback(
+        root.path().join("typo").to_string_lossy().into(),
+        root.path().join("saves3"),
+        Some(pack),
+    );
+    assert!(
+        c.load_resources().is_err(),
+        "invalid explicit install must not silently start the demo"
+    );
+}
+
+#[test]
+fn fallback_rejects_invalid_manifest_and_tracks_art_changes() {
+    let root = tempfile::tempdir().unwrap();
+    let pack = fallback_pack(root.path());
+    let first = Resources::load_isotrident(&pack, None).unwrap().identity();
+    let path = pack.join("atlas.json");
+    let original = fs::read(&path).unwrap();
+    let mut manifest: serde_json::Value = serde_json::from_slice(&original).unwrap();
+    manifest["sprites"]["u.settlers_Idle"]["rect"] = serde_json::json!([0, 0, 31, 30]);
+    fs::write(&path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert_ne!(
+        first,
+        Resources::load_isotrident(&pack, None).unwrap().identity()
+    );
+    for rect in [
+        serde_json::json!([u32::MAX, 0, 30, 30]),
+        serde_json::json!([0, 0, 0, 30]),
+        serde_json::json!([0, 0, 65, 30]),
+    ] {
+        manifest["sprites"]["u.settlers_Idle"]["rect"] = rect;
+        fs::write(&path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+        assert!(Resources::load_isotrident(&pack, None).is_err());
+    }
+    manifest = serde_json::from_slice(&original).unwrap();
+    manifest["sprites"]["u.settlers_Idle"]["sheet"] = serde_json::json!("../sheet.png");
+    fs::write(&path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    assert!(Resources::load_isotrident(&pack, None).is_err());
+}
+
+#[test]
+fn installed_isotrident_pack_covers_shared_renderer() {
+    let Some(pack) = std::env::var_os("TOTENGINE_ISOTRIDENT_TEST") else {
+        return;
+    };
+    let pack = PathBuf::from(pack);
+    let r = Resources::load_isotrident(&pack, None).unwrap();
+    let a = Atlas::load(&r).unwrap();
+    assert!(r.isotrident.as_ref().unwrap().len() > 300);
+    assert_eq!(a.sprites["unit-0"].w, 64);
+    for key in [
+        "unit-0",
+        "unit-1",
+        "unit-2",
+        "terrain-10-0",
+        "city-0",
+        "citizen-0",
+    ] {
+        assert!(a.sprites[key]
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .any(|p| p[3] > 0));
+        assert!(a.sprites[key]
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .any(|p| p[3] == 0));
+    }
+    if let Some(home) = std::env::var_os("CIVTOT_HOME") {
+        let root = PathBuf::from(home).canonicalize().unwrap();
+        let path = crate::resources::client_rules_path(&root).unwrap().unwrap();
+        let fallback = Resources::load_isotrident(&pack, Some(&path)).unwrap();
+        assert_eq!(
+            fallback.rules,
+            Resources::load(&root, "Original").unwrap().rules
+        );
+        assert!(Atlas::load(&fallback)
+            .unwrap()
+            .sprites
+            .contains_key("unit-79"));
+    }
+    let scratch = tempfile::tempdir().unwrap();
+    let mut c = Client::with_fallback(String::new(), scratch.path().join("saves"), Some(pack));
+    button(&mut c, "Start open demo");
+    research(&mut c);
+    founding(&mut c);
+    button(&mut c, "Choose production");
+    for _ in 0..80 {
+        if c.choice == Some(2) {
+            break;
+        }
+        key(&mut c, "ArrowDown");
+    }
+    assert_eq!(c.choice, Some(2));
+    key(&mut c, "Enter");
+    for _ in 0..10 {
+        research(&mut c);
+        key(&mut c, "Ctrl+n");
+        if matches!(c.modal, Some(Modal::Confirm { .. })) {
+            key(&mut c, "Enter");
+        }
+        ready(&mut c);
+    }
+    research(&mut c);
+    let actor = c
+        .active
+        .expect("normal production must produce a ready guard");
+    let before = unit_at(&c, actor);
+    key(&mut c, "v");
+    let body = c
+        .frame()
+        .draws
+        .iter()
+        .find_map(|d| match d {
+            Draw::UnitSprite {
+                x,
+                y,
+                w,
+                h,
+                sprite,
+                unit,
+                ..
+            } if *unit == actor.slot => {
+                let s = &c.atlas().unwrap().sprites[sprite];
+                let (px, py) = (20..55)
+                    .find_map(|py| {
+                        (20..44)
+                            .find(|&px| s.rgba[(py * 64 + px) * 4 + 3] > 0)
+                            .map(|px| (px, py))
+                    })
+                    .unwrap();
+                Some((
+                    *x + (px as f64 + 0.5) * *w / 64.,
+                    *y + (py as f64 + 0.5) * *h / 64.,
+                ))
+            }
+            _ => None,
+        })
+        .unwrap();
+    click_point(&mut c, body);
+    assert_eq!(c.active, Some(actor));
+    assert!(c.moving);
+    assert_eq!(unit_at(&c, actor).moves_left, before.moves_left);
+    key(&mut c, "6");
+    let after = unit_at(&c, actor);
+    assert_ne!((after.x, after.y), (before.x, before.y));
+    assert!(after.moves_left < before.moves_left);
+}
 pub(super) struct Fixture(PathBuf);
 impl Fixture {
     pub(super) fn new() -> Self {

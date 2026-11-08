@@ -7,6 +7,7 @@ mod city_panels;
 pub mod desktop;
 #[cfg(any(feature = "desktop", test))]
 mod editor;
+mod isotrident;
 mod selection;
 pub mod storage;
 use crate::resources::Resources;
@@ -254,9 +255,21 @@ pub struct Client {
     pan: (f64, f64),
     zoom: f64,
     assets: String,
+    fallback_pack: Option<PathBuf>,
 }
 impl Client {
     pub fn new(home: String, saves: PathBuf) -> Self {
+        let pack = std::env::var_os("TOTENGINE_ISOTRIDENT")
+            .map(PathBuf::from)
+            .or_else(|| {
+                let path = std::env::current_exe().ok()?.parent()?.join("isotrident");
+                path.is_dir().then_some(path)
+            });
+        Self::with_fallback(home, saves, pack)
+    }
+
+    /// Explicit configuration also lets tests avoid process-global environment.
+    pub fn with_fallback(home: String, saves: PathBuf, fallback_pack: Option<PathBuf>) -> Self {
         Self {
             loaded: None,
             closed: false,
@@ -270,9 +283,7 @@ impl Client {
             size: 0,
             revision: 0,
             receipts: BTreeMap::new(),
-            status:
-                "Choose your owned ToT installation; generated Original-profile surface games only."
-                    .into(),
+            status: "Choose a ToT install, or leave blank to use the Isotrident open demo.".into(),
             modal: None,
             entry: String::new(),
             modal_id: 0,
@@ -294,7 +305,37 @@ impl Client {
             pan: (0., 0.),
             zoom: 1.,
             assets: "none".into(),
+            fallback_pack,
         }
+    }
+    fn load_resources(&self) -> Result<(Resources, Atlas), String> {
+        if !self.home.trim().is_empty() {
+            match Resources::load(Path::new(&self.home), "Original")
+                .and_then(|r| Atlas::load(&r).map(|a| (r, a)))
+            {
+                Ok(loaded) => return Ok(loaded),
+                Err(original_error) => {
+                    // An explicitly entered install must supply its own rules.
+                    // Never replace a typo/corrupt install with different balance.
+                    let root = Path::new(&self.home)
+                        .canonicalize()
+                        .map_err(|_| original_error.clone())?;
+                    let path = if root.is_file() {
+                        root.clone()
+                    } else {
+                        crate::resources::client_rules_path(&root)?.ok_or(original_error.clone())?
+                    };
+                    let pack = self.fallback_pack.as_ref().ok_or(original_error)?;
+                    let r = Resources::load_isotrident(pack, Some(&path))?;
+                    let a = Atlas::load(&r)?;
+                    return Ok((r, a));
+                }
+            }
+        }
+        let pack = self.fallback_pack.as_ref().ok_or("Isotrident artwork pack missing; install it beside the client or set TOTENGINE_ISOTRIDENT")?;
+        let r = Resources::load_isotrident(pack, None)?;
+        let a = Atlas::load(&r)?;
+        Ok((r, a))
     }
     pub fn atlas(&self) -> Option<&Atlas> {
         self.loaded.as_ref().map(|l| &l.atlas)
@@ -653,8 +694,7 @@ impl Client {
                     .seed
                     .parse::<u32>()
                     .map_err(|_| "Seed must be a whole number from 0 to 4294967295")?;
-                let resources = Resources::load(Path::new(&self.home), "Original")?;
-                let atlas = Atlas::load(&resources)?;
+                let (resources, atlas) = self.load_resources()?;
                 let identity = resources.identity();
                 let session = HumanSession::generated(
                     NewGameConfig {
@@ -968,8 +1008,7 @@ impl Client {
                             )?;
                             l.session = restored;
                         } else {
-                            let resources = Resources::load(Path::new(&self.home), "Original")?;
-                            let atlas = Atlas::load(&resources)?;
+                            let (resources, atlas) = self.load_resources()?;
                             let identity = resources.identity();
                             let session =
                                 HumanSession::restore(resources.rules.clone(), &identity, &text)?;
@@ -1630,7 +1669,12 @@ impl Client {
                 480.,
                 824.,
                 50.,
-                "Start Original surface game".into(),
+                if self.home.trim().is_empty() {
+                    "Start open demo"
+                } else {
+                    "Start Original surface game"
+                }
+                .into(),
                 Action::Start,
             );
             add(
@@ -1765,7 +1809,17 @@ impl Client {
         draws.push(text(
             16.,
             16.,
-            "ToTEngine — Original surface game",
+            self.loaded
+                .as_ref()
+                .map_or("ToTEngine — surface game", |l| {
+                    if l.resources.profile.starts_with("Open demo") {
+                        "ToTEngine — Open demo / Isotrident"
+                    } else if l.resources.isotrident.is_some() {
+                        "ToTEngine — ToT rules / Isotrident"
+                    } else {
+                        "ToTEngine — Original surface game"
+                    }
+                }),
             24,
             "#fff0b5",
         ));
@@ -1932,10 +1986,11 @@ impl Client {
             draws.push(text(
                 100.,
                 120.,
-                "Use your owned ToT install. No original assets are bundled.",
+                "ToT directory (optional). Leave blank for the open demo.",
                 20,
                 "#eee8d4",
             ));
+            draws.push(text(100., 155., "Isotrident / Freeciv artwork: GPL-2.0-or-later. Credits and editable source in the artwork pack.", 12, "#d9d4b7"));
             draws.push(text(
                 100.,
                 570.,

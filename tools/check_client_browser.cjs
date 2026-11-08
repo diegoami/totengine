@@ -204,7 +204,12 @@ fs.mkdirSync(out,{recursive:true});
  if(process.env.TOTENGINE_PANELS_FIXTURES)await require('./check_city_panels.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_PANELS_FIXTURES,saves:process.env.TOTENGINE_CLIENT_SAVES,out});
  if(process.env.TOTENGINE_CITY_OPEN_FIXTURE)await require('./check_city_open.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_CITY_OPEN_FIXTURE,saves:process.env.TOTENGINE_CLIENT_SAVES,out});
  if(process.env.TOTENGINE_CITY_OPEN_FIXTURE)await require('./check_city_gesture_races.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_CITY_OPEN_FIXTURE,saves:process.env.TOTENGINE_CLIENT_SAVES,out});
- // A second tab/reconnect reads the same decision and cannot advance the game.
- const tab=await browser.newPage({viewport:{width:1024,height:768}});await tab.goto(origin);await tab.waitForFunction(()=>typeof frame!=='undefined'&&frame);await tab.close();
+ // Human-phase reconnect preserves gameplay. The gesture-race suite above
+ // separately checks a second tab continuing an authorized opponent round.
+ const beforeReconnect=await (await page.request.get(origin+'/state')).json();
+ const tab=await browser.newPage({viewport:{width:1024,height:768}});await tab.goto(origin);await tab.waitForFunction(()=>typeof frame!=='undefined'&&frame);
+ const afterReconnect=await tab.evaluate(()=>frame);
+ if(beforeReconnect.phase==='Human'&&(afterReconnect.phase!=='Human'||JSON.stringify(afterReconnect.draws)!==JSON.stringify(beforeReconnect.draws)))throw Error('human-phase reconnect changed the pending view');
+ await tab.close();
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

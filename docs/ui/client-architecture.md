@@ -98,7 +98,10 @@ The following names are proposed, not APIs that currently exist:
   identity and legality, then records accepted gameplay through the common
   order boundary. Reject wrong/stale submissions without gameplay mutation.
   Duplicate request IDs return the recorded response without executing twice.
-  An explicit EndTurn may advance opponents; polling or reconnecting may not.
+  An explicit EndTurn authorizes an opponent round. Reading state is inert;
+  after a refresh, browser adapters may resume bounded tick POSTs for an already
+  advancing opponent round. This includes reconnects and new tabs, so lost POST
+  responses cannot strand the round. A refresh never submits another EndTurn.
 - `advance(budget)` performs bounded opponent/phase work and returns progress,
   a decision or human input. The budget limits work per call, never the human's
   thinking time. No busy loop or automatic EndTurn represents waiting.
@@ -144,8 +147,12 @@ results and render the same engine-known map with the same tile geometry.
 The browser host serves only its client, selected assets and human-session
 protocol on loopback. Mutation requests need a per-launch token, same-origin
 checks, bounded input and revision/request validation; no mutation through GET.
-Two tabs and duplicate/retried requests must not issue extra orders. A reconnect
-retrieves the pending decision; it does not restart or advance the game. Never
+Two tabs and duplicate/retried requests must not issue extra gameplay orders.
+A reconnect retrieves the pending decision. If the host is already advancing
+opponents, either tab may finish that authorized round with revision-checked
+tick POSTs; stale concurrent ticks refresh instead of executing twice. GET
+remains read-only. During human input, refresh/reconnect leaves gameplay and
+required decisions unchanged, and no tab automatically ends another turn. Never
 expose arbitrary installation paths, the spectator feed, complete world data or
 private replay/policy state as human-client endpoints. The read-only prototype's
 HTTP server is not sufficient for this mutation protocol.

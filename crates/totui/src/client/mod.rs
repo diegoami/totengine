@@ -1021,6 +1021,10 @@ impl Client {
                             });
                             self.assets = assets;
                         }
+                        if !self.city_open {
+                            self.city_panel = CityPanel::Info;
+                            self.city_panel_page = 0;
+                        }
                         self.advancing = false;
                         self.active = None;
                         self.city = None;

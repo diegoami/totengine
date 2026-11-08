@@ -137,6 +137,7 @@ async function paint(next) {
     entry.hidden = false;
     if (document.activeElement !== entry) entry.focus({ preventScroll: true });
   } else {
+    editPending = false;
     entry.hidden = true;
     entry.dataset.field = "";
     if (document.activeElement === entry) canvas.focus();
@@ -148,8 +149,9 @@ async function refresh() {
   const r = await fetch("/state");
   if (!r.ok) throw Error("Host unavailable");
   await paint(await r.json());
-  // Reconnect can be the only acknowledgement after both POST attempts fail.
-  // Resume from the observed host phase without replaying a gameplay command.
+  // Reconnect (including a new tab) can finish an already authorized opponent
+  // round after lost POST responses. GET itself remains read-only; continuation
+  // uses bounded, revision-checked tick POSTs, never another End Turn.
   resumeOpponents();
 }
 let opponentTimer = null;
@@ -172,7 +174,9 @@ async function send(input, requestId = id()) {
   if (busy) {
     if (input.type === "focus") pendingFocus = input.focused;
     else if (input.type === "double_click" && inFlight?.id === input.first_click && inFlight.input.type === "click")
-      pendingDoubleClick = input;
+      // Keep the first second-click attempt, even if invalid. A third event
+      // cannot repair its coordinates before shared validation consumes it.
+      pendingDoubleClick ??= input;
     else if (input.type === "edit") editPending = true;
     else if (input.type === "key" && !entry.hidden)
       pendingKey = { input, field: entry.dataset.field };

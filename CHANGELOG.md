@@ -5,6 +5,15 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Preserve a queued invalid browser second click against a later third event,
+  and clear obsolete pending edits so opponent reconnect recovery keeps working
+  (#176, #177).
+- Default city panels to Info after map/setup checkpoint loads while retaining
+  the panel and list page inside an open workspace (#178).
+- Document and test second tabs completing an already advancing opponent round
+  through bounded tick POSTs; reads remain inert and never end another human
+  turn (#179).
+
 ## [0.15.0] — city information panels
 
 - Add own-city Info/Support/Improvements/Happy panels to both development clients

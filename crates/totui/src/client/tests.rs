@@ -2268,6 +2268,55 @@ fn generated_city_panels_fixture() {
 }
 
 #[test]
+fn checkpoint_load_defaults_to_info_only_after_leaving_city_workspace() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    button(&mut c, "Manage city");
+    button(&mut c, "Choose production");
+    key(&mut c, "ArrowDown");
+    key(&mut c, "Enter");
+    assert!(c.view().unwrap().production_context_city.is_some());
+    let saved = c.checkpoint().unwrap();
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "budget");
+    key(&mut c, "Enter");
+    button(&mut c, "Happy");
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "budget");
+    key(&mut c, "Enter");
+    assert!(c.city_open);
+    assert_eq!(c.city_panel, CityPanel::Happy);
+    assert_eq!(c.checkpoint().unwrap(), saved);
+
+    key(&mut c, "Escape");
+    assert!(!c.city_open);
+    let before_failed_load = c.checkpoint().unwrap();
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "missing");
+    key(&mut c, "Enter");
+    assert!(matches!(c.modal, Some(Modal::Load)));
+    assert_eq!(c.city_panel, CityPanel::Happy);
+    assert_eq!(c.checkpoint().unwrap(), before_failed_load);
+    edit(&mut c, "budget");
+    key(&mut c, "Enter");
+    assert!(c.city_open, "restored budget reopens its city");
+    assert_eq!(c.city_panel, CityPanel::Info);
+    assert_eq!(c.city_panel_page, 0);
+    assert_eq!(c.checkpoint().unwrap(), saved);
+
+    let mut fresh = f.client();
+    button(&mut fresh, "Load engine checkpoint");
+    edit(&mut fresh, "budget");
+    key(&mut fresh, "Enter");
+    assert!(fresh.city_open);
+    assert_eq!(fresh.city_panel, CityPanel::Info);
+    assert_eq!(fresh.city_panel_page, 0);
+    assert_eq!(fresh.checkpoint().unwrap(), saved);
+}
+
+#[test]
 fn city_double_click_is_bound_to_an_inert_own_city_click() {
     let f = Fixture::new();
     let mut c = f.client();
@@ -2539,6 +2588,27 @@ fn city_list_previous_uses_the_visible_page_after_a_boundary_sale() {
     button(&mut c, "Next list");
     assert_eq!(c.city_panel_page, 2);
     assert_eq!(c.city_panel_pages(), 3);
+    let saved = c.checkpoint().unwrap();
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "paged");
+    key(&mut c, "Enter");
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "paged");
+    key(&mut c, "Enter");
+    assert_eq!(c.city_panel, CityPanel::Improvements);
+    assert_eq!(c.city_panel_page, 2, "open workspace retains list page");
+    key(&mut c, "Escape");
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "paged");
+    key(&mut c, "Enter");
+    assert!(!c.city_open);
+    button(&mut c, "Manage city");
+    assert_eq!(c.city_panel, CityPanel::Info);
+    assert_eq!(c.city_panel_page, 0, "closed workspace discards old page");
+    assert_eq!(c.checkpoint().unwrap(), saved);
+    button(&mut c, "Improvements");
+    button(&mut c, "Next list");
+    button(&mut c, "Next list");
     let sale = c
         .buttons()
         .into_iter()

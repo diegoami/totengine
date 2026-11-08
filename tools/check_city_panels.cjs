@@ -31,4 +31,16 @@ exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out})=>{
   if(!fs.readFileSync(path.join(saves,name+'reload.cth')).equals(fs.readFileSync(path.join(fixture,route.name+'-after.cth'))))throw Error('panel reload checkpoint differs '+route.name);
  }
  await key('Escape');
+ // #178: a different session loaded from the map defaults to Info, including
+ // when its saved production budget immediately reopens the city workspace.
+ await load('panelbudgettabs');
+ if(!(await state()).draws.some(d=>d.kind==='text'&&d.x===744&&d.y===193&&d.text==='Info'))throw Error('map load retained old city panel');
+ await key('Control+s');await save('panelnewsession');
+ if(!fs.readFileSync(path.join(saves,'panelnewsession.cth')).equals(fs.readFileSync(path.join(fixture,'budgettabs-before.cth'))))throw Error('Info default changed loaded gameplay');
+ await click('Happy');
+ await load('panelnewsession');
+ if(!(await state()).draws.some(d=>d.kind==='text'&&d.x===744&&d.y===193&&d.text==='Happy'))throw Error('open workspace lost its panel on load');
+ await key('Control+s');await save('panelnewsessionreload');
+ if(!fs.readFileSync(path.join(saves,'panelnewsessionreload.cth')).equals(fs.readFileSync(path.join(fixture,'budgettabs-before.cth'))))throw Error('open workspace load changed gameplay');
+ await key('Escape');
 };

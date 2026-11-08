@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Add an optional, separately licensed Isotrident artwork pack to both clients,
+  retaining original-resource precedence; blank setup can run the small authored
+  Open demo. Keep Freeciv game code/rules out of the MIT engine (#181).
+- Reorganize mission/backlog and named planning milestones around ToT scenario
+  compatibility, AI choice, observation, author tools, recording and optional
+  queues/rally points (#191). No new release or complete-client claim.
 - Preserve a queued invalid browser second click against a later third event,
   and clear obsolete pending edits so opponent reconnect recovery keeps working
   (#176, #177).

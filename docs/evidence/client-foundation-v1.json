@@ -1,0 +1,190 @@
+{
+  "schema": 1,
+  "date": "2026-11-08",
+  "milestone": 14,
+  "status": "Awaiting owner human acceptance; no version/candidate/review assigned",
+  "integration": {
+    "production_code_commit": "7ad1e9302566836ca643dd62c12a102a938b0f53",
+    "windows_checker_commit": "89c7c1d0045420571ed980e00696dc58b56a9b6d",
+    "integrated_main_commit": "71f7d9fb4e20db250348ddac3b3da2021c5e1124",
+    "runtime_crates_and_cargo_identical_to_tested_packages": true,
+    "merged_prs": {
+      "181": "d165aebb4d40c178168bfc2d733407a84af860b4",
+      "191": "72ad5f352dbb2e5b492314f3b7649e8f12bcbd4c",
+      "182": "71f7d9fb4e20db250348ddac3b3da2021c5e1124"
+    },
+    "note": "Windows checker-only commit follows packaged production build; docs/main merge changes no crate/Cargo content. PR 182 was briefly auto-closed by closing-keyword wording in the planning merge, reopened, then explicitly merged at the recorded SHA."
+  },
+  "source_sha256": {
+    "Cargo.toml": "6dbfcb51d58cb1486400f78214cf1b268cd9b7131b7341b87b5de9e3a4ad917a",
+    "Cargo.lock": "919a0ee0873a3364f0fa087f0b33f2665a2936bdb67e10b37df036cd0caadf2e",
+    "crates/totui/src/client/mod.rs": "37eb324bdec637348221f2a934fe53d51a763322cf8da053f19aab332e843d80",
+    "crates/totui/src/client/play.js": "3dc95e3d1ad01ab266fca5cd2653ed880873103cdcba0c21b6cc552585a125a2",
+    "crates/totui/src/client/isotrident.rs": "777b41972b1e2ad9124d317346d9abcf8884abd4ceab11fb886f20b05b0f1756",
+    "crates/totui/src/client/atlas.rs": "4019b4e8c5e19b35c1fc308a004eb03b01c5d32feb517ab91a3e224bfa2d9dfd",
+    "crates/totui/src/resources.rs": "531247a00d6307ed0698646200122c9631ee34e6665e9a42b0278f31ba9cad6d",
+    "tools/check_client_windows.ps1": "627b786af7f54b1f3161658eebcc16116bc68c207d12b7989c388cb39a232d70",
+    "tools/check_city_gesture_races.cjs": "ae3f490147096294759fa316f463fe961bfada284cdcb35a1c427da9be72d65c"
+  },
+  "combined_validation": {
+    "desktop_shared_tests": {
+      "passed": 34,
+      "ignored": 6,
+      "installed_resources": true
+    },
+    "real_pack_opt_in_test": {
+      "passed": 1,
+      "env": "TOTENGINE_ISOTRIDENT_TEST",
+      "scope": "Pack load, Original rules/all unit sprites, normally produced unit selection and movement"
+    },
+    "pack_preparer_tests": {
+      "passed": 2
+    },
+    "github_at_windows_checker_commit": {
+      "ci": "PASS",
+      "ci_run": 42481646094,
+      "generated_autoplay": "PASS",
+      "autoplay_run": 42481646016
+    },
+    "checks_inherited_not_freshly_rederived_here": [
+      "Full install-backed workspace/goldens/default+desktop strict Clippy from the two feature validations; see their retained evidence.",
+      "Native mechanic/format evidence is unchanged; no new format, AI or original-rules parity claim."
+    ],
+    "github_integrated_main": {
+      "ci": "PASS",
+      "ci_run": 42481973316,
+      "event": "push",
+      "commit": "71f7d9fb4e20db250348ddac3b3da2021c5e1124"
+    }
+  },
+  "actual_packaged_input": {
+    "original_resources": {
+      "surfaces": [
+        "Chromium",
+        "Linux SDL/XTest",
+        "Windows SDL/SendInput"
+      ],
+      "result": "PASS",
+      "saves": {
+        "chromium": "/home/diego/review-tmp/tot-foundation-original-browser/saves",
+        "linux": "/home/diego/review-tmp/tot-client-linux-e6a3arnh/saves",
+        "windows": "/home/diego/review-tmp/tot-foundation-windows-original-input/370c1c8bc32642a8940caa6bf1ede031/saves"
+      },
+      "cross_surface_new_output_checkpoints": 26,
+      "excludes": "Copied input fixtures",
+      "output_sha256": {
+        "citydouble.cth": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+        "founding.cth": "bc750d9cb199036d5d7012310dd019cc34a894894f38fc4e02cdf99cc9b02a07",
+        "foundingnext.cth": "b53a7779a5e728c267b5ffc110054f1b9a9b5c72ea0d13b1e3473c072b3cb6de",
+        "normal.cth": "b53a7779a5e728c267b5ffc110054f1b9a9b5c72ea0d13b1e3473c072b3cb6de",
+        "normalnext.cth": "fd26beb444313722f5dea810160e9f5053aaeaf573ae37dbbaab17387c3d41a2",
+        "panelbudgetnavafter.cth": "7f47e7710b3e230e8952538f95fa7b206f85cd563880598ec5a6c70ba1eaaae5",
+        "panelbudgetnavreload.cth": "7f47e7710b3e230e8952538f95fa7b206f85cd563880598ec5a6c70ba1eaaae5",
+        "panelbudgettabsafter.cth": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+        "panelbudgettabsreload.cth": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+        "panelentertainerafter.cth": "36c7ce01822353fa0be19c8e7c82e561470c87cd9a9b8c5974dcf777f42d341c",
+        "panelentertainerreload.cth": "36c7ce01822353fa0be19c8e7c82e561470c87cd9a9b8c5974dcf777f42d341c",
+        "panelnavigationafter.cth": "6fdd97756e4c79ce4748574555f1b6e69d3cbd4cdf42e3585979f967a303d8d5",
+        "panelnavigationreload.cth": "6fdd97756e4c79ce4748574555f1b6e69d3cbd4cdf42e3585979f967a303d8d5",
+        "panelnewsession.cth": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+        "panelnewsessionreload.cth": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+        "paneloverviewafter.cth": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+        "paneloverviewreload.cth": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+        "panelsaleafter.cth": "7cbaceae7e2f332423a2199e1aacae4e307a29bf5c1f4a1cff100363ece7aa6a",
+        "panelsalecancelafter.cth": "a3636b40bef3b2fd39ab29d598f14cc9ac43fcc2e4b18ca065e91e70e985ce91",
+        "panelsalecancelreload.cth": "a3636b40bef3b2fd39ab29d598f14cc9ac43fcc2e4b18ca065e91e70e985ce91",
+        "panelsalereload.cth": "7cbaceae7e2f332423a2199e1aacae4e307a29bf5c1f4a1cff100363ece7aa6a",
+        "panelspecialistsafter.cth": "d172eabd31d73351a128e1ddb5df4aafed1a19c377b4457170834edb760dcfe7",
+        "panelspecialistsreload.cth": "d172eabd31d73351a128e1ddb5df4aafed1a19c377b4457170834edb760dcfe7",
+        "research.cth": "280f20cf8453c5227d80a18c2e22b747964f23d0cb6aa2a9a74e0e793d332625",
+        "researchnext.cth": "bc750d9cb199036d5d7012310dd019cc34a894894f38fc4e02cdf99cc9b02a07",
+        "tenrounds.cth": "5aa303e51e78670023485dfa8cf9a772c9339409340bbeb3126ea3ed18b473bf"
+      },
+      "windows_foreground_guard": "Retained and passed; new Info/open-workspace Happy routes included"
+    },
+    "open_demo": {
+      "surfaces": [
+        "Chromium",
+        "Linux SDL/XTest",
+        "Windows SDL/SendInput"
+      ],
+      "result": "PASS",
+      "saves": {
+        "chromium": "/home/diego/review-tmp/tot-foundation-demo-browser/saves",
+        "linux": "/home/diego/review-tmp/tot-client-linux-4mhvaz3t/saves",
+        "windows": "/home/diego/review-tmp/tot-foundation-windows-demo-input/b16b01e860da4657b9628ec311e9a6fa/saves"
+      },
+      "cross_surface_output_checkpoints": 7,
+      "output_sha256": {
+        "founding.cth": "048ce2af50dca6f8c33d122cedf057ffcf251a284997c21c577dee535a5f068a",
+        "foundingnext.cth": "fd513ac5a761ef120f42ad350d2106618921961d3e6dea535796c7381b0d05f2",
+        "normal.cth": "fd513ac5a761ef120f42ad350d2106618921961d3e6dea535796c7381b0d05f2",
+        "normalnext.cth": "38b420d7fb5b07b80d1f94617888c80c4a8fab68b6a0113a09b1be579330f4aa",
+        "research.cth": "28998b2aa379276e8461ee0d8834472c224abf4bbab6440a73c6b9aebb75a3d9",
+        "researchnext.cth": "048ce2af50dca6f8c33d122cedf057ffcf251a284997c21c577dee535a5f068a",
+        "tenrounds.cth": "3ffb7309c703a08e09a65e971455b7dbdf2896ca7b076f95a8edd5dece0c5053"
+      },
+      "scope": "Small authored demo, ten rounds plus research/founding/normal continuation; not full standard ToT rules."
+    },
+    "browser_races": {
+      "result": "PASS",
+      "cases": [
+        "busy-new-key",
+        "busy-new-click",
+        "invalid-second-third",
+        "held-first-invalid-second-third",
+        "opponent-double-post-tick",
+        "canceled-edit-failed-tick-reconnect",
+        "opponent-second-tab"
+      ],
+      "checkpoint_writes": 8,
+      "checkpoint_comparisons": 7
+    }
+  },
+  "packages": {
+    "linux": {
+      "path": "/home/diego/review-tmp/tot-client-foundation-linux-7ad1e93",
+      "manifest_sha256": "d615640c61fe86367cb0b8e819af62589c7f01e9b144357b3275648246beccb3",
+      "verified_payload_files": 98,
+      "binaries_sha256": {
+        "totplay": "4a0b69d6ac4f50320c5f93c94534f50958a8bf4b0bcfefd5f7294b3780cf3e1f",
+        "totdesktop": "5b302dd1d33978c2c0c8c6f4535472591d3a63b69368eb045bb1b0bb852da6a3"
+      }
+    },
+    "windows": {
+      "path": "/home/diego/review-tmp/tot-client-foundation-windows-7ad1e93",
+      "manifest_sha256": "e579d21f537644de6e83f1fafd4bee3531a928a4c0856a0cd2b4c710c65db90c",
+      "verified_payload_files": 100,
+      "binaries_sha256": {
+        "totplay.exe": "30efad5a8db8e36256091347c739987e8248a1942d38e0c174ddc3cd21ae5600",
+        "totdesktop.exe": "36da3f1b63ea13daab5a4224d2f7192c493458c5991501eb952c9b41dab1cf70"
+      }
+    }
+  },
+  "owner_acceptance": {
+    "issue": 210,
+    "readiness_issue": 211,
+    "status": "PENDING",
+    "owner_reply": "I\u2019ll test them later",
+    "preview_folder": "/home/diego/review-tmp/totengine-owner-client-foundation",
+    "original_browser": "http://127.0.0.1:8816",
+    "demo_browser": "http://127.0.0.1:8820",
+    "windows_launchers": [
+      "launch-original.cmd",
+      "launch-demo.cmd"
+    ],
+    "note": "Fresh separate saves; panelpractice exists only in Original-mode save folders. No human acceptance inferred from automation or prior visual approval."
+  },
+  "cleanup": {
+    "qa_hosts_8817_8818": "Stopped",
+    "qa_native_apps_displays": "Closed by their checkers",
+    "owner_hosts_8816_8820": "Left running intentionally",
+    "older_owner_previews_games": "Preserved"
+  },
+  "limits": [
+    "No new released tag, numeric version, candidate freeze or independent milestone verdict.",
+    "Optional art has known coast/style/animation limits from isotrident-fallback-v1.json.",
+    "No full redistributable standard rules, public hosting, scenario import, AI port or feature-parity completion.",
+    "Original-game resources remain private; packages contain only separately licensed fallback media and code/notices."
+  ]
+}

@@ -26,10 +26,11 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 
 ## Near-term selection
 
-1. Complete milestone 14 integration/validation: Isotrident [#181](https://github.com/diegoami/totengine/pull/181)
-   has merged; client fixes [#182](https://github.com/diegoami/totengine/pull/182), which
-   addresses #176–#179 and is validating against the merged art. Keep release
-   gates and evidence explicit; no new tag or complete-client claim is implied.
+1. Complete milestone 14 acceptance/readiness: artwork #181, recovery #182 and
+   planning #191 are merged and combined packaged checks pass. Human acceptance
+   [#210](https://github.com/diegoami/totengine/issues/210) is deferred by the owner;
+   [#211](https://github.com/diegoami/totengine/issues/211) retains candidate/review
+   preparation. [Evidence/previews](docs/client-foundation-readiness.md).
 2. Select the next bounded both-client package from
    [client milestones](docs/ui/client-milestones.md). Science/rates/government and
    original-save/scenario entry are scope candidates; finish reference/API gaps

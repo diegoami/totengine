@@ -2,6 +2,96 @@ use super::*;
 use std::fs;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+// Reproducible fixtures explicitly select a seed; interactive clients are random.
+fn seeded_client(home: String, saves: PathBuf) -> Client {
+    let mut client = Client::new(home, saves);
+    client.seed = "7".into();
+    client
+}
+fn seeded_fallback(home: String, saves: PathBuf, pack: Option<PathBuf>) -> Client {
+    let mut client = Client::with_fallback(home, saves, pack);
+    client.seed = "7".into();
+    client
+}
+
+#[test]
+fn random_setup_and_quick_start_keep_explicit_games_reproducible() {
+    let f = Fixture::new();
+    let mut seeds = std::collections::BTreeSet::new();
+    for _ in 0..16 {
+        let c = Client::new(String::new(), f.0.join("unused"));
+        assert!(c.seed.parse::<u32>().is_ok());
+        let seed = c.seed.clone();
+        c.frame();
+        c.frame();
+        assert_eq!(c.seed, seed, "refresh cannot reroll setup");
+        seeds.insert(seed);
+    }
+    assert!(
+        seeds.len() > 1,
+        "interactive starts cannot use a fixed seed"
+    );
+
+    let mut quick = f.client();
+    quick.seed = "not-a-number".into();
+    button(&mut quick, "Quick Start");
+    assert!(quick.loaded.is_some(), "{}", quick.status);
+    assert!(quick.seed.parse::<u32>().is_ok());
+    let mut explicit = f.client();
+    explicit.seed = quick.seed.clone();
+    button(&mut explicit, "Start Original");
+    assert_eq!(quick.checkpoint(), explicit.checkpoint());
+    assert_eq!(
+        quick.tech_name(0),
+        "Advance 0",
+        "owned rules keep their labels"
+    );
+    let saved = quick.checkpoint();
+    let seed = quick.seed.clone();
+    quick.action(Action::NewGame).unwrap();
+    key(&mut quick, "Escape");
+    assert_eq!(quick.checkpoint(), saved);
+    assert_eq!(quick.seed, seed, "cancel keeps the current setup");
+    quick.action(Action::NewGame).unwrap();
+    key(&mut quick, "Enter");
+    assert!(quick.loaded.is_none());
+    assert!(quick.seed.parse::<u32>().is_ok());
+}
+
+#[test]
+fn demo_research_names_preserve_rules_and_old_checkpoint_identity() {
+    let root = tempfile::tempdir().unwrap();
+    let pack = fallback_pack(root.path());
+    let saves = root.path().join("saves");
+    let mut c = seeded_fallback(String::new(), saves.clone(), Some(pack.clone()));
+    button(&mut c, "Start open demo");
+    let before = c.checkpoint().unwrap();
+    let names = c.current_choices();
+    assert_eq!(names.len(), 12);
+    assert_eq!(names[0], (0, "Agriculture".into()));
+    assert!(names.iter().all(|(_, name)| !name.starts_with("Advance ")));
+    assert_eq!(
+        c.loaded.as_ref().unwrap().resources.rules.tech_defs()[0].name,
+        "Advance 0"
+    );
+    c.frame();
+    assert_eq!(c.checkpoint().unwrap(), before);
+    storage::save(&saves, "existing-demo", &before).unwrap();
+    let mut restored = Client::with_fallback(String::new(), saves, Some(pack));
+    button(&mut restored, "Load engine checkpoint");
+    edit(&mut restored, "existing-demo");
+    key(&mut restored, "Enter");
+    assert_eq!(restored.checkpoint().unwrap(), before);
+    assert_eq!(restored.current_choices(), names);
+    key(&mut restored, "ArrowDown");
+    key(&mut restored, "Enter");
+    assert!(restored
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::Text{text,..} if text == "Topic: Agriculture")));
+}
+
 fn fallback_pack(root: &std::path::Path) -> PathBuf {
     let pack = root.join("isotrident");
     fs::create_dir_all(&pack).unwrap();
@@ -57,7 +147,7 @@ fn fallback_pack(root: &std::path::Path) -> PathBuf {
 fn fallback_standalone_and_rules_only_reload_without_install() {
     let root = tempfile::tempdir().unwrap();
     let pack = fallback_pack(root.path());
-    let mut c = Client::with_fallback(String::new(), root.path().join("saves"), Some(pack.clone()));
+    let mut c = seeded_fallback(String::new(), root.path().join("saves"), Some(pack.clone()));
     button(&mut c, "Start open demo");
     let loaded = c.loaded.as_ref().unwrap_or_else(|| panic!("{}", c.status));
     assert_eq!(loaded.resources.profile, "Open demo + Isotrident");
@@ -89,7 +179,7 @@ fn fallback_standalone_and_rules_only_reload_without_install() {
             .checkpoint(&r.identity()),
         checkpoint
     );
-    let c = Client::with_fallback(
+    let c = seeded_fallback(
         rules_path.to_string_lossy().into(),
         root.path().join("saves2"),
         Some(pack.clone()),
@@ -100,7 +190,7 @@ fn fallback_standalone_and_rules_only_reload_without_install() {
         .0
         .profile
         .starts_with("ToT rules"));
-    let c = Client::with_fallback(
+    let c = seeded_fallback(
         root.path().join("typo").to_string_lossy().into(),
         root.path().join("saves3"),
         Some(pack),
@@ -185,7 +275,7 @@ fn installed_isotrident_pack_covers_shared_renderer() {
             .contains_key("unit-79"));
     }
     let scratch = tempfile::tempdir().unwrap();
-    let mut c = Client::with_fallback(String::new(), scratch.path().join("saves"), Some(pack));
+    let mut c = seeded_fallback(String::new(), scratch.path().join("saves"), Some(pack));
     button(&mut c, "Start open demo");
     research(&mut c);
     founding(&mut c);
@@ -277,7 +367,7 @@ impl Fixture {
         Self(p)
     }
     pub(super) fn client(&self) -> Client {
-        Client::new(self.0.to_str().unwrap().into(), self.0.join("saves"))
+        seeded_client(self.0.to_str().unwrap().into(), self.0.join("saves"))
     }
 }
 impl Drop for Fixture {
@@ -560,7 +650,7 @@ fn generated_population_five_city_fixture() {
     let home = std::env::var("CIVTOT_HOME").expect("set CIVTOT_HOME");
     let out = PathBuf::from(std::env::var("TOTENGINE_CITIZENS_OUT").expect("set private output"));
     fs::create_dir_all(&out).unwrap();
-    let mut c = Client::new(home, out.clone());
+    let mut c = seeded_client(home, out.clone());
     for _ in 0..3 {
         button(&mut c, "Civilizations");
     }
@@ -802,7 +892,7 @@ fn generated_land_encounter_through_shared_ui() {
         "../../../../docs/evidence/client-input-route-v3.json"
     ))
     .unwrap();
-    let mut c = Client::new(home, out.clone());
+    let mut c = seeded_client(home, out.clone());
     let mut battle = false;
     let mut capture = false;
     let mut direction = String::new();
@@ -1266,7 +1356,7 @@ fn generated_warrior_mouse_fixture() {
     let before = fs::read_to_string(std::env::var("TOTENGINE_MOVEMENT_SOURCE").unwrap()).unwrap();
     let out = PathBuf::from(std::env::var("TOTENGINE_MOVEMENT_OUT").unwrap());
     fs::create_dir_all(&out).unwrap();
-    let mut c = Client::new(home, out.clone());
+    let mut c = seeded_client(home, out.clone());
     storage::save(&out, "source", &before).unwrap();
     button(&mut c, "Load engine checkpoint");
     edit(&mut c, "source");
@@ -1596,7 +1686,7 @@ fn generated_selection_fixture() {
     let home = std::env::var("CIVTOT_HOME").unwrap();
     let out = PathBuf::from(std::env::var("TOTENGINE_SELECTION_OUT").unwrap());
     fs::create_dir_all(&out).unwrap();
-    let mut c = Client::new(home, out.clone());
+    let mut c = seeded_client(home, out.clone());
     build_pair(&mut c);
     let units = c.view().unwrap().units;
     assert_eq!(units.len(), 2);
@@ -1681,7 +1771,7 @@ fn generated_city_production_fixture() {
     let home = std::env::var("CIVTOT_HOME").expect("set CIVTOT_HOME");
     let out = PathBuf::from(std::env::var("TOTENGINE_PRODUCTION_OUT").expect("set private output"));
     fs::create_dir_all(&out).unwrap();
-    let mut c = Client::new(home, out.clone());
+    let mut c = seeded_client(home, out.clone());
     for _ in 0..3 {
         button(&mut c, "Civilizations");
     }
@@ -2033,7 +2123,7 @@ fn generated_city_panels_fixture() {
         PathBuf::from(std::env::var("TOTENGINE_PANEL_INPUTS").expect("private v0.15 fixture root"));
     let out = PathBuf::from(std::env::var("TOTENGINE_PANELS_OUT").expect("private output"));
     fs::create_dir_all(&out).unwrap();
-    let mut c = Client::new(std::env::var("CIVTOT_HOME").unwrap(), out.clone());
+    let mut c = seeded_client(std::env::var("CIVTOT_HOME").unwrap(), out.clone());
     let mut routes = Vec::new();
     fn load_city(c: &mut Client, source: &Path) {
         let name = format!("source{}", storage::nonce().unwrap());

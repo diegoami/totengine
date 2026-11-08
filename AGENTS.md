@@ -65,6 +65,27 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+Owner follow-up fixes, 2026-11-08: branch `fix/client-demo-labels-random-seed`
+adds a prominent Quick Start, random setup/confirmed-new-game seeds, editable
+fixed-seed starts, and presentation-only Open demo technology names/current
+topic. Underlying demo Rules/resource identities are unchanged; the owner's
+active browser demo was checkpointed and restored after host update.
+Shared/desktop tests (36 pass), legacy-demo restoration, real-pack integration,
+strict desktop Clippy and actual Chromium Quick Start/labels/old-save routes
+pass. The existing checkpoint input checkers now explicitly type seed 7.
+Updated owner hosts remain 8816/8820, backed by
+`review-tmp/tot-client-quick-start-linux`. Windows rebuilt package is
+`review-tmp/tot-client-quick-start-windows`; it was opened/activated at owner
+request (PID 1868). Windows launch helper uses direct ProcessStartInfo, as in
+validated tests; earlier ShellExecute reopen was canceled by Windows.
+Original owner saves remain in `review-tmp/totengine-owner-client-foundation`;
+launchers point to the rebuilt package. Browser update backup is
+`browser-demo-saves/before-ui-update-cb13618e.cth`. Refresh the demo browser tab
+if it still has a frame revision from the previous host. #213 tracks these
+feedback fixes inside milestone 14; #210/#211 remain open, with no human pass or
+release claimed. The previous combined foundation record below is historical
+validation before these feedback changes.
+
 Milestone 14 integration complete, 2026-11-08: #181/#191/#182 are merged;
 main runtime baseline `71f7d9fb4e20db250348ddac3b3da2021c5e1124` passed push CI.
 34 shared/desktop tests, real-pack integration and pack preparer checks pass.

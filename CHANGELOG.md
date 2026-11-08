@@ -5,6 +5,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Add a prominent Quick Start button and fresh random setup/new-game seeds,
+  retaining editable fixed seeds and deterministic checkpoints.
+- Give Open demo research readable presentation names and show the current
+  topic without changing existing rules/checkpoint identities.
 - Add an optional, separately licensed Isotrident artwork pack to both clients,
   retaining original-resource precedence; blank setup can run the small authored
   Open demo. Keep Freeciv game code/rules out of the MIT engine (#181).

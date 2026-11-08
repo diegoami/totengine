@@ -151,6 +151,9 @@ def run():
                 def save_dialog(name):
                     write(name);wait(lambda s:s.get("entry") and s["entry"]["value"]==name);key("Return")
                 wait(lambda s:s["phase"]=="Setup")
+                click_button("Generated seed")
+                for _ in range(len(scene()["entry"]["value"])): key("BackSpace")
+                write("7")
                 button(start_label)
                 wait(lambda s:has(s,"Choose research explicitly"));button("Save pending choice");save_dialog("research");research()
                 key("b");wait(lambda s:has(s,"Name your city"));button("Save pending choice");save_dialog("founding")

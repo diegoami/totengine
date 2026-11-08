@@ -6,6 +6,20 @@ check. [Acceptance #210](https://github.com/diegoami/totengine/issues/210) and
 [readiness #211](https://github.com/diegoami/totengine/issues/211) remain open.
 No numeric release version, frozen candidate or independent review is assigned.
 
+## Owner feedback update: Quick Start and demo names
+
+Follow-up [#213](https://github.com/diegoami/totengine/issues/213) adds the owner's
+requested prominent Quick Start, random editable setup/new-game seeds and
+readable demo technology labels/current topic. The current owner hosts and
+Windows launchers use rebuilt `review-tmp/tot-client-quick-start-{linux,windows}`
+packages. The active browser demo was saved and restored; refresh a tab retaining
+a previous host revision. Existing original/demo saves remain compatible.
+[Feedback validation](evidence/client-quick-start-v1.json) records the shared/
+Chromium checks and seven unchanged fixed-seed Linux demo checkpoints. The
+combined-package results below describe the earlier integration baseline; they
+are not a fresh full three-surface run of these feedback changes. #210/#211
+remain open and require the final candidate's actual acceptance/checks.
+
 ## Integrated scope
 
 - Optional Isotrident artwork/resource delivery in both clients, retaining
@@ -19,7 +33,7 @@ No numeric release version, frozen candidate or independent review is assigned.
 All three PRs are merged. Integrated main at
 `71f7d9fb4e20db250348ddac3b3da2021c5e1124` passed
 [push CI](https://github.com/diegoami/totengine/actions/runs/42481973316).
-The preview packages contain production code from
+The initial combined preview packages contained production code from
 `7ad1e9302566836ca643dd62c12a102a938b0f53`. All crate/Cargo files are byte-identical
 between those refs. Commit `89c7c1d0045420571ed980e00696dc58b56a9b6d` adds only
 Windows checker coverage; it passed CI/autoplay before the explicit recovery

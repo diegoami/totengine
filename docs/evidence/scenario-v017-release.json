@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "version": "0.17.0",
+  "date": "2026-11-08",
+  "reviewed_and_tagged_sha": "70dea8d7e61e74125c9faa027bf7a6abb7cbdaff",
+  "review_issue": 224,
+  "review_comment_url": "https://github.com/diegoami/totengine/issues/224#issuecomment-6727971701",
+  "reviewer": "Kimi K3.1 Pro",
+  "verdict": "AGREE",
+  "rounds": 3,
+  "release_url": "https://github.com/diegoami/totengine/releases/tag/v0.17.0",
+  "release_id": 438570012,
+  "published_at": "2026-11-08T22:37:44Z",
+  "release_kind": "Source/CLI tooling and conditional contract; no new packaged gameplay path or GUI input claim.",
+  "reviewed_full_report_sha256": "0ff9067fd2bc07685bde1688bb70030faecdef72be02312a0d312120f7832df4",
+  "reviewed_corpus": {
+    "entries": 5,
+    "report_available": 3,
+    "incomplete": 2,
+    "simulation_admitted": 0
+  },
+  "validation": "Independent third-round review reproduced 265 release-mode Rust tests with desktop, seven campaigns including 32 seeds per policy, 43 Python tests, full install-backed goldens, complete make test, formatting, strict default/desktop Clippy and actual-pack integration. All previous findings verified fixed.",
+  "new_client_archives": [],
+  "packaged_client_baseline": "v0.16.0",
+  "closed_issues": [
+    192,
+    193,
+    224
+  ],
+  "closed_milestone": 15,
+  "non_blocking_review_followups": [
+    235
+  ],
+  "ci_limit": "Inspector tests run explicitly and via local make; direct GitHub CI wiring remains open under #221.",
+  "preservation": "No owner preview/game modified. Checkpoints remain version-bound; preserve older binaries/games.",
+  "tag": "Fetched and verified at exact reviewed SHA; subsequent main follow-ups are outside this release."
+}

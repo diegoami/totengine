@@ -58,6 +58,8 @@ in every phase. Inside TEXT, directive/other-terminator text stays literal;
 inside LOCATIONS, a non-coordinate line remains a malformed location.
 After `@ENDEVENTS`, scanning continues under the same budgets: non-comment
 content is diagnosed but never counted as an active event/trigger/action.
+Non-directive tail text always uses the fixed `<unrecognized>` diagnostic token,
+including angle-bracketed prose; it is never accepted as an internal placeholder.
 Blank/comment tails are allowed. This is lexical inspection policy, not a
 claim about the original game's tolerance for trailing content.
 Location fields accept an optional minus and up to ten ASCII decimal digits;

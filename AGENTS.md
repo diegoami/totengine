@@ -65,36 +65,36 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
-Milestone 15 / v0.17.0 remains UNRELEASED. Kimi K3.1 Pro BLOCK on #224,
-round two, reviewed `51732991e4577a538f0a12b0492ade0b464581a1`. All six
-first-round fixes #225–#230 were verified. New #232 MUST-FIX (stray payload
-terminators) and #233 follow-up (ignored trailing content after ENDEVENTS) are
-addressed in `review-tmp/totengine-v017-review-r2`, branch `fix/v017-review-r2`.
-Thirty inspector tests cover the phase/payload and trailing-content/budget
-matrix; all 43 Python tests and refreshed reports are recorded in
-`docs/evidence/scenario-v017-candidate.json`. No third-round approval is claimed.
+**v0.17.0 is RELEASED** at exactly reviewed/tagged SHA
+`70dea8d7e61e74125c9faa027bf7a6abb7cbdaff` (Kimi K3.1 Pro AGREE on #224,
+round three). Milestone 15 and #192/#193/#224 are closed. The reviewer
+reproduced 265 Rust tests with desktop, seven campaigns (32 seeds/policy),
+43 Python tests, full make/goldens/fmt/strict Clippy and actual-pack integration.
+This is a source/CLI tooling release, without new client archives, GUI input
+or native-gameplay acceptance. v0.16 remains the packaged-client baseline.
+Release record: `docs/evidence/scenario-v017-release.json`; readiness:
+`docs/v0.17.0-readiness.md`. Keep the release tag at the exact approved SHA.
 
-The second-round reviewer reproduced 265 install-backed Rust tests in both
-debug/release with desktop, all seven campaigns (32 seeds/policy), 39 then-current
-Python tests, full make test/goldens/fmt/strict Clippy and actual-pack integration.
-No Rust/workspace/runtime files change in the third candidate; don't present
-retained checks as freshly rerun. No GUI/native-gameplay claim is made.
+All first/second-round findings #225–#230/#232–#233 were independently verified
+fixed. Third-round non-blocking #235 is addressed after the tag: trailing prose
+uses a fixed diagnostic placeholder; its full/compact regression fails on the
+released scanner. Current compact corpus metadata is refreshed for the producer
+hash only; input identities, counts, diagnostics and support remain unchanged.
+The release/candidate evidence retains the reviewed report hash separately.
 
-#192/#193 await the release gate. Inspector/conditional classic-surface-032-v1
-contract activate no native importer. Three corpus entries have report-available
-inspection; Midgard/location and Roman Civil Wars/trailing-content diagnostics
-make those two incomplete, not proven invalid in the original game. All five
-remain unadmitted for simulation/human continuation; #197/#198 retain explicit
-phase/movement/fog/event/dependency/initializer blockers. Docs:
-`docs/scenario-inspection.md`, `docs/scenario-entry-contract.md`,
-`docs/evidence/scenario-inventory-v1.json`, `docs/v0.17.0-readiness.md`.
+The inspector and conditional classic-surface-032-v1 contract activate no native
+importer. Three corpus entries have report-available inspection;
+Midgard/location and Roman Civil Wars/trailing-content diagnostics make two
+incomplete, not proven invalid in the original game. All five remain unadmitted
+for runtime continuation; #197/#198 retain phase/movement/fog/event/dependency/
+initializer blockers. #221 CI wiring remains open: OAuth credentials lack
+workflow scope; inspector tests run explicitly and via make, not current CI.
 
-#221 CI wiring remains open: available OAuth credentials lack workflow scope;
-inspector tests run explicitly and via make test, not current CI. After fixes
-land, update #224 to exact main SHA and PRINT the third-round review prompt per
-`docs/milestone-review.md`; the owner launches it. Do not tag or launch review.
-If a third round is BLOCK, the owner decides. Preserve owner games/previews and
-old version-bound binaries/checkpoints; workspace metadata remains v0.17.
+Next planned package is milestone 16, science/rates/government on both clients
+(#194–#196), version unassigned. Finish reference/API scope before implementation;
+new human routes need both-client acceptance and owner-launched independent
+review. Preserve all owner previews/games and old version-bound binaries;
+workspace metadata remains v0.17. No full-client or full-AI gate is cleared.
 
 v0.16.0 is RELEASED at exactly reviewed/tagged SHA
 `2f37ab49a56dbcb2091977162518604ae3b6ea0b` (Kimi K3.1 Pro AGREE on #216,
@@ -109,8 +109,8 @@ across all three. Reviewer repeated Chromium/Linux input and verified retained
 Windows outputs/guards; do not claim reviewer-rerun Windows or fresh live-Wine.
 Records: `docs/v0.16.0-readiness.md`, `docs/evidence/client-v016-release.json`.
 
-Post-v0.16 fixes #217–#219 were merged through #220 and enter the unreleased
-v0.17 candidate. They clarify campaign/AI dependencies and correct three sprite
+Post-v0.16 fixes #217–#219 were merged through #220 and shipped in
+v0.17.0. They clarify campaign/AI dependencies and correct three sprite
 aliases, with a distinct-pixel regression. Do not move v0.16 or replace its assets.
 
 Preserve owner browser hosts 8816/8820 and all old previews/games. Launchers and
@@ -136,7 +136,8 @@ were integrated through their separate PRs #181/#182.
 Original resources remain the main product requirement; approved Isotrident
 fallback stays optional. The follow-up backlog-to-milestone request created named packages 14–29 and
 bounded stories #192–#209, recorded in `docs/milestones.md`. Milestone 14 is
-released as v0.16.0; future packages 15–29 retain unassigned versions/dates.
+released as v0.16.0 and milestone 15 as v0.17.0; future packages 16–29
+retain unassigned versions/dates.
 Original historical milestones are unchanged. Full-AI/plugin gates still depend on complete clients, including
 additional original-feature slices beyond this planning list. No implementation,
 public hosting or licensing change was launched by this reorganization.

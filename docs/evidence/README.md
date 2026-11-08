@@ -4139,4 +4139,13 @@ producer/full-report hashes and incomplete inspection statuses are refreshed.
 Round-two #232/#233 reject stray terminators in every non-payload phase and
 inspect inactive trailing content under the existing budgets. Active event
 counts stay unchanged; Roman Civil Wars now has a trailing-content diagnostic.
-The third candidate requires owner-launched review; no AGREE/tag is claimed.
+Kimi K3.1 Pro agreed in round three at exactly
+`70dea8d7e61e74125c9faa027bf7a6abb7cbdaff`, now tagged/published as v0.17.0.
+[Release record](scenario-v017-release.json) retains the exact reviewed report
+hash and validation. No new client package or native gameplay claim follows.
+
+Post-tag #235 suppresses angle-bracketed non-directive tail prose with a fixed
+placeholder. Its full/compact regression fails on the released scanner and
+passes with the fix. Current compact producer/full-report hashes are refreshed;
+all five corpus entries (including diagnostics/counts/support) remain identical
+to the release. The release/candidate artifacts retain the historical hashes.

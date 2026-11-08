@@ -6,8 +6,9 @@ Owner requested milestone alignment with the reorganized backlog, 2026-11-08.
 
 The original thirteen historical milestones are unchanged. Milestone 14 is now
 closed with released v0.16.0 after owner acceptance and independent AGREE.
-Milestone 15 now prepares v0.17.0 as a tooling/contract candidate; remaining
-packages (16–29) retain unassigned versions/dates. Exact release/review state
+Milestone 15 is closed with released v0.17.0 after third-round AGREE #224,
+shipping inspection and a conditional entry contract with zero runtime admissions.
+Remaining packages (16–29) retain unassigned versions/dates. Exact release/review state
 comes from the live queue.
 This is a planning horizon, not a fixed count of remaining releases or a claim
 of complete client delivery after the listed UI slices.
@@ -40,8 +41,9 @@ of complete client delivery after the listed UI slices.
    Owner acceptance #210 and independent AGREE #216 passed; v0.16.0 is released
    at exactly the reviewed SHA and milestone 14 is closed.
    See [the release record](v0.16.0-readiness.md).
-2. Admission (15) and science/government (16) can be scoped from current
-   references. Classic entry (17) waits for the admitted profile/contract; the
+2. Inspection/entry boundary (15) is released; it grants no runtime admission.
+   Science/government (16) is the next planned client package, scoped from current
+   references. Classic entry (17) waits for an actually admitted profile; the
    headless/observer/recording chain then validates that same supported profile.
 3. Diplomacy (18) and reports/help (19) are bounded first slices. Advanced orders,
    remaining native screens, sound, sea/air/cargo, endgame, Lua and multiple-map

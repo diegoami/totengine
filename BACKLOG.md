@@ -29,14 +29,15 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 1. v0.16.0 / milestone 14 is released after explicit both-client owner acceptance
    #210 and independent AGREE #216. Post-tag follow-ups #217–#219 are fixed on
    main without moving the tag. [Release record](docs/v0.16.0-readiness.md).
-   Current milestone 15 prepares the v0.17.0 tooling/contract candidate, with
+   Milestone 15 is released as v0.17.0 after third-round independent AGREE #224, with
    [inspection](docs/scenario-inspection.md) and
    the [conditional first-entry contract](docs/scenario-entry-contract.md), not
    playable imports. None of the reference corpus is admitted for full simulation.
-2. Select the next bounded both-client package from
-   [client milestones](docs/ui/client-milestones.md). Science/rates/government and
-   original-save/scenario entry are scope candidates; finish reference/API gaps
-   before assigning a release. Complete remaining original features in further
+2. Next is milestone 16, science/rates/government on both clients (#194–#196),
+   from [client milestones](docs/ui/client-milestones.md). Finish reference/API
+   gaps before assigning a release. Original-save/scenario entry remains a
+   separate package with its conditional import gates. Complete remaining original
+   features in further
    coherent slices, not a single optimistic full-client milestone.
 3. Scope the scenario capability corpus/import dependencies (#183), headless
    manifest/reporting (#184), observation (#185) and recording foundation (#186)
@@ -48,7 +49,8 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 
 Named planning milestones 14–29 now carry bounded stories from this backlog;
 [the package map](docs/milestones.md) records their dependencies and AI gates.
-Milestone 14 is released as v0.16.0, after owner acceptance and independent review. No future versions, calendar schedule or fixed remaining release
+Milestones 14/15 are released as v0.16.0/v0.17.0 after their applicable acceptance
+and independent review. No future versions, calendar schedule or fixed remaining release
 count are assigned. Umbrella programs link to their child milestones and remain open
 across slices; an unassigned program is not an abandoned target. Older T0–T4/RG identifiers remain useful history; they no
 longer impose the old sequence or defer all authoring/QoL to T4.
@@ -89,8 +91,8 @@ the owner or applicable instructions request it.
 
 ## Releases and standing work
 
-Latest released tag: **v0.16.0**, client resources and recovery.
-[Changelog](CHANGELOG.md) and [release readiness](docs/v0.16.0-readiness.md)
+Latest released tag: **v0.17.0**, scenario inspection and entry boundary.
+[Changelog](CHANGELOG.md) and [release readiness](docs/v0.17.0-readiness.md)
 record earlier slices; [GitHub milestones](https://github.com/diegoami/totengine/milestones)
 and issues carry current state.
 

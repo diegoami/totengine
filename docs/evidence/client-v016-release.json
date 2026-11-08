@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "version": "0.16.0",
+  "date": "2026-11-08",
+  "reviewed_and_tagged_sha": "2f37ab49a56dbcb2091977162518604ae3b6ea0b",
+  "review_issue": 216,
+  "reviewer": "Kimi K3.1 Pro",
+  "verdict": "AGREE",
+  "rounds": 1,
+  "release_url": "https://github.com/diegoami/totengine/releases/tag/v0.16.0",
+  "archive_sha256": {
+    "SHA256SUMS": "a19e4418425ab819840c34c4bdb50e97823a2402d5524185ead371e707e9fde4",
+    "totengine-v0.16.0-linux-x86_64.tar.gz": "977c697dd6ab7a63d0018d087da68f9f233aa9826a9fa13ff43c895364422978",
+    "totengine-v0.16.0-windows-x86_64.zip": "b1df401df1cfc6ef56a96f54dda1519cc863c6e3f4dfcc5eea72efc4575b6efd"
+  },
+  "package_manifests": {
+    "linux": {
+      "candidate_manifest_sha256": "6734d6d6a5261b6f787b20fcdd0a3de7ce4d28c108fb80ed054bd9d5c919ff20",
+      "release_manifest_sha256": "86a97108106c5598c67cc931bdc70f03cc6bf2b28b4a56b9501a5629b707ad68",
+      "payload_files": 99,
+      "reviewed_payloads_unchanged": true,
+      "additive_file": "RELEASE.md"
+    },
+    "windows": {
+      "candidate_manifest_sha256": "673e69178a76490fce29408e77f24c0aa6d2d3e61bc4d86422df968092f02b53",
+      "release_manifest_sha256": "0914864c8c0b217c6af7734ba54995e9fbc94b41fea825262db63c69baf7f435",
+      "payload_files": 101,
+      "reviewed_payloads_unchanged": true,
+      "additive_file": "RELEASE.md"
+    }
+  },
+  "validation": "Reviewer reproduced 264 install-backed Rust tests, thirteen Python, all six fixture authors, full goldens/fmt/default+desktop Clippy, seven campaigns including 32 seeds/policy, actual packaged Chromium/Linux routes and all retained package/source/scenario hashes. Reviewer verified retained Windows 53/7 outputs and foreground guards but did not rerun Windows input; main-session candidate Windows input had passed.",
+  "owner_acceptance": {
+    "issue": 210,
+    "result": "PASS",
+    "scope": "Both clients and original/fallback resource routes, unit movement/save-reload, panelpractice; not full-client or full-demo-rules acceptance."
+  },
+  "non_blocking_review_followups": [
+    217,
+    218,
+    219
+  ],
+  "release_payload": "All reviewed candidate files/binaries unchanged; additive RELEASE.md records approval/limits, with refreshed package inventory. Both archives/checksums downloaded and verified byte-for-byte; every archived payload hash verified.",
+  "preservation": "All owner previews/games and v0.15-metadata Quick Start packages retained. Engine checkpoints remain version-bound.",
+  "tag": "Created exactly at reviewed SHA; later main follow-up fixes are not included in this release."
+}

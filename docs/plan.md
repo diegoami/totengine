@@ -30,11 +30,10 @@ T0–T4 schedule; historical evidence and released tags remain unchanged.
 
 ## Baseline and remaining work
 
-Latest release: **v0.15.0**, independently reviewed at
-`948b0d2b94d22315190c664340d080062629c8ea`. See
-[readiness](v0.15.0-readiness.md) and [release evidence](evidence/client-v015-release.json).
-Milestone 14 now prepares v0.16.0 after owner acceptance; the release still
-requires independent owner-launched review.
+Latest release: **v0.16.0**, independently reviewed at
+`2f37ab49a56dbcb2091977162518604ae3b6ea0b`. See
+[readiness](v0.16.0-readiness.md) and [release evidence](evidence/client-v016-release.json).
+Milestone 14 is closed after owner acceptance and first-round independent AGREE.
 
 | Capability | Available foundation | Remaining target |
 | --- | --- | --- |
@@ -45,10 +44,10 @@ requires independent owner-launched review.
 | Scenario tools | Format inspection/diffs and an installed private corpus | Capability reports, client import, event/extension coverage, run diagnostics, safe editing/export and creation assistance |
 | Recordings | Canonical order logs, observer NDJSON and replay checkpoints | Unified session manifests, view/annotation streams, recording controls/recovery, then audio/video capture |
 
-Unreleased artwork/recovery and planning PRs #181/#182/#191 are integrated.
-Combined packaged Chromium/Linux/Windows routes and CI pass. Milestone 14 is
-preparing v0.16.0 after owner acceptance #210, with readiness #211 retaining the
-independent-review gate. [Candidate record](v0.16.0-readiness.md). Roman Civil Wars is
+Artwork/recovery, setup feedback and planning PRs #181/#182/#191/#212/#214/#215
+shipped in v0.16.0. Combined packaged Chromium/Linux/Windows routes and CI pass;
+owner acceptance #210 and independent review #216 are complete.
+[Release record](v0.16.0-readiness.md). Roman Civil Wars is
 installed and statically parsed; no playable/native acceptance is claimed.
 
 ## Workstreams and live programs

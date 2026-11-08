@@ -12,9 +12,9 @@ Inputs: [design proposal](client-design.md), [screen contracts](screen-contracts
 and [reference inventory/gaps](discovery.md). The [implementation audit and
 architecture recommendation](client-architecture.md) identifies the driver,
 visibility, resource and persistence gaps and six concrete prerequisite stories
-for both clients. The complete original-AI program
-#117 and pluggable AIs remain behind completion of the playable client. Neither
-is a dependency of the UI work below. Existing built-in opponents are sufficient
+for both clients. These UI packages do not depend on completing original-AI
+program #117 or pluggable AIs. Full-AI/plugin implementation instead waits for
+complete playable-client delivery. Existing built-in opponents are sufficient
 for the human-play acceptance routes.
 
 ## Live planning milestones — 2026-11-08

@@ -144,6 +144,43 @@ fn fallback_pack(root: &std::path::Path) -> PathBuf {
 }
 
 #[test]
+fn stock_unit_aliases_render_the_intended_art_instead_of_neutral_markers() {
+    let root = tempfile::tempdir().unwrap();
+    let pack = fallback_pack(root.path());
+    let path = pack.join("atlas.json");
+    let mut manifest: serde_json::Value =
+        serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    for (i, tag) in ["elephants", "stealth_fighter", "stealth_bomber"]
+        .iter()
+        .enumerate()
+    {
+        // Distinct opaque swatches identify the actual semantic source selected.
+        manifest["sprites"][format!("u.{tag}_Idle")] = serde_json::json!({
+            "sheet":"sheet.png", "rect":[10 * (i + 1), 4, 1, 1]
+        });
+    }
+    fs::write(path, serde_json::to_vec(&manifest).unwrap()).unwrap();
+    let rules = root.path().join("Rules.txt");
+    fs::write(
+        &rules,
+        "@UNITS\nElephant\nStlth Ftr.\nStlth Bmbr.\nUnmapped unit\n",
+    )
+    .unwrap();
+    let resources = Resources::load_isotrident(&pack, Some(&rules)).unwrap();
+    let atlas = Atlas::load(&resources).unwrap();
+    let neutral = &atlas.sprites["unit-3"].rgba;
+    for i in 0..3 {
+        let sprite = &atlas.sprites[&format!("unit-{i}")];
+        let center = ((32 * sprite.w + 32) * 4) as usize;
+        assert_eq!(
+            &sprite.rgba[center..center + 4],
+            &[(10 * (i + 1)) as u8, 4, 120, 255]
+        );
+        assert_ne!(&sprite.rgba, neutral);
+    }
+}
+
+#[test]
 fn fallback_standalone_and_rules_only_reload_without_install() {
     let root = tempfile::tempdir().unwrap();
     let pack = fallback_pack(root.path());

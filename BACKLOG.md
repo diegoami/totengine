@@ -26,12 +26,9 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 
 ## Near-term selection
 
-1. Complete milestone 14 acceptance/readiness: artwork #181, recovery #182 and
-   planning #191 are merged and combined packaged checks pass. Human acceptance
-   [#210](https://github.com/diegoami/totengine/issues/210) is explicitly accepted
-   for both clients/resources; [#211](https://github.com/diegoami/totengine/issues/211)
-   prepares the v0.16.0 candidate and independent review.
-   [Candidate record](docs/v0.16.0-readiness.md).
+1. v0.16.0 / milestone 14 is released after explicit both-client owner acceptance
+   #210 and independent AGREE #216. Finish the separate post-tag follow-ups
+   #217–#219 without moving the tag. [Release record](docs/v0.16.0-readiness.md).
 2. Select the next bounded both-client package from
    [client milestones](docs/ui/client-milestones.md). Science/rates/government and
    original-save/scenario entry are scope candidates; finish reference/API gaps
@@ -47,8 +44,7 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 
 Named planning milestones 14–29 now carry bounded stories from this backlog;
 [the package map](docs/milestones.md) records their dependencies and AI gates.
-Only milestone 14 now has the proposed v0.16.0 release version, after owner
-acceptance. No future versions, calendar schedule or fixed remaining release
+Milestone 14 is released as v0.16.0, after owner acceptance and independent review. No future versions, calendar schedule or fixed remaining release
 count are assigned. Umbrella programs link to their child milestones and remain open
 across slices; an unassigned program is not an abandoned target. Older T0–T4/RG identifiers remain useful history; they no
 longer impose the old sequence or defer all authoring/QoL to T4.
@@ -89,8 +85,8 @@ the owner or applicable instructions request it.
 
 ## Releases and standing work
 
-Latest released tag: **v0.15.0**, both clients with city information panels.
-[Changelog](CHANGELOG.md) and [release readiness](docs/v0.15.0-readiness.md)
+Latest released tag: **v0.16.0**, client resources and recovery.
+[Changelog](CHANGELOG.md) and [release readiness](docs/v0.16.0-readiness.md)
 record earlier slices; [GitHub milestones](https://github.com/diegoami/totengine/milestones)
 and issues carry current state.
 

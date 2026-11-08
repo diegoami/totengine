@@ -56,6 +56,24 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+Resumed 2026-11-08: [PR #182](https://github.com/diegoami/totengine/pull/182)
+implements the post-v0.15 follow-ups #176–#179 on the separate
+`fix/client-input-recovery` branch, head
+`194b955335560593d58d0a988fc4c272b7401140`, based directly on main.
+Worktree: `/home/diego/review-tmp/totengine-client-input-recovery`.
+It preserves the first queued gesture attempt, clears obsolete pending edits,
+resets city panels on map/setup loads while retaining open-workspace state,
+and documents/tests second tabs completing already advancing opponents.
+Local validation passed: 259 install-backed Rust tests including desktop,
+11 Python tests, full goldens/fmt/strict default+desktop Clippy, actual Chromium
+and Linux SDL routes with 26 newly written checkpoints identical across both.
+Windows native input and human acceptance were not rerun. Evidence:
+`docs/evidence/client-input-recovery-v1.json` on the fix branch. PR #182 is open;
+GitHub CI was pending when this note was written. #176–#179 stay open until it
+lands. Owned QA host 8815 and isolated native app/display are stopped; owner
+previews/saves are untouched. PR #181 and the source-assessment branch below
+remain separate; no release, milestone review or AI port was launched.
+
 Session close, 2026-11-08: [PR #181](https://github.com/diegoami/totengine/pull/181)
 (Isotrident fallback, head `de0bca17a4a1fa1df963af79203d130a67ebed9a`)
 is **open; all four GitHub checks passed** (Rust, Python, autoplay, GitGuardian).

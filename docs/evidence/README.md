@@ -4102,7 +4102,7 @@ probe counts, lexical macro requirements and implementation gaps. Generate it:
 
 ```sh
 CIVTOT_HOME=/path/to/CIVTOT python3 tools/scenario_inventory.py --compact --out /tmp/scenario-inventory.json
-# Exit 1 is expected: Midgard has a lexical location diagnostic; report is retained.
+# Exit 1 is expected: Midgard/location and Roman/trailing-content diagnostics; report is retained.
 cmp docs/evidence/scenario-inventory-v1.json /tmp/scenario-inventory.json
 ```
 
@@ -4110,9 +4110,9 @@ Omit --compact for all line diagnostics; the compact view retains exact full
 report size/hash, totals and eight examples. No original bodies are committed.
 [Inspector/schema](../scenario-inspection.md) and
 [first entry contract](../scenario-entry-contract.md) keep parsing distinct from
-runtime admission. Reports retain all five entries; four have report-available
-inspection and Midgard is incomplete for a lexical location diagnostic (not
-proof the native file is invalid). None is admitted for
+runtime admission. Reports retain all five entries; three have report-available
+inspection. Midgard/location and Roman Civil Wars/trailing-content diagnostics
+make those two incomplete, without proving native invalidity. None is admitted for
 full simulation/human entry. Original events include compound/endgame behavior;
 FallRome/Roman technology effects remain skipped, Midgard framing/maps remain
 partial, and Warring States requires unimplemented Lua/extended state. These are
@@ -4124,9 +4124,10 @@ extraction, including CR/LF and Latin-1 line handling.
 
 [scenario-v017-candidate.json](scenario-v017-candidate.json) and
 [readiness](../v0.17.0-readiness.md) separate the read-only tool/conditional
-contract from runtime admission. Twenty-six inspector + thirteen existing Python tests,
-265 install-backed release-mode Rust tests, full unchanged format goldens,
-strict Clippy and 32 seeds/policy pass. No new GUI-package or native-gameplay
+contract from runtime admission. Current thirty inspector + thirteen existing
+Python tests and full unchanged install goldens pass. The second-round reviewer
+reproduced 265 Rust tests in both debug/release, strict Clippy and 32 seeds/policy;
+these runtime files are unchanged in the third candidate. No new GUI-package or native-gameplay
 claim follows. The rederived campaign changes only its engine-version header;
 old owner binaries/saves remain preserved. Direct new-suite CI wiring requires
 workflow-scoped credentials (#221); make test runs the suite locally.
@@ -4134,4 +4135,8 @@ Round-one #224 findings #225–#230 are fixed: structural failures affect entry
 status/exit, huge location tokens cannot abort reports, audit metadata is
 validated, misplaced directives are visible and scanner work/vocabularies have
 entry/shared budgets. Re-derived corpus counts/input hashes are unchanged;
-producer/full-report hashes and Midgard's inspection status are refreshed.
+producer/full-report hashes and incomplete inspection statuses are refreshed.
+Round-two #232/#233 reject stray terminators in every non-payload phase and
+inspect inactive trailing content under the existing budgets. Active event
+counts stay unchanged; Roman Civil Wars now has a trailing-content diagnostic.
+The third candidate requires owner-launched review; no AGREE/tag is claimed.

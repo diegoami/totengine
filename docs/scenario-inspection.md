@@ -53,6 +53,13 @@ vocabularies; it does not disguise incomplete scans as complete inspection.
 Structural macro diagnostics (unclosed/misplaced blocks, unterminated payloads,
 malformed locations) and scan-limit failures also mark the entry's inspection
 incomplete and yield exit 1. Unsupported-but-parseable semantics alone do not.
+Reserved `ENDTEXT`/`ENDLOCATIONS` outside their payloads are structural errors
+in every phase. Inside TEXT, directive/other-terminator text stays literal;
+inside LOCATIONS, a non-coordinate line remains a malformed location.
+After `@ENDEVENTS`, scanning continues under the same budgets: non-comment
+content is diagnosed but never counted as an active event/trigger/action.
+Blank/comment tails are allowed. This is lexical inspection policy, not a
+claim about the original game's tolerance for trailing content.
 Location fields accept an optional minus and up to ten ASCII decimal digits;
 this lexical safety bound is not evidence of the native coordinate range.
 
@@ -111,7 +118,7 @@ coverage. The snapshot probe helpers preserve the old CLI/walk golden outputs.
 | --- | --- | --- |
 | Original standard `Ph_Auto2.SAV` | 0x0032; 38 units, 10 cities; one event block | Compound RECEIVEDTECHNOLOGY/RANDOMTURN condition and endgame/AVI actions are outside the modeled subset. Numeric year is raw, not a universal scenario date formatter. |
 | FallRome | 0x0032; 710 units, 146 cities; 64 event blocks | Two GIVETECHNOLOGY tokens emit effects that are skipped by application; placement/presentation/hooks remain partial. |
-| Roman Civil Wars | 0x0032; 618 units, 159 cities; 258 event blocks | Delay/flag/randomized placement, technology removal, aggression/audio and author objectives need missing semantics. Installation/hash success is not play acceptance. |
+| Roman Civil Wars | 0x0032; 618 units, 159 cities; 258 event blocks; inspection incomplete | Non-comment content follows ENDEVENTS; it is diagnosed, not counted as active logic. This lexical policy is not native-invalidity evidence. Delay/flag/randomized placement, technology removal, aggression/audio and author objectives need missing semantics. Installation/hash success is not play acceptance. |
 | Midgard | 0x0032; surface framing only, 12 transport records; 151 event blocks; inspection incomplete | A location line fails the inspector's lexical grammar; this is not proof that the native input is invalid. Classic unit/city counts are not located by this probe. Declared multiple maps and terrain/flag/endgame semantics block continuation. No active-map count is inferred from the header. |
 | Warring States | 0x0033 partial layout; five declared Lua files | Extended saves and Lua execution are not admitted. Absence of populated Lua state in a pristine file would not prove that Lua is unnecessary. |
 

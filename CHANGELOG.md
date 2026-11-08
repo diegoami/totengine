@@ -13,7 +13,8 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   simulation is admitted by inspection (#192, #193).
 - Report malformed event structures as incomplete inspection; bound coordinate
   tokens and scanner work, retain reports on input errors, and validate audit
-  metadata and directive placement (#225–#230).
+  metadata and directive placement (#225–#230). Reject stray payload terminators
+  and diagnose bounded trailing content after ENDEVENTS (#232, #233).
 - Correct fallback sprites for Elephant, Stlth Ftr. and Stlth Bmbr.; clarify
   campaign-version and client/AI dependency prose (#217–#219).
 

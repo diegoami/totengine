@@ -73,6 +73,82 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(report['entries'][0]['support']['simulation'], 'not_admitted')
 
+    def test_stray_payload_terminators_fail_in_every_nonpayload_phase(self):
+        valid = (self.home/'Events.txt').read_text()
+        contexts = [
+            '{token}\n'+valid,
+            '@IF\n{token}\n@THEN\n@ENDIF',
+            valid.replace('turn=1', 'turn=1\n{token}'),
+            valid.replace('CHANGEMONEY', '{token}\nCHANGEMONEY'),
+            valid+'{token}\n',
+            valid+'@ENDEVENTS\n{token}\n',
+        ]
+        for token, reason in [('ENDTEXT', 'stray_text_end'), ('ENDLOCATIONS', 'stray_location_end')]:
+            for context in contexts:
+                with self.subTest(token=token, context=context):
+                    (self.home/'Events.txt').write_text(context.format(token=token))
+                    code, report = self.cli_report()
+                    self.assertEqual(code, 1)
+                    self.assertEqual(report['summary']['inspection_errors'], 1)
+                    entry = report['entries'][0]
+                    self.assertEqual(entry['support']['inspection'], 'incomplete')
+                    self.assertIn(reason, entry['diagnostics'][0]['reasons'])
+                    self.assertNotIn(token, entry['macro']['triggers'])
+                    self.assertNotIn(token, entry['macro']['actions'])
+
+    def test_payload_terminators_inside_text_are_content_and_matching_ends_close(self):
+        src = '@IF\nTURN\nturn=1\n@THEN\nTEXT\nENDLOCATIONS\n@ENDEVENTS\nENDTEXT\nCREATEUNIT\nLOCATIONS\n1,2,0\nENDLOCATIONS\n@ENDIF'
+        (self.home/'Events.txt').write_text(src)
+        code, report = self.cli_report()
+        self.assertEqual(code, 0)
+        macro = report['entries'][0]['macro']
+        self.assertEqual(macro['actions'], {'CREATEUNIT': 1, 'TEXT': 1})
+        self.assertFalse(any(d['code'] in inv.STRUCTURAL_DIAGNOSTICS for d in macro['diagnostics']))
+        # An incorrect terminator cannot close a location payload.
+        d = inv.scan_events(src.replace('1,2,0', 'ENDTEXT'), self.baseline)
+        self.assertIn('malformed_location', {d['code'] for d in d['diagnostics']})
+
+    def test_trailing_event_content_is_diagnosed_without_adding_active_counts(self):
+        valid = (self.home/'Events.txt').read_text()
+        base = '@BEGINEVENTS\n'+valid+'@ENDEVENTS\n'
+        for prefix in ['@BEGINEVENTS\n@ENDEVENTS\n', base]:
+            for trailing in ['@BEGINEVENTS\n'+valid, 'private trailing prose\n', '@ENDEVENTS\n']:
+                with self.subTest(prefix=prefix, trailing=trailing):
+                    (self.home/'Events.txt').write_text(prefix+trailing)
+                    code, report = self.cli_report()
+                    self.assertEqual(code, 1)
+                    entry = report['entries'][0]
+                    self.assertEqual(entry['support']['inspection'], 'incomplete')
+                    self.assertIn('content_after_endevents', entry['diagnostics'][0]['reasons'])
+                    macro = entry['macro']
+                    self.assertEqual(macro['event_blocks'], 1 if prefix == base else 0)
+                    self.assertEqual(macro['actions'], {'CHANGEMONEY': 1} if prefix == base else {})
+                    self.assertTrue(macro['scan_complete'])
+                    self.assertNotIn('private trailing prose', json.dumps(report))
+        (self.home/'Events.txt').write_text(base+'\n; trailing comment\n')
+        self.assertEqual(self.cli_report()[0], 0)
+
+    def test_trailing_content_uses_the_same_entry_and_report_work_limits(self):
+        source = '@BEGINEVENTS\n@ENDEVENTS\n'+'UNKNOWN\n'*(inv.SCAN_ENTRY_LIMITS['diagnostics']+10)
+        (self.home/'Events.txt').write_text(source)
+        self.manifest['entries'] = [self.entry | {'id': 'entry-'+str(i), 'first_entry_candidate': False} for i in range(3)]
+        code, report = self.cli_report()
+        self.assertEqual(code, 1)
+        macros = [e['macro'] for e in report['entries']]
+        self.assertEqual(macros[0]['overflow'], {'scope': 'entry', 'category': 'diagnostics'})
+        self.assertEqual(macros[2]['overflow'], {'scope': 'report', 'category': 'diagnostics'})
+        for macro in macros:
+            self.assertEqual(macro['event_blocks'], 0)
+            self.assertEqual(macro['actions'], {})
+            self.assertFalse(macro['scan_complete'])
+        for limits, patch_values, category in [
+            (inv.SCAN_ENTRY_LIMITS, {'lines': 10}, 'entry'),
+            (inv.SCAN_REPORT_LIMITS, {'lines': 10}, 'report'),
+        ]:
+            with patch.dict(limits, patch_values):
+                d = inv.scan_events('@ENDEVENTS\n'+'; comment\n'*20, self.baseline)
+                self.assertEqual(d['overflow'], {'scope': category, 'category': 'lines'})
+
     def test_oversized_coordinates_leave_other_entries_reportable(self):
         valid = (self.home/'Events.txt').read_text()
         (self.home/'valid.txt').write_text(valid)

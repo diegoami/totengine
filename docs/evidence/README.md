@@ -4061,3 +4061,13 @@ retains all seven request-race cases. [Readiness and owner previews](../client-f
 keep automation separate from human acceptance: the owner deferred #210, so no
 new version, frozen candidate, independent review or release is claimed. The
 older individual-feature records remain historical validation snapshots.
+
+## Client setup feedback: Quick Start, random seeds and demo labels
+
+[client-quick-start-v1.json](client-quick-start-v1.json) records #213's actual
+Quick Start/research/legacy-save browser route, shared-client checks and seven
+fixed-seed demo checkpoints unchanged in Linux desktop input. Demo names are
+presentation aliases; original rules, demo rules and checkpoint identities are
+preserved. Owner preview hosts and launchers use the rebuilt packages. Earlier
+combined foundation evidence remains a historical snapshot, not acceptance of
+these later feedback changes. Human/release gates #210/#211 remain open.

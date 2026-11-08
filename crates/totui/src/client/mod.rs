@@ -23,6 +23,28 @@ use city_panels::CityPanel;
 
 pub const WIDTH: u32 = 1024;
 pub const HEIGHT: u32 = 768;
+// Presentation labels for the authored demo, kept separate from its versioned
+// rules so existing demo checkpoints retain their original identity.
+const DEMO_TECH_NAMES: [&str; 12] = [
+    "Agriculture",
+    "Masonry",
+    "Metalworking",
+    "Writing",
+    "Pottery",
+    "Navigation",
+    "Commerce",
+    "Mathematics",
+    "Engineering",
+    "Medicine",
+    "Education",
+    "Astronomy",
+];
+
+fn random_seed() -> Result<String, String> {
+    let mut bytes = [0; 4];
+    getrandom::fill(&mut bytes).map_err(|e| format!("Cannot generate a random seed: {e}"))?;
+    Ok(u32::from_le_bytes(bytes).to_string())
+}
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Input {
@@ -149,6 +171,7 @@ enum Modal {
 }
 #[derive(Clone)]
 enum Action {
+    QuickStart,
     Start,
     Civs,
     Human,
@@ -270,20 +293,27 @@ impl Client {
 
     /// Explicit configuration also lets tests avoid process-global environment.
     pub fn with_fallback(home: String, saves: PathBuf, fallback_pack: Option<PathBuf>) -> Self {
+        let (seed, status) = match random_seed() {
+            Ok(seed) => (
+                seed,
+                "Choose a ToT install, or leave blank to use the Isotrident open demo.".into(),
+            ),
+            Err(why) => (String::new(), format!("{why}. Enter a seed manually.")),
+        };
         Self {
             loaded: None,
             closed: false,
             advancing: false,
             saves,
             home,
-            seed: "7".into(),
+            seed,
             civs: 5,
             human: 1,
             difficulty: 2,
             size: 0,
             revision: 0,
             receipts: BTreeMap::new(),
-            status: "Choose a ToT install, or leave blank to use the Isotrident open demo.".into(),
+            status,
             modal: None,
             entry: String::new(),
             modal_id: 0,
@@ -689,6 +719,10 @@ impl Client {
             }
             Action::Difficulty => self.difficulty = (self.difficulty + 1) % 6,
             Action::Size => self.size = (self.size + 1) % 3,
+            Action::QuickStart => {
+                self.seed = random_seed()?;
+                self.action(Action::Start)?;
+            }
             Action::Start => {
                 let seed = self
                     .seed
@@ -726,8 +760,10 @@ impl Client {
                 self.schedule_unit(None, true);
                 self.center();
                 self.required();
-                self.status =
-                    "Generated game ready. Required choices are never selected for you.".into();
+                self.status = format!(
+                    "Generated game ready. Seed: {}. Required choices are never selected for you.",
+                    self.seed
+                );
             }
             Action::Work => {
                 if self.view().is_none_or(|v| v.phase != Phase::Opponents) {
@@ -915,7 +951,9 @@ impl Client {
                         return Ok(());
                     }
                     Modal::NewGame => {
+                        let seed = random_seed()?;
                         self.loaded = None;
+                        self.seed = seed;
                         self.city_open = false;
                         self.modal = None;
                         self.active = None;
@@ -1400,17 +1438,9 @@ impl Client {
         match &self.modal {
             Some(Modal::Research) => {
                 if let Some(Decision::Research { available, .. }) = v.decision {
-                    let techs = l.resources.rules.tech_defs();
                     available
                         .into_iter()
-                        .map(|id| {
-                            (
-                                id as i32,
-                                techs
-                                    .get(id)
-                                    .map_or_else(|| format!("Advance {id}"), |t| t.name.clone()),
-                            )
-                        })
+                        .map(|id| (id as i32, self.tech_name(id)))
                         .collect()
                 } else {
                     Vec::new()
@@ -1499,6 +1529,20 @@ impl Client {
                 .unwrap_or_else(|| format!("Improvement {}", -i32::from(item)))
         }
     }
+    fn tech_name(&self, id: usize) -> String {
+        if let Some(l) = &self.loaded {
+            if l.resources.profile == "Open demo + Isotrident" {
+                if let Some(name) = DEMO_TECH_NAMES.get(id) {
+                    return (*name).into();
+                }
+            }
+            if let Some(tech) = l.resources.rules.tech_defs().get(id) {
+                return tech.name.clone();
+            }
+        }
+        format!("Advance {id}")
+    }
+
     fn entry_meta(&self) -> Option<Entry> {
         if self.loaded.is_none() && self.modal.is_none() {
             return Some(Entry {
@@ -1623,6 +1667,14 @@ impl Client {
             return self.city_buttons();
         }
         if self.loaded.is_none() {
+            add(
+                100.,
+                100.,
+                824.,
+                56.,
+                "Quick Start — random map".into(),
+                Action::QuickStart,
+            );
             add(
                 100.,
                 180.,
@@ -1877,6 +1929,15 @@ impl Client {
                 {
                     draws.push(text(770., 110. + i as f64 * 30., &line, 17, "#eee8d4"));
                 }
+                if let Some(target) = o.research.target {
+                    draws.push(text(
+                        770.,
+                        220.,
+                        &format!("Topic: {}", self.tech_name(target)),
+                        12,
+                        "#fff0b5",
+                    ));
+                }
                 if let Some(u) = self
                     .active
                     .and_then(|e| o.units.iter().find(|u| u.index == e.slot))
@@ -1974,7 +2035,7 @@ impl Client {
                     Notice::CityDestroyed(id)=>format!("City {id} was lost"),
                     Notice::UnitDisbanded(id)=>format!("Unit {id} disbanded for support"),
                     Notice::Production(id,_)=>format!("{} completed production",city_name(*id)),
-                    Notice::Discovery(id)=>{let name=self.loaded.as_ref().unwrap().resources.rules.tech_defs().get(*id).map_or_else(||format!("advance {id}"),|t|t.name.clone());format!("Discovered {name}")},
+                    Notice::Discovery(id)=>format!("Discovered {}",self.tech_name(*id)),
                     Notice::Revolution=>"Your government fell into anarchy; save to preserve this unsupported choice".into(),
                 }
             }).collect::<Vec<_>>().join(" · ");
@@ -1989,12 +2050,15 @@ impl Client {
         } else {
             draws.push(text(
                 100.,
-                120.,
+                62.,
                 "ToT directory (optional). Leave blank for the open demo.",
-                20,
+                16,
                 "#eee8d4",
             ));
-            draws.push(text(100., 155., "Isotrident / Freeciv artwork: GPL-2.0-or-later. Credits and editable source in the artwork pack.", 12, "#d9d4b7"));
+            draws.push(text(100., 160., "Isotrident / Freeciv artwork: GPL-2.0-or-later. Credits and editable source in the artwork pack.", 10, "#d9d4b7"));
+            if self.editing != "seed" {
+                draws.push(text(110., 320., &self.seed, 18, "#f4eedb"));
+            }
             draws.push(text(
                 100.,
                 570.,
@@ -2160,12 +2224,19 @@ impl Client {
             }
         }
         for (i, b) in self.buttons().iter().enumerate() {
+            let primary = matches!(b.action, Action::QuickStart);
             draws.push(rect(
                 b.x,
                 b.y,
                 b.w,
                 b.h,
-                if i == self.focus_button {
+                if primary {
+                    if i == self.focus_button {
+                        "#f4d46c"
+                    } else {
+                        "#d9b85a"
+                    }
+                } else if i == self.focus_button {
                     "#6b7057"
                 } else {
                     "#41483b"
@@ -2180,7 +2251,13 @@ impl Client {
                     sprite: "chrome".into(),
                 });
             }
-            draws.push(text(b.x + 7., b.y + 7., &b.label, 16, "#f4eedb"));
+            draws.push(text(
+                b.x + 7.,
+                b.y + 7.,
+                &b.label,
+                if primary { 24 } else { 16 },
+                if primary { "#172015" } else { "#f4eedb" },
+            ));
             if let Action::Specialist(city, slot) = &b.action {
                 let role = view
                     .as_ref()

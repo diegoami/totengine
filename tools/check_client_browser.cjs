@@ -64,7 +64,7 @@ fs.mkdirSync(out,{recursive:true});
  if((await state()).phase!==setupPhase||(await state()).status!=='Window is unfocused; input ignored')throw Error('delayed focus defeated newer blur');
  await page.unroute('**/*',holdFocusRequests);
  await restoreFocus();
- await idle();await click(startLabel);
+ await idle();await click('Generated seed');await fill('7');await click(startLabel);
  await click('Save pending choice');await save('research');await research();
  await key('b');await click('Save pending choice');await save('founding');await fill('athenx');await page.keyboard.press('Backspace');await page.keyboard.type('a');await page.waitForFunction(()=>frame.entry?.value==='athena'&&!busy);await key('Enter');
  await click('Choose production');

@@ -40,6 +40,19 @@ No original artwork, Rules, saves or fonts are included. Desktop reads a system
 DejaVu Sans font on Linux or Arial on Windows; `TOTENGINE_FONT` selects another
 owned TTF if required.
 
+## Quick Start and reproducible seeds
+
+The prominent **Quick Start — random map** button starts with the current
+setup and a fresh random seed. Setup also generates a random seed when the
+client opens or a new game is confirmed. **Generated seed** remains visible and
+editable; use the ordinary Start button with a chosen seed to reproduce a world.
+Required research/founding choices still need an explicit human selection.
+
+Open demo research now has readable presentation labels, used consistently in
+the chooser, current-topic display and discovery notices. Its underlying rules
+and resource identity stay unchanged so existing demo checkpoints still load;
+the labels do not add new unlocks or change the demo into full ToT rules.
+
 ## Controls
 
 The supported map commands follow the original Test of Time manual and installed

@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "date": "2026-11-08",
+  "issue": 213,
+  "milestone": 14,
+  "scope": [
+    "Readable Open demo technology presentation",
+    "Random editable setup and confirmed-new-game seeds",
+    "Prominent Quick Start using current setup with a fresh seed"
+  ],
+  "compatibility": {
+    "open_demo_rules_sha256": "e3660a02b7fac84b27ca2e802aac70519152983fa88e038dda6f16e2a8b611f4",
+    "rules_changed": false,
+    "legacy_demo_restore": "PASS in shared tests and actual Chromium",
+    "fixed_seed_7_legacy_checkpoint_matches": {
+      "founding.cth": "048ce2af50dca6f8c33d122cedf057ffcf251a284997c21c577dee535a5f068a",
+      "foundingnext.cth": "fd513ac5a761ef120f42ad350d2106618921961d3e6dea535796c7381b0d05f2",
+      "normal.cth": "fd513ac5a761ef120f42ad350d2106618921961d3e6dea535796c7381b0d05f2",
+      "normalnext.cth": "38b420d7fb5b07b80d1f94617888c80c4a8fab68b6a0113a09b1be579330f4aa",
+      "research.cth": "28998b2aa379276e8461ee0d8834472c224abf4bbab6440a73c6b9aebb75a3d9",
+      "researchnext.cth": "048ce2af50dca6f8c33d122cedf057ffcf251a284997c21c577dee535a5f068a",
+      "tenrounds.cth": "3ffb7309c703a08e09a65e971455b7dbdf2896ca7b076f95a8edd5dece0c5053"
+    },
+    "note": "Demo names are presentation aliases only; original/explicit ToT-rules labels stay authoritative. Engine checkpoints, rules identity and gameplay remain unchanged."
+  },
+  "checks": {
+    "shared_desktop_tests_passed": 36,
+    "fixture_authors_ignored": 6,
+    "targeted_quick_start_new_game_cancel_and_reproducibility": "PASS after confirmed-new-game seed update",
+    "strict_desktop_clippy": "PASS",
+    "actual_chromium": {
+      "quick_start": "PASS",
+      "random_seed_chosen": 843267125,
+      "all_research_rows_named": "PASS",
+      "legacy_demo_restore": "PASS",
+      "screenshots": "/home/diego/review-tmp/tot-quick-start-browser-check"
+    },
+    "actual_linux": "Ten rounds and seven save/reload output checkpoints byte-identical to pre-change demo at explicitly entered seed 7.",
+    "windows": "Cross-build succeeded; rebuilt ordinary desktop launched and activated (PID 1868). No new automated SendInput run while owner is using the desktop."
+  },
+  "owner_preview": {
+    "linux_package": "/home/diego/review-tmp/tot-client-quick-start-linux",
+    "windows_package": "/home/diego/review-tmp/tot-client-quick-start-windows",
+    "hosts": [
+      8816,
+      8820
+    ],
+    "active_demo_checkpoint_backup": "/home/diego/review-tmp/totengine-owner-client-foundation/browser-demo-saves/before-ui-update-cb13618e.cth",
+    "game_restore": "PASS; observed current topic Commerce",
+    "browser_reload": "Refresh a tab retaining the previous host revision."
+  },
+  "limits": [
+    "No release, independent review or owner acceptance inferred. #210/#211 remain open.",
+    "Earlier combined foundation evidence is a historical snapshot; this feedback update requires its own acceptance/candidate verification."
+  ],
+  "runtime_source_sha256": {
+    "crates/totui/src/client/mod.rs": "7341f1fd34a2fe572303cffaa436f20b9edbe340b4d3f0ca71f79b54fc0344cc"
+  }
+}

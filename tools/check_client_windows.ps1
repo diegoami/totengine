@@ -203,6 +203,10 @@ try {
     }
     [void](Wait-Scene {param($s) $s.phase -eq 'Setup'})
     if(-not $MovementOnly -and -not $SelectionOnly) {
+    Click-Button 'Generated seed'
+    $seedLength=(Read-Scene).entry.value.Length
+    for($n=0;$n -lt $seedLength;$n++){Send-Key 8}
+    Send-Text '7'
     Focus-Button $startLabel
     [void](Wait-Scene {param($s) Has-Text $s 'Choose research explicitly'})
     Focus-Button 'Save pending choice'

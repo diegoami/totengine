@@ -1,5 +1,14 @@
 # Original AI: implementation scope and completion gates
 
+Owner clarification, 2026-11-08: **ToT scenario compatibility is the product
+niche**. Evaluate potentially stronger Freeciv/C-evo AI, clients and UI workflows
+as adoption candidates; exact original AI is not the only approach to assess.
+[Source assessment and adapter requirements](ai-client-reuse-assessment.md).
+This document still defines what a claimed original-AI reproduction must prove;
+the clarification is not a claim that another game's AI implements these gates
+or that program #117 has been cancelled. No implementation or licensing change
+is authorized merely by the assessment, and no AI port was started here.
+
 Status: scoped proposal, 2026-11-06, requested by the owner after the v0.10
 candidate. Tracking: [program #117](https://github.com/diegoami/totengine/issues/117).
 Baseline: 8f6b57feb44a834a2a452a73e70664ee4895b81a.

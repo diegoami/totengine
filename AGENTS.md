@@ -56,6 +56,19 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+2026-11-08 owner direction: ToT **scenario compatibility is the niche**; evaluate
+stronger Freeciv/C-evo AI, whole clients and UI workflows as real adoption
+candidates. Do not assume exact original-AI reproduction is the sole acceptable
+AI route. Source/adapter assessment: `docs/ai-client-reuse-assessment.md`; pinned
+C-evo-x checkout is `/home/diego/review-tmp/c-evo-x-reference`. Its code has
+public-domain declarations, but bundled help excludes graphics/sounds. No code
+or media was adopted. Full-AI/plugin implementation gates remain; source study
+does not launch a port or cancel #117. Owner authorized community scenario
+downloads **installed in the real CIVTOT Scenario directory**, in individual
+folders, not merely left in temporary reference storage. Roman Civil Wars plus
+audio is installed under `Scenario/Roman Civil Wars`; static parse and hashes
+passed, no native play acceptance claimed. Preserve existing games/root assets.
+
 Owner approved **Isotrident as fallback artwork** on 2026-11-08 for a future web
 application without a ToT installation. Assessment/usage/licensing and remaining
 hosting/rules scope: `docs/ui/freeciv-assessment.md`. Freeciv 3.2.7 source and GTK

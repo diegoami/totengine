@@ -1,5 +1,11 @@
 # Tier-0 Evidence — first format probe results (2026-11-01)
 
+AI/client adoption source study: [C-evo and scenario record](cevo-source-assessment-v1.json)
+pins the downloaded source, media-license exception and an installed Roman Civil
+Wars fixture. [Assessment](../ai-client-reuse-assessment.md) follows the owner's
+ToT-scenario compatibility direction; source inspection is not an AI benchmark
+or native scenario acceptance.
+
 Unreleased client artwork study: [Isotrident fallback](isotrident-fallback-v1.json)
 records Freeciv 3.2.7 source/pack identities and install-free browser/Linux/Windows
 routes with seven identical checkpoints. This is artwork integration evidence,

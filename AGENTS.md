@@ -76,11 +76,15 @@ Release record: `docs/evidence/scenario-v017-release.json`; readiness:
 `docs/v0.17.0-readiness.md`. Keep the release tag at the exact approved SHA.
 
 All first/second-round findings #225–#230/#232–#233 were independently verified
-fixed. Third-round non-blocking #235 is addressed after the tag: trailing prose
+fixed. Third-round non-blocking #235 is CLOSED through merged PR #236, after
+the tag (merge `e1f6eb63e51cecb8765260bdac81b1d5f5d6aa83`): trailing prose
 uses a fixed diagnostic placeholder; its full/compact regression fails on the
 released scanner. Current compact corpus metadata is refreshed for the producer
 hash only; input identities, counts, diagnostics and support remain unchanged.
 The release/candidate evidence retains the reviewed report hash separately.
+All 44 Python tests pass after this fix, as do full/compact/blocked report
+reproduction, audited source hashes, compilation, links and whitespace checks;
+all four GitHub checks passed before merge. No Rust/runtime source changed.
 
 The inspector and conditional classic-surface-032-v1 contract activate no native
 importer. Three corpus entries have report-available inspection;
@@ -95,6 +99,21 @@ Next planned package is milestone 16, science/rates/government on both clients
 new human routes need both-client acceptance and owner-launched independent
 review. Preserve all owner previews/games and old version-bound binaries;
 workspace metadata remains v0.17. No full-client or full-AI gate is cleared.
+
+Resume at #194; no milestone-16 implementation or new acceptance has started.
+Read `docs/plan.md`, `docs/ui/discovery.md` (U08/U09/U17/U31/U32),
+`docs/ui/screen-contracts.md` (Science and goals; Rates and government), then
+#194–#196. Existing research Goal is not arbitrary project switching. The
+observed rates/lock example does not establish the complete redistribution
+algorithm or caps. Revolution Escape began a revolution in the isolated
+reference context; the proposed safe-cancel change still needs an explicit
+owner decision. Do not turn that proposal into accepted behavior. Native legal
+rates/governments/timing need evidence before #195 commands and #196 client
+routes. Current `engine::human::Phase::UnsupportedGovernment` stops human
+anarchy; government choices must be added authoritatively with phase/checkpoint
+persistence, not bypassed in the UI. Read oracle README/lessons before any
+reference execution; preserve existing sessions. #221 is credential-blocked,
+not a reason to defer the independent #194 reference work.
 
 v0.16.0 is RELEASED at exactly reviewed/tagged SHA
 `2f37ab49a56dbcb2091977162518604ae3b6ea0b` (Kimi K3.1 Pro AGREE on #216,

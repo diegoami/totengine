@@ -30,10 +30,13 @@ T0–T4 schedule; historical evidence and released tags remain unchanged.
 
 ## Baseline and remaining work
 
-Latest release: **v0.16.0**, independently reviewed at
-`2f37ab49a56dbcb2091977162518604ae3b6ea0b`. See
-[readiness](v0.16.0-readiness.md) and [release evidence](evidence/client-v016-release.json).
-Milestone 14 is closed after owner acceptance and first-round independent AGREE.
+Latest release: **v0.17.0**, independently reviewed and tagged at
+`70dea8d7e61e74125c9faa027bf7a6abb7cbdaff`. See
+[readiness](v0.17.0-readiness.md) and [release evidence](evidence/scenario-v017-release.json).
+Milestone 15 is closed after third-round independent AGREE. This source/CLI
+release ships read-only inspection and a conditional entry boundary; it grants
+zero runtime admissions. v0.16.0 remains the packaged-client baseline, with
+milestone 14's owner acceptance and independent review unchanged.
 
 | Capability | Available foundation | Remaining target |
 | --- | --- | --- |
@@ -41,7 +44,7 @@ Milestone 14 is closed after owner acceptance and first-round independent AGREE.
 | Headless | Save/scenario boot, modeled macro events, original-derived mechanics, built-in policies, generated campaigns and deterministic order replay | Admitted scenario campaigns, parameter sweeps, objective-aware reports and author regressions |
 | Observer | Live/replay browser observer, full/per-civ views, turn controls and archives | Scenario presentation/objectives/events, supported map layers, comparison and recording integration |
 | AI | Versioned built-in/legacy policies and partial original-derived decisions | Per-faction policy selection, bounded candidate comparisons, external plugins and independently measured native fidelity |
-| Scenario tools | Format inspection/diffs, pinned private corpus and an unreleased read-only capability inspector/conditional entry contract | Actual native import/admission, event/extension coverage, run diagnostics, safe editing/export and creation assistance |
+| Scenario tools | Format inspection/diffs, pinned private corpus and released read-only capability inspector/conditional entry contract | Actual native import/admission, event/extension coverage, run diagnostics, safe editing/export and creation assistance |
 | Recordings | Canonical order logs, observer NDJSON and replay checkpoints | Unified session manifests, view/annotation streams, recording controls/recovery, then audio/video capture |
 
 Artwork/recovery, setup feedback and planning PRs #181/#182/#191/#212/#214/#215
@@ -67,15 +70,18 @@ installed and statically parsed; no playable/native acceptance is claimed.
 These are dependency stages, not one release per stage or a fixed milestone count.
 Named planning packages 14–29 and their concrete child stories are now mapped in
 [milestones.md](milestones.md), following the owner's backlog-to-milestone request.
-Their scopes retain reference/engine/human-acceptance gates; versions/dates and
-release candidates remain unassigned. Refine/split each package from evidence.
+Their scopes retain reference/engine/human-acceptance gates. Packages 14/15 are
+released as v0.16.0/v0.17.0; packages 16–29 have unassigned versions/dates and no
+release candidate. Refine/split each package from evidence.
 
-1. **Reconcile the baseline.** Integrate/review the separate client-fix and
-   optional-art candidates through the normal process. Keep published tags,
-   owner previews and saves intact. Distinguish released from pending work.
-2. **Complete client packages while establishing scenario tooling.** Next client
-   scope candidates are science/rates/government and bounded original save/
-   scenario entry. Finish missing engine decisions and reference contracts
+1. **Preserve the released baseline.** Resource/recovery and scenario inspection
+   packages are released. Keep published tags, owner previews and saves intact;
+   distinguish inspection from runtime admission and preserve version-bound games.
+2. **Complete client packages while establishing scenario tooling.** Next is
+   milestone 16, science/rates/government on both clients (#194–#196), starting
+   with native decision/rate legality and the revolution cancel contract (#194).
+   Bounded original save/scenario entry remains separate in milestone 17.
+   Finish missing engine decisions and reference contracts
    before promising UI behavior. Continue diplomacy, reports/help, advanced
    orders, sound and campaign/endgame dependencies in further slices. As
    separately scoped tasks, establish the scenario capability matrix, recording

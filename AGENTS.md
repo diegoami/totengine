@@ -69,8 +69,8 @@ Local validation passed: 259 install-backed Rust tests including desktop,
 and Linux SDL routes with 26 newly written checkpoints identical across both.
 Windows native input and human acceptance were not rerun. Evidence:
 `docs/evidence/client-input-recovery-v1.json` on the fix branch. PR #182 is open;
-GitHub CI was pending when this note was written. #176–#179 stay open until it
-lands. Owned QA host 8815 and isolated native app/display are stopped; owner
+GitHub CI and generated campaign autoplay both passed on its exact head.
+#176–#179 stay open until it lands. Owned QA host 8815 and isolated native app/display are stopped; owner
 previews/saves are untouched. PR #181 and the source-assessment branch below
 remain separate; no release, milestone review or AI port was launched.
 

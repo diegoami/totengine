@@ -429,6 +429,19 @@ try {
             if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES ($name+'reload.cth')) -Algorithm SHA256).Hash -ne $expected){throw ('Panel reload checkpoint differs '+$route.name)}
         }
         Send-Key 27
+        # #178: map-to-session load defaults to Info; an open workspace retains
+        # Happy. Both must preserve the saved production budget exactly.
+        Load-Slot 'panelbudgettabs'
+        if(@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.x -eq 744 -and $_.y -eq 193 -and $_.text -eq 'Info'}).Count -ne 1){throw 'Map load retained old city panel'}
+        $expected=(Get-FileHash (Join-Path $env:TOTENGINE_PANELS_FIXTURES 'budgettabs-before.cth') -Algorithm SHA256).Hash
+        Send-Chord 83;Save-Dialog 'panelnewsession'
+        if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES 'panelnewsession.cth') -Algorithm SHA256).Hash -ne $expected){throw 'Info default changed loaded gameplay'}
+        Click-Button 'Happy'
+        Load-Slot 'panelnewsession'
+        if(@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.x -eq 744 -and $_.y -eq 193 -and $_.text -eq 'Happy'}).Count -ne 1){throw 'Open workspace lost its panel'}
+        Send-Chord 83;Save-Dialog 'panelnewsessionreload'
+        if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES 'panelnewsessionreload.cth') -Algorithm SHA256).Hash -ne $expected){throw 'Open workspace load changed gameplay'}
+        Send-Key 27
     }
     if(-not $MovementOnly -and -not $SelectionOnly -and $env:TOTENGINE_CITY_OPEN_FIXTURE) {
         Copy-Item $env:TOTENGINE_CITY_OPEN_FIXTURE (Join-Path $env:TOTENGINE_SAVES 'cityopen.cth')

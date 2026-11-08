@@ -65,6 +65,16 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+Milestone 14 started, 2026-11-08, at the owner's instruction to begin the first
+roadmap item after milestone alignment. #181 merged to main at
+`d165aebb4d40c178168bfc2d733407a84af860b4`. #182 is testing the combined code
+at `7ad1e9302566836ca643dd62c12a102a938b0f53`; CI/autoplay, 34 desktop/shared
+tests, real-pack integration and pack-preparer tests pass. Actual packaged
+Chromium/Linux/Windows routes are in progress. Planning PR #191 is retargeted
+to main. No new release version, human acceptance or milestone review is claimed.
+Preserve existing owner previews/saves. Current private packages:
+`review-tmp/tot-client-foundation-{linux,windows}-7ad1e93`.
+
 Owner mission/roadmap reorganization, 2026-11-08: `docs/mission.md` and decision
 0008 define the seven product targets; `docs/plan.md` replaces the stale T0–T4
 schedule with workstreams/dependency gates, and root `BACKLOG.md` maps the live

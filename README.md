@@ -44,9 +44,10 @@ resources. See [launch/controls](docs/playable-clients.md),
 | Versioned built-in opponent and legacy policies | Original-derived research and supported land campaigns are partial; full native AI and external plugins are not shipped |
 | Format inspection/diff, order logs, observer archives and replay checkpoints | Full scenario authoring and unified play/observation recording are future programs |
 
-Pending candidates remain separate from releases:
-[Isotrident/Open demo #181](https://github.com/diegoami/totengine/pull/181) and
-[client follow-ups #182](https://github.com/diegoami/totengine/pull/182).
+Unreleased work remains separate from released tags: Isotrident/Open demo
+[#181](https://github.com/diegoami/totengine/pull/181) has merged to main;
+[client follow-ups #182](https://github.com/diegoami/totengine/pull/182) and the
+combined milestone-14 validation are in progress.
 The approved Isotrident artwork fallback is optional and separately licensed;
 Open demo is a small authored demonstration, not full redistributable ToT rules.
 Public hosting and a complete independent rules profile remain separate scope.

@@ -44,10 +44,11 @@ This plan does not designate a new release.
 | Scenario tools | Format inspection/diffs and an installed private corpus | Capability reports, client import, event/extension coverage, run diagnostics, safe editing/export and creation assistance |
 | Recordings | Canonical order logs, observer NDJSON and replay checkpoints | Unified session manifests, view/annotation streams, recording controls/recovery, then audio/video capture |
 
-Unmerged work is separate: [#181](https://github.com/diegoami/totengine/pull/181)
-adds Isotrident/Open demo; [#182](https://github.com/diegoami/totengine/pull/182)
-fixes client follow-ups #176–#179. Both passed CI at this planning snapshot.
-Neither is a release or full-client/scenario completion. Roman Civil Wars is
+Unreleased work is separate: [#181](https://github.com/diegoami/totengine/pull/181)
+(Isotrident/Open demo) has merged; [#182](https://github.com/diegoami/totengine/pull/182)
+fixes client follow-ups #176–#179 and is validating against that merged code.
+Both individual changes and their combined code passed CI. Milestone 14 is now
+in progress; no new release or full-client/scenario completion is claimed. Roman Civil Wars is
 installed and statically parsed; no playable/native acceptance is claimed.
 
 ## Workstreams and live programs

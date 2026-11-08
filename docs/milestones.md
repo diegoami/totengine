@@ -33,7 +33,7 @@ of complete client delivery after the listed UI slices.
 
 ## Selection and completion rules
 
-1. Milestone 14 groups the pending resource/recovery code and planning PRs; it
+1. Milestone 14 groups the resource/recovery code and planning PRs; it
    does not retroactively change v0.15 or establish a new human acceptance.
 2. Admission (15) and science/government (16) can be scoped from current
    references. Classic entry (17) waits for the admitted profile/contract; the

@@ -1,5 +1,16 @@
 # Playable-client screen and decision contracts
 
+Mission alignment, 2026-11-08: [decision 0008](../decisions/0008-scenario-platform.md)
+keeps these original-UI contracts as the baseline and adds optional QoL and
+recording. City queues (#189) require explicit automation/completion/legality/
+shield-budget and persistence semantics. Rally points (#190) require known-map
+routing, manual-order priority and interruption/transfer semantics. Neither is
+implemented or implicitly covered by the existing production/movement routes.
+Session recording (#186) separates canonical orders/events/checkpoints from
+viewpoint, camera and notes. Define new controls/settings in a concrete reviewed
+contract before implementation; preserve both client surfaces and original
+scenario behavior. Scenario entry/author assistance is tracked by #183.
+
 Owner-reviewed planning contracts under #107 / decision 0005 (2026-11-06). This specifies proposed
 behavior and required information, not implemented engine APIs. Route IDs refer
 to [reference discovery](discovery.md) and its capture manifest. The

@@ -12,6 +12,15 @@ Owner requested this assessment and approved Isotrident as a fallback on
 2026-11-08, to support a future web application without requiring users to own
 Test of Time. This is an implementation candidate, not a released milestone.
 
+## Current product position
+
+The [mission](../mission.md) keeps the main ToT experience dependent on original
+resources. The previously approved Isotrident fallback remains optional artwork;
+its Open demo does not replace that goal. AI/client/workflow reuse is a tracked
+assessment under [#187](https://github.com/diegoami/totengine/issues/187) and
+[#188](https://github.com/diegoami/totengine/issues/188), with no Freeciv game-code
+or rules adoption authorized by this plan.
+
 ## Findings from the installed distribution
 
 Inspected source `~/projects/freeciv/freeciv-3.2.7`, installed data under

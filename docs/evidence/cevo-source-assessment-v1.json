@@ -1,0 +1,228 @@
+{
+  "schema": 1,
+  "date": "2026-11-08",
+  "kind": "static source/adapter assessment; no implementation or AI-strength benchmark",
+  "owner_direction": [
+    "ToT scenario compatibility is the niche",
+    "Evaluate stronger Freeciv/C-evo AI, clients and UI workflows as adoption candidates",
+    "Community scenario downloads must be extracted into individual folders under the actual CivTot Scenario directory"
+  ],
+  "cevo": {
+    "repository": "https://github.com/donmccaughey/C-evo-x",
+    "commit": "8e2e203e7766bc5524e989137b00d110a517238d",
+    "tree": "33c6536f152763c1673ed6f6f50d3ff191e15d7e",
+    "checkout_clean": true,
+    "inspected_files": {
+      "LICENSE": {
+        "bytes": 3548,
+        "lines": 135,
+        "sha256": "28514b472f7dbf5d80d3c222eaf9168d4f0cc25c0da4a563febcc394b1692c3b"
+      },
+      "README.md": {
+        "bytes": 13167,
+        "lines": 329,
+        "sha256": "9bf9eaf4f3f13998d98fcdce0b57d7e2b45a886b22cc77069f03ca7d9208a1b6"
+      },
+      "Project/readme.txt": {
+        "bytes": 479,
+        "lines": 14,
+        "sha256": "9528dc4afe606ecdfdeb3cf3444b8730278e2a4eb69706634ea4fd812c084225"
+      },
+      "Resources/Help/help.txt": {
+        "bytes": 65123,
+        "lines": 1483,
+        "sha256": "ef8494d374e3bad542721bf7dc87b6b7a5b6a0b1b07c4ab3639f1f497f3f1ce0"
+      },
+      "Project/Protocol.pas": {
+        "bytes": 54526,
+        "lines": 1295,
+        "sha256": "78c857a0f15149dd1f932be9359577515ff332b2aae3ac39ed0b6c89972bfd5e"
+      },
+      "Project/GameServer.pas": {
+        "bytes": 132611,
+        "lines": 3879,
+        "sha256": "90750f84ed3b772eece87a9ecc4c322345f4a6cb990c0f7a2ad7733c44a9fb74"
+      },
+      "Project/IPQ.pas": {
+        "bytes": 3014,
+        "lines": 163,
+        "sha256": "d46188a621da9f8da0d922cef180bdf530537804cf61a3fa6b268b8aa5b1d199"
+      },
+      "Project/LocalPlayer/LocalPlayer.pas": {
+        "bytes": 1592,
+        "lines": 60,
+        "sha256": "19857ad438037d96962a5094b888b751e412e2d322d97b9a05e002d0c9f259d2"
+      },
+      "Project/LocalPlayer/CityScreen.pas": {
+        "bytes": 50811,
+        "lines": 1560,
+        "sha256": "2241e66a97d3a8ac20a04f5f84744aca0fc0002de6b21ae280e392642cb9a2a9"
+      },
+      "Project/LocalPlayer/IsoEngine.pas": {
+        "bytes": 43149,
+        "lines": 1299,
+        "sha256": "22becf70e628eda1a51824f6f78e84647d4b48a687d4368add68e42bdd2d37d2"
+      },
+      "Project/LocalPlayer/Term.pas": {
+        "bytes": 232543,
+        "lines": 6900,
+        "sha256": "1bd6a280f8747d48575b8a651d037c48e9dc2d4293f68e692f874ae82636b85a"
+      },
+      "StdAI/AI.pas": {
+        "bytes": 98837,
+        "lines": 2907,
+        "sha256": "6c56612a1ce4018322f81e3ee88216a18286b2a75d1be769691b1ba98a21d27c"
+      },
+      "StdAI/ToolAI.pas": {
+        "bytes": 49796,
+        "lines": 1426,
+        "sha256": "9144f7ae93e02a5b6b90a298af14a237f0390641bdd8312d5415b5a38f6bf29e"
+      },
+      "StdAI/CustomAI.pas": {
+        "bytes": 30727,
+        "lines": 1064,
+        "sha256": "504a52baeb6e6b0bd0a952406d9da1e9246cdfb24fc57ae5a5c7c609c0922ab2"
+      },
+      "AI_Template/Project/Persistent.cs": {
+        "bytes": 1556,
+        "lines": 81,
+        "sha256": "7313573d50457b3d941eb6efbc6a281aae963fa6cae09a55bdbde60f1c269a64"
+      },
+      "AI_Template/Project/Lib/Sprawl.cs": {
+        "bytes": 21413,
+        "lines": 591,
+        "sha256": "9b17e9ff51e07f555e0a8d89cdaf82da5c6331c29320f04a0fa772a4162721a4"
+      },
+      "AI_Template/Project/Lib/AddressPriorityQueue.cs": {
+        "bytes": 9363,
+        "lines": 272,
+        "sha256": "14250dffe99f61cd922aeb7e81201113602c1096f7dca8cf92df00858a454e4b"
+      },
+      "docs/protocol/c/aidev.html": {
+        "bytes": 51519,
+        "lines": 1195,
+        "sha256": "3a297c2c2c1b0852f42656e4951f74b28d9165c43168f8bb5a592dfc56753389"
+      }
+    },
+    "license_finding": "Project/readme.txt explicitly dedicates source code to public domain; root LICENSE broader declaration is qualified by Resources/Help/help.txt excluding graphics and sounds. No blanket media reuse clearance. No code or media adopted.",
+    "runtime_built_or_run": false,
+    "new_horizons_download": "official source link and guessed 1.3.9 zip returned HTTP 404; no New Horizons source inspected"
+  },
+  "freeciv": {
+    "version": "3.2.7",
+    "inspected_reference_files": {
+      "COPYING": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "doc/README.AI": "6d86757ecb9063456e49614eebc70542f275d0755df2df03cca43b7e0044be52",
+      "doc/README.AI_modules": "62228e720c8918dbd36142f5ff8a0f091839ea1b0e67e9111f993a0458732a97",
+      "ai/default/daicity.h": "d38bf7c91fb9a4a1495e00cb129a1f3f2f7fd0196d1c4200b5951fb4dfebe4d5",
+      "data/civ2/units.ruleset": "3030a3d5fdf9b1a7d6f7ed7a33521f9002f2f6d0a22d9a45b8cf02579260a7f0"
+    },
+    "ai_code_license": "GPL-2.0-or-later; adoption needs explicit integration/licensing decision",
+    "ai_coupling": "ai/ plus server/advisors and Freeciv city/player/effect/action types; not an engine-neutral policy library"
+  },
+  "scenario": {
+    "name": "Roman Civil Wars",
+    "author": "techumseh",
+    "page": "https://sleague.civfanatics.com/index.php/Roman_Civil_Wars",
+    "downloads": [
+      {
+        "url": "https://sleague.civfanatics.com/images/2/25/RomanCivilWars.rar",
+        "bytes": 1195550,
+        "sha256": "a1294de7ae95ae014a0d754b605d51a9991fe083dd588cda56c89715b393d36a"
+      },
+      {
+        "url": "https://sleague.civfanatics.com/images/5/5b/RCWSound.rar",
+        "bytes": 1686768,
+        "sha256": "ecf48e6a43d47fc72dbb4d3b8c326f094f33fda6a5f8b10e867c34268ce0ec5f"
+      }
+    ],
+    "installed_relative_to_CIVTOT_HOME": "Scenario/Roman Civil Wars",
+    "entry": "RomCivWars.SCN",
+    "installed_file_count": 43,
+    "installed_file_sha256": {
+      "Cities.bmp": "848aacda1403d35cd31f0b357177888e51341611ab0a63b8ae321fe927d5ab16",
+      "Describe.txt": "a670ab5cbc760608ad521e335092bce29c223f642846a437585525872ab268e8",
+      "Events.txt": "c38d5e49fc7498196900eac15d07be58d51ed02e2da2310d3f30982f8d2a1177",
+      "Game.txt": "436b66bb2b72f3c1ac2ef8894e3d45861faeea8a066189d63595a39323c61b1c",
+      "Icons.bmp": "207bf23838be4113362de4b2afa4a57e87d290a3d81ae7cf0ec2d2d30d493198",
+      "Improvements.bmp": "f7f50c1df7c9c4d9882e8b48797642609737f2182bb30263cd6f37c4a8f70c50",
+      "Labels.txt": "3209a3e299ab2d57a4c7155b658d192d1a17c634173c0856531b14c51a92f7fb",
+      "Menu.txt": "b86fd8b92749b47efedbb63274970a925f3839813a635720af905388b0b4f3f3",
+      "Pedia.txt": "173fb7ae4e77fbe0f20ced1d85a94d394a522eed8646821538a1b1804c4e7930",
+      "People.bmp": "bfd858ddd31f948e04a033aef7402be41cc559298e09e6685a0eea1de3f0bbd6",
+      "Readme.html": "359dbd43af3845adef9fd07438d1345b40cc0db5d399ca9e4aa6e0fdbeae16d9",
+      "RomCivWars.SCN": "f16a30e434dd283c4bee9c6bc57d8845acc4b4ddd3ac9d6df5d0d3e762b1ee89",
+      "RomCivWars.txt": "ec607532747711c1cde40309dbf9f0328c2a6764754f6d3280a18252abefb1ac",
+      "Rules.txt": "1d3106de9e93d0067932153860dd0915704911583f0f745fcc950f45a3352972",
+      "Sound/Archer.WAV": "3f1525001fbf50d2f019f650664c399545537df10e8fc591ef291e0f055865f5",
+      "Sound/Barbarian.wav": "422eb4e3face822505f2de7acf76b9516a6f9611993287489e2190eb4d7f8dd5",
+      "Sound/Barracks.wav": "c5256390950349391b806786ec0422b29f0f0e0bde2a894ea6a34d5446076167",
+      "Sound/Battram.WAV": "d5b07909da0e79e09dcc202871307e2235ad72cfcb767d14ee698a30ac4e039c",
+      "Sound/Begin.wav": "e55551a04532c9b396ac20af32dfd4b87126b656655d088b1f2bca6bee6370ae",
+      "Sound/Calmsea.wav": "8c5cd1f9f49b11b7375606a4e38036fe178822b525f2d91e0ada00d89c927665",
+      "Sound/Camel.wav": "5cc11d6731b279667d6c0b033651404142b903fdafca6bdd913a1c55444b2d84",
+      "Sound/Catapult.wav": "6a4a8db4b2e11633fa5143e43c2c0ced30a49dfe511cb64d39965cee869247c0",
+      "Sound/Cathedral.wav": "27f131aac6149e21b0bc199eea7488a0ae0ea836c49a158b32929b98eb9ca436",
+      "Sound/Cavalry.wav": "0c766d07287d3c0b7b0bc7b7f10c2627dc68d958361933474cd3622560639829",
+      "Sound/Civdisor.wav": "1ffb541a7862d2e7478d7245c6899c86a00c9dba6751194e49a09396afda28c2",
+      "Sound/Cleopatra.wav": "4aef745678b8c0bc00eecd384a2de238195c2d6a9f173e98ff4c3e35dd043639",
+      "Sound/DEATH.WAV": "aaf07cc17ab3b391bbc6cf4e9a31c95ee2160fba44cd59f234bf251112597d98",
+      "Sound/Diesel.WAV": "56b1c5d65447e389db2e74fa3f2f6319f410f20eb1cd71b8bb924279a7bcd247",
+      "Sound/General.WAV": "64d2a6acf61f0421d4d49541715dd3d30908639d8b1057973a6f0e06b25a39e4",
+      "Sound/Horsearch.WAV": "b424f4af1c2442ecea139c58186dfc96a77dbc6eb81662de204f2a4e7fd2176b",
+      "Sound/Infantry.wav": "d5ac872ba20c587fb1e8a1a263dd23161690bd96b9fbaa9a452eca92d0964d67",
+      "Sound/Scorpion.wav": "7727fa70c683f8267395ad7ed228040568c6563a254aef141642664d979497f6",
+      "Sound/Sell.wav": "00c1a4d8867dae8ae2a66c7e0291476ed76dc11ee8db91d66412d5dd120bd407",
+      "Sound/Sink.wav": "dc8b6e02d7bc2ad089c9252af6959b92eec65a672eb64b967fda0a4faeafb560",
+      "Sound/Storm.wav": "1f35ba378e569d9eefec32d89f75d0ac35d50e8a3891be674ef58c2a326ebaa1",
+      "Sound/Temple.wav": "84b2b36b156aa4f7ec74eb93dce3af6c288aa15583c526f6728fd205f88e8455",
+      "Sound/Torpedo.Wav": "84dff2de370e590437611f3c2b5f93181182fd2d4c960d5160b17bc85d0754e0",
+      "Sound/Tribune.WAV": "dec108088793090b1cf668d55e8aeafa2740a866b95ac3e4da6f900f0c4b110a",
+      "Sound/swordfgt.wav": "db5dc4df54ff11bab3de27c21b8548a05d5ff61e0218bbcc3c0815e2025c0bb5",
+      "Terrain1.BMP": "1544749ed4433f1061eafbbba7480dd2fc2d5342959a1b16746e35fc2e11149d",
+      "Terrain2.bmp": "541fc55611e20707cc621d88a271902a054c52c89f7194c2ba18be634a01b630",
+      "Title.gif": "d63bc1fb4950ed44e3624f98c9bc3cc210314f4d8495f5057cb0c71a4b5e8c45",
+      "units.bmp": "f59eb16b9fbaf6dc4e0bbb358c3197c4bb4e7c96ffaf7dcb2005c56be5949884"
+    },
+    "all_installed_files_verified": true,
+    "static_parse": {
+      "tool": "tools/totctl.py save",
+      "version_raw": "0x0032",
+      "bytes": 202069,
+      "cities": 159,
+      "units": 618,
+      "map_header_values": [
+        140,
+        130,
+        9100,
+        1,
+        3315,
+        35,
+        33,
+        0
+      ]
+    },
+    "event_line_counts": {
+      "CREATEUNIT": 121,
+      "UNITKILLED": 69,
+      "CITYTAKEN": 111,
+      "TURN": 14,
+      "GIVETECHNOLOGY": 7,
+      "TAKETECHNOLOGY": 8
+    },
+    "native_game_launched": false,
+    "scenario_scripts_executed": false,
+    "global_Original_files_modified": false,
+    "optional_global_IMP_pack_installed": false,
+    "extraction": "Linux 7-Zip listed files but failed decompression; installed Windows UnRAR extracted both archives successfully. Earlier zero-byte staging output was not installed."
+  },
+  "conclusions": [
+    "C-evo UI/AI shared command boundary and hidden-information-safe movement previews are useful design references",
+    "C-evo travel-state pathfinding and transport/job planners are concrete adaptation candidates, with ToT-specific costs and capabilities",
+    "AI/client adoption must preserve ToT custom rules, event timing, map identity, goals, persistence and filtered observations",
+    "Stronger standard-game AI is a hypothesis, not established by this source inspection",
+    "Original-AI fidelity remains a baseline where needed; no imported AI is claimed to implement program #117",
+    "Isotrident remains the selected fallback; C-evo media is not adopted"
+  ],
+  "validation": "Reference checkout cleanliness and file hashes, installed scenario hashes, static scenario parse, source-link/path checks. Documentation only; workspace tests not rerun."
+}

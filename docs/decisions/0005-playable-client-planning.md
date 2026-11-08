@@ -1,5 +1,10 @@
 # Decision 0005 — specify the original UI before scheduling the playable client
 
+Current mission/roadmap: [decision 0008](0008-scenario-platform.md), accepted
+2026-11-08. Historical release scope below remains recorded; its future schedule
+is superseded where inconsistent. Both-client UI fidelity and client-first AI
+implementation gates remain; native-AI reproduction is not the only AI route.
+
 Status: accepted, owner discussion 2026-11-04. Supersedes the earlier
 assumption that v0.11.0 delivers a complete minimal playable SDL2 client.
 

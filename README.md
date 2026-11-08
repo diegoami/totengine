@@ -1,107 +1,98 @@
 # ToTEngine — Civilization II: Test of Time, recreated
 
-Goal: an open, cross-platform program that **replicates the gameplay of Civ2: Test
-of Time (ToT)**, with first-class support for the community's **scenarios** (both the
-classic 1999-era macro-events kind and the modern ToTPP/Lua kind).
+An open, native recreation of **Civilization II: Test of Time** for desktop and
+browser play, headless all-AI experiments, observation and scenario work.
+**ToT scenario compatibility is the project's distinguishing purpose.**
 
-The engine is a *recreation*, not a bundle: it requires the user's original ToT
-installation and reads its data files directly.
+The main game experience reads the user's original ToT resources, including
+scenario overrides. The original executable is not needed to run our engine;
+no proprietary artwork, maps, saves, sounds or scenarios are distributed.
 
-| Document | Purpose |
-|---|---|
-| [BACKLOG.md](BACKLOG.md) | Working conventions (difficulty, releases); the queue itself is GitHub [milestones](https://github.com/diegoami/totengine/milestones) and issues |
-| [docs/milestone-review.md](docs/milestone-review.md) | Release process: independent milestone review, AGREE/BLOCK verdict, tag-on-reviewed-SHA |
-| [docs/feasibility.md](docs/feasibility.md) | Evidence-based feasibility evaluation: formats, prior art, risks, effort, value assessment, verdict |
-| [docs/plan.md](docs/plan.md) | Phased implementation plan: architecture, milestones, testing strategy |
-| [docs/generated-campaign.md](docs/generated-campaign.md) | Seeded fresh games, AI autoplay and deterministic engine checkpoints |
-| [docs/evidence/](docs/evidence/) | Tier-0 probe results — measured format findings, rendered map, save walks |
+## Mission
 
-## Local reference environment (verified)
+- Play standard games and scenarios in both an ordinary desktop application and
+  a playable browser client, backed by the same native Rust simulation.
+- Test scenarios headlessly with all civilizations under AI, varying declared
+  parameters and comparing reproducible outcomes.
+- Observe live games and replays, including scenario events, objectives and maps.
+- Recreate ToT's complete UI and controls, with optional QoL and alternative
+  settings such as city production queues and rally points.
+- Support different, pluggable AIs and evaluate C-evo/Freeciv AI/client/workflow
+  reuse without replacing ToT mechanics or scenario semantics.
+- Help open, diagnose, test and eventually create/edit scenarios.
+- Help record playing and observation sessions, with replay, annotations and
+  later audiovisual capture.
 
-Civ2 Test of Time 1.1 + ToTPP at `/mnt/d/games/CIVTOT`, running under Wine 10
-(prefix `~/.wine_civ2tot`) as a behavioral *oracle* for differential testing.
-Full provisioning for a new machine — toolchain, scratch space, rebuild
-steps for the gitignored oracle binaries, box quirks — lives in
-[docs/environment.md](docs/environment.md); the oracle rig recipe in
-[tools/oracle/README.md](tools/oracle/README.md).
+These are product targets, not a statement that all are implemented.
+[Mission and boundaries](docs/mission.md) · [Delivery plan](docs/plan.md) ·
+[Live backlog](BACKLOG.md) · [Planned milestones](docs/milestones.md).
 
 ## Status
 
-The latest released tag is **v0.14.0 — City production decisions, browser and desktop**, independently reviewed on
-[#155](https://github.com/diegoami/totengine/issues/155). A version counts as
-released once its
-`vX.Y.Z` tag exists
-([tags](https://github.com/diegoami/totengine/tags); see
-[CHANGELOG.md](CHANGELOG.md); the queue is the GitHub
-[milestones](https://github.com/diegoami/totengine/milestones)).
+Latest released tag: **v0.15.0 — city information panels**, independently
+reviewed on [#162](https://github.com/diegoami/totengine/issues/162).
+[Windows/Linux downloads](https://github.com/diegoami/totengine/releases/tag/v0.15.0)
+include `totplay` and `totdesktop`, runtime/dependency notices and no original
+resources. See [launch/controls](docs/playable-clients.md),
+[readiness](docs/v0.15.0-readiness.md) and [changelog](CHANGELOG.md).
 
-What runs today, headless, against your own ToT install:
-- **Boot:** scenarios and standard-game saves boot into a world state.
-- **Units and cities:** movement; combat replaying the original's battles
-  exactly; macro events; city growth; tile yields, corruption, waste and
-  the production queue, each decoded from the original executable and
-  replayed against its saves.
-- **New games:** seeded engine-designed worlds, decoded start-placement
-  sampling, AI autoplay and deterministic checkpoints (`totctl campaign`;
-  [scope and usage](docs/generated-campaign.md)).
-- **Players:** every civ is driven by a player behind a headless
-  interface, and games replay bit-exact from their order logs
-  (`totctl play` / `totctl replay`; decision 0003).
-- **AI:** the built-in opponent researches, expands, reserves garrisons,
-  builds field armies, attacks and occupies cities (`totctl play --builtin`).
-  Campaigns and browser observation use it by default; legacy AI options remain.
-- **Browser observer:** watch live AI turns or
-  replay a finished game, with full-map/per-civ fog views and turn controls
-  (`totctl observe`; [usage and stream format](docs/browser-observer.md)).
+| Available foundation | Current boundary |
+| --- | --- |
+| Both playable clients: generated surface games, unit input, founding/research, workers/specialists, quoted production/buy/sell, city panels and checkpoints | Complete original UI, original-save/scenario import, diplomacy/government/report depth and sustained scenario campaigns remain unfinished |
+| Headless save/scenario boot and modeled turns/events, deterministic order replay, generated campaigns | A successful parse/boot is not full scenario compatibility; general scenario parameter sweeps and objective-aware reports remain planned |
+| Browser observer: live turns, cached replay, full/per-civ views, turn controls and archives | Scenario-specific presentation, complete event/objective inspection and recording integration need further work |
+| Versioned built-in opponent and legacy policies | Original-derived research and supported land campaigns are partial; full native AI and external plugins are not shipped |
+| Format inspection/diff, order logs, observer archives and replay checkpoints | Full scenario authoring and unified play/observation recording are future programs |
 
-The playable-client track targets **both a browser client and a standalone
-desktop client**, sharing the Rust engine. The first generated-game slice is
-released in `totplay` and `totdesktop`; [launch and controls](docs/playable-clients.md).
-[Windows/Linux downloads](https://github.com/diegoami/totengine/releases/tag/v0.14.0)
-include both programs, runtime/dependency notices and no original game assets.
-v0.14 adds quoted production switching, buying and
-single-city building sales in both clients; [validation and accepted human
-routes](docs/v0.14.0-readiness.md). Full client delivery continues across
-later milestones.
-See the [client delivery plan](docs/ui/client-milestones.md).
+Unreleased work remains separate from released tags: Isotrident/Open demo
+[#181](https://github.com/diegoami/totengine/pull/181) has merged to main;
+[client follow-ups #182](https://github.com/diegoami/totengine/pull/182) and the
+combined milestone-14 validation are in progress.
+The approved Isotrident artwork fallback is optional and separately licensed;
+Open demo is a small authored demonstration, not full redistributable ToT rules.
+Public hosting and a complete independent rules profile remain separate scope.
 
-AI v1 expands, invests in city improvements, researches and handles units
-through the player interface (`totctl play --ai-v1` / `totctl observe --ai-v1`).
-Economy work includes science/tax, recurring trade routes, maintenance,
-happiness, wonder effects and capital road/rail waste. Controlled acceptance
-checks match 50 original-written city saves and 64 live barbarian phases;
-50-turn AI runs are deterministic and replay. The [completion record](docs/v0.8.0-readiness.md)
-and [evidence](docs/evidence/README.md) describe the fixtures and limits.
-v0.10 adds original-derived research scoring and controlled
-production comparisons across six difficulties, with supported land campaigns
-and explicit remaining differences. See [the readiness record](docs/v0.10.0-readiness.md)
-and [decision 0007](docs/decisions/0007-original-like-ai.md). Full original-AI
-parity is not claimed. The owner-requested [complete original-AI scope](docs/original-ai-scope.md)
-now defines the remaining ports and completion gates ([program #117](https://github.com/diegoami/totengine/issues/117)).
-Full AI reproduction is gated behind the playable UI/client work.
-The v0.11 planning release contains [owner-reviewed client discovery/design](docs/v0.11.0-readiness.md)
-and a [shared implementation plan](docs/ui/client-milestones.md). Both a playable
-browser and standalone desktop are required; the prototype remains simulated.
+Freeciv and C-evo are concrete sources for AI, client and UI-workflow assessment,
+not ToT rules oracles. Their playing strength and adaptation cost have not been
+benchmarked here. [Source assessment](docs/ai-client-reuse-assessment.md) ·
+[Artwork assessment](docs/ui/freeciv-assessment.md) ·
+[Reuse policy](docs/prior-art.md).
+
+## Documentation
+
+| Document | Purpose |
+| --- | --- |
+| [Mission](docs/mission.md) | Product targets, compatibility, resources and reuse boundaries |
+| [Delivery plan](docs/plan.md) | Workstreams, dependencies, sequencing and acceptance |
+| [Backlog](BACKLOG.md) | Map to live GitHub programs and story/release conventions |
+| [Client packages](docs/ui/client-milestones.md) | Both-client delivery, original UI contracts and human acceptance |
+| [Headless campaigns](docs/generated-campaign.md) | Seeded fresh games, AI autoplay and deterministic checkpoints |
+| [Browser observer](docs/browser-observer.md) | Live/replay usage, fog modes and stream semantics |
+| [Evidence](docs/evidence/README.md) | Measured format/mechanics findings and reproducible checks |
+| [Milestone review](docs/milestone-review.md) | Owner-launched independent review and exact-reviewed-SHA releases |
+| [Environment](docs/environment.md) | Local toolchain, installation and reference/oracle setup |
+| [Initial feasibility study](docs/feasibility.md) | Historical reconnaissance; the current plan supersedes its schedule |
+
+## Development
 
 ```bash
-# Rust CLI (successor of the Python probe)
+# Rust CLI (successor of the Python format probe)
 cargo run -- mp /mnt/d/games/CIVTOT/World.mp
 
-# Full local suite: Rust tests + Python probe + golden evidence corpus
-export CIVTOT_HOME=/mnt/d/games/CIVTOT   # golden part self-skips when unset
+# Full local suite; install-backed checks self-skip without CIVTOT_HOME
+export CIVTOT_HOME=/mnt/d/games/CIVTOT
 make test
-make evidence-regen                       # after an intentional format change
+make fmt clippy
+make evidence-regen  # after an intentional format change
 
-# Python format probe: Rules.txt / .MP maps / .SAV+.SCN walks / save diffs
-python3 tools/totctl.py rules $CIVTOT_HOME/Rules.txt -o /tmp/rules.json
-python3 tools/totctl.py map   World.mp -o /tmp/world.png --json /tmp/world.json
-python3 tools/totctl.py scnmap FallRome/ROMFALL.scn -o /tmp/romfall.png
-python3 tools/totctl.py save  FallRome/ROMFALL.scn -o /tmp/walk.json
-python3 tools/totctl.py diff  <a.sav> <b.sav> -o /tmp/diff.json
+# Python format inspection
+python3 tools/totctl.py rules "$CIVTOT_HOME/Rules.txt" -o /tmp/rules.json
+python3 tools/totctl.py map "$CIVTOT_HOME/World.mp" -o /tmp/world.png --json /tmp/world.json
+python3 tools/totctl.py save "$CIVTOT_HOME/FallRome/ROMFALL.scn" -o /tmp/walk.json
 ```
 
-Highlights from the first session (details in [docs/evidence/](docs/evidence/)):
-`.MP` format decoded and *proven* (World.mp renders as Earth with correct biome
-latitudes); ROMFALL.scn walked — all 7 civ names decoded; ToTPP `0x33` saves share
-the base front layout; the save-differ identified a "−1 unit record" delta between
-two real autosaves.
+The Rust workspace contains `tot-kit`, `engine`, `lua-host`, `totctl` and `totui`.
+Original behavior is measured using the owner's installation and an isolated
+Wine oracle. Read [its README](tools/oracle/README.md) and
+[lessons](docs/lessons.md) before running it. The engine and clients run natively;
+Wine is a development reference, not their runtime architecture.

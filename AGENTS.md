@@ -1,8 +1,16 @@
 # ToTEngine — agent orientation
 
-Open-source recreation of Civilization II: Test of Time gameplay (especially
-community scenarios), in Rust. Reads the user's original ToT install; ships
-none of its assets.
+Open-source native recreation of Civilization II: Test of Time in Rust, for
+both desktop and playable browser clients using the user's original resources.
+ToT scenario compatibility is the niche. Main targets: complete faithful UI
+with optional QoL, headless all-AI scenario experiments, scenario observation,
+different/pluggable AIs, scenario inspection/testing/creation assistance, and
+recording of play/observation sessions. Ships no original assets. Current scope
+and sequencing: `docs/mission.md`, `docs/plan.md`, `BACKLOG.md` and decision 0008.
+Freeciv/C-evo AI/client/workflow reuse is an assessment candidate, not adopted
+rules or a license change. Full-AI/plugin implementation stays behind complete
+playable clients; source study and existing-policy scenario tools may proceed.
+Exact original-AI #117 remains separate, not a prerequisite for every AI option.
 
 ## Layout
 
@@ -12,8 +20,9 @@ none of its assets.
   stdlib only
 - `tools/oracle/` — headless-Wine rig that drives the original game as a
   behavioral oracle; **read its README before touching or running it**
-- `docs/` — `feasibility.md`, `plan.md` (tiers/principles), `BACKLOG.md`
-  (story queue), `evidence/` (all proven format findings), `decisions/`,
+- `BACKLOG.md` — root live-queue map and working conventions
+- `docs/` — `mission.md`, `plan.md` (workstreams/dependencies), historical
+  `feasibility.md`, `evidence/` (all proven format findings), `decisions/`,
   `refs/` (vendored ToTPP Lua API), `milestone-review.md` (release process),
   `environment.md` (machine setup/quirks), `lessons.md` (distilled
   process/rig lessons — read before driving the oracle)
@@ -55,6 +64,80 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
   pass explicit working directories.
 
 ## Status shorthand
+
+Milestone 14 started, 2026-11-08, at the owner's instruction to begin the first
+roadmap item after milestone alignment. #181 merged to main at
+`d165aebb4d40c178168bfc2d733407a84af860b4`. #182 is testing the combined code
+at `7ad1e9302566836ca643dd62c12a102a938b0f53`; CI/autoplay, 34 desktop/shared
+tests, real-pack integration and pack-preparer tests pass. Actual packaged
+Chromium/Linux/Windows routes are in progress. Planning PR #191 is retargeted
+to main. No new release version, human acceptance or milestone review is claimed.
+Preserve existing owner previews/saves. Current private packages:
+`review-tmp/tot-client-foundation-{linux,windows}-7ad1e93`.
+
+Owner mission/roadmap reorganization, 2026-11-08: `docs/mission.md` and decision
+0008 define the seven product targets; `docs/plan.md` replaces the stale T0–T4
+schedule with workstreams/dependency gates, and root `BACKLOG.md` maps the live
+queue. New programs: #183 scenario compatibility/workbench, #184 headless
+scenario experiments, #185 scenario observer, #186 session recording, #187
+AI adoption/evaluation, #188 optional QoL, #189 city queues, #190 rally points.
+Existing engine/client/AI umbrellas are reconciled, not closed by planning.
+Planning branch `docs/scenario-platform-roadmap` includes the earlier source
+study and remains stacked on the Isotrident feature commit; keep #181 and #182
+separate when integrating it. Changes since that feature are documentation only.
+Original resources remain the main product requirement; approved Isotrident
+fallback stays optional. The follow-up backlog-to-milestone request created named packages 14–29 and
+bounded stories #192–#209, recorded in `docs/milestones.md`; version numbers,
+due dates and candidate SHAs remain unassigned. Historical milestones are
+unchanged. Full-AI/plugin gates still depend on complete clients, including
+additional original-feature slices beyond this planning list. No implementation,
+public hosting or licensing change was launched by this reorganization.
+
+Resumed 2026-11-08: [PR #182](https://github.com/diegoami/totengine/pull/182)
+implements the post-v0.15 follow-ups #176–#179 on the separate
+`fix/client-input-recovery` branch, head
+`194b955335560593d58d0a988fc4c272b7401140`, based directly on main.
+Worktree: `/home/diego/review-tmp/totengine-client-input-recovery`.
+It preserves the first queued gesture attempt, clears obsolete pending edits,
+resets city panels on map/setup loads while retaining open-workspace state,
+and documents/tests second tabs completing already advancing opponents.
+Local validation passed: 259 install-backed Rust tests including desktop,
+11 Python tests, full goldens/fmt/strict default+desktop Clippy, actual Chromium
+and Linux SDL routes with 26 newly written checkpoints identical across both.
+Windows native input and human acceptance were not rerun. Evidence:
+`docs/evidence/client-input-recovery-v1.json` on the fix branch. PR #182 is open;
+GitHub CI and generated campaign autoplay both passed on its exact head.
+#176–#179 stay open until it lands. Owned QA host 8815 and isolated native app/display are stopped; owner
+previews/saves are untouched. PR #181 and the source-assessment branch below
+remain separate; no release, milestone review or AI port was launched.
+
+Session close, 2026-11-08: [PR #181](https://github.com/diegoami/totengine/pull/181)
+(Isotrident fallback, head `de0bca17a4a1fa1df963af79203d130a67ebed9a`)
+is **open; all four GitHub checks passed** (Rust, Python, autoplay, GitGuardian).
+It is not merged/released or independently milestone-reviewed. Current branch
+`docs/c-evo-source-assessment` is pushed and **stacked on that feature commit**;
+its later commits are documentation/source-study only. Keep the Isotrident PR
+separate when integrating these notes. Next session: read
+`docs/ai-client-reuse-assessment.md` and `docs/ui/freeciv-assessment.md`, then
+inspect current review/PR status before choosing the next scoped package.
+The Open demo was an assistant-authored validation baseline; the owner approved
+Isotrident artwork, not a complete alternative gameplay ruleset. Public hosting,
+full redistributable rules, AI adoption benchmarks and whole-client adoption
+are unfinished. #176–#179 remain separate follow-ups. No new milestone/version
+was assigned, and no AI/client port or public deployment was started.
+
+2026-11-08 owner direction: ToT **scenario compatibility is the niche**; evaluate
+stronger Freeciv/C-evo AI, whole clients and UI workflows as real adoption
+candidates. Do not assume exact original-AI reproduction is the sole acceptable
+AI route. Source/adapter assessment: `docs/ai-client-reuse-assessment.md`; pinned
+C-evo-x checkout is `/home/diego/review-tmp/c-evo-x-reference`. Its code has
+public-domain declarations, but bundled help excludes graphics/sounds. No code
+or media was adopted. Full-AI/plugin implementation gates remain; source study
+does not launch a port or cancel #117. Owner authorized community scenario
+downloads **installed in the real CIVTOT Scenario directory**, in individual
+folders, not merely left in temporary reference storage. Roman Civil Wars plus
+audio is installed under `Scenario/Roman Civil Wars`; static parse and hashes
+passed, no native play acceptance claimed. Preserve existing games/root assets.
 
 Owner approved **Isotrident as fallback artwork** on 2026-11-08 for a future web
 application without a ToT installation. Assessment/usage/licensing and remaining
@@ -173,7 +256,7 @@ The release tag points exactly to the independently reviewed SHA.
 v0.10 is original-derived, not the complete original AI. The owner's subsequent
 full-port scope is `docs/original-ai-scope.md`, program #117: A0–A7 standard-game
 completion, A8 full vanilla maps/scenarios. **The complete AI program is gated
-behind the playable UI/client work** (owner decision, 2026-11-06). First AI task
+behind the playable UI/client work** (owner decision, 2026-11-06). First task within original-fidelity program #117
 after that gate: #118 (native decision inventory, explicit fidelity boundary
 and revised work estimates). The proposed
 trusted compatibility driver is not an approved amendment of decision 0003.
@@ -334,6 +417,7 @@ original AI/pluggable AI stay behind complete playable-client delivery.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).
+Historical release ladder follows; current future scope/order is decision 0008 and `docs/plan.md`.
 Roadmap: small releases, one theme each (GitHub milestones; BACKLOG.md
 holds conventions only;
 decision 0002; observing and playing are the two main goals): v0.3.0
@@ -345,10 +429,10 @@ and client milestone planning → v0.12.0 first playable turn on both clients
 → full playable client across subsequent milestones
 → pluggable AIs after the playable client (version unassigned). The v0.10
 target is recognizable original-game AI behavior, supported by oracle
-comparisons; AI v1 in v0.8 is only the foundation. Client screen/workflow
-specification and owner-reviewed design are still missing: decision 0005
-requires them before substantial UI implementation; later versions and
-milestone count are unassigned. Story state:
+comparisons; AI v1 in v0.8 is only the foundation. Decision 0005 required original UI discovery and owner-reviewed design;
+that first design/first-slice gate is complete. Remaining native UI branches
+still require reference/contracts; later versions and milestone count are
+unassigned. Decision 0008 organizes scenario, recording, QoL and AI-choice work. Story state:
 T1-1/2/3/5/8/9 and RG-1 are done; `engine::turn::run_turn` is the loop. T1-6's randomness half is **done**
 (the original LCG and its `rand_int` are decoded, runtime-verified and
 shipped in `engine::rng`). Its combat-round half is decoded and shipped

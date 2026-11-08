@@ -1,5 +1,11 @@
 # Browser observer (#80 / #81)
 
+Scenario-aware observation is a first-class [mission](mission.md) target,
+tracked by [#185](https://github.com/diegoami/totengine/issues/185) with scenario
+capabilities #183, headless experiments #184 and session recording #186. The
+current usage below remains the implemented baseline; complete scenario event/
+objective/map inspection and unified recording are future packages.
+
 The browser watches the v0.10 built-in opponent by default through the existing
 player API (decision 0002), with original-derived research, expansion, military
 targeting and city occupation. `--builtin` explicitly selects that default;

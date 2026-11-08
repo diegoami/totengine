@@ -1,5 +1,11 @@
 # Feasibility Evaluation — Recreating Civ2: Test of Time Gameplay
 
+> Historical reconnaissance from 2026-11-01. The current [mission](mission.md),
+> [delivery plan](plan.md) and [decision 0008](decisions/0008-scenario-platform.md)
+> supersede this document's schedule, early status assumptions and single-path AI
+> planning. Retain its observations as dated evidence, not current completion
+> claims. Freeciv/C-evo reuse is assessed in [the source study](ai-client-reuse-assessment.md).
+
 *Evaluation date: 2026-11-01. All local facts below were verified on this machine
 against the installation at `/mnt/d/games/CIVTOT` and the Wine prefix
 `~/.wine_civ2tot`.*

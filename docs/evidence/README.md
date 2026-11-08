@@ -3379,8 +3379,8 @@ contract; original new-game initialization parity is not claimed.
 
 [generated-campaign-v1.json](generated-campaign-v1.json) records Rules hashes,
 setup and validation context. [The full authored-rules checkpoint golden](generated-campaign-v1.ctc)
-is regenerated for engine v0.15.0; only the exact-version header changes from
-the v0.14 fixture, with metadata hash/version refreshed. It still contains every
+is regenerated for engine v0.16.0; only the exact-version header changes from
+the v0.15 fixture, with metadata hash/version refreshed. It still contains every
 order and round fingerprint for 100 rounds of AI v1, including
 the final fingerprint `b22e4340b6ab8bf6`. It reaches 20 cities, 27 population,
 28 units and 35 acquired advances. [The authored trajectory](generated-authored-campaign.tsv)
@@ -4084,3 +4084,12 @@ The exact candidate SHA and independent verdict are authoritative on the live
 milestone review issue; neither human acceptance nor this evidence launches a
 review or creates a tag. Earlier client-foundation and Quick Start records
 remain historical preview validation.
+
+## v0.16.0 release closeout
+
+[client-v016-release.json](client-v016-release.json) records first-round Kimi
+AGREE on #216, the exact reviewed/tagged SHA, archive/package checksums and
+verified downloaded payloads. Published binaries/art match the reviewed
+candidate; additive RELEASE.md records approval and known limits. Later fixes
+for #217–#219 are unreleased and do not alter the immutable tag/assets. Owner
+previews/games remain preserved; full client/AI/scenario claims remain limited.

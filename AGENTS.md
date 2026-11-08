@@ -65,43 +65,41 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
-v0.16.0 candidate preparation, milestone 14, 2026-11-08: #181/#182/#191/#212
-and setup-feedback #214 are merged; #176–#179/#213 are closed. Owner explicitly
-confirmed “Yes, both clients and resource routes pass” for #210, now closed.
-This is narrow client-resource/recovery acceptance, not full clients, ruleset
-balance or independent review. Source/claims: `docs/v0.16.0-readiness.md` and
-`docs/evidence/client-v016-candidate.json`. Only v0.15.0 is released so far.
+v0.16.0 is RELEASED at exactly reviewed/tagged SHA
+`2f37ab49a56dbcb2091977162518604ae3b6ea0b` (Kimi K3.1 Pro AGREE on #216,
+round one, no MUST-FIX). Milestone 14 and #210/#211/#216 are closed.
+Windows/Linux archives and SHA256SUMS are on the GitHub release; downloaded
+archives and every payload hash verify. All reviewed payloads/binaries are
+unchanged; additive RELEASE.md records approval/limits with a refreshed package
+inventory. Candidate passed 264 install-backed Rust tests, 13 Python,
+goldens/fmt/strict Clippy, six fixture authors, 32 seeds/policy and fresh packaged
+Chromium/Linux/Windows input with 53 Original + seven demo outputs identical
+across all three. Reviewer repeated Chromium/Linux input and verified retained
+Windows outputs/guards; do not claim reviewer-rerun Windows or fresh live-Wine.
+Records: `docs/v0.16.0-readiness.md`, `docs/evidence/client-v016-release.json`.
 
-Preparation rederived the version-bound campaign golden (only engine header
-changed; fingerprint b22e4340b6ab8bf6), six fixture authors, all 264 install-backed
-Rust tests with desktop, 13 Python, goldens/fmt/strict default+desktop Clippy and
-all seven campaign tests including 32 seeds per policy. Versioned Chromium/Linux/Windows packages pass all input routes; 53 original
-and seven demo newly written outputs match across all three. Fresh Windows
-candidate input retained/passed its foreground guard after observing the owner
-desktop closed. Final packages are `review-tmp/tot-v016-final-{linux,windows}`;
-all manifests verify and binaries match tested copies. Versioned Quick Start and
-wrong-version rejection checks pass without changing the active test game.
+Post-tag branch `fix/v016-review-followups` addresses #217 campaign prose,
+#218 explicit client-first AI dependency prose, #219 Elephant/abbreviated stealth
+sprite aliases with a distinct-source-pixel regression. These fixes are
+UNRELEASED; do not move v0.16.0 or replace its assets. Targeted shared/desktop
+suite passes 37 tests (six authors ignored), including real-pack integration.
+Next planned package is milestone 15, #192/#193 scenario admission/corpus and
+entry contract. Worktree `review-tmp/totengine-scenario-admission` on
+`feat/scenario-admission` exists but is unmodified. Source audit found emitted
+GIVETECHNOLOGY skipped on application and Original Events compound/endgame
+constructs unsupported; report these honestly before admitting simulation. No
+scenario inspector, full UI/AI, Lua/multi-map implementation or AI port is shipped.
 
-The release-preparation branch is `release/v0.16.0`, worktree
-`/home/diego/review-tmp/totengine-v016-candidate`. After candidate notes/version
-land on main, create the exact-SHA independent milestone issue and print the
-review prompt per `docs/milestone-review.md`; the owner launches it. No review
-or tag is authorized merely by human acceptance. Once candidate main is frozen,
-only fixes for that milestone land until its release. #211 tracks readiness.
-Find the live milestone review issue for the authoritative candidate SHA.
-
-Preserve owner hosts 8816 (Original) / 8820 (demo), updated Quick Start packages
-`review-tmp/tot-client-quick-start-{linux,windows}`, launchers and saves under
-`review-tmp/totengine-owner-client-foundation`. The active browser demo was
-checkpointed/restored at `browser-demo-saves/before-ui-update-cb13618e.cth`.
-Owner preview metadata remains v0.15; v0.16 checkpoints are version-bound, so do
-not replace their binaries or saves. The owner desktop PID 1868 was observed
-closed before final Windows validation. Earlier preview/combined records are
-historical snapshots. Scenario-admission worktree/branch exists at
-`review-tmp/totengine-scenario-admission` / `feat/scenario-admission`, still
-unmodified: source audit found GIVETECHNOLOGY emitted but skipped, and Original
-Events.txt includes compound/endgame constructs; no scenario inspector or AI
-port has been implemented. #192/#193 remain future work after the review gate.
+Preserve owner browser hosts 8816/8820 and all old previews/games. Launchers and
+saves remain under `review-tmp/totengine-owner-client-foundation`; running
+Quick Start previews use v0.15 metadata in
+`review-tmp/tot-client-quick-start-{linux,windows}`. Do not replace these with
+version-bound v0.16 binaries. Active demo backup:
+`browser-demo-saves/before-ui-update-cb13618e.cth`. Candidate QA apps/displays and
+hosts 8817–8819 are stopped; owner desktop was observed closed before candidate
+Windows checks. Final release artifacts are under
+`review-tmp/totengine-v016-release-artifacts` and verified downloads under
+`review-tmp/totengine-v016-release-download`.
 
 Owner mission/roadmap reorganization, 2026-11-08: `docs/mission.md` and decision
 0008 define the seven product targets; `docs/plan.md` replaces the stale T0–T4
@@ -114,9 +112,9 @@ The source study and roadmap are now on main via #191; artwork and recovery
 were integrated through their separate PRs #181/#182.
 Original resources remain the main product requirement; approved Isotrident
 fallback stays optional. The follow-up backlog-to-milestone request created named packages 14–29 and
-bounded stories #192–#209, recorded in `docs/milestones.md`; version numbers,
-due dates and candidate SHAs remain unassigned. Historical milestones are
-unchanged. Full-AI/plugin gates still depend on complete clients, including
+bounded stories #192–#209, recorded in `docs/milestones.md`. Milestone 14 is
+released as v0.16.0; future packages 15–29 retain unassigned versions/dates.
+Original historical milestones are unchanged. Full-AI/plugin gates still depend on complete clients, including
 additional original-feature slices beyond this planning list. No implementation,
 public hosting or licensing change was launched by this reorganization.
 

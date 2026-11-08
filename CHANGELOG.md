@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Correct fallback sprites for Elephant, Stlth Ftr. and Stlth Bmbr.; clarify
+  campaign-version and client/AI dependency prose (#217–#219).
+
 ## [0.16.0] — client resources and recovery
 
 - Add a prominent Quick Start button and fresh random setup/new-game seeds,

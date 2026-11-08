@@ -29,12 +29,12 @@ These are product targets, not a statement that all are implemented.
 
 ## Status
 
-Latest released tag: **v0.15.0 — city information panels**, independently
-reviewed on [#162](https://github.com/diegoami/totengine/issues/162).
-[Windows/Linux downloads](https://github.com/diegoami/totengine/releases/tag/v0.15.0)
+Latest released tag: **v0.16.0 — client resources and recovery**, independently
+reviewed on [#216](https://github.com/diegoami/totengine/issues/216).
+[Windows/Linux downloads](https://github.com/diegoami/totengine/releases/tag/v0.16.0)
 include `totplay` and `totdesktop`, runtime/dependency notices and no original
 resources. See [launch/controls](docs/playable-clients.md),
-[readiness](docs/v0.15.0-readiness.md) and [changelog](CHANGELOG.md).
+[readiness](docs/v0.16.0-readiness.md) and [changelog](CHANGELOG.md).
 
 | Available foundation | Current boundary |
 | --- | --- |
@@ -44,11 +44,11 @@ resources. See [launch/controls](docs/playable-clients.md),
 | Versioned built-in opponent and legacy policies | Original-derived research and supported land campaigns are partial; full native AI and external plugins are not shipped |
 | Format inspection/diff, order logs, observer archives and replay checkpoints | Full scenario authoring and unified play/observation recording are future programs |
 
-Unreleased artwork/recovery and planning PRs #181/#182/#191 are merged to main.
-Combined packaged Chromium/Linux/Windows checks pass; milestone 14 remains open
-for independent review after explicit
-[owner acceptance #210](https://github.com/diegoami/totengine/issues/210).
-[Proposed v0.16.0 scope and checks](docs/v0.16.0-readiness.md).
+v0.16 adds optional artwork/resources, input/reconnect recovery, Quick Start,
+random editable seeds and named demo research after both-client owner acceptance
+and first-round independent AGREE. [Release evidence](docs/evidence/client-v016-release.json)
+records archive hashes and the 53 Original/seven demo checkpoints matching
+across packaged Chromium, Linux and Windows. Milestone 14 is closed.
 The approved Isotrident artwork fallback is optional and separately licensed;
 Open demo is a small authored demonstration, not full redistributable ToT rules.
 Public hosting and a complete independent rules profile remain separate scope.

@@ -4,11 +4,10 @@ Owner requested milestone alignment with the reorganized backlog, 2026-11-08.
 [Mission](mission.md) · [Delivery plan](plan.md) · [Backlog](../BACKLOG.md) ·
 [Live GitHub milestones](https://github.com/diegoami/totengine/milestones).
 
-The existing thirteen closed milestones retain their historical metadata and
-assignments. Sixteen named future packages now carry concrete stories.
-Milestone 14 now prepares v0.16.0 after explicit owner acceptance; the other
-packages have no release versions or due dates. Candidate SHA and review state
-are recorded in the readiness/review issue, not inferred from assignment.
+The original thirteen historical milestones are unchanged. Milestone 14 is now
+closed with released v0.16.0 after owner acceptance and independent AGREE.
+The fifteen future packages (15–29) retain concrete stories with no release
+versions or due dates. Exact release/review state comes from the live queue.
 This is a planning horizon, not a fixed count of remaining releases or a claim
 of complete client delivery after the listed UI slices.
 
@@ -37,9 +36,9 @@ of complete client delivery after the listed UI slices.
 
 1. Milestone 14 groups the resource/recovery code and planning PRs; it
    does not retroactively change v0.15 or establish a new human acceptance.
-   Its code/planning PRs are merged and owner acceptance #210 passed for both
-   clients/resources. Readiness #211 now prepares v0.16.0 and independent review.
-   See [the candidate record](v0.16.0-readiness.md).
+   Owner acceptance #210 and independent AGREE #216 passed; v0.16.0 is released
+   at exactly the reviewed SHA and milestone 14 is closed.
+   See [the release record](v0.16.0-readiness.md).
 2. Admission (15) and science/government (16) can be scoped from current
    references. Classic entry (17) waits for the admitted profile/contract; the
    headless/observer/recording chain then validates that same supported profile.

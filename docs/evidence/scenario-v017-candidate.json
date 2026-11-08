@@ -43,7 +43,16 @@
       "sha256": "42a82ff57728ef08cb50def4993a4561d39008a3f3adbca91860a0e64bc079cb"
     },
     "review_fix_tests": "26 inspector tests pass; structural CLI status, multi-entry oversized coordinates, bad magic, audit meaning, directive placement and entry/shared scan budgets.",
-    "environment_notes": "Initial preview HTTP test could not bind a loopback socket in the sandbox; rerun with local socket access passed all six preview tests. Non-Rust make commands ran separately; install-backed goldens are explicitly rerun with CIVTOT_HOME because the non-Rust environment initially self-skipped them."
+    "environment_notes": "Sandbox blocked two Rust browser tests and Python preview HTTP bind; with loopback access both Rust tests and all six Python preview tests pass. Non-Rust make commands ran separately. Their first golden attempt self-skipped without CIVTOT_HOME; full install-backed goldens are explicitly rerun with the variable set.",
+    "review_fix_rust_debug": {
+      "initial_passed": 260,
+      "initial_socket_permission_failures": 2,
+      "loopback_rerun_passed": 2,
+      "aggregate_passed": 262,
+      "ignored": 7,
+      "make_test_exit": 2,
+      "reason": "Two Rust loopback tests need socket permission; both rerun successfully. Non-Rust make commands completed separately. No single uninterrupted make test pass claimed."
+    }
   },
   "inspection_evidence": "scenario-inventory-v1.json",
   "engine_audit_ref": "v0.16.0; audited production source bytes match; not a runtime/binary conformance claim",

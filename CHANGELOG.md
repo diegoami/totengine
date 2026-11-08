@@ -13,7 +13,7 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   building sales through the existing explicit confirmation.
 - Retain a fresh original UI panel study and 1,280 original happiness-stage
   snapshots. The owner approved the requested both-client panel route;
-  independent milestone review gates publication.
+  independent milestone review agreed in round three (#162).
 - Open own cities by double-clicking their map sprite or garrison in both
   clients. Bind the gesture to its inert first click, including delayed browser
   responses and multiple SDL events in one frame.

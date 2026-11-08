@@ -3,7 +3,10 @@
 Milestone 13 / #157–#159 follows the owner's instruction to continue after the
 v0.14 release. It selects the remaining information panels from the reviewed
 city screen contract, not government/diplomacy or the complete client/AI gates.
-Both browser and ordinary standalone desktop remain required.
+Both browser and ordinary standalone desktop shipped in v0.15.0 at exactly
+`948b0d2b94d22315190c664340d080062629c8ea`, after owner panel approval and
+third-round independent AGREE #162. #157–#159 and milestone 13 are closed;
+non-blocking #176–#179 remain open. Both clients remain required for later work.
 
 ## Reference and implementation boundary
 

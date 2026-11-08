@@ -8,7 +8,9 @@ Run **totplay** (Windows: **totplay.exe**) for the local browser client, or
 **totdesktop** (**totdesktop.exe**) for a standalone game window. The browser
 launcher starts a local loopback host and opens your default browser. Use the
 in-game Close client button to stop that host; closing a browser tab keeps the
-game paused and available for reconnection. Desktop needs no browser/server.
+session available for reconnection. In v0.15 a refreshed/reconnected tab can
+resume an already-running opponent phase; #179 tracks the contract follow-up.
+Desktop needs no browser/server.
 The reference Linux x86-64 package requires glibc 2.34 or later; desktop also
 requires the system SDL2 runtime. Windows x86-64 packages include SDL2 and have
 been tested on Windows 10.
@@ -56,12 +58,13 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   five. Outputs/mood refresh immediately, without collecting income or ending
   the turn. **PageUp/PageDown** navigate your cities; **Escape** returns to the
   map and keeps accepted edits. **Ctrl+S / Ctrl+L** save/load inside the city too.
-- Development v0.15 adds **Info / Support / Improvements / Happy** panels.
+- v0.15 adds **Info / Support / Improvements / Happy** panels.
   Support distinguishes units supported here from units present in Info. Building
   sale rows retain explicit confirmation. Happy omits unchanged stages. The
   selected panel stays across city navigation; viewing a list never orders a
   unit. Tile arrow/Space keys apply only in Info; radius mouse edits remain
-  immediate in every panel. The owner approved these panels in both clients; independent review is pending.
+  immediate in every panel. The owner approved these panels in both clients;
+  independent review agreed in round three (#162), and v0.15.0 is released.
 - **Auto workers**, or the centre tile, requests automatic allocation. An empty
   tile clicked without a spare specialist also requests automatic allocation,
   following the original transition. First remove a worker when you want to

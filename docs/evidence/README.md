@@ -4005,3 +4005,16 @@ browser recovery after two failed tick attempts. Windows QA stopped at its
 initial foreground guard before input; prior results remain historical.
 No new native arithmetic or human acceptance is claimed. The third review is
 owner-launched; no tag is approved by the previous BLOCK verdicts.
+
+
+## v0.15 released packages
+
+`client-v015-release.json` records third-round AGREE #162, exact tagged SHA
+`948b0d2b94d22315190c664340d080062629c8ea`, uploaded archive/manifest hashes
+and final packaged input: 54 Chromium / 47 Linux SDL / 47 Windows SDL full
+checkpoint comparisons. The final Windows run acquired foreground focus and
+completed; earlier guard-stopped runs above remain historical. Original assets,
+fonts, saves and captures stay outside Git. Both archives include notices plus
+a release-status/known-follow-up note; downloaded bytes match retained hashes.
+Non-blocking #176–#179 remain open. The release closes milestone 13/#157–#159,
+not complete-client #94/#125 or original-AI gate #117.

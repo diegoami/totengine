@@ -290,55 +290,34 @@ explicit in release notes and docs/evidence/client-v014-release.json; do not
 claim those final Windows input reruns passed. Preserve all owner previews/games:
 current accepted browser is port 8797; Windows launcher is under
 review-tmp/totengine-owner-v014. Readiness: docs/v0.14.0-readiness.md.
-**Current v0.15 work:** the owner directed “ok when done continue”. Milestone 13
-“City information panels: browser and desktop” is live: #157 reference/filtered
-views, #158 shared panels, #159 real-input/owner acceptance. Scope:
-docs/ui/city-information-milestone.md. Panel implementation merged in PR160;
-city entry merged in PR161. First independent review #162 (Kimi K3.1 Pro)
-returned BLOCK on browser races #166/#167 and follow-ups #163–#165/#168/#169.
-Review fixes: fix/v015-review-round-one; evidence client-v015-review-r2.json.
-First-review fix checks: 254 Rust / eleven Python / full goldens / fmt / strict Clippy;
-29 desktop-feature tests; 45 current Chromium and 39 Linux checkpoint comparisons.
-Windows input remains pre-review evidence, not rerun for these fixes.
-Round two (Kimi K3.1 Pro) independently verified those fixes but returned BLOCK
-on #171 (SDL batch invalidation), with follow-ups #172–#174. Current fixes:
-fix/v015-review-round-two; evidence client-v015-review-r3.json. Final desktop
-suite: 30 tests; actual Chromium 54 / Linux SDL 47 checkpoint comparisons pass.
-Windows QA was rebuilt; guarded input stopped at initial owned-window focus,
-before input. Prior Windows results remain historical. Owner previews preserved.
-Third review is owner-launched;
-do not tag the blocked candidate or begin unrelated milestone work.
-New private original study is complete: eleven captures, native Happy suppresses
-unchanged stages, Roma/Rhegium navigation retains the chosen panel. No original
-images/assets committed. Only the new copied prefix/display was driven; owned
-reference cleanup uses its stop marker. Numeric study: city-panels-study-v1.json.
-Engine CityInfo exposes own supported versus present unit lists, actual ordinal
-shield and settler-food charges, owned improvements/upkeep/local wonders, and
-five happiness snapshots. Views are immutable. happiness-stages-v1.json/vectors
-match 1,280 native snapshots in 256 contexts; final mood arithmetic is unchanged.
-Engine library 140 tests and strict Clippy pass; full install-backed make checks
-pass 251 Rust, 11 Python and golden. Desktop suite 26 passes; all six fixture
-authors and seven 32-seed campaign tests pass. Shared Info/Support/
-Improvements/Happy tabs are implemented; Info keeps the accepted tile inspector
-and adds present units, commodity workflows stay later. Happy omits unchanged
-rows, tabs do not close production context, city navigation clears it as before.
-Tile arrow/Space shortcuts are active only in Info; no implicit unit-list orders.
-All three adapters pass eight panel checkpoints with per-step panel/modal/page/
-roster assertions plus ninety prior-route checkpoints (114 total). The visiting
-unit case is created by recorded movement between existing own cities. Both
-new previews are ready; owner browser is 8799 and Windows launcher is under
-review-tmp/totengine-owner-v015, with separate practice slots. Owner approved the requested both-client panel route on 2026-11-07:
-“ok found it, approved, let us move on”. All owner v0.14 previews remain preserved.
-A final caption-only correction aligns panel unit numbers with map slot numbers;
-its fail-before/pass-after controller test is recorded in client-city-panels-v1.json.
-The running owner preview retains initial captions; preserve its games.
-New panel owner acceptance is satisfied. Independent owner-launched review
-remains required; no manual acceptance of the subsequent double-click correction
-is claimed. The correction is covered by shared/SDL and actual-input checks. Cargo now 0.15.0;
-the exact-version campaign golden was rederived and differs from v0.14 only
-in the version header. Do not overwrite
-accepted v0.14 previews or released packages. Complete original AI/pluggable AI
-remain gated behind complete playable-client delivery.
+**v0.15.0 “city information panels” is released**, exactly at independently
+reviewed SHA `948b0d2b94d22315190c664340d080062629c8ea` (AGREE #162,
+Kimi K3.1 Pro, round three). Milestone 13 and #157–#159 are complete. Both
+clients have Info/Support/Improvements/Happy with immutable own-city filtered
+support/upkeep/wonder views and five native-checked mood snapshots. Original
+study retains eleven private capture identities; 1,280 native stage snapshots
+reproduce byte-identically, with existing garrison-input limits explicit.
+City double click binds first ID/entity/session/pointer/focus; shared, SDL-batch
+and browser timing regressions protect selection and stale inputs. City lists
+page through explicit sale confirmation; Info alone owns tile keys.
+Independent review passed 255 Rust, eleven Python, full goldens/fmt/strict
+Clippy, 30 desktop tests, seven campaign tests including 32 seeds per policy,
+six fixture authors and actual Chromium/Linux input. Exact-reviewed-SHA final
+Linux/Windows archives and checksums are on the GitHub release. Final packaged
+Chromium/Linux/Windows input passes 54/47/47 full checkpoint comparisons.
+The final Windows run acquired foreground focus; earlier guard-blocked runs
+remain historical and were not relabeled. Release record:
+docs/evidence/client-v015-release.json; readiness: docs/v0.15.0-readiness.md.
+First/second review findings #163–#169/#171–#174 are fixed. Third review
+opened non-blocking #176–#179: queued invalid/third browser click, stranded edit
+recovery, new-session Info default, and reconnect/second-tab contract/testing.
+They remain open for subsequent work; no next version is assigned here.
+Owner approved the new panel route in both clients on 2026-11-07. No manual
+acceptance of later entry/review fixes is claimed. Preserve owner previews/games:
+browser ports 8797/8799 and launchers under review-tmp/totengine-owner-v014 and
+review-tmp/totengine-owner-v015. Those previews are older builds; do not overwrite
+live saves. Full-client #94/#125 and original-AI gate #117 remain open. Complete
+original AI/pluggable AI stay behind complete playable-client delivery.
 Read `docs/decisions/0005-playable-client-planning.md` for settled owner choices; read
 `tools/oracle/README.md` and `docs/lessons.md` before driving the reference UI.
 v0.10 implementation record: `docs/decisions/0007-original-like-ai.md` (#106).

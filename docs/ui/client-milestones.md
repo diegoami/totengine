@@ -176,12 +176,15 @@ browser inputs pass. [Scope](city-production-milestone.md) and
 first-round independent AGREE on #155 is complete and v0.14.0 is released. Deeper city panels and the packages below remain separate work; full
 original AI and pluggable AI stay behind complete playable-client delivery.
 
-## Current slice: v0.15 city information panels
+## Released slice: v0.15 city information panels
 
 Milestone 13 / #157–#159 selects Info, Support, Improvements and Happy from the
 reviewed city contract. New copied-reference observations and original-x86 stage
-snapshots back the immutable views. Shared panels are implemented; actual input,
-new both-client owner acceptance and independent review are still gates.
+snapshots back the immutable views. Both-client panels, new owner acceptance and
+third-round independent AGREE on #162 are complete; v0.15.0 is released at exactly
+`948b0d2b94d22315190c664340d080062629c8ea`. Final package input passes
+54 Chromium / 47 Linux / 47 Windows checkpoint comparisons. Non-blocking
+#176–#179 remain open for subsequent work.
 [Scope](city-information-milestone.md), [readiness](../v0.15.0-readiness.md).
 Further versions/counts and the complete client/AI gates remain unchanged.
 

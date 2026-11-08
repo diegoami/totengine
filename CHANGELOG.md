@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Suppress angle-bracketed trailing prose in scenario diagnostic tokens (#235),
+  retaining structural failures, inactive counts and bounded reports.
+
 ## [0.17.0] — scenario inspection and entry boundary
 
 - Add a bounded read-only scenario/corpus inspector with pinned input/resource

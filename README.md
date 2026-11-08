@@ -29,8 +29,10 @@ These are product targets, not a statement that all are implemented.
 
 ## Status
 
-Latest released tag: **v0.16.0 — client resources and recovery**, independently
-reviewed on [#216](https://github.com/diegoami/totengine/issues/216).
+Latest released tag: **[v0.17.0 — scenario inspection and entry boundary](https://github.com/diegoami/totengine/releases/tag/v0.17.0)**, independently
+reviewed on [#224](https://github.com/diegoami/totengine/issues/224). This is a
+source/CLI release; [readiness](docs/v0.17.0-readiness.md) records its limits.
+The packaged-client baseline remains v0.16.0:
 [Windows/Linux downloads](https://github.com/diegoami/totengine/releases/tag/v0.16.0)
 include `totplay` and `totdesktop`, runtime/dependency notices and no original
 resources. See [launch/controls](docs/playable-clients.md),
@@ -59,7 +61,7 @@ benchmarked here. [Source assessment](docs/ai-client-reuse-assessment.md) ·
 [Artwork assessment](docs/ui/freeciv-assessment.md) ·
 [Reuse policy](docs/prior-art.md).
 
-Unreleased scenario inspection now has a read-only CLI:
+Scenario inspection has a read-only CLI:
 `CIVTOT_HOME=/path/to/CIVTOT python3 tools/scenario_inventory.py --compact`.
 It pins five reference inputs and reports actual capability gaps; it executes
 no scripts/game and admits no runtime continuation. See

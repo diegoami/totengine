@@ -128,6 +128,28 @@ class InventoryTests(unittest.TestCase):
         (self.home/'Events.txt').write_text(base+'\n; trailing comment\n')
         self.assertEqual(self.cli_report()[0], 0)
 
+    def test_trailing_prose_never_becomes_a_diagnostic_token(self):
+        for prose in ['private tail prose', '<private tail prose>', '<secret>',
+                      '<content>', '<'+'private '*30+'>', '<private>; comment']:
+            with self.subTest(prose=prose):
+                (self.home/'Events.txt').write_text('@BEGINEVENTS\n@ENDEVENTS\n'+prose+'\n@IF\n')
+                code, full = self.cli_report()
+                self.assertEqual(code, 1)
+                for report in [full, inv.compact_report(full)]:
+                    entry = report['entries'][0]
+                    self.assertEqual(entry['support']['inspection'], 'incomplete')
+                    self.assertEqual(entry['support']['simulation'], 'not_admitted')
+                    macro = entry['macro']
+                    self.assertEqual(macro['event_blocks'], 0)
+                    self.assertEqual(macro['triggers'], {})
+                    self.assertEqual(macro['actions'], {})
+                    self.assertTrue(macro['scan_complete'])
+                    self.assertEqual(macro['diagnostics'], [
+                        {'code': 'content_after_endevents', 'line': 3, 'token': '<unrecognized>'},
+                        {'code': 'content_after_endevents', 'line': 4, 'token': '@IF'},
+                    ])
+                    self.assertNotIn(prose.split(';', 1)[0].upper(), json.dumps(report))
+
     def test_trailing_content_uses_the_same_entry_and_report_work_limits(self):
         source = '@BEGINEVENTS\n@ENDEVENTS\n'+'UNKNOWN\n'*(inv.SCAN_ENTRY_LIMITS['diagnostics']+10)
         (self.home/'Events.txt').write_text(source)

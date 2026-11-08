@@ -209,7 +209,8 @@ def scan_events(text, baseline, budget=None):
                 diagnostic('stray_text_end' if upper == 'ENDTEXT' else 'stray_location_end', number, upper)
                 continue
             if ended:
-                diagnostic('content_after_endevents', number, upper)
+                diagnostic('content_after_endevents', number,
+                           upper if upper.startswith('@') else '<unrecognized>')
                 continue
             if upper == '@BEGINEVENTS':
                 if block or events or began:

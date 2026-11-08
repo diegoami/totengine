@@ -1647,11 +1647,11 @@
     }
   ],
   "full_report_bytes": 433164,
-  "full_report_sha256": "0ff9067fd2bc07685bde1688bb70030faecdef72be02312a0d312120f7832df4",
+  "full_report_sha256": "15bc21772c7f904acd7166c8394bc71ed9f961618a9bb78c5f3c675b4ce5019a",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
     "format_probe_sha256": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",
-    "sha256": "dbbc97fbf798fa0df104cfb2b7c08a73dc700204b9d18b5a8d2de1092ae2f785",
+    "sha256": "a0b62e48c2368ac7893d2fcd56fe3935cc8a0b25ba9f03c379d0c0148f9a66df",
     "tool": "tools/scenario_inventory.py"
   },
   "profile_candidate": "classic-surface-032-v1",

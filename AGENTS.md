@@ -65,35 +65,36 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
-Milestone 15 / v0.17.0 remains UNRELEASED. Kimi K3.1 Pro BLOCK on #224
-reviewed exact first candidate `56262b0a761cd5307328f174593e02dde1ba429c`.
-It reproduced all declared checks and opened two MUST-FIX (#226 structural
-macro failures still succeeded; #227 huge coordinate aborted reports), plus
-four follow-ups #225/#228–#230. Worktree `review-tmp/totengine-v017-review-r1`
-on `fix/v017-review-r1` addresses all six with 26 inspector tests, bounded
-entry/shared scan budgets, corrected diagnostic/configuration behavior and
-regenerated corpus evidence. No review verdict for these fixes is implied.
+Milestone 15 / v0.17.0 remains UNRELEASED. Kimi K3.1 Pro BLOCK on #224,
+round two, reviewed `51732991e4577a538f0a12b0492ade0b464581a1`. All six
+first-round fixes #225–#230 were verified. New #232 MUST-FIX (stray payload
+terminators) and #233 follow-up (ignored trailing content after ENDEVENTS) are
+addressed in `review-tmp/totengine-v017-review-r2`, branch `fix/v017-review-r2`.
+Thirty inspector tests cover the phase/payload and trailing-content/budget
+matrix; all 43 Python tests and refreshed reports are recorded in
+`docs/evidence/scenario-v017-candidate.json`. No third-round approval is claimed.
 
-#192/#193 remain open for the release-review gate. #222's inspector and
-conditional classic-surface-032-v1 contract activate no native-file import.
-Four corpus entries have report-available inspection; Midgard is incomplete
-for a lexical location diagnostic, not proven invalid in the native game.
-All five remain unadmitted for simulation/human continuation. Phase/movement/
-fog, required events, dependencies and imported initializer remain explicit
-#197/#198 blockers. Sources/docs: `tools/scenario_inventory.py`,
+The second-round reviewer reproduced 265 install-backed Rust tests in both
+debug/release with desktop, all seven campaigns (32 seeds/policy), 39 then-current
+Python tests, full make test/goldens/fmt/strict Clippy and actual-pack integration.
+No Rust/workspace/runtime files change in the third candidate; don't present
+retained checks as freshly rerun. No GUI/native-gameplay claim is made.
+
+#192/#193 await the release gate. Inspector/conditional classic-surface-032-v1
+contract activate no native importer. Three corpus entries have report-available
+inspection; Midgard/location and Roman Civil Wars/trailing-content diagnostics
+make those two incomplete, not proven invalid in the original game. All five
+remain unadmitted for simulation/human continuation; #197/#198 retain explicit
+phase/movement/fog/event/dependency/initializer blockers. Docs:
 `docs/scenario-inspection.md`, `docs/scenario-entry-contract.md`,
 `docs/evidence/scenario-inventory-v1.json`, `docs/v0.17.0-readiness.md`.
 
-The first candidate's install-backed 265 Rust tests, 32 Python tests,
-goldens/fmt/strict Clippy and seven campaigns (32 seeds/policy) passed and were
-independently reproduced. Revised validation is recorded in
-`docs/evidence/scenario-v017-candidate.json`. No new GUI/native-gameplay run is
-claimed. Workspace metadata/checkpoints are v0.17; preserve old binaries/saves.
-#221 remains a CI-wiring follow-up: the available OAuth credential lacks
-workflow scope; new inspector tests run explicitly and through make test.
-After fixes land, update #224 to the exact main SHA and print the second-round
-review prompt per `docs/milestone-review.md`; the owner launches review. Do not
-tag or launch it from the main session. Existing owner previews/games remain.
+#221 CI wiring remains open: available OAuth credentials lack workflow scope;
+inspector tests run explicitly and via make test, not current CI. After fixes
+land, update #224 to exact main SHA and PRINT the third-round review prompt per
+`docs/milestone-review.md`; the owner launches it. Do not tag or launch review.
+If a third round is BLOCK, the owner decides. Preserve owner games/previews and
+old version-bound binaries/checkpoints; workspace metadata remains v0.17.
 
 v0.16.0 is RELEASED at exactly reviewed/tagged SHA
 `2f37ab49a56dbcb2091977162518604ae3b6ea0b` (Kimi K3.1 Pro AGREE on #216,

@@ -24,7 +24,8 @@ SCAN_REPORT_LIMITS = {'diagnostics': 8192, 'vocabulary': 1024, 'lines': 500000}
 STRUCTURAL_DIAGNOSTICS = frozenset({
     'nested_event', 'misplaced_condition', 'malformed_then', 'malformed_endif',
     'unclosed_event', 'unclosed_payload', 'malformed_location',
-    'stray_location_end', 'misplaced_directive', 'content_outside_event',
+    'stray_location_end', 'stray_text_end', 'misplaced_directive',
+    'content_outside_event', 'content_after_endevents',
 })
 
 
@@ -172,6 +173,7 @@ def scan_events(text, baseline, budget=None):
     payload = None
     events = 0
     began = False
+    ended = False
     budget = budget if budget is not None else ScanBudget()
     local = Counter()
     overflow = None
@@ -203,6 +205,12 @@ def scan_events(text, baseline, budget=None):
             if not t:
                 continue
             upper = t.upper()
+            if upper in ('ENDTEXT', 'ENDLOCATIONS'):
+                diagnostic('stray_text_end' if upper == 'ENDTEXT' else 'stray_location_end', number, upper)
+                continue
+            if ended:
+                diagnostic('content_after_endevents', number, upper)
+                continue
             if upper == '@BEGINEVENTS':
                 if block or events or began:
                     diagnostic('misplaced_directive', number, upper)
@@ -245,7 +253,11 @@ def scan_events(text, baseline, budget=None):
             if upper == '@ENDEVENTS':
                 if block:
                     diagnostic('unclosed_event', number, upper)
-                break
+                block = False
+                phase = None
+                current = None
+                ended = True
+                continue
             if upper.startswith('@'):
                 diagnostic('unsupported_directive', number, upper)
                 continue
@@ -276,9 +288,6 @@ def scan_events(text, baseline, budget=None):
                     payload = 'ENDLOCATIONS'
                     continue
                 if re.fullmatch(r'-?\d+', t) and current == 'PLAYCDTRACK':
-                    continue
-                if upper == 'ENDLOCATIONS':
-                    diagnostic('stray_location_end', number, upper)
                     continue
                 if not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', upper):
                     diagnostic('unmodelled_argument', number, current or '<none>')

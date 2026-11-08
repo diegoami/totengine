@@ -4,65 +4,20 @@
   "milestone": 15,
   "previous_tag": "v0.16.0",
   "previous_tag_sha": "2f37ab49a56dbcb2091977162518604ae3b6ea0b",
-  "base_sha": "56262b0a761cd5307328f174593e02dde1ba429c",
   "scope": [
     "Read-only scenario corpus inspection",
     "Conditional classic-surface-032-v1 entry contract",
     "Post-v0.16 non-blocking sprite/prose corrections"
   ],
-  "validation": {
-    "new_authored_inspector_tests": 26,
-    "existing_python_tests": 13,
-    "total_python_tests": 39,
-    "install_backed_rust_release_mode_with_desktop": 265,
-    "ignored_client_fixture_authors": 6,
-    "ignored_nightly_in_workspace": 1,
-    "autoplay": {
-      "tests": 7,
-      "seeds_per_policy": 32,
-      "result": "PASS"
-    },
-    "fmt": "PASS",
-    "strict_default_and_desktop_clippy": "PASS",
-    "format_goldens": "PASS; helper extraction leaves all previous outputs unchanged",
-    "real_corpus": {
-      "entries": 5,
-      "inspection_errors": 1,
-      "runtime_admissions": 0,
-      "compact_bytes_identical_to_evidence": true,
-      "full_report_sha256": "6652bd63e2e25440ac107cd82c76bdf19eee708a804fece8c5e74a07df3bb672",
-      "report_available_entries": 4,
-      "incomplete_entries": [
-        "midgard"
-      ]
-    },
-    "campaign": {
-      "rounds": 100,
-      "final_fingerprint": "b22e4340b6ab8bf6",
-      "only_engine_version_header_changed": true,
-      "sha256": "42a82ff57728ef08cb50def4993a4561d39008a3f3adbca91860a0e64bc079cb"
-    },
-    "review_fix_tests": "26 inspector tests pass; structural CLI status, multi-entry oversized coordinates, bad magic, audit meaning, directive placement and entry/shared scan budgets.",
-    "environment_notes": "Sandbox blocked two Rust browser tests and Python preview HTTP bind; with loopback access both Rust tests and all six Python preview tests pass. Non-Rust make commands ran separately. Their first golden attempt self-skipped without CIVTOT_HOME; full install-backed goldens are explicitly rerun with the variable set.",
-    "review_fix_rust_debug": {
-      "initial_passed": 260,
-      "initial_socket_permission_failures": 2,
-      "loopback_rerun_passed": 2,
-      "aggregate_passed": 262,
-      "ignored": 7,
-      "make_test_exit": 2,
-      "reason": "Two Rust loopback tests need socket permission; both rerun successfully. Non-Rust make commands completed separately. No single uninterrupted make test pass claimed."
-    }
-  },
   "inspection_evidence": "scenario-inventory-v1.json",
   "engine_audit_ref": "v0.16.0; audited production source bytes match; not a runtime/binary conformance claim",
   "source_sha256": {
-    "tools/scenario_inventory.py": "51a7eb6dedd7ac43f721f0a5745b629d9d6f1319b142e0eab880ed1902322858",
+    "tools/scenario_inventory.py": "dbbc97fbf798fa0df104cfb2b7c08a73dc700204b9d18b5a8d2de1092ae2f785",
     "tools/totctl.py": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",
     "docs/scenario-corpus.json": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
     "docs/scenario-engine-baseline.json": "7b3aa80969762a7b43fdedca0e982d5120bc68f281954c821f2a585f2a44b999",
     "docs/scenario-entry-contract.md": "b35090d21b067a2d7085fc9c14ba401e345537ad80a980795ccb34f5dc9341ba",
-    "docs/evidence/scenario-inventory-v1.json": "2a9b387041c1aa103eafcb03acd18428c0c20154f5a9eec3cabc14f9ad0f0f53"
+    "docs/evidence/scenario-inventory-v1.json": "36de22a6904d928d2de96da2ee0f74244ce51bbd9518ce559cc984a4a5fe4643"
   },
   "ci_limits": {
     "issue": 221,
@@ -71,19 +26,69 @@
   "compatibility": "Workspace metadata updates engine checkpoint version; preserve v0.15/v0.16 binaries/saves. No migration/native import/export provided. No new gameplay/client binary/input claim.",
   "admission": "No current corpus entry or manifest/keyword recognition grants simulation/human admission. First reference is conditional; phase/movement/fog/event/dependency/initializer proof remains before #197/#198 activation.",
   "safety": "No supplied code/game executes; original inputs and owner previews/saves remain unchanged. Sources are bounded snapshots; output is exclusive. Full reports private, compact derived metadata only in Git.",
-  "gates": {
-    "independent_review": "Round one BLOCK on #224 at base_sha; owner-launched second-round review required for fixes, not launched.",
-    "tag": "Not created",
-    "human_acceptance": "No new player UI/import route; no inferred additional human result."
-  },
-  "review_round": 2,
+  "base_sha": "51732991e4577a538f0a12b0492ade0b464581a1",
+  "review_round": 3,
   "review_findings_fixed": [
     225,
     226,
     227,
     228,
     229,
-    230
+    230,
+    232,
+    233
   ],
-  "validation_scope": "First-candidate release-mode Rust/autoplay/fmt/Clippy checks were independently reproduced on #224; no Rust/workspace/runtime files changed in review fixes. Current revision reruns make-test commands including Rust debug, all 39 Python tests/compilation and full install format goldens, plus exact full/compact report/expected failure reproduction."
+  "validation": {
+    "authored_inspector_tests": 30,
+    "existing_python_tests": 13,
+    "total_python_tests": 43,
+    "python_compilation": "PASS",
+    "format_goldens": "PASS; full CIVTOT_HOME-backed corpus, unchanged existing format outputs",
+    "real_corpus": {
+      "entries": 5,
+      "inspection_errors": 2,
+      "runtime_admissions": 0,
+      "report_available_entries": 3,
+      "incomplete_entries": [
+        "roman-civil-wars",
+        "midgard"
+      ],
+      "compact_bytes_identical_to_evidence": true,
+      "full_report_sha256": "0ff9067fd2bc07685bde1688bb70030faecdef72be02312a0d312120f7832df4",
+      "inspect_exit": 1,
+      "require_simulation_exit": 1,
+      "input_hashes_and_active_macro_counts_unchanged": true
+    },
+    "regressions": "Stray terminators across all non-payload phases, legitimate payload content, inactive tails and comments, entry/shared trailing scan budgets. New tests fail on round-two candidate.",
+    "campaign": {
+      "rounds": 100,
+      "final_fingerprint": "b22e4340b6ab8bf6",
+      "only_engine_version_header_changed": true,
+      "sha256": "42a82ff57728ef08cb50def4993a4561d39008a3f3adbca91860a0e64bc079cb"
+    }
+  },
+  "prior_runtime_validation": {
+    "sha": "51732991e4577a538f0a12b0492ade0b464581a1",
+    "review_issue": 224,
+    "round": 2,
+    "reviewer": "Kimi K3.1 Pro",
+    "rust_tests_with_desktop_release": 265,
+    "rust_tests_with_desktop_debug": 265,
+    "intentional_ignores": 7,
+    "campaign_tests": 7,
+    "seeds_per_policy": 32,
+    "then_current_python_tests": 39,
+    "make_test": "PASS in reviewer environment",
+    "format_goldens": "PASS",
+    "fmt": "PASS",
+    "strict_default_and_desktop_clippy": "PASS",
+    "actual_pack_test": "PASS",
+    "current_revision_runtime_sources_unchanged": true,
+    "scope": "Retained reviewer validation, not newly rerun Rust/GUI claims. Earlier implementation socket failures/reruns remain in the prior candidate record."
+  },
+  "gates": {
+    "independent_review": "Rounds one and two BLOCK on #224; owner-launched third-round review required for fixes, not launched. A third BLOCK requires owner decision.",
+    "tag": "Not created",
+    "human_acceptance": "No new player UI/import route; no inferred additional human result."
+  }
 }

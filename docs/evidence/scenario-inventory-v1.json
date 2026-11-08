@@ -644,7 +644,15 @@
         "author_objectives"
       ],
       "dependency_closure": "not_established: listed logic/sheets are pinned; full text/audio/video/Lua-module dependencies need a separate audit",
-      "diagnostics": [],
+      "diagnostics": [
+        {
+          "code": "macro_inspection_incomplete",
+          "path": "Scenario/Roman Civil Wars/Events.txt",
+          "reasons": [
+            "content_after_endevents"
+          ]
+        }
+      ],
       "files": {
         "events": {
           "bytes": 57180,
@@ -850,6 +858,7 @@
           }
         },
         "diagnostic_counts": {
+          "content_after_endevents": 1,
           "emitted_but_skipped": 7,
           "no_game_state_effect": 84,
           "partial": 126,
@@ -903,7 +912,7 @@
             "token": "listenermask"
           }
         ],
-        "diagnostics_total": 1398,
+        "diagnostics_total": 1399,
         "diagnostics_truncated": true,
         "event_blocks": 258,
         "logical": {
@@ -980,7 +989,7 @@
         "engine_boot": "not_run",
         "human_campaign": "not_validated",
         "human_entry": "not_implemented",
-        "inspection": "report_available",
+        "inspection": "incomplete",
         "native_export": "not_admitted",
         "observation": "not_validated_for_input",
         "simulation": "not_admitted"
@@ -1637,12 +1646,12 @@
       }
     }
   ],
-  "full_report_bytes": 432827,
-  "full_report_sha256": "6652bd63e2e25440ac107cd82c76bdf19eee708a804fece8c5e74a07df3bb672",
+  "full_report_bytes": 433164,
+  "full_report_sha256": "0ff9067fd2bc07685bde1688bb70030faecdef72be02312a0d312120f7832df4",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
     "format_probe_sha256": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",
-    "sha256": "51a7eb6dedd7ac43f721f0a5745b629d9d6f1319b142e0eab880ed1902322858",
+    "sha256": "dbbc97fbf798fa0df104cfb2b7c08a73dc700204b9d18b5a8d2de1092ae2f785",
     "tool": "tools/scenario_inventory.py"
   },
   "profile_candidate": "classic-surface-032-v1",
@@ -1650,7 +1659,7 @@
   "schema": 1,
   "summary": {
     "entries": 5,
-    "inspection_errors": 1,
+    "inspection_errors": 2,
     "simulation_admitted": 0
   },
   "view": "compact"

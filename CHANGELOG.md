@@ -11,6 +11,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   hashes, distinct support levels, macro line diagnostics and compact evidence.
   Freeze a conditional first native-entry contract; no gameplay import or
   simulation is admitted by inspection (#192, #193).
+- Report malformed event structures as incomplete inspection; bound coordinate
+  tokens and scanner work, retain reports on input errors, and validate audit
+  metadata and directive placement (#225–#230).
 - Correct fallback sprites for Elephant, Stlth Ftr. and Stlth Bmbr.; clarify
   campaign-version and client/AI dependency prose (#217–#219).
 

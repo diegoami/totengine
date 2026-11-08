@@ -6,6 +6,7 @@ from pathlib import Path
 import struct
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import scenario_inventory as inv
 import totctl
@@ -36,6 +37,118 @@ class InventoryTests(unittest.TestCase):
 
     def report(self):
         return inv.report(self.home, json.dumps(self.manifest).encode(), json.dumps(self.baseline).encode())
+
+    def cli_report(self):
+        manifest = self.root/'manifest.json'
+        manifest.write_text(json.dumps(self.manifest))
+        output = self.root/'report.json'
+        with redirect_stderr(StringIO()):
+            code = inv.main(['--home', str(self.home), '--manifest', str(manifest), '--out', str(output)])
+        result = json.loads(output.read_text())
+        output.unlink()
+        return code, result
+
+    def test_structural_macro_errors_fail_inspection_but_keep_reports(self):
+        valid = (self.home/'Events.txt').read_text()
+        for src, reason in [
+            (valid.replace('@ENDIF', ''), 'unclosed_event'),
+            ('@IF\nTURN\n@THEN\nTEXT\nunclosed', 'unclosed_payload'),
+            ('@IF\n@THEN\n@ENDIF', 'malformed_then'),
+            ('@IF\nTURN\n@ENDIF', 'malformed_endif'),
+            (valid.replace('CHANGEMONEY', 'CREATEUNIT\nLOCATIONS\nx,y\nENDLOCATIONS'), 'malformed_location'),
+            (valid.replace('TURN', '@BEGINEVENTS\nTURN'), 'misplaced_directive'),
+        ]:
+            with self.subTest(reason=reason):
+                (self.home/'Events.txt').write_text(src)
+                code, report = self.cli_report()
+                self.assertEqual(code, 1)
+                self.assertEqual(report['summary']['inspection_errors'], 1)
+                entry = report['entries'][0]
+                self.assertEqual(entry['support']['inspection'], 'incomplete')
+                self.assertIn(reason, entry['diagnostics'][0]['reasons'])
+                self.assertIn(reason, {d['code'] for d in entry['macro']['diagnostics']})
+        # Unsupported semantics remain inspectable; they never grant simulation.
+        (self.home/'Events.txt').write_text(valid.replace('CHANGEMONEY', 'UNKNOWN'))
+        code, report = self.cli_report()
+        self.assertEqual(code, 0)
+        self.assertEqual(report['entries'][0]['support']['simulation'], 'not_admitted')
+
+    def test_oversized_coordinates_leave_other_entries_reportable(self):
+        valid = (self.home/'Events.txt').read_text()
+        (self.home/'valid.txt').write_text(valid)
+        self.manifest['entries'].append(self.entry | {'id': 'other', 'events': 'valid.txt', 'first_entry_candidate': False})
+        for position in range(3):
+            fields = ['1', '2', '0']
+            fields[position] = '9'*5000
+            (self.home/'Events.txt').write_text('@IF\nTURN\nturn=1\n@THEN\nCREATEUNIT\nLOCATIONS\n'+','.join(fields)+'\nENDLOCATIONS\n@ENDIF')
+            with self.subTest(position=position):
+                code, report = self.cli_report()
+                self.assertEqual(code, 1)
+                self.assertEqual(report['summary']['inspection_errors'], 1)
+                a, b = report['entries']
+                self.assertIn('malformed_location', a['diagnostics'][0]['reasons'])
+                self.assertEqual(b['support']['inspection'], 'report_available')
+
+    def test_bad_magic_is_malformed_not_an_unsupported_version(self):
+        for data, reason in [(b'not a save header', 'malformed_or_truncated'),
+                             (b'CIVILIZE\0\0\x99\0', 'unsupported_version')]:
+            (self.home/'sample.scn').write_bytes(data)
+            code, report = self.cli_report()
+            self.assertEqual(code, 1)
+            self.assertEqual(report['entries'][0]['diagnostics'][0]['reason'], reason)
+
+    def test_begin_directive_has_an_outer_position_and_is_not_payload_syntax(self):
+        valid = (self.home/'Events.txt').read_text()
+        self.assertEqual(inv.scan_events('@BEGINEVENTS\n'+valid+'@ENDEVENTS', self.baseline)['diagnostics'], [])
+        for source in [valid.replace('TURN', '@BEGINEVENTS\nTURN'), valid+'@BEGINEVENTS', '@BEGINEVENTS\n@BEGINEVENTS\n'+valid]:
+            self.assertIn('misplaced_directive', {d['code'] for d in inv.scan_events(source, self.baseline)['diagnostics']})
+        payload = valid.replace('CHANGEMONEY', 'TEXT\n@BEGINEVENTS\nENDTEXT\nCHANGEMONEY')
+        self.assertNotIn('misplaced_directive', {d['code'] for d in inv.scan_events(payload, self.baseline)['diagnostics']})
+
+    def test_scanner_stops_before_unbounded_vocabulary_or_diagnostics_are_retained(self):
+        for actions, category in [('\n'.join('UNKNOWN'+str(i) for i in range(1000)), 'vocabulary'),
+                                  ('UNKNOWN\n'*(inv.SCAN_ENTRY_LIMITS['diagnostics']+10), 'diagnostics')]:
+            (self.home/'Events.txt').write_text('@IF\nTURN\nturn=1\n@THEN\n'+actions+'\n@ENDIF')
+            code, full = self.cli_report()
+            self.assertEqual(code, 1)
+            macro = full['entries'][0]['macro']
+            self.assertFalse(macro['scan_complete'])
+            self.assertEqual(macro['overflow'], {'scope': 'entry', 'category': category})
+            self.assertLessEqual(sum(len(macro[k]) for k in ['actions', 'triggers', 'logical']), inv.SCAN_ENTRY_LIMITS['vocabulary'])
+            self.assertLessEqual(len(macro['diagnostics']), inv.SCAN_ENTRY_LIMITS['diagnostics']+1)
+            compact = inv.compact_report(full)['entries'][0]['macro']
+            self.assertLessEqual(len(compact['diagnostics']), 8)
+            self.assertIn('scan_limit_exceeded', compact['diagnostic_counts'])
+            self.assertFalse(compact['scan_complete'])
+            self.assertLessEqual(len(compact['audited_baseline_coverage']['actions']), inv.SCAN_ENTRY_LIMITS['vocabulary'])
+
+    def test_scanner_shares_report_budgets_and_keeps_later_entry_reports(self):
+        for category, source in [
+            ('diagnostics', '@IF\nTURN\n@THEN\n'+'UNKNOWN\n'*10+'@ENDIF'),
+            ('vocabulary', '@IF\nTURN\n@THEN\n'+'\n'.join('UNKNOWN'+str(i) for i in range(10))+'\n@ENDIF'),
+            ('lines', '\n'*20),
+        ]:
+            with self.subTest(category=category), patch.dict(inv.SCAN_REPORT_LIMITS, {category: 15}):
+                (self.home/'Events.txt').write_text(source)
+                self.manifest['entries'] = [self.entry | {'id': 'entry-'+str(i), 'first_entry_candidate': False} for i in range(3)]
+                code, report = self.cli_report()
+                self.assertEqual(code, 1)
+                self.assertEqual(len(report['entries']), 3)
+                macros = [e['macro'] for e in report['entries']]
+                self.assertTrue(any(m['overflow'] == {'scope': 'report', 'category': category} for m in macros))
+                for e in report['entries']:
+                    self.assertIn('save_probe', e)
+                    if not e['macro']['scan_complete']:
+                        self.assertEqual(e['support']['inspection'], 'incomplete')
+                if category == 'diagnostics':
+                    self.assertLessEqual(sum(len(m['diagnostics']) for m in macros), 15+len(macros))
+                if category == 'vocabulary':
+                    self.assertLessEqual(sum(len(m[k]) for m in macros for k in ['triggers', 'actions', 'logical']), 15)
+
+    def test_scanner_line_work_is_bounded_even_without_diagnostics(self):
+        d = inv.scan_events('\n'*(inv.SCAN_ENTRY_LIMITS['lines']+10), self.baseline)
+        self.assertEqual(d['overflow'], {'scope': 'entry', 'category': 'lines'})
+        self.assertEqual(d['diagnostics'][0]['code'], 'scan_limit_exceeded')
 
     def test_snapshot_helpers_preserve_existing_probe_results_and_newlines(self):
         p = self.home/'sample.scn'
@@ -145,8 +258,21 @@ class InventoryTests(unittest.TestCase):
 
     def test_malformed_engine_baseline_is_configuration_failure(self):
         for b in [[], {}, self.baseline | {'source_sha256': {}},
+                  {k: v for k, v in self.baseline.items() if k != 'meaning'},
+                  self.baseline | {'meaning': None}, self.baseline | {'meaning': 1},
                   self.baseline | {'schema': True}, self.baseline | {'triggers': []}]:
             with self.assertRaises(ValueError): inv.load_baseline(json.dumps(b).encode())
+        manifest = self.root/'manifest.json'; manifest.write_text(json.dumps(self.manifest))
+        broken = self.root/'baseline.json'
+        broken.write_text(json.dumps({k: v for k, v in self.baseline.items() if k != 'meaning'}))
+        output = self.root/'missing.json'
+        original = inv.read_document
+        def read(path):
+            return broken.read_bytes() if path.name == 'scenario-engine-baseline.json' else original(path)
+        with patch.object(inv, 'read_document', side_effect=read), redirect_stderr(StringIO()) as errors:
+            self.assertEqual(inv.main(['--home', str(self.home), '--manifest', str(manifest), '--out', str(output)]), 2)
+        self.assertFalse(output.exists())
+        self.assertIn('meaning must be a string', errors.getvalue())
 
     def test_unframed_record_count_is_not_a_valid_profile_candidate(self):
         data=bytearray((self.home/'sample.scn').read_bytes())

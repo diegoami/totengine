@@ -41,6 +41,21 @@ sources 16 MiB); directory inventory stops beyond 4,096 children. Files are read
 into immutable snapshots before parsing/hash generation. No scenario directory
 is added to Python's module path and no supplied code is imported/executed.
 
+Scanning stops before exceeding 4,096 diagnostics, 128 distinct phase/token
+keys or 100,000 lines per entry; a report shares budgets of 8,192 diagnostics,
+1,024 phase/token keys and 500,000 lines across entries. One additional reserved
+`scan_limit_exceeded` marker per entry identifies overflow. Remaining entries
+still receive their file/probe reports. Counts/coverage on an interrupted scan
+are prefix inventories, not complete totals: `scan_complete` is false and
+`overflow` identifies the budget. Compact mode retains that state and bounded
+vocabularies; it does not disguise incomplete scans as complete inspection.
+
+Structural macro diagnostics (unclosed/misplaced blocks, unterminated payloads,
+malformed locations) and scan-limit failures also mark the entry's inspection
+incomplete and yield exit 1. Unsupported-but-parseable semantics alone do not.
+Location fields accept an optional minus and up to ten ASCII decimal digits;
+this lexical safety bound is not evidence of the native coordinate range.
+
 Lua files/modules, map modes and author objectives are explicitly declared, not
 inferred from arbitrary code or prose. A null events path is an omitted input,
 not proof that no native macro is required. The listed Lua files and selected
@@ -59,7 +74,7 @@ and native resource search behavior need a separate audit before gameplay.
 | `entries[].files` | Listed input role, relative path, bytes and SHA-256; no source bodies |
 | `save_probe` | Existing walker results: version, raw game/header fields, counts where framed, and transport records. `structurally_probed`, `partial_layout` and `failed` are distinct. The zero-based header index 3/probe block inference is not an established active-map count. |
 | `rules_probe` | Section/row inventory only; no claim that every rule/effect is implemented |
-| `macro` | Lexical condition/action-token counts, partial baseline coverage and line diagnostics; text/location payloads are not commands. Unknown parameters, compounds, skipped effects and malformed blocks remain visible. |
+| `macro` | Lexical condition/action-token counts, partial baseline coverage and bounded line diagnostics; `scan_complete`/`overflow` identify interrupted inventories. Text/location payloads are not commands. Unknown parameters, compounds, skipped effects and malformed blocks remain visible. |
 | `lua` | Declared source count; execution and inference flags remain false |
 | `art` | BMP/GIF file identities chosen from declared roots in order, BMP before GIF within each root. Ambiguous roots are not silently replaced. No pixels are decoded. This is inspector policy, not native lookup evidence. Missing means missing in declared roots, not necessarily missing from the native game. |
 | `dependency_closure` | Explicitly not established for complete gameplay/presentation |
@@ -97,7 +112,7 @@ coverage. The snapshot probe helpers preserve the old CLI/walk golden outputs.
 | Original standard `Ph_Auto2.SAV` | 0x0032; 38 units, 10 cities; one event block | Compound RECEIVEDTECHNOLOGY/RANDOMTURN condition and endgame/AVI actions are outside the modeled subset. Numeric year is raw, not a universal scenario date formatter. |
 | FallRome | 0x0032; 710 units, 146 cities; 64 event blocks | Two GIVETECHNOLOGY tokens emit effects that are skipped by application; placement/presentation/hooks remain partial. |
 | Roman Civil Wars | 0x0032; 618 units, 159 cities; 258 event blocks | Delay/flag/randomized placement, technology removal, aggression/audio and author objectives need missing semantics. Installation/hash success is not play acceptance. |
-| Midgard | 0x0032; surface framing only, 12 transport records; 151 event blocks | Classic unit/city counts are not located by this probe. Declared multiple maps and terrain/flag/endgame semantics block continuation. No active-map count is inferred from the header. |
+| Midgard | 0x0032; surface framing only, 12 transport records; 151 event blocks; inspection incomplete | A location line fails the inspector's lexical grammar; this is not proof that the native input is invalid. Classic unit/city counts are not located by this probe. Declared multiple maps and terrain/flag/endgame semantics block continuation. No active-map count is inferred from the header. |
 | Warring States | 0x0033 partial layout; five declared Lua files | Extended saves and Lua execution are not admitted. Absence of populated Lua state in a pristine file would not prove that Lua is unnecessary. |
 
 The manifest selects the Original standard input for **first entry contract

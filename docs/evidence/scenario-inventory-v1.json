@@ -195,6 +195,8 @@
           "@AND": 1
         },
         "meaning": "Lexical counts/line diagnostics only; recognition does not prove native semantics or an active runtime hook.",
+        "overflow": null,
+        "scan_complete": true,
         "triggers": {
           "RANDOMTURN": 1,
           "RECEIVEDTECHNOLOGY": 1
@@ -516,6 +518,8 @@
         "event_blocks": 64,
         "logical": {},
         "meaning": "Lexical counts/line diagnostics only; recognition does not prove native semantics or an active runtime hook.",
+        "overflow": null,
+        "scan_complete": true,
         "triggers": {
           "CITYTAKEN": 9,
           "NEGOTIATION": 22,
@@ -906,6 +910,8 @@
           "@AND": 27
         },
         "meaning": "Lexical counts/line diagnostics only; recognition does not prove native semantics or an active runtime hook.",
+        "overflow": null,
+        "scan_complete": true,
         "triggers": {
           "BRIBEUNIT": 2,
           "CHECKFLAG": 42,
@@ -1039,7 +1045,15 @@
         "author_objectives"
       ],
       "dependency_closure": "not_established: listed logic/sheets are pinned; full text/audio/video/Lua-module dependencies need a separate audit",
-      "diagnostics": [],
+      "diagnostics": [
+        {
+          "code": "macro_inspection_incomplete",
+          "path": "Midgard/Events.txt",
+          "reasons": [
+            "malformed_location"
+          ]
+        }
+      ],
       "files": {
         "events": {
           "bytes": 60605,
@@ -1358,6 +1372,8 @@
           "@AND": 62
         },
         "meaning": "Lexical counts/line diagnostics only; recognition does not prove native semantics or an active runtime hook.",
+        "overflow": null,
+        "scan_complete": true,
         "triggers": {
           "ALPHACENTAURIARRIVAL": 4,
           "BRIBEUNIT": 15,
@@ -1429,7 +1445,7 @@
         "engine_boot": "not_run",
         "human_campaign": "not_validated",
         "human_entry": "not_implemented",
-        "inspection": "report_available",
+        "inspection": "incomplete",
         "native_export": "not_admitted",
         "observation": "not_validated_for_input",
         "simulation": "not_admitted"
@@ -1621,12 +1637,12 @@
       }
     }
   ],
-  "full_report_bytes": 432421,
-  "full_report_sha256": "728a037cc3e9217d3bcf1fc92f137e63ddf29fdd1957b53b388765d21beaf1c3",
+  "full_report_bytes": 432827,
+  "full_report_sha256": "6652bd63e2e25440ac107cd82c76bdf19eee708a804fece8c5e74a07df3bb672",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
     "format_probe_sha256": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",
-    "sha256": "7e188e43ab1ce04f8406bf0abd6f948ca1725bc5493205d2140e43cad338b407",
+    "sha256": "51a7eb6dedd7ac43f721f0a5745b629d9d6f1319b142e0eab880ed1902322858",
     "tool": "tools/scenario_inventory.py"
   },
   "profile_candidate": "classic-surface-032-v1",
@@ -1634,7 +1650,7 @@
   "schema": 1,
   "summary": {
     "entries": 5,
-    "inspection_errors": 0,
+    "inspection_errors": 1,
     "simulation_admitted": 0
   },
   "view": "compact"

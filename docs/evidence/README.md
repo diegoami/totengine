@@ -4018,3 +4018,24 @@ fonts, saves and captures stay outside Git. Both archives include notices plus
 a release-status/known-follow-up note; downloaded bytes match retained hashes.
 Non-blocking #176–#179 remain open. The release closes milestone 13/#157–#159,
 not complete-client #94/#125 or original-AI gate #117.
+
+## Client input and reconnect follow-ups (#176–#179)
+
+The post-v0.15 fixes and real-input regression scope are recorded in
+[client-input-recovery-v1.json](client-input-recovery-v1.json). A queued invalid
+second click remains authoritative over a later third event; a disappearing
+entry clears its pending edit; map/setup checkpoint loads reset the city panel
+to Info while an open workspace retains its panel/page. Browser refreshes may
+finish an already advancing opponent round through tick POSTs; GET itself is
+inert and reconnect never ends another human turn.
+
+Run `tools/check_client_browser.cjs` with `TOTENGINE_CITY_OPEN_FIXTURE` set to a
+private generated citizens `mature.cth`, and `TOTENGINE_PANELS_FIXTURES` set to
+the generated panel routes. `tools/check_city_gesture_races.cjs` holds the first
+click POST across invalid detail-2 and valid detail-3 events, combines a canceled
+queued edit with two failed tick attempts, and holds the original tab while a
+fresh tab completes opponents. It compares each result with the ordinary-round
+checkpoint. Both browser and native panel helpers also check map-load Info and
+open-workspace Happy retention against the original saved production context.
+The shared Rust tests cover failed loads, setup loads and list-page retention.
+No new native format/mechanics claim, release or human acceptance is implied.

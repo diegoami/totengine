@@ -41,3 +41,16 @@ def run_panels(scene, key, click_at, click_button, save_dialog, load, work, fixt
         key('Ctrl+s'); save_dialog(name+'reload')
         assert (work/'saves'/(name+'reload.cth')).read_bytes() == (fixture/(route['name']+'-after.cth')).read_bytes(), 'panel reload: '+name
     key('Escape')
+    # A map-to-session load resets the panel; loading inside an open workspace
+    # retains it. The saved production budget must survive both transitions.
+    load('panelbudgettabs')
+    assert any(d.get('kind') == 'text' and d['x'] == 744 and d['y'] == 193 and d['text'] == 'Info' for d in scene()['draws']), 'map load retained old city panel'
+    key('Ctrl+s'); save_dialog('panelnewsession')
+    expected = (fixture/'budgettabs-before.cth').read_bytes()
+    assert (work/'saves/panelnewsession.cth').read_bytes() == expected, 'Info default changed gameplay'
+    click_button('Happy')
+    load('panelnewsession')
+    assert any(d.get('kind') == 'text' and d['x'] == 744 and d['y'] == 193 and d['text'] == 'Happy' for d in scene()['draws']), 'open workspace lost its panel'
+    key('Ctrl+s'); save_dialog('panelnewsessionreload')
+    assert (work/'saves/panelnewsessionreload.cth').read_bytes() == expected, 'open workspace load changed gameplay'
+    key('Escape')

@@ -1,0 +1,122 @@
+{
+  "schema": 1,
+  "date": "2026-11-08",
+  "base_sha": "a353b4c07bfd97610cea591fcde817816266d352",
+  "scope": "Post-v0.15 client follow-ups #176\u2013#179; separate from Isotrident PR #181 and AI source study. No version or milestone assigned.",
+  "implementation": {
+    "176": "Keep the first queued double-click attempt while the first click response is in flight; later events cannot repair its invalid coordinates.",
+    "177": "Clear editPending when an acknowledged frame removes its entry; canceled queued edits no longer block periodic state recovery.",
+    "178": "After a successful load from outside the city workspace, reset panel/page to Info/0. Open-workspace loads retain panel/page. Failed loads retain gameplay and presentation.",
+    "179": "Retain existing opponent reconnect recovery and reconcile its documented contract: GET is inert; initial/periodic refresh in any tab may schedule bounded tick POSTs only for an already advancing opponent phase. No automatic EndTurn."
+  },
+  "source_sha256": {
+    "crates/totui/src/client/mod.rs": "347f1c54ce28afcbdb02833ab181d65e58b2dc48a4ebfa4d23cf3902fedf8f6a",
+    "crates/totui/src/client/play.js": "3dc95e3d1ad01ab266fca5cd2653ed880873103cdcba0c21b6cc552585a125a2",
+    "crates/totui/src/client/tests.rs": "72da85d44de32b4d97298508a35a7ef6d4bafdd7a3d5c273776cc4337c81ba2e",
+    "tools/check_city_gesture_races.cjs": "ae3f490147096294759fa316f463fe961bfada284cdcb35a1c427da9be72d65c",
+    "tools/check_city_panels.cjs": "d1047fe1e561da33ec69806ab8cfaeead6c349b0ccfffd077926510fdf664700",
+    "tools/check_city_panels.py": "47e6cf18a25e8bed3d8f0cef0ddd3c9648e0d531b54517ccd00f57677378fff3",
+    "tools/check_client_browser.cjs": "e9cbbe111f633bd474a248134bb5b826e407e33feeea84faab2721e4ea888e4c"
+  },
+  "real_input": {
+    "chromium": {
+      "result": "PASS",
+      "report": "/home/diego/review-tmp/tot-input-recovery-browser-r2/report",
+      "saves": "/home/diego/review-tmp/tot-input-recovery-browser-r2/saves",
+      "baseline": "Ten rounds and required research/founding save/reload; original installation artwork/rules.",
+      "race_cases": [
+        "busy-new-key",
+        "busy-new-click",
+        "invalid-second-third",
+        "held-first-invalid-second-third",
+        "opponent-double-post-tick",
+        "canceled-edit-failed-tick-reconnect",
+        "opponent-second-tab"
+      ],
+      "race_checkpoint_writes": 8,
+      "race_checkpoint_comparisons": 7,
+      "second_tab": "Hold the original tab continuation timer, assert repeated GETs preserve opponent revision, let a fresh tab finish through tick POSTs, observe another periodic refresh without starting a round, compare gameplay checkpoint with ordinary advancement."
+    },
+    "linux_sdl": {
+      "result": "PASS",
+      "work": "/home/diego/review-tmp/tot-client-linux-fb9n5wny",
+      "input": "Actual XTest keys/mouse on an isolated Xvfb; ten rounds, panel routes, map-load Info/open-workspace Happy retention and double-click entry."
+    },
+    "cross_client_output_checkpoints": {
+      "count": 26,
+      "comparison": "Full bytes, excluding copied input fixtures",
+      "sha256": {
+        "citydouble.cth": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+        "founding.cth": "bc750d9cb199036d5d7012310dd019cc34a894894f38fc4e02cdf99cc9b02a07",
+        "foundingnext.cth": "b53a7779a5e728c267b5ffc110054f1b9a9b5c72ea0d13b1e3473c072b3cb6de",
+        "normal.cth": "b53a7779a5e728c267b5ffc110054f1b9a9b5c72ea0d13b1e3473c072b3cb6de",
+        "normalnext.cth": "fd26beb444313722f5dea810160e9f5053aaeaf573ae37dbbaab17387c3d41a2",
+        "panelbudgetnavafter.cth": "7f47e7710b3e230e8952538f95fa7b206f85cd563880598ec5a6c70ba1eaaae5",
+        "panelbudgetnavreload.cth": "7f47e7710b3e230e8952538f95fa7b206f85cd563880598ec5a6c70ba1eaaae5",
+        "panelbudgettabsafter.cth": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+        "panelbudgettabsreload.cth": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+        "panelentertainerafter.cth": "36c7ce01822353fa0be19c8e7c82e561470c87cd9a9b8c5974dcf777f42d341c",
+        "panelentertainerreload.cth": "36c7ce01822353fa0be19c8e7c82e561470c87cd9a9b8c5974dcf777f42d341c",
+        "panelnavigationafter.cth": "6fdd97756e4c79ce4748574555f1b6e69d3cbd4cdf42e3585979f967a303d8d5",
+        "panelnavigationreload.cth": "6fdd97756e4c79ce4748574555f1b6e69d3cbd4cdf42e3585979f967a303d8d5",
+        "panelnewsession.cth": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+        "panelnewsessionreload.cth": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03",
+        "paneloverviewafter.cth": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+        "paneloverviewreload.cth": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+        "panelsaleafter.cth": "7cbaceae7e2f332423a2199e1aacae4e307a29bf5c1f4a1cff100363ece7aa6a",
+        "panelsalecancelafter.cth": "a3636b40bef3b2fd39ab29d598f14cc9ac43fcc2e4b18ca065e91e70e985ce91",
+        "panelsalecancelreload.cth": "a3636b40bef3b2fd39ab29d598f14cc9ac43fcc2e4b18ca065e91e70e985ce91",
+        "panelsalereload.cth": "7cbaceae7e2f332423a2199e1aacae4e307a29bf5c1f4a1cff100363ece7aa6a",
+        "panelspecialistsafter.cth": "d172eabd31d73351a128e1ddb5df4aafed1a19c377b4457170834edb760dcfe7",
+        "panelspecialistsreload.cth": "d172eabd31d73351a128e1ddb5df4aafed1a19c377b4457170834edb760dcfe7",
+        "research.cth": "280f20cf8453c5227d80a18c2e22b747964f23d0cb6aa2a9a74e0e793d332625",
+        "researchnext.cth": "bc750d9cb199036d5d7012310dd019cc34a894894f38fc4e02cdf99cc9b02a07",
+        "tenrounds.cth": "5aa303e51e78670023485dfa8cf9a772c9339409340bbeb3126ea3ed18b473bf"
+      }
+    },
+    "fixture_sha256": {
+      "citizens/mature.cth": "dd63b9e177b35b7d28ecc3d052317c70eaf233860d7a76e91914fad5748a327b",
+      "panels/route.json": "1fb89c0a132d4cb39d428286cc55576048093d7860b2672fd26e15b024777f8a",
+      "panels/budgettabs-before.cth": "06afe812f914b54a26a1722a26c86bcba56b4042a45e540d45f4db3f7e2fac03"
+    }
+  },
+  "limits": [
+    "No new human acceptance or milestone review claimed.",
+    "Windows native input was not rerun for this follow-up; shared Rust and actual Linux desktop routes cover the changed client layer.",
+    "Ignored fixture authors and nightly multi-seed autoplay are outside this follow-up validation.",
+    "No original scenario import, AI adoption, public hosting or native format/mechanics changes."
+  ],
+  "validation": {
+    "workspace": {
+      "command": "CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test --workspace --features totui/desktop",
+      "result": "PASS",
+      "passed": 259,
+      "ignored": 7,
+      "totui_passed": 31
+    },
+    "python": {
+      "result": "PASS",
+      "worldgen_tests": 5,
+      "preview_tests": 6
+    },
+    "golden": {
+      "command": "CIVTOT_HOME=/mnt/d/games/CIVTOT bash tools/golden.sh check",
+      "result": "PASS"
+    },
+    "format": {
+      "command": "cargo fmt --all -- --check",
+      "result": "PASS"
+    },
+    "clippy_default": {
+      "command": "cargo clippy --workspace --all-targets -- -D warnings",
+      "result": "PASS"
+    },
+    "clippy_desktop": {
+      "command": "cargo clippy --workspace --all-targets --features totui/desktop -- -D warnings",
+      "result": "PASS"
+    },
+    "syntax": "Node --check for changed scripts; Python py_compile for native panel helper; git diff --check passed.",
+    "environment": "Initial sandbox attempts could not bind loopback test sockets; final Rust/Python/real-input runs used approved local-network access and passed. First browser run reached second-tab setup and stopped on a Playwright owned-context API error; corrected harness rerun passed all cases with fresh slots.",
+    "cleanup": "Owned browser host on 8815 stopped; native checker closed its app/display. Existing owner previews/saves untouched."
+  }
+}

@@ -56,6 +56,21 @@ exports.run = async ({page, state, key, click, save, load, idle, fixture, saves}
   await key('Escape');
   if (!(await checkpoint('cityrace-invalid')).equals(fs.readFileSync(fixture))) throw Error('invalid gesture changed gameplay');
 
+  // #176: queue BOTH later events behind the first response. The invalid
+  // second must be sent to shared validation, not replaced by the third.
+  const [heldX, heldY] = await map();
+  const heldFirst = await heldPost('click');
+  await page.mouse.click(heldX, heldY); await heldFirst.ready;
+  await page.evaluate(([x, y]) => {
+    canvas.dispatchEvent(new MouseEvent('click', {clientX:x + 100, clientY:y, detail:2}));
+    canvas.dispatchEvent(new MouseEvent('click', {clientX:x, clientY:y, detail:3}));
+  }, [heldX, heldY]);
+  heldFirst.release(); await idle();
+  if (isCity(await state()) || (await state()).city_click !== null)
+    throw Error('held-first third event repaired the invalid second click');
+  await key('Escape');
+  if (!(await checkpoint('cityrace-held-invalid')).equals(fs.readFileSync(fixture))) throw Error('held invalid gesture changed gameplay');
+
   async function endTurn() {
     await key('Control+n');
     if ((await state()).draws.some(d => d.text === 'End your turn with movable units?')) await key('Enter');
@@ -102,6 +117,15 @@ exports.run = async ({page, state, key, click, save, load, idle, fixture, saves}
   // Fail both retry attempts before reaching the host. Only periodic /state
   // recovery may resume the round; do not send any user input while waiting.
   await map();
+  // #177: type while Cancel's response is held. Its obsolete field must not
+  // leave editPending blocking the periodic recovery used below.
+  await key('Control+s');
+  const cancel = await heldPost('key');
+  await page.keyboard.press('Escape'); await cancel.ready;
+  await page.locator('#entry').fill('obsolete');
+  if (!await page.evaluate(() => editPending && !entry.hidden && busy)) throw Error('canceled-edit race was not queued');
+  cancel.release(); await idle();
+  if (!await page.evaluate(() => entry.hidden && !editPending)) throw Error('canceled field stranded its pending edit');
   let aborted = 0, refreshed = 0, recoveredTick = 0;
   const attempts = [];
   const reconnect = async route => {
@@ -129,5 +153,46 @@ exports.run = async ({page, state, key, click, save, load, idle, fixture, saves}
   } finally { await page.unroute('**/*', reconnect); }
   await finishTurn();
   if (!(await checkpoint('cityrace-reconnect')).equals(expected)) throw Error('reconnected next round differs from ordinary round');
-  console.log(JSON.stringify({city_gesture_races:'PASS', checkpoints:6, cases:['busy-new-key','busy-new-click','invalid-second-third','opponent-double-post-tick','failed-tick-reconnect']}));
+
+  // #179: GET is inert, but a new tab must continue the existing authorized
+  // opponent round with tick POSTs. Hold all ticks in the original tab so it
+  // cannot make this test pass on behalf of the reconnecting tab.
+  await map();
+  await page.evaluate(() => {
+    window.reconnectSetTimeout = window.setTimeout;
+    window.setTimeout = (fn, ms, ...args) => ms === 20 ? -1 : reconnectSetTimeout(fn, ms, ...args);
+  });
+  let tab, tabTicks = 0;
+  try {
+    await endTurn();
+    const origin = new URL(page.url()).origin;
+    const pending = await (await page.request.get(origin + '/state')).json();
+    if (pending.phase !== 'Opponents' || !pending.advancing) throw Error('second-tab test did not hold Opponents');
+    for (let n = 0; n < 2; n++) {
+      const observed = await (await page.request.get(origin + '/state')).json();
+      if (observed.revision !== pending.revision) throw Error('read-only GET advanced opponents');
+    }
+    tab = await page.context().browser().newPage({viewport:{width:1024,height:768}});
+    tab.on('request', request => {
+      if (request.url().endsWith('/input') && request.postDataJSON()?.input?.type === 'tick') tabTicks++;
+    });
+    await tab.goto(origin);
+    await tab.waitForFunction(() => typeof frame !== 'undefined' && frame?.phase === 'Human' && !busy);
+    if (tabTicks < 1) throw Error('second tab did not resume authorized opponents');
+    const completed = await tab.evaluate(() => frame.draws.find(d => d.text?.startsWith('Turn ')).text);
+    await tab.waitForTimeout(1800); // Include a periodic refresh during Human.
+    if (await tab.evaluate(() => frame.phase) !== 'Human' ||
+        await tab.evaluate(() => frame.draws.find(d => d.text?.startsWith('Turn ')).text) !== completed)
+      throw Error('reconnected tab started an additional round');
+  } finally {
+    if (tab) await tab.close();
+    await page.evaluate(() => { window.setTimeout = reconnectSetTimeout; opponentTimer = null; });
+  }
+  // Closing the second tab can return focus asynchronously; acknowledge that
+  // before using the original tab for the checkpoint comparison.
+  await page.bringToFront();
+  await page.evaluate(async () => { await refresh(); await send({type:'focus', focused:true}); });
+  await finishTurn();
+  if (!(await checkpoint('cityrace-second-tab')).equals(expected)) throw Error('second-tab continuation differs from ordinary round');
+  console.log(JSON.stringify({city_gesture_races:'PASS', checkpoints:8, cases:['busy-new-key','busy-new-click','invalid-second-third','held-first-invalid-second-third','opponent-double-post-tick','canceled-edit-failed-tick-reconnect','opponent-second-tab']}));
 };

@@ -65,15 +65,26 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
-Milestone 14 started, 2026-11-08, at the owner's instruction to begin the first
-roadmap item after milestone alignment. #181 merged to main at
-`d165aebb4d40c178168bfc2d733407a84af860b4`. #182 is testing the combined code
-at `7ad1e9302566836ca643dd62c12a102a938b0f53`; CI/autoplay, 34 desktop/shared
-tests, real-pack integration and pack-preparer tests pass. Actual packaged
-Chromium/Linux/Windows routes are in progress. Planning PR #191 is retargeted
-to main. No new release version, human acceptance or milestone review is claimed.
-Preserve existing owner previews/saves. Current private packages:
-`review-tmp/tot-client-foundation-{linux,windows}-7ad1e93`.
+Milestone 14 integration complete, 2026-11-08: #181/#191/#182 are merged;
+main runtime baseline `71f7d9fb4e20db250348ddac3b3da2021c5e1124` passed push CI.
+34 shared/desktop tests, real-pack integration and pack preparer checks pass.
+Actual packaged Chromium/Linux/Windows runs pass with 26 original-resource and
+seven demo output checkpoints identical across all three. Code in owner preview
+packages is `7ad1e9302566836ca643dd62c12a102a938b0f53`; integrated crate/Cargo
+content is identical. `89c7c1d0045420571ed980e00696dc58b56a9b6d` adds only the
+Windows checker test and passed CI/autoplay. New combined record:
+`docs/evidence/client-foundation-v1.json`; readiness/launch details:
+`docs/client-foundation-readiness.md`.
+
+Human check #210 remains OPEN: owner replied “I’ll test them later”. Readiness
+#211 is open. No new version/candidate, human acceptance, independent review or
+tag is claimed. Next step: inspect actual owner results; fix blockers, then
+prepare the exact candidate and owner-launched review only when gates pass.
+Keep owner hosts 8816 (Original) / 8820 (demo) RUNNING, save/launcher folder
+`/home/diego/review-tmp/totengine-owner-client-foundation`. QA hosts 8817/8818
+and native checker apps/displays are stopped. Private packages remain under
+`review-tmp/tot-client-foundation-{linux,windows}-7ad1e93`. All older owner
+previews/games are preserved. Current readiness branch is documentation-only.
 
 Owner mission/roadmap reorganization, 2026-11-08: `docs/mission.md` and decision
 0008 define the seven product targets; `docs/plan.md` replaces the stale T0–T4
@@ -82,9 +93,8 @@ queue. New programs: #183 scenario compatibility/workbench, #184 headless
 scenario experiments, #185 scenario observer, #186 session recording, #187
 AI adoption/evaluation, #188 optional QoL, #189 city queues, #190 rally points.
 Existing engine/client/AI umbrellas are reconciled, not closed by planning.
-Planning branch `docs/scenario-platform-roadmap` includes the earlier source
-study and remains stacked on the Isotrident feature commit; keep #181 and #182
-separate when integrating it. Changes since that feature are documentation only.
+The source study and roadmap are now on main via #191; artwork and recovery
+were integrated through their separate PRs #181/#182.
 Original resources remain the main product requirement; approved Isotrident
 fallback stays optional. The follow-up backlog-to-milestone request created named packages 14–29 and
 bounded stories #192–#209, recorded in `docs/milestones.md`; version numbers,
@@ -92,39 +102,6 @@ due dates and candidate SHAs remain unassigned. Historical milestones are
 unchanged. Full-AI/plugin gates still depend on complete clients, including
 additional original-feature slices beyond this planning list. No implementation,
 public hosting or licensing change was launched by this reorganization.
-
-Resumed 2026-11-08: [PR #182](https://github.com/diegoami/totengine/pull/182)
-implements the post-v0.15 follow-ups #176–#179 on the separate
-`fix/client-input-recovery` branch, head
-`194b955335560593d58d0a988fc4c272b7401140`, based directly on main.
-Worktree: `/home/diego/review-tmp/totengine-client-input-recovery`.
-It preserves the first queued gesture attempt, clears obsolete pending edits,
-resets city panels on map/setup loads while retaining open-workspace state,
-and documents/tests second tabs completing already advancing opponents.
-Local validation passed: 259 install-backed Rust tests including desktop,
-11 Python tests, full goldens/fmt/strict default+desktop Clippy, actual Chromium
-and Linux SDL routes with 26 newly written checkpoints identical across both.
-Windows native input and human acceptance were not rerun. Evidence:
-`docs/evidence/client-input-recovery-v1.json` on the fix branch. PR #182 is open;
-GitHub CI and generated campaign autoplay both passed on its exact head.
-#176–#179 stay open until it lands. Owned QA host 8815 and isolated native app/display are stopped; owner
-previews/saves are untouched. PR #181 and the source-assessment branch below
-remain separate; no release, milestone review or AI port was launched.
-
-Session close, 2026-11-08: [PR #181](https://github.com/diegoami/totengine/pull/181)
-(Isotrident fallback, head `de0bca17a4a1fa1df963af79203d130a67ebed9a`)
-is **open; all four GitHub checks passed** (Rust, Python, autoplay, GitGuardian).
-It is not merged/released or independently milestone-reviewed. Current branch
-`docs/c-evo-source-assessment` is pushed and **stacked on that feature commit**;
-its later commits are documentation/source-study only. Keep the Isotrident PR
-separate when integrating these notes. Next session: read
-`docs/ai-client-reuse-assessment.md` and `docs/ui/freeciv-assessment.md`, then
-inspect current review/PR status before choosing the next scoped package.
-The Open demo was an assistant-authored validation baseline; the owner approved
-Isotrident artwork, not a complete alternative gameplay ruleset. Public hosting,
-full redistributable rules, AI adoption benchmarks and whole-client adoption
-are unfinished. #176–#179 remain separate follow-ups. No new milestone/version
-was assigned, and no AI/client port or public deployment was started.
 
 2026-11-08 owner direction: ToT **scenario compatibility is the niche**; evaluate
 stronger Freeciv/C-evo AI, whole clients and UI workflows as real adoption

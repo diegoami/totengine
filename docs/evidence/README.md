@@ -4050,3 +4050,14 @@ checkpoint. Both browser and native panel helpers also check map-load Info and
 open-workspace Happy retention against the original saved production context.
 The shared Rust tests cover failed loads, setup loads and list-page retention.
 No new native format/mechanics claim, release or human acceptance is implied.
+
+## Combined client resources and recovery (milestone 14)
+
+[client-foundation-v1.json](client-foundation-v1.json) records the integrated
+production source, both verified package manifests, real Chromium/Linux/Windows
+original/demo input and 26 + 7 matching output checkpoints. The Windows run
+includes the map-load Info/open-workspace Happy recovery check; the browser
+retains all seven request-race cases. [Readiness and owner previews](../client-foundation-readiness.md)
+keep automation separate from human acceptance: the owner deferred #210, so no
+new version, frozen candidate, independent review or release is claimed. The
+older individual-feature records remain historical validation snapshots.

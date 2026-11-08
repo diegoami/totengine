@@ -12,9 +12,9 @@ of complete client delivery after the listed UI slices.
 
 ## Package map
 
-| Milestone | Assigned stories / PRs | Package prerequisites and gates |
+| Milestone | Primary stories / PRs | Package prerequisites and gates |
 | --- | --- | --- |
-| [14 — Client resources and recovery](https://github.com/diegoami/totengine/milestone/14) | [#176](https://github.com/diegoami/totengine/issues/176), [#177](https://github.com/diegoami/totengine/issues/177), [#178](https://github.com/diegoami/totengine/issues/178), [#179](https://github.com/diegoami/totengine/issues/179), [#181](https://github.com/diegoami/totengine/pull/181), [#182](https://github.com/diegoami/totengine/pull/182), [#191](https://github.com/diegoami/totengine/pull/191) | Existing engine/reference/design prerequisites. |
+| [14 — Client resources and recovery](https://github.com/diegoami/totengine/milestone/14) | [#176](https://github.com/diegoami/totengine/issues/176), [#177](https://github.com/diegoami/totengine/issues/177), [#178](https://github.com/diegoami/totengine/issues/178), [#179](https://github.com/diegoami/totengine/issues/179), [#181](https://github.com/diegoami/totengine/pull/181), [#182](https://github.com/diegoami/totengine/pull/182), [#191](https://github.com/diegoami/totengine/pull/191), [#210](https://github.com/diegoami/totengine/issues/210), [#211](https://github.com/diegoami/totengine/issues/211) | Existing engine/reference/design prerequisites. |
 | [15 — Scenario admission: corpus and capability reports](https://github.com/diegoami/totengine/milestone/15) | [#192](https://github.com/diegoami/totengine/issues/192), [#193](https://github.com/diegoami/totengine/issues/193) | Existing engine/reference/design prerequisites. |
 | [16 — Science, rates and government — both clients](https://github.com/diegoami/totengine/milestone/16) | [#194](https://github.com/diegoami/totengine/issues/194), [#195](https://github.com/diegoami/totengine/issues/195), [#196](https://github.com/diegoami/totengine/issues/196) | After [14](https://github.com/diegoami/totengine/milestone/14). |
 | [17 — Classic save and scenario entry — both clients](https://github.com/diegoami/totengine/milestone/17) | [#197](https://github.com/diegoami/totengine/issues/197), [#198](https://github.com/diegoami/totengine/issues/198) | After [14](https://github.com/diegoami/totengine/milestone/14), [15](https://github.com/diegoami/totengine/milestone/15). |
@@ -35,6 +35,8 @@ of complete client delivery after the listed UI slices.
 
 1. Milestone 14 groups the resource/recovery code and planning PRs; it
    does not retroactively change v0.15 or establish a new human acceptance.
+   Its code/planning PRs are merged; actual owner acceptance #210 is deferred
+   and readiness #211 remains open. See [the current record](client-foundation-readiness.md).
 2. Admission (15) and science/government (16) can be scoped from current
    references. Classic entry (17) waits for the admitted profile/contract; the
    headless/observer/recording chain then validates that same supported profile.

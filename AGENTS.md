@@ -297,10 +297,16 @@ docs/ui/city-information-milestone.md. Panel implementation merged in PR160;
 city entry merged in PR161. First independent review #162 (Kimi K3.1 Pro)
 returned BLOCK on browser races #166/#167 and follow-ups #163–#165/#168/#169.
 Review fixes: fix/v015-review-round-one; evidence client-v015-review-r2.json.
-Final checks: 254 Rust / eleven Python / full goldens / fmt / strict Clippy;
+First-review fix checks: 254 Rust / eleven Python / full goldens / fmt / strict Clippy;
 29 desktop-feature tests; 45 current Chromium and 39 Linux checkpoint comparisons.
 Windows input remains pre-review evidence, not rerun for these fixes.
-Re-review is owner-launched;
+Round two (Kimi K3.1 Pro) independently verified those fixes but returned BLOCK
+on #171 (SDL batch invalidation), with follow-ups #172–#174. Current fixes:
+fix/v015-review-round-two; evidence client-v015-review-r3.json. Final desktop
+suite: 30 tests; actual Chromium 54 / Linux SDL 47 checkpoint comparisons pass.
+Windows QA was rebuilt; guarded input stopped at initial owned-window focus,
+before input. Prior Windows results remain historical. Owner previews preserved.
+Third review is owner-launched;
 do not tag the blocked candidate or begin unrelated milestone work.
 New private original study is complete: eleven captures, native Happy suppresses
 unchanged stages, Roma/Rhegium navigation retains the chosen panel. No original

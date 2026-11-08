@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "engine_version": "0.15.0",
+  "review_issue": 162,
+  "round_two_candidate": "918e91c39a83f002486c67a7e824a224eb02639e",
+  "round_two_verdict": "BLOCK; Kimi K3.1 Pro; one MUST-FIX and three follow-ups",
+  "findings": {
+    "171": {
+      "fix": "InputBatch cancels a pending city gesture on a stale later event unless that event is the already-validated second half. Its stale gameplay revision is retained and rejected; no map key/click is rebased.",
+      "tests": [
+        "city_keys_in_one_sdl_batch_are_preserved_without_crossing_workspace",
+        "stale_city_gesture_halves_and_newer_intent_cannot_repair_a_batch"
+      ],
+      "scope": "First test pushes native SDL events for distant second/valid third, newer V/valid second and ordinary click/third before one poll. Second test produces two units, moves both outside city, refreshes moves and selects a ready actor; distant second, V, movement 6 and ordinary click stay stale, cancel gesture, preserve mode/active identity/full checkpoint, and later click cannot repair. Fresh valid pair still opens."
+    },
+    "172": {
+      "fix": "Successful /state refresh rearms the existing singleton opponent timer from the observed phase, including recovery after both POST retry attempts fail.",
+      "test": "check_city_gesture_races.cjs aborts both attempts of one tick before reaching host, verifies identical retry ID/revision/payload, waits for periodic successful state refresh and a new tick with no user input, compares next round to ordinary advancement."
+    },
+    "173": {
+      "fix": "Shared regression keeps Happy selected through save/load in an open workspace without a production context. Actual browser/Linux helpers assert the prior panel immediately after reload and save/compare all eight full checkpoints again. Windows helper includes same check but run was blocked before input.",
+      "test": "city_panels_inspect_without_orders_and_retain_panel_through_navigation_and_reload; check_city_panels.cjs/.py; guarded Windows helper"
+    },
+    "174": {
+      "fix": "Authored CityInfo integration checks adjusted Barracks upkeep 1 from base 2 at difficulty zero, government-exempt Temple upkeep 0 from base 3, local active wonder ID 40/zero upkeep, exclusion of remote wonder, and inactive local row after another civ learns its obsoleting advance. Inspection checksum stays unchanged.",
+      "test": "city_info_composes_adjusted_upkeep_and_local_wonder_expiry",
+      "scope": "Authored WorldState integration, not a new native-kernel comparison or a naturally played wonder campaign."
+    }
+  },
+  "source_sha256": {
+    "crates/engine/src/city_info.rs": "8792a62a19c23324ef2e3332fb7f7b1aa1ec19b0338606aa72c5052b723806dd",
+    "crates/totui/src/client/desktop.rs": "555d9eb378e80f3740c2ec76030e9887b4b8912af907f68ab1db90e176296a48",
+    "crates/totui/src/client/play.js": "08320eec428ca0ecd1ec75d74f00e3ddb194e0a0c53acd450c516fd7ad645ba8",
+    "crates/totui/src/client/tests.rs": "bb2d5223aa53cfb5abe528d3488150327d7ec7e6a18b95bd370526a993312412",
+    "tools/check_city_gesture_races.cjs": "7df81b877edbe93f1e386d2e42cafd4d50ff09263a1f5f37ab77e07cf4ec0b8c",
+    "tools/check_city_panels.cjs": "70897d3dc005110f443267d3e7be4e937b14d36ca89c991040a565bb0f8a5dc4",
+    "tools/check_city_panels.py": "44df3585dbfbffc0462e7ad1e7c7adba6bb34f21bb231b9540f579a855cbe7df",
+    "tools/check_client_windows.ps1": "eacabd3da2d1637982a6ec9002ec04fba837406a3a8574344bd01da5197ed24d"
+  },
+  "validation": {
+    "desktop_feature_passed": 30,
+    "fixture_authors_ignored": 6,
+    "strict_desktop_clippy": "PASS",
+    "city_info_tests_passed": 2,
+    "actual_input": {
+      "chromium": {
+        "result": "PASS",
+        "full_checkpoint_comparisons": 54,
+        "non_info_panel_retention_on_reload": true
+      },
+      "linux_sdl": {
+        "result": "PASS",
+        "full_checkpoint_comparisons": 47,
+        "non_info_panel_retention_on_reload": true
+      }
+    },
+    "windows_sdl": "Rebuilt QA package and attempted guarded actual-input run; owned window could not acquire initial foreground focus, so guard stopped before input. No bypass/retry. Pre-review 39 comparisons remain retained, not final-fix Windows evidence.",
+    "regression_sensitivity": {
+      "171": "Removing adapter cancellation makes both native-event and ready-unit batch tests fail.",
+      "172": "Removing refresh rearming in a test-page script reproduces a 10-second Opponents stall after two aborted attempts; restoring exact final script passes all six race checkpoint comparisons.",
+      "173": "Resetting panel to Info on Modal::Load makes named shared reload test fail.",
+      "174": "Forcing wonder active always or using raw building upkeep independently makes the CityInfo integration test fail."
+    }
+  },
+  "checkpoint_sha256": {
+    "ordinary_next_round": "523864d07299b3988b05c896667843dca7708c2cd3e78789d86bd58fcd738e4d",
+    "reconnected_next_round": "523864d07299b3988b05c896667843dca7708c2cd3e78789d86bd58fcd738e4d"
+  },
+  "provenance": "Chromium full route passes 54 checkpoint comparisons; its six race outputs were subsequently regenerated in the successful restored-script sensitivity run. Linux passes 47. Native runtime inputs use final shared/SDL logic; later changes only extend tests. Temporary mutations were restored. Prior r2/city-panel/double-click artifacts retain their historical hashes/results. Engine runtime/native arithmetic is unchanged; only CityInfo test coverage was added.",
+  "limits": "No new owner manual acceptance claimed. Existing panel approval and pre-review Windows comparisons remain distinct. No original assets/saves/screenshots committed. Owner previews/games preserved; owner-launched third independent review is required before tag."
+}

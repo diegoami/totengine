@@ -26,6 +26,9 @@ exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out})=>{
   await key('Control+s');await save(name+'after');
   if(!fs.readFileSync(path.join(saves,name+'after.cth')).equals(fs.readFileSync(path.join(fixture,route.name+'-after.cth'))))throw Error('panel checkpoint differs '+route.name);
   await load(name+'after');
+  if(!(await state()).draws.some(d=>d.kind==='text'&&d.x===744&&d.y===193&&d.text===route.panel))throw Error('panel was reset on reload '+route.name);
+  await key('Control+s');await save(name+'reload');
+  if(!fs.readFileSync(path.join(saves,name+'reload.cth')).equals(fs.readFileSync(path.join(fixture,route.name+'-after.cth'))))throw Error('panel reload checkpoint differs '+route.name);
  }
  await key('Escape');
 };

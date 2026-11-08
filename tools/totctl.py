@@ -8,8 +8,8 @@ Reads original game data (no assets are redistributed):
   * .SAV/.SCN  -> structural walk per Mercator's published ToT section map
   * save diff  -> annotated byte-diff mapped to known sections
 
-Reference implementation for docs/plan.md Phase 0. Production language is decided
-separately; this probe exists to validate format assumptions fast.
+Reference probe for reproducible format evidence; Rust is the production
+implementation. Snapshot helpers also support read-only corpus inspection.
 
 Usage:
   totctl rules  <Rules.txt> [-o out.json]
@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from io import StringIO
 import os
 import struct
 import sys
@@ -77,33 +78,34 @@ def null_strings(block: bytes, limit: int = 5):
 # Rules.txt
 
 def parse_rules(path: str) -> dict:
-    """Parse Rules.txt. Every non-comment line after @SECTION is DATA —
-    there are no header rows (issue #44: the first data row used to be
-    stashed as a 'header', shifting every terrain name/color by one).
-    ';' starts a comment anywhere (inline comments are common in @COSMIC);
-    strip them before splitting fields."""
+    """Read a Rules file using the same byte-to-text policy as the probe."""
+    with open(path, "r", encoding="latin-1") as fh:
+        return parse_rules_text(fh.read())
+
+
+def parse_rules_text(data: str) -> dict:
+    """Probe a captured text snapshot; every row after @SECTION is data."""
     sections: dict[str, dict] = {}
     name = None
-    with open(path, "r", encoding="latin-1") as fh:
-        for raw in fh:
-            line = raw.rstrip("\r\n")
-            if line.startswith(";") or not line.strip():
-                continue
-            if line.startswith("@"):
-                name = line[1:].strip()
-                sections.setdefault(name, {"rows": [], "comments": []})
-                continue
-            if name is None:
-                continue
-            comment = ""
-            if ";" in line:  # inline comment — in @COSMIC it is the key text
-                line, comment = line.split(";", 1)
-            line = line.strip().rstrip(",").strip()
-            if not line:
-                continue
-            sec = sections[name]
-            sec["rows"].append([c.strip() for c in line.split(",")])
-            sec["comments"].append(comment.strip())
+    for raw in StringIO(data, newline=None):
+        line = raw.rstrip("\r\n")
+        if line.startswith(";") or not line.strip():
+            continue
+        if line.startswith("@"):
+            name = line[1:].strip()
+            sections.setdefault(name, {"rows": [], "comments": []})
+            continue
+        if name is None:
+            continue
+        comment = ""
+        if ";" in line:  # inline comment — in @COSMIC it is the key text
+            line, comment = line.split(";", 1)
+        line = line.strip().rstrip(",").strip()
+        if not line:
+            continue
+        sec = sections[name]
+        sec["rows"].append([c.strip() for c in line.split(",")])
+        sec["comments"].append(comment.strip())
     return sections
 
 
@@ -562,8 +564,13 @@ def walk_ext033(data, hdr, blob10240_end, out):
 
 
 def walk_save(path: str) -> dict:
-    data = open(path, "rb").read()
-    out = {"file": path, "size": len(data)}
+    with open(path, "rb") as stream:
+        return walk_save_bytes(stream.read(), path)
+
+
+def walk_save_bytes(data: bytes, source: str = "<memory>") -> dict:
+    """Use the established walker on one immutable caller-owned snapshot."""
+    out = {"file": source, "size": len(data)}
     if data[:8] != b"CIVILIZE":
         out["error"] = "not a Civ2 save/scenario (bad magic)"
         return out

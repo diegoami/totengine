@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "description": "Private ToT inspection corpus; paths are relative to CIVTOT_HOME. No runtime admission is granted by membership.",
+  "first_entry_profile": "classic-surface-032-v1",
+  "entries": [
+    {
+      "id": "original-standard",
+      "kind": "standard-save",
+      "save": "Original/Ph_Auto2.SAV",
+      "rules": "Original/Rules.txt",
+      "events": "Original/Events.txt",
+      "lua": [],
+      "art_roots": ["Original", "."],
+      "declared_features": ["surface"],
+      "first_entry_candidate": true
+    },
+    {
+      "id": "fallrome",
+      "kind": "shipped-classic-scenario",
+      "save": "FallRome/ROMFALL.scn",
+      "rules": "FallRome/Rules.txt",
+      "events": "FallRome/Events.txt",
+      "lua": [],
+      "art_roots": ["FallRome", "."],
+      "declared_features": ["surface", "classic_macro"]
+    },
+    {
+      "id": "roman-civil-wars",
+      "kind": "community-classic-scenario",
+      "save": "Scenario/Roman Civil Wars/RomCivWars.SCN",
+      "rules": "Scenario/Roman Civil Wars/Rules.txt",
+      "events": "Scenario/Roman Civil Wars/Events.txt",
+      "lua": [],
+      "art_roots": ["Scenario/Roman Civil Wars", "."],
+      "declared_features": ["surface", "classic_macro", "author_objectives"]
+    },
+    {
+      "id": "midgard",
+      "kind": "shipped-multiple-map-scenario",
+      "save": "Midgard/Midgard.SCN",
+      "rules": "Midgard/Rules.txt",
+      "events": "Midgard/Events.txt",
+      "lua": [],
+      "art_roots": ["Midgard", "."],
+      "declared_features": ["multiple_maps", "classic_macro", "author_objectives"]
+    },
+    {
+      "id": "warring-states",
+      "kind": "community-totpp-lua-scenario",
+      "save": "Scenario/china/Warring States.scn",
+      "rules": "Scenario/china/Rules.txt",
+      "events": null,
+      "lua": [
+        "Scenario/china/events.lua",
+        "Scenario/china/Lua/objectsDefinitions.lua",
+        "Scenario/china/Lua/modFunctions.lua",
+        "Scenario/china/Lua/genericFunctions.lua",
+        "Scenario/china/Lua/gameStatics.lua"
+      ],
+      "art_roots": ["Scenario/china", "."],
+      "declared_features": ["surface", "totpp_extended_save", "lua", "author_objectives"]
+    }
+  ]
+}

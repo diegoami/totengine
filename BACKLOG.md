@@ -27,8 +27,11 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 ## Near-term selection
 
 1. v0.16.0 / milestone 14 is released after explicit both-client owner acceptance
-   #210 and independent AGREE #216. Finish the separate post-tag follow-ups
-   #217–#219 without moving the tag. [Release record](docs/v0.16.0-readiness.md).
+   #210 and independent AGREE #216. Post-tag follow-ups #217–#219 are fixed on
+   main without moving the tag. [Release record](docs/v0.16.0-readiness.md).
+   Current milestone 15 implements [inspection](docs/scenario-inspection.md) and
+   the [conditional first-entry contract](docs/scenario-entry-contract.md), not
+   playable imports. None of the reference corpus is admitted for full simulation.
 2. Select the next bounded both-client package from
    [client milestones](docs/ui/client-milestones.md). Science/rates/government and
    original-save/scenario entry are scope candidates; finish reference/API gaps

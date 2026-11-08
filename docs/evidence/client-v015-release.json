@@ -1,0 +1,65 @@
+{
+  "schema": 1,
+  "release": "v0.15.0",
+  "review_issue": 162,
+  "reviewer": "Kimi K3.1 Pro",
+  "verdict": "AGREE",
+  "rounds": 3,
+  "reviewed_and_tagged_sha": "948b0d2b94d22315190c664340d080062629c8ea",
+  "fixed_prior_review_findings": [
+    163,
+    164,
+    165,
+    166,
+    167,
+    168,
+    169,
+    171,
+    172,
+    173,
+    174
+  ],
+  "non_blocking_followups": [
+    176,
+    177,
+    178,
+    179
+  ],
+  "release_url": "https://github.com/diegoami/totengine/releases/tag/v0.15.0",
+  "archives_sha256": {
+    "SHA256SUMS": "e2c0e3a659f09ef8539fa8532e9611cfb646675a159f10de47ba979104713246",
+    "totengine-v0.15.0-linux-x86_64.tar.gz": "a05046b65479b2f78d046a3ef108eed69ac5ad7f839c1efac7fe8286e2a5d817",
+    "totengine-v0.15.0-windows-x86_64.zip": "25283b2855dcf27857462dd58296af9e9a1a9068184c4a0a2e1af3ef92aae401"
+  },
+  "final_package_input": {
+    "chromium": {
+      "result": "PASS",
+      "full_checkpoint_comparisons": 54
+    },
+    "linux_sdl": {
+      "result": "PASS",
+      "full_checkpoint_comparisons": 47
+    },
+    "windows_sdl": {
+      "result": "PASS",
+      "full_checkpoint_comparisons": 47,
+      "scope": "Final release package acquired owned-window foreground focus and completed actual SendInput route. Earlier v0.14/v0.15 review-fix attempts stopped before input at the focus guard; those remain historical, not relabeled."
+    }
+  },
+  "package_manifest_sha256": {
+    "linux": "83e3d8fc458eecc35cbb2b9d2b6e0d3641999875bdf5543791bc8d24ef37b7af",
+    "windows": "6aab1386490c01e9a2b01bd40e967b9310fd12388b05e17c3610f00174505d26"
+  },
+  "package_binaries_sha256": {
+    "linux": {
+      "totplay": "10b158e755d6ca66dff0df6559b27dd9b2d112617e652d91f4e01f33546abbcf",
+      "totdesktop": "86b5d5d1771a88468c7488dcb7e90b6add0b383b0add16f2468ef0dcced3f31b"
+    },
+    "windows": {
+      "totplay.exe": "96286416c8afdce1d2c7367b018bf1f4c9f93549e04921a0b5f728d440eee008",
+      "totdesktop.exe": "c7304afdab455891d86e33fd5fe356189cc8099d4d03d0ee7590565b117f1653"
+    }
+  },
+  "packaging": "Exact reviewed checkout; both archives include candidate README plus an additive RELEASE.md recording approval and known follow-ups. Manifest and every archived file verified; downloaded release assets compared byte-for-byte. Notices and Windows runtimes included, no original game assets/fonts/saves. Existing owner previews/games preserved.",
+  "validation": "Independent third review reproduced 255 Rust / 11 Python / full goldens/fmt/strict default+desktop Clippy, 30 desktop tests, all seven campaign tests including 32 seeds per policy, all six fixture authors, 1280 native happiness snapshots and Chromium/Linux input. Final release package runs independently pass the documented 148 checkpoint comparisons above."
+}

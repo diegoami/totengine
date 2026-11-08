@@ -134,6 +134,22 @@ fn connection(
             "text/javascript; charset=utf-8",
             SCRIPT.as_bytes(),
         ),
+        ("GET", "/artwork-license") => response(
+            stream,
+            "200 OK",
+            "text/plain; charset=utf-8",
+            concat!(
+                "ToTEngine code: MIT.\n\n",
+                "Optional Isotrident artwork: Freeciv 3.2.7, GPL-2.0-or-later.\n",
+                "Artists include Tim F. Smith, Tatu Rissanen, Jerzy Klek, Marco Saupe,\n",
+                "Daniel Speyer, Alexandre Beraud, Jeff Mallatt, Davide Pagnin,\n",
+                "GriffonSpade, Eleazar, Vincent Croisier and Jacob Nevins.\n",
+                "Full credits and editable PNG/spec source accompany the isotrident pack.\n",
+                "Unmodified upstream source: https://files.freeciv.org/stable/freeciv-3.2.7.tar.xz\n",
+                "Open demo gameplay rules are independently authored, MIT; they are not ToT rules.\n\n",
+                include_str!("../../../../docs/third-party/isotrident-GPL-2.0.txt")
+            ).as_bytes(),
+        ),
         ("GET", "/state") => response(
             stream,
             "200 OK",

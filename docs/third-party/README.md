@@ -2,13 +2,23 @@
 
 Inventory checked against Cargo.lock and downloaded crate manifests/license files,
 2026-11-06. Includes build dependencies and target-only permissive dependencies.
-The two clients use image with only BMP/GIF enabled, serde JSON, OS randomness,
+The two clients use image with BMP/GIF and (in the unreleased Isotrident candidate) PNG enabled, serde JSON, OS randomness,
 atomic checkpoint creation, and optional SDL2/fontdue for the native client.
-No game implementation was copied from prior-art projects. No artwork or fonts
-are distributed. Retain these notices in binary packages.
+No game implementation was copied from prior-art projects. Release v0.15 and earlier distribute no artwork or fonts. The unreleased
+Isotrident candidate can optionally package separately licensed Freeciv artwork;
+its PNG/spec source, credits and GPL notice stay in the artwork pack. Retain these notices in binary packages.
 
 | Dependency | Selected license | Retained notice |
 | --- | --- | --- |
+| adler2-2.0.1 | MIT | [adler2-2.0.1.txt](adler2-2.0.1.txt) |
+| crc32fast-1.5.4 | MIT | [crc32fast-1.5.4.txt](crc32fast-1.5.4.txt) |
+| fdeflate-0.3.7 | MIT | [fdeflate-0.3.7.txt](fdeflate-0.3.7.txt) |
+| flate2-1.1.11 | MIT | [flate2-1.1.11.txt](flate2-1.1.11.txt) |
+| miniz_oxide-0.8.9 | MIT | [miniz_oxide-0.8.9.txt](miniz_oxide-0.8.9.txt) |
+| miniz_oxide-0.9.1 | MIT | [miniz_oxide-0.9.1.txt](miniz_oxide-0.9.1.txt) |
+| png-0.18.1 | MIT | [png-0.18.1.txt](png-0.18.1.txt) |
+| simd-adler32-0.3.10 | MIT | [simd-adler32-0.3.10.txt](simd-adler32-0.3.10.txt) |
+| zlib-rs-0.6.8 | Zlib | [zlib-rs-0.6.8.txt](zlib-rs-0.6.8.txt) |
 | allocator-api2-0.2.21 | MIT | [allocator-api2-0.2.21.txt](allocator-api2-0.2.21.txt) |
 | autocfg-1.5.1 | MIT | [autocfg-1.5.1.txt](autocfg-1.5.1.txt) |
 | bitflags-1.3.2 | MIT | [bitflags-1.3.2.txt](bitflags-1.3.2.txt) |
@@ -69,3 +79,7 @@ UEFI r-efi is lockfile-only for these targets and is not distributed.
 Runtime notices: [SDL2](SDL2-2.32.10.txt), [HIDAPI BSD](SDL2-HIDAPI-BSD.txt),
 [YUV](SDL2-yuv2rgb.txt), [LLVM](llvm-mingw.txt), [MinGW](mingw-runtime.txt).
 The package script includes all notices rather than pruning build-only entries.
+
+Optional Isotrident artwork retains [GPL-2.0](isotrident-GPL-2.0.txt),
+with the “or later” grant in Freeciv's README. The browser exposes notices at
+`/artwork-license`; see [assessment](../ui/freeciv-assessment.md).

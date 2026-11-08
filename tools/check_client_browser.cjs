@@ -1,5 +1,8 @@
 const {chromium}=require('playwright');
 const fs=require('fs');
+const demo=process.env.TOTENGINE_OPEN_DEMO==='1';
+const startLabel=demo?'Start open demo':'Start Original surface game';
+const unitChoice=demo?'Guards':'Warriors';
 const origin=process.env.TOTENGINE_CLIENT_ORIGIN||'http://127.0.0.1:8773';
 const out=process.env.TOTENGINE_CLIENT_REPORT||'/tmp/totengine-client';
 fs.mkdirSync(out,{recursive:true});
@@ -57,15 +60,15 @@ fs.mkdirSync(out,{recursive:true});
  await page.evaluate(()=>new Promise(resolve=>setTimeout(resolve,0)));
  releasePost();await latestBlurPosted;await page.waitForFunction(()=>!busy&&pendingFocus===null);
  const setupPhase=(await state()).phase;
- await click('Start Original surface game');
+ await click(startLabel);
  if((await state()).phase!==setupPhase||(await state()).status!=='Window is unfocused; input ignored')throw Error('delayed focus defeated newer blur');
  await page.unroute('**/*',holdFocusRequests);
  await restoreFocus();
- await idle();await click('Start Original surface game');
+ await idle();await click(startLabel);
  await click('Save pending choice');await save('research');await research();
  await key('b');await click('Save pending choice');await save('founding');await fill('athenx');await page.keyboard.press('Backspace');await page.keyboard.type('a');await page.waitForFunction(()=>frame.entry?.value==='athena'&&!busy);await key('Enter');
  await click('Choose production');
- for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes('Warriors')))break}
+ for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes(unitChoice)))break}
  await key('Enter');await key('Control+s');await save('normal');
  await page.screenshot({path:out+'/browser-map.png'});
  for(let n=0;n<10;n++){
@@ -82,7 +85,7 @@ fs.mkdirSync(out,{recursive:true});
  await load('research');await research();await key('b');await click('Save pending choice');await save('researchnext');
  await loadPending('founding');await fill('athena');await key('Enter');
  await click('Choose production');
- for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes('Warriors')))break}
+ for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes(unitChoice)))break}
  await key('Enter');await key('Control+s');await save('foundingnext');
  await load('normal');await key('Control+n');if(has(await state(),'End your turn with movable units?'))await key('Enter');
  await page.waitForFunction(()=>frame.phase==='Human'&&frame.draws.some(d=>d.text?.startsWith('Turn 2 ')));await idle();

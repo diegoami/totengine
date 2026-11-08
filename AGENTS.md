@@ -76,8 +76,12 @@ Planning branch `docs/scenario-platform-roadmap` includes the earlier source
 study and remains stacked on the Isotrident feature commit; keep #181 and #182
 separate when integrating it. Changes since that feature are documentation only.
 Original resources remain the main product requirement; approved Isotrident
-fallback stays optional. No new version, milestone, implementation, public
-hosting or licensing change was launched by this documentation reorganization.
+fallback stays optional. The follow-up backlog-to-milestone request created named packages 14–29 and
+bounded stories #192–#209, recorded in `docs/milestones.md`; version numbers,
+due dates and candidate SHAs remain unassigned. Historical milestones are
+unchanged. Full-AI/plugin gates still depend on complete clients, including
+additional original-feature slices beyond this planning list. No implementation,
+public hosting or licensing change was launched by this reorganization.
 
 Resumed 2026-11-08: [PR #182](https://github.com/diegoami/totengine/pull/182)
 implements the post-v0.15 follow-ups #176–#179 on the separate

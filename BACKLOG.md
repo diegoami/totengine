@@ -3,6 +3,7 @@
 **GitHub issues are the live queue; GitHub milestones are scoped releases.**
 This file maps programs and records working conventions, not a second story
 status database. [Mission](docs/mission.md) · [Delivery plan](docs/plan.md) ·
+[Planned milestones](docs/milestones.md) ·
 [Decision 0008](docs/decisions/0008-scenario-platform.md).
 
 ## Program map
@@ -41,9 +42,11 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
    baseline; retain #187 source assessment now. Do not launch full AI ports or
    the external plugin implementation before the client gate.
 
-No new version, calendar schedule or fixed milestone count is assigned. A program
-issue without a release milestone is planned scope, not necessarily the next
-implementation task. Older T0–T4/RG identifiers remain useful history; they no
+Named planning milestones 14–29 now carry bounded stories from this backlog;
+[the package map](docs/milestones.md) records their dependencies and AI gates.
+No numeric release version, calendar schedule or fixed remaining milestone count
+is assigned. Umbrella programs link to their child milestones and remain open
+across slices; an unassigned program is not an abandoned target. Older T0–T4/RG identifiers remain useful history; they no
 longer impose the old sequence or defer all authoring/QoL to T4.
 
 ## Story contract

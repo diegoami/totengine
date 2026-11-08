@@ -17,6 +17,19 @@ for both clients. The complete original-AI program
 is a dependency of the UI work below. Existing built-in opponents are sufficient
 for the human-play acceptance routes.
 
+## Live planning milestones — 2026-11-08
+
+The owner requested mapping the reorganized backlog onto GitHub milestones.
+[The package map](../milestones.md) records the named scopes, assigned stories
+and dependencies. Immediate client packages are resources/recovery (14),
+science/rates/government (16), classic entry (17), contact/peace (18) and initial
+reports/help (19), with admission/capability work in 15. Queues/rally points
+(23/24) are optional. The recording slice (22) includes both human clients.
+These are bounded packages, not the complete original interface or a fixed
+release count; remaining controls, sound, domains, maps and scenario branches
+still need their own evidence-backed slices. Full-AI gates remain closed until
+actual complete-client acceptance, not merely completion of these packages.
+
 ## Required delivery targets
 
 Owner clarification, 2026-11-06: **both a playable browser client and a normal

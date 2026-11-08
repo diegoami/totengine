@@ -25,7 +25,7 @@ no proprietary artwork, maps, saves, sounds or scenarios are distributed.
 
 These are product targets, not a statement that all are implemented.
 [Mission and boundaries](docs/mission.md) · [Delivery plan](docs/plan.md) ·
-[Live backlog](BACKLOG.md).
+[Live backlog](BACKLOG.md) · [Planned milestones](docs/milestones.md).
 
 ## Status
 

@@ -65,3 +65,13 @@ GitHub programs #183–#190 extend the existing queue. Existing macro/mechanics,
 client, ToTPP and AI issues are reused and cross-linked; planning does not close
 unfinished implementation. Actual release candidates still use small coherent
 themes and independent owner-launched review at the exact candidate SHA.
+
+## Milestone alignment — owner follow-up, 2026-11-08
+
+The owner then requested using this backlog to update milestones. Named future
+packages 14–29 now carry bounded implementation/preparation stories, with no
+numeric release versions or due dates. [The package map](../milestones.md)
+records dependencies, the complete-client AI gates and remaining unscheduled
+original-feature work. Historical milestones remain unchanged. Program epics
+remain open across their child milestones; this is not a fixed final release
+count, frozen review candidate or implementation launch.

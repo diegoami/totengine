@@ -1,7 +1,7 @@
 # ToTEngine delivery plan
 
 Reorganized from the owner's seven product targets, 2026-11-08.
-[Mission](mission.md) → this plan → [live backlog](../BACKLOG.md).
+[Mission](mission.md) → this plan → [live backlog](../BACKLOG.md) → [planned milestones](milestones.md).
 [Decision 0008](decisions/0008-scenario-platform.md) supersedes the old sequential
 T0–T4 schedule; historical evidence and released tags remain unchanged.
 
@@ -65,7 +65,10 @@ installed and statically parsed; no playable/native acceptance is claimed.
 ## Delivery order and gates
 
 These are dependency stages, not one release per stage or a fixed milestone count.
-Choose each actual milestone from concrete reviewed scope and evidence.
+Named planning packages 14–29 and their concrete child stories are now mapped in
+[milestones.md](milestones.md), following the owner's backlog-to-milestone request.
+Their scopes retain reference/engine/human-acceptance gates; versions/dates and
+release candidates remain unassigned. Refine/split each package from evidence.
 
 1. **Reconcile the baseline.** Integrate/review the separate client-fix and
    optional-art candidates through the normal process. Keep published tags,

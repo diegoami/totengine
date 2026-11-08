@@ -4,16 +4,16 @@
   "milestone": 15,
   "previous_tag": "v0.16.0",
   "previous_tag_sha": "2f37ab49a56dbcb2091977162518604ae3b6ea0b",
-  "base_sha": "2f6acccb0b2bce7eae27af0220bedaed1277b600",
+  "base_sha": "56262b0a761cd5307328f174593e02dde1ba429c",
   "scope": [
     "Read-only scenario corpus inspection",
     "Conditional classic-surface-032-v1 entry contract",
     "Post-v0.16 non-blocking sprite/prose corrections"
   ],
   "validation": {
-    "new_authored_inspector_tests": 19,
+    "new_authored_inspector_tests": 26,
     "existing_python_tests": 13,
-    "total_python_tests": 32,
+    "total_python_tests": 39,
     "install_backed_rust_release_mode_with_desktop": 265,
     "ignored_client_fixture_authors": 6,
     "ignored_nightly_in_workspace": 1,
@@ -27,28 +27,33 @@
     "format_goldens": "PASS; helper extraction leaves all previous outputs unchanged",
     "real_corpus": {
       "entries": 5,
-      "inspection_errors": 0,
+      "inspection_errors": 1,
       "runtime_admissions": 0,
       "compact_bytes_identical_to_evidence": true,
-      "full_report_sha256": "728a037cc3e9217d3bcf1fc92f137e63ddf29fdd1957b53b388765d21beaf1c3",
-      "root": "/home/diego/review-tmp/tot-v017-validation"
+      "full_report_sha256": "6652bd63e2e25440ac107cd82c76bdf19eee708a804fece8c5e74a07df3bb672",
+      "report_available_entries": 4,
+      "incomplete_entries": [
+        "midgard"
+      ]
     },
     "campaign": {
       "rounds": 100,
       "final_fingerprint": "b22e4340b6ab8bf6",
       "only_engine_version_header_changed": true,
       "sha256": "42a82ff57728ef08cb50def4993a4561d39008a3f3adbca91860a0e64bc079cb"
-    }
+    },
+    "review_fix_tests": "26 inspector tests pass; structural CLI status, multi-entry oversized coordinates, bad magic, audit meaning, directive placement and entry/shared scan budgets.",
+    "environment_notes": "Initial preview HTTP test could not bind a loopback socket in the sandbox; rerun with local socket access passed all six preview tests. Non-Rust make commands ran separately; install-backed goldens are explicitly rerun with CIVTOT_HOME because the non-Rust environment initially self-skipped them."
   },
   "inspection_evidence": "scenario-inventory-v1.json",
   "engine_audit_ref": "v0.16.0; audited production source bytes match; not a runtime/binary conformance claim",
   "source_sha256": {
-    "tools/scenario_inventory.py": "7e188e43ab1ce04f8406bf0abd6f948ca1725bc5493205d2140e43cad338b407",
+    "tools/scenario_inventory.py": "51a7eb6dedd7ac43f721f0a5745b629d9d6f1319b142e0eab880ed1902322858",
     "tools/totctl.py": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",
     "docs/scenario-corpus.json": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
     "docs/scenario-engine-baseline.json": "7b3aa80969762a7b43fdedca0e982d5120bc68f281954c821f2a585f2a44b999",
     "docs/scenario-entry-contract.md": "b35090d21b067a2d7085fc9c14ba401e345537ad80a980795ccb34f5dc9341ba",
-    "docs/evidence/scenario-inventory-v1.json": "7ad38ca4c0831aa9acac39de2b0dfc4ff95f790ec5624d9a2bbf8a1f784ec983"
+    "docs/evidence/scenario-inventory-v1.json": "2a9b387041c1aa103eafcb03acd18428c0c20154f5a9eec3cabc14f9ad0f0f53"
   },
   "ci_limits": {
     "issue": 221,
@@ -58,8 +63,18 @@
   "admission": "No current corpus entry or manifest/keyword recognition grants simulation/human admission. First reference is conditional; phase/movement/fog/event/dependency/initializer proof remains before #197/#198 activation.",
   "safety": "No supplied code/game executes; original inputs and owner previews/saves remain unchanged. Sources are bounded snapshots; output is exclusive. Full reports private, compact derived metadata only in Git.",
   "gates": {
-    "independent_review": "Owner-launched exact-main-SHA review required; not launched",
+    "independent_review": "Round one BLOCK on #224 at base_sha; owner-launched second-round review required for fixes, not launched.",
     "tag": "Not created",
     "human_acceptance": "No new player UI/import route; no inferred additional human result."
-  }
+  },
+  "review_round": 2,
+  "review_findings_fixed": [
+    225,
+    226,
+    227,
+    228,
+    229,
+    230
+  ],
+  "validation_scope": "First-candidate release-mode Rust/autoplay/fmt/Clippy checks were independently reproduced on #224; no Rust/workspace/runtime files changed in review fixes. Current revision reruns make-test commands including Rust debug, all 39 Python tests/compilation and full install format goldens, plus exact full/compact report/expected failure reproduction."
 }

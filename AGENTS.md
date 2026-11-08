@@ -65,33 +65,35 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
-Milestone 15 / v0.17.0 tooling candidate preparation: #222's read-only
-inspector, pinned five-entry corpus, source-audited coverage and conditional
-classic-surface-032-v1 entry contract are merged. #192/#193 remain open for the
-release-review gate. No current input is admitted for simulation/human import;
-phase/movement/fog, required events, dependency closure and native-import
-initializer remain explicit #197/#198 blockers. Sources/docs:
-`tools/scenario_inventory.py`, `docs/scenario-inspection.md`,
-`docs/scenario-entry-contract.md`, `docs/evidence/scenario-inventory-v1.json`.
+Milestone 15 / v0.17.0 remains UNRELEASED. Kimi K3.1 Pro BLOCK on #224
+reviewed exact first candidate `56262b0a761cd5307328f174593e02dde1ba429c`.
+It reproduced all declared checks and opened two MUST-FIX (#226 structural
+macro failures still succeeded; #227 huge coordinate aborted reports), plus
+four follow-ups #225/#228–#230. Worktree `review-tmp/totengine-v017-review-r1`
+on `fix/v017-review-r1` addresses all six with 26 inspector tests, bounded
+entry/shared scan budgets, corrected diagnostic/configuration behavior and
+regenerated corpus evidence. No review verdict for these fixes is implied.
 
-Release-preparation worktree `review-tmp/totengine-v017-candidate` on
-`release/v0.17.0` updates workspace metadata and rederived campaign header only;
-all other campaign bytes/fingerprint remain identical to v0.16. Actual checks:
-265 install-backed Rust tests in release mode with desktop, 19 new + 13 existing
-Python tests, full goldens/fmt/strict default+desktop Clippy and seven campaigns
-including 32 seeds/policy pass. Six client fixture authors were not rerun for
-this non-UI slice. Real full/compact corpus output reproduces byte-for-byte.
-Readiness: `docs/v0.17.0-readiness.md`; candidate evidence:
-`docs/evidence/scenario-v017-candidate.json`.
+#192/#193 remain open for the release-review gate. #222's inspector and
+conditional classic-surface-032-v1 contract activate no native-file import.
+Four corpus entries have report-available inspection; Midgard is incomplete
+for a lexical location diagnostic, not proven invalid in the native game.
+All five remain unadmitted for simulation/human continuation. Phase/movement/
+fog, required events, dependencies and imported initializer remain explicit
+#197/#198 blockers. Sources/docs: `tools/scenario_inventory.py`,
+`docs/scenario-inspection.md`, `docs/scenario-entry-contract.md`,
+`docs/evidence/scenario-inventory-v1.json`, `docs/v0.17.0-readiness.md`.
 
-GitHub rejected a workflow-file edit because its OAuth credential lacks workflow
-scope. That edit was removed from the unpushed commit; no permission bypass was
-attempted. New tests run through make test/explicit commands, not claimed in
-existing CI; #221 tracks direct CI wiring. Before release, land notes/version,
-create the exact-main-SHA review issue and PRINT the owner-launched review prompt
-per `docs/milestone-review.md`, then stop. No review/tag is started by preparation.
-This tool/contract does not activate a native client, Lua, map simulation or AI
-port. Existing owner previews/saves and v0.16 artifacts remain preserved.
+The first candidate's install-backed 265 Rust tests, 32 Python tests,
+goldens/fmt/strict Clippy and seven campaigns (32 seeds/policy) passed and were
+independently reproduced. Revised validation is recorded in
+`docs/evidence/scenario-v017-candidate.json`. No new GUI/native-gameplay run is
+claimed. Workspace metadata/checkpoints are v0.17; preserve old binaries/saves.
+#221 remains a CI-wiring follow-up: the available OAuth credential lacks
+workflow scope; new inspector tests run explicitly and through make test.
+After fixes land, update #224 to the exact main SHA and print the second-round
+review prompt per `docs/milestone-review.md`; the owner launches review. Do not
+tag or launch it from the main session. Existing owner previews/games remain.
 
 v0.16.0 is RELEASED at exactly reviewed/tagged SHA
 `2f37ab49a56dbcb2091977162518604ae3b6ea0b` (Kimi K3.1 Pro AGREE on #216,
@@ -106,17 +108,9 @@ across all three. Reviewer repeated Chromium/Linux input and verified retained
 Windows outputs/guards; do not claim reviewer-rerun Windows or fresh live-Wine.
 Records: `docs/v0.16.0-readiness.md`, `docs/evidence/client-v016-release.json`.
 
-Post-tag branch `fix/v016-review-followups` addresses #217 campaign prose,
-#218 explicit client-first AI dependency prose, #219 Elephant/abbreviated stealth
-sprite aliases with a distinct-source-pixel regression. These fixes are
-UNRELEASED; do not move v0.16.0 or replace its assets. Targeted shared/desktop
-suite passes 37 tests (six authors ignored), including real-pack integration.
-Next planned package is milestone 15, #192/#193 scenario admission/corpus and
-entry contract. Worktree `review-tmp/totengine-scenario-admission` on
-`feat/scenario-admission` exists but is unmodified. Source audit found emitted
-GIVETECHNOLOGY skipped on application and Original Events compound/endgame
-constructs unsupported; report these honestly before admitting simulation. No
-scenario inspector, full UI/AI, Lua/multi-map implementation or AI port is shipped.
+Post-v0.16 fixes #217–#219 were merged through #220 and enter the unreleased
+v0.17 candidate. They clarify campaign/AI dependencies and correct three sprite
+aliases, with a distinct-pixel regression. Do not move v0.16 or replace its assets.
 
 Preserve owner browser hosts 8816/8820 and all old previews/games. Launchers and
 saves remain under `review-tmp/totengine-owner-client-foundation`; running

@@ -19,6 +19,34 @@ import totctl
 ROOT = Path(__file__).resolve().parents[1]
 MAX_FILE = 16 * 1024 * 1024
 ART_NAMES = ('terrain1', 'terrain2', 'units', 'cities', 'city', 'icons', 'people', 'dialog')
+SCAN_ENTRY_LIMITS = {'diagnostics': 4096, 'vocabulary': 128, 'lines': 100000}
+SCAN_REPORT_LIMITS = {'diagnostics': 8192, 'vocabulary': 1024, 'lines': 500000}
+STRUCTURAL_DIAGNOSTICS = frozenset({
+    'nested_event', 'misplaced_condition', 'malformed_then', 'malformed_endif',
+    'unclosed_event', 'unclosed_payload', 'malformed_location',
+    'stray_location_end', 'misplaced_directive', 'content_outside_event',
+})
+
+
+class ScanLimitReached(Exception):
+    """Stop before retaining more scanner work than the declared budget."""
+
+    def __init__(self, scope, category):
+        self.scope = scope
+        self.category = category
+
+
+class ScanBudget:
+    def __init__(self):
+        self.used = Counter()
+
+    def take(self, category, local):
+        for scope, used, limits in [('report', self.used, SCAN_REPORT_LIMITS),
+                                    ('entry', local, SCAN_ENTRY_LIMITS)]:
+            if used[category] >= limits[category]:
+                raise ScanLimitReached(scope, category)
+        self.used[category] += 1
+        local[category] += 1
 
 
 def digest(data):
@@ -92,6 +120,8 @@ def load_baseline(data):
     baseline = json.loads(data)
     if not isinstance(baseline, dict) or type(baseline.get('schema')) is not int or baseline['schema'] != 1:
         raise ValueError('unknown engine audit schema')
+    if not isinstance(baseline.get('meaning'), str):
+        raise ValueError('engine audit meaning must be a string')
     sources = baseline.get('source_sha256')
     if not isinstance(sources, dict) or not 1 <= len(sources) <= 64:
         raise ValueError('invalid bounded engine source audit')
@@ -131,7 +161,7 @@ def audit_current(baseline, root=ROOT):
             'meaning': baseline['meaning']}
 
 
-def scan_events(text, baseline):
+def scan_events(text, baseline, budget=None):
     """Lexical inventory, not a replacement macro parser or compatibility proof."""
     counts = {'triggers': Counter(), 'actions': Counter(), 'logical': Counter()}
     diagnostics = []
@@ -141,121 +171,145 @@ def scan_events(text, baseline):
     block = False
     payload = None
     events = 0
+    began = False
+    budget = budget if budget is not None else ScanBudget()
+    local = Counter()
+    overflow = None
     def diagnostic(code, line, token):
+        budget.take('diagnostics', local)
         if not re.fullmatch(r'@?[A-Za-z][A-Za-z0-9_]{0,63}|<[^<>]{1,24}>', token):
             token = '<unrecognized>'
         diagnostics.append({'code': code, 'line': line, 'token': token})
-    for number, raw in enumerate(StringIO(text, newline=None), 1):
-        stripped = raw.strip()
-        upper = stripped.upper()
-        if payload:
-            if upper == payload:
-                payload = None
-            elif payload == 'ENDLOCATIONS' and stripped and not stripped.startswith(';'):
-                fields = stripped.split(';', 1)[0].split(',')
-                if len(fields) not in (2, 3) or not all(re.fullmatch(r'-?\d+', x.strip()) for x in fields):
-                    diagnostic('malformed_location', number, 'LOCATIONS')
-                elif len(fields) == 3 and int(fields[2]) != 0:
-                    diagnostic('non_surface_location', number, 'LOCATIONS')
-            continue
-        t = stripped.split(';', 1)[0].strip()
-        if not t:
-            continue
-        upper = t.upper()
-        if upper in ('@BEGINEVENTS', '@DEBUG'):
-            continue
-        if upper == '@IF':
-            if block:
-                diagnostic('nested_event', number, upper)
-            block = True
-            phase = 'triggers'
-            want_trigger = True
-            current = None
-            events += 1
-            continue
-        if upper in ('@AND', '@OR'):
-            counts['logical'][upper] += 1
-            diagnostic('unsupported_compound_condition', number, upper)
-            if not block or phase != 'triggers':
-                diagnostic('misplaced_condition', number, upper)
-            want_trigger = True
-            current = None
-            continue
-        if upper == '@THEN':
-            if not block or phase != 'triggers' or want_trigger:
-                diagnostic('malformed_then', number, upper)
-            phase = 'actions'
-            current = None
-            continue
-        if upper == '@ENDIF':
-            if not block or phase != 'actions':
-                diagnostic('malformed_endif', number, upper)
-            block = False
-            phase = None
-            current = None
-            continue
-        if upper == '@ENDEVENTS':
-            if block:
-                diagnostic('unclosed_event', number, upper)
-            break
-        if upper.startswith('@'):
-            diagnostic('unsupported_directive', number, upper)
-            continue
-        if not block:
-            diagnostic('content_outside_event', number, '<content>')
-            continue
-        if '=' in t:
-            key = t.split('=', 1)[0].strip().lower()
-            if not re.fullmatch('[a-z][a-z0-9_]{0,63}', key):
-                diagnostic('unrecognised_parameter', number, '<unrecognized>')
+    def count(phase, token):
+        if token not in counts[phase]:
+            budget.take('vocabulary', local)
+        counts[phase][token] += 1
+    try:
+        for number, raw in enumerate(StringIO(text, newline=None), 1):
+            budget.take('lines', local)
+            stripped = raw.strip()
+            upper = stripped.upper()
+            if payload:
+                if upper == payload:
+                    payload = None
+                elif payload == 'ENDLOCATIONS' and stripped and not stripped.startswith(';'):
+                    fields = stripped.split(';', 1)[0].split(',')
+                    if len(fields) not in (2, 3) or not all(re.fullmatch(r'-?[0-9]{1,10}', x.strip()) for x in fields):
+                        diagnostic('malformed_location', number, 'LOCATIONS')
+                    elif len(fields) == 3 and fields[2].strip().lstrip('-').strip('0'):
+                        diagnostic('non_surface_location', number, 'LOCATIONS')
                 continue
-            coverage = baseline.get(phase, {}).get(current, {})
-            if key not in coverage.get('params', []):
-                diagnostic('unmodelled_parameter', number, key)
-            continue
-        if phase == 'triggers' and want_trigger:
-            if not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', upper):
-                diagnostic('unrecognised_trigger_line', number, '<unrecognized>')
-                current = '<unrecognized>'
-            else:
+            t = stripped.split(';', 1)[0].strip()
+            if not t:
+                continue
+            upper = t.upper()
+            if upper == '@BEGINEVENTS':
+                if block or events or began:
+                    diagnostic('misplaced_directive', number, upper)
+                began = True
+                continue
+            if upper == '@DEBUG':
+                if block:
+                    diagnostic('misplaced_directive', number, upper)
+                continue
+            if upper == '@IF':
+                if block:
+                    diagnostic('nested_event', number, upper)
+                block = True
+                phase = 'triggers'
+                want_trigger = True
+                current = None
+                events += 1
+                continue
+            if upper in ('@AND', '@OR'):
+                count('logical', upper)
+                diagnostic('unsupported_compound_condition', number, upper)
+                if not block or phase != 'triggers':
+                    diagnostic('misplaced_condition', number, upper)
+                want_trigger = True
+                current = None
+                continue
+            if upper == '@THEN':
+                if not block or phase != 'triggers' or want_trigger:
+                    diagnostic('malformed_then', number, upper)
+                phase = 'actions'
+                current = None
+                continue
+            if upper == '@ENDIF':
+                if not block or phase != 'actions':
+                    diagnostic('malformed_endif', number, upper)
+                block = False
+                phase = None
+                current = None
+                continue
+            if upper == '@ENDEVENTS':
+                if block:
+                    diagnostic('unclosed_event', number, upper)
+                break
+            if upper.startswith('@'):
+                diagnostic('unsupported_directive', number, upper)
+                continue
+            if not block:
+                diagnostic('content_outside_event', number, '<content>')
+                continue
+            if '=' in t:
+                key = t.split('=', 1)[0].strip().lower()
+                if not re.fullmatch('[a-z][a-z0-9_]{0,63}', key):
+                    diagnostic('unrecognised_parameter', number, '<unrecognized>')
+                    continue
+                coverage = baseline.get(phase, {}).get(current, {})
+                if key not in coverage.get('params', []):
+                    diagnostic('unmodelled_parameter', number, key)
+                continue
+            if phase == 'triggers' and want_trigger:
+                if not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', upper):
+                    diagnostic('unrecognised_trigger_line', number, '<unrecognized>')
+                    current = '<unrecognized>'
+                else:
+                    current = upper
+                count(phase, current)
+                want_trigger = False
+            elif phase == 'actions':
+                if upper == 'LOCATIONS':
+                    if current != 'CREATEUNIT':
+                        diagnostic('placement_context_unmodelled', number, 'LOCATIONS')
+                    payload = 'ENDLOCATIONS'
+                    continue
+                if re.fullmatch(r'-?\d+', t) and current == 'PLAYCDTRACK':
+                    continue
+                if upper == 'ENDLOCATIONS':
+                    diagnostic('stray_location_end', number, upper)
+                    continue
+                if not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', upper):
+                    diagnostic('unmodelled_argument', number, current or '<none>')
+                    continue
                 current = upper
-            counts[phase][current] += 1
-            want_trigger = False
-        elif phase == 'actions':
-            if upper == 'LOCATIONS':
-                if current != 'CREATEUNIT':
-                    diagnostic('placement_context_unmodelled', number, 'LOCATIONS')
-                payload = 'ENDLOCATIONS'
+                count(phase, current)
+                if current == 'TEXT':
+                    payload = 'ENDTEXT'
+            else:
+                diagnostic('unmodelled_trigger_argument', number, current or '<none>')
                 continue
-            if re.fullmatch(r'-?\d+', t) and current == 'PLAYCDTRACK':
-                continue
-            if upper == 'ENDLOCATIONS':
-                diagnostic('stray_location_end', number, upper)
-                continue
-            if not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', upper):
-                diagnostic('unmodelled_argument', number, current or '<none>')
-                continue
-            current = upper
-            counts[phase][current] += 1
-            if current == 'TEXT':
-                payload = 'ENDTEXT'
-        else:
-            diagnostic('unmodelled_trigger_argument', number, current or '<none>')
-            continue
-        coverage = baseline.get(phase, {}).get(current)
-        if coverage is None:
-            diagnostic('unimplemented_keyword', number, current)
-        elif coverage['status'] != 'modelled_subset':
-            diagnostic(coverage['status'], number, current)
-    if payload:
-        diagnostic('unclosed_payload', number if 'number' in locals() else 1, payload)
-    if block:
-        diagnostic('unclosed_event', number if 'number' in locals() else 1, '@IF')
+            coverage = baseline.get(phase, {}).get(current)
+            if coverage is None:
+                diagnostic('unimplemented_keyword', number, current)
+            elif coverage['status'] != 'modelled_subset':
+                diagnostic(coverage['status'], number, current)
+        if payload:
+            diagnostic('unclosed_payload', number if 'number' in locals() else 1, payload)
+        if block:
+            diagnostic('unclosed_event', number if 'number' in locals() else 1, '@IF')
+    except ScanLimitReached as limit:
+        overflow = {'scope': limit.scope, 'category': limit.category}
+        # One reserved marker per entry remains possible after the shared budget.
+        diagnostics.append({'code': 'scan_limit_exceeded', 'line': number if 'number' in locals() else 1,
+                            'token': '<limit>', **overflow})
     observed = {}
     for phase in ('triggers', 'actions'):
         observed[phase] = {key: baseline.get(phase, {}).get(key, {'status': 'unimplemented', 'params': [], 'note': 'No audited handler.'}) for key in sorted(counts[phase])}
     return {'event_blocks': events, **{key: dict(sorted(value.items())) for key, value in counts.items()},
             'audited_baseline_coverage': observed, 'diagnostics': diagnostics,
+            'scan_complete': overflow is None, 'overflow': overflow,
             'meaning': 'Lexical counts/line diagnostics only; recognition does not prove native semantics or an active runtime hook.'}
 
 
@@ -312,7 +366,7 @@ def inventory_art(home, roots):
             'decoded': False}
 
 
-def inspect_entry(home, e, baseline, current):
+def inspect_entry(home, e, baseline, current, scan_budget=None):
     result = {'id': e['id'], 'kind': e.get('kind', 'unspecified'), 'declared_features': e['declared_features'],
               'first_entry_candidate': bool(e.get('first_entry_candidate')), 'files': {}, 'diagnostics': []}
     data = {}
@@ -347,7 +401,7 @@ def inspect_entry(home, e, baseline, current):
                 result['save_probe']['status'] = 'partial_layout'
         except (ValueError, IndexError, struct.error, KeyError, OverflowError):
             result['save_probe'] = {'status': 'failed', 'version_raw': probe.get('version_raw') if probe else None}
-            reason = 'unsupported_version' if probe and probe.get('version_raw') not in ('0x0032', '0x0033') else 'malformed_or_truncated'
+            reason = 'unsupported_version' if probe and probe.get('version_raw') is not None and probe['version_raw'] not in ('0x0032', '0x0033') else 'malformed_or_truncated'
             result['diagnostics'].append({'code': 'save_probe_failed', 'path': e['save'], 'reason': reason})
     if 'rules' in data:
         sections = totctl.parse_rules_text(data['rules'].decode('latin-1'))
@@ -359,7 +413,11 @@ def inspect_entry(home, e, baseline, current):
             if not sections.get(required, {}).get('rows'):
                 result['diagnostics'].append({'code': 'missing_rules_section', 'section': required})
     if 'events' in data:
-        result['macro'] = scan_events(data['events'].decode('latin-1'), baseline)
+        result['macro'] = scan_events(data['events'].decode('latin-1'), baseline, scan_budget)
+        errors = sorted({d['code'] for d in result['macro']['diagnostics']
+                         if d['code'] in STRUCTURAL_DIAGNOSTICS or d['code'] == 'scan_limit_exceeded'})
+        if errors:
+            result['diagnostics'].append({'code': 'macro_inspection_incomplete', 'path': e['events'], 'reasons': errors})
     result['dependency_closure'] = 'not_established: listed logic/sheets are pinned; full text/audio/video/Lua-module dependencies need a separate audit'
     result['lua'] = {'declared_files': len(e['lua']), 'executed': False, 'requirements_inferred_from_code': False}
     result['art'] = inventory_art(home, e['art_roots'])
@@ -403,7 +461,8 @@ def report(home, manifest_bytes, baseline_bytes, source_root=ROOT):
     manifest = load_manifest(manifest_bytes)
     baseline = load_baseline(baseline_bytes)
     current = audit_current(baseline, source_root)
-    entries = [inspect_entry(home, e, baseline, current) for e in manifest['entries']]
+    scan_budget = ScanBudget()
+    entries = [inspect_entry(home, e, baseline, current, scan_budget) for e in manifest['entries']]
     return {'schema': 1, 'view': 'full', 'purpose': 'Read-only inspection. No game/scripts are executed and no runtime admission is granted.',
         'producer': {'tool': 'tools/scenario_inventory.py', 'sha256': digest(Path(__file__).read_bytes()), 'format_probe_sha256': digest((ROOT/'tools/totctl.py').read_bytes())},
         'manifest_sha256': digest(manifest_bytes), 'baseline_sha256': digest(baseline_bytes), 'engine_audit': current,

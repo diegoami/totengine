@@ -41,7 +41,7 @@ Milestone 14 is closed after owner acceptance and first-round independent AGREE.
 | Headless | Save/scenario boot, modeled macro events, original-derived mechanics, built-in policies, generated campaigns and deterministic order replay | Admitted scenario campaigns, parameter sweeps, objective-aware reports and author regressions |
 | Observer | Live/replay browser observer, full/per-civ views, turn controls and archives | Scenario presentation/objectives/events, supported map layers, comparison and recording integration |
 | AI | Versioned built-in/legacy policies and partial original-derived decisions | Per-faction policy selection, bounded candidate comparisons, external plugins and independently measured native fidelity |
-| Scenario tools | Format inspection/diffs and an installed private corpus | Capability reports, client import, event/extension coverage, run diagnostics, safe editing/export and creation assistance |
+| Scenario tools | Format inspection/diffs, pinned private corpus and an unreleased read-only capability inspector/conditional entry contract | Actual native import/admission, event/extension coverage, run diagnostics, safe editing/export and creation assistance |
 | Recordings | Canonical order logs, observer NDJSON and replay checkpoints | Unified session manifests, view/annotation streams, recording controls/recovery, then audio/video capture |
 
 Artwork/recovery, setup feedback and planning PRs #181/#182/#191/#212/#214/#215

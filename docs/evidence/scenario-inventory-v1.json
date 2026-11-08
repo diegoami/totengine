@@ -1,0 +1,1641 @@
+{
+  "baseline_sha256": "7b3aa80969762a7b43fdedca0e982d5120bc68f281954c821f2a585f2a44b999",
+  "engine_audit": {
+    "changed_or_missing": [],
+    "matches_current_source": true,
+    "meaning": "Manually audited implementation coverage, not native conformance or runtime admission. Source changes require a new audit.",
+    "ref": "v0.16.0",
+    "sha": "2f37ab49a56dbcb2091977162518604ae3b6ea0b"
+  },
+  "entries": [
+    {
+      "art": {
+        "decoded": false,
+        "diagnostics": [],
+        "files": {
+          "cities": {
+            "bytes": 614454,
+            "path": "Original/Cities.bmp",
+            "sha256": "85956af43a4db2b8621b703f4e92f2998eb0e017e7a91bb4fb13d53993ef2ac4"
+          },
+          "city": {
+            "bytes": 960054,
+            "path": "Original/city.bmp",
+            "sha256": "c35d356f9db7a622debd5675c993e7e57ab1f14ba69eb3144a1f12c6b44a922f"
+          },
+          "dialog": {
+            "bytes": 666382,
+            "path": "Original/dialog.bmp",
+            "sha256": "46697809ce8cc308161eef463a02ec906994be7d8fe7aed6ac0117afa6c15b81"
+          },
+          "icons": {
+            "bytes": 614454,
+            "path": "Original/Icons.bmp",
+            "sha256": "6ef962ea8e66a74fda9165bbced8a6badf89849fc377ef32f622cb5ed4c8f2d5"
+          },
+          "people": {
+            "bytes": 614454,
+            "path": "Original/People.bmp",
+            "sha256": "c956f81a4f10433764eaf4edf6647a9e71e872ff4d67df22e871fb91106bce77"
+          },
+          "terrain1": {
+            "bytes": 614454,
+            "path": "Original/Terrain1.BMP",
+            "sha256": "5b591d8811069228e0f74b073ef42fd3f1db1d15357545016a9bda3a7b521734"
+          },
+          "terrain2": {
+            "bytes": 614454,
+            "path": "Original/Terrain2.bmp",
+            "sha256": "3f65949a078451711512b380ac0a80b07cfc65acf2d8e9da30e707e61e540730"
+          },
+          "units": {
+            "bytes": 750134,
+            "path": "Original/units.bmp",
+            "sha256": "7bf8a38fddd4c2023e2bd57f96d5d8c9a4af6da7ba9da859bdde473ac8248a75"
+          }
+        },
+        "missing": [],
+        "policy": "Declared roots in order; BMP then GIF in each. Inspector policy, not native scenario lookup proof."
+      },
+      "blockers": [
+        "no_runtime_conformance_or_import_acceptance",
+        "objectives_and_house_rules_not_inferred",
+        "macro_requires_unsupported_or_partial_semantics"
+      ],
+      "declared_features": [
+        "surface"
+      ],
+      "dependency_closure": "not_established: listed logic/sheets are pinned; full text/audio/video/Lua-module dependencies need a separate audit",
+      "diagnostics": [],
+      "files": {
+        "events": {
+          "bytes": 604,
+          "path": "Original/Events.txt",
+          "sha256": "742d7475e6fe3431a4e4d08494455f4696b82cd3f53b2805c05eeb6ecc92f312"
+        },
+        "rules": {
+          "bytes": 46102,
+          "path": "Original/Rules.txt",
+          "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+        },
+        "save": {
+          "bytes": 72247,
+          "path": "Original/Ph_Auto2.SAV",
+          "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+        }
+      },
+      "first_entry_candidate": true,
+      "first_profile_structure": {
+        "classic_032": true,
+        "classic_counts_probed": true,
+        "no_lua_declared": true,
+        "no_transport_records": true,
+        "surface_declared": true,
+        "surface_geometry_probed": true
+      },
+      "id": "original-standard",
+      "kind": "standard-save",
+      "lua": {
+        "declared_files": 0,
+        "executed": false,
+        "requirements_inferred_from_code": false
+      },
+      "macro": {
+        "actions": {
+          "ENDGAME": 1,
+          "PLAYAVIFILE": 1,
+          "TEXT": 1
+        },
+        "audited_baseline_coverage": {
+          "actions": {
+            "ENDGAME": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "PLAYAVIFILE": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "TEXT": {
+              "note": "Effect/log recording is not full scenario client delivery.",
+              "params": [],
+              "status": "no_game_state_effect"
+            }
+          },
+          "triggers": {
+            "RANDOMTURN": {
+              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "params": [
+                "denominator"
+              ],
+              "status": "modelled_subset"
+            },
+            "RECEIVEDTECHNOLOGY": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            }
+          }
+        },
+        "diagnostic_counts": {
+          "no_game_state_effect": 1,
+          "unimplemented_keyword": 3,
+          "unmodelled_argument": 1,
+          "unmodelled_parameter": 3,
+          "unsupported_compound_condition": 1
+        },
+        "diagnostics": [
+          {
+            "code": "unimplemented_keyword",
+            "line": 9,
+            "token": "RECEIVEDTECHNOLOGY"
+          },
+          {
+            "code": "unmodelled_parameter",
+            "line": 10,
+            "token": "receiver"
+          },
+          {
+            "code": "unmodelled_parameter",
+            "line": 11,
+            "token": "futuretech"
+          },
+          {
+            "code": "unsupported_compound_condition",
+            "line": 12,
+            "token": "@AND"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 16,
+            "token": "TEXT"
+          },
+          {
+            "code": "unimplemented_keyword",
+            "line": 24,
+            "token": "ENDGAME"
+          },
+          {
+            "code": "unmodelled_parameter",
+            "line": 25,
+            "token": "endscreens"
+          },
+          {
+            "code": "unimplemented_keyword",
+            "line": 26,
+            "token": "PLAYAVIFILE"
+          }
+        ],
+        "diagnostics_total": 9,
+        "diagnostics_truncated": true,
+        "event_blocks": 1,
+        "logical": {
+          "@AND": 1
+        },
+        "meaning": "Lexical counts/line diagnostics only; recognition does not prove native semantics or an active runtime hook.",
+        "triggers": {
+          "RANDOMTURN": 1,
+          "RECEIVEDTECHNOLOGY": 1
+        }
+      },
+      "rules_probe": {
+        "section_rows": {
+          "ATTITUDES": 9,
+          "CARAVAN": 16,
+          "CIVILIZE": 100,
+          "CIVILIZE2": 100,
+          "COSMIC": 32,
+          "DIFFICULTY": 6,
+          "ENDWONDER": 29,
+          "GOVERNMENTS": 7,
+          "IMPROVE": 68,
+          "INITIAL_SETTINGS": 21,
+          "LEADERS": 23,
+          "LEADERS2": 23,
+          "MAP_TRANSPORT_RELATIONSHIPS": 3,
+          "ORDERS": 12,
+          "RIVERS": 4,
+          "SOUNDS": 80,
+          "TERRAIN": 33,
+          "TERRAIN1": 33,
+          "TERRAIN2": 33,
+          "TERRAIN3": 33,
+          "UNITS": 81,
+          "UNITS_ADVANCED": 62
+        },
+        "semantics_validated": false
+      },
+      "save_probe": {
+        "city_count": 10,
+        "game": {
+          "turn": 43,
+          "year": -1900
+        },
+        "map_header_raw": [
+          80,
+          50,
+          2000,
+          0,
+          32416,
+          20,
+          13,
+          0
+        ],
+        "note": "Existing format probe, not full validation. Zero-based header index 3 and probe_surface_blocks are NOT an established active-map count.",
+        "probe_surface_blocks": 1,
+        "status": "structurally_probed",
+        "transporter_records": 0,
+        "unit_count": 38,
+        "version_raw": "0x0032"
+      },
+      "support": {
+        "engine_boot": "not_run",
+        "human_campaign": "not_validated",
+        "human_entry": "not_implemented",
+        "inspection": "report_available",
+        "native_export": "not_admitted",
+        "observation": "not_validated_for_input",
+        "simulation": "not_admitted"
+      }
+    },
+    {
+      "art": {
+        "decoded": false,
+        "diagnostics": [],
+        "files": {
+          "cities": {
+            "bytes": 921654,
+            "path": "FallRome/Cities.bmp",
+            "sha256": "c3a6920ba7492a110939f416ca909adbbb298fbb318a95581952d5ac6c1a0205"
+          },
+          "city": {
+            "bytes": 66152,
+            "path": "City.gif",
+            "sha256": "96d45d56d41bdac1bd0b88650cd2338c613cf2d237417dbfccbe2c97c8f2dca9"
+          },
+          "icons": {
+            "bytes": 889014,
+            "path": "FallRome/Icons.bmp",
+            "sha256": "1051d23ed97265fab2dc12e43841a31bf5623575921e738e166bc0572b8a8991"
+          },
+          "people": {
+            "bytes": 152902,
+            "path": "FallRome/People.bmp",
+            "sha256": "a247479fdbbfc601197e4605cbbc7328a0b6394fdf8077d50518ce4cbd2403f5"
+          },
+          "terrain1": {
+            "bytes": 921654,
+            "path": "FallRome/Terrain1.bmp",
+            "sha256": "14296081a26d040d2513cb469b5f0d82315acda79c863223a5a84bbb4c16e9fc"
+          },
+          "terrain2": {
+            "bytes": 762294,
+            "path": "FallRome/Terrain2.bmp",
+            "sha256": "c06c70bc091157d98be9f71539cf186a79d4774d515ed04f52e8e438661396ad"
+          },
+          "units": {
+            "bytes": 1125174,
+            "path": "FallRome/Units.bmp",
+            "sha256": "0d835b8f19935d367124986c4ebe894546fdfaad4309040c43a41ab48ad916a8"
+          }
+        },
+        "missing": [
+          "dialog"
+        ],
+        "policy": "Declared roots in order; BMP then GIF in each. Inspector policy, not native scenario lookup proof."
+      },
+      "blockers": [
+        "no_runtime_conformance_or_import_acceptance",
+        "objectives_and_house_rules_not_inferred",
+        "macro_requires_unsupported_or_partial_semantics"
+      ],
+      "declared_features": [
+        "surface",
+        "classic_macro"
+      ],
+      "dependency_closure": "not_established: listed logic/sheets are pinned; full text/audio/video/Lua-module dependencies need a separate audit",
+      "diagnostics": [],
+      "files": {
+        "events": {
+          "bytes": 14241,
+          "path": "FallRome/Events.txt",
+          "sha256": "cf4afb907b0d9e59434de5ce9ba9820aeb314bed3c152eb11c05180009f52d75"
+        },
+        "rules": {
+          "bytes": 40712,
+          "path": "FallRome/Rules.txt",
+          "sha256": "e2d841e2e6722095470eefb0ece1311643d6652ba300649d7bf0bc7800bf81be"
+        },
+        "save": {
+          "bytes": 203227,
+          "path": "FallRome/ROMFALL.scn",
+          "sha256": "394449e92f7b2d73fcfe6cd21e5d688213619dad6b4bad5f836fe0f79a942d07"
+        }
+      },
+      "first_entry_candidate": false,
+      "first_profile_structure": {
+        "classic_032": true,
+        "classic_counts_probed": true,
+        "no_lua_declared": true,
+        "no_transport_records": true,
+        "surface_declared": true,
+        "surface_geometry_probed": true
+      },
+      "id": "fallrome",
+      "kind": "shipped-classic-scenario",
+      "lua": {
+        "declared_files": 0,
+        "executed": false,
+        "requirements_inferred_from_code": false
+      },
+      "macro": {
+        "actions": {
+          "CHANGEMONEY": 7,
+          "CREATEUNIT": 22,
+          "DONTPLAYWONDERS": 1,
+          "GIVETECHNOLOGY": 2,
+          "JUSTONCE": 16,
+          "PLAYCDTRACK": 18,
+          "TEXT": 39
+        },
+        "audited_baseline_coverage": {
+          "actions": {
+            "CHANGEMONEY": {
+              "note": "Current treasury effect; supported receiver contexts only.",
+              "params": [
+                "receiver",
+                "amount"
+              ],
+              "status": "modelled_subset"
+            },
+            "CREATEUNIT": {
+              "note": "First-valid placement; native validity, randomize and map contexts remain partial.",
+              "params": [
+                "unit",
+                "owner",
+                "veteran",
+                "count"
+              ],
+              "status": "partial"
+            },
+            "DONTPLAYWONDERS": {
+              "note": "Applied::NoState; native presentation semantics are not implemented.",
+              "params": [],
+              "status": "no_game_state_effect"
+            },
+            "GIVETECHNOLOGY": {
+              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "params": [
+                "receiver",
+                "technology"
+              ],
+              "status": "emitted_but_skipped"
+            },
+            "JUSTONCE": {
+              "note": "In-memory event latch; native imported event state is not restored.",
+              "params": [],
+              "status": "modelled_subset"
+            },
+            "PLAYCDTRACK": {
+              "note": "Recorded effect; no native track playback claim.",
+              "params": [],
+              "status": "no_game_state_effect"
+            },
+            "TEXT": {
+              "note": "Effect/log recording is not full scenario client delivery.",
+              "params": [],
+              "status": "no_game_state_effect"
+            }
+          },
+          "triggers": {
+            "CITYTAKEN": {
+              "note": "Current supported occupation contexts only.",
+              "params": [
+                "city",
+                "attacker",
+                "defender"
+              ],
+              "status": "modelled_subset"
+            },
+            "NEGOTIATION": {
+              "note": "Interpreter matching is not an implemented diplomatic conversation/hook.",
+              "params": [
+                "talker",
+                "listener"
+              ],
+              "status": "partial"
+            },
+            "NOSCHISM": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "RANDOMTURN": {
+              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "params": [
+                "denominator"
+              ],
+              "status": "modelled_subset"
+            },
+            "SCENARIOLOADED": {
+              "note": "Interpreter recognition is not complete native startup/session delivery.",
+              "params": [],
+              "status": "partial"
+            },
+            "TURN": {
+              "note": "Interpreter turn/every selector; full native scheduling not established.",
+              "params": [
+                "turn"
+              ],
+              "status": "modelled_subset"
+            },
+            "UNITKILLED": {
+              "note": "Current supported battle contexts only.",
+              "params": [
+                "unit",
+                "attacker",
+                "defender"
+              ],
+              "status": "modelled_subset"
+            }
+          }
+        },
+        "diagnostic_counts": {
+          "emitted_but_skipped": 2,
+          "no_game_state_effect": 58,
+          "partial": 45,
+          "unimplemented_keyword": 1,
+          "unmodelled_parameter": 67
+        },
+        "diagnostics": [
+          {
+            "code": "partial",
+            "line": 5,
+            "token": "SCENARIOLOADED"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 7,
+            "token": "PLAYCDTRACK"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 9,
+            "token": "DONTPLAYWONDERS"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 18,
+            "token": "TEXT"
+          },
+          {
+            "code": "partial",
+            "line": 21,
+            "token": "CREATEUNIT"
+          },
+          {
+            "code": "unmodelled_parameter",
+            "line": 25,
+            "token": "homecity"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 35,
+            "token": "PLAYCDTRACK"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 45,
+            "token": "TEXT"
+          }
+        ],
+        "diagnostics_total": 173,
+        "diagnostics_truncated": true,
+        "event_blocks": 64,
+        "logical": {},
+        "meaning": "Lexical counts/line diagnostics only; recognition does not prove native semantics or an active runtime hook.",
+        "triggers": {
+          "CITYTAKEN": 9,
+          "NEGOTIATION": 22,
+          "NOSCHISM": 1,
+          "RANDOMTURN": 7,
+          "SCENARIOLOADED": 1,
+          "TURN": 1,
+          "UNITKILLED": 23
+        }
+      },
+      "rules_probe": {
+        "section_rows": {
+          "ATTITUDES": 9,
+          "CARAVAN": 16,
+          "CIVILIZE": 100,
+          "CIVILIZE2": 100,
+          "COSMIC": 32,
+          "COSMIC2": 11,
+          "DIFFICULTY": 6,
+          "ENDWONDER": 29,
+          "GOVERNMENTS": 7,
+          "IMPROVE": 68,
+          "INITIAL_SETTINGS": 21,
+          "LEADERS": 23,
+          "LEADERS2": 23,
+          "MAP_TRANSPORT_RELATIONSHIPS": 6,
+          "ORDERS": 12,
+          "SOUNDS": 62,
+          "TERRAIN": 33,
+          "UNITS": 63,
+          "UNITS_ADVANCED": 62
+        },
+        "semantics_validated": false
+      },
+      "save_probe": {
+        "city_count": 146,
+        "game": {
+          "turn": 0,
+          "year": 5159
+        },
+        "map_header_raw": [
+          150,
+          120,
+          9000,
+          1,
+          16908,
+          38,
+          30,
+          0
+        ],
+        "note": "Existing format probe, not full validation. Zero-based header index 3 and probe_surface_blocks are NOT an established active-map count.",
+        "probe_surface_blocks": 1,
+        "status": "structurally_probed",
+        "transporter_records": 0,
+        "unit_count": 710,
+        "version_raw": "0x0032"
+      },
+      "support": {
+        "engine_boot": "not_run",
+        "human_campaign": "not_validated",
+        "human_entry": "not_implemented",
+        "inspection": "report_available",
+        "native_export": "not_admitted",
+        "observation": "not_validated_for_input",
+        "simulation": "not_admitted"
+      }
+    },
+    {
+      "art": {
+        "decoded": false,
+        "diagnostics": [],
+        "files": {
+          "cities": {
+            "bytes": 921654,
+            "path": "Scenario/Roman Civil Wars/Cities.bmp",
+            "sha256": "848aacda1403d35cd31f0b357177888e51341611ab0a63b8ae321fe927d5ab16"
+          },
+          "city": {
+            "bytes": 66152,
+            "path": "City.gif",
+            "sha256": "96d45d56d41bdac1bd0b88650cd2338c613cf2d237417dbfccbe2c97c8f2dca9"
+          },
+          "icons": {
+            "bytes": 921654,
+            "path": "Scenario/Roman Civil Wars/Icons.bmp",
+            "sha256": "207bf23838be4113362de4b2afa4a57e87d290a3d81ae7cf0ec2d2d30d493198"
+          },
+          "people": {
+            "bytes": 308278,
+            "path": "Scenario/Roman Civil Wars/People.bmp",
+            "sha256": "bfd858ddd31f948e04a033aef7402be41cc559298e09e6685a0eea1de3f0bbd6"
+          },
+          "terrain1": {
+            "bytes": 921654,
+            "path": "Scenario/Roman Civil Wars/Terrain1.BMP",
+            "sha256": "1544749ed4433f1061eafbbba7480dd2fc2d5342959a1b16746e35fc2e11149d"
+          },
+          "terrain2": {
+            "bytes": 921654,
+            "path": "Scenario/Roman Civil Wars/Terrain2.bmp",
+            "sha256": "541fc55611e20707cc621d88a271902a054c52c89f7194c2ba18be634a01b630"
+          },
+          "units": {
+            "bytes": 1125174,
+            "path": "Scenario/Roman Civil Wars/units.bmp",
+            "sha256": "f59eb16b9fbaf6dc4e0bbb358c3197c4bb4e7c96ffaf7dcb2005c56be5949884"
+          }
+        },
+        "missing": [
+          "dialog"
+        ],
+        "policy": "Declared roots in order; BMP then GIF in each. Inspector policy, not native scenario lookup proof."
+      },
+      "blockers": [
+        "no_runtime_conformance_or_import_acceptance",
+        "objectives_and_house_rules_not_inferred",
+        "macro_requires_unsupported_or_partial_semantics"
+      ],
+      "declared_features": [
+        "surface",
+        "classic_macro",
+        "author_objectives"
+      ],
+      "dependency_closure": "not_established: listed logic/sheets are pinned; full text/audio/video/Lua-module dependencies need a separate audit",
+      "diagnostics": [],
+      "files": {
+        "events": {
+          "bytes": 57180,
+          "path": "Scenario/Roman Civil Wars/Events.txt",
+          "sha256": "c38d5e49fc7498196900eac15d07be58d51ed02e2da2310d3f30982f8d2a1177"
+        },
+        "rules": {
+          "bytes": 48225,
+          "path": "Scenario/Roman Civil Wars/Rules.txt",
+          "sha256": "1d3106de9e93d0067932153860dd0915704911583f0f745fcc950f45a3352972"
+        },
+        "save": {
+          "bytes": 202069,
+          "path": "Scenario/Roman Civil Wars/RomCivWars.SCN",
+          "sha256": "f16a30e434dd283c4bee9c6bc57d8845acc4b4ddd3ac9d6df5d0d3e762b1ee89"
+        }
+      },
+      "first_entry_candidate": false,
+      "first_profile_structure": {
+        "classic_032": true,
+        "classic_counts_probed": true,
+        "no_lua_declared": true,
+        "no_transport_records": true,
+        "surface_declared": true,
+        "surface_geometry_probed": true
+      },
+      "id": "roman-civil-wars",
+      "kind": "community-classic-scenario",
+      "lua": {
+        "declared_files": 0,
+        "executed": false,
+        "requirements_inferred_from_code": false
+      },
+      "macro": {
+        "actions": {
+          "CHANGEMONEY": 8,
+          "CONTINUOUS": 84,
+          "CREATEUNIT": 121,
+          "DELAY": 13,
+          "FLAG": 84,
+          "GIVETECHNOLOGY": 7,
+          "INCAPITAL": 17,
+          "JUSTONCE": 30,
+          "MAKEAGGRESSION": 4,
+          "NEGOTIATOR": 12,
+          "PLAYWAVEFILE": 31,
+          "RANDOMIZE": 82,
+          "TAKETECHNOLOGY": 8,
+          "TEXT": 84
+        },
+        "audited_baseline_coverage": {
+          "actions": {
+            "CHANGEMONEY": {
+              "note": "Current treasury effect; supported receiver contexts only.",
+              "params": [
+                "receiver",
+                "amount"
+              ],
+              "status": "modelled_subset"
+            },
+            "CONTINUOUS": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "CREATEUNIT": {
+              "note": "First-valid placement; native validity, randomize and map contexts remain partial.",
+              "params": [
+                "unit",
+                "owner",
+                "veteran",
+                "count"
+              ],
+              "status": "partial"
+            },
+            "DELAY": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "FLAG": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "GIVETECHNOLOGY": {
+              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "params": [
+                "receiver",
+                "technology"
+              ],
+              "status": "emitted_but_skipped"
+            },
+            "INCAPITAL": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "JUSTONCE": {
+              "note": "In-memory event latch; native imported event state is not restored.",
+              "params": [],
+              "status": "modelled_subset"
+            },
+            "MAKEAGGRESSION": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "NEGOTIATOR": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "PLAYWAVEFILE": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "RANDOMIZE": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "TAKETECHNOLOGY": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "TEXT": {
+              "note": "Effect/log recording is not full scenario client delivery.",
+              "params": [],
+              "status": "no_game_state_effect"
+            }
+          },
+          "triggers": {
+            "BRIBEUNIT": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "CHECKFLAG": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "CITYTAKEN": {
+              "note": "Current supported occupation contexts only.",
+              "params": [
+                "city",
+                "attacker",
+                "defender"
+              ],
+              "status": "modelled_subset"
+            },
+            "NEGOTIATION": {
+              "note": "Interpreter matching is not an implemented diplomatic conversation/hook.",
+              "params": [
+                "talker",
+                "listener"
+              ],
+              "status": "partial"
+            },
+            "RANDOMTURN": {
+              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "params": [
+                "denominator"
+              ],
+              "status": "modelled_subset"
+            },
+            "RECEIVEDTECHNOLOGY": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "SCENARIOLOADED": {
+              "note": "Interpreter recognition is not complete native startup/session delivery.",
+              "params": [],
+              "status": "partial"
+            },
+            "TURN": {
+              "note": "Interpreter turn/every selector; full native scheduling not established.",
+              "params": [
+                "turn"
+              ],
+              "status": "modelled_subset"
+            },
+            "TURNINTERVAL": {
+              "note": "Current absolute modulo timing is not full last-activation semantics.",
+              "params": [
+                "interval"
+              ],
+              "status": "partial"
+            },
+            "UNITKILLED": {
+              "note": "Current supported battle contexts only.",
+              "params": [
+                "unit",
+                "attacker",
+                "defender"
+              ],
+              "status": "modelled_subset"
+            }
+          }
+        },
+        "diagnostic_counts": {
+          "emitted_but_skipped": 7,
+          "no_game_state_effect": 84,
+          "partial": 126,
+          "placement_context_unmodelled": 99,
+          "unimplemented_keyword": 381,
+          "unmodelled_argument": 35,
+          "unmodelled_parameter": 610,
+          "unmodelled_trigger_argument": 28,
+          "unsupported_compound_condition": 27,
+          "unsupported_directive": 1
+        },
+        "diagnostics": [
+          {
+            "code": "unsupported_directive",
+            "line": 15,
+            "token": "@INITFLAG"
+          },
+          {
+            "code": "partial",
+            "line": 56,
+            "token": "SCENARIOLOADED"
+          },
+          {
+            "code": "unimplemented_keyword",
+            "line": 58,
+            "token": "PLAYWAVEFILE"
+          },
+          {
+            "code": "unmodelled_argument",
+            "line": 59,
+            "token": "PLAYWAVEFILE"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 66,
+            "token": "TEXT"
+          },
+          {
+            "code": "partial",
+            "line": 78,
+            "token": "NEGOTIATION"
+          },
+          {
+            "code": "unmodelled_parameter",
+            "line": 79,
+            "token": "talkermask"
+          },
+          {
+            "code": "unmodelled_parameter",
+            "line": 80,
+            "token": "listenermask"
+          }
+        ],
+        "diagnostics_total": 1398,
+        "diagnostics_truncated": true,
+        "event_blocks": 258,
+        "logical": {
+          "@AND": 27
+        },
+        "meaning": "Lexical counts/line diagnostics only; recognition does not prove native semantics or an active runtime hook.",
+        "triggers": {
+          "BRIBEUNIT": 2,
+          "CHECKFLAG": 42,
+          "CITYTAKEN": 111,
+          "NEGOTIATION": 2,
+          "RANDOMTURN": 40,
+          "RECEIVEDTECHNOLOGY": 2,
+          "SCENARIOLOADED": 1,
+          "TURN": 14,
+          "TURNINTERVAL": 2,
+          "UNITKILLED": 69
+        }
+      },
+      "rules_probe": {
+        "section_rows": {
+          "ATTITUDES": 9,
+          "CARAVAN": 16,
+          "CIVILIZE": 100,
+          "CIVILIZE2": 100,
+          "COSMIC": 32,
+          "DIFFICULTY": 6,
+          "ENDWONDER": 29,
+          "GOVERNMENTS": 7,
+          "IMPROVE": 68,
+          "INITIAL_SETTINGS": 21,
+          "LEADERS": 23,
+          "LEADERS2": 23,
+          "MAP_TRANSPORT_RELATIONSHIPS": 3,
+          "ORDERS": 12,
+          "RIVERS": 4,
+          "SECONDARY_MAPS": 0,
+          "SOUNDS": 80,
+          "TERRAIN": 33,
+          "TERRAIN1": 33,
+          "TERRAIN2": 33,
+          "TERRAIN3": 33,
+          "UNITS": 82,
+          "UNITS_ADVANCED": 78
+        },
+        "semantics_validated": false
+      },
+      "save_probe": {
+        "city_count": 159,
+        "game": {
+          "turn": 1,
+          "year": -660
+        },
+        "map_header_raw": [
+          140,
+          130,
+          9100,
+          1,
+          3315,
+          35,
+          33,
+          0
+        ],
+        "note": "Existing format probe, not full validation. Zero-based header index 3 and probe_surface_blocks are NOT an established active-map count.",
+        "probe_surface_blocks": 1,
+        "status": "structurally_probed",
+        "transporter_records": 0,
+        "unit_count": 618,
+        "version_raw": "0x0032"
+      },
+      "support": {
+        "engine_boot": "not_run",
+        "human_campaign": "not_validated",
+        "human_entry": "not_implemented",
+        "inspection": "report_available",
+        "native_export": "not_admitted",
+        "observation": "not_validated_for_input",
+        "simulation": "not_admitted"
+      }
+    },
+    {
+      "art": {
+        "decoded": false,
+        "diagnostics": [],
+        "files": {
+          "cities": {
+            "bytes": 46452,
+            "path": "Cities.gif",
+            "sha256": "a78f6e3736c31d5a18167e39daa643f315ac641ef5401087dd4d0a6ecf99fe6c"
+          },
+          "city": {
+            "bytes": 66152,
+            "path": "City.gif",
+            "sha256": "96d45d56d41bdac1bd0b88650cd2338c613cf2d237417dbfccbe2c97c8f2dca9"
+          },
+          "icons": {
+            "bytes": 54242,
+            "path": "Icons.gif",
+            "sha256": "0571733df707409068a0d631c83b89d9aa56adbfd9cbed23dfda9424b7001490"
+          },
+          "people": {
+            "bytes": 21227,
+            "path": "People.gif",
+            "sha256": "0818d85567b3567c50148bd8d7606548a0f9a4457d8b709113ca5bdc6ad809e8"
+          },
+          "terrain1": {
+            "bytes": 614454,
+            "path": "Midgard/Terrain1.BMP",
+            "sha256": "29b474ee006ea4f2c5f67a71334923c16504230083735d08ee846141f6a4931c"
+          },
+          "terrain2": {
+            "bytes": 55966,
+            "path": "Terrain2.gif",
+            "sha256": "c512c451630a3d9835738a26874e5e9a8209681c6bb4dc007ebe36dd9ae179b9"
+          },
+          "units": {
+            "bytes": 55546,
+            "path": "Units.gif",
+            "sha256": "64c68e6d99abb83bdbf2386166eb5663de1d1abf44f89b61d80eae93403ec3b6"
+          }
+        },
+        "missing": [
+          "dialog"
+        ],
+        "policy": "Declared roots in order; BMP then GIF in each. Inspector policy, not native scenario lookup proof."
+      },
+      "blockers": [
+        "no_runtime_conformance_or_import_acceptance",
+        "objectives_and_house_rules_not_inferred",
+        "multiple_map_simulation_not_implemented",
+        "macro_requires_unsupported_or_partial_semantics",
+        "native_transport_state_requires_map_audit"
+      ],
+      "declared_features": [
+        "multiple_maps",
+        "classic_macro",
+        "author_objectives"
+      ],
+      "dependency_closure": "not_established: listed logic/sheets are pinned; full text/audio/video/Lua-module dependencies need a separate audit",
+      "diagnostics": [],
+      "files": {
+        "events": {
+          "bytes": 60605,
+          "path": "Midgard/Events.txt",
+          "sha256": "489dc0b30ee1361dd75151f9441349fba544c3773e84e293ecb02bb8530747a5"
+        },
+        "rules": {
+          "bytes": 48869,
+          "path": "Midgard/Rules.txt",
+          "sha256": "af965e5c98901b1803abd1183b5783d627dc928b50adce105788d8578e170f58"
+        },
+        "save": {
+          "bytes": 565599,
+          "path": "Midgard/Midgard.SCN",
+          "sha256": "d47d9106e0276778650991ca596c5ba65d59aaf2d3ccbe09c0fbdb11ab2d9372"
+        }
+      },
+      "first_entry_candidate": false,
+      "first_profile_structure": {
+        "classic_032": true,
+        "classic_counts_probed": false,
+        "no_lua_declared": true,
+        "no_transport_records": false,
+        "surface_declared": false,
+        "surface_geometry_probed": true
+      },
+      "id": "midgard",
+      "kind": "shipped-multiple-map-scenario",
+      "lua": {
+        "declared_files": 0,
+        "executed": false,
+        "requirements_inferred_from_code": false
+      },
+      "macro": {
+        "actions": {
+          "CHANGEMONEY": 17,
+          "CHANGETERRAIN": 18,
+          "CONTINUOUS": 26,
+          "CREATEUNIT": 68,
+          "DELAY": 10,
+          "DELAYPERFLAG": 6,
+          "DONTPLAYWONDERS": 1,
+          "ENABLETECHNOLOGY": 1,
+          "ENDGAME": 6,
+          "FLAG": 40,
+          "GIVETECHNOLOGY": 11,
+          "INCAPITAL": 7,
+          "JUSTONCE": 97,
+          "MAPRECT": 18,
+          "MODIFYREPUTATION": 2,
+          "PLAYAVIFILE": 8,
+          "PLAYCDTRACK": 3,
+          "PLAYWAVEFILE": 49,
+          "RANDOMIZE": 24,
+          "TAKETECHNOLOGY": 1,
+          "TEXT": 89
+        },
+        "audited_baseline_coverage": {
+          "actions": {
+            "CHANGEMONEY": {
+              "note": "Current treasury effect; supported receiver contexts only.",
+              "params": [
+                "receiver",
+                "amount"
+              ],
+              "status": "modelled_subset"
+            },
+            "CHANGETERRAIN": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "CONTINUOUS": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "CREATEUNIT": {
+              "note": "First-valid placement; native validity, randomize and map contexts remain partial.",
+              "params": [
+                "unit",
+                "owner",
+                "veteran",
+                "count"
+              ],
+              "status": "partial"
+            },
+            "DELAY": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "DELAYPERFLAG": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "DONTPLAYWONDERS": {
+              "note": "Applied::NoState; native presentation semantics are not implemented.",
+              "params": [],
+              "status": "no_game_state_effect"
+            },
+            "ENABLETECHNOLOGY": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "ENDGAME": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "FLAG": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "GIVETECHNOLOGY": {
+              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "params": [
+                "receiver",
+                "technology"
+              ],
+              "status": "emitted_but_skipped"
+            },
+            "INCAPITAL": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "JUSTONCE": {
+              "note": "In-memory event latch; native imported event state is not restored.",
+              "params": [],
+              "status": "modelled_subset"
+            },
+            "MAPRECT": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "MODIFYREPUTATION": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "PLAYAVIFILE": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "PLAYCDTRACK": {
+              "note": "Recorded effect; no native track playback claim.",
+              "params": [],
+              "status": "no_game_state_effect"
+            },
+            "PLAYWAVEFILE": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "RANDOMIZE": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "TAKETECHNOLOGY": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "TEXT": {
+              "note": "Effect/log recording is not full scenario client delivery.",
+              "params": [],
+              "status": "no_game_state_effect"
+            }
+          },
+          "triggers": {
+            "ALPHACENTAURIARRIVAL": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "BRIBEUNIT": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "CHECKFLAG": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "CITYDESTROYED": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "CITYPRODUCTION": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "CITYTAKEN": {
+              "note": "Current supported occupation contexts only.",
+              "params": [
+                "city",
+                "attacker",
+                "defender"
+              ],
+              "status": "modelled_subset"
+            },
+            "FLAG": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "NOSCHISM": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "RANDOMTURN": {
+              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "params": [
+                "denominator"
+              ],
+              "status": "modelled_subset"
+            },
+            "RECEIVEDTECHNOLOGY": {
+              "note": "No audited handler.",
+              "params": [],
+              "status": "unimplemented"
+            },
+            "SCENARIOLOADED": {
+              "note": "Interpreter recognition is not complete native startup/session delivery.",
+              "params": [],
+              "status": "partial"
+            },
+            "TURN": {
+              "note": "Interpreter turn/every selector; full native scheduling not established.",
+              "params": [
+                "turn"
+              ],
+              "status": "modelled_subset"
+            },
+            "UNITKILLED": {
+              "note": "Current supported battle contexts only.",
+              "params": [
+                "unit",
+                "attacker",
+                "defender"
+              ],
+              "status": "modelled_subset"
+            }
+          }
+        },
+        "diagnostic_counts": {
+          "emitted_but_skipped": 11,
+          "malformed_location": 1,
+          "no_game_state_effect": 93,
+          "non_surface_location": 86,
+          "partial": 69,
+          "placement_context_unmodelled": 16,
+          "unimplemented_keyword": 359,
+          "unmodelled_argument": 75,
+          "unmodelled_parameter": 715,
+          "unsupported_compound_condition": 62,
+          "unsupported_directive": 1
+        },
+        "diagnostics": [
+          {
+            "code": "unsupported_directive",
+            "line": 9,
+            "token": "@INITFLAG"
+          },
+          {
+            "code": "partial",
+            "line": 12,
+            "token": "SCENARIOLOADED"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 14,
+            "token": "PLAYCDTRACK"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 16,
+            "token": "DONTPLAYWONDERS"
+          },
+          {
+            "code": "unimplemented_keyword",
+            "line": 20,
+            "token": "NOSCHISM"
+          },
+          {
+            "code": "unmodelled_parameter",
+            "line": 21,
+            "token": "defender"
+          },
+          {
+            "code": "unimplemented_keyword",
+            "line": 32,
+            "token": "FLAG"
+          },
+          {
+            "code": "unimplemented_keyword",
+            "line": 33,
+            "token": "CONTINUOUS"
+          }
+        ],
+        "diagnostics_total": 1488,
+        "diagnostics_truncated": true,
+        "event_blocks": 151,
+        "logical": {
+          "@AND": 62
+        },
+        "meaning": "Lexical counts/line diagnostics only; recognition does not prove native semantics or an active runtime hook.",
+        "triggers": {
+          "ALPHACENTAURIARRIVAL": 4,
+          "BRIBEUNIT": 15,
+          "CHECKFLAG": 84,
+          "CITYDESTROYED": 1,
+          "CITYPRODUCTION": 2,
+          "CITYTAKEN": 8,
+          "FLAG": 2,
+          "NOSCHISM": 1,
+          "RANDOMTURN": 21,
+          "RECEIVEDTECHNOLOGY": 34,
+          "SCENARIOLOADED": 1,
+          "TURN": 2,
+          "UNITKILLED": 38
+        }
+      },
+      "rules_probe": {
+        "section_rows": {
+          "ATTITUDES": 9,
+          "CARAVAN": 16,
+          "CIVILIZE": 100,
+          "CIVILIZE2": 100,
+          "COSMIC": 32,
+          "DIFFICULTY": 6,
+          "ENDWONDER": 29,
+          "GOVERNMENTS": 7,
+          "IMPROVE": 68,
+          "INITIAL_SETTINGS": 21,
+          "LEADERS": 23,
+          "LEADERS2": 23,
+          "MAP_TRANSPORT_RELATIONSHIPS": 6,
+          "ORDERS": 12,
+          "RIVERS": 4,
+          "SECONDARY_MAPS": 3,
+          "SOUNDS": 80,
+          "TERRAIN": 33,
+          "TERRAIN1": 33,
+          "TERRAIN2": 33,
+          "TERRAIN3": 33,
+          "UNITS": 81,
+          "UNITS_ADVANCED": 80
+        },
+        "semantics_validated": false
+      },
+      "save_probe": {
+        "city_count": null,
+        "game": {
+          "turn": 1,
+          "year": -4000
+        },
+        "map_header_raw": [
+          122,
+          163,
+          9943,
+          0,
+          44,
+          31,
+          41,
+          3
+        ],
+        "note": "Existing format probe, not full validation. Zero-based header index 3 and probe_surface_blocks are NOT an established active-map count.",
+        "probe_surface_blocks": 1,
+        "status": "partial_layout",
+        "transporter_records": 12,
+        "unit_count": null,
+        "version_raw": "0x0032"
+      },
+      "support": {
+        "engine_boot": "not_run",
+        "human_campaign": "not_validated",
+        "human_entry": "not_implemented",
+        "inspection": "report_available",
+        "native_export": "not_admitted",
+        "observation": "not_validated_for_input",
+        "simulation": "not_admitted"
+      }
+    },
+    {
+      "art": {
+        "decoded": false,
+        "diagnostics": [],
+        "files": {
+          "cities": {
+            "bytes": 921654,
+            "path": "Scenario/china/Cities.bmp",
+            "sha256": "dfc0cc3e19edbc16c42adc7689ba95d0781039b4191b4fa929b329e564fed7bd"
+          },
+          "city": {
+            "bytes": 1440054,
+            "path": "Scenario/china/city.bmp",
+            "sha256": "8513fc339064903817ddf139a081b6cd99bf87164408147f6e81bcbff132d931"
+          },
+          "dialog": {
+            "bytes": 666382,
+            "path": "Scenario/china/dialog.bmp",
+            "sha256": "46697809ce8cc308161eef463a02ec906994be7d8fe7aed6ac0117afa6c15b81"
+          },
+          "icons": {
+            "bytes": 889014,
+            "path": "Scenario/china/Icons.bmp",
+            "sha256": "82615155214c758af32edd5cc5eb666b6c8130c2335030fa0720b25c83c31a1b"
+          },
+          "people": {
+            "bytes": 152902,
+            "path": "Scenario/china/People.bmp",
+            "sha256": "512e4d8916d2b9f85ef96589f348f4a96a28984028d4f73ce93248cc5a80d1d1"
+          },
+          "terrain1": {
+            "bytes": 1135254,
+            "path": "Scenario/china/Terrain1.bmp",
+            "sha256": "8769f805b7f979e6389a33f9c11c513c3724c19160f1a44e793defe2e9c2742c"
+          },
+          "terrain2": {
+            "bytes": 1878658,
+            "path": "Scenario/china/Terrain2.bmp",
+            "sha256": "1a4ad5f8e4f7754ed51d841e3499c6ce6010a6f12f9d3abf422bea5a9bd7badc"
+          },
+          "units": {
+            "bytes": 2749494,
+            "path": "Scenario/china/units.bmp",
+            "sha256": "63d69110ec290d855840055455132d7b23b3d63d4dc572c1c9d582a923113f01"
+          }
+        },
+        "missing": [],
+        "policy": "Declared roots in order; BMP then GIF in each. Inspector policy, not native scenario lookup proof."
+      },
+      "blockers": [
+        "no_runtime_conformance_or_import_acceptance",
+        "objectives_and_house_rules_not_inferred",
+        "lua_execution_not_implemented",
+        "extended_save_not_admitted",
+        "macro_absence_not_proven_by_manifest_null"
+      ],
+      "declared_features": [
+        "surface",
+        "totpp_extended_save",
+        "lua",
+        "author_objectives"
+      ],
+      "dependency_closure": "not_established: listed logic/sheets are pinned; full text/audio/video/Lua-module dependencies need a separate audit",
+      "diagnostics": [],
+      "files": {
+        "lua_0": {
+          "bytes": 95617,
+          "path": "Scenario/china/events.lua",
+          "sha256": "00789aaa1e41f0675df77099cbbfddf42d2bfad0d8d1b1c937663fc18aa30caf"
+        },
+        "lua_1": {
+          "bytes": 21017,
+          "path": "Scenario/china/Lua/objectsDefinitions.lua",
+          "sha256": "af573f790abaf7af0269f9d94cccb39b34317c90c184d68303e9bc3f13295d16"
+        },
+        "lua_2": {
+          "bytes": 145515,
+          "path": "Scenario/china/Lua/modFunctions.lua",
+          "sha256": "835994cb4b6707ec7d4343d4c75a2d9effa7e4e30140c5b9015cfd75c8209dce"
+        },
+        "lua_3": {
+          "bytes": 42174,
+          "path": "Scenario/china/Lua/genericFunctions.lua",
+          "sha256": "ba6370aed7adf938f31c54127bcae49d30b73b6b773da5c690523a16cb21a9aa"
+        },
+        "lua_4": {
+          "bytes": 14771,
+          "path": "Scenario/china/Lua/gameStatics.lua",
+          "sha256": "2e1af0ba6712b07af93b93306a38f13b000364dbcc3006a4511a8ba6dcf51c70"
+        },
+        "rules": {
+          "bytes": 80952,
+          "path": "Scenario/china/Rules.txt",
+          "sha256": "47564ae5766d6f1d71f9fec5061a8b2093554a08c769a3f88aabfb923c5df9c3"
+        },
+        "save": {
+          "bytes": 912727,
+          "path": "Scenario/china/Warring States.scn",
+          "sha256": "ba9120685b37f0fc1abdccc66e8b4a761e1626b58498cfe50d4c3395b09d01d2"
+        }
+      },
+      "first_entry_candidate": false,
+      "first_profile_structure": {
+        "classic_032": false,
+        "classic_counts_probed": false,
+        "no_lua_declared": false,
+        "no_transport_records": true,
+        "surface_declared": true,
+        "surface_geometry_probed": true
+      },
+      "id": "warring-states",
+      "kind": "community-totpp-lua-scenario",
+      "lua": {
+        "declared_files": 5,
+        "executed": false,
+        "requirements_inferred_from_code": false
+      },
+      "rules_probe": {
+        "section_rows": {
+          "ATTITUDES": 9,
+          "CARAVAN": 16,
+          "CIVILIZE": 100,
+          "CIVILIZE2": 100,
+          "COSMIC": 32,
+          "COSMIC2": 21,
+          "DIFFICULTY": 6,
+          "ENDWONDER": 29,
+          "FERTILITY": 5,
+          "FERTILITY1": 14,
+          "GOVERNMENTS": 7,
+          "IMPROVE": 68,
+          "INITIAL_SETTINGS": 21,
+          "LEADERS": 23,
+          "LEADERS2": 23,
+          "MAP_TRANSPORT_RELATIONSHIPS": 3,
+          "ORDERS": 12,
+          "OVERLAYS": 15,
+          "OVERLAYS1": 15,
+          "OVERLAYS2": 6,
+          "OVERLAYS3": 7,
+          "RIVERS": 4,
+          "ROADTRADE1": 14,
+          "SOUNDS": 189,
+          "TERRAIN": 48,
+          "TERRAIN1": 48,
+          "TERRAIN2": 48,
+          "TERRAIN3": 48,
+          "UNITS": 190,
+          "UNITS_ADVANCED": 189
+        },
+        "semantics_validated": false
+      },
+      "save_probe": {
+        "city_count": null,
+        "game": {
+          "turn": 1,
+          "year": -4000
+        },
+        "map_header_raw": [
+          224,
+          250,
+          28000,
+          1,
+          -20924,
+          56,
+          63,
+          1
+        ],
+        "note": "Existing format probe, not full validation. Zero-based header index 3 and probe_surface_blocks are NOT an established active-map count.",
+        "probe_surface_blocks": 1,
+        "status": "partial_layout",
+        "transporter_records": 0,
+        "unit_count": null,
+        "version_raw": "0x0033"
+      },
+      "support": {
+        "engine_boot": "not_run",
+        "human_campaign": "not_validated",
+        "human_entry": "not_implemented",
+        "inspection": "report_available",
+        "native_export": "not_admitted",
+        "observation": "not_validated_for_input",
+        "simulation": "not_admitted"
+      }
+    }
+  ],
+  "full_report_bytes": 432421,
+  "full_report_sha256": "728a037cc3e9217d3bcf1fc92f137e63ddf29fdd1957b53b388765d21beaf1c3",
+  "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
+  "producer": {
+    "format_probe_sha256": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",
+    "sha256": "7e188e43ab1ce04f8406bf0abd6f948ca1725bc5493205d2140e43cad338b407",
+    "tool": "tools/scenario_inventory.py"
+  },
+  "profile_candidate": "classic-surface-032-v1",
+  "purpose": "Read-only inspection. No game/scripts are executed and no runtime admission is granted.",
+  "schema": 1,
+  "summary": {
+    "entries": 5,
+    "inspection_errors": 0,
+    "simulation_admitted": 0
+  },
+  "view": "compact"
+}

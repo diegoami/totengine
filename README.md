@@ -59,6 +59,13 @@ benchmarked here. [Source assessment](docs/ai-client-reuse-assessment.md) ·
 [Artwork assessment](docs/ui/freeciv-assessment.md) ·
 [Reuse policy](docs/prior-art.md).
 
+Unreleased scenario inspection now has a read-only CLI:
+`CIVTOT_HOME=/path/to/CIVTOT python3 tools/scenario_inventory.py --compact`.
+It pins five reference inputs and reports actual capability gaps; it executes
+no scripts/game and admits no runtime continuation. See
+[inspection](docs/scenario-inspection.md) and the
+[conditional entry contract](docs/scenario-entry-contract.md).
+
 ## Documentation
 
 | Document | Purpose |

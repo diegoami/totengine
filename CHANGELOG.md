@@ -5,6 +5,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Add a bounded read-only scenario/corpus inspector with pinned input/resource
+  hashes, distinct support levels, macro line diagnostics and compact evidence.
+  Freeze a conditional first native-entry contract; no gameplay import or
+  simulation is admitted by inspection (#192, #193).
 - Correct fallback sprites for Elephant, Stlth Ftr. and Stlth Bmbr.; clarify
   campaign-version and client/AI dependency prose (#217–#219).
 

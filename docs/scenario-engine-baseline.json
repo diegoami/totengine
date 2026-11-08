@@ -1,0 +1,130 @@
+{
+  "schema": 1,
+  "audit_ref": "v0.16.0",
+  "audit_sha": "2f37ab49a56dbcb2091977162518604ae3b6ea0b",
+  "meaning": "Manually audited implementation coverage, not native conformance or runtime admission. Source changes require a new audit.",
+  "source_sha256": {
+    "crates/tot-kit/src/events.rs": "ad279d9b6f857879bc7e39e9c95195c32bf33806db54b51287e947bf1d08994f",
+    "crates/tot-kit/src/sav.rs": "7a45d279f4dde45860650869d3f6dd4827fa4f07b807cd75ab6c459fd1d6a7f3",
+    "crates/engine/src/events.rs": "5dc1820f0151d3b6371fc507eefab502488a13e72057d873b0ee777885100fe5",
+    "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
+    "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
+    "crates/engine/src/player.rs": "4f1458c34155eeeb4129fa8f5065d855f11f050e408d5e6632a8bfa60abbd0b5",
+    "crates/engine/src/human.rs": "7db2eddc362419f9fd45aed469ba2e838497daf9e347e72373e1ae55af3159ca",
+    "crates/engine/src/human/checkpoint.rs": "d695cbbf6779be8c7c17a72d1c97df96aca3aaed654a0af3b6ae318583966c93",
+    "crates/engine/src/lib.rs": "e927b87ca5496ab8e4ba087e7a44d1a2eac460c2f061fd561b79f5f2053c661c",
+    "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
+    "crates/totui/src/client/mod.rs": "7341f1fd34a2fe572303cffaa436f20b9edbe340b4d3f0ca71f79b54fc0344cc",
+    "crates/totui/src/resources.rs": "531247a00d6307ed0698646200122c9631ee34e6665e9a42b0278f31ba9cad6d",
+    "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
+  },
+  "triggers": {
+    "TURN": {
+      "status": "modelled_subset",
+      "params": [
+        "turn"
+      ],
+      "note": "Interpreter turn/every selector; full native scheduling not established."
+    },
+    "TURNINTERVAL": {
+      "status": "partial",
+      "params": [
+        "interval"
+      ],
+      "note": "Current absolute modulo timing is not full last-activation semantics."
+    },
+    "RANDOMTURN": {
+      "status": "modelled_subset",
+      "params": [
+        "denominator"
+      ],
+      "note": "Current supplied roll/turn hook; full native scheduling not claimed."
+    },
+    "UNITKILLED": {
+      "status": "modelled_subset",
+      "params": [
+        "unit",
+        "attacker",
+        "defender"
+      ],
+      "note": "Current supported battle contexts only."
+    },
+    "CITYTAKEN": {
+      "status": "modelled_subset",
+      "params": [
+        "city",
+        "attacker",
+        "defender"
+      ],
+      "note": "Current supported occupation contexts only."
+    },
+    "SCENARIOLOADED": {
+      "status": "partial",
+      "params": [],
+      "note": "Interpreter recognition is not complete native startup/session delivery."
+    },
+    "NEGOTIATION": {
+      "status": "partial",
+      "params": [
+        "talker",
+        "listener"
+      ],
+      "note": "Interpreter matching is not an implemented diplomatic conversation/hook."
+    }
+  },
+  "actions": {
+    "CHANGEMONEY": {
+      "status": "modelled_subset",
+      "params": [
+        "receiver",
+        "amount"
+      ],
+      "note": "Current treasury effect; supported receiver contexts only."
+    },
+    "CREATEUNIT": {
+      "status": "partial",
+      "params": [
+        "unit",
+        "owner",
+        "veteran",
+        "count"
+      ],
+      "note": "First-valid placement; native validity, randomize and map contexts remain partial."
+    },
+    "GIVETECHNOLOGY": {
+      "status": "emitted_but_skipped",
+      "params": [
+        "receiver",
+        "technology"
+      ],
+      "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action."
+    },
+    "JUSTONCE": {
+      "status": "modelled_subset",
+      "params": [],
+      "note": "In-memory event latch; native imported event state is not restored."
+    },
+    "TEXT": {
+      "status": "no_game_state_effect",
+      "params": [],
+      "note": "Effect/log recording is not full scenario client delivery."
+    },
+    "PLAYCDTRACK": {
+      "status": "no_game_state_effect",
+      "params": [],
+      "note": "Recorded effect; no native track playback claim."
+    },
+    "DONTPLAYWONDERS": {
+      "status": "no_game_state_effect",
+      "params": [],
+      "note": "Applied::NoState; native presentation semantics are not implemented."
+    }
+  },
+  "global_limits": [
+    "Native SAV/SCN human-session import is not implemented.",
+    "Lua host is a placeholder; scripts are never executed by this inspector.",
+    "Multiple-map simulation/transfers are not implemented.",
+    "Scenario objectives/house rules cannot be inferred from arbitrary scripts or prose.",
+    "Keyword recognition cannot admit simulation, observation, human campaigns or native export."
+  ]
+}

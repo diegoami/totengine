@@ -4093,3 +4093,26 @@ verified downloaded payloads. Published binaries/art match the reviewed
 candidate; additive RELEASE.md records approval and known limits. Later fixes
 for #217–#219 are unreleased and do not alter the immutable tag/assets. Owner
 previews/games remain preserved; full client/AI/scenario claims remain limited.
+
+## Scenario corpus inspection (milestone 15)
+
+[scenario-inventory-v1.json](scenario-inventory-v1.json) is a compact, reproducible
+view of the five private corpus entries: input/sheet identities, structural
+probe counts, lexical macro requirements and implementation gaps. Generate it:
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT python3 tools/scenario_inventory.py --compact --out /tmp/scenario-inventory.json
+cmp docs/evidence/scenario-inventory-v1.json /tmp/scenario-inventory.json
+```
+
+Omit --compact for all line diagnostics; the compact view retains exact full
+report size/hash, totals and eight examples. No original bodies are committed.
+[Inspector/schema](../scenario-inspection.md) and
+[first entry contract](../scenario-entry-contract.md) keep parsing distinct from
+runtime admission. All five files can be inspected, but none is admitted for
+full simulation/human entry. Original events include compound/endgame behavior;
+FallRome/Roman technology effects remain skipped, Midgard framing/maps remain
+partial, and Warring States requires unimplemented Lua/extended state. These are
+current coverage findings, not newly verified native behavior or a game port.
+The existing format golden corpus remains byte-identical after snapshot-helper
+extraction, including CR/LF and Latin-1 line handling.

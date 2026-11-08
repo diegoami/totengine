@@ -56,6 +56,19 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+Owner approved **Isotrident as fallback artwork** on 2026-11-08 for a future web
+application without a ToT installation. Assessment/usage/licensing and remaining
+hosting/rules scope: `docs/ui/freeciv-assessment.md`. Freeciv 3.2.7 source and GTK
+binary are installed under `~/projects/freeciv`; its Civ2 rules are approximate,
+not an oracle for original ToT behavior. This approval permits a separately
+licensed GPL-2.0-or-later artwork pack, with PNG/spec source and credits; no
+Freeciv game code/rules are copied into our MIT engine. The unreleased candidate
+adds one shared fallback adapter for both clients, an external pack preparer and
+optional package inclusion. Blank setup runs a clearly labeled, independently
+authored **Open demo**, not full original standard rules. Complete ToT resources
+still take precedence. Public hosting and a complete redistributable standard
+rules profile remain separate work; no new version/tag/milestone is assigned.
+
 v0.1.0 (Tier 0) and **v0.2.0 "headless game loop"** are released (v0.2.0:
 2 review rounds, AGREE on #61) and **v0.3.0 "reproducible new game"** are
 released (v0.3.0: AGREE on #70, 1 round; RG-2 done: `seeded_start.sh`,

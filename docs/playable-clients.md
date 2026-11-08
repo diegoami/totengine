@@ -1,5 +1,15 @@
 # Playable browser and desktop clients
 
+Unreleased candidate: an optional [Isotrident artwork pack](ui/freeciv-assessment.md)
+supports both clients when ToT artwork is unavailable. Leave setup's ToT path
+blank for the independently authored **Open demo**, or provide a ToT directory/
+Rules.txt to keep your own rules with fallback graphics. The demo is a small
+three-unit profile, not full original ToT balance. Prepare the pack with
+`tools/prepare_isotrident.py`; set `TOTENGINE_ISOTRIDENT` to its directory, or
+place it in `isotrident/` beside the executables. It retains GPL-2.0-or-later and
+artist credits separately from the MIT engine. No original ToT resources are
+included. The published v0.15 packages predate this candidate.
+
 The clients support generated Original-profile surface games,
 one human civilization and the existing built-in opponents. Both clients use
 the same validated human session, presentation, owned artwork and checkpoints.

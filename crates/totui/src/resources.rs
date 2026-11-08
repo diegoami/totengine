@@ -50,6 +50,18 @@ fn contained(root: &Path, path: PathBuf) -> Result<PathBuf, String> {
     Ok(resolved)
 }
 
+pub(crate) fn client_rules_path(root: &Path) -> Result<Option<PathBuf>, String> {
+    if let Some(profile) = child(root, "Original")? {
+        let profile = contained(root, profile)?;
+        if let Some(rules) = child(&profile, "Rules.txt")? {
+            return contained(root, rules).map(Some);
+        }
+    }
+    child(root, "Rules.txt")?
+        .map(|p| contained(root, p))
+        .transpose()
+}
+
 fn read(path: &Path) -> Result<Vec<u8>, String> {
     if !path.is_file() {
         return Err("resource is not a regular file".into());
@@ -81,6 +93,24 @@ pub struct Resources {
     pub sheets: BTreeMap<String, RgbaImage>,
     pub missing: Vec<String>,
     pub profile: String,
+    pub isotrident: Option<BTreeMap<String, FreecivSprite>>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FreecivSprite {
+    pub sheet: String,
+    pub rect: [u32; 4],
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FreecivManifest {
+    version: u32,
+    upstream: String,
+    license: String,
+    source: String,
+    sprites: BTreeMap<String, FreecivSprite>,
 }
 
 impl Resources {
@@ -163,6 +193,100 @@ impl Resources {
             sheets,
             missing,
             profile,
+            isotrident: None,
+        })
+    }
+
+    /// A separately installed redistributable art pack, with explicitly supplied
+    /// gameplay rules. Freeciv rules and game code are never loaded here.
+    pub fn load_isotrident(pack: &Path, rules_path: Option<&Path>) -> Result<Self, String> {
+        let root = pack
+            .canonicalize()
+            .map_err(|e| format!("Isotrident pack: {e}"))?;
+        let bytes = match rules_path {
+            Some(path) => read(path)?,
+            None => include_bytes!("../data/open-demo-rules.txt").to_vec(),
+        };
+        let rules = tot_kit::parse_rules(&tot_kit::latin1(&bytes));
+        let mut sources = BTreeMap::from([(
+            "rules".into(),
+            Source {
+                relative: "rules.txt".into(),
+                bytes: bytes.len(),
+                fingerprint: fingerprint(&bytes),
+            },
+        )]);
+        let data = read(&contained(&root, root.join("atlas.json"))?)?;
+        let manifest: FreecivManifest =
+            serde_json::from_slice(&data).map_err(|e| format!("Isotrident manifest: {e}"))?;
+        if manifest.version != 1
+            || manifest.upstream != "Freeciv 3.2.7"
+            || manifest.license != "GPL-2.0-or-later"
+            || manifest.source.is_empty()
+            || manifest.sprites.len() > 4096
+        {
+            return Err("unsupported Isotrident pack".into());
+        }
+        sources.insert(
+            "atlas".into(),
+            Source {
+                relative: "atlas.json".into(),
+                bytes: data.len(),
+                fingerprint: fingerprint(&data),
+            },
+        );
+        let mut sheets = BTreeMap::new();
+        for sprite in manifest.sprites.values() {
+            let path = Path::new(&sprite.sheet);
+            if path.extension().and_then(|s| s.to_str()) != Some("png")
+                || !path
+                    .components()
+                    .all(|c| matches!(c, std::path::Component::Normal(_)))
+            {
+                return Err("invalid Isotrident sheet path".into());
+            }
+            if !sheets.contains_key(&sprite.sheet) {
+                if sheets.len() >= 16 {
+                    return Err("too many Isotrident sheets".into());
+                }
+                let data = read(&contained(&root, root.join(path))?)?;
+                sources.insert(
+                    sprite.sheet.clone(),
+                    Source {
+                        relative: sprite.sheet.clone(),
+                        bytes: data.len(),
+                        fingerprint: fingerprint(&data),
+                    },
+                );
+                sheets.insert(
+                    sprite.sheet.clone(),
+                    decode_format(&data, ImageFormat::Png)?,
+                );
+            }
+            let [x, y, w, h] = sprite.rect;
+            let sheet = &sheets[&sprite.sheet];
+            if w == 0
+                || h == 0
+                || w > 256
+                || h > 256
+                || x.checked_add(w).is_none_or(|n| n > sheet.width())
+                || y.checked_add(h).is_none_or(|n| n > sheet.height())
+            {
+                return Err("Isotrident crop outside sheet".into());
+            }
+        }
+        Ok(Self {
+            rules,
+            sources,
+            sheets,
+            missing: vec![],
+            profile: if rules_path.is_some() {
+                "ToT rules + Isotrident"
+            } else {
+                "Open demo + Isotrident"
+            }
+            .into(),
+            isotrident: Some(manifest.sprites),
         })
     }
 
@@ -205,6 +329,10 @@ pub fn decode(bytes: &[u8]) -> Result<RgbaImage, String> {
     if !matches!(format, ImageFormat::Bmp | ImageFormat::Gif) {
         return Err("only BMP/GIF sheets are supported".into());
     }
+    decode_format(bytes, format)
+}
+
+fn decode_format(bytes: &[u8], format: ImageFormat) -> Result<RgbaImage, String> {
     let mut reader = ImageReader::with_format(Cursor::new(bytes), format);
     let mut limits = Limits::default();
     limits.max_image_width = Some(4096);

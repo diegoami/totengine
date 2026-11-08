@@ -5,6 +5,7 @@ field plus the repos' own LICENSE files where present.
 
 | Project | What it is | License | May we copy code? | Policy for ToTEngine |
 |---|---|---|---|---|
+| [Freeciv](https://github.com/freeciv/freeciv) 3.2.7 | Civilization-inspired game and Isotrident graphics | **GPL-2.0-or-later** | No game code copying under this project's policy | Owner approved a separately licensed Isotrident artwork fallback on 2026-11-08. Keep PNG/spec source, credits and GPL notice in its own pack; MIT engine code is independent. [Assessment and limits](ui/freeciv-assessment.md). |
 | [axx0/Civ2-clone](https://github.com/axx0/Civ2-clone) | C# re-implementation of Civ2; loads ToT saves | **GPL-3.0** | **No** (unless ToTEngine relicenses GPL-3.0, which we won't) | Read for *format facts* only (facts are not copyrightable); cite it in evidence when a finding agrees/disagrees with its behavior. No code, no files. |
 | [richardpenman/civ2](https://github.com/richardpenman/civ2) | C reconstruction of Civ2 (new, Oct 2026) | **MIT** | Yes, with attribution | Same as above by preference: independent implementation; if we ever copy a function, keep the copyright line and cite the commit. |
 | [ProfGarfield/ZeroBraneForTOTPP](https://github.com/ProfGarfield/ZeroBraneForTOTPP) | ZeroBrane fork with ToTPP Lua API autocomplete | **MIT** (inherits ZeroBrane Studio's LICENSE) | Yes, with the MIT notice | `docs/refs/totpp-api-zerobrane.lua` is vendored from it; an MIT notice is prepended to the file (required for substantial portions). |

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Package the two playable clients with notices, without game assets/fonts."""
+"""Package clients and notices, optionally with separately licensed Isotrident art."""
 import argparse
 import hashlib
 import json
 from pathlib import Path
 import shutil
+from prepare_isotrident import copy_pack
 
 REPO = Path(__file__).resolve().parent.parent
 
@@ -17,6 +18,8 @@ def main():
     parser.add_argument('--sdl-runtime', type=Path)
     parser.add_argument('--unwind-runtime', type=Path)
     parser.add_argument('--rust-docs', type=Path, required=True)
+    parser.add_argument('--isotrident-pack', type=Path,
+                        help='verified pack made by prepare_isotrident.py; never a ToT install')
     args = parser.parse_args()
     suffix = '.exe' if args.windows else ''
     files = [args.bin_dir / (name + suffix) for name in ('totplay', 'totdesktop')]
@@ -41,6 +44,8 @@ def main():
     shutil.copy2(copyright_file, args.out / 'notices/Rust-COPYRIGHT-library.html')
     shutil.copytree(args.rust_docs / 'licenses', args.out / 'notices/rust')
     shutil.copy2(REPO / 'docs/playable-clients.md', args.out / 'README.md')
+    if args.isotrident_pack:
+        copy_pack(args.isotrident_pack, args.out / 'isotrident')
     manifest = {
         str(p.relative_to(args.out)): hashlib.sha256(p.read_bytes()).hexdigest()
         for p in sorted(args.out.rglob('*')) if p.is_file()

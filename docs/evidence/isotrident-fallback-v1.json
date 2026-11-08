@@ -1,0 +1,86 @@
+{
+  "schema": 1,
+  "date": "2026-11-08",
+  "status": "unreleased candidate; no human acceptance or milestone review claimed",
+  "upstream": {
+    "name": "Freeciv",
+    "version": "3.2.7",
+    "license": "GPL-2.0-or-later",
+    "source": "https://files.freeciv.org/stable/freeciv-3.2.7.tar.xz",
+    "selected_pack_files": {
+      "COPYING": "8177f97513213526df2cf6184d8ff986c675afb514d4e68a404010521b880643",
+      "FREECIV-README": "593f54fcf7c47b641b63b936306c834b7b0724afc94f0e1dbc9f19f9834d1dbf",
+      "atlas.json": "7703bb753748470d0883b1f0e309eb1a9ad9960bcf22264d1b0a5f9e8d71d71c",
+      "isotrident/cities.png": "d17d0f7461f38fb726e7fe9392b23c92c39748758dcf8408b5d90f6d1298ca42",
+      "isotrident/cities.spec": "bcbb36e263b0be1bc327d08d4d5072c3db6954cdfad1faab7076db0a02d753fb",
+      "isotrident/terrain1.png": "561ee64db2c05491b6f0f9c3d841a157ab13e2fc98bd3a98f98cf6f8b648b735",
+      "isotrident/terrain1.spec": "8c67b9bb58403b7a9e8c91b7d4cfe40db07c1f4bb933ab28681c925068249b60",
+      "isotrident/terrain2.png": "3a7a7dccbe5943cd4b7a5965193cc302941621c76adf498bbd1bd1418a340c7f",
+      "isotrident/terrain2.spec": "67473d1591ff6f10d85435fb199b7477e4618eec467d64374d970b1ba923ab3e",
+      "isotrident.tilespec": "a13f4f05a3f5c78ebef04e207fd70b0d80dfc81faf4f81eb33fa97b7b4bd1208",
+      "misc/small.png": "3cd3c097a8a5bd391047545e34fafd6239b368aea1143b241a5d72dd6600613e",
+      "misc/small.spec": "1e7cca8a198690b9c1f5eb0d8f202b3a29f0c918be84dd240f4988c90dd795d2",
+      "misc/specialists.png": "e52b5c202a8c55873de568fd4d18802daf75b2173525fa826679ebaf9bdcaac0",
+      "misc/specialists.spec": "86c50676df4c3741be8076f0302587d2aff53be308bd4a442aabc11c6c1605a1",
+      "trident/units.png": "13cec0e285a10c62300ca95602adea5a7ca09c8f35af88e9deeb4653a78910af",
+      "trident/units.spec": "8f287b5da5a046ebca30e224e952265989ce2941844f16a1b6d90ac95cd39f65"
+    },
+    "sprite_definitions": 381
+  },
+  "permissions": "Owner explicitly approved Isotrident fallback artwork; no Freeciv game code or rules copied",
+  "rules_profile": {
+    "name": "Open demo v1",
+    "license": "MIT",
+    "sha256": "e3660a02b7fac84b27ca2e802aac70519152983fa88e038dda6f16e2a8b611f4",
+    "unit_types": 3,
+    "enabled_improvement_slots": 7,
+    "research_choices": 12,
+    "original_tot_rules_parity": false,
+    "freeciv_ruleset": false
+  },
+  "validation": {
+    "freeciv_binary": "3.2.7 GTK client starts on isolated X11 display; no interactive city workflow study claimed",
+    "workspace": "install-backed cargo test --workspace passed; nightly and ignored fixture authors not rerun",
+    "client_default": "30 passed, 6 ignored; final actual-pack coverage also checks original-rules loading, produced-unit sprite selection and movement",
+    "client_desktop": "33 passed, 6 ignored",
+    "python": "5 worldgen + 6 preview + 2 Isotrident tests passed",
+    "style": "fmt and strict default/desktop Clippy passed",
+    "golden": "full install-backed corpus passed",
+    "packaged_browser": "Chromium ten rounds and save/reload routes, no CIVTOT_HOME or TOTENGINE_ISOTRIDENT; automatic adjacent-pack discovery; browser license/source endpoint checked",
+    "packaged_linux": "SDL/XTest ten rounds and save/reload routes, no CIVTOT_HOME or TOTENGINE_ISOTRIDENT; automatic adjacent-pack discovery",
+    "packaged_windows": "SDL/SendInput ten rounds and save/reload routes, empty CIVTOT_HOME; automatic adjacent-pack discovery; owned-window foreground guard retained",
+    "cross_client_checkpoint_hashes": {
+      "founding.cth": "048ce2af50dca6f8c33d122cedf057ffcf251a284997c21c577dee535a5f068a",
+      "foundingnext.cth": "fd513ac5a761ef120f42ad350d2106618921961d3e6dea535796c7381b0d05f2",
+      "normal.cth": "fd513ac5a761ef120f42ad350d2106618921961d3e6dea535796c7381b0d05f2",
+      "normalnext.cth": "38b420d7fb5b07b80d1f94617888c80c4a8fab68b6a0113a09b1be579330f4aa",
+      "research.cth": "28998b2aa379276e8461ee0d8834472c224abf4bbab6440a73c6b9aebb75a3d9",
+      "researchnext.cth": "048ce2af50dca6f8c33d122cedf057ffcf251a284997c21c577dee535a5f068a",
+      "tenrounds.cth": "3ffb7309c703a08e09a65e971455b7dbdf2896ca7b076f95a8edd5dece0c5053"
+    },
+    "all_package_payload_hashes_verified": true
+  },
+  "packages": {
+    "linux": {
+      "manifest_sha256": "1626cdddcaa9d1b5cf173204dd9b6da772814254040a0d694a2b1ef17683378f",
+      "binaries": {
+        "totplay": "9564f109f266d67aa29317e8ac449b610df12f2105b62545073090968aba19f0",
+        "totdesktop": "dcebc0d25c31624863116124e36690ae00997972422bd736410364ac21b15d63"
+      }
+    },
+    "windows": {
+      "manifest_sha256": "359b3ba91a6dc8547a31b42f56e1363158b5cbf236be424865aa112328ef98dc",
+      "binaries": {
+        "totplay.exe": "e28b0ec198f88067feffe0b260d495f5dd3fbbedcabe72ad57862ed5cde4ebd6",
+        "totdesktop.exe": "12448dd1d26c26823f352836848eadd2a376d82265eb97a511b155b85614e72d"
+      }
+    }
+  },
+  "limits": [
+    "No public multi-user service deployed; loopback single-session host unchanged",
+    "Open demo is a small authored profile, not a complete independent standard-game rules replacement",
+    "Open-water fallback does not implement full matched shoreline rendering",
+    "Two city sizes, no directional unit animation; unknown unit names use a neutral marker",
+    "Owner previews and games preserved; #176\u2013#179 remain separate follow-ups"
+  ]
+}

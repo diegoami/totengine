@@ -22,6 +22,9 @@ def bind(lib, name, result, *args):
     return fn
 
 def run():
+    demo = os.environ.get("TOTENGINE_OPEN_DEMO") == "1"
+    start_label = "Start open demo" if demo else "Start Original surface game"
+    unit_choice = "Guards" if demo else "Warriors"
     with tempfile.TemporaryDirectory(prefix="tot-desktop-x11-") as folder:
         scratch = Path(folder)
         cookie = secrets.token_bytes(16)
@@ -148,14 +151,14 @@ def run():
                 def save_dialog(name):
                     write(name);wait(lambda s:s.get("entry") and s["entry"]["value"]==name);key("Return")
                 wait(lambda s:s["phase"]=="Setup")
-                button("Start Original surface game")
+                button(start_label)
                 wait(lambda s:has(s,"Choose research explicitly"));button("Save pending choice");save_dialog("research");research()
                 key("b");wait(lambda s:has(s,"Name your city"));button("Save pending choice");save_dialog("founding")
                 wait(lambda s:has(s,"Name your city"));write("athenx");key("BackSpace");key("a");key("Return");wait(lambda s:s["status"]=="founded 0")
                 button("Choose production")
                 for _ in range(80):
                     key("Down")
-                    if any(d.get("text","").startswith("●") and "Warriors" in d["text"] for d in scene()["draws"]):break
+                    if any(d.get("text","").startswith("●") and unit_choice in d["text"] for d in scene()["draws"]):break
                 key("Return");wait(lambda s:s["status"]=="prod-set");key("Ctrl+s");save_dialog("normal")
                 for _ in range(10):
                     research();s=scene();turn=int(next(d["text"] for d in s["draws"] if d.get("text","").startswith("Turn ")).split()[1])
@@ -170,7 +173,7 @@ def run():
                 button("Choose production")
                 for _ in range(80):
                     key("Down")
-                    if any(d.get("text","").startswith("●") and "Warriors" in d["text"] for d in scene()["draws"]):break
+                    if any(d.get("text","").startswith("●") and unit_choice in d["text"] for d in scene()["draws"]):break
                 key("Return");key("Ctrl+s");save_dialog("foundingnext")
                 load("normal");key("Ctrl+n")
                 if has(scene(),"End your turn with movable units?"):key("Return")

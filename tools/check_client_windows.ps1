@@ -1,5 +1,8 @@
 # Real OS input only; traces are private test instrumentation, never endpoints.
 param([string]$Binary = "$PSScriptRoot\..\target\x86_64-pc-windows-gnullvm\debug\totdesktop.exe", [string]$Work = "$PSScriptRoot\..\target\client-windows-check", [switch]$MovementOnly, [switch]$SelectionOnly)
+$openDemo = $env:TOTENGINE_OPEN_DEMO -eq '1'
+$startLabel = if ($openDemo) { 'Start open demo' } else { 'Start Original surface game' }
+$unitChoice = if ($openDemo) { 'Guards' } else { 'Warriors' }
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type @'
@@ -200,7 +203,7 @@ try {
     }
     [void](Wait-Scene {param($s) $s.phase -eq 'Setup'})
     if(-not $MovementOnly -and -not $SelectionOnly) {
-    Focus-Button 'Start Original surface game'
+    Focus-Button $startLabel
     [void](Wait-Scene {param($s) Has-Text $s 'Choose research explicitly'})
     Focus-Button 'Save pending choice'
     Save-Dialog 'research'
@@ -219,7 +222,7 @@ try {
     for($n=0;$n -lt 80;$n++) {
         Send-Key 40
         $s=Read-Scene
-        if(@($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith([string][char]0x25cf) -and $_.text.Contains('Warriors')}).Count -gt 0){break}
+        if(@($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith([string][char]0x25cf) -and $_.text.Contains($unitChoice)}).Count -gt 0){break}
     }
     Send-Key 13
     [void](Wait-Scene {param($s) $s.status -eq 'prod-set'})
@@ -244,7 +247,7 @@ try {
     for($n=0;$n -lt 80;$n++) {
         Send-Key 40
         $s=Read-Scene
-        if(@($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith([string][char]0x25cf) -and $_.text.Contains('Warriors')}).Count -gt 0){break}
+        if(@($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith([string][char]0x25cf) -and $_.text.Contains($unitChoice)}).Count -gt 0){break}
     }
     Send-Key 13;Send-Chord 83;Save-Dialog 'foundingnext'
     Load-Slot 'normal';Send-Chord 78

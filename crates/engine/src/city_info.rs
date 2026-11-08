@@ -124,6 +124,54 @@ impl WorldState {
 mod tests {
 
     #[test]
+    fn city_info_composes_adjusted_upkeep_and_local_wonder_expiry() {
+        let mut world = crate::boot(&crate::tests_support::synthetic_save(), 1);
+        let rules = tot_kit::parse_rules("@CIVILIZE\nOne,1,0,nil,nil,0,0 ; One\n@ENDWONDER\nOne\n@IMPROVE\nNothing,0,0,nil\nPalace,10,0,nil\nBarracks,4,2,nil\nGranary,6,1,nil\nTemple,4,3,nil\n");
+        world.wonders = [-1; 28];
+        world.techs = [[0; 13]; 8];
+        world.difficulty = 0;
+        world.governments[1] = 4;
+        world.cities[1].owner = 1;
+        world.cities[1].city_id = 77;
+        world.cities[1].map_id = 0;
+        world.cities[1].buildings = [0; 5];
+        world.cities[1].buildings[0] = (1 << 2) | (1 << 4);
+        world.wonders[0] = 1;
+        world.wonders[1] = 0; // A wonder elsewhere is not a local city row.
+        for expired in [false, true] {
+            if expired {
+                world.techs[2][0] |= 1;
+            }
+            let before = world.checksum();
+            let info = world.city_info(&rules, 1, 1).unwrap();
+            assert_eq!(before, world.checksum());
+            assert_eq!(
+                info.improvements,
+                vec![
+                    super::CityImprovementInfo {
+                        id: 2,
+                        upkeep: 1,
+                        wonder: false,
+                        active: true
+                    },
+                    super::CityImprovementInfo {
+                        id: 4,
+                        upkeep: 0,
+                        wonder: false,
+                        active: true
+                    },
+                    super::CityImprovementInfo {
+                        id: 40,
+                        upkeep: 0,
+                        wonder: true,
+                        active: !expired
+                    },
+                ]
+            );
+        }
+    }
+
+    #[test]
     fn own_city_details_are_inert_and_support_lists_do_not_leak_foreign_units() {
         let mut world = crate::boot(&crate::tests_support::synthetic_save(), 1);
         let rules=tot_kit::parse_rules("@COSMIC\n3\n2\n2\n10\n10\n1\n2\n7\n14\n@UNITS\nArmy,nil,0,1.,0,1a,1d,1h,1f,1,0,0,nil,000000000000000\nSettler,nil,0,1.,0,0a,1d,1h,1f,1,0,5,nil,000000000000000\nTrader,nil,0,1.,0,0a,1d,1h,1f,1,0,6,nil,000000000000000\n@IMPROVE\nNothing,0,0,nil\nPalace,10,0,nil\nBarracks,4,1,nil\n");

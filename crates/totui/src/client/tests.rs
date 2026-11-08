@@ -1095,7 +1095,7 @@ fn generated_warrior_mouse_fixture() {
     .unwrap();
 }
 
-fn end_round(c: &mut Client) {
+pub(super) fn end_round(c: &mut Client) {
     research(c);
     key(c, "Ctrl+n");
     if matches!(c.modal, Some(Modal::Confirm { .. })) {
@@ -1104,7 +1104,7 @@ fn end_round(c: &mut Client) {
     ready(c);
     research(c);
 }
-fn build_pair(c: &mut Client) {
+pub(super) fn build_pair(c: &mut Client) {
     for _ in 0..3 {
         button(c, "Civilizations");
     }
@@ -1166,7 +1166,7 @@ fn point(c: &Client, e: Entity, sy: f64) -> (f64, f64) {
 fn click_point(c: &mut Client, p: (f64, f64)) {
     input(c, Input::Click { x: p.0, y: p.1 });
 }
-fn land_step(c: &Client, e: Entity) -> (i32, i32) {
+pub(super) fn land_step(c: &Client, e: Entity) -> (i32, i32) {
     let v = c.view().unwrap();
     let u = unit_at(c, e);
     [
@@ -1763,12 +1763,12 @@ fn city_panels_inspect_without_orders_and_retain_panel_through_navigation_and_re
     key(&mut c, "Ctrl+s");
     edit(&mut c, "panels");
     key(&mut c, "Enter");
-    button(&mut c, "Info");
     key(&mut c, "Ctrl+l");
     edit(&mut c, "panels");
     key(&mut c, "Enter");
     assert!(c.city_open);
-    assert_eq!(c.city_panel, CityPanel::Info);
+    assert_eq!(c.city_panel, CityPanel::Happy);
+    assert_eq!(c.view().unwrap().production_context_city, None);
     assert_eq!(
         closed,
         c.checkpoint().unwrap(),

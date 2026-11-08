@@ -20,6 +20,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 - Resume opponent turns across delayed browser gestures, cancel queued gestures
   on newer input, and consume invalid second clicks. Correct city-list paging
   after sales and show tile shortcut hints only where the keys apply (#163–#169).
+- Cancel stale city gestures within SDL event batches while rejecting their
+  gameplay actions, recover opponent turns after reconnect, and strengthen panel
+  reload/upkeep/wonder integration checks (#171–#174).
 
 ## [0.14.0] — city production decisions
 

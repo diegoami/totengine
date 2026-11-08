@@ -3994,3 +3994,14 @@ discriminating ready-unit and eleven-to-ten sale tests. Windows results remain
 pre-review evidence. The browser checker automatically includes the new race
 helper when `TOTENGINE_CITY_OPEN_FIXTURE` is set. Original source hashes/counts
 above stay historical; independent owner-launched re-review is required.
+
+Round two verified the first fixes and blocked SDL batch invalidation #171,
+with follow-ups #172–#174. `client-v015-review-r3.json` records the current
+adapter fix, reconnect recovery, non-Info panel reload and CityInfo upkeep/
+wonder integration coverage. Native event-pump and ready-unit batch tests keep
+stale gameplay rejected while canceling the gesture. Actual Chromium/Linux
+perform 54/47 full checkpoint comparisons, including eight panel reloads and
+browser recovery after two failed tick attempts. Windows QA stopped at its
+initial foreground guard before input; prior results remain historical.
+No new native arithmetic or human acceptance is claimed. The third review is
+owner-launched; no tag is approved by the previous BLOCK verdicts.

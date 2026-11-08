@@ -37,4 +37,7 @@ def run_panels(scene, key, click_at, click_button, save_dialog, load, work, fixt
         key('Ctrl+s'); save_dialog(name+'after')
         assert (work/'saves'/(name+'after.cth')).read_bytes() == (fixture/(route['name']+'-after.cth')).read_bytes(), name
         load(name+'after')
+        assert any(d.get('kind') == 'text' and d['x'] == 744 and d['y'] == 193 and d['text'] == route['panel'] for d in scene()['draws']), 'panel reset on reload: '+name
+        key('Ctrl+s'); save_dialog(name+'reload')
+        assert (work/'saves'/(name+'reload.cth')).read_bytes() == (fixture/(route['name']+'-after.cth')).read_bytes(), 'panel reload: '+name
     key('Escape')

@@ -44,7 +44,13 @@ impl InputBatch {
             && client.city == self.city
             && client.modal.is_none()
             && client.modal_id == self.modal;
-        if matches!(&input, Input::DoubleClick{x,y,first_click} if client.can_open_double_click(*first_click,*x,*y))
+        let valid_double = matches!(&input, Input::DoubleClick{x,y,first_click} if client.can_open_double_click(*first_click,*x,*y));
+        if revision != client.revision && !valid_double {
+            // A later event is still newer intent when its gameplay revision
+            // is stale. Cancel only the gesture; never rebase its map action.
+            client.pending_city_click = None;
+        }
+        if valid_double
             || matches!(&input, Input::Focus { .. })
             || matches!(&input, Input::Key { key } if key == "Tab" || key == "ShiftTab")
             || (same_dialog && matches!(&input, Input::Key { .. } | Input::Edit { .. }))
@@ -678,6 +684,164 @@ mod tests {
                 Input::Key { key: "6".into() }
             )
             .is_err());
+        assert_eq!(before, client.checkpoint().unwrap());
+        // Poll real SDL events for each invalidation route too: direct shared
+        // inputs alone do not exercise the received batch revision.
+        client
+            .input(
+                client.revision,
+                6000,
+                Input::Key {
+                    key: "Escape".into(),
+                },
+            )
+            .unwrap();
+        let mouse = |x, clicks| Event::MouseButtonDown {
+            timestamp: 0,
+            window_id: 0,
+            which: 0,
+            mouse_btn: sdl2::mouse::MouseButton::Left,
+            clicks,
+            x,
+            y: 370,
+        };
+        let mut id = 6000;
+        for middle in [
+            mouse(480, 2),
+            Event::KeyDown {
+                timestamp: 0,
+                window_id: 0,
+                keycode: Some(Keycode::V),
+                scancode: None,
+                keymod: Mod::NOMOD,
+                repeat: false,
+            },
+            mouse(480, 1),
+        ] {
+            let batch = InputBatch::new(&client);
+            for event in [mouse(380, 1), middle, mouse(380, 3)] {
+                events.push_event(event).unwrap();
+            }
+            let mut count = 0;
+            for event in pump.poll_iter() {
+                let input = match event {
+                    Event::MouseButtonDown { x, y, clicks, .. } => {
+                        pointer_input(&client, x, y, clicks)
+                    }
+                    Event::KeyDown {
+                        keycode: Some(k), ..
+                    } => Input::Key {
+                        key: key(k, false, false).unwrap(),
+                    },
+                    _ => continue,
+                };
+                id += 1;
+                let result = batch.submit(&mut client, id, batch.revision, input);
+                if count == 0 {
+                    result.unwrap();
+                } else {
+                    assert!(result.is_err());
+                }
+                count += 1;
+            }
+            assert_eq!(count, 3);
+            assert!(!client.city_open);
+            assert_eq!(client.frame().city_click, None);
+            assert_eq!(before, client.checkpoint().unwrap());
+        }
+    }
+
+    #[test]
+    fn stale_city_gesture_halves_and_newer_intent_cannot_repair_a_batch() {
+        use super::super::{tests, Action};
+        let f = tests::Fixture::new();
+        let mut client = f.client();
+        tests::build_pair(&mut client);
+        let city = client.view().unwrap().observation.cities[0].clone();
+        let units = client.view().unwrap().units;
+        for &u in &units {
+            client.action(Action::Unit(u)).unwrap();
+            let (dx, dy) = tests::land_step(&client, u);
+            client.step(dx, dy).unwrap();
+        }
+        tests::end_round(&mut client);
+        assert!(client.view().unwrap().city_info[0].present.is_empty());
+        client.pan = (
+            380. - f64::from(city.x) * 32.,
+            390. - f64::from(city.y) * 16.,
+        );
+        let actor = units[0];
+        let mut id = 8000;
+        for intent in [
+            Input::DoubleClick {
+                x: 480.,
+                y: 370.,
+                first_click: 0,
+            },
+            Input::Key { key: "v".into() },
+            Input::Key { key: "6".into() },
+            Input::Click { x: 444., y: 390. },
+        ] {
+            client.action(Action::Unit(actor)).unwrap();
+            client.pan = (
+                380. - f64::from(city.x) * 32.,
+                390. - f64::from(city.y) * 16.,
+            );
+            assert!(client.moving);
+            let v = client.view().unwrap();
+            assert!(v
+                .observation
+                .units
+                .iter()
+                .any(|u| u.index == actor.slot && u.moves_left > 0));
+            let before = client.checkpoint().unwrap();
+            let batch = InputBatch::new(&client);
+            id += 1;
+            let first = id;
+            let click = pointer_input(&client, 380, 370, 1);
+            batch
+                .submit(&mut client, id, batch.revision, click)
+                .unwrap();
+            assert_eq!(client.frame().city_click, Some(first));
+            let intent = if matches!(intent, Input::DoubleClick { .. }) {
+                pointer_input(&client, 480, 370, 2)
+            } else {
+                intent
+            };
+            id += 1;
+            assert!(batch
+                .submit(&mut client, id, batch.revision, intent)
+                .is_err());
+            assert_eq!(
+                client.frame().city_click,
+                None,
+                "stale later intent cancels only the gesture"
+            );
+            id += 1;
+            let third = pointer_input(&client, 380, 370, 3);
+            assert!(batch
+                .submit(&mut client, id, batch.revision, third)
+                .is_err());
+            assert!(!client.city_open);
+            assert_eq!(client.active, Some(actor));
+            assert!(client.moving, "stale V did not change mode");
+            assert_eq!(
+                before,
+                client.checkpoint().unwrap(),
+                "stale movement/click cannot spend a ready unit"
+            );
+        }
+        // A fresh batch still accepts an ordinary valid pair.
+        let batch = InputBatch::new(&client);
+        let before = client.checkpoint().unwrap();
+        for clicks in [1, 2] {
+            id += 1;
+            let click = pointer_input(&client, 380, 370, clicks);
+            batch
+                .submit(&mut client, id, batch.revision, click)
+                .unwrap();
+        }
+        assert!(client.city_open);
         assert_eq!(before, client.checkpoint().unwrap());
     }
 

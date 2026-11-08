@@ -421,6 +421,9 @@ try {
             $expected=(Get-FileHash (Join-Path $env:TOTENGINE_PANELS_FIXTURES ($route.name+'-after.cth')) -Algorithm SHA256).Hash
             if($actual -ne $expected){throw ('Panel checkpoint differs: '+$route.name)}
             Load-Slot ($name+'after')
+            if(@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.x -eq 744 -and $_.y -eq 193 -and $_.text -eq $route.panel}).Count -ne 1){throw ('Panel reset on reload '+$route.name)}
+            Send-Chord 83;Save-Dialog ($name+'reload')
+            if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES ($name+'reload.cth')) -Algorithm SHA256).Hash -ne $expected){throw ('Panel reload checkpoint differs '+$route.name)}
         }
         Send-Key 27
     }

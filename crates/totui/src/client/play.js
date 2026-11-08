@@ -148,6 +148,9 @@ async function refresh() {
   const r = await fetch("/state");
   if (!r.ok) throw Error("Host unavailable");
   await paint(await r.json());
+  // Reconnect can be the only acknowledgement after both POST attempts fail.
+  // Resume from the observed host phase without replaying a gameplay command.
+  resumeOpponents();
 }
 let opponentTimer = null;
 function resumeOpponents() {

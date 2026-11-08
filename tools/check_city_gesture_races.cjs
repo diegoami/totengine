@@ -99,5 +99,35 @@ exports.run = async ({page, state, key, click, save, load, idle, fixture, saves}
   }
   await finishTurn();
   if (!(await checkpoint('cityrace-next')).equals(expected)) throw Error('raced opponent round differs from ordinary round');
-  console.log(JSON.stringify({city_gesture_races:'PASS', checkpoints:5, cases:['busy-new-key','busy-new-click','invalid-second-third','opponent-double-post-tick']}));
+  // Fail both retry attempts before reaching the host. Only periodic /state
+  // recovery may resume the round; do not send any user input while waiting.
+  await map();
+  let aborted = 0, refreshed = 0, recoveredTick = 0;
+  const attempts = [];
+  const reconnect = async route => {
+    const request = route.request();
+    if (request.url().endsWith('/input') && request.postDataJSON()?.input?.type === 'tick') {
+      if (aborted < 2) {
+        attempts.push(request.postDataJSON()); aborted++;
+        return route.abort('failed');
+      }
+      recoveredTick++;
+    }
+    if (request.url().endsWith('/state') && aborted === 2) {
+      const response = await route.fetch();
+      if (response.ok()) refreshed++;
+      return route.fulfill({response});
+    }
+    return route.fallback();
+  };
+  await page.route('**/*', reconnect);
+  try {
+    await endTurn();
+    await page.waitForFunction(() => frame.phase !== 'Opponents' && !busy, null, {timeout:10000});
+    if (aborted !== 2 || refreshed < 1 || recoveredTick < 1) throw Error('reconnect did not recover through periodic state refresh');
+    if (JSON.stringify(attempts[0]) !== JSON.stringify(attempts[1])) throw Error('failed tick retry changed identity or payload');
+  } finally { await page.unroute('**/*', reconnect); }
+  await finishTurn();
+  if (!(await checkpoint('cityrace-reconnect')).equals(expected)) throw Error('reconnected next round differs from ordinary round');
+  console.log(JSON.stringify({city_gesture_races:'PASS', checkpoints:6, cases:['busy-new-key','busy-new-click','invalid-second-third','opponent-double-post-tick','failed-tick-reconnect']}));
 };

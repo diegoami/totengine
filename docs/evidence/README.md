@@ -2983,6 +2983,36 @@ revolution question returns a non-zero value natively (the U31 observation says
 Escape started the revolution); the engine-side civ-flag/queue effects of
 `0x4bf9b6`, called after a voluntary revolution; custom-rules caps under ToTPP.
 
+#### Second-government fixture (#194)
+
+`tools/government_fixture.py --out DIR` derives two **private** saves from
+`Original/Ph_Auto2.SAV` (never committed; `DIR/Rules.txt` is a symlink): the human
+civ (civ 4, Despotism, knows only Bronze Working, turn 43) receives Monarchy and
+its prerequisite closure (advances 1, 9, 12, 54) and its acquired counter, while
+it stays in Despotism (`monarchy.SAV`); `anarchy.SAV` also sets Anarchy. Only civ
+block bytes 24, 29 and 96–102 change; both derived saves parse with `totctl save`.
+Retained evidence: [government-fixture.json](government-fixture.json) (hashes,
+changed offsets) and [government-fixture-vectors.txt](government-fixture-vectors.txt),
+reproducible and deterministic.
+
+Native results on the derived saves (same harness and replaced callee as the
+rates check; the advance table's enabled byte for the five government advances is
+set from `Rules.txt` because the harness does not load that table):
+
+- chooser list (`0x525468`): baseline save offers `{Despotism}`; the fixture offers
+  `{Despotism, Monarchy}`;
+- caps `0x40966b`: Anarchy 6, Despotism 6, Monarchy 7 (tenths);
+- rate route from the saved 4/0/6 (tax/lux/sci) through `0x409704`, no locks: under
+  Despotism science 7 and 8 are clamped to the cap and leave 4/0/6, tax 7 gives
+  6/0/4, luxury 3 gives 1/3/6; under Monarchy science 7 gives 3/0/7, science 8
+  clamps to 3/0/7, tax 7 gives 7/0/3, luxury 3 gives 1/3/6;
+- Anarchy resolution (`0x5292d6`, saved flags): the chooser opens at turns 44, 48
+  and 52 and at none of 43, 45–47, 49–51.
+
+**Not done:** loading the derived saves in the original game (no live Wine run, so
+the original's acceptance of the patched bytes and its on-screen chooser are not
+confirmed) and an engine/client fixture; both belong to the #195/#196 routes.
+
 #### Research selection, goal and mid-project changes (#194)
 
 Source: unpatched `civ2.bak`. The candidate filter is **executed natively**

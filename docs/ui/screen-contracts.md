@@ -263,9 +263,11 @@ Native evidence for each is in the evidence README section above.
 (legal change, illegal change rejected with cap reason, locks) → Shift+R → question
 (cancel path, then confirm path) → Anarchy → end turns until a multiple-of-four
 turn → chooser (only legal governments, stale/ineligible rejected) → rate review →
-map; save/reload before and after each decision. A fixture with a second legal
-government (Monarchy known) is required; the generated standard start offers only
-Despotism, as U31 did.
+map; save/reload before and after each decision. The second-government fixture is authored by `tools/government_fixture.py` (evidence
+§Second-government fixture): the human civ knows Monarchy and is in Despotism, so the
+chooser must list exactly Despotism and Monarchy, caps are 6 then 7, and the retained
+vectors give the expected rate results; the generated standard start offers only
+Despotism, as U31 did. An engine/client version of this fixture is part of #195/#196.
 
 ## Diplomacy and intelligence
 

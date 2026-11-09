@@ -64,6 +64,41 @@ pub fn check_rates(government: u8, science: u8, tax: u8) -> Result<u8, &'static 
     Ok(luxury)
 }
 
+/// The split the rate dialog shows when it opens (`0x40a6c3`, static decode of
+/// the three loops before the single `0x409704` pass, which is the identity on a
+/// legal split). `[tax, luxury, science]` in and out; luxury is the remainder.
+///
+/// 1. while tax exceeds the cap: tax -1, science +1 if science is below the cap;
+/// 2. while science exceeds the cap: science -1, tax +1 if tax is below the cap;
+/// 3. while luxury exceeds the cap: tax +1 if tax is below the cap, else science +1.
+///
+/// The dialog also writes these values to the civ immediately; the engine instead
+/// proposes them in a `RateReview` and commits only the reviewed split.
+pub fn open_normalize(cap: u8, tax: u8, science: u8) -> [u8; 3] {
+    let cap = i32::from(cap);
+    let (mut t, mut s) = (i32::from(tax).min(10), i32::from(science).min(10));
+    while t > cap {
+        t -= 1;
+        if s < cap {
+            s += 1;
+        }
+    }
+    while s > cap {
+        s -= 1;
+        if t < cap {
+            t += 1;
+        }
+    }
+    while 10 - s - t > cap {
+        if t < cap {
+            t += 1;
+        } else {
+            s += 1;
+        }
+    }
+    [t as u8, (10 - s - t).max(0) as u8, s as u8]
+}
+
 /// The original slider rule (`0x409704` through the three slider handlers).
 ///
 /// `current` and `remembered` are `[tax, luxury, science]`. `remembered` is the
@@ -252,6 +287,28 @@ mod tests {
             differs >= 20,
             "only {differs} vectors depend on the opening value"
         );
+    }
+
+    #[test]
+    fn opening_normalization_always_yields_a_legal_split() {
+        for cap in [6u8, 7, 8, 10] {
+            for tax in 0..=10u8 {
+                for sci in 0..=10u8 {
+                    if tax + sci > 10 {
+                        continue;
+                    }
+                    let [t, l, s] = open_normalize(cap, tax, sci);
+                    assert_eq!(t + l + s, 10, "cap {cap} tax {tax} sci {sci}");
+                    assert!(t <= cap && l <= cap && s <= cap, "cap {cap} {tax}/{sci}");
+                    if tax <= cap && sci <= cap && 10 - tax - sci <= cap {
+                        assert_eq!([t, l, s], [tax, 10 - tax - sci, sci]);
+                    }
+                }
+            }
+        }
+        // Monarchy (7) to Despotism (6): science 7 loses one point to tax.
+        assert_eq!(open_normalize(6, 3, 7), [4, 0, 6]);
+        assert_eq!(open_normalize(6, 7, 3), [6, 0, 4]);
     }
 
     #[test]

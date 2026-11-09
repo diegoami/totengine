@@ -9,12 +9,12 @@
     "crates/engine/src/events.rs": "5dc1820f0151d3b6371fc507eefab502488a13e72057d873b0ee777885100fe5",
     "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
-    "crates/engine/src/player.rs": "114b3c177dc9b247c0ae3c3da94a03ff3a40a11f4dcd3ebfe1bb9278b89a0b61",
-    "crates/engine/src/human.rs": "a7848443a8b255c2bdb567bc5e9d680ab1472702a723f3594b51acd480e54052",
-    "crates/engine/src/human/checkpoint.rs": "e5d2f5e25d804a3ac3eb027236d976183431b1850b4c7e8addbd067e776e9195",
+    "crates/engine/src/player.rs": "4e5284a0dbba1348b273c48726a2d6d2686c77231541dcbddaeb07c9aec6837b",
+    "crates/engine/src/human.rs": "69da87ce3d53940293593af07fee633c0c1c878ad3ff33a84f58eb272603411a",
+    "crates/engine/src/human/checkpoint.rs": "09247c61a7be0ea76ee94a218bd97578f780cce65ad90c6ae30531f4f0d2a7c2",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "7341f1fd34a2fe572303cffaa436f20b9edbe340b4d3f0ca71f79b54fc0344cc",
+    "crates/totui/src/client/mod.rs": "13bdcc605f8d8b047681bb2c759befeef9cd7e01897bf6006daad541a42633d4",
     "crates/totui/src/resources.rs": "531247a00d6307ed0698646200122c9631ee34e6665e9a42b0278f31ba9cad6d",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -137,6 +137,16 @@
         "crates/engine/src/player.rs"
       ],
       "finding": "Additive human/Order variants only. No trigger or action coverage, scenario event path, classic-entry or runtime admission changed; the trigger/action tables above are unchanged."
+    },
+    {
+      "change": "#195 slice 2: Revolution/SetGovernment orders, Government and Rates decisions, begin-of-turn anarchy step, removal of Phase::UnsupportedGovernment, client status text for pending decisions",
+      "files": [
+        "crates/engine/src/human.rs",
+        "crates/engine/src/human/checkpoint.rs",
+        "crates/engine/src/player.rs",
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Human-session government/rate decisions only. No trigger or action coverage, scenario event path, classic-entry or runtime admission changed; the trigger/action tables above are unchanged. Human sessions still start only from generated games."
     }
   ]
 }

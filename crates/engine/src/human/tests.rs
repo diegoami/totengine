@@ -414,22 +414,9 @@ fn accepted_movement_replays_and_hidden_changes_do_not_enter_human_view() {
 }
 
 #[test]
-fn unsupported_government_and_elimination_stop_with_a_readable_phase() {
+fn elimination_stops_with_a_readable_phase() {
     let mut s = session(1);
     choose(&mut s);
-    s.game.world.governments[1] = 0;
-    assert_eq!(s.build_view().phase, Phase::UnsupportedGovernment);
-    let before = s.checkpoint("assets");
-    assert_eq!(s.advance(256), 0);
-    assert!(s
-        .submit(Request {
-            civ: 1,
-            revision: s.revision,
-            id: 99,
-            command: Command::EndTurn
-        })
-        .is_err());
-    assert_eq!(s.checkpoint("assets"), before);
     for u in s.game.world.units.iter_mut().filter(|u| u.owner == 1) {
         u.id = 0;
     }
@@ -1078,4 +1065,216 @@ fn rate_commands_validate_commit_retry_and_survive_checkpoints() {
     // Replaying the journal reproduces the same session.
     let restored = round_trip(&s);
     assert_eq!(restored.view().rates, s.view().rates);
+}
+
+fn next_round(s: &mut HumanSession) {
+    choose(s);
+    send(s, Command::EndTurn);
+    ready(s, 256);
+}
+
+fn rejected(s: &mut HumanSession, command: Command) {
+    let before = s.checkpoint("assets");
+    let r = Request {
+        civ: s.human,
+        revision: s.revision,
+        id: s.receipts.len() as u64 + 1,
+        command,
+    };
+    assert!(s.submit(r).is_err(), "{command:?}");
+    assert_eq!(s.checkpoint("assets"), before, "{command:?}");
+}
+
+#[test]
+fn revolution_waits_for_a_multiple_of_four_then_requires_government_and_rate_review() {
+    // No direct world edits: every step is reachable from the journal, so the
+    // checkpoint round trips below are real replays.
+    let mut s = session(1);
+    choose(&mut s);
+    assert!(s.view().revolution_available);
+    send(&mut s, Command::Revolution);
+    assert_eq!(s.game.world.governments[1], 0);
+    assert!(!s.view().revolution_available);
+    assert!(s.game.log().contains("revolution = revolution-started"));
+    rejected(&mut s, Command::Revolution);
+    let restored = round_trip(&s);
+    assert_eq!(restored.game.world.governments[1], 0);
+    // Anarchy is playable until the first aligned turn step.
+    let mut rounds = 0;
+    while !matches!(s.decision, Some(Decision::Government { .. })) {
+        assert!(rounds < 5, "no chooser within a turn cycle");
+        assert_eq!(s.phase(), Phase::Human);
+        next_round(&mut s);
+        rounds += 1;
+    }
+    assert_eq!(s.game.world.turn & 3, 0);
+    let Some(Decision::Government { id, eligible }) = s.decision.clone() else {
+        unreachable!()
+    };
+    // A generated start knows no other government's advance.
+    assert_eq!(eligible, [1]);
+    // Required: nothing else is accepted, and stale or ineligible choices are refused.
+    rejected(&mut s, Command::EndTurn);
+    rejected(&mut s, Command::Revolution);
+    rejected(
+        &mut s,
+        Command::Government {
+            decision: id,
+            government: 2,
+        },
+    );
+    rejected(
+        &mut s,
+        Command::Government {
+            decision: id + 1,
+            government: 1,
+        },
+    );
+    let restored = round_trip(&s);
+    assert_eq!(restored.decision, s.decision);
+    send(
+        &mut s,
+        Command::Government {
+            decision: id,
+            government: 1,
+        },
+    );
+    assert_eq!(s.game.world.governments[1], 1);
+    assert!(s.game.log().contains("government 1 = government-set"));
+    // The native setter then opens the rate dialog for review.
+    let Some(Decision::Rates { id, view, opening }) = s.decision.clone() else {
+        panic!("rate review is required after choosing a government");
+    };
+    assert_eq!((view.government, view.cap), (1, 6));
+    assert_eq!(opening, [view.tax, view.luxury, view.science]);
+    rejected(
+        &mut s,
+        Command::ReviewRates {
+            decision: id,
+            science: 7,
+            tax: 3,
+        },
+    );
+    rejected(&mut s, Command::Rates { science: 5, tax: 5 });
+    let restored = round_trip(&s);
+    assert_eq!(restored.decision, s.decision);
+    send(
+        &mut s,
+        Command::ReviewRates {
+            decision: id,
+            science: 5,
+            tax: 5,
+        },
+    );
+    assert!(!matches!(s.decision, Some(Decision::Rates { .. })));
+    assert_eq!(
+        s.view()
+            .rates
+            .map(|r| (r.government, r.tax, r.luxury, r.science)),
+        Some((1, 5, 0, 5))
+    );
+    let restored = round_trip(&s);
+    assert_eq!(restored.view().rates, s.view().rates);
+}
+
+#[test]
+fn a_known_government_advance_extends_the_chooser_and_the_rate_cap() {
+    // Direct tech edit: not reproducible from the journal, so no round trips here.
+    let mut s = session(1);
+    choose(&mut s);
+    s.game.world.techs[1][54 / 8] |= 1 << (54 % 8); // Monarchy
+    s.game.world.governments[1] = 0;
+    s.game.world.turn = 43;
+    next_round(&mut s);
+    let Some(Decision::Government { id, eligible }) = s.decision.clone() else {
+        panic!("chooser expected");
+    };
+    assert_eq!(eligible, [1, 2]);
+    send(
+        &mut s,
+        Command::Government {
+            decision: id,
+            government: 2,
+        },
+    );
+    let Some(Decision::Rates { id, view, opening }) = s.decision.clone() else {
+        panic!("rate review expected");
+    };
+    assert_eq!((view.government, view.cap), (2, 7));
+    assert_eq!(opening, [view.tax, view.luxury, view.science]);
+    send(
+        &mut s,
+        Command::ReviewRates {
+            decision: id,
+            science: 7,
+            tax: 3,
+        },
+    );
+    assert_eq!(
+        s.view().rates.map(|r| (r.tax, r.luxury, r.science)),
+        Some((3, 0, 7))
+    );
+}
+
+#[test]
+fn rate_review_opens_over_cap_shares_at_the_new_governments_limit() {
+    let mut s = session(1);
+    choose(&mut s);
+    s.game.world.governments[1] = 0;
+    s.game.world.science_rates[1] = 7;
+    s.game.world.tax_rates[1] = 3;
+    s.game.world.turn = 43; // the next round closes onto turn 44, an aligned step
+    next_round(&mut s);
+    let Some(Decision::Government { id, eligible }) = s.decision.clone() else {
+        panic!("chooser expected at turn {}", s.game.world.turn);
+    };
+    assert_eq!(eligible, [1]);
+    send(
+        &mut s,
+        Command::Government {
+            decision: id,
+            government: 1,
+        },
+    );
+    let Some(Decision::Rates { id, view, opening }) = s.decision.clone() else {
+        panic!("rate review expected");
+    };
+    // Despotism caps each share at 6: science 7 loses one point to tax.
+    assert_eq!((view.cap, view.tax, view.science), (6, 3, 7));
+    assert_eq!(opening, [4, 0, 6]);
+    send(
+        &mut s,
+        Command::ReviewRates {
+            decision: id,
+            science: opening[2],
+            tax: opening[0],
+        },
+    );
+    assert_eq!(
+        s.view().rates.map(|r| (r.tax, r.luxury, r.science)),
+        Some((4, 0, 6))
+    );
+}
+
+#[test]
+fn city_unrest_anarchy_consumes_its_first_aligned_turn() {
+    let mut s = session(1);
+    choose(&mut s);
+    s.game.world.governments[1] = 0;
+    s.game.world.ai_state.civ_flags[1] |= 1; // set by the city-unrest path
+    s.game.world.turn = 43;
+    next_round(&mut s);
+    assert_eq!(s.game.world.turn, 44);
+    assert!(
+        s.decision.is_none(),
+        "forced anarchy skips the first aligned step"
+    );
+    assert_eq!(s.game.world.ai_state.civ_flags[1] & 1, 0);
+    for _ in 0..3 {
+        next_round(&mut s);
+        assert!(s.decision.is_none());
+    }
+    next_round(&mut s);
+    assert_eq!(s.game.world.turn, 48);
+    assert!(matches!(s.decision, Some(Decision::Government { .. })));
 }

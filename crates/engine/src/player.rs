@@ -108,6 +108,12 @@ pub enum Order {
         science: u8,
         tax: u8,
     },
+    /// Voluntary revolution: Anarchy starts at once ([`WorldState::start_revolution`]).
+    Revolution,
+    /// Choose a government while in Anarchy; must be eligible (`0x525468`).
+    SetGovernment {
+        government: u8,
+    },
     /// Found a city with settler `unit` on its tile
     /// ([`WorldState::found_city`]).
     FoundCity {
@@ -145,6 +151,8 @@ pub enum OrderResult {
     ImprovementSold(u8),
     ResearchSet,
     RatesSet,
+    RevolutionStarted,
+    GovernmentSet,
     /// A city was founded; its index.
     Founded(usize),
     TurnEnded,
@@ -167,6 +175,8 @@ impl fmt::Display for Order {
             Order::SellImprovement { city, quote } => write!(f, "sell {city} {}", quote.encode()),
             Order::SetResearch { advance } => write!(f, "research {advance}"),
             Order::SetRates { science, tax } => write!(f, "rates {science} {tax}"),
+            Order::Revolution => write!(f, "revolution"),
+            Order::SetGovernment { government } => write!(f, "government {government}"),
             Order::FoundCity { unit } => write!(f, "found {unit}"),
             Order::FoundNamedCity { unit, name } => {
                 write!(f, "found-named {unit} ")?;
@@ -199,6 +209,8 @@ impl fmt::Display for OrderResult {
             OrderResult::ImprovementSold(id) => write!(f, "improvement-sold {id}"),
             OrderResult::ResearchSet => write!(f, "research-set"),
             OrderResult::RatesSet => write!(f, "rates-set"),
+            OrderResult::RevolutionStarted => write!(f, "revolution-started"),
+            OrderResult::GovernmentSet => write!(f, "government-set"),
             OrderResult::Founded(c) => write!(f, "founded {c}"),
             OrderResult::TurnEnded => write!(f, "ended"),
             OrderResult::Skipped => write!(f, "skipped"),
@@ -242,6 +254,10 @@ impl Order {
             }),
             ["research", a] => Some(Order::SetResearch {
                 advance: a.parse().ok()?,
+            }),
+            ["revolution"] => Some(Order::Revolution),
+            ["government", g] => Some(Order::SetGovernment {
+                government: g.parse().ok()?,
             }),
             ["rates", s, t] => Some(Order::SetRates {
                 science: s.parse().ok()?,
@@ -676,6 +692,20 @@ impl WorldState {
                 Ok(()) => OrderResult::RatesSet,
                 Err(why) => OrderResult::Rejected(why),
             },
+            Order::Revolution => match self.start_revolution(rules, civ) {
+                Ok(()) => OrderResult::RevolutionStarted,
+                Err(why) => OrderResult::Rejected(why),
+            },
+            Order::SetGovernment { government } => {
+                if self.governments.get(civ as usize) != Some(&0) {
+                    return OrderResult::Rejected("not in anarchy");
+                }
+                if !self.eligible_governments(rules, civ).contains(&government) {
+                    return OrderResult::Rejected("government is not available");
+                }
+                self.set_government(rules, civ, government);
+                OrderResult::GovernmentSet
+            }
             Order::FoundCity { unit } | Order::FoundNamedCity { unit, .. } => {
                 if self
                     .units

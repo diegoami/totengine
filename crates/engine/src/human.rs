@@ -24,15 +24,33 @@ pub enum Phase {
     Human,
     Opponents,
     Eliminated,
-    /// A later client package must implement the required government choice.
-    UnsupportedGovernment,
     TurnLimit,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Decision {
-    Research { id: u64, available: Vec<usize> },
-    Founding { id: u64, unit: Entity },
+    Research {
+        id: u64,
+        available: Vec<usize>,
+    },
+    Founding {
+        id: u64,
+        unit: Entity,
+    },
+    /// Required after Anarchy ends its wait: choose one of the eligible
+    /// governments (`0x5255c4` mode 0). There is no cancel.
+    Government {
+        id: u64,
+        eligible: Vec<u8>,
+    },
+    /// Required after a government is set (the native setter opens the rate
+    /// dialog for a human civ). `opening` is the split the dialog opens with,
+    /// `[tax, luxury, science]`; commit with [`Command::ReviewRates`].
+    Rates {
+        id: u64,
+        view: crate::rates::RatesView,
+        opening: [u8; 3],
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -91,6 +109,19 @@ pub enum Command {
         science: u8,
         tax: u8,
     },
+    /// Start a voluntary revolution; Anarchy begins at once.
+    Revolution,
+    /// Resolve [`Decision::Government`].
+    Government {
+        decision: u64,
+        government: u8,
+    },
+    /// Resolve [`Decision::Rates`] with one validated split.
+    ReviewRates {
+        decision: u64,
+        science: u8,
+        tax: u8,
+    },
     EndTurn,
     Skip {
         unit: Entity,
@@ -145,6 +176,8 @@ pub struct HumanView {
     pub production_context_city: Option<Entity>,
     /// The human civilization's committed shares and their cap.
     pub rates: Option<crate::rates::RatesView>,
+    /// Whether a voluntary revolution may be started now.
+    pub revolution_available: bool,
 }
 
 /// Owns the game and opponent policies. Adapters cannot bypass recording or
@@ -219,6 +252,7 @@ impl HumanSession {
             journal: Vec::new(),
         };
         session.remember();
+        session.begin_human_turn();
         session.require_research();
         Ok(session)
     }
@@ -229,11 +263,7 @@ impl HumanSession {
         } else if self.game.world.turn >= 30_001 {
             Phase::TurnLimit
         } else if self.cursor == self.human {
-            if self.game.world.governments[self.human as usize] == 0 {
-                Phase::UnsupportedGovernment
-            } else {
-                Phase::Human
-            }
+            Phase::Human
         } else {
             Phase::Opponents
         }
@@ -291,6 +321,9 @@ impl HumanSession {
         observation.cities.sort_by_key(|c| c.index);
         HumanView {
             rates: self.game.world.rates_view(self.human),
+            revolution_available: self.phase() == Phase::Human
+                && self.decision.is_none()
+                && self.game.world.can_start_revolution(self.human),
             production_context_city: self
                 .game
                 .world
@@ -510,6 +543,39 @@ impl HumanSession {
         }
     }
 
+    /// The native government setter opens the rate dialog for a human civ whose
+    /// new government is not Anarchy; the engine requires that review.
+    fn open_rate_review(&mut self) {
+        let Some(view) = self.game.world.rates_view(self.human) else {
+            return;
+        };
+        let opening = crate::rates::open_normalize(view.cap, view.tax, view.science);
+        let id = self.allocate_decision();
+        self.decision = Some(Decision::Rates { id, view, opening });
+    }
+
+    /// The human civ's per-civ turn step (`0x5292d6`, called once when its turn
+    /// begins after the round's turn increment): Anarchy asks for a government
+    /// at the first turn counter that is a multiple of four, or at once with the
+    /// Statue of Liberty.
+    fn begin_human_turn(&mut self) {
+        if self.phase() != Phase::Human || self.decision.is_some() {
+            return;
+        }
+        if self
+            .game
+            .world
+            .resolve_anarchy(&self.game.rules, self.human)
+        {
+            let eligible = self
+                .game
+                .world
+                .eligible_governments(&self.game.rules, self.human);
+            let id = self.allocate_decision();
+            self.decision = Some(Decision::Government { id, eligible });
+        }
+    }
+
     fn allocate_decision(&mut self) -> u64 {
         let id = self.next_decision;
         self.next_decision += 1;
@@ -561,6 +627,7 @@ impl HumanSession {
             return Err("session request limit reached");
         }
         let mut new_decision = None;
+        let mut new_rates_review = false;
         let order = match (&self.decision, request.command) {
             (_, Command::CloseProduction { city }) => {
                 self.city(city, true)?;
@@ -575,6 +642,24 @@ impl HumanSession {
             ) if *id == decision && available.contains(&advance) => {
                 Some(Order::SetResearch { advance })
             }
+            (
+                Some(Decision::Government { id, eligible }),
+                Command::Government {
+                    decision,
+                    government,
+                },
+            ) if *id == decision && eligible.contains(&government) => {
+                new_rates_review = true;
+                Some(Order::SetGovernment { government })
+            }
+            (
+                Some(Decision::Rates { id, .. }),
+                Command::ReviewRates {
+                    decision,
+                    science,
+                    tax,
+                },
+            ) if *id == decision => Some(Order::SetRates { science, tax }),
             (Some(Decision::Founding { id, unit }), Command::NameCity { decision, name })
                 if *id == decision =>
             {
@@ -680,6 +765,7 @@ impl HumanSession {
                 None
             }
             (None, Command::Rates { science, tax }) => Some(Order::SetRates { science, tax }),
+            (None, Command::Revolution) => Some(Order::Revolution),
             (None, Command::EndTurn) => Some(Order::EndTurn),
             (None, _) => return Err("no matching decision"),
         };
@@ -691,6 +777,9 @@ impl HumanSession {
                 let id = self.allocate_decision();
                 Decision::Founding { id, unit }
             });
+            if new_rates_review {
+                self.open_rate_review();
+            }
         }
         if let Some(result) = &result {
             self.last_human = Some(result.clone());
@@ -749,6 +838,9 @@ impl HumanSession {
             self.remember();
             steps += 1;
             self.revision += 1;
+            if self.cursor == self.human {
+                self.begin_human_turn();
+            }
             self.require_research();
         }
         if steps > 0 {

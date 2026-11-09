@@ -86,6 +86,11 @@ pub enum Command {
         decision: u64,
         advance: usize,
     },
+    /// Commit science and tax shares in tenths; luxury is the remainder.
+    Rates {
+        science: u8,
+        tax: u8,
+    },
     EndTurn,
     Skip {
         unit: Entity,
@@ -138,6 +143,8 @@ pub struct HumanView {
     pub city_info: Vec<crate::city_info::CityInfo>,
     pub city_production: Vec<crate::city_production::CityProductionView>,
     pub production_context_city: Option<Entity>,
+    /// The human civilization's committed shares and their cap.
+    pub rates: Option<crate::rates::RatesView>,
 }
 
 /// Owns the game and opponent policies. Adapters cannot bypass recording or
@@ -283,6 +290,7 @@ impl HumanSession {
         );
         observation.cities.sort_by_key(|c| c.index);
         HumanView {
+            rates: self.game.world.rates_view(self.human),
             production_context_city: self
                 .game
                 .world
@@ -671,6 +679,7 @@ impl HumanSession {
                 new_decision = Some(unit);
                 None
             }
+            (None, Command::Rates { science, tax }) => Some(Order::SetRates { science, tax }),
             (None, Command::EndTurn) => Some(Order::EndTurn),
             (None, _) => return Err("no matching decision"),
         };

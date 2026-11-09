@@ -100,7 +100,9 @@ new human routes need both-client acceptance and owner-launched independent
 review. Preserve all owner previews/games and old version-bound binaries;
 workspace metadata remains v0.17. No full-client or full-AI gate is cleared.
 
-Resume at #194; no milestone-16 engine/client implementation or acceptance has started.
+Resume at #194/#195. #195 slice 1 (rates) is implemented in `engine::rates` on the PR #237
+branch: `Command::Rates`/`Order::SetRates`, `HumanView::rates`, checkpoint encoding, native-vector tests.
+No client route or acceptance exists yet (#196); revolution/government phases are not started.
 #194 reference work is in progress: native caps/redistribution/eligibility/anarchy
 resolution are executed (`tools/rates_government_check.py`, `docs/evidence/rates-government*`,
 evidence README §Rates, revolution and government selection); the proposed contract and

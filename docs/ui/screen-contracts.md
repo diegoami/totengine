@@ -226,12 +226,13 @@ its advance enabled in the loaded rules; Anarchy ends at the first per-civ turn
 step whose turn counter is a multiple of four (every step with Statue of
 Liberty); the chooser lists governments 1..6 filtered by eligibility.
 
-**Proposed engine surface (not implemented; #195).** Rates: a `SetRates {civ,
-science, tax}` command legal iff `science`, `tax` and `10 - science - tax` are all
-in `[0, cap]` for the civ's current government, with a typed rejection reason; the
-view supplies the cap, current shares, and the consistent finance quote. Lock
-state and the native redistribution (ported with the 621 vectors as regression
-data) stay client presentation: the engine validates only committed shares.
+**Engine surface (#195).** *Implemented:* the rates slice below. *Not yet:* revolution, government choice and rate review phases, anarchy resolution, native research-list rules and goal persistence. Rates: `Command::Rates {science, tax}` / `Order::SetRates` (`engine::rates`), legal iff `science`, `tax` and `10 - science - tax` are all
+in `[0, cap]` for the civ's current government, rejected atomically with a reason
+string (no typed reason enum yet); `HumanView::rates` supplies the cap and current
+shares (the consistent finance/research quote is not yet in the view). Lock state
+and the native redistribution (`engine::rates::redistribute`, tested against all
+621 native vectors) stay client presentation: the engine validates only committed
+shares.
 Revolution: a `Revolution` command is legal for a human civ that is not already in
 Anarchy, honors the scenario restriction once its bits are decoded, and sets
 Anarchy at once (native). A pending government choice is an authoritative phase

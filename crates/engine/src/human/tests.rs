@@ -1019,3 +1019,63 @@ fn explored_tiles_and_foreign_cities_remember_last_sight_without_hidden_updates(
     assert_eq!(replaced.observation.cities.len(), 1);
     assert_eq!(replaced.observation.cities[0].index, 2);
 }
+
+#[test]
+fn rate_commands_validate_commit_retry_and_survive_checkpoints() {
+    use crate::rates::RatesView;
+    let mut s = session(1);
+    choose(&mut s);
+    let start = s.view().rates.expect("human rates");
+    assert_eq!(
+        start,
+        RatesView {
+            government: 1,
+            cap: 6,
+            tax: 4,
+            luxury: 0,
+            science: 6
+        }
+    );
+    let before = s.checkpoint("assets");
+    // Illegal splits are rejected atomically: no revision, log or receipt change.
+    for (science, tax) in [(7, 3), (6, 5), (1, 2), (0, 11)] {
+        let r = Request {
+            civ: 1,
+            revision: s.revision,
+            id: s.receipts.len() as u64 + 1,
+            command: Command::Rates { science, tax },
+        };
+        assert!(s.submit(r).is_err(), "{science}/{tax}");
+        assert_eq!(s.checkpoint("assets"), before);
+        assert_eq!(s.view().rates, Some(start));
+    }
+    // A legal change commits, bumps the revision and shows the remainder as luxury.
+    let legal = send(&mut s, Command::Rates { science: 3, tax: 4 });
+    let view = s.view();
+    assert_eq!(
+        view.rates,
+        Some(RatesView {
+            tax: 4,
+            luxury: 3,
+            science: 3,
+            ..start
+        })
+    );
+    assert!(s.game.log().contains("rates 3 4 = rates-set"));
+    // Retrying the same request returns the receipt; a changed payload is refused.
+    let revision = s.revision;
+    assert!(s.submit(legal).is_ok());
+    assert_eq!(s.revision, revision);
+    assert!(s
+        .submit(Request {
+            command: Command::Rates { science: 2, tax: 4 },
+            ..legal
+        })
+        .is_err());
+    // A no-op split is accepted without changing the shares.
+    send(&mut s, Command::Rates { science: 3, tax: 4 });
+    assert_eq!(s.view().rates.map(|r| r.luxury), Some(3));
+    // Replaying the journal reproduces the same session.
+    let restored = round_trip(&s);
+    assert_eq!(restored.view().rates, s.view().rates);
+}

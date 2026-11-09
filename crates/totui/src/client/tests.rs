@@ -67,7 +67,7 @@ fn demo_research_names_preserve_rules_and_old_checkpoint_identity() {
     button(&mut c, "Start open demo");
     let before = c.checkpoint().unwrap();
     let names = c.current_choices();
-    assert_eq!(names.len(), 12);
+    assert_eq!(names.len(), 9, "native thinning drops 3, 6 and 9");
     assert_eq!(names[0], (0, "Agriculture".into()));
     assert!(names.iter().all(|(_, name)| !name.starts_with("Advance ")));
     assert_eq!(

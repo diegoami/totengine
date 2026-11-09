@@ -32,7 +32,7 @@ fn send(s: &mut HumanSession, command: Command) -> Request {
     r
 }
 fn choose(s: &mut HumanSession) {
-    while let Some(Decision::Research { id, available }) = s.decision.clone() {
+    while let Some(Decision::Research { id, available, .. }) = s.decision.clone() {
         send(
             s,
             Command::Research {
@@ -97,7 +97,7 @@ fn thinking_polling_rejections_and_retries_are_inert() {
         assert!(s.submit(r).is_err());
         assert_eq!(s.checkpoint("assets"), before);
     }
-    let Some(Decision::Research { id, available }) = s.decision.clone() else {
+    let Some(Decision::Research { id, available, .. }) = s.decision.clone() else {
         panic!()
     };
     let r = Request {
@@ -1277,4 +1277,67 @@ fn city_unrest_anarchy_consumes_its_first_aligned_turn() {
     next_round(&mut s);
     assert_eq!(s.game.world.turn, 48);
     assert!(matches!(s.decision, Some(Decision::Government { .. })));
+}
+
+#[test]
+fn human_research_list_applies_native_thinning_and_goal_steers_only_the_default() {
+    let mut s = session(1);
+    let rules = s.game.rules.clone();
+    let legacy = s.game.world.observe_research(&rules, 1).available;
+    let Some(Decision::Research {
+        id,
+        available,
+        default,
+    }) = s.decision.clone()
+    else {
+        panic!("research prompt expected at the start");
+    };
+    // Native thinning (difficulty 2, acquired 0): 3, 6 and 9 drop out after the first pick.
+    assert_ne!(available, legacy);
+    assert_eq!(available, [0, 1, 2, 4, 5, 7, 8, 10, 11]);
+    assert_eq!(default, None);
+    // A thinned-out advance that the old list allowed is now refused atomically.
+    rejected(
+        &mut s,
+        Command::Research {
+            decision: id,
+            advance: 3,
+        },
+    );
+    // The fixture tree is flat, so the goal is itself a candidate; the chain case is
+    // covered by research::tests::goal_path_follows_prerequisites.
+    let goal = 7;
+    rejected(&mut s, Command::Goal { advance: Some(100) });
+    send(
+        &mut s,
+        Command::Goal {
+            advance: Some(goal),
+        },
+    );
+    let Some(Decision::Research {
+        id: same,
+        available: still,
+        default,
+    }) = s.decision.clone()
+    else {
+        panic!("the pending prompt stays");
+    };
+    assert_eq!((same, still), (id, available.clone()));
+    assert_eq!(default, Some(7));
+    assert_eq!(s.view().goal, Some(goal));
+    // The goal survives checkpoints (replayed from the journal).
+    let restored = round_trip(&s);
+    assert_eq!(restored.view().goal, Some(goal));
+    assert_eq!(restored.decision, s.decision);
+    // The prompt is still required and the goal does not pick for the player.
+    send(
+        &mut s,
+        Command::Research {
+            decision: id,
+            advance: available[0],
+        },
+    );
+    assert_eq!(s.view().goal, Some(goal));
+    send(&mut s, Command::Goal { advance: None });
+    assert_eq!(s.view().goal, None);
 }

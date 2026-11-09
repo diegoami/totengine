@@ -135,10 +135,28 @@ pub struct Frame {
     pub status: String,
     pub assets: String,
 }
+mod routes;
 #[derive(Clone)]
 enum Modal {
     Name,
     Research,
+    /// `review` is the pending `Decision::Rates` id after a government change.
+    Rates {
+        review: Option<u64>,
+        government: u8,
+        cap: u8,
+        /// `[tax, luxury, science]` draft and the split the dialog opened with.
+        draft: [u8; 3],
+        opened: [u8; 3],
+        row: usize,
+        quote: Option<engine::rates::RatesQuote>,
+    },
+    Revolution,
+    Government {
+        decision: u64,
+    },
+    Science,
+    Goal,
     Production {
         city: Entity,
     },
@@ -182,6 +200,13 @@ enum Action {
     Work,
     Found,
     Research,
+    Rates,
+    Revolution,
+    Science,
+    GoalList,
+    ClearGoal,
+    RateStep(usize, i32),
+    RateLock(usize),
     City,
     OpenCity,
     CloseCity,
@@ -272,6 +297,9 @@ pub struct Client {
     pending_city_click: Option<CityClick>,
     city_panel: CityPanel,
     city_panel_page: usize,
+    /// Slider locks persist for the client session only (the original keeps
+    /// them in globals); they are never engine state or checkpointed.
+    rate_locks: [bool; 3],
     inspect: Option<(u16, u16)>,
     moving: bool,
     confirm_moves: bool,
@@ -329,6 +357,7 @@ impl Client {
             pending_city_click: None,
             city_panel: CityPanel::Info,
             city_panel_page: 0,
+            rate_locks: [false; 3],
             inspect: None,
             moving: false,
             confirm_moves: false,
@@ -393,7 +422,22 @@ impl Client {
     fn required(&mut self) {
         match self.view().and_then(|v| v.decision) {
             Some(Decision::Founding { .. }) => self.open(Modal::Name),
-            Some(Decision::Research { .. }) => self.open(Modal::Research),
+            Some(Decision::Research {
+                available, default, ..
+            }) => {
+                self.open(Modal::Research);
+                // A goal-steered suggestion is pre-selected, never accepted for you.
+                if let Some(d) = default {
+                    self.choice = Some(d as i32);
+                    self.page = available.iter().position(|&a| a == d).unwrap_or(0) / 12;
+                }
+            }
+            Some(Decision::Government { id, .. }) => self.open(Modal::Government { decision: id }),
+            Some(Decision::Rates { .. }) => {
+                if let Err(why) = self.open_rates() {
+                    self.status = why;
+                }
+            }
             _ => (),
         }
     }
@@ -532,7 +576,7 @@ impl Client {
                         if self.view().is_some_and(|v| v.phase != Phase::Opponents) {
                             self.advancing = false;
                             self.schedule_unit(None, true);
-                            self.status=match self.view().unwrap().phase {Phase::Human=>"Your turn. Choose actions or resolve the required research choice.",Phase::Eliminated=>"Your civilization has no units or cities. Load a checkpoint or start a new game.",Phase::TurnLimit=>"Turn limit reached. Save a checkpoint to preserve this game.",Phase::Opponents=>"Opponents playing"}.into();
+                            self.status=match self.view().unwrap().phase {Phase::Human=>"Your turn. Choose actions or resolve the required choice.",Phase::Eliminated=>"Your civilization has no units or cities. Load a checkpoint or start a new game.",Phase::TurnLimit=>"Turn limit reached. Save a checkpoint to preserve this game.",Phase::Opponents=>"Opponents playing"}.into();
                             self.required();
                         }
                     }
@@ -639,6 +683,9 @@ impl Client {
             return self.action(Action::Cancel);
         }
         if self.modal.is_some() {
+            if let Some(result) = self.route_key(key) {
+                return result;
+            }
             match key {
                 "ArrowDown" | "ArrowUp" => {
                     let choices = self.current_choices();
@@ -664,6 +711,9 @@ impl Client {
         } else {
             match key {
                 "b" => self.action(Action::Found),
+                "Shift+t" => self.action(Action::Rates),
+                "Shift+r" => self.action(Action::Revolution),
+                "F6" => self.action(Action::Science),
                 "v" => self.action(Action::Mode),
                 "a" => self.action(Action::Activate),
                 "c" => self.action(Action::Center),
@@ -793,6 +843,13 @@ impl Client {
                 self.order(Command::BeginFound { unit })?;
             }
             Action::Research => self.required(),
+            Action::Rates => self.open_rates()?,
+            Action::Revolution => self.open_revolution()?,
+            Action::Science => self.open_science()?,
+            Action::GoalList => self.open_goal_list()?,
+            Action::ClearGoal => self.set_goal(None)?,
+            Action::RateStep(row, delta) => self.rate_step(row, delta)?,
+            Action::RateLock(row) => self.rate_lock(row),
             Action::City => {
                 if let Some(v) = self.view() {
                     let next = v
@@ -906,6 +963,15 @@ impl Client {
             }
             Action::Accept => {
                 let modal = self.modal.clone().ok_or("No dialog to accept")?;
+                match self.route_accept(&modal)? {
+                    Some(true) => {
+                        self.modal = None;
+                        self.required();
+                        return Ok(());
+                    }
+                    Some(false) => return Ok(()),
+                    None => (),
+                }
                 match modal {
                     Modal::Improvements { city } => {
                         let id = self.choice.ok_or("Select an improvement explicitly")?;
@@ -943,6 +1009,11 @@ impl Client {
                             quote: preview.quote,
                         })?;
                     }
+                    Modal::Rates { .. }
+                    | Modal::Revolution
+                    | Modal::Government { .. }
+                    | Modal::Science
+                    | Modal::Goal => unreachable!("handled by route_accept"),
                     Modal::Quit => {
                         self.closed = true;
                         self.modal = None;
@@ -1080,6 +1151,9 @@ impl Client {
                 self.required();
             }
             Action::Cancel => {
+                if self.route_cancel() {
+                    return Ok(());
+                }
                 let restore_required = matches!(self.modal, Some(Modal::Save | Modal::Load));
                 let production_cancel = matches!(self.modal, Some(Modal::Production { .. }));
                 if matches!(self.modal, Some(Modal::Name)) {
@@ -1098,9 +1172,8 @@ impl Client {
                         "Research is still required; reopen with Research."
                     }
                     Some(Decision::Founding { .. }) => "City naming remains pending.",
-                    Some(Decision::Government { .. } | Decision::Rates { .. }) => {
-                        "A government or rate decision remains pending."
-                    }
+                    Some(Decision::Government { .. }) => "A government choice remains pending.",
+                    Some(Decision::Rates { .. }) => "A rate review remains pending.",
                     None if production_cancel => {
                         "Production selection cancelled; existing item unchanged."
                     }
@@ -1438,12 +1511,25 @@ impl Client {
             return Vec::new();
         };
         let v = l.session.view();
+        if let Some(choices) = self.route_choices(&v) {
+            return choices;
+        }
         match &self.modal {
             Some(Modal::Research) => {
-                if let Some(Decision::Research { available, .. }) = v.decision {
+                if let Some(Decision::Research {
+                    available, default, ..
+                }) = v.decision
+                {
                     available
                         .into_iter()
-                        .map(|id| (id as i32, self.tech_name(id)))
+                        .map(|id| {
+                            let mark = if default == Some(id) {
+                                " (suggested)"
+                            } else {
+                                ""
+                            };
+                            (id as i32, format!("{}{mark}", self.tech_name(id)))
+                        })
                         .collect()
                 } else {
                     Vec::new()
@@ -1588,6 +1674,8 @@ impl Client {
         if let Some(modal) = &self.modal {
             match modal {
                 Modal::Research
+                | Modal::Goal
+                | Modal::Government { .. }
                 | Modal::Production { .. }
                 | Modal::Units { .. }
                 | Modal::Improvements { .. } => {
@@ -1636,7 +1724,19 @@ impl Client {
                 }
                 _ => (),
             }
-            if matches!(modal, Modal::Name | Modal::Research) {
+            for rb in self.route_buttons(modal) {
+                add(rb.x, rb.y, rb.w, rb.h, rb.label, rb.action);
+            }
+            if matches!(
+                modal,
+                Modal::Name | Modal::Research | Modal::Government { .. }
+            ) || matches!(
+                modal,
+                Modal::Rates {
+                    review: Some(_),
+                    ..
+                }
+            ) {
                 add(
                     650.,
                     120.,
@@ -1645,6 +1745,18 @@ impl Client {
                     "Save pending choice".into(),
                     Action::Save,
                 );
+                // Required government/rate decisions cannot be dismissed, so a
+                // saved checkpoint must stay loadable from them.
+                if !matches!(modal, Modal::Name | Modal::Research) {
+                    add(
+                        480.,
+                        120.,
+                        160.,
+                        30.,
+                        "Load checkpoint".into(),
+                        Action::Load,
+                    );
+                }
             }
             if !matches!(modal,Modal::Purchase {quote,..} if quote.price > quote.treasury) {
                 add(
@@ -1652,18 +1764,36 @@ impl Client {
                     595.,
                     240.,
                     40.,
-                    "Accept [Enter]".into(),
+                    match modal {
+                        Modal::Rates { review: None, .. } => "Apply [Enter]",
+                        Modal::Rates { .. } => "Apply rates [Enter]",
+                        Modal::Revolution => "Yes, revolt [Enter]",
+                        Modal::Science => "Close [Enter]",
+                        _ => "Accept [Enter]",
+                    }
+                    .into(),
                     Action::Accept,
                 );
             }
-            add(
-                572.,
-                595.,
-                240.,
-                40.,
-                "Cancel / inspect [Esc]".into(),
-                Action::Cancel,
-            );
+            // A required government choice has no cancel button (owner decision).
+            if !matches!(modal, Modal::Government { .. }) {
+                add(
+                    572.,
+                    595.,
+                    240.,
+                    40.,
+                    match modal {
+                        Modal::Rates { review: None, .. } => "Discard [Esc]",
+                        Modal::Rates { .. } => "Reset split [Esc]",
+                        Modal::Revolution => "Cancel [Esc]",
+                        Modal::Goal => "Back [Esc]",
+                        Modal::Science => "Close [Esc]",
+                        _ => "Cancel / inspect [Esc]",
+                    }
+                    .into(),
+                    Action::Cancel,
+                );
+            }
             return b;
         }
         if self.city_open {
@@ -1772,6 +1902,9 @@ impl Client {
         add(770., 574., 115., 36., "Center".into(), Action::Center);
         add(895., 574., 52., 36., "+".into(), Action::Zoom(1.25));
         add(955., 574., 55., 36., "−".into(), Action::Zoom(0.8));
+        add(770., 392., 78., 26., "Rates".into(), Action::Rates);
+        add(852., 392., 78., 26., "Revolt".into(), Action::Revolution);
+        add(934., 392., 78., 26., "Science".into(), Action::Science);
         add(
             12.,
             685.,
@@ -2016,20 +2149,8 @@ impl Client {
                     .into_iter()
                     .enumerate()
                     {
-                        draws.push(text(770., 400. + i as f64 * 23., &line, 15, "#ddd9bd"));
+                        draws.push(text(770., 422. + i as f64 * 16., &line, 14, "#ddd9bd"));
                     }
-                }
-                if matches!(
-                    v.decision,
-                    Some(Decision::Government { .. } | Decision::Rates { .. })
-                ) {
-                    draws.push(text(
-                    25.,
-                    140.,
-                    "A government or rate decision is required; its client route is not implemented yet (#196). Save a checkpoint.",
-                    17,
-                    "#ffba8a",
-                ));
                 }
                 let notices=v.notices.iter().map(|n| {
                 use engine::human::Notice;
@@ -2077,6 +2198,12 @@ impl Client {
             let title = match modal {
                 Modal::Name => "Name your city",
                 Modal::Research => "Choose research explicitly",
+                Modal::Rates { review: None, .. } => "Tax, luxury and science rates",
+                Modal::Rates { .. } => "Review your rates",
+                Modal::Revolution => "Revolution",
+                Modal::Government { .. } => "Choose a government",
+                Modal::Science => "Science advisor",
+                Modal::Goal => "Choose a research goal",
                 Modal::Production { .. } => "Choose production",
                 Modal::Improvements { .. } => "Improvements — select a building to sell",
                 Modal::Purchase { .. } => "Confirm purchase",
@@ -2089,6 +2216,7 @@ impl Client {
                 Modal::Quit => "Close client? Save first if you want to resume.",
             };
             draws.push(text(212., 125., title, 22, "#fff0b5"));
+            self.route_draws(modal, &mut draws);
             if let (Modal::Production { city }, Some(item), Some(l)) =
                 (modal, self.choice, self.loaded.as_ref())
             {
@@ -2316,6 +2444,9 @@ impl Client {
                 "Improvement sold; city totals refreshed.".into()
             }
             "research-set" => "Research selected".into(),
+            "rates-set" => "Rates updated; city finance refreshed.".into(),
+            "government-set" => "Government changed.".into(),
+            "revolution-started" => "The old government has fallen. Anarchy has begun.".into(),
             "ended" => "Your turn ended; opponents are playing".into(),
             "skipped" => "Unit skipped for this turn".into(),
             s if s.starts_with("founded ") => "City founded".into(),

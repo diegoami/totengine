@@ -92,12 +92,18 @@ fn key(k: Keycode, shift: bool, ctrl: bool) -> Option<String> {
             _ => None,
         };
     }
-    if shift && k == Keycode::Z {
-        return Some("Shift+z".into());
+    if shift {
+        match k {
+            Keycode::Z => return Some("Shift+z".into()),
+            Keycode::T => return Some("Shift+t".into()),
+            Keycode::R => return Some("Shift+r".into()),
+            _ => (),
+        }
     }
     let name = match k {
         Keycode::Return => "Enter",
         Keycode::Escape => "Escape",
+        Keycode::F6 => "F6",
         Keycode::Tab => {
             if shift {
                 "ShiftTab"
@@ -859,6 +865,10 @@ mod tests {
         assert_eq!(key(Keycode::S, false, true).as_deref(), Some("Ctrl+s"));
         assert_eq!(key(Keycode::L, false, true).as_deref(), Some("Ctrl+l"));
         assert_eq!(key(Keycode::Z, true, false).as_deref(), Some("Shift+z"));
+        assert_eq!(key(Keycode::T, true, false).as_deref(), Some("Shift+t"));
+        assert_eq!(key(Keycode::R, true, false).as_deref(), Some("Shift+r"));
+        assert_eq!(key(Keycode::F6, false, false).as_deref(), Some("F6"));
+        assert_eq!(key(Keycode::T, false, false), None);
         assert_eq!(key(Keycode::B, false, true), None);
         assert_eq!(key(Keycode::B, true, false), None);
         assert_eq!(key(Keycode::S, true, true), None);

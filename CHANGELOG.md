@@ -20,6 +20,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   research prompt, or that chose a thinned-out advance, may no longer replay.
   All-AI campaigns, hut grants and goldens are unchanged.
 
+- Milestone 16 client routes (#196, unreleased; owner acceptance on both clients
+  still pending): rates dialog (Shift+T) with engine quotes and locks, revolution
+  question (Shift+R), required government chooser and rate review, and a small
+  science advisor (F6) with a research goal, shared by the browser and desktop
+  clients. New read-only view fields: goal choices, anarchy/revolution chooser
+  turn; new `HumanSession::preview_rates`.
+
 ## [0.17.0] — scenario inspection and entry boundary
 
 - Add a bounded read-only scenario/corpus inspector with pinned input/resource

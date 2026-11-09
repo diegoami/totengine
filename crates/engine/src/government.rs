@@ -154,6 +154,39 @@ impl WorldState {
         Ok(())
     }
 
+    /// The turn counter at which the government chooser will next open for a
+    /// civ in Anarchy, simulating the per-civ steps that follow the round's
+    /// turn increment (`self.turn + 1` onward). `None` outside Anarchy.
+    pub fn next_government_choice_turn(&self, rules: &Rules, civ: u8) -> Option<i16> {
+        let c = civ as usize;
+        if c >= 8 || self.governments[c] != 0 {
+            return None;
+        }
+        self.anarchy_choice_turn(rules, civ)
+    }
+
+    /// The same simulation as if Anarchy began now, leaving the government and
+    /// civ flags alone. A voluntary revolution does not set flag `0x1`.
+    pub fn revolution_choice_turn(&self, rules: &Rules, civ: u8) -> Option<i16> {
+        self.anarchy_choice_turn(rules, civ)
+    }
+
+    fn anarchy_choice_turn(&self, rules: &Rules, civ: u8) -> Option<i16> {
+        let c = civ as usize;
+        if c >= 8 {
+            return None;
+        }
+        let human = self.human_mask & (1 << civ) != 0;
+        let statue = self.has_active_wonder(rules, civ, STATUE_OF_LIBERTY);
+        let mut flags = self.ai_state.civ_flags[c];
+        (1..=8i16).find_map(|k| {
+            let turn = self.turn.wrapping_add(k);
+            let step = anarchy_resolution(human, 0, turn, flags, statue);
+            flags = step.flags;
+            step.open_chooser.then_some(turn)
+        })
+    }
+
     /// One `0x5292d6` pass for `civ` at the per-civ turn step: consumes flag
     /// bits as the original does and reports whether the chooser must open.
     pub fn resolve_anarchy(&mut self, rules: &Rules, civ: u8) -> bool {
@@ -231,6 +264,26 @@ mod tests {
             assert_eq!(i32::from(step.flags), r[5], "{r:?}");
             assert_eq!(i32::from(step.open_chooser), r[6], "{r:?}");
         }
+    }
+
+    #[test]
+    fn next_choice_turn_matches_the_step_simulation() {
+        let rules = Rules::default();
+        let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
+        w.human_mask = 1 << 1;
+        w.wonders = [-1; 28];
+        w.governments[1] = 1;
+        assert_eq!(w.next_government_choice_turn(&rules, 1), None);
+        w.governments[1] = 0;
+        w.ai_state.civ_flags[1] = 0;
+        for (turn, want) in [(41, 44), (43, 44), (44, 48), (45, 48)] {
+            w.turn = turn;
+            assert_eq!(w.next_government_choice_turn(&rules, 1), Some(want));
+        }
+        // city-unrest anarchy (flag 0x1) consumes the first aligned turn
+        w.turn = 41;
+        w.ai_state.civ_flags[1] = 1;
+        assert_eq!(w.next_government_choice_turn(&rules, 1), Some(48));
     }
 
     #[test]

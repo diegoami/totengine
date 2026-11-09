@@ -120,6 +120,17 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   leaves gold, shields and accepted orders unchanged.
 - **Research** opens the required research choice. Select explicitly and accept. Escape permits
   inspection while the choice still blocks gameplay; it never auto-selects.
+- **Rates (Shift+T)**, **Revolt (Shift+R)** and **Science (F6)** are right-panel buttons
+  too. Rates shows the three shares with per-share limits for the government;
+  Up/Down pick a row, Left/Right (or −/+) move it through the original slider
+  rule, **L** locks a row, Enter applies one validated command and Esc discards
+  the draft. The dialog shows an engine quote of treasury, taxes, upkeep, science and
+  disorder for the displayed split. Revolt asks for confirmation (Esc cancels;
+  Enter confirms) and names the turn at which the government chooser opens. That
+  chooser and the rate review after it are **required**: Esc keeps them open
+  (Esc in the review resets the split), and Save pending / Load checkpoint stay available.
+  Science is a small advisor (topic, progress, goal) with a goal list; the goal
+  only suggests the next research choice. Locks last for the client session.
 - **Ctrl+N** ends the human turn, confirming if movable units remain. Opponents run
   in bounded steps and then return control. Pause/Continue controls that work.
   Loading a checkpoint during opponents requires explicit Continue.

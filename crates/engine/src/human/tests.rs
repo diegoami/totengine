@@ -1067,6 +1067,88 @@ fn rate_commands_validate_commit_retry_and_survive_checkpoints() {
     assert_eq!(restored.view().rates, s.view().rates);
 }
 
+#[test]
+fn rate_quotes_are_immutable_and_match_the_committed_refresh() {
+    let mut s = session(1);
+    choose(&mut s);
+    let unit = s.view().units[0];
+    send(&mut s, Command::BeginFound { unit });
+    let Some(Decision::Founding { id, .. }) = s.decision else {
+        panic!()
+    };
+    send(
+        &mut s,
+        Command::NameCity {
+            decision: id,
+            name: CityName::new("Quoted").unwrap(),
+        },
+    );
+    // Give the city trade so shares matter (authored input, no round trips).
+    s.game.world.cities[0].size = 8;
+    s.game.world.cities[0].worked = 8u32 << 26 | 0x3ff;
+    let before = s.checkpoint("assets");
+    let revision = s.revision;
+    let a = s.preview_rates(6, 4).unwrap();
+    let b = s.preview_rates(2, 4).unwrap();
+    assert_eq!(s.checkpoint("assets"), before, "a quote changes nothing");
+    assert_eq!(s.revision, revision);
+    assert_eq!((a.tax, a.luxury, a.science), (4, 0, 6));
+    assert_eq!((b.tax, b.luxury, b.science), (4, 4, 2));
+    assert!(b.science_output <= a.science_output);
+    assert!(b.luxuries >= a.luxuries);
+    assert_eq!(a.treasury, s.view().observation.treasury);
+    assert!(s.preview_rates(7, 3).is_err());
+    assert!(s.preview_rates(6, 5).is_err());
+    // The committed split refreshes the same city totals the quote predicted.
+    for (science, tax) in [(5, 4), (2, 4), (3, 6)] {
+        let quote = s.preview_rates(science, tax);
+        let mut w = s.game.world.clone();
+        let committed = w.set_rates(&s.game.rules, 1, science, tax);
+        assert_eq!(committed.is_ok(), quote.is_ok());
+        if let Ok(q) = quote {
+            let city = &w.cities[0];
+            assert_eq!(q.science_output, i32::from(city.net_science));
+            assert!(q.luxuries + q.taxes + q.science_output > 0);
+        }
+    }
+}
+
+#[test]
+fn goal_choices_and_anarchy_turn_are_view_facts() {
+    let mut s = session(1);
+    choose(&mut s);
+    let v = s.view();
+    assert_eq!(v.anarchy_choice_turn, None);
+    assert!(!v.goal_choices.is_empty());
+    assert!(v
+        .goal_choices
+        .iter()
+        .all(|&a| s.game.world.goal_is_valid(&s.game.rules, 1, a)));
+    let known = (0..100)
+        .find(|&a| !v.goal_choices.contains(&a) && a != 89)
+        .unwrap();
+    assert!(!s.game.world.goal_is_valid(&s.game.rules, 1, known));
+    let predicted = s.view().revolution_choice_turn;
+    send(&mut s, Command::Revolution);
+    let turn = s.game.world.turn;
+    let due = s
+        .view()
+        .anarchy_choice_turn
+        .expect("anarchy has a chooser turn");
+    assert_eq!(due & 3, 0);
+    assert!(due > turn);
+    assert_eq!(
+        predicted,
+        Some(due),
+        "the question can name the chooser turn"
+    );
+    // The chooser really opens at the predicted turn.
+    while !matches!(s.decision, Some(Decision::Government { .. })) {
+        next_round(&mut s);
+    }
+    assert_eq!(s.game.world.turn, due);
+}
+
 fn next_round(s: &mut HumanSession) {
     choose(s);
     send(s, Command::EndTurn);

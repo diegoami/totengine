@@ -107,8 +107,8 @@ evidence README §Rates, revolution and government selection); the proposed cont
 the owner's 2026-11-09 decisions (revolution Escape = Cancel; chooser required, no cancel;
 rate Cancel discards the draft) are in `docs/ui/screen-contracts.md`. Research rules are
 decoded too (`tools/research_choice_check.py`, evidence §Research selection): no human path changes a
-running project; the engine's human candidate list differs from native (open owner decision).
-Still open: a second-government fixture and the two research decisions; #194 is not closed.
+running project; owner decided 2026-11-09 to adopt native list rules and persist the goal in
+checkpoints (both for #195). Still open: a second-government fixture; #194 is not closed.
 Read `docs/plan.md`, `docs/ui/discovery.md` (U08/U09/U17/U31/U32),
 `docs/ui/screen-contracts.md` (Science and goals; Rates and government), then
 #194–#196. Existing research Goal is not arbitrary project switching. The

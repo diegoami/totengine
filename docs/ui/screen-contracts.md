@@ -183,15 +183,16 @@ field (the original does not persist it), cleared on discovery of the goal.
 The recommendation shown with the list is part of the decision payload (recorded,
 not recomputed) so replay and RNG stay deterministic.
 
-**Open owner decisions (2026-11-09; nothing implemented).**
+**Owner decisions, 2026-11-09 (accepted as design; nothing implemented).**
 
-1. *Candidate list fidelity.* The current engine list differs from native
-   (`!= 2` group gate, no thinning, no both-`nil` exclusion). Options: adopt the
-   native rules exactly (requires regenerating accepted human checkpoints and
-   changes what players can pick), or keep the current permissive list as a
-   documented difference.
-2. *Goal persistence.* Persist goal in checkpoints (recommended, session state
-   outside the original format) or reset it on reload like the original.
+1. *Candidate list fidelity:* **adopt the native rules exactly** (enabled,
+   unknown, prerequisites, group gate with flag 0, both-`nil` exclusion and the
+   human thinning rule). #195 ports them into one engine function; accepted human
+   checkpoints are regenerated and the change is called out in release notes,
+   since players lose some previously offered choices.
+2. *Goal persistence:* **persist the goal in checkpoints** as explicit session
+   state outside the original format, cleared when the goal advance is
+   discovered. Native reload would forget it; this is a documented difference.
 
 ## Rates and government
 

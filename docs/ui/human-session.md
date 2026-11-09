@@ -52,10 +52,14 @@ UI interruption timing. A controlled two-human-city plus foreign-city test runs
 the real city phases in descending order, verifies later-city banking and checks
 that only the human's discovery enters the notices.
 
-Elimination stops the driver. Forced human anarchy stops at the human boundary
-with `UnsupportedGovernment`; adapters must display the unsupported required
-choice and preserve a checkpoint, rather than continue or invent a government.
-Government choice remains a prerequisite to continuing such a game. There is an
+Elimination stops the driver. Anarchy, forced or voluntary, is playable until
+the human turn step whose turn counter is a multiple of four (at once with the
+Statue of Liberty; a city-unrest anarchy consumes its first aligned step). Then
+`Decision::Government` is required, listing the eligible governments with no
+cancel; choosing one opens a required `Decision::Rates` carrying the committed
+shares, the cap and the split the native dialog opens with, resolved by one
+`Command::ReviewRates`. Both decisions are derived from the replayed journal, so
+checkpoints restore them. There is an
 explicit 30,000-round limit, before the signed turn counter can wrap. The driver
 currently retains up to 100,000 accepted input receipts. It does not implement
 native victory rules or the later full-client management commands.

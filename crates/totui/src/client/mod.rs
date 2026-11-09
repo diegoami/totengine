@@ -532,7 +532,7 @@ impl Client {
                         if self.view().is_some_and(|v| v.phase != Phase::Opponents) {
                             self.advancing = false;
                             self.schedule_unit(None, true);
-                            self.status=match self.view().unwrap().phase {Phase::Human=>"Your turn. Choose actions or resolve the required research choice.",Phase::Eliminated=>"Your civilization has no units or cities. Load a checkpoint or start a new game.",Phase::UnsupportedGovernment=>"Government choice is unsupported. Save a checkpoint to preserve this game.",Phase::TurnLimit=>"Turn limit reached. Save a checkpoint to preserve this game.",Phase::Opponents=>"Opponents playing"}.into();
+                            self.status=match self.view().unwrap().phase {Phase::Human=>"Your turn. Choose actions or resolve the required research choice.",Phase::Eliminated=>"Your civilization has no units or cities. Load a checkpoint or start a new game.",Phase::TurnLimit=>"Turn limit reached. Save a checkpoint to preserve this game.",Phase::Opponents=>"Opponents playing"}.into();
                             self.required();
                         }
                     }
@@ -1098,6 +1098,9 @@ impl Client {
                         "Research is still required; reopen with Research."
                     }
                     Some(Decision::Founding { .. }) => "City naming remains pending.",
+                    Some(Decision::Government { .. } | Decision::Rates { .. }) => {
+                        "A government or rate decision remains pending."
+                    }
                     None if production_cancel => {
                         "Production selection cancelled; existing item unchanged."
                     }
@@ -1919,7 +1922,6 @@ impl Client {
                         Phase::Human => "Viewing pieces",
                         Phase::Opponents => "Opponents playing",
                         Phase::Eliminated => "Your civilization is eliminated",
-                        Phase::UnsupportedGovernment => "Government choice required",
                         Phase::TurnLimit => "Turn limit reached",
                     }
                     .into(),
@@ -2017,11 +2019,14 @@ impl Client {
                         draws.push(text(770., 400. + i as f64 * 23., &line, 15, "#ddd9bd"));
                     }
                 }
-                if v.phase == Phase::UnsupportedGovernment {
+                if matches!(
+                    v.decision,
+                    Some(Decision::Government { .. } | Decision::Rates { .. })
+                ) {
                     draws.push(text(
                     25.,
                     140.,
-                    "Government choice is unsupported. Save a checkpoint to preserve this game.",
+                    "A government or rate decision is required; its client route is not implemented yet (#196). Save a checkpoint.",
                     17,
                     "#ffba8a",
                 ));

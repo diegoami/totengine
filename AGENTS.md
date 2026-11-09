@@ -100,9 +100,17 @@ new human routes need both-client acceptance and owner-launched independent
 review. Preserve all owner previews/games and old version-bound binaries;
 workspace metadata remains v0.17. No full-client or full-AI gate is cleared.
 
-Resume at #194/#195. #195 slice 1 (rates) is implemented in `engine::rates` on the PR #237
-branch: `Command::Rates`/`Order::SetRates`, `HumanView::rates`, checkpoint encoding, native-vector tests.
-No client route or acceptance exists yet (#196); revolution/government phases are not started.
+Resume at #194/#195/#196. #194's reference work and the second-government fixture are merged (#237);
+#195 slice 1 (rates; `engine::rates`, `Command::Rates`/`Order::SetRates`) is merged (#238, independent
+review fixed in-PR). #195 slice 2 (on its own PR) adds `Command::Revolution`, `Decision::Government`,
+`Decision::Rates` (`Command::ReviewRates`) and the begin-of-turn anarchy step in `engine::government`/`human`,
+checked against native eligibility (144) and anarchy-resolution (528) vectors; `Phase::UnsupportedGovernment`
+is gone. Still open in #195: native research-list rules, goal persistence in checkpoints, the revolution
+scenario restriction. No client route or both-client acceptance exists yet (#196; both clients only show a
+"decision required" notice). Changing `crates/engine/src/{player,human,human/checkpoint,lib}.rs` or
+`crates/totui/src/client/mod.rs` stales `docs/scenario-engine-baseline.json`: run the full `make test` with
+`CIVTOT_HOME` set (CI does not run `test_scenario_inventory`, #221), audit the diff, refresh the hashes and
+`docs/evidence/scenario-inventory-v1.json`.
 #194 reference work is in progress: native caps/redistribution/eligibility/anarchy
 resolution are executed (`tools/rates_government_check.py`, `docs/evidence/rates-government*`,
 evidence README §Rates, revolution and government selection); the proposed contract and
@@ -121,9 +129,8 @@ algorithm or caps. Revolution Escape began a revolution in the isolated
 reference context; the proposed safe-cancel change still needs an explicit
 owner decision. Do not turn that proposal into accepted behavior. Native legal
 rates/governments/timing need evidence before #195 commands and #196 client
-routes. Current `engine::human::Phase::UnsupportedGovernment` stops human
-anarchy; government choices must be added authoritatively with phase/checkpoint
-persistence, not bypassed in the UI. Read oracle README/lessons before any
+routes. Government choices are authoritative engine decisions with checkpoint
+replay; clients must not bypass them. Read oracle README/lessons before any
 reference execution; preserve existing sessions. #221 is credential-blocked,
 not a reason to defer the independent #194 reference work.
 

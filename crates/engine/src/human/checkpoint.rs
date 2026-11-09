@@ -171,6 +171,16 @@ impl Command {
             Self::CancelFound { decision } => format!("cancel {decision}"),
             Self::Research { decision, advance } => format!("research {decision} {advance}"),
             Self::Rates { science, tax } => format!("rates {science} {tax}"),
+            Self::Revolution => "revolution".into(),
+            Self::Government {
+                decision,
+                government,
+            } => format!("government {decision} {government}"),
+            Self::ReviewRates {
+                decision,
+                science,
+                tax,
+            } => format!("rate-review {decision} {science} {tax}"),
             Self::EndTurn => "end".into(),
         }
     }
@@ -267,6 +277,16 @@ impl Command {
                 advance: advance.parse().ok()?,
             }),
             ["rates", science, tax] => Some(Self::Rates {
+                science: science.parse().ok()?,
+                tax: tax.parse().ok()?,
+            }),
+            ["revolution"] => Some(Self::Revolution),
+            ["government", decision, government] => Some(Self::Government {
+                decision: decision.parse().ok()?,
+                government: government.parse().ok()?,
+            }),
+            ["rate-review", decision, science, tax] => Some(Self::ReviewRates {
+                decision: decision.parse().ok()?,
                 science: science.parse().ok()?,
                 tax: tax.parse().ok()?,
             }),

@@ -2935,16 +2935,22 @@ loader `0x412f54` sets +17 to 1 only when the row's first prerequisite is not
 `0x529453`). It clears civ flag bits `0x48`, then does nothing unless the civ is
 in Anarchy. For a human civ in Anarchy: when `turn & 3 == 0` (`turn` = game block
 i16 @668, RAM `0x607648`) it opens the government chooser (`0x52588e(civ, 1)`)
-unless flag bit `0x1` is set, in which case it only clears that bit; when
-`turn & 3 != 0` it does nothing. Owning the Statue of Liberty opens the chooser on
-every pass regardless of the turn. The AI branch has the same turn gating. So a
+unless flag bit `0x1` is set, in which case it only clears that bit (also with the Statue of
+Liberty); when `turn & 3 != 0` it does nothing, except that owning the Statue of
+Liberty opens the chooser and clears bit `0x1`. The AI branch opens on a multiple
+of four or with the Statue and never touches bit `0x1`. (An earlier summary said
+the Statue opens the chooser on every pass; the 528 vectors show the aligned-turn
+flag case does not.) So a
 **voluntary revolution lasts until the next turn whose counter is a multiple of
 four** (1–4 turn steps depending on when it starts), not a fixed number of
 rounds. U31's "chooser at the first end-turn" is consistent with that and
-fixture-specific. The only caller is `0x47274a`, in the per-civ turn step after
-`0x471cdf`/`0x4709d1` and before `0x505df1`; the exact turn-counter value at that
-moment relative to the round increment still has to be pinned against a native
-round trace before an engine implementation (#195).
+fixture-specific. The only caller is `0x47274a`, in the per-civ turn step
+`0x4725c8` after `0x471cdf`/`0x4709d1` and before `0x505df1`. Static order of the
+main loop: the round-close routine `0x4702fc` increments the turn counter
+(`0x470337`, after barbarian arrivals), and the per-civ steps `0x4725c8` (called
+from `0x474bc0`) run afterwards, so `0x5292d6` sees the **already incremented**
+counter. This is a decode of the call order, not a native round trace; the engine
+runs the step when the human's turn begins after `close_round`.
 
 **Statically decoded, not executed** (UI-bound; treat as decode, not oracle):
 
@@ -4379,3 +4385,18 @@ placeholder. Its full/compact regression fails on the released scanner and
 passes with the fix. Current compact producer/full-report hashes are refreshed;
 all five corpus entries (including diagnostics/counts/support) remain identical
 to the release. The release/candidate artifacts retain the historical hashes.
+
+#### Rate dialog opening and who calls the rate/government handlers (#194/#195)
+
+Static decode of `0x40a6c3` (the dialog constructor `0x40b783` runs): before the
+single `0x409704` pass it rewrites the civ's science/tax bytes (@27/@28) directly
+with three loops: while tax exceeds the cap, tax -1 and science +1 if science is
+below the cap; while science exceeds the cap, science -1 and tax +1 if tax is below
+the cap; while luxury (10 - tax - science) exceeds the cap, tax +1 if below the cap,
+else science +1. It also sets a dialog-changed flag (+0x7ac) on each adjustment.
+`engine::rates::open_normalize` transcribes this and is checked for legality and
+idempotence on legal splits, not against executed vectors. `0x40b8a7` (cap test that
+opens the dialog when a share exceeds the cap) and `0x40b783` are event-action
+handlers reached through the dispatcher `0x468ade`, not a per-turn check. The
+engine opens a required `Decision::Rates` only after a government is chosen,
+matching the setter `0x52522f`.

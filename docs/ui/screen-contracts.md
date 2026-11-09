@@ -226,7 +226,7 @@ its advance enabled in the loaded rules; Anarchy ends at the first per-civ turn
 step whose turn counter is a multiple of four (every step with Statue of
 Liberty); the chooser lists governments 1..6 filtered by eligibility.
 
-**Engine surface (#195).** *Implemented:* the rates slice below. *Not yet:* revolution, government choice and rate review phases, anarchy resolution, native research-list rules and goal persistence. Rates: `Command::Rates {science, tax}` / `Order::SetRates` (`engine::rates`), legal iff `science`, `tax` and `10 - science - tax` are all
+**Engine surface (#195).** *Implemented:* the rates slice, then (slice 2) `Command::Revolution`, `Decision::Government`, `Decision::Rates` (resolved by `Command::ReviewRates`) and anarchy resolution at the start of the human turn, all replayed through checkpoints; `Phase::UnsupportedGovernment` is gone. *Not yet:* native research-list rules and goal persistence, the revolution scenario restriction, any client route (#196). Rates: `Command::Rates {science, tax}` / `Order::SetRates` (`engine::rates`), legal iff `science`, `tax` and `10 - science - tax` are all
 in `[0, cap]` for the civ's current government, rejected atomically with a reason
 string (no typed reason enum yet); `HumanView::rates` supplies the cap and current
 shares (the consistent finance/research quote is not yet in the view). Lock state
@@ -240,8 +240,8 @@ Anarchy at once (native). A pending government choice is an authoritative phase
 at the first qualifying turn step, rejecting stale ids and ineligible
 governments. Accepting it sets the government through the existing setter effects
 and opens a `RateReview` decision before input returns (native: the setter opens
-the rate dialog for a human civ). The current `Phase::UnsupportedGovernment` is
-replaced by these, not bypassed.
+the rate dialog for a human civ). `Phase::UnsupportedGovernment` was replaced by
+these, not bypassed (implemented in #195 slice 2).
 
 **Owner decisions, 2026-11-09 (accepted as design; nothing here is implemented).**
 Native evidence for each is in the evidence README section above.

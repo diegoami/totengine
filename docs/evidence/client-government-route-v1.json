@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "candidate_version": "0.18.0",
+  "milestone": 16,
+  "previous_tag": "v0.17.0",
+  "previous_tag_sha": "70dea8d7e61e74125c9faa027bf7a6abb7cbdaff",
+  "scope": "Science, rates and government routes on the browser and the standalone desktop client (#194-#196)",
+  "route": {
+    "recorder": "cargo test -p totui --lib generated_government_route -- --ignored (CIVTOT_HOME set, TOTENGINE_GOVERNMENT_OUT=<private dir>)",
+    "runners": [
+      "tools/check_government_route.py via tools/check_client_linux.py (SDL under private Xvfb, XTest keyboard and pointer)",
+      "tools/check_government_route.cjs via tools/check_client_browser.cjs (headless Chromium, real keyboard and mouse)"
+    ],
+    "steps": 69,
+    "route_json_sha256": "04f4ea54c5968c0348a415a67660321ec88d8226a99652655dcb72747c3b15eb",
+    "checkpoint_sha256": {
+      "govstart": "bbcf98fac97a122fa148f757cf5a778cff6ded469985aa72dcdc6640f8fd95a5",
+      "govdiscard": "bbcf98fac97a122fa148f757cf5a778cff6ded469985aa72dcdc6640f8fd95a5",
+      "govrates": "ae486b5f39046ec494101fe11e289cc73d827c7f98e173b77c91728ee03497b3",
+      "govgoal": "75806d15af3ad18f143319b9f30d9bd9920ec2b7400fd28c8bdc31bc1cab7b7b",
+      "govrevoltcancel": "75806d15af3ad18f143319b9f30d9bd9920ec2b7400fd28c8bdc31bc1cab7b7b",
+      "govanarchy": "8362e6f2f4dcedabb2a3294aea9aaa9ca3539f907ca63249034ebca907c4ff90",
+      "govchooser": "1c3e9b1fb73c1bf2839c76d187a73225caff3bc0e89c0f3cb0d4e609ccbd7f68",
+      "govreview": "31952f3079c03131fae978e6b8947d7f3ea6e2305e92c98ef7e20b492b996dc0",
+      "govfinal": "7486c35ddbb25943e5bfdc4dd1038f1948835cf21c1d78a3029fe8516d62366e"
+    },
+    "result": "Both runners replayed every step, checked the on-screen dialog title after each step and found every saved checkpoint byte-identical to the recorded one, including save/reload while the government chooser and the rate review were pending.",
+    "steps_covered": [
+      "rates Escape discards (checkpoint equals start)",
+      "locked shares refuse a move, unlocked move applies",
+      "F6 advisor sets a research goal that the checkpoint keeps",
+      "revolution Cancel leaves the checkpoint unchanged",
+      "revolution Yes starts Anarchy",
+      "turns until the required government chooser; Escape and empty Enter keep it",
+      "Save and Load while the chooser is pending",
+      "chooser selection opens the required rate review; Escape resets the split and keeps it",
+      "Save and Load while the review is pending",
+      "review Enter returns to the map under the chosen government"
+    ]
+  },
+  "not_claimed": [
+    "Windows SDL input run",
+    "packaged archives",
+    "owner acceptance on either client",
+    "a second-government fixture load (the generated start offers only Despotism)",
+    "native prompt timing, recommender RNG, enabled-byte semantics, revolution scenario restriction, AI government choice"
+  ],
+  "environment": "Linux (WSL2) x86_64; Original install via CIVTOT_HOME; seed 7; private Xvfb and a private loopback host port; owner previews and hosts untouched"
+}

@@ -3625,7 +3625,7 @@ contract; original new-game initialization parity is not claimed.
 
 [generated-campaign-v1.json](generated-campaign-v1.json) records Rules hashes,
 setup and validation context. [The full authored-rules checkpoint golden](generated-campaign-v1.ctc)
-is regenerated for engine v0.17.0; only the exact-version header changes from
+is regenerated for engine v0.18.0; only the exact-version header changes from
 the v0.16 fixture, with metadata hash/version refreshed. It still contains every
 order and round fingerprint for 100 rounds of AI v1, including
 the final fingerprint `b22e4340b6ab8bf6`. It reaches 20 cities, 27 population,
@@ -4410,3 +4410,12 @@ opens the dialog when a share exceeds the cap) and `0x40b783` are event-action
 handlers reached through the dispatcher `0x468ade`, not a per-turn check. The
 engine opens a required `Decision::Rates` only after a government is chosen,
 matching the setter `0x52522f`.
+
+## Milestone 16 real-input route (#196)
+
+[client-government-route-v1.json](client-government-route-v1.json) summarizes the
+recorded science/rates/government route replayed through real SDL (Xvfb/XTest) and
+Chromium input: 69 steps, nine checkpoints, byte-identical in the recorder and both
+clients, with the dialog title checked after every step. Recorder, runners and
+commands: [v0.18.0 readiness](../v0.18.0-readiness.md). Windows input and owner
+acceptance are not part of this evidence.

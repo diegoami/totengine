@@ -5,27 +5,40 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+## [0.18.0] — science, rates and government on both clients
+
+- Add the shared science/rates/government client routes to the browser and the
+  standalone desktop client (#194–#196): a rates dialog (Shift+T) with the native
+  caps and slider rule, session-long locks and an engine quote of treasury, taxes,
+  upkeep, science and disorder; a revolution question (Shift+R; Esc cancels); a
+  **required** government chooser and rate review that persist through checkpoints
+  (Save and Load stay reachable); and a small science advisor (F6) with a research
+  goal that only steers the suggested topic. Rates are validated by the engine
+  (`Command::Rates`, `Command::ReviewRates`); read-only view fields and
+  `HumanSession::preview_rates` supply goal choices, chooser turns and quotes.
+- Engine (#195): voluntary revolution, native government eligibility and anarchy
+  resolution (turn counter multiple of four, or the Statue of Liberty), validated by
+  executed native vectors; `Phase::UnsupportedGovernment` is removed. The human
+  research prompt and `SetResearch` use the native candidate list (tech-group gate
+  `== 0` and the human thinning rule) and a checkpointed research goal.
+- Native reference (#194): caps, slider redistribution (including the remembered
+  opening value), eligibility, anarchy resolution and the research list are
+  documented in `docs/evidence/` with reproducible vectors; the second-government
+  fixture author is `tools/government_fixture.py` (a live original-game load of it
+  is untested).
 - Suppress angle-bracketed trailing prose in scenario diagnostic tokens (#235),
   retaining structural failures, inactive counts and bounded reports.
-
-- Milestone 16 engine work (#194/#195; no client route yet, #196): validated
-  human rate commands with the native caps and slider rule; voluntary revolution,
-  native government eligibility, anarchy resolution (multiple-of-four turn
-  counter or Statue of Liberty) and required government/rate-review decisions
-  restored by checkpoint replay (`Phase::UnsupportedGovernment` is removed); the
-  human research prompt and `SetResearch` use the native candidate list (tech-group
-  gate `== 0` and the human thinning rule) and a checkpointed research goal.
-  **Compatibility:** human-session research lists change (the open demo offers
-  nine topics instead of twelve), so human checkpoints taken in an unfinished
-  research prompt, or that chose a thinned-out advance, may no longer replay.
-  All-AI campaigns, hut grants and goldens are unchanged.
-
-- Milestone 16 client routes (#196, unreleased; owner acceptance on both clients
-  still pending): rates dialog (Shift+T) with engine quotes and locks, revolution
-  question (Shift+R), required government chooser and rate review, and a small
-  science advisor (F6) with a research goal, shared by the browser and desktop
-  clients. New read-only view fields: goal choices, anarchy/revolution chooser
-  turn; new `HumanSession::preview_rates`.
+- **Compatibility:** the workspace/engine version changes, so engine checkpoints
+  from earlier releases do not load (as at every release); human-session research
+  lists change (the open demo offers nine topics instead of twelve), so human
+  checkpoints taken in an unfinished research prompt, or that chose a thinned-out
+  advance, may not replay. All-AI campaigns, hut grants and goldens are unchanged
+  except for the golden's exact-version header. Preserve v0.15/v0.16 binaries and
+  saves.
+- **Limits:** no Windows input run, no packaged archives and no owner acceptance
+  are claimed by the candidate; native prompt timing, the recommender's random
+  consumption, the exact "enabled" research byte, the revolution scenario
+  restriction and AI government choice remain undecoded.
 
 ## [0.17.0] — scenario inspection and entry boundary
 

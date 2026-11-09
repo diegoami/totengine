@@ -8,7 +8,8 @@ The original thirteen historical milestones are unchanged. Milestone 14 is now
 closed with released v0.16.0 after owner acceptance and independent AGREE.
 Milestone 15 is closed with released v0.17.0 after third-round AGREE #224,
 shipping inspection and a conditional entry contract with zero runtime admissions.
-Remaining packages (16–29) retain unassigned versions/dates. Exact release/review state
+Milestone 16 prepares v0.18.0 as the science/rates/government candidate; remaining
+packages (17–29) retain unassigned versions/dates. Exact release/review state
 comes from the live queue.
 This is a planning horizon, not a fixed count of remaining releases or a claim
 of complete client delivery after the listed UI slices.
@@ -19,7 +20,7 @@ of complete client delivery after the listed UI slices.
 | --- | --- | --- |
 | [14 — v0.16.0: Client resources and recovery](https://github.com/diegoami/totengine/milestone/14) | [#176](https://github.com/diegoami/totengine/issues/176), [#177](https://github.com/diegoami/totengine/issues/177), [#178](https://github.com/diegoami/totengine/issues/178), [#179](https://github.com/diegoami/totengine/issues/179), [#181](https://github.com/diegoami/totengine/pull/181), [#182](https://github.com/diegoami/totengine/pull/182), [#191](https://github.com/diegoami/totengine/pull/191), [#210](https://github.com/diegoami/totengine/issues/210), [#211](https://github.com/diegoami/totengine/issues/211) | Existing engine/reference/design prerequisites. |
 | [15 — v0.17.0: Scenario inspection and entry boundary](https://github.com/diegoami/totengine/milestone/15) | [#192](https://github.com/diegoami/totengine/issues/192), [#193](https://github.com/diegoami/totengine/issues/193) | Existing engine/reference/design prerequisites. |
-| [16 — Science, rates and government — both clients](https://github.com/diegoami/totengine/milestone/16) | [#194](https://github.com/diegoami/totengine/issues/194), [#195](https://github.com/diegoami/totengine/issues/195), [#196](https://github.com/diegoami/totengine/issues/196) | After [14](https://github.com/diegoami/totengine/milestone/14). |
+| [16 — v0.18.0: Science, rates and government — both clients](https://github.com/diegoami/totengine/milestone/16) | [#194](https://github.com/diegoami/totengine/issues/194), [#195](https://github.com/diegoami/totengine/issues/195), [#196](https://github.com/diegoami/totengine/issues/196) | After [14](https://github.com/diegoami/totengine/milestone/14). |
 | [17 — Classic save and scenario entry — both clients](https://github.com/diegoami/totengine/milestone/17) | [#197](https://github.com/diegoami/totengine/issues/197), [#198](https://github.com/diegoami/totengine/issues/198) | After [14](https://github.com/diegoami/totengine/milestone/14), [15](https://github.com/diegoami/totengine/milestone/15). |
 | [18 — Diplomacy: contact and peace decisions — both clients](https://github.com/diegoami/totengine/milestone/18) | [#199](https://github.com/diegoami/totengine/issues/199), [#200](https://github.com/diegoami/totengine/issues/200) | After [14](https://github.com/diegoami/totengine/milestone/14), [16](https://github.com/diegoami/totengine/milestone/16). |
 | [19 — Reports and reference help: own-civilization views](https://github.com/diegoami/totengine/milestone/19) | [#201](https://github.com/diegoami/totengine/issues/201), [#202](https://github.com/diegoami/totengine/issues/202) | After [14](https://github.com/diegoami/totengine/milestone/14), [16](https://github.com/diegoami/totengine/milestone/16). |

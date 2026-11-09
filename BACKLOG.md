@@ -33,9 +33,9 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
    [inspection](docs/scenario-inspection.md) and
    the [conditional first-entry contract](docs/scenario-entry-contract.md), not
    playable imports. None of the reference corpus is admitted for full simulation.
-2. Next is milestone 16, science/rates/government on both clients (#194–#196),
-   from [client milestones](docs/ui/client-milestones.md). Finish reference/API
-   gaps before assigning a release. Original-save/scenario entry remains a
+2. Milestone 16, science/rates/government on both clients (#194–#196), is the
+   v0.18.0 candidate awaiting independent review ([readiness](docs/v0.18.0-readiness.md);
+   from [client milestones](docs/ui/client-milestones.md)). Original-save/scenario entry remains a
    separate package with its conditional import gates. Complete remaining original
    features in further
    coherent slices, not a single optimistic full-client milestone.

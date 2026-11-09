@@ -14,10 +14,10 @@
   },
   "golden": {
     "file": "generated-campaign-v1.ctc",
-    "sha256": "42a82ff57728ef08cb50def4993a4561d39008a3f3adbca91860a0e64bc079cb",
-    "engine_version": "0.17.0",
+    "sha256": "f63164156af1970ae6ff212047e03e53de0bf7a649a662c9b7b41682a8c35f9f",
+    "engine_version": "0.18.0",
     "kind": "engine replay checkpoint, not native SAV",
-    "refresh": "v0.17 tooling candidate rederived the authored 100-round campaign. Only engine version header differs from v0.16; all remaining bytes and b22e4340b6ab8bf6 fingerprint are unchanged. Historical initialization/results remain below."
+    "refresh": "v0.18 candidate rederived the authored 100-round campaign. Only the engine version header differs from v0.17 (and v0.16); all remaining bytes and b22e4340b6ab8bf6 fingerprint are unchanged. Historical initialization/results remain below."
   },
   "authored_100_round_result": {
     "round": "100",

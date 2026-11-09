@@ -2942,3 +2942,167 @@ fn science_advisor_sets_and_clears_the_goal_and_marks_the_suggestion() {
     key(&mut c, "Escape");
     assert!(c.modal.is_none());
 }
+
+/// Records the science/rates/government route for the real-input runners
+/// (`tools/check_government_route.{py,cjs}`): each step carries the dialog title
+/// that must be on screen afterwards, and every save is compared byte for byte.
+#[test]
+#[ignore = "install-backed recorded science/rates/government input route"]
+fn generated_government_route() {
+    let out = PathBuf::from(std::env::var("TOTENGINE_GOVERNMENT_OUT").expect("private output"));
+    fs::create_dir_all(&out).unwrap();
+    let home = std::env::var("CIVTOT_HOME").unwrap();
+    let mut c = seeded_client(home.clone(), out.clone());
+    start(&mut c);
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "govstart");
+    key(&mut c, "Enter");
+    // A fresh client loads the start state, exactly as each real client will.
+    let mut c = seeded_client(home, out.clone());
+    button(&mut c, "Load engine checkpoint");
+    edit(&mut c, "govstart");
+    key(&mut c, "Enter");
+    assert!(c.loaded.is_some(), "{}", c.status);
+    fn title(c: &Client) -> serde_json::Value {
+        c.frame()
+            .draws
+            .iter()
+            .find_map(|d| match d {
+                Draw::Text {
+                    x, y, text, size, ..
+                } if (*x, *y, *size) == (212., 125., 22) => Some(text.clone().into()),
+                _ => None,
+            })
+            .unwrap_or(serde_json::Value::Null)
+    }
+    struct Rec(Vec<serde_json::Value>);
+    impl Rec {
+        fn key(&mut self, c: &mut Client, k: &str) {
+            key(c, k);
+            self.0
+                .push(serde_json::json!({"op":"key","key":k,"title":title(c)}));
+        }
+        fn button(&mut self, c: &mut Client, label: &str) {
+            button(c, label);
+            self.0
+                .push(serde_json::json!({"op":"button","label":label,"title":title(c)}));
+        }
+        fn entry(&mut self, c: &mut Client, name: &str) {
+            edit(c, name);
+            key(c, "Enter");
+            self.0
+                .push(serde_json::json!({"op":"entry","value":name,"title":title(c)}));
+        }
+        fn save(&mut self, c: &mut Client, name: &str) {
+            self.key(c, "Ctrl+s");
+            self.entry(c, name);
+            self.0.push(serde_json::json!({"op":"compare","name":name}));
+        }
+        fn research(&mut self, c: &mut Client) {
+            research(c);
+            self.0
+                .push(serde_json::json!({"op":"research","title":title(c)}));
+        }
+        fn endturn(&mut self, c: &mut Client) {
+            key(c, "Ctrl+n");
+            if matches!(c.modal, Some(Modal::Confirm { .. })) {
+                key(c, "Enter");
+            }
+            ready(c);
+            self.0
+                .push(serde_json::json!({"op":"endturn","title":title(c)}));
+        }
+    }
+    let mut r = Rec(Vec::new());
+    let read = |name: &str| fs::read(out.join(format!("{name}.cth"))).unwrap();
+    // Rates: Escape discards, locked shares refuse a move, Enter applies.
+    r.key(&mut c, "Shift+t");
+    assert_eq!(title(&c), "Tax, luxury and science rates");
+    r.key(&mut c, "ArrowRight");
+    r.key(&mut c, "Escape");
+    r.save(&mut c, "govdiscard");
+    assert_eq!(read("govdiscard"), read("govstart"));
+    r.key(&mut c, "Shift+t");
+    for k in [
+        "ArrowDown",
+        "l",
+        "ArrowDown",
+        "l",
+        "ArrowUp",
+        "ArrowUp",
+        "ArrowRight",
+    ] {
+        r.key(&mut c, k);
+    }
+    assert!(c.status.contains("locked"), "{}", c.status);
+    // Locks outlive the dialog (session only): unlock both, then apply a move.
+    for k in [
+        "ArrowDown",
+        "l",
+        "ArrowDown",
+        "l",
+        "ArrowUp",
+        "ArrowUp",
+        "ArrowRight",
+    ] {
+        r.key(&mut c, k);
+    }
+    assert_eq!(c.rate_locks, [false; 3]);
+    r.key(&mut c, "Enter");
+    r.save(&mut c, "govrates");
+    assert_ne!(read("govrates"), read("govstart"));
+    // The advisor sets a goal that the checkpoint keeps.
+    r.key(&mut c, "F6");
+    r.button(&mut c, "Set goal…");
+    r.key(&mut c, "ArrowDown");
+    r.key(&mut c, "Enter");
+    assert!(c.view().unwrap().goal.is_some(), "{}", c.status);
+    r.key(&mut c, "Escape");
+    r.save(&mut c, "govgoal");
+    // Revolution: Cancel changes nothing, Yes starts Anarchy.
+    r.key(&mut c, "Shift+r");
+    assert_eq!(title(&c), "Revolution");
+    r.key(&mut c, "Escape");
+    r.save(&mut c, "govrevoltcancel");
+    assert_eq!(read("govrevoltcancel"), read("govgoal"));
+    r.key(&mut c, "Shift+r");
+    r.key(&mut c, "Enter");
+    r.save(&mut c, "govanarchy");
+    for _ in 0..8 {
+        if matches!(c.modal, Some(Modal::Government { .. })) {
+            break;
+        }
+        r.research(&mut c);
+        r.endturn(&mut c);
+    }
+    assert_eq!(title(&c), "Choose a government");
+    // The chooser is required: Escape and an empty Enter keep it; reload restores it.
+    r.key(&mut c, "Escape");
+    r.key(&mut c, "Enter");
+    r.button(&mut c, "Save pending choice");
+    r.entry(&mut c, "govchooser");
+    r.0.push(serde_json::json!({"op":"compare","name":"govchooser"}));
+    r.button(&mut c, "Load checkpoint");
+    r.entry(&mut c, "govchooser");
+    assert_eq!(title(&c), "Choose a government");
+    r.key(&mut c, "ArrowDown");
+    r.key(&mut c, "Enter");
+    assert_eq!(title(&c), "Review your rates");
+    r.key(&mut c, "ArrowRight");
+    r.key(&mut c, "Escape");
+    r.button(&mut c, "Save pending choice");
+    r.entry(&mut c, "govreview");
+    r.0.push(serde_json::json!({"op":"compare","name":"govreview"}));
+    r.button(&mut c, "Load checkpoint");
+    r.entry(&mut c, "govreview");
+    assert_eq!(title(&c), "Review your rates");
+    r.key(&mut c, "Enter");
+    assert_eq!(title(&c), serde_json::Value::Null);
+    r.save(&mut c, "govfinal");
+    assert_eq!(c.view().unwrap().rates.unwrap().government, 1);
+    fs::write(
+        out.join("route.json"),
+        serde_json::to_vec_pretty(&r.0).unwrap(),
+    )
+    .unwrap();
+}

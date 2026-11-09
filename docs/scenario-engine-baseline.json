@@ -10,11 +10,11 @@
     "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
     "crates/engine/src/player.rs": "5b6233ce96993634f1804a72b67283583a0c7fabeee5a90c8c4370c48aecc794",
-    "crates/engine/src/human.rs": "0bd463c95fbd158755ca1902635669d022713240ec6fb286d0b58a9d3ae9371c",
+    "crates/engine/src/human.rs": "ffe49d8ae432758c0bcfd4510be5cad626cfa656b7f95763423ea24bd01a5699",
     "crates/engine/src/human/checkpoint.rs": "362b517c5cb057da8b62fcf19f4fd58bd2109ee03ae3909b3b5775c373a4167b",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "13bdcc605f8d8b047681bb2c759befeef9cd7e01897bf6006daad541a42633d4",
+    "crates/totui/src/client/mod.rs": "6144541fd4bb76712927543944a22c02e699ce43caf3a73ceaf519862c8fe70d",
     "crates/totui/src/resources.rs": "531247a00d6307ed0698646200122c9631ee34e6665e9a42b0278f31ba9cad6d",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -156,6 +156,14 @@
         "crates/engine/src/player.rs"
       ],
       "finding": "Human-session research choice only. Scenario event paths, hut grants, AI research and classic entry are unchanged; the trigger/action tables above are unchanged."
+    },
+    {
+      "change": "#196 client routes: read-only HumanView fields (goal_choices, anarchy_choice_turn, revolution_choice_turn), HumanSession::preview_rates, and shared-client rate/revolution/government/science modals",
+      "files": [
+        "crates/engine/src/human.rs",
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Human-session presentation and immutable previews only. No order, event, trigger, action, hut or scenario-entry path changed; the trigger/action tables above are unchanged."
     }
   ]
 }

@@ -188,6 +188,14 @@ pub struct HumanView {
     pub goal: Option<usize>,
     /// Whether a voluntary revolution may be started now.
     pub revolution_available: bool,
+    /// Advances that may be set as the goal (not known, enabled, defined).
+    pub goal_choices: Vec<usize>,
+    /// While the human civ is in Anarchy: the turn counter at which the
+    /// government chooser will next open.
+    pub anarchy_choice_turn: Option<i16>,
+    /// While a revolution may be started: the turn counter at which the
+    /// government chooser would open if it began now.
+    pub revolution_choice_turn: Option<i16>,
 }
 
 /// Owns the game and opponent policies. Adapters cannot bypass recording or
@@ -317,6 +325,18 @@ impl HumanSession {
             .quote_production_change(&self.game.rules, self.human, city.slot, item)
     }
 
+    /// Immutable per-turn consequences of a candidate split for the human civ.
+    /// No journal entry, no randomness; the quote never commits anything.
+    pub fn preview_rates(
+        &self,
+        science: u8,
+        tax: u8,
+    ) -> Result<crate::rates::RatesQuote, &'static str> {
+        self.game
+            .world
+            .rates_quote(&self.game.rules, self.human, science, tax)
+    }
+
     fn build_view(&self) -> HumanView {
         let mut observation =
             self.game
@@ -333,6 +353,15 @@ impl HumanSession {
         observation.cities.sort_by_key(|c| c.index);
         HumanView {
             goal: self.goal,
+            goal_choices: self.game.world.goal_choices(&self.game.rules, self.human),
+            anarchy_choice_turn: self
+                .game
+                .world
+                .next_government_choice_turn(&self.game.rules, self.human),
+            revolution_choice_turn: self
+                .game
+                .world
+                .revolution_choice_turn(&self.game.rules, self.human),
             rates: self.game.world.rates_view(self.human),
             revolution_available: self.phase() == Phase::Human
                 && self.decision.is_none()

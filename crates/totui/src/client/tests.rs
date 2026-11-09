@@ -2759,3 +2759,186 @@ fn city_list_previous_uses_the_visible_page_after_a_boundary_sale() {
     );
     assert_eq!(before, c.checkpoint().unwrap());
 }
+
+fn next_turn(c: &mut Client) {
+    research(c);
+    key(c, "Ctrl+n");
+    if matches!(c.modal, Some(Modal::Confirm { .. })) {
+        key(c, "Enter");
+    }
+    ready(c);
+}
+
+#[test]
+fn rates_dialog_moves_locks_applies_and_discards_without_engine_changes() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    let before = c.checkpoint().unwrap();
+    key(&mut c, "Shift+t");
+    let Some(Modal::Rates { draft, cap, .. }) = c.modal.clone() else {
+        panic!("{}", c.status)
+    };
+    assert_eq!((draft, cap), ([4, 0, 6], 6));
+    // Escape discards the draft: no command, no revision, identical checkpoint.
+    key(&mut c, "ArrowRight");
+    assert!(matches!(c.modal, Some(Modal::Rates { draft, .. }) if draft == [5, 0, 5]));
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    assert_eq!(c.checkpoint().unwrap(), before);
+    // A refused move (the other two shares locked) keeps the draft and says why.
+    key(&mut c, "Shift+t");
+    key(&mut c, "ArrowDown");
+    key(&mut c, "l");
+    key(&mut c, "ArrowDown");
+    key(&mut c, "l");
+    assert_eq!(c.rate_locks, [false, true, true]);
+    key(&mut c, "ArrowUp");
+    key(&mut c, "ArrowUp");
+    key(&mut c, "ArrowRight");
+    assert!(c.status.contains("locked"), "{}", c.status);
+    assert!(matches!(c.modal, Some(Modal::Rates { draft, .. }) if draft == [4, 0, 6]));
+    key(&mut c, "Escape");
+    c.rate_locks = [false; 3];
+    // Apply sends one validated command.
+    key(&mut c, "Shift+t");
+    key(&mut c, "ArrowRight");
+    key(&mut c, "Enter");
+    assert!(c.modal.is_none(), "{}", c.status);
+    let r = c.view().unwrap().rates.unwrap();
+    assert_eq!((r.tax, r.luxury, r.science), (5, 0, 5));
+    // The draft shows an engine quote for the split it displays.
+    key(&mut c, "Shift+t");
+    key(&mut c, "ArrowDown");
+    key(&mut c, "ArrowRight");
+    let Some(Modal::Rates { draft, quote, .. }) = c.modal.clone() else {
+        panic!()
+    };
+    let quote = quote.expect("quote follows the draft");
+    assert_eq!(
+        (quote.tax, quote.luxury, quote.science),
+        (draft[0], draft[1], draft[2])
+    );
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::Text{text,..} if text.starts_with("Treasury "))));
+}
+
+#[test]
+fn revolution_cancel_confirm_chooser_review_and_reload() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    let before = c.checkpoint().unwrap();
+    key(&mut c, "Shift+r");
+    assert!(matches!(c.modal, Some(Modal::Revolution)));
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    assert_eq!(c.checkpoint().unwrap(), before, "Cancel changes nothing");
+    key(&mut c, "Shift+r");
+    key(&mut c, "Enter");
+    assert_eq!(c.view().unwrap().rates.unwrap().government, 0);
+    key(&mut c, "Shift+r");
+    assert!(c.status.contains("Already in Anarchy"), "{}", c.status);
+    // The rate dialog stays available during Anarchy at its 60% cap.
+    key(&mut c, "Shift+t");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Rates {
+            cap: 6,
+            review: None,
+            ..
+        })
+    ));
+    key(&mut c, "Escape");
+    for _ in 0..8 {
+        if matches!(c.modal, Some(Modal::Government { .. })) {
+            break;
+        }
+        next_turn(&mut c);
+    }
+    assert!(
+        matches!(c.modal, Some(Modal::Government { .. })),
+        "{}",
+        c.status
+    );
+    // Required: Escape keeps it, a missing selection is refused, state is saved as pending.
+    key(&mut c, "Escape");
+    assert!(matches!(c.modal, Some(Modal::Government { .. })));
+    key(&mut c, "Enter");
+    assert!(c.status.contains("Select a government"), "{}", c.status);
+    assert!(!c.buttons().iter().any(|b| b.label.contains("Cancel")));
+    button(&mut c, "Save pending");
+    edit(&mut c, "pending-government");
+    key(&mut c, "Enter");
+    button(&mut c, "Load checkpoint");
+    edit(&mut c, "pending-government");
+    key(&mut c, "Enter");
+    assert!(
+        matches!(c.modal, Some(Modal::Government { .. })),
+        "reload reopens the chooser"
+    );
+    assert_eq!(
+        c.current_choices(),
+        vec![(1, "Despotism — each share up to 60%".to_string())]
+    );
+    key(&mut c, "ArrowDown");
+    key(&mut c, "Enter");
+    // Choosing opens the required review; Escape resets it and keeps it open.
+    assert!(
+        matches!(
+            c.modal,
+            Some(Modal::Rates {
+                review: Some(_),
+                ..
+            })
+        ),
+        "{}",
+        c.status
+    );
+    key(&mut c, "ArrowRight");
+    key(&mut c, "Escape");
+    assert!(
+        matches!(c.modal, Some(Modal::Rates { review: Some(_), draft, opened, .. }) if draft == opened)
+    );
+    key(&mut c, "Enter");
+    assert!(c.modal.is_none(), "{}", c.status);
+    let r = c.view().unwrap().rates.unwrap();
+    assert_eq!(r.government, 1);
+    assert!(c.view().unwrap().decision.is_none());
+}
+
+#[test]
+fn science_advisor_sets_and_clears_the_goal_and_marks_the_suggestion() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    button(&mut c, "Start Original");
+    let Some(Decision::Research { available, .. }) = c.view().unwrap().decision else {
+        panic!()
+    };
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    key(&mut c, "F6");
+    assert!(matches!(c.modal, Some(Modal::Science)));
+    button(&mut c, "Set goal");
+    assert!(matches!(c.modal, Some(Modal::Goal)));
+    let goal = available[1];
+    c.action(Action::Choose(goal as i32)).unwrap();
+    key(&mut c, "Enter");
+    assert_eq!(c.view().unwrap().goal, Some(goal), "{}", c.status);
+    // The pending research prompt returns with the goal's step marked and pre-selected.
+    assert!(matches!(c.modal, Some(Modal::Research)));
+    assert_eq!(c.choice, Some(goal as i32));
+    assert!(c
+        .current_choices()
+        .iter()
+        .any(|(id, label)| *id == goal as i32 && label.ends_with("(suggested)")));
+    key(&mut c, "Escape");
+    key(&mut c, "F6");
+    button(&mut c, "Clear goal");
+    assert_eq!(c.view().unwrap().goal, None);
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+}

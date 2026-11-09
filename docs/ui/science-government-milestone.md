@@ -1,7 +1,10 @@
 # Milestone 16 — science, rates and government routes (#196)
 
-Shared route design for both clients. Status: **proposal for owner review; no
-client code exists yet.** It builds on the engine surface merged/open under #195
+Shared route design for both clients. Status: **owner accepted the recommendations on 2026-11-09 ("do as you advise, and
+continue"); implemented on the branch `issue-196-engine-views`, pending owner
+acceptance on both clients.** Accepted points: review-modal Escape resets and stays open; small F6 advisor with goal
+list; engine rates quote (E2); toolbar unchanged, with *Rates*, *Revolt* and *Science* as right-panel buttons
+(the toolbar and bottom row were full, and the second row had no room). It builds on the engine surface merged/open under #195
 (`Decision::{Research, Government, Rates}`, `Command::{Rates, Goal, Revolution,
 Government, ReviewRates}`, `HumanView::{rates, goal, revolution_available}`) and
 on the owner decisions of 2026-11-09 recorded in
@@ -108,7 +111,7 @@ later (engine behavior, already vector-tested).
 ## 5. Science advisor and goal
 
 F6 opens a deliberately small advisor: known-advance count, current project with
-progress/cost and turns estimate, the goal, buttons *Set goal…* and *Clear goal*.
+progress/cost, science per turn, the goal, buttons *Set goal…* and *Clear goal*.
 It cannot change a running project (native: no such path). *Set goal…* opens
 `Modal::Goal`, a paged list from the engine; choosing sends `Command::Goal` at
 once (no required decision). The research prompt's suggestion follows the goal.
@@ -124,7 +127,7 @@ The advisor is not the full original F6 screen; the contract wording stays
 | E3 | `HumanView::anarchy: Option<{next_choice_turn}>` | revolution/anarchy status text without client re-derivation |
 | E4 | stable typed reasons for rejected rates/government (currently strings) | testable inert-rejection text; optional, strings are acceptable for the first slice |
 
-E1–E3 are read-only view additions; they change `human.rs` and therefore
+E1–E3 are read-only view additions (E3 adds the revolution chooser turn too); they change `human.rs` and therefore
 re-trigger the scenario-audit baseline refresh (see `AGENTS.md`).
 
 ## 7. Adapter work
@@ -133,9 +136,9 @@ re-trigger the scenario-audit baseline refresh (see `AGENTS.md`).
   other than `z` are dropped) in the keydown filter, with `preventDefault`.
 - Desktop (`desktop.rs`): map Shift+T/Shift+R and `Keycode::F6` in `key()`; extend
   its key unit test.
-- Toolbar (`buttons()` in `client/mod.rs`) is already full (8 × 126 px). Add *Rates*,
-  *Revolution*, *Science* by narrowing the row or using a second row; a rendered
-  check on both adapters must show no clipped labels.
+- Toolbar is already full; *Rates*, *Revolt* and *Science* are right-panel buttons (see §9);
+  the economy text below *Choose production* moved down by 22 px for them. A rendered check on
+  both adapters must show no clipped labels.
 - Pending-decision status text in `Phase::Human` and the placeholder
   "client route is not implemented yet (#196)" notice are replaced.
 
@@ -161,12 +164,22 @@ start must be loadable as a checkpoint or session); that remains part of #195/#1
 Owner acceptance on both clients and an owner-launched independent review gate
 closure; none of this is claimed here.
 
-## 9. Open points for the owner
+## 9. Decisions
 
-1. **Review-modal Escape** (§2): reset to the opening split and stay open — confirm.
-2. **Advisor scope:** a small F6 advisor with goal setting as in §5, rather than
-   a goal button inside the research prompt — confirm.
-3. **Quote cost** (E2): acceptable to add a preview API that scratch-computes one
-   civ's city finance per slider move, or should the dialog show shares only in
-   the first slice?
-4. **Toolbar:** narrower buttons on one row vs. a second row.
+1. Review-modal Escape resets to the opening split and stays open — accepted.
+2. Small F6 advisor with goal setting (§5) — accepted.
+3. Engine rates quote (E2) — accepted; it scratch-copies the world per quote. Measured on a
+   generated 80×50 game with one city: 8 µs (release) / 75 µs (debug) per quote. Cost grows
+   with the civ's city count; re-measure with a mature empire before release.
+4. Toolbar: not widened; three right-panel buttons below *Choose production*.
+   The advisor shows no turns-to-discovery estimate (the native formula is not decoded).
+
+## 10. Implementation notes
+
+- E1 `HumanView::goal_choices`, E2 `HumanSession::preview_rates`, E3
+  `HumanView::{anarchy_choice_turn, revolution_choice_turn}` are implemented; E4
+  (typed reasons) is not.
+- A required decision (chooser, review) also shows *Load checkpoint*, because
+  Esc cannot dismiss it and a saved game must stay reachable.
+- Route code: `crates/totui/src/client/routes.rs`; tests `rates_dialog_*`,
+  `revolution_cancel_confirm_chooser_review_and_reload`, `science_advisor_*`.

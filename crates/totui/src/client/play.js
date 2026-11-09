@@ -277,11 +277,12 @@ addEventListener("keydown", (e) => {
   if (modified) {
     if (editing || !["s", "l", "n"].includes(key) || e.shiftKey) return;
     key = "Ctrl+" + key;
-  } else if (e.shiftKey && key === "z") key = "Shift+z";
+  } else if (e.shiftKey && ["z", "t", "r"].includes(key)) key = "Shift+" + key;
   else if (e.shiftKey && /^[a-z]$/.test(key)) return;
   if (["Enter", "Escape", "Tab", "ShiftTab", "ArrowLeft", "ArrowRight",
        "ArrowUp", "ArrowDown", "PageUp", "PageDown", " ", "+", "-", "=",
-       "Ctrl+s", "Ctrl+l", "Ctrl+n", "Shift+z"].includes(key) ||
+       "Ctrl+s", "Ctrl+l", "Ctrl+n", "Shift+z", "Shift+t", "Shift+r",
+       "F6"].includes(key) ||
       (!editing && /^[abvcwzxfremosl123456789]$/.test(key))) {
     e.preventDefault();
     send({ type: "key", key });

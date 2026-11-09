@@ -159,7 +159,87 @@ pub fn redistribute(
     out
 }
 
+/// Per-turn consequences of a candidate split for one civ, derived by applying
+/// it to a scratch copy of the world and refreshing the civ's surface cities
+/// exactly as [`WorldState::set_rates`] would. Nothing is journaled or stored.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RatesQuote {
+    pub tax: u8,
+    pub luxury: u8,
+    pub science: u8,
+    pub treasury: i32,
+    /// City taxes credited per turn; cities in disorder credit none
+    /// (`process_city_treasury`). Zero in Anarchy.
+    pub taxes: i32,
+    /// Improvement upkeep charged per turn (human-mask civs only).
+    pub maintenance: i32,
+    /// Science points per turn from all own surface cities.
+    pub science_output: i32,
+    pub luxuries: i32,
+    /// Own surface cities whose unhappy citizens outnumber the happy ones.
+    pub disorder_cities: u16,
+}
+
+impl RatesQuote {
+    pub fn net_income(&self) -> i32 {
+        self.taxes - self.maintenance
+    }
+}
+
 impl WorldState {
+    /// Quote a legal split for `civ` without changing `self`.
+    pub fn rates_quote(
+        &self,
+        rules: &Rules,
+        civ: u8,
+        science: u8,
+        tax: u8,
+    ) -> Result<RatesQuote, &'static str> {
+        let c = civ as usize;
+        let government = *self.governments.get(c).ok_or("unknown civilization")?;
+        let luxury = check_rates(government, science, tax)?;
+        let mut scratch = self.clone();
+        scratch.science_rates[c] = science;
+        scratch.tax_rates[c] = tax;
+        let mut quote = RatesQuote {
+            tax,
+            luxury,
+            science,
+            treasury: self.treasury[c],
+            taxes: 0,
+            maintenance: 0,
+            science_output: 0,
+            luxuries: 0,
+            disorder_cities: 0,
+        };
+        let human = self.human_mask & (1 << civ) != 0;
+        for k in 0..scratch.cities.len() {
+            let city = &scratch.cities[k];
+            if city.city_id == 0 || city.map_id != 0 || city.owner & 15 != u16::from(civ) {
+                continue;
+            }
+            let Some(totals) = scratch.refresh_city_totals(rules, k, false) else {
+                continue;
+            };
+            let disorder = totals.mood.unhappy > totals.mood.happy;
+            quote.disorder_cities += u16::from(disorder);
+            quote.science_output += totals.finance.science;
+            quote.luxuries += totals.finance.luxuries;
+            if government != 0 {
+                if !disorder {
+                    quote.taxes += totals.finance.taxes;
+                }
+                if human {
+                    quote.maintenance += (1..36)
+                        .filter(|&b| scratch.cities[k].has_building(b))
+                        .map(|b| scratch.improvement_upkeep(rules, civ, b))
+                        .sum::<i32>();
+                }
+            }
+        }
+        Ok(quote)
+    }
+
     pub fn rates_view(&self, civ: u8) -> Option<RatesView> {
         let c = civ as usize;
         let government = *self.governments.get(c)?;

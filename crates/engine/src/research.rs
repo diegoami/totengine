@@ -363,7 +363,10 @@ impl crate::WorldState {
     /// May the human set `advance` as its goal: a defined, enabled advance the
     /// civ does not know yet (the goal chooser's filter beyond this is not decoded).
     pub fn goal_is_valid(&self, rules: &Rules, civ: u8, advance: usize) -> bool {
-        let tree = TechTree::from_rules(rules);
+        self.goal_valid_in(rules, &TechTree::from_rules(rules), civ, advance)
+    }
+
+    fn goal_valid_in(&self, rules: &Rules, tree: &TechTree, civ: u8, advance: usize) -> bool {
         let Some(t) = tree.techs.get(advance).filter(|_| advance < 100) else {
             return false;
         };
@@ -376,6 +379,14 @@ impl crate::WorldState {
         let known =
             advance != 89 && self.techs[civ as usize % 8][advance / 8] & (1 << (advance % 8)) != 0;
         !disabled && !t.defective && !known
+    }
+
+    /// Every advance the human may set as a goal, in ascending order.
+    pub fn goal_choices(&self, rules: &Rules, civ: u8) -> Vec<usize> {
+        let tree = TechTree::from_rules(rules);
+        (0..100)
+            .filter(|&a| self.goal_valid_in(rules, &tree, civ, a))
+            .collect()
     }
 
     pub fn observe_research(&self, rules: &Rules, civ: u8) -> ResearchView {

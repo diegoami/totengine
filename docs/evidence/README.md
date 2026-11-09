@@ -3048,7 +3048,7 @@ A human-visible candidate `a` (0..99), in ascending order, must pass **all** of:
 
 1. record enabled (+17 non-zero);
 2. not already known (`0x49c820`; advance 89 is never "known");
-3. both prerequisites known (`nil` = −2 counts as known) and not both `nil`;
+3. both prerequisites satisfied by `0x49c820`: `nil` (−1, any negative id except −2) is always satisfied, `no` (−2) never is, so either `no` prerequisite excludes the advance (decode of `0x49c820`; the "not both −2" test in the chooser is then redundant, and the probe's seeded table only uses −2 as its absent marker, so −1 is not exercised by the vectors);
 4. tech-group gate `0x4a2098`: group −1, or the leader's group flag is **0**
    (flag 1 blocks it; this is the stricter gate, not `0x4a2111`'s "≠ 2");
 5. **human thinning:** once at least one candidate has been accepted, and the
@@ -3093,14 +3093,24 @@ accepted candidate (human value `v + rand%3 − 1`), so opening the chooser adva
 that generator. Replay equivalence with native requires either reproducing that
 consumption or recording the recommendation as part of the decision.
 
-**Engine comparison (not fixed here).** `WorldState::observe_research` (used for
-the human decision list) differs from the native human list: it gates on
-`tech_group_flag != 2` (`0x4a2111`) instead of `== 0`; it has no thinning rule;
-it does not exclude both-`nil` records; and it prompts at the start of the human
-phase when the target is unset or free advances remain, while native prompts at
-the research step with non-zero progress. These are candidates for #195 scope,
-needing an owner-scoped change because they alter accepted human-client lists
-and checkpoints.
+**Engine comparison and what #195 changed.** `WorldState::observe_research` still
+gates on `tech_group_flag != 2` (`0x4a2111`, the separately vector-checked hut/AI
+list in [tech-group-vectors.txt](tech-group-vectors.txt)) and has no thinning.
+Human sessions now use `WorldState::human_research_candidates` instead for the
+prompt list and `SetResearch` validation of a human-mask civ: gate `== 0`, thinning,
+the native `nil`/`no` rule, over the engine's existing enabled proxy (`no`/defective
+rows). The pure rule `research::human_research_list` is regression-tested against the
+48 executed states, whose per-advance inputs (enabled, known, prerequisites, group
+gate) are now part of the vectors file. Hut grants and AI civs keep the old list, so
+all-AI trajectories and goldens are unchanged. Remaining differences: the engine
+prompts at the start of the human phase when the target is unset or free advances
+remain (native: at the research step with non-zero progress); the recommender's
+default pick and its CRT `rand()` consumption are not reproduced; the enabled byte is
+approximated by the `no`/defective test. The goal is stored in the human session
+(`Command::Goal`, `HumanView::goal`), replayed through checkpoints, cleared once the
+advance is known, and only sets the prompt's `default` to the first candidate on its
+path (`0x49c8d4`: the goal or a transitive prerequisite); it never changes a running
+project.
 
 **Not established (research):** the `@CIVILIZE` row loader's treatment of the
 `no` prerequisite and the Rules.txt → advance-record mapping beyond the

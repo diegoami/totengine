@@ -171,6 +171,10 @@ impl Command {
             Self::CancelFound { decision } => format!("cancel {decision}"),
             Self::Research { decision, advance } => format!("research {decision} {advance}"),
             Self::Rates { science, tax } => format!("rates {science} {tax}"),
+            Self::Goal { advance } => match advance {
+                Some(a) => format!("goal {a}"),
+                None => "goal none".into(),
+            },
             Self::Revolution => "revolution".into(),
             Self::Government {
                 decision,
@@ -279,6 +283,10 @@ impl Command {
             ["rates", science, tax] => Some(Self::Rates {
                 science: science.parse().ok()?,
                 tax: tax.parse().ok()?,
+            }),
+            ["goal", "none"] => Some(Self::Goal { advance: None }),
+            ["goal", a] => Some(Self::Goal {
+                advance: Some(a.parse().ok()?),
             }),
             ["revolution"] => Some(Self::Revolution),
             ["government", decision, government] => Some(Self::Government {

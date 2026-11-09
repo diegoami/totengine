@@ -673,11 +673,12 @@ impl WorldState {
                 OrderResult::Skipped
             }
             Order::SetResearch { advance } => {
-                if !self
-                    .observe_research(rules, civ)
-                    .available
-                    .contains(&advance)
-                {
+                let available = if civ < 8 && self.human_mask & (1 << civ) != 0 {
+                    self.human_research_candidates(rules, civ)
+                } else {
+                    self.observe_research(rules, civ).available
+                };
+                if !available.contains(&advance) {
                     return OrderResult::Rejected("cannot research");
                 }
                 self.research[civ as usize].target = advance as i16;

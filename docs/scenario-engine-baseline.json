@@ -9,9 +9,9 @@
     "crates/engine/src/events.rs": "5dc1820f0151d3b6371fc507eefab502488a13e72057d873b0ee777885100fe5",
     "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
-    "crates/engine/src/player.rs": "4e5284a0dbba1348b273c48726a2d6d2686c77231541dcbddaeb07c9aec6837b",
-    "crates/engine/src/human.rs": "69da87ce3d53940293593af07fee633c0c1c878ad3ff33a84f58eb272603411a",
-    "crates/engine/src/human/checkpoint.rs": "09247c61a7be0ea76ee94a218bd97578f780cce65ad90c6ae30531f4f0d2a7c2",
+    "crates/engine/src/player.rs": "5b6233ce96993634f1804a72b67283583a0c7fabeee5a90c8c4370c48aecc794",
+    "crates/engine/src/human.rs": "0bd463c95fbd158755ca1902635669d022713240ec6fb286d0b58a9d3ae9371c",
+    "crates/engine/src/human/checkpoint.rs": "362b517c5cb057da8b62fcf19f4fd58bd2109ee03ae3909b3b5775c373a4167b",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
     "crates/totui/src/client/mod.rs": "13bdcc605f8d8b047681bb2c759befeef9cd7e01897bf6006daad541a42633d4",
@@ -147,6 +147,15 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Human-session government/rate decisions only. No trigger or action coverage, scenario event path, classic-entry or runtime admission changed; the trigger/action tables above are unchanged. Human sessions still start only from generated games."
+    },
+    {
+      "change": "#195 research slice: Command::Goal, native human research list for human-mask civs in the prompt and SetResearch, Decision::Research default",
+      "files": [
+        "crates/engine/src/human.rs",
+        "crates/engine/src/human/checkpoint.rs",
+        "crates/engine/src/player.rs"
+      ],
+      "finding": "Human-session research choice only. Scenario event paths, hut grants, AI research and classic entry are unchanged; the trigger/action tables above are unchanged."
     }
   ]
 }

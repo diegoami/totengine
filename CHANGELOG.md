@@ -8,6 +8,18 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 - Suppress angle-bracketed trailing prose in scenario diagnostic tokens (#235),
   retaining structural failures, inactive counts and bounded reports.
 
+- Milestone 16 engine work (#194/#195; no client route yet, #196): validated
+  human rate commands with the native caps and slider rule; voluntary revolution,
+  native government eligibility, anarchy resolution (multiple-of-four turn
+  counter or Statue of Liberty) and required government/rate-review decisions
+  restored by checkpoint replay (`Phase::UnsupportedGovernment` is removed); the
+  human research prompt and `SetResearch` use the native candidate list (tech-group
+  gate `== 0` and the human thinning rule) and a checkpointed research goal.
+  **Compatibility:** human-session research lists change (the open demo offers
+  nine topics instead of twelve), so human checkpoints taken in an unfinished
+  research prompt, or that chose a thinned-out advance, may no longer replay.
+  All-AI campaigns, hut grants and goldens are unchanged.
+
 ## [0.17.0] — scenario inspection and entry boundary
 
 - Add a bounded read-only scenario/corpus inspector with pinned input/resource

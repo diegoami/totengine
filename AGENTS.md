@@ -105,8 +105,9 @@ Resume at #194/#195/#196. #194's reference work and the second-government fixtur
 review fixed in-PR). #195 slice 2 (on its own PR) adds `Command::Revolution`, `Decision::Government`,
 `Decision::Rates` (`Command::ReviewRates`) and the begin-of-turn anarchy step in `engine::government`/`human`,
 checked against native eligibility (144) and anarchy-resolution (528) vectors; `Phase::UnsupportedGovernment`
-is gone. Still open in #195: native research-list rules, goal persistence in checkpoints, the revolution
-scenario restriction. No client route or both-client acceptance exists yet (#196; both clients only show a
+is gone. The research slice (own PR, stacked on it) adds the native human research list (thinning, group gate `== 0`)
+and a checkpointed research goal (`Command::Goal`); hut/AI lists and all-AI goldens are unchanged. Still open in #195:
+native prompt timing, recommender RNG, the revolution scenario restriction. No client route or both-client acceptance exists yet (#196; both clients only show a
 "decision required" notice). Changing `crates/engine/src/{player,human,human/checkpoint,lib}.rs` or
 `crates/totui/src/client/mod.rs` stales `docs/scenario-engine-baseline.json`: run the full `make test` with
 `CIVTOT_HOME` set (CI does not run `test_scenario_inventory`, #221), audit the diff, refresh the hashes and

@@ -107,6 +107,17 @@ def model(o, civ, difficulty, thin=True):
     return members
 
 
+def inputs(o, civ):
+    """Per-advance inputs to the candidate rule, as the native predicates see them."""
+    rows = []
+    for a in range(100):
+        base = TABLE + 20 * a
+        enabled = o.cpu.mem_read(base + 17, 1)[0] != 0
+        p1, p2 = struct.unpack("<bb", o.cpu.mem_read(base + 22, 2))
+        rows.append((a, int(enabled), int(bool(o.call(0x49C820, civ, a))), p1, p2, int(bool(o.call(0x4A2098, civ, a)))))
+    return rows
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--gold")
@@ -115,7 +126,7 @@ def main():
     home = Path(os.environ["CIVTOT_HOME"])
     binary, o = world(home)
     rng = random.Random(194)
-    lines, mismatches, thinned, empty = [], 0, 0, 0
+    lines, mismatches, thinned, empty, details = [], 0, 0, 0, []
     for case in range(48):
         civ = 1 + case % 7
         difficulty = case % 6
@@ -128,8 +139,13 @@ def main():
             thinned += 1
         empty += not expected
         lines.append([case, civ, difficulty, len(native), int(native == expected), *native])
+        acquired = o.cpu.mem_read(CIV + STRIDE * civ + 24, 1)[0]
+        details.append(f"case {case} difficulty {difficulty} acquired {acquired}")
+        details += [f"{case} " + " ".join(map(str, r)) for r in inputs(o, civ)]
     text = ["# case civ difficulty members match | members..."]
     text += [" ".join(map(str, r)) for r in lines]
+    text.append("# inputs: case advance enabled known prerequisite1 prerequisite2 group_gate_open (native predicates 0x49c820/0x4a2098; known is false for 89; -1 nil, -2 no)")
+    text += details
     body = "\n".join(text) + "\n"
     report = {
         "binary_sha256": hashlib.sha256(binary).hexdigest(),

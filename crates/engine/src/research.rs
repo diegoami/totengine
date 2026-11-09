@@ -30,6 +30,54 @@ pub struct Tech {
     pub ai_value: Option<i32>,
 }
 
+/// One advance as the native human research chooser sees it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CandidateRow {
+    /// The advance record's enabled byte (+17).
+    pub enabled: bool,
+    /// Native `0x49c820`: known by the civ (never true for advance 89).
+    pub known: bool,
+    /// Prerequisites: advance id, -1 for `nil` (always satisfied), -2 for `no`.
+    pub prerequisites: [i32; 2],
+    /// Tech-group gate `0x4a2098`: group -1, or the leader's flag is 0.
+    pub group_gate_open: bool,
+}
+
+/// The human research candidate list (`0x4a0ab4` mode 0, equivalently the
+/// filter of `0x49f98b`), ascending: enabled, not known, both prerequisites
+/// satisfied (`nil` -1 always, `no` -2 never), group gate open, and the human
+/// thinning rule. Thinning skips advance `a` once a candidate has been accepted
+/// when the difficulty byte is non-zero and `(a - acquired) % 3 == 0`; it does
+/// not apply under the scenario flag `0x80`. Executed natively on 48 seeded
+/// states (docs/evidence/research-choice-vectors.txt).
+pub fn human_research_list(
+    rows: &[CandidateRow],
+    acquired: i32,
+    difficulty: u8,
+    scenario: bool,
+) -> Vec<usize> {
+    let satisfied = |p: i32| match p {
+        -2 => false,
+        p if p < 0 => true,
+        p => rows.get(p as usize).is_some_and(|r| r.known),
+    };
+    let mut list = Vec::new();
+    for (a, row) in rows.iter().enumerate() {
+        if !row.enabled
+            || row.known
+            || !row.prerequisites.iter().all(|&p| satisfied(p))
+            || !row.group_gate_open
+        {
+            continue;
+        }
+        if !list.is_empty() && difficulty != 0 && !scenario && (a as i32 - acquired) % 3 == 0 {
+            continue;
+        }
+        list.push(a);
+    }
+    list
+}
+
 /// The research tree of one Rules.txt.
 #[derive(Debug, Clone, Default)]
 pub struct TechTree {
@@ -252,6 +300,84 @@ impl crate::WorldState {
             .unwrap_or(0) as u8
     }
 
+    /// The research list the human project chooser offers (`0x4a0ab4`, #195):
+    /// [`human_research_list`] over this civ's state. Hut grants and AI civs keep
+    /// the separately checked [`WorldState::observe_research`] list.
+    pub fn human_research_candidates(&self, rules: &Rules, civ: u8) -> Vec<usize> {
+        let Some(state) = self.research.get(civ as usize) else {
+            return Vec::new();
+        };
+        if self.research_cost(rules, civ).is_none() {
+            return Vec::new();
+        }
+        let tree = TechTree::from_rules(rules);
+        let rows: Vec<CandidateRow> = (0..tree.techs.len().min(100))
+            .map(|id| {
+                let t = &tree.techs[id];
+                let disabled = rules
+                    .section("CIVILIZE")
+                    .and_then(|s| s.rows.get(id))
+                    .is_some_and(|r| {
+                        r.get(3).is_some_and(|p| p == "no") || r.get(4).is_some_and(|p| p == "no")
+                    });
+                let known = id != 89
+                    && self.techs[civ as usize]
+                        .get(id / 8)
+                        .is_some_and(|b| b & (1 << (id % 8)) != 0);
+                CandidateRow {
+                    enabled: !disabled && !t.defective,
+                    known,
+                    prerequisites: t.prereqs.map(|p| p.map_or(-1, |k| k as i32)),
+                    group_gate_open: self.tech_group_flag(rules, civ, id) == 0,
+                }
+            })
+            .collect();
+        human_research_list(
+            &rows,
+            i32::from(state.acquired),
+            self.difficulty,
+            self.research_settings.flags & 128 != 0,
+        )
+    }
+
+    /// Native `0x49c8d4(goal, a)`: is `a` the goal or one of its (transitive)
+    /// prerequisites? `nil`/`no` prerequisites end the walk.
+    pub fn on_goal_path(rules: &Rules, goal: usize, a: usize) -> bool {
+        let tree = TechTree::from_rules(rules);
+        let mut stack = vec![goal];
+        let mut seen = [false; 100];
+        while let Some(g) = stack.pop() {
+            if g >= 100 || std::mem::replace(&mut seen[g], true) {
+                continue;
+            }
+            if g == a {
+                return true;
+            }
+            if let Some(t) = tree.techs.get(g) {
+                stack.extend(t.prereqs.iter().flatten().copied());
+            }
+        }
+        false
+    }
+
+    /// May the human set `advance` as its goal: a defined, enabled advance the
+    /// civ does not know yet (the goal chooser's filter beyond this is not decoded).
+    pub fn goal_is_valid(&self, rules: &Rules, civ: u8, advance: usize) -> bool {
+        let tree = TechTree::from_rules(rules);
+        let Some(t) = tree.techs.get(advance).filter(|_| advance < 100) else {
+            return false;
+        };
+        let disabled = rules
+            .section("CIVILIZE")
+            .and_then(|s| s.rows.get(advance))
+            .is_some_and(|r| {
+                r.get(3).is_some_and(|p| p == "no") || r.get(4).is_some_and(|p| p == "no")
+            });
+        let known =
+            advance != 89 && self.techs[civ as usize % 8][advance / 8] & (1 << (advance % 8)) != 0;
+        !disabled && !t.defective && !known
+    }
+
     pub fn observe_research(&self, rules: &Rules, civ: u8) -> ResearchView {
         let Some(state) = self.research.get(civ as usize) else {
             return ResearchView {
@@ -432,6 +558,56 @@ E1,         ; Hanging Gardens\r\n\
         assert_eq!(unreached, vec![4], "Monarchy blocked by missing Cer");
         // deterministic
         assert_eq!(tree.scripted_research(), (order, unreached));
+    }
+
+    #[test]
+    fn goal_path_follows_prerequisites() {
+        let rules = tot_kit::parse_rules(
+            "@CIVILIZE\nA, 1, 0, nil, nil, 0, 0 ; A\nB, 1, 0, A, nil, 0, 0 ; B\n\
+             C, 1, 0, B, nil, 0, 0 ; C\nD, 1, 0, A, nil, 0, 0 ; D\n",
+        );
+        let on = |g, a| crate::WorldState::on_goal_path(&rules, g, a);
+        assert!(on(2, 2) && on(2, 1) && on(2, 0));
+        assert!(!on(2, 3), "a sibling branch is not on the path");
+        assert!(!on(0, 2), "a goal's dependants are not on the path");
+        assert!(!on(500, 0));
+    }
+
+    #[test]
+    fn human_list_matches_native_vectors() {
+        let text = include_str!("../../../docs/evidence/research-choice-vectors.txt");
+        let (head, inputs) = text.split_once("# inputs:").unwrap();
+        let members: Vec<Vec<i32>> = head
+            .lines()
+            .filter(|l| !l.starts_with('#') && !l.is_empty())
+            .map(|l| l.split_whitespace().map(|t| t.parse().unwrap()).collect())
+            .collect();
+        assert_eq!(members.len(), 48);
+        let mut cases: Vec<(i32, i32, Vec<CandidateRow>)> = Vec::new();
+        for line in inputs.lines().skip(1) {
+            let f: Vec<&str> = line.split_whitespace().collect();
+            if f.first() == Some(&"case") {
+                cases.push((f[5].parse().unwrap(), f[3].parse().unwrap(), Vec::new()));
+            } else if !f.is_empty() {
+                let v: Vec<i32> = f.iter().map(|t| t.parse().unwrap()).collect();
+                cases.last_mut().unwrap().2.push(CandidateRow {
+                    enabled: v[2] != 0,
+                    known: v[3] != 0,
+                    prerequisites: [v[4], v[5]],
+                    group_gate_open: v[6] != 0,
+                });
+            }
+        }
+        assert_eq!(cases.len(), 48);
+        let mut thinned = 0;
+        for (m, (acquired, difficulty, rows)) in members.iter().zip(&cases) {
+            assert_eq!(rows.len(), 100);
+            let got = human_research_list(rows, *acquired, *difficulty as u8, false);
+            let want: Vec<usize> = m[5..].iter().map(|&a| a as usize).collect();
+            assert_eq!(got, want, "case {}", m[0]);
+            thinned += usize::from(got != human_research_list(rows, *acquired, 0, false));
+        }
+        assert!(thinned >= 20, "thinning exercised in {thinned} cases");
     }
 
     #[test]

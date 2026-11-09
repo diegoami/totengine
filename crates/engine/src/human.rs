@@ -29,9 +29,12 @@ pub enum Phase {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Decision {
+    /// `default` is the first candidate on the path to the research goal
+    /// (`0x49c8d4`), when a goal is set; a goal never skips the prompt.
     Research {
         id: u64,
         available: Vec<usize>,
+        default: Option<usize>,
     },
     Founding {
         id: u64,
@@ -109,6 +112,11 @@ pub enum Command {
         science: u8,
         tax: u8,
     },
+    /// Set or clear the research goal (`0x4a0886`). A goal only steers the
+    /// default of the research prompt; it never changes a running project.
+    Goal {
+        advance: Option<usize>,
+    },
     /// Start a voluntary revolution; Anarchy begins at once.
     Revolution,
     /// Resolve [`Decision::Government`].
@@ -176,6 +184,8 @@ pub struct HumanView {
     pub production_context_city: Option<Entity>,
     /// The human civilization's committed shares and their cap.
     pub rates: Option<crate::rates::RatesView>,
+    /// The research goal (one global value in the original), cleared when known.
+    pub goal: Option<usize>,
     /// Whether a voluntary revolution may be started now.
     pub revolution_available: bool,
 }
@@ -196,6 +206,7 @@ pub struct HumanSession {
     last_ai: Option<OrderResult>,
     last_human: Option<OrderResult>,
     decision: Option<Decision>,
+    goal: Option<usize>,
     next_decision: u64,
     receipts: BTreeMap<u64, (Request, Response)>,
     notices: Vec<Notice>,
@@ -246,6 +257,7 @@ impl HumanSession {
             last_ai: None,
             last_human: None,
             decision: None,
+            goal: None,
             next_decision: 1,
             receipts: BTreeMap::new(),
             notices: Vec::new(),
@@ -320,6 +332,7 @@ impl HumanSession {
         );
         observation.cities.sort_by_key(|c| c.index);
         HumanView {
+            goal: self.goal,
             rates: self.game.world.rates_view(self.human),
             revolution_available: self.phase() == Phase::Human
                 && self.decision.is_none()
@@ -525,6 +538,16 @@ impl HumanSession {
     }
 
     fn require_research(&mut self) {
+        // 0x4a1581: the goal is cleared once that advance is known.
+        if let Some(goal) = self.goal {
+            if !self
+                .game
+                .world
+                .goal_is_valid(&self.game.rules, self.human, goal)
+            {
+                self.goal = None;
+            }
+        }
         if self.phase() != Phase::Human || self.decision.is_some() {
             return;
         }
@@ -532,13 +555,22 @@ impl HumanSession {
             .game
             .world
             .observe_research(&self.game.rules, self.human);
-        if (research.target.is_none() || research.free_advances > 0)
-            && !research.available.is_empty()
-        {
+        let available = self
+            .game
+            .world
+            .human_research_candidates(&self.game.rules, self.human);
+        if (research.target.is_none() || research.free_advances > 0) && !available.is_empty() {
             let id = self.allocate_decision();
+            let default = self.goal.and_then(|goal| {
+                available
+                    .iter()
+                    .copied()
+                    .find(|&a| crate::WorldState::on_goal_path(&self.game.rules, goal, a))
+            });
             self.decision = Some(Decision::Research {
                 id,
-                available: research.available,
+                available,
+                default,
             });
         }
     }
@@ -628,7 +660,21 @@ impl HumanSession {
         }
         let mut new_decision = None;
         let mut new_rates_review = false;
+        let mut new_goal = None;
         let order = match (&self.decision, request.command) {
+            (_, Command::Goal { advance }) => {
+                if let Some(a) = advance {
+                    if !self
+                        .game
+                        .world
+                        .goal_is_valid(&self.game.rules, self.human, a)
+                    {
+                        return Err("not a valid research goal");
+                    }
+                }
+                new_goal = Some(advance);
+                None
+            }
             (_, Command::CloseProduction { city }) => {
                 self.city(city, true)?;
                 Some(Order::CloseProduction {
@@ -637,7 +683,7 @@ impl HumanSession {
                 })
             }
             (
-                Some(Decision::Research { id, available }),
+                Some(Decision::Research { id, available, .. }),
                 Command::Research { decision, advance },
             ) if *id == decision && available.contains(&advance) => {
                 Some(Order::SetResearch { advance })
@@ -772,13 +818,31 @@ impl HumanSession {
         let result = order
             .map(|o| self.game.submit_checked(self.human, o))
             .transpose()?;
-        if !matches!(request.command, Command::CloseProduction { .. }) {
+        if !matches!(
+            request.command,
+            Command::CloseProduction { .. } | Command::Goal { .. }
+        ) {
             self.decision = new_decision.map(|unit| {
                 let id = self.allocate_decision();
                 Decision::Founding { id, unit }
             });
             if new_rates_review {
                 self.open_rate_review();
+            }
+        }
+        if let Some(goal) = new_goal {
+            self.goal = goal;
+            // A pending prompt keeps its candidates; only its default follows the goal.
+            if let Some(Decision::Research {
+                available, default, ..
+            }) = &mut self.decision
+            {
+                *default = goal.and_then(|g| {
+                    available
+                        .iter()
+                        .copied()
+                        .find(|&a| crate::WorldState::on_goal_path(&self.game.rules, g, a))
+                });
             }
         }
         if let Some(result) = &result {

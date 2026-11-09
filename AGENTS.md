@@ -105,8 +105,10 @@ Resume at #194; no milestone-16 engine/client implementation or acceptance has s
 resolution are executed (`tools/rates_government_check.py`, `docs/evidence/rates-government*`,
 evidence README §Rates, revolution and government selection); the proposed contract and
 the owner's 2026-11-09 decisions (revolution Escape = Cancel; chooser required, no cancel;
-rate Cancel discards the draft) are in `docs/ui/screen-contracts.md`. Still open:
-mid-project research rules and a second-government fixture; #194 is not closed.
+rate Cancel discards the draft) are in `docs/ui/screen-contracts.md`. Research rules are
+decoded too (`tools/research_choice_check.py`, evidence §Research selection): no human path changes a
+running project; the engine's human candidate list differs from native (open owner decision).
+Still open: a second-government fixture and the two research decisions; #194 is not closed.
 Read `docs/plan.md`, `docs/ui/discovery.md` (U08/U09/U17/U31/U32),
 `docs/ui/screen-contracts.md` (Science and goals; Rates and government), then
 #194–#196. Existing research Goal is not arbitrary project switching. The

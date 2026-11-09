@@ -2977,13 +2977,98 @@ round trace before an engine implementation (#195).
   Shift+T opens the dialog during Anarchy; no Anarchy gate was found in its entry
   `0x40b783`, which only requires a human civ and no dialog already open.
 
-**Not established:** mid-project research changes, penalty/retention and
-discovery-time prompts (target writes `0x4a126f`/`0x4a13d1`, completion reset
-`0x4a154b` located, not decoded); what the `0x607640 & 0x80`/`0x5f5e50 & 0x10`
-revolution restriction means; whether Escape on the revolution question returns
-a non-zero value natively (the U31 observation says Escape started the
-revolution); the engine-side civ-flag/queue effects of `0x4bf9b6`, called after a
-voluntary revolution; custom-rules caps under ToTPP.
+**Not established (rates/government):** what the `0x607640 & 0x80` /
+`0x5f5e50 & 0x10` revolution restriction means; whether Escape on the
+revolution question returns a non-zero value natively (the U31 observation says
+Escape started the revolution); the engine-side civ-flag/queue effects of
+`0x4bf9b6`, called after a voluntary revolution; custom-rules caps under ToTPP.
+
+#### Research selection, goal and mid-project changes (#194)
+
+Source: unpatched `civ2.bak`. The candidate filter is **executed natively**
+([research-choice.json](research-choice.json),
+[research-choice-vectors.txt](research-choice-vectors.txt); 48 seeded states over
+every civ slot and difficulty 0–5, 100 advances probed in each):
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+  python3 tools/research_choice_check.py --gold /tmp/rc.json --vectors /tmp/rc.txt
+cmp docs/evidence/research-choice.json /tmp/rc.json
+cmp docs/evidence/research-choice-vectors.txt /tmp/rc.txt
+```
+
+`0x49f98b(civ)` (the recommender) applies the same filter as the human project
+chooser in `0x4a0ab4`; a candidate's membership is read by making it the unique
+best value (replaced callees, recorded: `0x5b11d0` rand → 1 and the value
+function `0x49c95d`). Predicates `0x49c820`, `0x49ecb6`, `0x4a2098` run
+natively. The advance table is synthetic and seeded (the `@CIVILIZE` loader
+`0x412f54` is a static decode); the Python model of the loop matches native
+membership in all 48 states (0 mismatches), and removing the thinning rule below
+changes the list in 28 of them, so the rule is exercised.
+
+A human-visible candidate `a` (0..99), in ascending order, must pass **all** of:
+
+1. record enabled (+17 non-zero);
+2. not already known (`0x49c820`; advance 89 is never "known");
+3. both prerequisites known (`nil` = −2 counts as known) and not both `nil`;
+4. tech-group gate `0x4a2098`: group −1, or the leader's group flag is **0**
+   (flag 1 blocks it; this is the stricter gate, not `0x4a2111`'s "≠ 2");
+5. **human thinning:** once at least one candidate has been accepted, and the
+   difficulty byte (save @684) is non-zero, skip `a` when
+   `(a − acquired) % 3 == 0`, with `acquired` = civ byte @24. The first
+   candidate is always accepted. The chooser applies this only for mode 0 and
+   when `0x607640 & 0x80` is clear (static decode of `0x4a11a6`–`0x4a1200`).
+
+**When the human is asked (static decode).** Research accumulation `0x4a1ebf`
+adds science to progress (@16). If a target (@18) exists and progress reaches
+`0x4a1ae0`'s cost it calls the discovery routine `0x4a145e`. If there is **no
+target**, a non-zero progress after adding triggers the chooser (`0x4a1436` =
+`0x4a0ab4(civ, 0)`), preceded by a one-time advisor text for a human with
+`acquired ≤ 1` when `0x60763b & 1`. Discovery with no target also opens it. The
+chooser is silent (adopts `0x49f98b`'s pick, no dialog) when turn is 0, the civ is
+not human, or `0x6031b8 != 0`; it returns −1 when nothing is researchable. After
+a discovery the target is −1 and progress is 0 (`0x4a154b`; the guard
+`0x5d6454 != 2` is true in practice: that word is 0 in the image and no writer
+exists).
+
+**There is no human path that changes a running project.** Every writer of the
+target (@18) was enumerated: new-game init (`0x48c528`), discovery completion
+(`0x4a1565`), the chooser's own writes (`0x4a126f`, `0x4a13d1`), the grant-advance
+routine `0x49dedf` (`0x49dff7`: gaining the advance you are researching sets the
+target to −1 and **keeps progress**) and scenario/event actions in `0x5219xx`
+(case 7 calls the chooser with mode 1, which skips the thinning rule but
+still applies every other filter; case 8 sets progress; case 9 clears the
+target). So a "mid-project change" exists only as a scenario/event action, and the
+F6 "Goal" screen never edits the active project.
+
+**Goal.** The goal is one global int (`0x5d6450`, image value −1), set by the
+goal chooser (`0x4a0886`/`0x4a0a30`) and cleared when that advance is
+discovered (`0x4a1581`). It is not per civ. It sits in `.data` outside the
+game, civ, city and unit blocks that saves map, so a native reload is expected to
+reset it; no reload run confirmed that. While building the chooser, each
+accepted candidate on the path to the goal (`0x49c8d4(goal, a)`) is pre-written as
+the target and the first such candidate is the default selection; the dialog
+still runs, so a goal never skips the required prompt.
+
+**Recommender RNG.** Building the list consumes the CRT `rand()` once per
+accepted candidate (human value `v + rand%3 − 1`), so opening the chooser advances
+that generator. Replay equivalence with native requires either reproducing that
+consumption or recording the recommendation as part of the decision.
+
+**Engine comparison (not fixed here).** `WorldState::observe_research` (used for
+the human decision list) differs from the native human list: it gates on
+`tech_group_flag != 2` (`0x4a2111`) instead of `== 0`; it has no thinning rule;
+it does not exclude both-`nil` records; and it prompts at the start of the human
+phase when the target is unset or free advances remain, while native prompts at
+the research step with non-zero progress. These are candidates for #195 scope,
+needing an owner-scoped change because they alter accepted human-client lists
+and checkpoints.
+
+**Not established (research):** the `@CIVILIZE` row loader's treatment of the
+`no` prerequisite and the Rules.txt → advance-record mapping beyond the
+executed table fields; the free-advance (Philosophy/Darwin) prompt path; the
+scenario `0x607640 & 0x80` mode; Great Library and tech-trade grant effects
+beyond `0x49dff7`.
 
 ### Integrated surface city phase and controlled full-round replay (#13)
 

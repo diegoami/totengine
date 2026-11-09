@@ -159,11 +159,39 @@ engine-provided legal list; response commits the chosen project and resumes the
 suspended phase. Help/goal/unlock detail returns to that same choice.
 
 The long-term goal does not grant technology or independently replace the
-active project. Mid-project changes, penalty/progress retention and later
-research-discovery presentation remain reference gaps. The prototype's project
-selection is a required-choice layout preview, not proof that arbitrary advisor
-changes should be allowed. Goal state, if part of the client, needs a stated
-persistence/ownership boundary.
+active project. The prototype's project selection is a required-choice layout
+preview, not proof that arbitrary advisor changes should be allowed.
+
+**Native rules (#194; evidence §Research selection, goal and mid-project
+changes).** There is no human path that changes a *running* project: the target
+changes only at discovery (reset, progress to 0), when the civ gains the advance it
+is researching by other means (target cleared, **progress kept**), in the
+chooser, and through scenario/event actions. The chooser opens when science is
+added with no target and non-zero progress, and after a discovery with no
+target. Its list applies enabled/unknown/prerequisite filters, the leader
+tech-group gate (flag must be 0) and, for a human at non-zero difficulty, a
+thinning rule that hides every later candidate with `(id − acquired) % 3 == 0`.
+The goal is one global value, not saved with the game; accepted candidates on
+its path are pre-selected but the prompt still appears. Building the list
+consumes the CRT generator.
+
+**Proposed contract (not implemented; #195).** Keep the required `Research`
+decision as the only way to set a project; do not add an advisor "change
+project" command. The decision's list comes from one engine function carrying the
+native filters. Goal is client/session state with its own explicit checkpoint
+field (the original does not persist it), cleared on discovery of the goal.
+The recommendation shown with the list is part of the decision payload (recorded,
+not recomputed) so replay and RNG stay deterministic.
+
+**Open owner decisions (2026-11-09; nothing implemented).**
+
+1. *Candidate list fidelity.* The current engine list differs from native
+   (`!= 2` group gate, no thinning, no both-`nil` exclusion). Options: adopt the
+   native rules exactly (requires regenerating accepted human checkpoints and
+   changes what players can pick), or keep the current permissive list as a
+   documented difference.
+2. *Goal persistence.* Persist goal in checkpoints (recommended, session state
+   outside the original format) or reset it on reload like the original.
 
 ## Rates and government
 

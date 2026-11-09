@@ -185,6 +185,59 @@ newspaper notice. The number of anarchy rounds is fixture-specific, not an
 inferred general duration. Additional government choices/effects need eligible
 fixtures and mechanics coverage before implementation acceptance.
 
+### Native rules and proposed contract for milestone 16 (#194)
+
+Native facts, with their evidence and static/executed status, are in
+[evidence §Rates, revolution and government selection](../evidence/README.md).
+Summary used below: the per-slider cap is 6/6/7/8/8/8/10 tenths for Anarchy,
+Despotism, Monarchy, Communism, Fundamentalism, Republic, Democracy; the
+redistribution rule and locks are the executed `0x409704` algorithm; governments
+2–6 need their advance or an active Statue of Liberty, Fundamentalism also needs
+its advance enabled in the loaded rules; Anarchy ends at the first per-civ turn
+step whose turn counter is a multiple of four (every step with Statue of
+Liberty); the chooser lists governments 1..6 filtered by eligibility.
+
+**Proposed engine surface (not implemented; #195).** Rates: a `SetRates {civ,
+science, tax}` command legal iff `science`, `tax` and `10 - science - tax` are all
+in `[0, cap]` for the civ's current government, with a typed rejection reason; the
+view supplies the cap, current shares, and the consistent finance quote. Lock
+state and the native redistribution (ported with the 621 vectors as regression
+data) stay client presentation: the engine validates only committed shares.
+Revolution: a `Revolution` command is legal for a human civ that is not already in
+Anarchy, honors the scenario restriction once its bits are decoded, and sets
+Anarchy at once (native). A pending government choice is an authoritative phase
+(`GovernmentChoice {decision_id, civ, eligible}`) persisted in checkpoints, opened
+at the first qualifying turn step, rejecting stale ids and ineligible
+governments. Accepting it sets the government through the existing setter effects
+and opens a `RateReview` decision before input returns (native: the setter opens
+the rate dialog for a human civ). The current `Phase::UnsupportedGovernment` is
+replaced by these, not bypassed.
+
+**Owner decisions, 2026-11-09 (accepted as design; nothing here is implemented).**
+Native evidence for each is in the evidence README section above.
+
+1. *Revolution question and Escape:* Escape/close means **Cancel**. Enter on the
+   focused default (Yes) still confirms, and an explicit Cancel button is shown.
+   This deliberately differs from the original, where Escape alone started the
+   revolution (U31); document it in client help. Cancel returns to the map with
+   no engine mutation and no decision consumed.
+2. *Government chooser:* a **required decision with no cancel**. Escape shows the
+   reason and keeps the chooser open; the pending phase persists in checkpoints.
+   This differs from the native "negative selection leaves Anarchy running until
+   the next qualifying turn step" path, whose UI exposure is untested.
+3. *Rate dialog:* Esc/Cancel **discards the draft**; OK sends one `SetRates`.
+   After a government change the review is required but may accept the normalized
+   current shares unchanged. Native Cancel behavior remains untested, so #196
+   acceptance must show the chosen behavior rather than claim original parity.
+
+**Route to freeze for validation (#194 → #196).** New standard game → Shift+T
+(legal change, illegal change rejected with cap reason, locks) → Shift+R → question
+(cancel path, then confirm path) → Anarchy → end turns until a multiple-of-four
+turn → chooser (only legal governments, stale/ineligible rejected) → rate review →
+map; save/reload before and after each decision. A fixture with a second legal
+government (Monarchy known) is required; the generated standard start offers only
+Despotism, as U31 did.
+
 ## Diplomacy and intelligence
 
 Evidence: U11–U14, U25/U26. With the optional visual diplomacy presentation

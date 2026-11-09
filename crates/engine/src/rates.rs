@@ -223,6 +223,38 @@ mod tests {
     }
 
     #[test]
+    fn remembered_opening_value_matches_native_vectors() {
+        let rows = section("remembered:");
+        assert_eq!(rows.len(), 414);
+        let mut differs = 0;
+        for r in rows {
+            let (cap, value) = (r[0] as u8, r[2] as u8);
+            let current = [r[3] as u8, r[4] as u8, r[5] as u8];
+            let locks = [r[6] & 1 != 0, r[6] & 2 != 0, r[6] & 4 != 0];
+            let remembered = [r[7] as u8, r[8] as u8, r[9] as u8];
+            let moved = match r[1] {
+                0 => Slider::Tax,
+                1 => Slider::Luxury,
+                _ => Slider::Science,
+            };
+            let out = redistribute(cap, current, remembered, locks, moved, value);
+            assert_eq!(
+                out.map(i32::from),
+                [r[10], r[11], r[12]],
+                "cap {cap} {moved:?} {value} from {current:?} opened {remembered:?} locks {locks:?}"
+            );
+            if out != redistribute(cap, current, current, locks, moved, value) {
+                differs += 1;
+            }
+        }
+        // the remembered value must actually change outcomes in the corpus
+        assert!(
+            differs >= 20,
+            "only {differs} vectors depend on the opening value"
+        );
+    }
+
+    #[test]
     fn legality_uses_each_share_and_the_total() {
         assert_eq!(check_rates(1, 6, 4), Ok(0));
         assert_eq!(

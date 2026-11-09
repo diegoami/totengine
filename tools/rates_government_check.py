@@ -107,6 +107,34 @@ def normalize_cases(o):
     return lines
 
 
+def remembered_cases(o):
+    """Same routine with W (remembered opening value of Y) independent of Y.
+
+    The dialog passes the value the sliders had when it opened, so after a few
+    drags W differs from the current Y. A separate generator keeps the
+    normalize section above byte-stable."""
+    rng = random.Random(1950)
+    legal = {
+        cap: [(t, 10 - t - s, s) for t in range(cap + 1) for s in range(cap + 1) if 0 <= 10 - t - s <= cap]
+        for cap in (6, 7, 8, 10)
+    }
+    cycle = {0: (2, 1), 2: (1, 0), 1: (0, 2)}
+    lines = []
+    for cap in (6, 7, 8, 10):
+        for tax, lux, sci in legal[cap]:
+            for _ in range(2):
+                rem = rng.choice(legal[cap])  # remembered opening split (tax, lux, sci)
+                moved, value, locks = rng.randrange(3), rng.randrange(cap + 1), rng.randrange(8)
+                cur = [tax, lux, sci]
+                lock = [locks & 1, (locks >> 1) & 1, (locks >> 2) & 1]
+                yi, zi = cycle[moved]
+                out = normalize(o, cap, value, cur[yi], cur[zi], rem[yi], lock[yi], lock[zi])
+                result = [0, 0, 0]
+                result[moved], result[yi], result[zi] = out
+                lines.append([cap, moved, value, tax, lux, sci, locks, *rem, *result])
+    return lines
+
+
 def eligible(o, civ, gov, tech, sol, flag, others):
     block = CIV + STRIDE * civ
     o.cpu.mem_write(block + 96, b"\0" * 13)
@@ -188,12 +216,15 @@ def main():
     binary, o = world(home)
     caps = cap_cases(o)
     norm = normalize_cases(o)
+    rem = remembered_cases(o)
     elig = eligibility_cases(o)
     res = resolve_cases(o)
     text = ["# cap: government cap_tenths"]
     text += [" ".join(map(str, row)) for row in caps]
     text.append("# normalize: cap moved(0=tax,1=lux,2=sci) value tax lux sci locks(tax=1,lux=2,sci=4) | tax lux sci")
     text += [" ".join(map(str, row)) for row in norm]
+    text.append("# remembered: cap moved value tax lux sci locks | opening_tax opening_lux opening_sci | tax lux sci")
+    text += [" ".join(map(str, row)) for row in rem]
     text.append("# eligible: government knows_own_advance knows_other_government_advances statue_of_liberty fundamentalism_flag | result")
     text += [" ".join(map(str, row)) for row in elig]
     text.append("# resolve: human government turn flags_in statue_of_liberty | flags_out chooser_calls arg0 arg1")
@@ -201,7 +232,7 @@ def main():
     report = {
         "binary_sha256": hashlib.sha256(binary).hexdigest(),
         "routines": ["0x40966b", "0x409704", "0x525468", "0x5292d6 -> 0x529453"],
-        "cases": {"cap": len(caps), "normalize": len(norm), "eligible": len(elig), "resolve": len(res)},
+        "cases": {"cap": len(caps), "normalize": len(norm), "remembered": len(rem), "eligible": len(elig), "resolve": len(res)},
         "replaced_callees": ["0x52588e (recorded, returns 0)"],
         "vectors_sha256": hashlib.sha256(("\n".join(text) + "\n").encode()).hexdigest(),
         "scope": __doc__.strip(),

@@ -94,20 +94,22 @@ for runtime continuation; #197/#198 retain phase/movement/fog/event/dependency/
 initializer blockers. #221 CI wiring remains open: OAuth credentials lack
 workflow scope; inspector tests run explicitly and via make, not current CI.
 
-Next planned package is milestone 16, science/rates/government on both clients
-(#194–#196), version unassigned. Finish reference/API scope before implementation;
-new human routes need both-client acceptance and owner-launched independent
-review. Preserve all owner previews/games and old version-bound binaries;
-workspace metadata remains v0.17. No full-client or full-AI gate is cleared.
+**Milestone 16 (science/rates/government on both clients, #194–#196) is a v0.18.0
+CANDIDATE awaiting the owner-launched independent review**; see
+[readiness](docs/v0.18.0-readiness.md) and the milestone issue for the candidate SHA.
+Merged on main: #237/#238 (reference, rates) and #239–#242 (revolution, required
+government chooser and rate review, native human research list with a checkpointed
+goal, and the shared client routes: Shift+T rates, Shift+R revolution, F6 science
+advisor + goal in `totui/src/client/routes.rs`; design
+`docs/ui/science-government-milestone.md`). Real SDL (Xvfb) and Chromium input replay
+one recorded 69-step route with byte-identical checkpoints
+(`docs/evidence/client-government-route-v1.json`); no Windows run, packaged archives or
+owner acceptance is claimed. `main` takes only fixes for the review's findings until the
+tag. Still undecoded: native prompt timing, recommender RNG, the revolution scenario
+restriction, AI government choice. Preserve owner previews/games and old version-bound
+binaries. No full-client or full-AI gate is cleared.
 
-Resume at #194/#195/#196. #194's reference work and the second-government fixture are merged (#237);
-#195 slice 1 (rates; `engine::rates`, `Command::Rates`/`Order::SetRates`) is merged (#238, independent
-review fixed in-PR). #195 slice 2 (on its own PR) adds `Command::Revolution`, `Decision::Government`,
-`Decision::Rates` (`Command::ReviewRates`) and the begin-of-turn anarchy step in `engine::government`/`human`,
-checked against native eligibility (144) and anarchy-resolution (528) vectors; `Phase::UnsupportedGovernment`
-is gone. The research slice (own PR, stacked on it) adds the native human research list (thinning, group gate `== 0`)
-and a checkpointed research goal (`Command::Goal`); hut/AI lists and all-AI goldens are unchanged. Still open in #195:
-native prompt timing, recommender RNG, the revolution scenario restriction. Shared client routes (rates Shift+T, revolution Shift+R, required government chooser/rate review, F6 science advisor + goal) are implemented in `totui/src/client/routes.rs` on PR #242 (design: `docs/ui/science-government-milestone.md`); no real-browser/SDL acceptance, owner acceptance or review exists yet. Changing `crates/engine/src/{player,human,human/checkpoint,lib}.rs` or
+Changing `crates/engine/src/{player,human,human/checkpoint,lib}.rs` or
 `crates/totui/src/client/mod.rs` stales `docs/scenario-engine-baseline.json`: run the full `make test` with
 `CIVTOT_HOME` set (CI does not run `test_scenario_inventory`, #221), audit the diff, refresh the hashes and
 `docs/evidence/scenario-inventory-v1.json`.

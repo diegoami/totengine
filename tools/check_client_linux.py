@@ -118,6 +118,10 @@ def run():
                         rawkey("Control_L",True,False)
                         rawkey(name[5:],down,up)
                         rawkey("Control_L",False,True)
+                    elif name.startswith("Shift+"):
+                        rawkey("Shift_L",True,False)
+                        rawkey(name[6:],down,up)
+                        rawkey("Shift_L",False,True)
                     else:rawkey(name,down,up)
                     if down and up and not closing: wait(lambda s:s["revision"]>old)
                 def has(s,label):return any(d.get("text")==label for d in s["draws"])
@@ -309,6 +313,10 @@ def run():
                         key("Escape");key("8");key("Return")
                         key("Ctrl+s");save_dialog(name+"after")
                         assert (work/"saves"/(name+"after.cth")).read_bytes()==(Path(fixtures)/("after-"+name+".cth")).read_bytes(),name
+                government=os.environ.get("TOTENGINE_GOVERNMENT_FIXTURES")
+                if government:
+                    from check_government_route import run_government
+                    run_government(scene,key,click_button,save_dialog,load,wait,work,government)
                 panels=os.environ.get("TOTENGINE_PANELS_FIXTURES")
                 if panels:
                     from check_city_panels import run_panels

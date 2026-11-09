@@ -2876,7 +2876,9 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test anarchy_install
 
 Source: unpatched `civ2.bak`, SHA-256 in [rates-government.json](rates-government.json).
 Four routines are **executed natively** under Unicorn on the standard reference
-save (1,549 cases, deterministic; vectors in
+save (1,963 cases, deterministic; 414 of them drive `0x409704` with a remembered
+opening value `W` that differs from the current slider, the case the dialog reaches
+after several drags; vectors in
 [rates-government-vectors.txt](rates-government-vectors.txt)):
 
 ```sh

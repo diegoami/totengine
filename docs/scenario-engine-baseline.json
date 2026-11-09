@@ -9,10 +9,10 @@
     "crates/engine/src/events.rs": "5dc1820f0151d3b6371fc507eefab502488a13e72057d873b0ee777885100fe5",
     "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
-    "crates/engine/src/player.rs": "4f1458c34155eeeb4129fa8f5065d855f11f050e408d5e6632a8bfa60abbd0b5",
-    "crates/engine/src/human.rs": "7db2eddc362419f9fd45aed469ba2e838497daf9e347e72373e1ae55af3159ca",
-    "crates/engine/src/human/checkpoint.rs": "d695cbbf6779be8c7c17a72d1c97df96aca3aaed654a0af3b6ae318583966c93",
-    "crates/engine/src/lib.rs": "e927b87ca5496ab8e4ba087e7a44d1a2eac460c2f061fd561b79f5f2053c661c",
+    "crates/engine/src/player.rs": "114b3c177dc9b247c0ae3c3da94a03ff3a40a11f4dcd3ebfe1bb9278b89a0b61",
+    "crates/engine/src/human.rs": "a7848443a8b255c2bdb567bc5e9d680ab1472702a723f3594b51acd480e54052",
+    "crates/engine/src/human/checkpoint.rs": "e5d2f5e25d804a3ac3eb027236d976183431b1850b4c7e8addbd067e776e9195",
+    "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
     "crates/totui/src/client/mod.rs": "7341f1fd34a2fe572303cffaa436f20b9edbe340b4d3f0ca71f79b54fc0344cc",
     "crates/totui/src/resources.rs": "531247a00d6307ed0698646200122c9631ee34e6665e9a42b0278f31ba9cad6d",
@@ -126,5 +126,17 @@
     "Multiple-map simulation/transfers are not implemented.",
     "Scenario objectives/house rules cannot be inferred from arbitrary scripts or prose.",
     "Keyword recognition cannot admit simulation, observation, human campaigns or native export."
+  ],
+  "incremental_audits": [
+    {
+      "change": "#195 slice 1: Command::Rates, Order::SetRates, OrderResult::RatesSet, checkpoint encoding of rates, `pub mod rates`",
+      "files": [
+        "crates/engine/src/human.rs",
+        "crates/engine/src/human/checkpoint.rs",
+        "crates/engine/src/lib.rs",
+        "crates/engine/src/player.rs"
+      ],
+      "finding": "Additive human/Order variants only. No trigger or action coverage, scenario event path, classic-entry or runtime admission changed; the trigger/action tables above are unchanged."
+    }
   ]
 }

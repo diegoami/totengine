@@ -103,6 +103,11 @@ pub enum Order {
     SetResearch {
         advance: usize,
     },
+    /// Commit new science and tax shares in tenths; luxury is the remainder.
+    SetRates {
+        science: u8,
+        tax: u8,
+    },
     /// Found a city with settler `unit` on its tile
     /// ([`WorldState::found_city`]).
     FoundCity {
@@ -139,6 +144,7 @@ pub enum OrderResult {
     ProductionBought,
     ImprovementSold(u8),
     ResearchSet,
+    RatesSet,
     /// A city was founded; its index.
     Founded(usize),
     TurnEnded,
@@ -160,6 +166,7 @@ impl fmt::Display for Order {
             Order::BuyProduction { city, quote } => write!(f, "buy {city} {}", quote.encode()),
             Order::SellImprovement { city, quote } => write!(f, "sell {city} {}", quote.encode()),
             Order::SetResearch { advance } => write!(f, "research {advance}"),
+            Order::SetRates { science, tax } => write!(f, "rates {science} {tax}"),
             Order::FoundCity { unit } => write!(f, "found {unit}"),
             Order::FoundNamedCity { unit, name } => {
                 write!(f, "found-named {unit} ")?;
@@ -191,6 +198,7 @@ impl fmt::Display for OrderResult {
             OrderResult::ProductionBought => write!(f, "production-bought"),
             OrderResult::ImprovementSold(id) => write!(f, "improvement-sold {id}"),
             OrderResult::ResearchSet => write!(f, "research-set"),
+            OrderResult::RatesSet => write!(f, "rates-set"),
             OrderResult::Founded(c) => write!(f, "founded {c}"),
             OrderResult::TurnEnded => write!(f, "ended"),
             OrderResult::Skipped => write!(f, "skipped"),
@@ -234,6 +242,10 @@ impl Order {
             }),
             ["research", a] => Some(Order::SetResearch {
                 advance: a.parse().ok()?,
+            }),
+            ["rates", s, t] => Some(Order::SetRates {
+                science: s.parse().ok()?,
+                tax: t.parse().ok()?,
             }),
             ["found", u] => Some(Order::FoundCity {
                 unit: u.parse().ok()?,
@@ -660,6 +672,10 @@ impl WorldState {
                 }
                 OrderResult::ResearchSet
             }
+            Order::SetRates { science, tax } => match self.set_rates(rules, civ, science, tax) {
+                Ok(()) => OrderResult::RatesSet,
+                Err(why) => OrderResult::Rejected(why),
+            },
             Order::FoundCity { unit } | Order::FoundNamedCity { unit, .. } => {
                 if self
                     .units

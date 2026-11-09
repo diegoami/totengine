@@ -9,12 +9,13 @@
   "cases": {
     "cap": 256,
     "normalize": 621,
+    "remembered": 414,
     "eligible": 144,
     "resolve": 528
   },
   "replaced_callees": [
     "0x52588e (recorded, returns 0)"
   ],
-  "vectors_sha256": "c01e34cbdba6f481f6ad73dcb5825e2fffa5f29806f12f428d1fb370a39192f8",
+  "vectors_sha256": "31a0e3b5afd84989a4ed2b5785f2f1637765975c73e44b734fd6500c895efabc",
   "scope": "Execute original rate-cap, slider-redistribution, government-eligibility and\nanarchy-resolution routines from unpatched civ2.bak (#194).\n\nNative routines (all executed from the original image, no reimplementation):\n\n* 0x40966b  max rate (tenths) for a civ's government byte\n* 0x409704  three-slider redistribution with two locks and a remembered value\n* 0x525468  is a government selectable for a civ (advance / Statue of Liberty)\n* 0x5292d6  per-civ anarchy resolution, run to its common exit 0x529453\n\nReplaced callees (recorded, not executed): 0x52588e, the human revolution /\nchooser trigger, because it opens modal UI. The call and its arguments are\ncaptured and the call returns 0. Everything else in the stretch is original\ncode on a copied standard save. This does not cover the Shift+R handler, the\ngovernment list UI, the dialog-open cap normalization or the rate commit; those\nare static decodes documented in docs/evidence/README.md."
 }

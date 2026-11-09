@@ -159,11 +159,40 @@ engine-provided legal list; response commits the chosen project and resumes the
 suspended phase. Help/goal/unlock detail returns to that same choice.
 
 The long-term goal does not grant technology or independently replace the
-active project. Mid-project changes, penalty/progress retention and later
-research-discovery presentation remain reference gaps. The prototype's project
-selection is a required-choice layout preview, not proof that arbitrary advisor
-changes should be allowed. Goal state, if part of the client, needs a stated
-persistence/ownership boundary.
+active project. The prototype's project selection is a required-choice layout
+preview, not proof that arbitrary advisor changes should be allowed.
+
+**Native rules (#194; evidence §Research selection, goal and mid-project
+changes).** There is no human path that changes a *running* project: the target
+changes only at discovery (reset, progress to 0), when the civ gains the advance it
+is researching by other means (target cleared, **progress kept**), in the
+chooser, and through scenario/event actions. The chooser opens when science is
+added with no target and non-zero progress, and after a discovery with no
+target. Its list applies enabled/unknown/prerequisite filters, the leader
+tech-group gate (flag must be 0) and, for a human at non-zero difficulty, a
+thinning rule that hides every later candidate with `(id − acquired) % 3 == 0`.
+The goal is one global value, not saved with the game; accepted candidates on
+its path are pre-selected but the prompt still appears. Building the list
+consumes the CRT generator.
+
+**Proposed contract (not implemented; #195).** Keep the required `Research`
+decision as the only way to set a project; do not add an advisor "change
+project" command. The decision's list comes from one engine function carrying the
+native filters. Goal is client/session state with its own explicit checkpoint
+field (the original does not persist it), cleared on discovery of the goal.
+The recommendation shown with the list is part of the decision payload (recorded,
+not recomputed) so replay and RNG stay deterministic.
+
+**Owner decisions, 2026-11-09 (accepted as design; nothing implemented).**
+
+1. *Candidate list fidelity:* **adopt the native rules exactly** (enabled,
+   unknown, prerequisites, group gate with flag 0, both-`nil` exclusion and the
+   human thinning rule). #195 ports them into one engine function; accepted human
+   checkpoints are regenerated and the change is called out in release notes,
+   since players lose some previously offered choices.
+2. *Goal persistence:* **persist the goal in checkpoints** as explicit session
+   state outside the original format, cleared when the goal advance is
+   discovered. Native reload would forget it; this is a documented difference.
 
 ## Rates and government
 
@@ -184,6 +213,61 @@ U31 reaches the chooser with only Despotism legal, then the rate screen and
 newspaper notice. The number of anarchy rounds is fixture-specific, not an
 inferred general duration. Additional government choices/effects need eligible
 fixtures and mechanics coverage before implementation acceptance.
+
+### Native rules and proposed contract for milestone 16 (#194)
+
+Native facts, with their evidence and static/executed status, are in
+[evidence §Rates, revolution and government selection](../evidence/README.md).
+Summary used below: the per-slider cap is 6/6/7/8/8/8/10 tenths for Anarchy,
+Despotism, Monarchy, Communism, Fundamentalism, Republic, Democracy; the
+redistribution rule and locks are the executed `0x409704` algorithm; governments
+2–6 need their advance or an active Statue of Liberty, Fundamentalism also needs
+its advance enabled in the loaded rules; Anarchy ends at the first per-civ turn
+step whose turn counter is a multiple of four (every step with Statue of
+Liberty); the chooser lists governments 1..6 filtered by eligibility.
+
+**Proposed engine surface (not implemented; #195).** Rates: a `SetRates {civ,
+science, tax}` command legal iff `science`, `tax` and `10 - science - tax` are all
+in `[0, cap]` for the civ's current government, with a typed rejection reason; the
+view supplies the cap, current shares, and the consistent finance quote. Lock
+state and the native redistribution (ported with the 621 vectors as regression
+data) stay client presentation: the engine validates only committed shares.
+Revolution: a `Revolution` command is legal for a human civ that is not already in
+Anarchy, honors the scenario restriction once its bits are decoded, and sets
+Anarchy at once (native). A pending government choice is an authoritative phase
+(`GovernmentChoice {decision_id, civ, eligible}`) persisted in checkpoints, opened
+at the first qualifying turn step, rejecting stale ids and ineligible
+governments. Accepting it sets the government through the existing setter effects
+and opens a `RateReview` decision before input returns (native: the setter opens
+the rate dialog for a human civ). The current `Phase::UnsupportedGovernment` is
+replaced by these, not bypassed.
+
+**Owner decisions, 2026-11-09 (accepted as design; nothing here is implemented).**
+Native evidence for each is in the evidence README section above.
+
+1. *Revolution question and Escape:* Escape/close means **Cancel**. Enter on the
+   focused default (Yes) still confirms, and an explicit Cancel button is shown.
+   This deliberately differs from the original, where Escape alone started the
+   revolution (U31); document it in client help. Cancel returns to the map with
+   no engine mutation and no decision consumed.
+2. *Government chooser:* a **required decision with no cancel**. Escape shows the
+   reason and keeps the chooser open; the pending phase persists in checkpoints.
+   This differs from the native "negative selection leaves Anarchy running until
+   the next qualifying turn step" path, whose UI exposure is untested.
+3. *Rate dialog:* Esc/Cancel **discards the draft**; OK sends one `SetRates`.
+   After a government change the review is required but may accept the normalized
+   current shares unchanged. Native Cancel behavior remains untested, so #196
+   acceptance must show the chosen behavior rather than claim original parity.
+
+**Route to freeze for validation (#194 → #196).** New standard game → Shift+T
+(legal change, illegal change rejected with cap reason, locks) → Shift+R → question
+(cancel path, then confirm path) → Anarchy → end turns until a multiple-of-four
+turn → chooser (only legal governments, stale/ineligible rejected) → rate review →
+map; save/reload before and after each decision. The second-government fixture is authored by `tools/government_fixture.py` (evidence
+§Second-government fixture): the human civ knows Monarchy and is in Despotism, so the
+chooser must list exactly Despotism and Monarchy, caps are 6 then 7, and the retained
+vectors give the expected rate results; the generated standard start offers only
+Despotism, as U31 did. An engine/client version of this fixture is part of #195/#196.
 
 ## Diplomacy and intelligence
 

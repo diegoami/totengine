@@ -2872,6 +2872,234 @@ CIVTOT_HOME=/mnt/d/games/CIVTOT cargo test -p engine --test anarchy_install
 ```
 
 
+### Rates, revolution and government selection (#194)
+
+Source: unpatched `civ2.bak`, SHA-256 in [rates-government.json](rates-government.json).
+Four routines are **executed natively** under Unicorn on the standard reference
+save (1,549 cases, deterministic; vectors in
+[rates-government-vectors.txt](rates-government-vectors.txt)):
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+  python3 tools/rates_government_check.py --gold /tmp/rg.json --vectors /tmp/rg.txt
+cmp docs/evidence/rates-government.json /tmp/rg.json
+cmp docs/evidence/rates-government-vectors.txt /tmp/rg.txt
+```
+
+The only replaced callee is `0x52588e` (the human chooser trigger, which opens
+modal UI); the run records its arguments and returns 0. Government order is the
+installed `@GOVERNMENTS`: 0 Anarchy, 1 Despotism, 2 Monarchy, 3 Communism,
+4 Fundamentalism, 5 Republic, 6 Democracy. Civ block byte @29 is the government,
+@27 science and @28 tax in tenths, luxury is `10 - science - tax`.
+
+**Rate cap `0x40966b(civ)`** (tenths; 256 government bytes executed): government
+0 or 1 → 6, 2 → 7, 3, 4 or 5 → 8, 6 and every higher byte → 10. Anarchy therefore
+shares Despotism's 60% cap in this binary. The cap bounds *each* of tax, luxury and
+science. It is separate from the Fundamentalism science cap (`@COSMIC` row 21,
+already in `engine::finance`). The ToTPP-patched executable was not re-checked.
+
+**Slider redistribution `0x409704(X, Y, Z, W, LY, LZ)`** (621 sampled legal states,
+every cap, each lock mask, each moved slider). The three handlers (`0x409844`,
+`0x4099d7` and the luxury handler at `0x409b6a`) clamp the requested value to
+`[0, cap]`, make it `X`, and pass the other two sliders in the cycle
+tax→science→luxury→tax as `(Y, Z)`. `W` is the remembered opening value of `Y`
+and each slider has its own lock. Dialog fields: cap `+0x740`, tax/luxury/science
+`+0x744/+0x748/+0x74c`, remembered `+0x750/+0x754/+0x758` (written only when the
+dialog opens), locks `+0x7b0` tax / `+0x7b8` luxury / `+0x7b4` science. Then:
+
+- while `X + Y + Z < 10`: if `Y < cap && W > Y && !LY` raise `Y`; else if
+  `Z < cap && !LZ` raise `Z`; else if `Y < cap && !LY` raise `Y`; else raise `X`;
+- while `X + Y + Z > 10`: lower `Y` if it is positive and unlocked; else lower `Z`
+  if positive and unlocked; else lower `X`.
+
+In the sampled domain the result always sums to 10 and never exceeds the cap.
+With both other sliders locked the moved slider returns to the remainder, i.e.
+the request is effectively rejected. This reproduces the U32 observation as one
+case; it is the full algorithm for the dialog, including its locks, but only in
+the sampled states.
+
+**Government eligibility `0x525468(civ, gov)`** (144 cases). Anarchy, Despotism
+and any government ≥ 7 are always eligible. Monarchy, Communism, Fundamentalism,
+Republic and Democracy need the civ to know advance 54, 15, 31, 71 and 21
+respectively (installed `@CIVILIZE` rows), **or** to hold an active Statue of
+Liberty (wonder 19 = improvement 59 − 40, via `0x444a61`). Knowing another
+government's advance does not help. Fundamentalism has one extra gate: the byte
+`0x5d0c91` must be non-zero even with the advance or the wonder. That byte is
+record #31 (+17) of the 20-byte advance table at `0x5d0a14`; the `@CIVILIZE` row
+loader `0x412f54` sets +17 to 1 only when the row's first prerequisite is not
+`nil` (static decode of the loader; the executed cases set the byte directly).
+
+**Anarchy resolution `0x5292d6(civ)`** (528 cases, run to its common exit
+`0x529453`). It clears civ flag bits `0x48`, then does nothing unless the civ is
+in Anarchy. For a human civ in Anarchy: when `turn & 3 == 0` (`turn` = game block
+i16 @668, RAM `0x607648`) it opens the government chooser (`0x52588e(civ, 1)`)
+unless flag bit `0x1` is set, in which case it only clears that bit; when
+`turn & 3 != 0` it does nothing. Owning the Statue of Liberty opens the chooser on
+every pass regardless of the turn. The AI branch has the same turn gating. So a
+**voluntary revolution lasts until the next turn whose counter is a multiple of
+four** (1–4 turn steps depending on when it starts), not a fixed number of
+rounds. U31's "chooser at the first end-turn" is consistent with that and
+fixture-specific. The only caller is `0x47274a`, in the per-civ turn step after
+`0x471cdf`/`0x4709d1` and before `0x505df1`; the exact turn-counter value at that
+moment relative to the round increment still has to be pinned against a native
+round trace before an engine implementation (#195).
+
+**Statically decoded, not executed** (UI-bound; treat as decode, not oracle):
+
+- Revolution command `0x40bde1` (Shift+R): returns at once if `0x607640 & 0x80`
+  and `0x5f5e50 & 0x10` (a scenario restriction; bit meaning unconfirmed). If civ
+  flag `0x8` is set it re-opens the chooser (`0x52588e(civ, 1)`); the flag is set
+  whenever that routine opens the chooser and is cleared at the next `0x5292d6`
+  pass. If already Anarchy it returns. Otherwise it asks a Yes/No question and
+  proceeds only when the answer is 0 (Yes); any other result returns with no
+  change. On Yes it plays a sound, shows a notice and calls `0x52522f(civ, 0)`,
+  which sets Anarchy immediately. The voluntary path does **not** set flag `0x1`;
+  the city-unrest path sets it after its dispatch (`0x4c9c05`), so a forced anarchy
+  consumes its first aligned turn (4–7 turn steps).
+- Government setter `0x52522f(civ, gov)`: stores the government; clears incoming
+  treaty bit `0x10` when the new government is Anarchy or the civ is not human;
+  refreshes own surface cities and maps queued unit 8 to 11 outside
+  Fundamentalism (the existing forced-anarchy decode); for a human civ with
+  `gov ≥ 1` and `0x6031b8 == 0` opens the rate dialog `0x40b783`.
+- Chooser `0x5255c4(civ, mode)`: mode 0 lists governments 1..6 filtered by
+  `0x525468`; any non-zero mode lists 0..6 unfiltered (scenario/event use). A
+  negative selection returns −1 with no change, which leaves Anarchy in place
+  until the next qualifying `0x5292d6` pass; whether the installed dialog exposes
+  such a cancel is untested. Choosing Republic or Democracy shows a one-time
+  advisory when `0x60763b & 1` and `0x607644 & 0x20` is clear, then sets that bit.
+- Rate dialog open: loops lower tax then science to the cap (moving the excess to
+  the other when it has room), then caps luxury by raising tax/science, then stores
+  the three values as the remembered set and runs `0x409704` once (its two lock
+  arguments are a local flag, assumed clear). Commit (`0x40b50c`–`0x40b5a0`)
+  writes dialog tax/science back to `@28/@27` and runs a city loop only when a
+  value changed (loop body not decoded). Locks appear to persist across openings
+  through globals `0x5cead0..8` (copies at `0x40b2e4`/`0x40b36a`/`0x40b4e1`).
+  Shift+T opens the dialog during Anarchy; no Anarchy gate was found in its entry
+  `0x40b783`, which only requires a human civ and no dialog already open.
+
+**Not established (rates/government):** what the `0x607640 & 0x80` /
+`0x5f5e50 & 0x10` revolution restriction means; whether Escape on the
+revolution question returns a non-zero value natively (the U31 observation says
+Escape started the revolution); the engine-side civ-flag/queue effects of
+`0x4bf9b6`, called after a voluntary revolution; custom-rules caps under ToTPP.
+
+#### Second-government fixture (#194)
+
+`tools/government_fixture.py --out DIR` derives two **private** saves from
+`Original/Ph_Auto2.SAV` (never committed; `DIR/Rules.txt` is a symlink): the human
+civ (civ 4, Despotism, knows only Bronze Working, turn 43) receives Monarchy and
+its prerequisite closure (advances 1, 9, 12, 54) and its acquired counter, while
+it stays in Despotism (`monarchy.SAV`); `anarchy.SAV` also sets Anarchy. Only civ
+block bytes 24, 29 and 96–102 change; both derived saves parse with `totctl save`.
+Retained evidence: [government-fixture.json](government-fixture.json) (hashes,
+changed offsets) and [government-fixture-vectors.txt](government-fixture-vectors.txt),
+reproducible and deterministic.
+
+Native results on the derived saves (same harness and replaced callee as the
+rates check; the advance table's enabled byte for the five government advances is
+set from `Rules.txt` because the harness does not load that table):
+
+- chooser list (`0x525468`): baseline save offers `{Despotism}`; the fixture offers
+  `{Despotism, Monarchy}`;
+- caps `0x40966b`: Anarchy 6, Despotism 6, Monarchy 7 (tenths);
+- rate route from the saved 4/0/6 (tax/lux/sci) through `0x409704`, no locks: under
+  Despotism science 7 and 8 are clamped to the cap and leave 4/0/6, tax 7 gives
+  6/0/4, luxury 3 gives 1/3/6; under Monarchy science 7 gives 3/0/7, science 8
+  clamps to 3/0/7, tax 7 gives 7/0/3, luxury 3 gives 1/3/6;
+- Anarchy resolution (`0x5292d6`, saved flags): the chooser opens at turns 44, 48
+  and 52 and at none of 43, 45–47, 49–51.
+
+**Not done:** loading the derived saves in the original game (no live Wine run, so
+the original's acceptance of the patched bytes and its on-screen chooser are not
+confirmed) and an engine/client fixture; both belong to the #195/#196 routes.
+
+#### Research selection, goal and mid-project changes (#194)
+
+Source: unpatched `civ2.bak`. The candidate filter is **executed natively**
+([research-choice.json](research-choice.json),
+[research-choice-vectors.txt](research-choice-vectors.txt); 48 seeded states over
+every civ slot and difficulty 0–5, 100 advances probed in each):
+
+```sh
+CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+  python3 tools/research_choice_check.py --gold /tmp/rc.json --vectors /tmp/rc.txt
+cmp docs/evidence/research-choice.json /tmp/rc.json
+cmp docs/evidence/research-choice-vectors.txt /tmp/rc.txt
+```
+
+`0x49f98b(civ)` (the recommender) applies the same filter as the human project
+chooser in `0x4a0ab4`; a candidate's membership is read by making it the unique
+best value (replaced callees, recorded: `0x5b11d0` rand → 1 and the value
+function `0x49c95d`). Predicates `0x49c820`, `0x49ecb6`, `0x4a2098` run
+natively. The advance table is synthetic and seeded (the `@CIVILIZE` loader
+`0x412f54` is a static decode); the Python model of the loop matches native
+membership in all 48 states (0 mismatches), and removing the thinning rule below
+changes the list in 28 of them, so the rule is exercised.
+
+A human-visible candidate `a` (0..99), in ascending order, must pass **all** of:
+
+1. record enabled (+17 non-zero);
+2. not already known (`0x49c820`; advance 89 is never "known");
+3. both prerequisites known (`nil` = −2 counts as known) and not both `nil`;
+4. tech-group gate `0x4a2098`: group −1, or the leader's group flag is **0**
+   (flag 1 blocks it; this is the stricter gate, not `0x4a2111`'s "≠ 2");
+5. **human thinning:** once at least one candidate has been accepted, and the
+   difficulty byte (save @684) is non-zero, skip `a` when
+   `(a − acquired) % 3 == 0`, with `acquired` = civ byte @24. The first
+   candidate is always accepted. The chooser applies this only for mode 0 and
+   when `0x607640 & 0x80` is clear (static decode of `0x4a11a6`–`0x4a1200`).
+
+**When the human is asked (static decode).** Research accumulation `0x4a1ebf`
+adds science to progress (@16). If a target (@18) exists and progress reaches
+`0x4a1ae0`'s cost it calls the discovery routine `0x4a145e`. If there is **no
+target**, a non-zero progress after adding triggers the chooser (`0x4a1436` =
+`0x4a0ab4(civ, 0)`), preceded by a one-time advisor text for a human with
+`acquired ≤ 1` when `0x60763b & 1`. Discovery with no target also opens it. The
+chooser is silent (adopts `0x49f98b`'s pick, no dialog) when turn is 0, the civ is
+not human, or `0x6031b8 != 0`; it returns −1 when nothing is researchable. After
+a discovery the target is −1 and progress is 0 (`0x4a154b`; the guard
+`0x5d6454 != 2` is true in practice: that word is 0 in the image and no writer
+exists).
+
+**There is no human path that changes a running project.** Every writer of the
+target (@18) was enumerated: new-game init (`0x48c528`), discovery completion
+(`0x4a1565`), the chooser's own writes (`0x4a126f`, `0x4a13d1`), the grant-advance
+routine `0x49dedf` (`0x49dff7`: gaining the advance you are researching sets the
+target to −1 and **keeps progress**) and scenario/event actions in `0x5219xx`
+(case 7 calls the chooser with mode 1, which skips the thinning rule but
+still applies every other filter; case 8 sets progress; case 9 clears the
+target). So a "mid-project change" exists only as a scenario/event action, and the
+F6 "Goal" screen never edits the active project.
+
+**Goal.** The goal is one global int (`0x5d6450`, image value −1), set by the
+goal chooser (`0x4a0886`/`0x4a0a30`) and cleared when that advance is
+discovered (`0x4a1581`). It is not per civ. It sits in `.data` outside the
+game, civ, city and unit blocks that saves map, so a native reload is expected to
+reset it; no reload run confirmed that. While building the chooser, each
+accepted candidate on the path to the goal (`0x49c8d4(goal, a)`) is pre-written as
+the target and the first such candidate is the default selection; the dialog
+still runs, so a goal never skips the required prompt.
+
+**Recommender RNG.** Building the list consumes the CRT `rand()` once per
+accepted candidate (human value `v + rand%3 − 1`), so opening the chooser advances
+that generator. Replay equivalence with native requires either reproducing that
+consumption or recording the recommendation as part of the decision.
+
+**Engine comparison (not fixed here).** `WorldState::observe_research` (used for
+the human decision list) differs from the native human list: it gates on
+`tech_group_flag != 2` (`0x4a2111`) instead of `== 0`; it has no thinning rule;
+it does not exclude both-`nil` records; and it prompts at the start of the human
+phase when the target is unset or free advances remain, while native prompts at
+the research step with non-zero progress. These are candidates for #195 scope,
+needing an owner-scoped change because they alter accepted human-client lists
+and checkpoints.
+
+**Not established (research):** the `@CIVILIZE` row loader's treatment of the
+`no` prerequisite and the Rules.txt → advance-record mapping beyond the
+executed table fields; the free-advance (Philosophy/Darwin) prompt path; the
+scenario `0x607640 & 0x80` mode; Great Library and tech-trade grant effects
+beyond `0x49dff7`.
+
 ### Integrated surface city phase and controlled full-round replay (#13)
 
 `WorldState::run_turn` now calls `run_city_phase` in civ order 0..7, descending

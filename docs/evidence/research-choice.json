@@ -1,0 +1,14 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "routine": "0x49f98b (probed per advance)",
+  "cases": 48,
+  "model_mismatches": 0,
+  "empty_candidate_sets": 2,
+  "cases_where_thinning_changes_the_list": 28,
+  "replaced_callees": [
+    "0x5b11d0 (returns 1)",
+    "0x49c95d (100 for probe, else 0)"
+  ],
+  "vectors_sha256": "53484a02a9577db3e2397b2484439110aed55bf30216ba6016e029d1129a95de",
+  "scope": "Probe the original human research-candidate filter natively (#194).\n\nNative routine executed: 0x49f98b(civ), the default/recommended research pick.\nIt applies the same candidate filter as the human project chooser built in\n0x4a0ab4 (enabled advance record, not known, both prerequisites known, not both\nprerequisites 'nil', tech-group gate 0x4a2098, and the human thinning rule), so\na candidate's membership can be read off by making it the unique best value.\n\nReplaced callees (recorded): 0x5b11d0 (CRT rand, returns 1 so the human value is\nunperturbed) and 0x49c95d (advance value: 100 for the probed advance, else 0).\nPredicates 0x49c820 (knows), 0x49ecb6 and 0x4a2098 run natively. The advance\nrecord table (0x5d0a14, 20-byte records: group dword +8, enabled byte +17,\nprerequisites +22/+23, nil = -2) is synthetic and seeded: the Rules.txt loader\n0x412f54 is a static decode only. The Python model transcribes the loop of\n0x49f98b and calls native predicates; it is compared with native membership.\nThe dialog's extra conditions (mode 0, scenario flag 0x80) are static decode."
+}

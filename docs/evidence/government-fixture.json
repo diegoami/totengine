@@ -1,0 +1,39 @@
+{
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": "Original/Ph_Auto2.SAV",
+  "source_sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef",
+  "human_civ": 4,
+  "turn": 43,
+  "granted_advances": [
+    1,
+    9,
+    12,
+    54
+  ],
+  "fixtures": {
+    "baseline": {
+      "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+    },
+    "monarchy": {
+      "sha256": "d38afe26a96125de9441cec3582ae4dd95f4770fbf1415c9fe698d45d80748cd",
+      "changed_civ_block_offsets": [
+        24,
+        96,
+        97,
+        102
+      ]
+    },
+    "anarchy": {
+      "sha256": "66ec54058f0a529e04b3e0464fb797f20405f7d87168278a3d042a1f06560577",
+      "changed_civ_block_offsets": [
+        24,
+        29,
+        96,
+        97,
+        102
+      ]
+    }
+  },
+  "vectors_sha256": "970828821b364d49a91ae186ceef429925970ccbc7af70480c65983e1108efaf",
+  "scope": "Author second-government fixtures from the installed reference save (#194).\n\nDerives two private saves from Original/Ph_Auto2.SAV into --out (never\ncommitted): `monarchy.SAV` gives the human civ Monarchy and its prerequisite\nclosure while it stays in Despotism, and `anarchy.SAV` additionally puts it in\nAnarchy. Only hashes, the patch description and native route vectors are\nretained as evidence.\n\nNative routines are executed on the derived saves exactly as in\nrates_government_check.py: 0x525468 (eligibility, chooser list), 0x40966b (cap),\n0x409704 (redistribution) and 0x5292d6 (anarchy resolution; 0x52588e recorded\nand returns 0). The advance record table is not loaded by the harness, so the\nenabled byte of the five government advances is set from the installed Rules.txt\n(prerequisite 1 not nil). Live load of the derived saves in the original game\nhas NOT been exercised."
+}

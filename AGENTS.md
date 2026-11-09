@@ -100,7 +100,17 @@ new human routes need both-client acceptance and owner-launched independent
 review. Preserve all owner previews/games and old version-bound binaries;
 workspace metadata remains v0.17. No full-client or full-AI gate is cleared.
 
-Resume at #194; no milestone-16 implementation or new acceptance has started.
+Resume at #194; no milestone-16 engine/client implementation or acceptance has started.
+#194 reference work is in progress: native caps/redistribution/eligibility/anarchy
+resolution are executed (`tools/rates_government_check.py`, `docs/evidence/rates-government*`,
+evidence README §Rates, revolution and government selection); the proposed contract and
+the owner's 2026-11-09 decisions (revolution Escape = Cancel; chooser required, no cancel;
+rate Cancel discards the draft) are in `docs/ui/screen-contracts.md`. Research rules are
+decoded too (`tools/research_choice_check.py`, evidence §Research selection): no human path changes a
+running project; owner decided 2026-11-09 to adopt native list rules and persist the goal in
+checkpoints (both for #195). The second-government fixture is authored natively
+(`tools/government_fixture.py`, evidence §Second-government fixture); a live original-game load of
+it is untested. #194 is not closed until its closure criteria (owner review) are met.
 Read `docs/plan.md`, `docs/ui/discovery.md` (U08/U09/U17/U31/U32),
 `docs/ui/screen-contracts.md` (Science and goals; Rates and government), then
 #194–#196. Existing research Goal is not arbitrary project switching. The

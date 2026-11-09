@@ -350,6 +350,8 @@ supported map/context, with format/version validation. Validate resume at a
 normal order, required choice and nested conversation. The native save/reload
 route in U18 proves only visible date/project retention, not full engine parity.
 
+The shared client route design for these screens (modals, key plumbing, cancel table, required engine additions, acceptance list) is proposed in [science-government-milestone.md](science-government-milestone.md) and awaits owner review.
+
 ## Owner decisions and deferred implementation choices
 
 2026-11-06, answers “1 yes 2 both 3 yes 4 option 1 5 like the original”:

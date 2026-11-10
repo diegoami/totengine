@@ -131,8 +131,8 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   (Esc in the review resets the split), and Save pending / Load checkpoint stay available.
   Science is a small advisor (topic, progress, goal) with a goal list; the goal
   only suggests the next research choice. Locks last for the client session.
-- **Reports (F1, F2, F5)** and the bottom-row **Reports** button open own-civilization reports:
-  City status, Defense and Trade. Up/Down select a row, PageUp/PageDown page, **S** (or a header
+- **Reports (F1, F2, F4, F5, F7)** and the bottom-row **Reports** button open own-civilization
+  reports: City status, Defense, Attitude (the *Mood* tab), Trade and Wonders. Up/Down select a row, PageUp/PageDown page, **S** (or a header
   button) sorts, Enter opens the selected city and Esc there returns to the report; Esc closes.
   Reports are read-only views of your own data and never change the game. See
   [reports milestone](ui/reports-milestone.md) for what is and is not covered.

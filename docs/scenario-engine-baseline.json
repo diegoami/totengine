@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "362b517c5cb057da8b62fcf19f4fd58bd2109ee03ae3909b3b5775c373a4167b",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "29f0e489b129b3f334e14753d48cd2f892efd9252db7e7393a997902dc90b34a",
+    "crates/totui/src/client/mod.rs": "abcdefe7eb50d6d98d775c660a7ab5680cf21c3cc1fd20e707fc6dad92a44d6b",
     "crates/totui/src/resources.rs": "531247a00d6307ed0698646200122c9631ee34e6665e9a42b0278f31ba9cad6d",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -172,6 +172,14 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Read-only views derived from the human's filtered HumanView plus rules; no order, event, trigger, action, hut or scenario-entry path changed; the trigger/action tables above are unchanged."
+    },
+    {
+      "change": "#201 reports slice 2: Attitude and Wonders report views and F4/F7 keys",
+      "files": [
+        "crates/engine/src/human.rs",
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Read-only own-civilization views only; no order, event, trigger, action, hut or scenario-entry path changed; the trigger/action tables above are unchanged."
     }
   ]
 }

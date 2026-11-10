@@ -105,8 +105,10 @@ fn key(k: Keycode, shift: bool, ctrl: bool) -> Option<String> {
         Keycode::Escape => "Escape",
         Keycode::F1 => "F1",
         Keycode::F2 => "F2",
+        Keycode::F4 => "F4",
         Keycode::F5 => "F5",
         Keycode::F6 => "F6",
+        Keycode::F7 => "F7",
         Keycode::Tab => {
             if shift {
                 "ShiftTab"

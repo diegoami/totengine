@@ -1,21 +1,21 @@
 {
   "schema": 1,
-  "slice": "reports first slice (#201/#202), unreleased",
+  "slice": "reports slices 1-2 (#201/#202), unreleased",
   "route": {
     "recorder": "cargo test -p totui --lib generated_reports_route -- --ignored (CIVTOT_HOME set, TOTENGINE_REPORTS_OUT=<private dir>)",
     "runners": [
       "tools/check_government_route.py (start=repstart) via tools/check_client_linux.py (TOTENGINE_REPORTS_FIXTURES)",
       "tools/check_government_route.cjs via tools/check_client_browser.cjs (TOTENGINE_REPORTS_FIXTURES)"
     ],
-    "steps": 13,
-    "route_json_sha256": "a03aedc483f78c2e8c40325f14b3c06213346d262eaa21b8a94912f7d1454233",
+    "steps": 15,
+    "route_json_sha256": "43437060f002242ec04c9c04a004002098ec932a90716f71f4bbb0ba1ab32e51",
     "checkpoint_sha256": {
       "repstart": "80f205b5e4a7255210901f41818c8b73c57760429df106798611864ecc10c673",
       "repdone": "80f205b5e4a7255210901f41818c8b73c57760429df106798611864ecc10c673"
     },
     "result": "SDL (private Xvfb, XTest) and headless Chromium replayed every step, the dialog title matched after each step, and the saved checkpoint after the route is byte-identical to the one before it (inspection never mutates the game).",
     "steps_covered": [
-      "F1, F2, F5 open and switch reports",
+      "F1, F2, F4, F5, F7 open and switch reports",
       "S cycles the sort column; a header click flips direction",
       "Enter drills into the selected city; Esc returns to the same report",
       "bottom-row Reports button",

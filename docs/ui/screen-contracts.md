@@ -320,6 +320,8 @@ Evidence: U05/U08/U12/U23/U24/U26. Report families and fields:
 | Demographics           | Values, units, ranks, selected competitor comparisons       | Derive public/earned values explicitly.                                |
 | Spaceships             | Early standard game reports unavailable                     | Late assembly/launch/arrival layouts unobserved.                       |
 
+**First slice (unreleased, #201/#202):** City status, Defense and Trade are implemented as own-civilization read-only views; see [reports-milestone.md](reports-milestone.md). The other families below remain unscoped.
+
 The Civilopedia needs scenario-provided names/descriptions and entity links,
 but its detailed navigation/media behavior is still uninspected. Preferences,
 city-report notifications and help are first-class routes, not hidden developer

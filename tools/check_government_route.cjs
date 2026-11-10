@@ -2,10 +2,10 @@
 const fs=require('fs'),path=require('path');
 const keys={'Ctrl+n':'Control+n','Ctrl+s':'Control+s','Shift+t':'Shift+T','Shift+r':'Shift+R'};
 function title(f){const d=f.draws.find(d=>d.kind==='text'&&d.x===212&&d.y===125&&d.size===22);return d?d.text:null}
-exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out})=>{
+exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out,start='govstart',shot='government-route-final.png'})=>{
  const route=JSON.parse(fs.readFileSync(path.join(fixture,'route.json'),'utf8'));
- fs.copyFileSync(path.join(fixture,'govstart.cth'),path.join(saves,'govstart.cth'));
- await load('govstart');
+ fs.copyFileSync(path.join(fixture,start+'.cth'),path.join(saves,start+'.cth'));
+ await load(start);
  if(title(await state())!==null)throw Error('start checkpoint did not return to the map');
  for(const [n,step] of route.entries()){
   if(step.op==='key')await key(keys[step.key]||step.key);
@@ -25,5 +25,5 @@ exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out})=>{
   const shown=title(await state());
   if(shown!==(step.title??null))throw Error(`step ${n} ${JSON.stringify(step)}: dialog is ${shown}`);
  }
- await page.screenshot({path:path.join(out,'government-route-final.png')});
+ await page.screenshot({path:path.join(out,shot)});
 };

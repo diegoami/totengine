@@ -12,6 +12,9 @@ use crate::newgame::NewGameConfig;
 use crate::player::{CityName, Game, Observation, Order, OrderResult, ACTION_CAP};
 use crate::production::Built;
 
+mod reports;
+pub use reports::*;
+
 /// Slot and identity together prevent acting on a reused entity slot.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Entity {
@@ -323,6 +326,12 @@ impl HumanSession {
         self.game
             .world
             .quote_production_change(&self.game.rules, self.human, city.slot, item)
+    }
+
+    /// An own-civilization report built from this session's filtered view only.
+    /// No journal entry, no randomness, no mutation.
+    pub fn report(&self, family: ReportFamily) -> Report {
+        reports::build(family, &self.view(), &self.game.rules)
     }
 
     /// Immutable per-turn consequences of a candidate split for the human civ.

@@ -2943,6 +2943,58 @@ fn science_advisor_sets_and_clears_the_goal_and_marks_the_suggestion() {
     assert!(c.modal.is_none());
 }
 
+// Shared recorder for the real-input routes (`tools/check_*_route.{py,cjs}`).
+pub(super) fn title(c: &Client) -> serde_json::Value {
+    c.frame()
+        .draws
+        .iter()
+        .find_map(|d| match d {
+            Draw::Text {
+                x, y, text, size, ..
+            } if (*x, *y, *size) == (212., 125., 22) => Some(text.clone().into()),
+            _ => None,
+        })
+        .unwrap_or(serde_json::Value::Null)
+}
+pub(super) struct Rec(pub Vec<serde_json::Value>);
+impl Rec {
+    fn key(&mut self, c: &mut Client, k: &str) {
+        key(c, k);
+        self.0
+            .push(serde_json::json!({"op":"key","key":k,"title":title(c)}));
+    }
+    fn button(&mut self, c: &mut Client, label: &str) {
+        button(c, label);
+        self.0
+            .push(serde_json::json!({"op":"button","label":label,"title":title(c)}));
+    }
+    fn entry(&mut self, c: &mut Client, name: &str) {
+        edit(c, name);
+        key(c, "Enter");
+        self.0
+            .push(serde_json::json!({"op":"entry","value":name,"title":title(c)}));
+    }
+    fn save(&mut self, c: &mut Client, name: &str) {
+        self.key(c, "Ctrl+s");
+        self.entry(c, name);
+        self.0.push(serde_json::json!({"op":"compare","name":name}));
+    }
+    fn research(&mut self, c: &mut Client) {
+        research(c);
+        self.0
+            .push(serde_json::json!({"op":"research","title":title(c)}));
+    }
+    fn endturn(&mut self, c: &mut Client) {
+        key(c, "Ctrl+n");
+        if matches!(c.modal, Some(Modal::Confirm { .. })) {
+            key(c, "Enter");
+        }
+        ready(c);
+        self.0
+            .push(serde_json::json!({"op":"endturn","title":title(c)}));
+    }
+}
+
 /// Records the science/rates/government route for the real-input runners
 /// (`tools/check_government_route.{py,cjs}`): each step carries the dialog title
 /// that must be on screen afterwards, and every save is compared byte for byte.
@@ -2963,56 +3015,6 @@ fn generated_government_route() {
     edit(&mut c, "govstart");
     key(&mut c, "Enter");
     assert!(c.loaded.is_some(), "{}", c.status);
-    fn title(c: &Client) -> serde_json::Value {
-        c.frame()
-            .draws
-            .iter()
-            .find_map(|d| match d {
-                Draw::Text {
-                    x, y, text, size, ..
-                } if (*x, *y, *size) == (212., 125., 22) => Some(text.clone().into()),
-                _ => None,
-            })
-            .unwrap_or(serde_json::Value::Null)
-    }
-    struct Rec(Vec<serde_json::Value>);
-    impl Rec {
-        fn key(&mut self, c: &mut Client, k: &str) {
-            key(c, k);
-            self.0
-                .push(serde_json::json!({"op":"key","key":k,"title":title(c)}));
-        }
-        fn button(&mut self, c: &mut Client, label: &str) {
-            button(c, label);
-            self.0
-                .push(serde_json::json!({"op":"button","label":label,"title":title(c)}));
-        }
-        fn entry(&mut self, c: &mut Client, name: &str) {
-            edit(c, name);
-            key(c, "Enter");
-            self.0
-                .push(serde_json::json!({"op":"entry","value":name,"title":title(c)}));
-        }
-        fn save(&mut self, c: &mut Client, name: &str) {
-            self.key(c, "Ctrl+s");
-            self.entry(c, name);
-            self.0.push(serde_json::json!({"op":"compare","name":name}));
-        }
-        fn research(&mut self, c: &mut Client) {
-            research(c);
-            self.0
-                .push(serde_json::json!({"op":"research","title":title(c)}));
-        }
-        fn endturn(&mut self, c: &mut Client) {
-            key(c, "Ctrl+n");
-            if matches!(c.modal, Some(Modal::Confirm { .. })) {
-                key(c, "Enter");
-            }
-            ready(c);
-            self.0
-                .push(serde_json::json!({"op":"endturn","title":title(c)}));
-        }
-    }
     let mut r = Rec(Vec::new());
     let read = |name: &str| fs::read(out.join(format!("{name}.cth"))).unwrap();
     // Rates: Escape discards, locked shares refuse a move, Enter applies.
@@ -3100,6 +3102,230 @@ fn generated_government_route() {
     assert_eq!(title(&c), serde_json::Value::Null);
     r.save(&mut c, "govfinal");
     assert_eq!(c.view().unwrap().rates.unwrap().government, 1);
+    fs::write(
+        out.join("route.json"),
+        serde_json::to_vec_pretty(&r.0).unwrap(),
+    )
+    .unwrap();
+}
+
+#[test]
+fn report_sorting_is_stable_numeric_and_text_aware() {
+    use super::reports::{sort_table, Table, TableRow};
+    let row = |name: &str, n: i64| TableRow {
+        cells: vec![name.into()],
+        keys: vec![(0, name.to_lowercase()), (n, String::new())],
+        city: None,
+        warn: false,
+    };
+    let mut t = Table {
+        headers: vec!["City", "Size"],
+        columns: vec![(0., 100.), (100., 40.)],
+        rows: vec![
+            row("beta", 9),
+            row("Alpha", 10),
+            row("gamma", 10),
+            row("delta", 2),
+        ],
+        footer: vec![],
+    };
+    let names = |t: &Table| {
+        t.rows
+            .iter()
+            .map(|r| r.cells[0].clone())
+            .collect::<Vec<_>>()
+    };
+    sort_table(&mut t, 0, false);
+    assert_eq!(
+        names(&t),
+        ["Alpha", "beta", "delta", "gamma"],
+        "case-insensitive text"
+    );
+    sort_table(&mut t, 1, true);
+    // 10 sorts above 9 (numeric, not text); equal sizes keep their previous order.
+    assert_eq!(names(&t), ["Alpha", "gamma", "beta", "delta"]);
+    sort_table(&mut t, 9, false);
+    assert_eq!(names(&t).len(), 4, "an out-of-range column clamps");
+}
+
+#[test]
+fn reports_open_switch_sort_drill_down_and_return_without_mutation() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    button(&mut c, "Start Original");
+    // A required choice blocks the reports; nothing opens.
+    key(&mut c, "Escape");
+    key(&mut c, "F1");
+    assert!(c.modal.is_none());
+    assert!(c.status.contains("required choice"), "{}", c.status);
+    c.required();
+    key(&mut c, "ArrowDown");
+    key(&mut c, "Enter");
+    // No city yet: an empty report says so and has nothing to open.
+    key(&mut c, "F1");
+    assert!(matches!(c.modal, Some(Modal::Report { .. })));
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::Text{text,..} if text == "Nothing to report yet.")));
+    key(&mut c, "Enter");
+    assert!(c.status.contains("Select a row"), "{}", c.status);
+    key(&mut c, "Escape");
+    founding(&mut c);
+    let before = c.checkpoint().unwrap();
+    let revision = c.view().unwrap().revision;
+    key(&mut c, "F1");
+    let title = |c: &Client| {
+        c.frame().draws.iter().find_map(|d| match d {
+            Draw::Text {
+                x, y, text, size, ..
+            } if (*x, *y, *size) == (212., 125., 22) => Some(text.clone()),
+            _ => None,
+        })
+    };
+    assert_eq!(title(&c).as_deref(), Some("Reports"));
+    let has = |c: &Client, s: &str| {
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Text{text,..} if text.starts_with(s)))
+    };
+    assert!(has(&c, "Athena"), "own city row");
+    key(&mut c, "F2");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::Defense,
+            ..
+        })
+    ));
+    key(&mut c, "F5");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::Trade,
+            ..
+        })
+    ));
+    assert!(has(&c, "Total: taxes"), "trade totals");
+    // `S` and a header click sort; the same header flips direction.
+    key(&mut c, "s");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            sort: 1,
+            descending: false,
+            ..
+        })
+    ));
+    button(&mut c, "Tax");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            sort: 1,
+            descending: true,
+            ..
+        })
+    ));
+    // A header can be focused and activated with the keyboard.
+    let headers: Vec<_> = c.buttons().iter().map(|b| b.label.clone()).collect();
+    assert!(
+        headers.iter().any(|l| l.starts_with("Tax v")),
+        "{headers:?}"
+    );
+    // Drill into the city and come back to the same report and sort.
+    key(&mut c, "Enter");
+    assert!(c.city_open && c.modal.is_none(), "{}", c.status);
+    key(&mut c, "Escape");
+    assert!(!c.city_open);
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::Trade,
+            sort: 1,
+            descending: true,
+            ..
+        })
+    ));
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    // Defense has no city to open.
+    key(&mut c, "F2");
+    key(&mut c, "Enter");
+    assert!(c.status.contains("no city"), "{}", c.status);
+    key(&mut c, "Escape");
+    // The toolbar button opens the same report; none of this changed the game.
+    button(&mut c, "Reports");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::CityStatus,
+            ..
+        })
+    ));
+    key(&mut c, "Escape");
+    assert_eq!(c.checkpoint().unwrap(), before);
+    assert_eq!(c.view().unwrap().revision, revision);
+}
+
+/// Records the reports route (F1/F2/F5, sorting, city drill-down and return) for
+/// the real-input runners; every inspection must leave the checkpoint unchanged.
+#[test]
+#[ignore = "install-backed recorded reports input route"]
+fn generated_reports_route() {
+    let out = PathBuf::from(std::env::var("TOTENGINE_REPORTS_OUT").expect("private output"));
+    fs::create_dir_all(&out).unwrap();
+    let home = std::env::var("CIVTOT_HOME").unwrap();
+    let mut c = seeded_client(home.clone(), out.clone());
+    start(&mut c);
+    founding(&mut c);
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "repstart");
+    key(&mut c, "Enter");
+    let mut c = seeded_client(home, out.clone());
+    button(&mut c, "Load engine checkpoint");
+    edit(&mut c, "repstart");
+    key(&mut c, "Enter");
+    assert!(c.loaded.is_some(), "{}", c.status);
+    let mut r = Rec(Vec::new());
+    r.key(&mut c, "F1");
+    assert_eq!(title(&c), "Reports");
+    r.key(&mut c, "F2");
+    r.key(&mut c, "F5");
+    r.key(&mut c, "s");
+    r.button(&mut c, "Tax ^");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::Trade,
+            sort: 1,
+            descending: true,
+            ..
+        })
+    ));
+    // Enter opens the selected city; Escape returns to the same report.
+    r.key(&mut c, "Enter");
+    assert_eq!(title(&c), serde_json::Value::Null);
+    assert!(c.city_open);
+    r.key(&mut c, "Escape");
+    assert_eq!(title(&c), "Reports");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::Trade,
+            sort: 1,
+            descending: true,
+            ..
+        })
+    ));
+    r.key(&mut c, "Escape");
+    r.button(&mut c, "Reports");
+    assert_eq!(title(&c), "Reports");
+    r.key(&mut c, "Escape");
+    r.save(&mut c, "repdone");
+    let read = |n: &str| fs::read(out.join(format!("{n}.cth"))).unwrap();
+    assert_eq!(read("repdone"), read("repstart"), "reports never mutate");
     fs::write(
         out.join("route.json"),
         serde_json::to_vec_pretty(&r.0).unwrap(),

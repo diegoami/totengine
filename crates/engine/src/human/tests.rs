@@ -1149,6 +1149,100 @@ fn goal_choices_and_anarchy_turn_are_view_facts() {
     assert_eq!(s.game.world.turn, due);
 }
 
+#[test]
+fn reports_are_inert_own_civ_views_that_agree_with_the_quote() {
+    let mut s = session(1);
+    choose(&mut s);
+    // Nothing to report before the first city; units are still counted.
+    assert_eq!(
+        s.report(ReportFamily::CityStatus),
+        Report::CityStatus(vec![])
+    );
+    let start = s.view();
+    let own_units = start
+        .observation
+        .units
+        .iter()
+        .filter(|u| u.owner == start.observation.civ)
+        .count() as u32;
+    let Report::Defense(at_start) = s.report(ReportFamily::Defense) else {
+        panic!()
+    };
+    assert!(own_units > 0);
+    assert_eq!(at_start.iter().map(|d| d.active).sum::<u32>(), own_units);
+    assert!(at_start.iter().all(|d| d.building == 0));
+    let unit = s.view().units[0];
+    send(&mut s, Command::BeginFound { unit });
+    let Some(Decision::Founding { id, .. }) = s.decision else {
+        panic!()
+    };
+    send(
+        &mut s,
+        Command::NameCity {
+            decision: id,
+            name: CityName::new("Reported").unwrap(),
+        },
+    );
+    // Authored buildings (temple, library) so maintenance is non-trivial.
+    for b in [4usize, 6] {
+        s.game.world.cities[0].buildings[b / 8] |= 1 << (b % 8);
+    }
+    let before = s.checkpoint("assets");
+    let revision = s.revision;
+    let view = s.view();
+    let Report::CityStatus(rows) = s.report(ReportFamily::CityStatus) else {
+        panic!()
+    };
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].name, "Reported");
+    assert!(view.cities.contains(&rows[0].city), "stable own-city link");
+    assert_eq!(rows[0].item, view.observation.cities[0].building.unwrap());
+    let Report::Trade {
+        rows: trade,
+        totals,
+    } = s.report(ReportFamily::Trade)
+    else {
+        panic!()
+    };
+    assert_eq!(trade.len(), 1);
+    // Palace (capital) + the authored temple and library.
+    assert_eq!(trade[0].improvements, 3);
+    assert!(trade[0].upkeep >= 0);
+    assert_eq!(totals.treasury, view.observation.treasury);
+    assert_eq!(totals.net(), totals.taxes - totals.upkeep);
+    // The report and the rates quote agree on the current split.
+    let r = view.rates.unwrap();
+    let quote = s.preview_rates(r.science, r.tax).unwrap();
+    assert_eq!(quote.science_output, totals.science);
+    assert_eq!(quote.taxes, totals.taxes);
+    assert_eq!(quote.maintenance, totals.upkeep);
+    // Defense counts only own units and own builds.
+    let Report::Defense(defense) = s.report(ReportFamily::Defense) else {
+        panic!()
+    };
+    let own = view
+        .observation
+        .units
+        .iter()
+        .filter(|u| u.owner == view.observation.civ)
+        .count() as u32;
+    assert_eq!(defense.iter().map(|d| d.active).sum::<u32>(), own);
+    assert_eq!(own, 0, "the founder was consumed");
+    assert!(defense.windows(2).all(|w| w[0].unit_type < w[1].unit_type));
+    if let Some(item) = view.observation.cities[0].building.filter(|i| *i >= 0) {
+        assert_eq!(
+            defense
+                .iter()
+                .find(|d| d.unit_type == item as u8)
+                .map(|d| d.building),
+            Some(1)
+        );
+    }
+    // Reports are inert: no revision, journal or state change.
+    assert_eq!(s.revision, revision);
+    assert_eq!(s.checkpoint("assets"), before);
+}
+
 fn next_round(s: &mut HumanSession) {
     choose(s);
     send(s, Command::EndTurn);

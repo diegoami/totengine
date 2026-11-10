@@ -317,6 +317,10 @@ def run():
                 if government:
                     from check_government_route import run_government
                     run_government(scene,key,click_button,save_dialog,load,wait,work,government)
+                reports=os.environ.get("TOTENGINE_REPORTS_FIXTURES")
+                if reports:
+                    from check_government_route import run_government
+                    run_government(scene,key,click_button,save_dialog,load,wait,work,reports,start="repstart")
                 panels=os.environ.get("TOTENGINE_PANELS_FIXTURES")
                 if panels:
                     from check_city_panels import run_panels

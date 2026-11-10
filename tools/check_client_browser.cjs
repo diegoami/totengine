@@ -202,6 +202,7 @@ fs.mkdirSync(out,{recursive:true});
   }
  }
  if(process.env.TOTENGINE_GOVERNMENT_FIXTURES)await require('./check_government_route.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_GOVERNMENT_FIXTURES,saves:process.env.TOTENGINE_CLIENT_SAVES,out});
+ if(process.env.TOTENGINE_REPORTS_FIXTURES)await require('./check_government_route.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_REPORTS_FIXTURES,saves:process.env.TOTENGINE_CLIENT_SAVES,out,start:'repstart',shot:'reports-route-final.png'});
  if(process.env.TOTENGINE_PANELS_FIXTURES)await require('./check_city_panels.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_PANELS_FIXTURES,saves:process.env.TOTENGINE_CLIENT_SAVES,out});
  if(process.env.TOTENGINE_CITY_OPEN_FIXTURE)await require('./check_city_open.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_CITY_OPEN_FIXTURE,saves:process.env.TOTENGINE_CLIENT_SAVES,out});
  if(process.env.TOTENGINE_CITY_OPEN_FIXTURE)await require('./check_city_gesture_races.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_CITY_OPEN_FIXTURE,saves:process.env.TOTENGINE_CLIENT_SAVES,out});

@@ -18,11 +18,11 @@ def title(scene):
     return None
 
 
-def run_government(scene, key, click_button, save_dialog, load, wait, work, fixture):
+def run_government(scene, key, click_button, save_dialog, load, wait, work, fixture, start='govstart'):
     fixture = Path(fixture)
     route = json.loads((fixture / 'route.json').read_text())
-    shutil.copyfile(fixture / 'govstart.cth', work / 'saves' / 'govstart.cth')
-    load('govstart')
+    shutil.copyfile(fixture / (start + '.cth'), work / 'saves' / (start + '.cth'))
+    load(start)
     assert title(scene()) is None, 'start checkpoint did not return to the map'
     for n, step in enumerate(route):
         op = step['op']

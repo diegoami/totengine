@@ -33,8 +33,9 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
    [inspection](docs/scenario-inspection.md) and
    the [conditional first-entry contract](docs/scenario-entry-contract.md), not
    playable imports. None of the reference corpus is admitted for full simulation.
-2. Milestone 16, science/rates/government on both clients (#194–#196), is the
-   v0.18.0 candidate awaiting independent review ([readiness](docs/v0.18.0-readiness.md);
+2. Milestone 16, science/rates/government on both clients (#194–#196), is
+   released as v0.18.0 after first-round independent AGREE #244; its stories stay open until
+   the owner accepts the routes on both clients ([readiness](docs/v0.18.0-readiness.md);
    from [client milestones](docs/ui/client-milestones.md)). Original-save/scenario entry remains a
    separate package with its conditional import gates. Complete remaining original
    features in further
@@ -91,8 +92,8 @@ the owner or applicable instructions request it.
 
 ## Releases and standing work
 
-Latest released tag: **v0.17.0**, scenario inspection and entry boundary.
-[Changelog](CHANGELOG.md) and [release readiness](docs/v0.17.0-readiness.md)
+Latest released tag: **v0.18.0**, science, rates and government on both clients.
+[Changelog](CHANGELOG.md) and [release readiness](docs/v0.18.0-readiness.md)
 record earlier slices; [GitHub milestones](https://github.com/diegoami/totengine/milestones)
 and issues carry current state.
 

@@ -29,9 +29,11 @@ These are product targets, not a statement that all are implemented.
 
 ## Status
 
-Latest released tag: **[v0.17.0 — scenario inspection and entry boundary](https://github.com/diegoami/totengine/releases/tag/v0.17.0)**, independently
-reviewed on [#224](https://github.com/diegoami/totengine/issues/224). This is a
-source/CLI release; [readiness](docs/v0.17.0-readiness.md) records its limits.
+Latest released tag: **[v0.18.0 — science, rates and government on both clients](https://github.com/diegoami/totengine/releases/tag/v0.18.0)**, independently
+reviewed on [#244](https://github.com/diegoami/totengine/issues/244). This is a
+source release (rates dialog, revolution, required government chooser/rate review, science
+advisor and goal on the browser and desktop clients); [readiness](docs/v0.18.0-readiness.md)
+records its limits. v0.17.0 was the scenario inspection release.
 The packaged-client baseline remains v0.16.0:
 [Windows/Linux downloads](https://github.com/diegoami/totengine/releases/tag/v0.16.0)
 include `totplay` and `totdesktop`, runtime/dependency notices and no original

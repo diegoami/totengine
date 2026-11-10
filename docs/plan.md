@@ -30,9 +30,12 @@ T0–T4 schedule; historical evidence and released tags remain unchanged.
 
 ## Baseline and remaining work
 
-Latest release: **v0.17.0**, independently reviewed and tagged at
-`70dea8d7e61e74125c9faa027bf7a6abb7cbdaff`. See
-[readiness](v0.17.0-readiness.md) and [release evidence](evidence/scenario-v017-release.json).
+Latest release: **v0.18.0**, independently reviewed and tagged at
+`a43dda0985bcb378bc6182522ed23b6880bd1269`. See
+[readiness](v0.18.0-readiness.md) and [release evidence](evidence/client-v018-release.json).
+Milestone 16's stories stay open pending owner acceptance of the new routes on both clients.
+v0.17.0 (`70dea8d7e61e74125c9faa027bf7a6abb7cbdaff`):
+[readiness](v0.17.0-readiness.md), [release evidence](evidence/scenario-v017-release.json).
 Milestone 15 is closed after third-round independent AGREE. This source/CLI
 release ships read-only inspection and a conditional entry boundary; it grants
 zero runtime admissions. v0.16.0 remains the packaged-client baseline, with

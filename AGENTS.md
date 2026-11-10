@@ -94,20 +94,21 @@ for runtime continuation; #197/#198 retain phase/movement/fog/event/dependency/
 initializer blockers. #221 CI wiring remains open: OAuth credentials lack
 workflow scope; inspector tests run explicitly and via make, not current CI.
 
-**Milestone 16 (science/rates/government on both clients, #194–#196) is a v0.18.0
-CANDIDATE awaiting the owner-launched independent review**; see
-[readiness](docs/v0.18.0-readiness.md) and the milestone issue for the candidate SHA.
-Merged on main: #237/#238 (reference, rates) and #239–#242 (revolution, required
-government chooser and rate review, native human research list with a checkpointed
-goal, and the shared client routes: Shift+T rates, Shift+R revolution, F6 science
-advisor + goal in `totui/src/client/routes.rs`; design
-`docs/ui/science-government-milestone.md`). Real SDL (Xvfb) and Chromium input replay
-one recorded 69-step route with byte-identical checkpoints
-(`docs/evidence/client-government-route-v1.json`); no Windows run, packaged archives or
-owner acceptance is claimed. `main` takes only fixes for the review's findings until the
-tag. Still undecoded: native prompt timing, recommender RNG, the revolution scenario
-restriction, AI government choice. Preserve owner previews/games and old version-bound
-binaries. No full-client or full-AI gate is cleared.
+**v0.18.0 is RELEASED** at exactly reviewed/tagged SHA
+`a43dda0985bcb378bc6182522ed23b6880bd1269` (MiniMax-M3 AGREE on #244, round one).
+Milestone 16, science/rates/government on both clients: Shift+T rates, Shift+R
+revolution, required government chooser and rate review, F6 science advisor + goal
+(`totui/src/client/routes.rs`; design `docs/ui/science-government-milestone.md`), the
+native human research list with a checkpointed goal, and the #194 native reference. The
+reviewer reproduced 285 Rust tests, 44 Python tests, goldens/fmt/strict Clippy, the native
+harnesses and the recorded 69-step route on SDL (Xvfb) and Chromium with byte-identical
+checkpoints. Source release: no archives, no Windows run; **#194–#196 and milestone 16 stay
+open until the owner accepts the routes on both clients.** Follow-up #245 (stale contract
+prose) is fixed by #246. Release record: `docs/evidence/client-v018-release.json`;
+readiness `docs/v0.18.0-readiness.md`. Keep the tag at the exact reviewed SHA. Still undecoded:
+native prompt timing, recommender RNG, the revolution scenario restriction, AI government
+choice. Preserve owner previews/games and old version-bound binaries. No full-client or
+full-AI gate is cleared.
 
 Changing `crates/engine/src/{player,human,human/checkpoint,lib}.rs` or
 `crates/totui/src/client/mod.rs` stales `docs/scenario-engine-baseline.json`: run the full `make test` with

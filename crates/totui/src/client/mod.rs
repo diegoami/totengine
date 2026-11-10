@@ -12,7 +12,9 @@ mod selection;
 pub mod storage;
 use crate::resources::Resources;
 pub use atlas::{Atlas, Sprite};
-use engine::human::{Command, Decision, Entity, HumanSession, HumanView, Phase, Request};
+use engine::human::{
+    Command, Decision, Entity, HumanSession, HumanView, Phase, ReportFamily, Request,
+};
 use engine::newgame::NewGameConfig;
 use engine::player::CityName;
 use serde::{Deserialize, Serialize};
@@ -135,6 +137,7 @@ pub struct Frame {
     pub status: String,
     pub assets: String,
 }
+mod reports;
 mod routes;
 #[derive(Clone)]
 enum Modal {
@@ -157,6 +160,13 @@ enum Modal {
     },
     Science,
     Goal,
+    /// An own-civilization report; `selected` indexes the sorted rows.
+    Report {
+        family: ReportFamily,
+        sort: usize,
+        descending: bool,
+        selected: usize,
+    },
     Production {
         city: Entity,
     },
@@ -203,6 +213,9 @@ enum Action {
     Rates,
     Revolution,
     Science,
+    Report(ReportFamily),
+    ReportFamily(ReportFamily),
+    ReportSort(usize),
     GoalList,
     ClearGoal,
     RateStep(usize, i32),
@@ -300,6 +313,8 @@ pub struct Client {
     /// Slider locks persist for the client session only (the original keeps
     /// them in globals); they are never engine state or checkpointed.
     rate_locks: [bool; 3],
+    /// The report a city workspace was opened from; Esc returns to it.
+    report_return: Option<Modal>,
     inspect: Option<(u16, u16)>,
     moving: bool,
     confirm_moves: bool,
@@ -358,6 +373,7 @@ impl Client {
             city_panel: CityPanel::Info,
             city_panel_page: 0,
             rate_locks: [false; 3],
+            report_return: None,
             inspect: None,
             moving: false,
             confirm_moves: false,
@@ -624,6 +640,9 @@ impl Client {
                 if let Some(b) = buttons.into_iter().find(|b| b.contains(x, y)) {
                     return self.action(b.action);
                 }
+                if matches!(self.modal, Some(Modal::Report { .. })) {
+                    return self.report_click(x, y);
+                }
                 if self.modal.is_none() && self.city_open {
                     return self.city_click(x, y);
                 }
@@ -652,7 +671,13 @@ impl Client {
         if key == "Enter" {
             if self.modal.is_some() {
                 if let Some(b) = self.buttons().get(self.focus_button) {
-                    if matches!(b.action, Action::Save | Action::Load) {
+                    if matches!(
+                        b.action,
+                        Action::Save
+                            | Action::Load
+                            | Action::ReportSort(_)
+                            | Action::ReportFamily(_)
+                    ) {
                         return self.action(b.action.clone());
                     }
                 }
@@ -686,6 +711,9 @@ impl Client {
             if let Some(result) = self.route_key(key) {
                 return result;
             }
+            if let Some(result) = self.report_key(key) {
+                return result;
+            }
             match key {
                 "ArrowDown" | "ArrowUp" => {
                     let choices = self.current_choices();
@@ -714,6 +742,9 @@ impl Client {
                 "Shift+t" => self.action(Action::Rates),
                 "Shift+r" => self.action(Action::Revolution),
                 "F6" => self.action(Action::Science),
+                "F1" => self.action(Action::Report(ReportFamily::CityStatus)),
+                "F2" => self.action(Action::Report(ReportFamily::Defense)),
+                "F5" => self.action(Action::Report(ReportFamily::Trade)),
                 "v" => self.action(Action::Mode),
                 "a" => self.action(Action::Activate),
                 "c" => self.action(Action::Center),
@@ -774,6 +805,7 @@ impl Client {
                 self.action(Action::Start)?;
             }
             Action::Start => {
+                self.report_return = None;
                 let seed = self
                     .seed
                     .parse::<u32>()
@@ -844,6 +876,9 @@ impl Client {
             }
             Action::Research => self.required(),
             Action::Rates => self.open_rates()?,
+            Action::Report(family) => self.open_report(family)?,
+            Action::ReportFamily(family) => self.report_family(family),
+            Action::ReportSort(column) => self.report_sort(Some(column)),
             Action::Revolution => self.open_revolution()?,
             Action::Science => self.open_science()?,
             Action::GoalList => self.open_goal_list()?,
@@ -889,6 +924,7 @@ impl Client {
                 self.city_open = false;
                 self.focus_button = 0;
                 self.status = "Returned to map; accepted city edits remain committed.".into();
+                self.report_return_after_city();
             }
             Action::CityPanel(panel) => {
                 self.city_panel = panel;
@@ -1013,6 +1049,7 @@ impl Client {
                     | Modal::Revolution
                     | Modal::Government { .. }
                     | Modal::Science
+                    | Modal::Report { .. }
                     | Modal::Goal => unreachable!("handled by route_accept"),
                     Modal::Quit => {
                         self.closed = true;
@@ -1022,6 +1059,7 @@ impl Client {
                         return Ok(());
                     }
                     Modal::NewGame => {
+                        self.report_return = None;
                         let seed = random_seed()?;
                         self.loaded = None;
                         self.seed = seed;
@@ -1108,6 +1146,7 @@ impl Client {
                         self.status = format!("Engine checkpoint saved: {}", self.entry);
                     }
                     Modal::Load => {
+                        self.report_return = None;
                         let text = storage::load(&self.saves, &self.entry)?;
                         if let Some(l) = self.loaded.as_mut() {
                             let restored = HumanSession::restore(
@@ -1724,7 +1763,11 @@ impl Client {
                 }
                 _ => (),
             }
-            for rb in self.route_buttons(modal) {
+            for rb in self
+                .route_buttons(modal)
+                .into_iter()
+                .chain(self.report_buttons())
+            {
                 add(rb.x, rb.y, rb.w, rb.h, rb.label, rb.action);
             }
             if matches!(
@@ -1769,6 +1812,7 @@ impl Client {
                         Modal::Rates { .. } => "Apply rates [Enter]",
                         Modal::Revolution => "Yes, revolt [Enter]",
                         Modal::Science => "Close [Enter]",
+                        Modal::Report { .. } => "Open city [Enter]",
                         _ => "Accept [Enter]",
                     }
                     .into(),
@@ -1787,7 +1831,7 @@ impl Client {
                         Modal::Rates { .. } => "Reset split [Esc]",
                         Modal::Revolution => "Cancel [Esc]",
                         Modal::Goal => "Back [Esc]",
-                        Modal::Science => "Close [Esc]",
+                        Modal::Science | Modal::Report { .. } => "Close [Esc]",
                         _ => "Cancel / inspect [Esc]",
                     }
                     .into(),
@@ -1908,18 +1952,26 @@ impl Client {
         add(
             12.,
             685.,
-            300.,
+            230.,
             30.,
             format!("Confirm all moves: {}", self.confirm_moves),
             Action::ConfirmMoves,
         );
-        add(325., 685., 160., 30., "New game".into(), Action::NewGame);
-        add(500., 685., 160., 30., "Close client".into(), Action::Quit);
+        add(250., 685., 110., 30., "New game".into(), Action::NewGame);
+        add(368., 685., 120., 30., "Close client".into(), Action::Quit);
+        add(
+            496.,
+            685.,
+            110.,
+            30.,
+            "Reports".into(),
+            Action::Report(ReportFamily::CityStatus),
+        );
         if self.city.is_some() {
             add(
-                674.,
+                614.,
                 685.,
-                336.,
+                396.,
                 30.,
                 "Manage city".into(),
                 Action::OpenCity,
@@ -2203,6 +2255,7 @@ impl Client {
                 Modal::Revolution => "Revolution",
                 Modal::Government { .. } => "Choose a government",
                 Modal::Science => "Science advisor",
+                Modal::Report { .. } => "Reports",
                 Modal::Goal => "Choose a research goal",
                 Modal::Production { .. } => "Choose production",
                 Modal::Improvements { .. } => "Improvements — select a building to sell",
@@ -2217,6 +2270,7 @@ impl Client {
             };
             draws.push(text(212., 125., title, 22, "#fff0b5"));
             self.route_draws(modal, &mut draws);
+            self.report_draws(&mut draws);
             if let (Modal::Production { city }, Some(item), Some(l)) =
                 (modal, self.choice, self.loaded.as_ref())
             {

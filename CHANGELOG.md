@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Own-civilization reports on both clients (#201/#202, unreleased; owner acceptance pending):
+  City status (F1), Defense (F2) and Trade (F5) with sortable columns, row selection, paging
+  and drill-down into an own city that returns to the report. Engine views
+  (`HumanSession::report`) are derived from the filtered view only and are inert.
+
 ## [0.18.0] — science, rates and government on both clients
 
 - Add the shared science/rates/government client routes to the browser and the

@@ -267,6 +267,10 @@ impl Client {
                 Ok(Some(true))
             }
             Modal::Science => Ok(Some(true)),
+            Modal::Report { .. } => {
+                self.report_open_city()?;
+                Ok(Some(false))
+            }
             Modal::Goal => {
                 let goal = self.choice.ok_or("Select a goal explicitly")? as usize;
                 self.set_goal(Some(goal))?;

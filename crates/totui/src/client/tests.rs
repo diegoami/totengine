@@ -3200,6 +3200,24 @@ fn reports_open_switch_sort_drill_down_and_return_without_mutation() {
             ..
         })
     ));
+    key(&mut c, "F4");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::Attitude,
+            ..
+        })
+    ));
+    assert!(has(&c, "Athena"), "attitude rows are own cities");
+    key(&mut c, "F7");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::Wonders,
+            ..
+        })
+    ));
+    assert!(has(&c, "Nothing to report yet."), "no wonders at the start");
     key(&mut c, "F5");
     assert!(matches!(
         c.modal,
@@ -3292,6 +3310,8 @@ fn generated_reports_route() {
     r.key(&mut c, "F1");
     assert_eq!(title(&c), "Reports");
     r.key(&mut c, "F2");
+    r.key(&mut c, "F4");
+    r.key(&mut c, "F7");
     r.key(&mut c, "F5");
     r.key(&mut c, "s");
     r.button(&mut c, "Tax ^");

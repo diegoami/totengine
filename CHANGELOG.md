@@ -6,7 +6,7 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 ## [Unreleased]
 
 - Own-civilization reports on both clients (#201/#202, unreleased; owner acceptance pending):
-  City status (F1), Defense (F2) and Trade (F5) with sortable columns, row selection, paging
+  City status (F1), Defense (F2), Attitude (F4), Trade (F5) and Wonders (F7) with sortable columns, row selection, paging
   and drill-down into an own city that returns to the report. Engine views
   (`HumanSession::report`) are derived from the filtered view only and are inert.
 

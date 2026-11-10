@@ -6,9 +6,11 @@
 //! Field sets follow the inspected original reports (docs/ui/discovery.md U05,
 //! U23): city identity/outputs/item/progress; unit statistics with active and
 //! in-production counts; per-city tax, science and improvement maintenance.
-//! Layout, sorting and the F-keys are client presentation. Wonders, attitude,
-//! foreign, ranking, score, demographics and spaceship reports are not part
-//! of this slice.
+//! Layout, sorting and the F-keys are client presentation. Attitude (F4) lists
+//! citizen moods per city and Wonders (F7) the wonders this civilization hosts;
+//! foreign, ranking, score, demographics and spaceship reports are not part of
+//! this slice. Wonder expiry is not shown: it depends on every civilization's
+//! knowledge, whose visibility to the player is unverified.
 use super::{Entity, HumanView};
 use tot_kit::Rules;
 
@@ -17,6 +19,8 @@ pub enum ReportFamily {
     CityStatus,
     Defense,
     Trade,
+    Attitude,
+    Wonders,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -82,6 +86,29 @@ impl TradeTotals {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttitudeRow {
+    pub city: Entity,
+    pub name: String,
+    pub size: u16,
+    pub happy: i32,
+    pub content: i32,
+    pub unhappy: i32,
+    pub entertainers: i32,
+    pub tax_collectors: i32,
+    pub scientists: i32,
+    pub disorder: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WonderRow {
+    /// Physical `@ENDWONDER` row id.
+    pub wonder: u8,
+    pub name: String,
+    pub city: Entity,
+    pub city_name: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Report {
     CityStatus(Vec<CityStatusRow>),
     Defense(Vec<DefenseRow>),
@@ -89,6 +116,8 @@ pub enum Report {
         rows: Vec<TradeRow>,
         totals: TradeTotals,
     },
+    Attitude(Vec<AttitudeRow>),
+    Wonders(Vec<WonderRow>),
 }
 
 fn improvement_count(buildings: &[u8; 5]) -> u32 {
@@ -203,6 +232,68 @@ pub fn trade(view: &HumanView) -> (Vec<TradeRow>, TradeTotals) {
     (rows, totals)
 }
 
+/// Citizen moods per own city. Content citizens are the remainder after the
+/// happy, unhappy and specialist citizens (never negative).
+pub fn attitude(view: &HumanView) -> Vec<AttitudeRow> {
+    let o = &view.observation;
+    let mut rows = Vec::new();
+    for city in o.cities.iter().filter(|c| c.owner == o.civ) {
+        let (Some(entity), Some(e), Some(c)) = (
+            city_entity(view, city.index),
+            o.city_economy.iter().find(|e| e.index == city.index),
+            view.city_citizens.iter().find(|c| c.index == city.index),
+        ) else {
+            continue;
+        };
+        let role = |r: u8| c.specialists.iter().filter(|&&s| s == r).count() as i32;
+        let (entertainers, tax_collectors, scientists) = (role(1), role(2), role(3));
+        let specialists = entertainers + tax_collectors + scientists;
+        rows.push(AttitudeRow {
+            city: entity,
+            name: city.name.clone(),
+            size: city.size,
+            happy: e.happy,
+            content: (i32::from(city.size) - specialists - e.happy - e.unhappy).max(0),
+            unhappy: e.unhappy,
+            entertainers,
+            tax_collectors,
+            scientists,
+            disorder: e.unhappy > e.happy,
+        });
+    }
+    rows.sort_by_key(|r| r.city.slot);
+    rows
+}
+
+/// Own wonders in ascending wonder-row order, with their host city.
+pub fn wonders(view: &HumanView, rules: &Rules) -> Vec<WonderRow> {
+    let o = &view.observation;
+    let names = rules.section("ENDWONDER").map(|s| &s.comments);
+    let mut rows = Vec::new();
+    for (id, host) in o.own_wonders.iter().enumerate() {
+        let Some(slot) = host else { continue };
+        let (Some(entity), Some(city)) = (
+            city_entity(view, *slot),
+            o.cities
+                .iter()
+                .find(|c| c.index == *slot && c.owner == o.civ),
+        ) else {
+            continue;
+        };
+        rows.push(WonderRow {
+            wonder: id as u8,
+            name: names
+                .and_then(|n| n.get(id))
+                .map(|n| n.trim().to_string())
+                .filter(|n| !n.is_empty())
+                .unwrap_or_else(|| format!("Wonder {id}")),
+            city: entity,
+            city_name: city.name.clone(),
+        });
+    }
+    rows
+}
+
 pub fn build(family: ReportFamily, view: &HumanView, rules: &Rules) -> Report {
     match family {
         ReportFamily::CityStatus => Report::CityStatus(city_status(view)),
@@ -211,5 +302,7 @@ pub fn build(family: ReportFamily, view: &HumanView, rules: &Rules) -> Report {
             let (rows, totals) = trade(view);
             Report::Trade { rows, totals }
         }
+        ReportFamily::Attitude => Report::Attitude(attitude(view)),
+        ReportFamily::Wonders => Report::Wonders(wonders(view, rules)),
     }
 }

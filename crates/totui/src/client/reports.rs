@@ -76,6 +76,8 @@ pub(super) fn family_label(f: ReportFamily) -> &'static str {
         ReportFamily::CityStatus => "City status [F1]",
         ReportFamily::Defense => "Defense [F2]",
         ReportFamily::Trade => "Trade [F5]",
+        ReportFamily::Attitude => "Mood [F4]",
+        ReportFamily::Wonders => "Wonders [F7]",
     }
 }
 
@@ -203,6 +205,57 @@ impl Client {
                             num_key(i64::from(r.upkeep)),
                             num_key(i64::from(r.improvements)),
                         ],
+                        city: Some(r.city),
+                        warn: false,
+                    })
+                    .collect(),
+            },
+            Report::Attitude(rows) => Table {
+                headers: vec!["City", "Sz", "Happy", "Cont", "Unhap", "Ent", "Tax", "Sci"],
+                columns: layout(&[140., 34., 62., 56., 64., 46., 46., 46.]),
+                footer: vec![
+                    "Citizens per city: Happy, Content, Unhappy, and specialists (Ent = entertainers, Tax = tax collectors, Sci = scientists).".into(),
+                    "Orange rows are in disorder.".into(),
+                ],
+                rows: rows
+                    .into_iter()
+                    .map(|r| TableRow {
+                        cells: vec![
+                            clip(&r.name, 18),
+                            r.size.to_string(),
+                            r.happy.to_string(),
+                            r.content.to_string(),
+                            r.unhappy.to_string(),
+                            r.entertainers.to_string(),
+                            r.tax_collectors.to_string(),
+                            r.scientists.to_string(),
+                        ],
+                        keys: vec![
+                            text_key(&r.name),
+                            num_key(i64::from(r.size)),
+                            num_key(i64::from(r.happy)),
+                            num_key(i64::from(r.content)),
+                            num_key(i64::from(r.unhappy)),
+                            num_key(i64::from(r.entertainers)),
+                            num_key(i64::from(r.tax_collectors)),
+                            num_key(i64::from(r.scientists)),
+                        ],
+                        city: Some(r.city),
+                        warn: r.disorder,
+                    })
+                    .collect(),
+            },
+            Report::Wonders(rows) => Table {
+                headers: vec!["Wonder", "City"],
+                columns: layout(&[260., 200.]),
+                footer: vec![
+                    "Wonders this civilization hosts. Expiry and other civilizations' wonders are not shown.".into(),
+                ],
+                rows: rows
+                    .into_iter()
+                    .map(|r| TableRow {
+                        cells: vec![clip(&r.name, 30), clip(&r.city_name, 24)],
+                        keys: vec![text_key(&r.name), text_key(&r.city_name)],
                         city: Some(r.city),
                         warn: false,
                     })
@@ -377,15 +430,17 @@ impl Client {
         for (i, f) in [
             ReportFamily::CityStatus,
             ReportFamily::Defense,
+            ReportFamily::Attitude,
             ReportFamily::Trade,
+            ReportFamily::Wonders,
         ]
         .into_iter()
         .enumerate()
         {
             b.push(Button {
-                x: TABLE_X + i as f64 * 150.,
+                x: TABLE_X + i as f64 * 122.,
                 y: 150.,
-                w: 144.,
+                w: 118.,
                 h: 28.,
                 label: family_label(f).into(),
                 action: Action::ReportFamily(f),
@@ -461,7 +516,7 @@ impl Client {
         }
         draws.push(text(
             TABLE_X + 470.,
-            158.,
+            132.,
             &format!(
                 "Row {}/{} · page {}/{}",
                 (*selected + 1).min(t.rows.len()),
@@ -487,7 +542,9 @@ impl Client {
             "s" => self.report_sort(None),
             "F1" => self.report_family(ReportFamily::CityStatus),
             "F2" => self.report_family(ReportFamily::Defense),
+            "F4" => self.report_family(ReportFamily::Attitude),
             "F5" => self.report_family(ReportFamily::Trade),
+            "F7" => self.report_family(ReportFamily::Wonders),
             _ => return None,
         }
         Some(Ok(()))

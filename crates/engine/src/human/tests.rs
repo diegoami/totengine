@@ -1243,6 +1243,50 @@ fn reports_are_inert_own_civ_views_that_agree_with_the_quote() {
     assert_eq!(s.checkpoint("assets"), before);
 }
 
+#[test]
+fn attitude_and_wonder_reports_cover_only_own_cities_and_hosts() {
+    let mut s = session(1);
+    choose(&mut s);
+    let unit = s.view().units[0];
+    send(&mut s, Command::BeginFound { unit });
+    let Some(Decision::Founding { id, .. }) = s.decision else {
+        panic!()
+    };
+    send(
+        &mut s,
+        Command::NameCity {
+            decision: id,
+            name: CityName::new("Moody").unwrap(),
+        },
+    );
+    let Report::Attitude(rows) = s.report(ReportFamily::Attitude) else {
+        panic!()
+    };
+    assert_eq!(rows.len(), 1);
+    let r = &rows[0];
+    assert_eq!(r.name, "Moody");
+    // Every citizen is happy, content, unhappy or a specialist.
+    let specialists = r.entertainers + r.tax_collectors + r.scientists;
+    assert_eq!(
+        r.happy + r.content + r.unhappy + specialists,
+        i32::from(r.size)
+    );
+    assert_eq!(r.disorder, r.unhappy > r.happy);
+    // No wonder yet; an authored Pyramids host appears with its own city only.
+    assert_eq!(s.report(ReportFamily::Wonders), Report::Wonders(vec![]));
+    s.game.world.wonders[0] = 0;
+    // A foreign civilization's wonder never shows up.
+    s.game.world.wonders[1] = 7;
+    *s.view_cache.borrow_mut() = None;
+    let Report::Wonders(rows) = s.report(ReportFamily::Wonders) else {
+        panic!()
+    };
+    assert_eq!(rows.len(), 1, "{rows:?}");
+    assert_eq!((rows[0].wonder, rows[0].city_name.as_str()), (0, "Moody"));
+    assert!(!rows[0].name.is_empty());
+    assert!(s.view().cities.contains(&rows[0].city));
+}
+
 fn next_round(s: &mut HumanSession) {
     choose(s);
     send(s, Command::EndTurn);

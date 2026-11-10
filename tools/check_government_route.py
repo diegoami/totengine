@@ -8,7 +8,8 @@ import json
 from pathlib import Path
 import shutil
 
-KEYS = {'ArrowDown': 'Down', 'ArrowUp': 'Up', 'ArrowLeft': 'Left', 'ArrowRight': 'Right', 'Enter': 'Return'}
+KEYS = {'ArrowDown': 'Down', 'ArrowUp': 'Up', 'ArrowLeft': 'Left', 'ArrowRight': 'Right', 'Enter': 'Return',
+        'PageDown': 'Next', 'PageUp': 'Prior'}
 
 
 def title(scene):
@@ -18,12 +19,12 @@ def title(scene):
     return None
 
 
-def run_government(scene, key, click_button, save_dialog, load, wait, work, fixture, start='govstart'):
+def run_government(scene, key, click_button, save_dialog, load, wait, work, fixture, start='govstart', start_title=None):
     fixture = Path(fixture)
     route = json.loads((fixture / 'route.json').read_text())
     shutil.copyfile(fixture / (start + '.cth'), work / 'saves' / (start + '.cth'))
     load(start)
-    assert title(scene()) is None, 'start checkpoint did not return to the map'
+    assert title(scene()) == start_title, f'start checkpoint shows {title(scene())!r}'
     for n, step in enumerate(route):
         op = step['op']
         if op == 'key':

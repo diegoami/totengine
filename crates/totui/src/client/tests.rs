@@ -3352,3 +3352,188 @@ fn generated_reports_route() {
     )
     .unwrap();
 }
+
+fn synthetic_pedia() -> String {
+    // Authored for the tests; the real Describe.txt text is never committed.
+    let mut text = String::from("; synthetic\r\n@ADVANCE_DESCRIPTIONS\r\n@@ADVANCE_INDEX\r\n");
+    for id in 0..100 {
+        text += &if id < 5 {
+            format!("{id},\t; a{id}\r\n")
+        } else {
+            "-1,\r\n".into()
+        };
+    }
+    text += "-2,\r\n";
+    for n in 0..5 {
+        text += &format!(
+            "\r\n@@First topic {n}\r\n{}\r\n\r\nSecond paragraph {n}.\r\n",
+            "word ".repeat(400)
+        );
+    }
+    text +=
+        "\r\n@CONCEPT_DESCRIPTIONS\r\n@@Idea one\r\nShort.\r\n\r\n@@Idea two\r\nAlso short.\r\n";
+    text += "@This must be here to terminate search!!!\r\n";
+    text
+}
+
+#[test]
+fn civilopedia_wraps_text_and_is_unavailable_without_a_describe_file() {
+    use super::pedia::wrap;
+    assert_eq!(wrap("aa bb cc dd", 5), ["aa bb", "cc dd"]);
+    assert_eq!(
+        wrap("averyveryverylongword x", 5),
+        ["averyveryverylongword", "x"]
+    );
+    assert!(wrap("   ", 10).is_empty());
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    button(&mut c, "Civilopedia");
+    assert!(c.modal.is_none());
+    assert!(c.status.contains("not available"), "{}", c.status);
+}
+
+#[test]
+fn civilopedia_browses_reads_and_returns_without_touching_the_game() {
+    let f = Fixture::new();
+    fs::write(f.0.join("Describe.txt"), synthetic_pedia()).unwrap();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    let before = c.checkpoint().unwrap();
+    button(&mut c, "Civilopedia");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Pedia {
+            section: 0,
+            reading: false,
+            ..
+        })
+    ));
+    let shown = |c: &Client, s: &str| {
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Text{text,..} if text.starts_with(s)))
+    };
+    assert!(shown(&c, "First topic 0"));
+    key(&mut c, "ArrowRight");
+    assert!(
+        matches!(c.modal, Some(Modal::Pedia { section: 6, .. })),
+        "only categories with text appear"
+    );
+    key(&mut c, "ArrowDown");
+    key(&mut c, "Enter");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Pedia {
+            reading: true,
+            selected: 1,
+            ..
+        })
+    ));
+    assert!(shown(&c, "Idea two") && shown(&c, "Also short."));
+    key(&mut c, "Escape");
+    assert!(matches!(c.modal, Some(Modal::Pedia { reading: false, .. })));
+    // A tab click switches category; long entries scroll.
+    button(&mut c, "Advances");
+    key(&mut c, "Enter");
+    key(&mut c, "PageDown");
+    assert!(matches!(c.modal, Some(Modal::Pedia { scroll, .. }) if scroll > 0));
+    key(&mut c, "Escape");
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    assert_eq!(c.checkpoint().unwrap(), before);
+}
+
+#[test]
+fn research_help_describes_the_highlighted_advance_and_returns_to_the_choice() {
+    let f = Fixture::new();
+    fs::write(f.0.join("Describe.txt"), synthetic_pedia()).unwrap();
+    let mut c = f.client();
+    button(&mut c, "Start Original");
+    assert!(matches!(c.modal, Some(Modal::Research)));
+    let before = c.checkpoint().unwrap();
+    // Nothing is highlighted yet.
+    button(&mut c, "Civilopedia");
+    assert!(matches!(c.modal, Some(Modal::Research)));
+    assert!(c.status.contains("Select a research topic"), "{}", c.status);
+    key(&mut c, "ArrowDown");
+    let chosen = c.choice;
+    button(&mut c, "Civilopedia");
+    assert!(
+        matches!(
+            c.modal,
+            Some(Modal::Pedia {
+                reading: true,
+                section: 0,
+                ..
+            })
+        ),
+        "{}",
+        c.status
+    );
+    key(&mut c, "Escape");
+    assert!(matches!(c.modal, Some(Modal::Research)));
+    assert_eq!(
+        c.choice, chosen,
+        "the highlighted topic survives the lookup"
+    );
+    assert_eq!(c.checkpoint().unwrap(), before);
+    key(&mut c, "Enter");
+    assert!(c.modal.is_none(), "{}", c.status);
+    assert_eq!(c.status, "research-set");
+}
+
+/// Records the Civilopedia route (research help, category browsing, reading and
+/// scrolling, Esc paths) for the real-input runners against the installed text.
+#[test]
+#[ignore = "install-backed recorded Civilopedia input route"]
+fn generated_pedia_route() {
+    let out = PathBuf::from(std::env::var("TOTENGINE_PEDIA_OUT").expect("private output"));
+    fs::create_dir_all(&out).unwrap();
+    let home = std::env::var("CIVTOT_HOME").unwrap();
+    let mut c = seeded_client(home.clone(), out.clone());
+    button(&mut c, "Start Original");
+    assert!(matches!(c.modal, Some(Modal::Research)));
+    button(&mut c, "Save pending");
+    edit(&mut c, "pedstart");
+    key(&mut c, "Enter");
+    let mut c = seeded_client(home, out.clone());
+    button(&mut c, "Load engine checkpoint");
+    edit(&mut c, "pedstart");
+    key(&mut c, "Enter");
+    assert!(matches!(c.modal, Some(Modal::Research)), "{}", c.status);
+    assert!(
+        c.loaded.as_ref().unwrap().resources.pedia.is_some(),
+        "the install's Describe.txt must load"
+    );
+    let mut r = Rec(Vec::new());
+    // Research help describes the highlighted advance and returns to the choice.
+    r.key(&mut c, "ArrowDown");
+    r.button(&mut c, "Civilopedia");
+    assert_eq!(title(&c), "Civilopedia");
+    assert!(matches!(c.modal, Some(Modal::Pedia { reading: true, .. })));
+    r.key(&mut c, "Escape");
+    assert_eq!(title(&c), "Choose research explicitly");
+    r.key(&mut c, "Enter");
+    assert_eq!(title(&c), serde_json::Value::Null);
+    // The main lookup: categories, reading, scrolling, back.
+    r.button(&mut c, "Civilopedia");
+    assert_eq!(title(&c), "Civilopedia");
+    r.key(&mut c, "ArrowRight");
+    r.key(&mut c, "ArrowRight");
+    r.key(&mut c, "ArrowDown");
+    r.key(&mut c, "Enter");
+    assert!(matches!(c.modal, Some(Modal::Pedia { reading: true, .. })));
+    r.key(&mut c, "PageDown");
+    r.key(&mut c, "Escape");
+    r.key(&mut c, "Escape");
+    assert_eq!(title(&c), serde_json::Value::Null);
+    r.save(&mut c, "pedend");
+    fs::write(
+        out.join("route.json"),
+        serde_json::to_vec_pretty(&r.0).unwrap(),
+    )
+    .unwrap();
+}

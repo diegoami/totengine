@@ -94,6 +94,10 @@ pub struct Resources {
     pub missing: Vec<String>,
     pub profile: String,
     pub isotrident: Option<BTreeMap<String, FreecivSprite>>,
+    /// The selected profile's Civilopedia (`Describe.txt`, else the root's). It is
+    /// reference text for the client only: it is not part of `sources` and so not
+    /// of the checkpoint identity. `None` when absent or structurally invalid.
+    pub pedia: Option<tot_kit::Pedia>,
 }
 
 #[derive(serde::Deserialize)]
@@ -187,6 +191,9 @@ impl Resources {
                 return Err(format!("required artwork missing: {key}"));
             }
         }
+        let pedia = select("describe", &[".txt"])?
+            .and_then(|path| read(&path).ok())
+            .and_then(|bytes| tot_kit::Pedia::parse(&tot_kit::latin1(&bytes)).ok());
         Ok(Self {
             rules,
             sources,
@@ -194,6 +201,7 @@ impl Resources {
             missing,
             profile,
             isotrident: None,
+            pedia,
         })
     }
 
@@ -287,6 +295,7 @@ impl Resources {
             }
             .into(),
             isotrident: Some(manifest.sprites),
+            pedia: None,
         })
     }
 

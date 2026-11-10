@@ -267,6 +267,10 @@ impl Client {
                 Ok(Some(true))
             }
             Modal::Science => Ok(Some(true)),
+            Modal::Pedia { .. } => {
+                self.pedia_accept()?;
+                Ok(Some(false))
+            }
             Modal::Report { .. } => {
                 self.report_open_city()?;
                 Ok(Some(false))
@@ -282,6 +286,9 @@ impl Client {
 
     /// Cancel/Escape for the new dialogs; `true` when handled here.
     pub(super) fn route_cancel(&mut self) -> bool {
+        if matches!(self.modal, Some(Modal::Pedia { .. })) {
+            return self.pedia_cancel();
+        }
         match &mut self.modal {
             Some(Modal::Rates {
                 review: Some(_),

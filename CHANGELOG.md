@@ -9,6 +9,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   City status (F1), Defense (F2), Attitude (F4), Trade (F5) and Wonders (F7) with sortable columns, row selection, paging
   and drill-down into an own city that returns to the report. Engine views
   (`HumanSession::report`) are derived from the filtered view only and are inert.
+- Civilopedia reference lookup on both clients (#201/#202, unreleased): `tot_kit::Pedia` decodes the
+  profile's own `Describe.txt` (checked against an independent inventory of all nine installed files),
+  with category browsing, reading, and a help button in the required research prompt that returns to
+  the same choice. Unavailable in the open demo; text is never committed.
 
 ## [0.18.0] — science, rates and government on both clients
 

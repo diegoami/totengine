@@ -55,3 +55,38 @@ casualty timeline, supply/demand, and the Civilopedia/reference lookup.
 - Not claimed: Windows input, packaged archives, large-list/small-window behavior on real
   input (paging is unit-tested only), custom-scenario labels beyond the loaded rules,
   owner acceptance, independent review.
+
+## Civilopedia lookup (slice 3)
+
+Reference text comes from the selected profile's own `Describe.txt` (the profile folder first,
+then the install root), so every shipped ruleset and scenario folder shows its own
+descriptions. The file documents its format in its header: `@NAME_DESCRIPTIONS` sections
+(advances, improvements, wonders, units, terrain and resources, governments, concepts), an
+`@@NAME_INDEX` block mapping rules entry order to a description number (`-1` none, `-2`
+terminator), `@@Title` entries with blank-line separated paragraphs, `;` comments and a
+terminator line. `tot_kit::Pedia` decodes it without rewriting text. Findings across the
+nine files in the reference install ([structure summary](../evidence/pedia-structure-v1.json),
+counts and hashes only, produced by the independent `tools/pedia_inventory.py` and
+checked by `crates/tot-kit/tests/pedia_install.rs`):
+
+- All nine files parse; each has the seven documented sections. Several files omit the
+  trailing comma on some index lines and indent others, so the comma is optional in the
+  decoder (the native loader's tolerance is unverified).
+- Index values past the entries of a section are tolerated as "no description" (none exist in
+  the reference install; the decoder counts them).
+- Description text is almost entirely ASCII; the decoder uses the Rules decoder's Latin-1 policy.
+- The text is copyrighted and is never committed: tests use authored synthetic text, and the
+  real-install recorder reads it at run time only.
+
+Client: a **Civilopedia** button (bottom row; the original menu declares no hotkey) opens
+category tabs, a paged title list and a scrollable reading view (Left/Right category, Up/Down
+select or scroll, PageUp/PageDown, Enter reads/goes back, Esc steps back then closes). In the
+required research prompt a **Civilopedia** button describes the highlighted advance and Esc
+returns to the same choice with the same highlight, answering "help returns to that choice".
+The open demo has no `Describe.txt` and reports the lookup as unavailable; the text is not part
+of the checkpoint identity. Word wrap is approximate (a fixed character width), not the
+original's layout. Not covered: media, hyperlinks between entries, search, unit/terrain
+pictures, and the "About" entry.
+
+Evidence: unit tests plus a recorded 15-step real-input route (`generated_pedia_route`)
+replayed through SDL and Chromium with byte-identical checkpoints.

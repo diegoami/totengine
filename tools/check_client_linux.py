@@ -321,6 +321,10 @@ def run():
                 if reports:
                     from check_government_route import run_government
                     run_government(scene,key,click_button,save_dialog,load,wait,work,reports,start="repstart")
+                pedia=os.environ.get("TOTENGINE_PEDIA_FIXTURES")
+                if pedia:
+                    from check_government_route import run_government
+                    run_government(scene,key,click_button,save_dialog,load,wait,work,pedia,start="pedstart",start_title="Choose research explicitly")
                 panels=os.environ.get("TOTENGINE_PANELS_FIXTURES")
                 if panels:
                     from check_city_panels import run_panels

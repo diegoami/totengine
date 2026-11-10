@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "slice": "Civilopedia lookup (#201/#202), unreleased",
+  "route": {
+    "recorder": "cargo test -p totui --lib generated_pedia_route -- --ignored (CIVTOT_HOME set, TOTENGINE_PEDIA_OUT=<private dir>)",
+    "runners": [
+      "tools/check_government_route.py (start=pedstart, start_title) via tools/check_client_linux.py (TOTENGINE_PEDIA_FIXTURES)",
+      "tools/check_government_route.cjs via tools/check_client_browser.cjs (TOTENGINE_PEDIA_FIXTURES)"
+    ],
+    "steps": 15,
+    "route_json_sha256": "71e9dd3d6bbca9bdb23831078d5dfa069e25526d67064872e521cc5a570ec8be",
+    "checkpoint_sha256": {
+      "pedstart": "4e38bdb9054388985191c38de6b4d0bbe8b5ea3041cec1dfae0f6a681544dc4f",
+      "pedend": "bbcf98fac97a122fa148f757cf5a778cff6ded469985aa72dcdc6640f8fd95a5"
+    },
+    "result": "SDL (private Xvfb, XTest) and headless Chromium replayed every step, the dialog title matched after each step, and the final checkpoint is byte-identical to the recorded one. The installed Describe.txt text is read at run time only.",
+    "steps_covered": [
+      "research help describes the highlighted advance and Esc returns to the same choice",
+      "Enter accepts the research choice",
+      "bottom-row Civilopedia button",
+      "Left/Right category, Up/Down select, Enter reads, PageDown scrolls, Esc steps back and closes"
+    ]
+  },
+  "not_claimed": [
+    "Windows input",
+    "packaged archives",
+    "owner acceptance",
+    "independent review",
+    "scenario-specific Describe.txt behavior on real input",
+    "original layout, media, links or search"
+  ]
+}

@@ -8,8 +8,8 @@ The original thirteen historical milestones are unchanged. Milestone 14 is now
 closed with released v0.16.0 after owner acceptance and independent AGREE.
 Milestone 15 is closed with released v0.17.0 after third-round AGREE #224,
 shipping inspection and a conditional entry contract with zero runtime admissions.
-Milestone 16 prepares v0.18.0 as the science/rates/government candidate; remaining
-packages (17–29) retain unassigned versions/dates. Exact release/review state
+Milestone 16 is released as v0.18.0 after first-round AGREE #244 (stories stay open
+pending owner acceptance); remaining packages (17–29) retain unassigned versions/dates. Exact release/review state
 comes from the live queue.
 This is a planning horizon, not a fixed count of remaining releases or a claim
 of complete client delivery after the listed UI slices.

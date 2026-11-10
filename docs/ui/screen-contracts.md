@@ -175,15 +175,16 @@ The goal is one global value, not saved with the game; accepted candidates on
 its path are pre-selected but the prompt still appears. Building the list
 consumes the CRT generator.
 
-**Proposed contract (not implemented; #195).** Keep the required `Research`
+**Contract (implemented in v0.18.0, #195/#196).** Keep the required `Research`
 decision as the only way to set a project; do not add an advisor "change
 project" command. The decision's list comes from one engine function carrying the
 native filters. Goal is client/session state with its own explicit checkpoint
 field (the original does not persist it), cleared on discovery of the goal.
-The recommendation shown with the list is part of the decision payload (recorded,
-not recomputed) so replay and RNG stay deterministic.
+The suggestion shown with the list is `Decision::Research::default`, the first
+candidate on the path to the goal; it is part of the decision payload so replay stays
+deterministic. The original's recommender (its CRT consumption) is not implemented.
 
-**Owner decisions, 2026-11-09 (accepted as design; nothing implemented).**
+**Owner decisions, 2026-11-09 (accepted and implemented in v0.18.0).**
 
 1. *Candidate list fidelity:* **adopt the native rules exactly** (enabled,
    unknown, prerequisites, group gate with flag 0, both-`nil` exclusion and the
@@ -226,24 +227,26 @@ its advance enabled in the loaded rules; Anarchy ends at the first per-civ turn
 step whose turn counter is a multiple of four (every step with Statue of
 Liberty); the chooser lists governments 1..6 filtered by eligibility.
 
-**Engine surface (#195).** *Implemented:* the rates slice, then (slice 2) `Command::Revolution`, `Decision::Government`, `Decision::Rates` (resolved by `Command::ReviewRates`) and anarchy resolution at the start of the human turn, all replayed through checkpoints; `Phase::UnsupportedGovernment` is gone. Research slice: the human prompt/`SetResearch` list uses the native filter and thinning (`engine::research::human_research_list`), `Command::Goal`/`HumanView::goal` persist the goal in checkpoints and `Decision::Research::default` follows it. *Not yet:* the recommender's CRT consumption, native prompt timing, the revolution scenario restriction, any client route (#196). Rates: `Command::Rates {science, tax}` / `Order::SetRates` (`engine::rates`), legal iff `science`, `tax` and `10 - science - tax` are all
+**Engine surface (#195).** *Implemented:* the rates slice, then (slice 2) `Command::Revolution`, `Decision::Government`, `Decision::Rates` (resolved by `Command::ReviewRates`) and anarchy resolution at the start of the human turn, all replayed through checkpoints; `Phase::UnsupportedGovernment` is gone. Research slice: the human prompt/`SetResearch` list uses the native filter and thinning (`engine::research::human_research_list`), `Command::Goal`/`HumanView::goal` persist the goal in checkpoints and `Decision::Research::default` follows it. *Client routes (#196):* shared by both clients, see [science-government-milestone.md](science-government-milestone.md). *Not implemented:* the recommender's CRT consumption, native prompt timing, the revolution scenario restriction. Rates: `Command::Rates {science, tax}` / `Order::SetRates` (`engine::rates`), legal iff `science`, `tax` and `10 - science - tax` are all
 in `[0, cap]` for the civ's current government, rejected atomically with a reason
 string (no typed reason enum yet); `HumanView::rates` supplies the cap and current
-shares (the consistent finance/research quote is not yet in the view). Lock state
+shares, and `HumanSession::preview_rates` returns an immutable `RatesQuote` (treasury,
+taxes, upkeep, science, luxuries, disorder cities) for a candidate split. Lock state
 and the native redistribution (`engine::rates::redistribute`, tested against all
 621 native vectors) stay client presentation: the engine validates only committed
 shares.
 Revolution: a `Revolution` command is legal for a human civ that is not already in
-Anarchy, honors the scenario restriction once its bits are decoded, and sets
-Anarchy at once (native). A pending government choice is an authoritative phase
-(`GovernmentChoice {decision_id, civ, eligible}`) persisted in checkpoints, opened
+Anarchy and sets Anarchy at once (native). The native scenario restriction
+(`0x607640 & 0x80` with `0x5f5e50 & 0x10`) is not decoded and is **not enforced**
+(`engine::government::can_start_revolution`). A pending government choice is an
+authoritative decision (`Decision::Government { id, eligible }`) persisted in checkpoints, opened
 at the first qualifying turn step, rejecting stale ids and ineligible
 governments. Accepting it sets the government through the existing setter effects
-and opens a `RateReview` decision before input returns (native: the setter opens
+and opens a `Decision::Rates { id, view, opening }` (resolved by `Command::ReviewRates`) before input returns (native: the setter opens
 the rate dialog for a human civ). `Phase::UnsupportedGovernment` was replaced by
 these, not bypassed (implemented in #195 slice 2).
 
-**Owner decisions, 2026-11-09 (accepted as design; nothing here is implemented).**
+**Owner decisions, 2026-11-09 (accepted and implemented in v0.18.0).**
 Native evidence for each is in the evidence README section above.
 
 1. *Revolution question and Escape:* Escape/close means **Cancel**. Enter on the
@@ -252,12 +255,12 @@ Native evidence for each is in the evidence README section above.
    revolution (U31); document it in client help. Cancel returns to the map with
    no engine mutation and no decision consumed.
 2. *Government chooser:* a **required decision with no cancel**. Escape shows the
-   reason and keeps the chooser open; the pending phase persists in checkpoints.
+   reason and keeps the chooser open; the pending decision persists in checkpoints.
    This differs from the native "negative selection leaves Anarchy running until
    the next qualifying turn step" path, whose UI exposure is untested.
-3. *Rate dialog:* Esc/Cancel **discards the draft**; OK sends one `SetRates`.
-   After a government change the review is required but may accept the normalized
-   current shares unchanged. Native Cancel behavior remains untested, so #196
+3. *Rate dialog:* Esc/Cancel **discards the draft**; OK sends one `Command::Rates`.
+   After a government change the review (`Command::ReviewRates`) is required, may accept the
+   normalized current shares unchanged, and Esc there resets the split and keeps it open. Native Cancel behavior remains untested, so #196
    acceptance must show the chosen behavior rather than claim original parity.
 
 **Route to freeze for validation (#194 → #196).** New standard game → Shift+T
@@ -269,6 +272,8 @@ map; save/reload before and after each decision. The second-government fixture i
 chooser must list exactly Despotism and Monarchy, caps are 6 then 7, and the retained
 vectors give the expected rate results; the generated standard start offers only
 Despotism, as U31 did. An engine/client version of this fixture is part of #195/#196.
+
+The shared client route design for the science, rates and government screens (modals, key plumbing, cancel table, engine additions, acceptance) was accepted on 2026-11-09 and is implemented in v0.18.0: [science-government-milestone.md](science-government-milestone.md).
 
 ## Diplomacy and intelligence
 
@@ -349,8 +354,6 @@ phase/decision, commands/results, randomness, policy state, event/Lua state and
 supported map/context, with format/version validation. Validate resume at a
 normal order, required choice and nested conversation. The native save/reload
 route in U18 proves only visible date/project retention, not full engine parity.
-
-The shared client route design for these screens (modals, key plumbing, cancel table, required engine additions, acceptance list) is proposed in [science-government-milestone.md](science-government-milestone.md) and awaits owner review.
 
 ## Owner decisions and deferred implementation choices
 

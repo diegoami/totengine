@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "version": "0.18.0",
+  "date": "2026-11-10",
+  "reviewed_and_tagged_sha": "a43dda0985bcb378bc6182522ed23b6880bd1269",
+  "review_issue": 244,
+  "review_comment_url": "https://github.com/diegoami/totengine/issues/244#issuecomment-6753776763",
+  "reviewer": "MiniMax-M3",
+  "verdict": "AGREE",
+  "rounds": 1,
+  "release_url": "https://github.com/diegoami/totengine/releases/tag/v0.18.0",
+  "release_node_id": "RE_kwDOVfZkwM4aN9bq",
+  "published_at": "2026-11-10T02:13:08Z",
+  "release_kind": "Source release; no packaged archives, no Windows input run, no owner acceptance of the new routes.",
+  "validation": "Independent first-round review reproduced 285 Rust tests (8 ignored install-backed recorders), 44 Python tests, full goldens, fmt, strict default and desktop Clippy, 40 desktop-feature client tests, the three native harnesses (rates/government, research choice, government fixture) byte-identically, and the 69-step real-input route on SDL (private Xvfb) and headless Chromium with nine byte-identical checkpoints; it re-derived 1,963 rate/government vectors and 48 research states independently with 0 mismatches.",
+  "new_client_archives": [],
+  "packaged_client_baseline": "v0.16.0",
+  "follow_up_issues": [
+    245
+  ],
+  "open_issues": [
+    194,
+    195,
+    196
+  ],
+  "open_milestone": 16,
+  "open_reason": "Owner acceptance of the new routes on both clients has not happened; #194's live original-game load of the second-government fixture is untested.",
+  "candidate_evidence": "client-government-route-v1.json"
+}

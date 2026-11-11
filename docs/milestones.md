@@ -60,14 +60,17 @@ of complete client delivery after the listed UI slices.
    only science, entry or reports does not clear the gate. Source/API/license
    study and benchmark planning may proceed earlier. Original fidelity #117
    is a separate route; its A0 is not a prerequisite for every AI alternative.
-6. Umbrella programs remain unassigned to these new release packages and link
+6. MCP interface #250 (owner request, 2026-11-11) has no package milestone yet.
+   Its headless/read-only slice and client-attached advisory slice can be scoped
+   as separate packages; acting MCP agents share milestone 27's plugin gate.
+7. Umbrella programs remain unassigned to these new release packages and link
    to their child milestones. Close a bounded story on its evidence; do not
    close the whole scenario/recording/client program after one slice. The older
    T0 umbrella keeps its pre-existing historical association.
-7. Dependencies are explicit in milestone descriptions and story bodies. IDs
+8. Dependencies are explicit in milestone descriptions and story bodies. IDs
    do not imply a calendar or mandatory ordering between independent packages.
    Scope can be refined/split after reference and capability findings.
-8. Before a release, freeze an admitted scope and version, collect relevant
+9. Before a release, freeze an admitted scope and version, collect relevant
    both-client human routes and checks, then use the owner-launched independent
    process in [milestone-review.md](milestone-review.md). No review, tag, full-AI
    port or new implementation is launched by milestone assignment.

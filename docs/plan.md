@@ -49,6 +49,7 @@ milestone 14's owner acceptance and independent review unchanged.
 | AI | Versioned built-in/legacy policies and partial original-derived decisions | Per-faction policy selection, bounded candidate comparisons, external plugins and independently measured native fidelity |
 | Scenario tools | Format inspection/diffs, pinned private corpus and released read-only capability inspector/conditional entry contract | Actual native import/admission, event/extension coverage, run diagnostics, safe editing/export and creation assistance |
 | Recordings | Canonical order logs, observer NDJSON and replay checkpoints | Unified session manifests, view/annotation streams, recording controls/recovery, then audio/video capture |
+| MCP agent interface | `totctl` inspection/campaign/observer commands, `engine::player` observations/orders, `engine::human` sessions | MCP server over stdio/loopback: headless inspection/runs/observer queries, then client-attached filtered/advisory access on both clients, then acting agents under the plugin gate |
 
 Artwork/recovery, setup feedback and planning PRs #181/#182/#191/#212/#214/#215
 shipped in v0.16.0. Combined packaged Chromium/Linux/Windows routes and CI pass;
@@ -66,6 +67,7 @@ installed and statically parsed; no playable/native acceptance is claimed.
 | Scenario observation | Add custom labels, event/objective inspection, map identity, live/replay comparison and recording navigation. Define viewing versus simulation pauses. Recorded seeking never executes another turn. | [#185](https://github.com/diegoami/totengine/issues/185) |
 | Session recording | Unify game/run identities, orders/events/checkpoints and stop reasons; keep camera/perspective/annotations separate. Record/open/recover play and observation sessions, then scope video/audio/clips. | [#186](https://github.com/diegoami/totengine/issues/186) |
 | Optional UI/QoL | Study Freeciv/C-evo workflows against ToT's baseline. Scope queues and rally points, disclose automation, preserve legal commands and checkpoints, and keep classic behavior available. Whole-client adoption remains a measured candidate. | [#188](https://github.com/diegoami/totengine/issues/188), queues [#189](https://github.com/diegoami/totengine/issues/189), rally points [#190](https://github.com/diegoami/totengine/issues/190) |
+| MCP agent interface | Expose the engine to MCP-capable assistants in two modes. **Headless:** inspection, diagnostics, existing-policy runs and observer/recording queries as tools, byte-identical to the equivalent `totctl` results. **Client-attached:** opt-in loopback attach to a running browser or desktop session, exposing only the human's filtered view, pending decisions and reports for advisory use. Acting agents submit validated orders with recorded identity and reuse #92's schema. | [#250](https://github.com/diegoami/totengine/issues/250); protocol [#92](https://github.com/diegoami/totengine/issues/92) |
 | AI choice and evaluation | Compare eligible C-evo/Freeciv-derived and built-in policies with matched starts, knowledge, budgets and held-out scenarios. Version per-faction policy/config/private state. Add plugins/fault handling and tournaments after the client gate. Keep native reproduction separately measured. | [#187](https://github.com/diegoami/totengine/issues/187), plugins [#92](https://github.com/diegoami/totengine/issues/92), tournaments [#93](https://github.com/diegoami/totengine/issues/93), native fidelity [#117](https://github.com/diegoami/totengine/issues/117) |
 
 ## Delivery order and gates
@@ -107,6 +109,10 @@ release candidate. Refine/split each package from evidence.
    reproduction #117 is a distinct fidelity route, not a predecessor to every
    other AI. A0 #118 is first only within that program. External tournaments #93
    depend on #92; built-in-policy scenario experiments #184 do not.
+   MCP (#250) is staged across these gates: read-only/headless tools can ship
+   as a tooling slice at any stage; client-attached advisory access needs a
+   both-client attach contract; MCP agents that act for a faction are external
+   policies and wait for the complete-client gate with #92.
 
 Scenario authors may supply goals/behavior not expressible by a general policy.
 Define explicit capabilities/constraints and unknowns; do not assume an AI can
@@ -117,7 +123,7 @@ relevant streams, regardless of which AI is used.
 ## Reuse and architecture
 
 ```text
-desktop + playable browser | headless runner | observer | scenario workbench
+desktop + playable browser | headless runner | observer | scenario workbench | MCP
                  session / recordings / filtered views
           validated commands, decisions and policy interfaces
         native Rust simulation: rules, events, RNG, maps, phases
@@ -161,6 +167,7 @@ commits us to another game's rules or public hosting.
 | Observation/recording | Live/replay event agreement; seeking/annotations do not execute gameplay; interrupted/incompatible recording recovery |
 | AI adoption | Matched knowledge/budgets/starts, scenario objectives/failure metrics and deterministic private state; strength and native fidelity measured separately |
 | Original save export | Original loads/re-saves our output with retained differential evidence; engine checkpoints never stand in for this gate |
+| MCP interface | Headless tool results match equivalent `totctl` runs; attached clients see only the human's filtered view, cannot mutate in advisory mode and survive reconnect/stale revisions; acting agents' orders are recorded and replay without the agent |
 | Release | Coherent scope, checks, applicable human acceptance and independent owner-launched review; tag exactly the agreed SHA |
 
 No calendar estimates or later version numbers are assigned here. The original

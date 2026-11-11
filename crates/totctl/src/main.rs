@@ -7,6 +7,8 @@ use std::process::ExitCode;
 
 use engine::rng::GameRng as _;
 
+mod mcp;
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().collect();
     let prog = args.first().map(String::as_str).unwrap_or("totctl");
@@ -23,6 +25,7 @@ fn main() -> ExitCode {
         Some("observe") => cmd_observe(&args[2..]),
         Some("edit") => cmd_edit(&args[2..]),
         Some("events") => cmd_events(&args[2..]),
+        Some("mcp") => mcp::cmd_mcp(&args[2..]),
         Some("--version") | Some("-V") => {
             println!("totctl {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
@@ -44,6 +47,8 @@ fn main() -> ExitCode {
                         {prog} tech <Rules.txt>    — advance tree + wonders (reachability run)\n\
                         {prog} run <file.sav|scn> --turns N [--seed S] [--rules P | --no-rules]\n\
                         \x20                        — deterministic N-turn headless run (per-turn checksums)\n\
+                        {prog} mcp [--root PATH]...   — stdio MCP server: read-only inspection/run tools (#250)
+\
                         {prog} edit <in> <out> [--turn N] [--year N] [--difficulty N]\n\
                         \x20      [--rivals N] [--unit-pos IDX X Y] [--city-name IDX NAME]\n\
                         \x20                        — surgical field edits (T1-8 writer)\n\
@@ -97,20 +102,30 @@ fn cmd_boot(args: &[String]) -> ExitCode {
         eprintln!("usage: totctl boot <file.sav|scn> [--turns N] [--seed S]");
         return ExitCode::from(2);
     };
-    let bytes = match std::fs::read(path) {
-        Ok(b) => b,
-        Err(e) => {
-            eprintln!("error: read {path}: {e}");
-            return ExitCode::from(1);
+    match boot_report(path, rules_path, turns, seed) {
+        Ok(text) => {
+            print!("{text}");
+            ExitCode::SUCCESS
         }
-    };
-    let sav = match tot_kit::parse_sav(&bytes) {
-        Ok(s) => s,
         Err(e) => {
             eprintln!("error: {e}");
-            return ExitCode::from(1);
+            ExitCode::from(1)
         }
-    };
+    }
+}
+
+/// Boot summary shared by `totctl boot` and the MCP `save_summary` tool (#250);
+/// the text is byte-identical to the CLI output.
+fn boot_report(
+    path: &str,
+    rules_path: Option<String>,
+    turns: usize,
+    seed: u64,
+) -> Result<String, String> {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
+    let sav = tot_kit::parse_sav(&bytes).map_err(|e| e.to_string())?;
     // rules: explicit --rules, else a sibling Rules.txt (scenario dir)
     let rules = rules_path.or_else(|| {
         let sib = std::path::Path::new(path).with_file_name("Rules.txt");
@@ -118,7 +133,7 @@ fn cmd_boot(args: &[String]) -> ExitCode {
     });
     let rules = rules.and_then(|rp| {
         std::fs::read_to_string(&rp).ok().map(|text| {
-            println!("rules         : {rp}");
+            let _ = writeln!(out, "rules         : {rp}");
             tot_kit::parse_rules(&text)
         })
     });
@@ -132,24 +147,27 @@ fn cmd_boot(args: &[String]) -> ExitCode {
             world.start_turn(r);
         }
     }
-    println!("file          : {path}");
-    println!("version       : 0x{:04x}", sav.version);
-    println!("turn / year   : {} / {}", world.turn, world.year);
-    println!(
+    let _ = writeln!(out, "file          : {path}");
+    let _ = writeln!(out, "version       : 0x{:04x}", sav.version);
+    let _ = writeln!(out, "turn / year   : {} / {}", world.turn, world.year);
+    let _ = writeln!(
+        out,
         "difficulty    : {}  rivals: {}",
         world.difficulty, world.rivals
     );
     let named: Vec<&engine::Civ> = world.civs.iter().filter(|c| !c.names.is_empty()).collect();
-    println!("civs (named)  : {}", named.len());
+    let _ = writeln!(out, "civs (named)  : {}", named.len());
     for c in &named {
-        println!(
+        let _ = writeln!(
+            out,
             "  owner {} : {:<28} units {}",
             c.id,
             c.names.join(" / "),
             c.unit_count
         );
     }
-    println!(
+    let _ = writeln!(
+        out,
         "map           : {}x{} stored ({} tiles), blocks {}",
         world.map.stored_w,
         world.map.stored_h,
@@ -164,14 +182,16 @@ fn cmd_boot(args: &[String]) -> ExitCode {
         .take(6)
         .map(|(id, n)| format!("{}={}", id, n))
         .collect();
-    println!("terrain hist  : {}", top_s.join(" "));
-    println!(
+    let _ = writeln!(out, "terrain hist  : {}", top_s.join(" "));
+    let _ = writeln!(
+        out,
         "units / cities: {} / {}",
         world.units.len(),
         world.cities.iter().filter(|c| c.city_id != 0).count()
     );
     if let Some(c) = world.cities.first() {
-        println!(
+        let _ = writeln!(
+            out,
             "city[0]       : {} size{} owner{} F{}/S{}/T{} sci{} tax{} box {}/{}",
             c.name,
             c.size,
@@ -191,18 +211,20 @@ fn cmd_boot(args: &[String]) -> ExitCode {
             .iter()
             .filter(|u| r.unit_move(u.type_id as usize).unwrap_or(0) > 0)
             .count();
-        println!(
+        let _ = writeln!(
+            out,
             "moves         : {movable}/{} units movable at turn start",
             world.units.len()
         );
     }
-    println!(
+    let _ = writeln!(
+        out,
         "rng seed      : {} (draws so far: {})",
         seed,
         world.rng.draws()
     );
-    println!("checksum      : {:016x}", world.checksum());
-    ExitCode::SUCCESS
+    let _ = writeln!(out, "checksum      : {:016x}", world.checksum());
+    Ok(out)
 }
 
 /// Surgical save edits (T1-8): copy the input applying typed field edits
@@ -346,20 +368,31 @@ fn cmd_run(args: &[String]) -> ExitCode {
         eprintln!("usage: totctl run <file.sav|scn> --turns N [--seed S] [--rules P | --no-rules]");
         return ExitCode::from(2);
     };
-    let bytes = match std::fs::read(path) {
-        Ok(b) => b,
-        Err(e) => {
-            eprintln!("error: read {path}: {e}");
-            return ExitCode::from(1);
+    match run_report(path, turns, seed, rules_path, no_rules) {
+        Ok(text) => {
+            print!("{text}");
+            ExitCode::SUCCESS
         }
-    };
-    let sav = match tot_kit::parse_sav(&bytes) {
-        Ok(s) => s,
         Err(e) => {
             eprintln!("error: {e}");
-            return ExitCode::from(1);
+            ExitCode::from(1)
         }
-    };
+    }
+}
+
+/// Deterministic N-turn run report shared by `totctl run` and the MCP
+/// `run_turns` tool (#250); the text is byte-identical to the CLI output.
+fn run_report(
+    path: &str,
+    turns: usize,
+    seed: u64,
+    rules_path: Option<String>,
+    no_rules: bool,
+) -> Result<String, String> {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
+    let sav = tot_kit::parse_sav(&bytes).map_err(|e| e.to_string())?;
     // Scenario files are Latin-1 (FallRome is not valid UTF-8).
     let read_lossy = |p: &std::path::Path| std::fs::read(p).ok().map(|b| tot_kit::latin1(&b));
     // Reviewer finding #66: an explicit --rules that cannot be read is an
@@ -373,11 +406,10 @@ fn cmd_run(args: &[String]) -> ExitCode {
         match read_lossy(&rp) {
             Some(t) => Some(tot_kit::parse_rules(&t)),
             None => {
-                eprintln!(
-                    "error: cannot read rules {} (pass --rules PATH, or --no-rules to only advance the turn counter)",
+                return Err(format!(
+                    "cannot read rules {} (pass --rules PATH, or --no-rules to only advance the turn counter)",
                     rp.display()
-                );
-                return ExitCode::from(1);
+                ));
             }
         }
     };
@@ -388,9 +420,10 @@ fn cmd_run(args: &[String]) -> ExitCode {
     if let Some(r) = &rules {
         world.start_turn(r);
     }
-    println!("file {}", path);
-    println!("seed {seed}");
-    println!(
+    let _ = writeln!(out, "file {}", path);
+    let _ = writeln!(out, "seed {seed}");
+    let _ = writeln!(
+        out,
         "rules {} events {}",
         if rules.is_some() { "yes" } else { "no" },
         events.as_ref().map_or(0, |e| e.file.events.len())
@@ -401,7 +434,8 @@ fn cmd_run(args: &[String]) -> ExitCode {
             match &rules {
                 Some(r) => {
                     let s = world.run_turn(r, events.as_mut());
-                    println!(
+                    let _ = writeln!(
+                        out,
                         "{line} grew {} built {} events {}",
                         s.grew.len(),
                         s.built.len(),
@@ -410,14 +444,14 @@ fn cmd_run(args: &[String]) -> ExitCode {
                 }
                 None => {
                     world.advance_turn();
-                    println!("{line}");
+                    let _ = writeln!(out, "{line}");
                 }
             }
         } else {
-            println!("{line}");
+            let _ = writeln!(out, "{line}");
         }
     }
-    ExitCode::SUCCESS
+    Ok(out)
 }
 
 /// Advance tree + wonder table (T1-5): resolves prerequisites, runs the
@@ -512,25 +546,37 @@ fn cmd_rules(args: &[String]) -> ExitCode {
         eprintln!("usage: totctl rules <Rules.txt>");
         return ExitCode::from(2);
     };
-    let bytes = match std::fs::read(path) {
-        Ok(b) => b,
-        Err(e) => {
-            eprintln!("error: read {path}: {e}");
-            return ExitCode::from(1);
+    match rules_report(path) {
+        Ok(text) => {
+            print!("{text}");
+            ExitCode::SUCCESS
         }
-    };
+        Err(e) => {
+            eprintln!("error: {e}");
+            ExitCode::from(1)
+        }
+    }
+}
+
+/// Rules summary shared by `totctl rules` and the MCP `rules_summary` tool
+/// (#250); the text is byte-identical to the CLI output.
+fn rules_report(path: &str) -> Result<String, String> {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
     let text = tot_kit::latin1(&bytes);
     let rules = tot_kit::parse_rules(&text);
-    println!("sections      : {}", rules.section_order().join(","));
-    println!("row counts    : {}", {
+    let _ = writeln!(out, "sections      : {}", rules.section_order().join(","));
+    let _ = writeln!(out, "row counts    : {}", {
         let mut s = String::new();
         for (n, c) in rules.row_counts() {
             s.push_str(&format!("{n}={c} "));
         }
         s.trim_end().to_string()
     });
-    println!("semantic ok   : {}", rules.terrain_semantic_ok());
-    println!(
+    let _ = writeln!(out, "semantic ok   : {}", rules.terrain_semantic_ok());
+    let _ = writeln!(
+        out,
         "terrain 0/10  : {} / {}",
         {
             let n = rules.base_terrain_names();
@@ -541,7 +587,7 @@ fn cmd_rules(args: &[String]) -> ExitCode {
             n.get(10).copied().unwrap_or("?")
         }
     );
-    println!("units         : {}", rules.unit_names().len());
+    let _ = writeln!(out, "units         : {}", rules.unit_names().len());
     let domains = {
         let mut counts = [0usize; 3];
         for i in 0..rules.unit_names().len() {
@@ -551,17 +597,25 @@ fn cmd_rules(args: &[String]) -> ExitCode {
         }
         format!("{}/{}/{}", counts[0], counts[1], counts[2])
     };
-    println!("unit domains  : {domains}");
-    println!("governments   : {}", rules.government_names().join(", "));
-    println!("caravan       : {}", rules.caravan_commodities().len());
-    println!("transport rel : {:?}", rules.transport_relationships());
+    let _ = writeln!(out, "unit domains  : {domains}");
+    let _ = writeln!(
+        out,
+        "governments   : {}",
+        rules.government_names().join(", ")
+    );
+    let _ = writeln!(out, "caravan       : {}", rules.caravan_commodities().len());
+    let _ = writeln!(out, "transport rel : {:?}", rules.transport_relationships());
     let road = rules
         .cosmic()
         .into_iter()
         .find(|(k, _)| k.contains("Road movement multiplier"))
         .map(|(_, v)| v.to_string());
-    println!("cosmic road   : {}", road.unwrap_or_else(|| "?".into()));
-    ExitCode::SUCCESS
+    let _ = writeln!(
+        out,
+        "cosmic road   : {}",
+        road.unwrap_or_else(|| "?".into())
+    );
+    Ok(out)
 }
 
 fn cmd_campaign(args: &[String]) -> ExitCode {
@@ -620,9 +674,6 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
         if !remainder.is_empty() {
             return Err("campaign options need values".into());
         }
-        if resume.is_some() && changed_setup {
-            return Err("resume uses the checkpoint setup; omit setup options".into());
-        }
         if checkpoint.is_some() && checkpoint == log_path {
             return Err("checkpoint and log output paths must differ".into());
         }
@@ -631,19 +682,21 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
                 return Err(format!("output already exists: {path}"));
             }
         }
-        let bytes = std::fs::read(rules_path).map_err(|e| format!("read {rules_path}: {e}"))?;
-        let rules = tot_kit::parse_rules(&tot_kit::latin1(&bytes));
-        let mut campaign = if let Some(path) = resume {
-            let saved = std::fs::read_to_string(path).map_err(|e| format!("read {path}: {e}"))?;
-            engine::campaign::Campaign::restore(rules, &saved)?
-        } else {
-            engine::campaign::Campaign::with_policy(config, rules, policy)?
+        let resume_checkpoint = match resume {
+            Some(path) => {
+                Some(std::fs::read_to_string(path).map_err(|e| format!("read {path}: {e}"))?)
+            }
+            None => None,
         };
-        let outcome = campaign.advance(turns)?;
-        for (path, contents) in [
-            (checkpoint, campaign.checkpoint()),
-            (log_path, campaign.game.log().to_string()),
-        ] {
+        let report = campaign_report(CampaignRequest {
+            rules_path: rules_path.to_string(),
+            policy,
+            turns,
+            config,
+            changed_setup,
+            resume_checkpoint,
+        })?;
+        for (path, contents) in [(checkpoint, &report.checkpoint), (log_path, &report.log)] {
             if let Some(path) = path {
                 let mut file = std::fs::OpenOptions::new()
                     .write(true)
@@ -654,23 +707,7 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
                     .map_err(|e| format!("write {path}: {e}"))?;
             }
         }
-        let world = &campaign.game.world;
-        println!(
-            "generated campaign: engine-designed world v{}, initialization policy v{}",
-            engine::worldgen::ALGORITHM_VERSION,
-            engine::newgame::INITIALIZATION_VERSION
-        );
-        println!("setup       : {}", campaign.config().descriptor());
-        println!("rounds      : {}", campaign.rounds());
-        println!("turn / year : {} / {}", world.turn, world.year);
-        println!("living civs : {:?}", world.living_civs());
-        println!(
-            "cities/units: {} / {}",
-            world.cities.iter().filter(|c| c.city_id != 0).count(),
-            world.units.iter().filter(|u| u.id != 0).count()
-        );
-        println!("fingerprint : {:016x}", world.checksum());
-        println!("outcome     : {outcome:?} (observed state; original victory rules not claimed)");
+        print!("{}", report.text);
         Ok(())
     };
     match run() {
@@ -680,6 +717,69 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// Campaign run inputs shared by `totctl campaign` and the MCP `campaign_run`
+/// tool (#250). `resume_checkpoint` is the checkpoint *text*: the CLI reads it
+/// from `--resume FILE`; the MCP tool receives it inline from a previous run.
+struct CampaignRequest {
+    rules_path: String,
+    policy: engine::campaign::AiPolicy,
+    turns: u32,
+    config: engine::newgame::NewGameConfig,
+    changed_setup: bool,
+    resume_checkpoint: Option<String>,
+}
+
+/// Campaign run outputs. `text` is byte-identical to the CLI stdout;
+/// `checkpoint` and `log` are exactly what `--checkpoint`/`--log` would write.
+struct CampaignReport {
+    text: String,
+    checkpoint: String,
+    log: String,
+}
+
+fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
+    use std::fmt::Write as _;
+    if req.resume_checkpoint.is_some() && req.changed_setup {
+        return Err("resume uses the checkpoint setup; omit setup options".into());
+    }
+    let bytes =
+        std::fs::read(&req.rules_path).map_err(|e| format!("read {}: {e}", req.rules_path))?;
+    let rules = tot_kit::parse_rules(&tot_kit::latin1(&bytes));
+    let mut campaign = match &req.resume_checkpoint {
+        Some(saved) => engine::campaign::Campaign::restore(rules, saved)?,
+        None => engine::campaign::Campaign::with_policy(req.config, rules, req.policy)?,
+    };
+    let outcome = campaign.advance(req.turns)?;
+    let world = &campaign.game.world;
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "generated campaign: engine-designed world v{}, initialization policy v{}",
+        engine::worldgen::ALGORITHM_VERSION,
+        engine::newgame::INITIALIZATION_VERSION
+    );
+    let _ = writeln!(out, "setup       : {}", campaign.config().descriptor());
+    let _ = writeln!(out, "rounds      : {}", campaign.rounds());
+    let _ = writeln!(out, "turn / year : {} / {}", world.turn, world.year);
+    let _ = writeln!(out, "living civs : {:?}", world.living_civs());
+    let _ = writeln!(
+        out,
+        "cities/units: {} / {}",
+        world.cities.iter().filter(|c| c.city_id != 0).count(),
+        world.units.iter().filter(|u| u.id != 0).count()
+    );
+    let _ = writeln!(out, "fingerprint : {:016x}", world.checksum());
+    let _ = writeln!(
+        out,
+        "outcome     : {outcome:?} (observed state; original victory rules not claimed)"
+    );
+    Ok(CampaignReport {
+        text: out,
+        checkpoint: campaign.checkpoint(),
+        log: campaign.game.log().to_string(),
+    })
 }
 
 fn cmd_worldgen(args: &[String]) -> ExitCode {
@@ -743,31 +843,9 @@ fn cmd_mp(args: &[String]) -> ExitCode {
         eprintln!("usage: totctl mp <file.mp>");
         return ExitCode::from(2);
     };
-    match tot_kit::parse_mp_file(path) {
-        Ok(map) => {
-            println!("file          : {path}");
-            println!("layout        : {:?}", map.format);
-            println!("dimensions    : {} x {}", map.width, map.height);
-            println!("declared real : {:?}", map.declared_real_tiles);
-            println!("counted real  : {}", map.real_tile_count());
-            println!("tail bytes    : {}", map.tail_bytes);
-            let mut histogram: Vec<(u8, usize)> = [0usize; 128]
-                .into_iter()
-                .enumerate()
-                .map(|(t, _)| (t as u8, 0))
-                .collect();
-            for i in 0..map.tiles.len() {
-                if let Some(t) = map.terrain(i) {
-                    histogram[t as usize].1 += 1;
-                }
-            }
-            histogram.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
-            println!("terrain top   :");
-            for (t, n) in histogram.into_iter().take(6) {
-                if n > 0 {
-                    println!("  id {t:3} : {n}");
-                }
-            }
+    match mp_report(path) {
+        Ok(text) => {
+            print!("{text}");
             ExitCode::SUCCESS
         }
         Err(e) => {
@@ -777,22 +855,62 @@ fn cmd_mp(args: &[String]) -> ExitCode {
     }
 }
 
+/// MP map summary shared by `totctl mp` and the MCP `map_summary` tool (#250);
+/// the text is byte-identical to the CLI output.
+fn mp_report(path: &str) -> Result<String, String> {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    let map = tot_kit::parse_mp_file(path).map_err(|e| e.to_string())?;
+    let _ = writeln!(out, "file          : {path}");
+    let _ = writeln!(out, "layout        : {:?}", map.format);
+    let _ = writeln!(out, "dimensions    : {} x {}", map.width, map.height);
+    let _ = writeln!(out, "declared real : {:?}", map.declared_real_tiles);
+    let _ = writeln!(out, "counted real  : {}", map.real_tile_count());
+    let _ = writeln!(out, "tail bytes    : {}", map.tail_bytes);
+    let mut histogram: Vec<(u8, usize)> = [0usize; 128]
+        .into_iter()
+        .enumerate()
+        .map(|(t, _)| (t as u8, 0))
+        .collect();
+    for i in 0..map.tiles.len() {
+        if let Some(t) = map.terrain(i) {
+            histogram[t as usize].1 += 1;
+        }
+    }
+    histogram.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
+    let _ = writeln!(out, "terrain top   :");
+    for (t, n) in histogram.into_iter().take(6) {
+        if n > 0 {
+            let _ = writeln!(out, "  id {t:3} : {n}");
+        }
+    }
+    Ok(out)
+}
+
 fn cmd_events(args: &[String]) -> ExitCode {
     let Some(path) = args.first() else {
         eprintln!("usage: totctl events <Events.txt>");
         return ExitCode::FAILURE;
     };
-    let Ok(src) = std::fs::read_to_string(path) else {
-        eprintln!("cannot read {path}");
-        return ExitCode::FAILURE;
-    };
-    let f = match tot_kit::parse_events(&src) {
-        Ok(f) => f,
-        Err(e) => {
-            eprintln!("parse error: {e:?}");
-            return ExitCode::FAILURE;
+    match events_report(path) {
+        Ok(text) => {
+            print!("{text}");
+            ExitCode::SUCCESS
         }
-    };
+        Err(e) => {
+            eprintln!("{e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// Events summary shared by `totctl events` and the MCP `events_summary` tool
+/// (#250); the text is byte-identical to the CLI output.
+fn events_report(path: &str) -> Result<String, String> {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    let src = std::fs::read_to_string(path).map_err(|_| format!("cannot read {path}"))?;
+    let f = tot_kit::parse_events(&src).map_err(|e| format!("parse error: {e:?}"))?;
     use std::collections::BTreeMap;
     let mut triggers: BTreeMap<&str, usize> = BTreeMap::new();
     let mut actions: BTreeMap<&str, usize> = BTreeMap::new();
@@ -802,16 +920,16 @@ fn cmd_events(args: &[String]) -> ExitCode {
             *actions.entry(a.keyword.as_str()).or_default() += 1;
         }
     }
-    println!("events       : {}", f.events.len());
-    println!("triggers     :");
+    let _ = writeln!(out, "events       : {}", f.events.len());
+    let _ = writeln!(out, "triggers     :");
     for (k, n) in &triggers {
-        println!("  {k:<18} {n}");
+        let _ = writeln!(out, "  {k:<18} {n}");
     }
-    println!("actions      :");
+    let _ = writeln!(out, "actions      :");
     for (k, n) in &actions {
-        println!("  {k:<18} {n}");
+        let _ = writeln!(out, "  {k:<18} {n}");
     }
-    ExitCode::SUCCESS
+    Ok(out)
 }
 
 /// Rules (required) and Events (optional) next to a save, read as Latin-1.

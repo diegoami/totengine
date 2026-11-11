@@ -75,3 +75,23 @@ records dependencies, the complete-client AI gates and remaining unscheduled
 original-feature work. Historical milestones remain unchanged. Program epics
 remain open across their child milestones; this is not a fixed final release
 count, frozen review candidate or implementation launch.
+
+## MCP agent interface — owner request, 2026-11-11
+
+The owner added a Model Context Protocol server to the roadmap, both in headless
+mode and with a client ([#250](https://github.com/diegoami/totengine/issues/250)).
+MCP is a transport/adapter over the existing engine boundaries, not a privileged
+driver: player-role tools see filtered observations only, every mutation is a
+validated order or decision, and agent/protocol identity is recorded with orders,
+checkpoints and session recordings. It is staged across the existing gates:
+
+1. Headless read-only and existing-policy tools (inspection, diagnostics, runs,
+   observer/recording queries) may be scoped as a tooling slice now.
+2. Client-attached access to a running browser or desktop session is opt-in and
+   local, exposes only the human's filtered view, and starts advisory-only; it
+   needs a both-client attach contract.
+3. MCP agents that act for a faction are external policies. They reuse #92's
+   protocol obligations and remain behind the complete-client gate (item 6).
+
+Original assets are never returned through MCP; transports stay local (stdio,
+loopback). No milestone, version or implementation is assigned by this entry.

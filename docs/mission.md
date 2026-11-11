@@ -1,7 +1,7 @@
 # ToTEngine mission
 
 Owner direction, 2026-11-08. [Delivery plan](plan.md) · [Live backlog](../BACKLOG.md) ·
-[Decision 0008](decisions/0008-scenario-platform.md).
+[Decision 0008](decisions/0008-scenario-platform.md); MCP interface [#250](https://github.com/diegoami/totengine/issues/250).
 
 **Build an open, native recreation of Civilization II: Test of Time for playing,
 observing, testing and creating scenarios, on desktop and in the browser.**

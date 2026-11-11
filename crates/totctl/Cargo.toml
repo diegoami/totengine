@@ -13,3 +13,6 @@ path = "src/main.rs"
 engine = { path = "../engine" }
 tot-kit = { path = "../tot-kit" }
 totui = { path = "../totui" }
+# JSON-RPC framing for `totctl mcp`; already in the workspace tree with
+# notices recorded in docs/third-party/ (MIT).
+serde_json = "1"

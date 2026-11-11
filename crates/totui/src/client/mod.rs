@@ -137,6 +137,7 @@ pub struct Frame {
     pub status: String,
     pub assets: String,
 }
+mod pedia;
 mod reports;
 mod routes;
 #[derive(Clone)]
@@ -160,6 +161,15 @@ enum Modal {
     },
     Science,
     Goal,
+    /// Civilopedia reference text; `back` is the dialog (and research choice) to
+    /// return to when it was opened from one.
+    Pedia {
+        section: usize,
+        selected: usize,
+        reading: bool,
+        scroll: usize,
+        back: Option<Box<(Modal, Option<i32>)>>,
+    },
     /// An own-civilization report; `selected` indexes the sorted rows.
     Report {
         family: ReportFamily,
@@ -213,6 +223,9 @@ enum Action {
     Rates,
     Revolution,
     Science,
+    Pedia,
+    PediaSection(usize),
+    PediaFor,
     Report(ReportFamily),
     ReportFamily(ReportFamily),
     ReportSort(usize),
@@ -643,6 +656,10 @@ impl Client {
                 if matches!(self.modal, Some(Modal::Report { .. })) {
                     return self.report_click(x, y);
                 }
+                if matches!(self.modal, Some(Modal::Pedia { .. })) {
+                    self.pedia_click(x, y);
+                    return Ok(());
+                }
                 if self.modal.is_none() && self.city_open {
                     return self.city_click(x, y);
                 }
@@ -677,6 +694,7 @@ impl Client {
                             | Action::Load
                             | Action::ReportSort(_)
                             | Action::ReportFamily(_)
+                            | Action::PediaSection(_)
                     ) {
                         return self.action(b.action.clone());
                     }
@@ -712,6 +730,9 @@ impl Client {
                 return result;
             }
             if let Some(result) = self.report_key(key) {
+                return result;
+            }
+            if let Some(result) = self.pedia_key(key) {
                 return result;
             }
             match key {
@@ -879,6 +900,9 @@ impl Client {
             Action::Research => self.required(),
             Action::Rates => self.open_rates()?,
             Action::Report(family) => self.open_report(family)?,
+            Action::Pedia => self.open_pedia()?,
+            Action::PediaSection(i) => self.pedia_section(i),
+            Action::PediaFor => self.pedia_for_research_choice()?,
             Action::ReportFamily(family) => self.report_family(family),
             Action::ReportSort(column) => self.report_sort(Some(column)),
             Action::Revolution => self.open_revolution()?,
@@ -1052,6 +1076,7 @@ impl Client {
                     | Modal::Government { .. }
                     | Modal::Science
                     | Modal::Report { .. }
+                    | Modal::Pedia { .. }
                     | Modal::Goal => unreachable!("handled by route_accept"),
                     Modal::Quit => {
                         self.closed = true;
@@ -1769,6 +1794,7 @@ impl Client {
                 .route_buttons(modal)
                 .into_iter()
                 .chain(self.report_buttons())
+                .chain(self.pedia_buttons())
             {
                 add(rb.x, rb.y, rb.w, rb.h, rb.label, rb.action);
             }
@@ -1792,6 +1818,16 @@ impl Client {
                 );
                 // Required government/rate decisions cannot be dismissed, so a
                 // saved checkpoint must stay loadable from them.
+                if matches!(modal, Modal::Research) {
+                    add(
+                        480.,
+                        120.,
+                        160.,
+                        30.,
+                        "Civilopedia".into(),
+                        Action::PediaFor,
+                    );
+                }
                 if !matches!(modal, Modal::Name | Modal::Research) {
                     add(
                         480.,
@@ -1815,6 +1851,8 @@ impl Client {
                         Modal::Revolution => "Yes, revolt [Enter]",
                         Modal::Science => "Close [Enter]",
                         Modal::Report { .. } => "Open city [Enter]",
+                        Modal::Pedia { reading: false, .. } => "Read [Enter]",
+                        Modal::Pedia { .. } => "Back to list [Enter]",
                         _ => "Accept [Enter]",
                     }
                     .into(),
@@ -1833,7 +1871,9 @@ impl Client {
                         Modal::Rates { .. } => "Reset split [Esc]",
                         Modal::Revolution => "Cancel [Esc]",
                         Modal::Goal => "Back [Esc]",
-                        Modal::Science | Modal::Report { .. } => "Close [Esc]",
+                        Modal::Science | Modal::Report { .. } | Modal::Pedia { .. } => {
+                            "Close [Esc]"
+                        }
                         _ => "Cancel / inspect [Esc]",
                     }
                     .into(),
@@ -1969,11 +2009,12 @@ impl Client {
             "Reports".into(),
             Action::Report(ReportFamily::CityStatus),
         );
+        add(614., 685., 130., 30., "Civilopedia".into(), Action::Pedia);
         if self.city.is_some() {
             add(
-                614.,
+                752.,
                 685.,
-                396.,
+                258.,
                 30.,
                 "Manage city".into(),
                 Action::OpenCity,
@@ -2258,6 +2299,7 @@ impl Client {
                 Modal::Government { .. } => "Choose a government",
                 Modal::Science => "Science advisor",
                 Modal::Report { .. } => "Reports",
+                Modal::Pedia { .. } => "Civilopedia",
                 Modal::Goal => "Choose a research goal",
                 Modal::Production { .. } => "Choose production",
                 Modal::Improvements { .. } => "Improvements — select a building to sell",
@@ -2273,6 +2315,7 @@ impl Client {
             draws.push(text(212., 125., title, 22, "#fff0b5"));
             self.route_draws(modal, &mut draws);
             self.report_draws(&mut draws);
+            self.pedia_draws(&mut draws);
             if let (Modal::Production { city }, Some(item), Some(l)) =
                 (modal, self.choice, self.loaded.as_ref())
             {

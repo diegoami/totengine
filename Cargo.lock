@@ -427,6 +427,9 @@ dependencies = [
 [[package]]
 name = "tot-kit"
 version = "0.18.0"
+dependencies = [
+ "serde_json",
+]
 
 [[package]]
 name = "totctl"

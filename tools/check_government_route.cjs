@@ -2,11 +2,11 @@
 const fs=require('fs'),path=require('path');
 const keys={'Ctrl+n':'Control+n','Ctrl+s':'Control+s','Shift+t':'Shift+T','Shift+r':'Shift+R'};
 function title(f){const d=f.draws.find(d=>d.kind==='text'&&d.x===212&&d.y===125&&d.size===22);return d?d.text:null}
-exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out,start='govstart',shot='government-route-final.png'})=>{
+exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out,start='govstart',shot='government-route-final.png',startTitle=null})=>{
  const route=JSON.parse(fs.readFileSync(path.join(fixture,'route.json'),'utf8'));
  fs.copyFileSync(path.join(fixture,start+'.cth'),path.join(saves,start+'.cth'));
  await load(start);
- if(title(await state())!==null)throw Error('start checkpoint did not return to the map');
+ if(title(await state())!==startTitle)throw Error('start checkpoint shows '+title(await state()));
  for(const [n,step] of route.entries()){
   if(step.op==='key')await key(keys[step.key]||step.key);
   else if(step.op==='button')await click(step.label);

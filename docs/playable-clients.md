@@ -136,6 +136,11 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   button) sorts, Enter opens the selected city and Esc there returns to the report; Esc closes.
   Reports are read-only views of your own data and never change the game. See
   [reports milestone](ui/reports-milestone.md) for what is and is not covered.
+- **Civilopedia** (bottom-row button; also a button inside the research prompt) shows the
+  selected ruleset's own `Describe.txt` text by category. Left/Right change category,
+  Up/Down select or scroll, Enter reads or goes back, Esc steps back and closes. In the research
+  prompt it describes the highlighted advance and returns to the same choice. It needs a ToT
+  installation; the open demo has no Civilopedia text.
 - **Ctrl+N** ends the human turn, confirming if movable units remain. Opponents run
   in bounded steps and then return control. Pause/Continue controls that work.
   Loading a checkpoint during opponents requires explicit Continue.

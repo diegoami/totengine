@@ -1,0 +1,501 @@
+{
+  "files": {
+    "Describe.txt": {
+      "bytes": 213151,
+      "sections": [
+        {
+          "entries": 89,
+          "index_described": 89,
+          "index_len": 100,
+          "index_unresolved": 0,
+          "name": "ADVANCE"
+        },
+        {
+          "entries": 38,
+          "index_described": 38,
+          "index_len": 39,
+          "index_unresolved": 0,
+          "name": "IMPROVEMENT"
+        },
+        {
+          "entries": 28,
+          "index_described": 28,
+          "index_len": 28,
+          "index_unresolved": 0,
+          "name": "WONDER"
+        },
+        {
+          "entries": 51,
+          "index_described": 51,
+          "index_len": 62,
+          "index_unresolved": 0,
+          "name": "UNIT"
+        },
+        {
+          "entries": 32,
+          "index_described": 33,
+          "index_len": 33,
+          "index_unresolved": 0,
+          "name": "TERRAIN_AND_RESOURCE"
+        },
+        {
+          "entries": 7,
+          "index_described": 7,
+          "index_len": 7,
+          "index_unresolved": 0,
+          "name": "GOVERNMENT"
+        },
+        {
+          "entries": 25,
+          "index_described": null,
+          "index_len": null,
+          "index_unresolved": null,
+          "name": "CONCEPT"
+        }
+      ],
+      "sha256": "a7e4870cbdeddc921a377bb36b60fa103c3227d2e8a456fc285aabeadbaed037"
+    },
+    "ExtendedOriginal/Describe.txt": {
+      "bytes": 257893,
+      "sections": [
+        {
+          "entries": 100,
+          "index_described": 100,
+          "index_len": 100,
+          "index_unresolved": 0,
+          "name": "ADVANCE"
+        },
+        {
+          "entries": 39,
+          "index_described": 39,
+          "index_len": 40,
+          "index_unresolved": 0,
+          "name": "IMPROVEMENT"
+        },
+        {
+          "entries": 28,
+          "index_described": 28,
+          "index_len": 28,
+          "index_unresolved": 0,
+          "name": "WONDER"
+        },
+        {
+          "entries": 77,
+          "index_described": 77,
+          "index_len": 80,
+          "index_unresolved": 0,
+          "name": "UNIT"
+        },
+        {
+          "entries": 61,
+          "index_described": 64,
+          "index_len": 66,
+          "index_unresolved": 0,
+          "name": "TERRAIN_AND_RESOURCE"
+        },
+        {
+          "entries": 7,
+          "index_described": 7,
+          "index_len": 7,
+          "index_unresolved": 0,
+          "name": "GOVERNMENT"
+        },
+        {
+          "entries": 28,
+          "index_described": null,
+          "index_len": null,
+          "index_unresolved": null,
+          "name": "CONCEPT"
+        }
+      ],
+      "sha256": "20adc7064ee5af104fa617ba5f5fdb455e1d3993065de123dafe62dd6cd29be0"
+    },
+    "Fantasy/Describe.txt": {
+      "bytes": 234745,
+      "sections": [
+        {
+          "entries": 96,
+          "index_described": 96,
+          "index_len": 100,
+          "index_unresolved": 0,
+          "name": "ADVANCE"
+        },
+        {
+          "entries": 39,
+          "index_described": 39,
+          "index_len": 40,
+          "index_unresolved": 0,
+          "name": "IMPROVEMENT"
+        },
+        {
+          "entries": 28,
+          "index_described": 28,
+          "index_len": 28,
+          "index_unresolved": 0,
+          "name": "WONDER"
+        },
+        {
+          "entries": 79,
+          "index_described": 79,
+          "index_len": 80,
+          "index_unresolved": 0,
+          "name": "UNIT"
+        },
+        {
+          "entries": 88,
+          "index_described": 89,
+          "index_len": 132,
+          "index_unresolved": 0,
+          "name": "TERRAIN_AND_RESOURCE"
+        },
+        {
+          "entries": 7,
+          "index_described": 7,
+          "index_len": 7,
+          "index_unresolved": 0,
+          "name": "GOVERNMENT"
+        },
+        {
+          "entries": 34,
+          "index_described": null,
+          "index_len": null,
+          "index_unresolved": null,
+          "name": "CONCEPT"
+        }
+      ],
+      "sha256": "e41ad4e93ca32997edd0a889cd189f35fb819f44bca8404a9fe5dd2f4fe0a99d"
+    },
+    "Midgard/Describe.txt": {
+      "bytes": 240824,
+      "sections": [
+        {
+          "entries": 97,
+          "index_described": 97,
+          "index_len": 100,
+          "index_unresolved": 0,
+          "name": "ADVANCE"
+        },
+        {
+          "entries": 39,
+          "index_described": 39,
+          "index_len": 40,
+          "index_unresolved": 0,
+          "name": "IMPROVEMENT"
+        },
+        {
+          "entries": 28,
+          "index_described": 28,
+          "index_len": 28,
+          "index_unresolved": 0,
+          "name": "WONDER"
+        },
+        {
+          "entries": 79,
+          "index_described": 79,
+          "index_len": 80,
+          "index_unresolved": 0,
+          "name": "UNIT"
+        },
+        {
+          "entries": 90,
+          "index_described": 97,
+          "index_len": 132,
+          "index_unresolved": 0,
+          "name": "TERRAIN_AND_RESOURCE"
+        },
+        {
+          "entries": 7,
+          "index_described": 7,
+          "index_len": 7,
+          "index_unresolved": 0,
+          "name": "GOVERNMENT"
+        },
+        {
+          "entries": 34,
+          "index_described": null,
+          "index_len": null,
+          "index_unresolved": null,
+          "name": "CONCEPT"
+        }
+      ],
+      "sha256": "748b55f73b4bfd5ab85ba94e0b168b7c24dbb3a642543e52c0bcaf170c40f5e9"
+    },
+    "Original/Describe.txt": {
+      "bytes": 213306,
+      "sections": [
+        {
+          "entries": 89,
+          "index_described": 89,
+          "index_len": 100,
+          "index_unresolved": 0,
+          "name": "ADVANCE"
+        },
+        {
+          "entries": 38,
+          "index_described": 38,
+          "index_len": 40,
+          "index_unresolved": 0,
+          "name": "IMPROVEMENT"
+        },
+        {
+          "entries": 28,
+          "index_described": 28,
+          "index_len": 28,
+          "index_unresolved": 0,
+          "name": "WONDER"
+        },
+        {
+          "entries": 51,
+          "index_described": 51,
+          "index_len": 62,
+          "index_unresolved": 0,
+          "name": "UNIT"
+        },
+        {
+          "entries": 32,
+          "index_described": 33,
+          "index_len": 33,
+          "index_unresolved": 0,
+          "name": "TERRAIN_AND_RESOURCE"
+        },
+        {
+          "entries": 7,
+          "index_described": 7,
+          "index_len": 7,
+          "index_unresolved": 0,
+          "name": "GOVERNMENT"
+        },
+        {
+          "entries": 25,
+          "index_described": null,
+          "index_len": null,
+          "index_unresolved": null,
+          "name": "CONCEPT"
+        }
+      ],
+      "sha256": "c933888c405a476cbb303494857fac657563112dd7f2f319f90064c7c6f22450"
+    },
+    "Scenario/Roman Civil Wars/Describe.txt": {
+      "bytes": 180016,
+      "sections": [
+        {
+          "entries": 89,
+          "index_described": 89,
+          "index_len": 100,
+          "index_unresolved": 0,
+          "name": "ADVANCE"
+        },
+        {
+          "entries": 38,
+          "index_described": 38,
+          "index_len": 40,
+          "index_unresolved": 0,
+          "name": "IMPROVEMENT"
+        },
+        {
+          "entries": 28,
+          "index_described": 28,
+          "index_len": 28,
+          "index_unresolved": 0,
+          "name": "WONDER"
+        },
+        {
+          "entries": 77,
+          "index_described": 77,
+          "index_len": 80,
+          "index_unresolved": 0,
+          "name": "UNIT"
+        },
+        {
+          "entries": 32,
+          "index_described": 33,
+          "index_len": 33,
+          "index_unresolved": 0,
+          "name": "TERRAIN_AND_RESOURCE"
+        },
+        {
+          "entries": 7,
+          "index_described": 7,
+          "index_len": 7,
+          "index_unresolved": 0,
+          "name": "GOVERNMENT"
+        },
+        {
+          "entries": 25,
+          "index_described": null,
+          "index_len": null,
+          "index_unresolved": null,
+          "name": "CONCEPT"
+        }
+      ],
+      "sha256": "a670ab5cbc760608ad521e335092bce29c223f642846a437585525872ab268e8"
+    },
+    "Scenario/ToT_Constantine/Describe.txt": {
+      "bytes": 39978,
+      "sections": [
+        {
+          "entries": 90,
+          "index_described": 0,
+          "index_len": 100,
+          "index_unresolved": 0,
+          "name": "ADVANCE"
+        },
+        {
+          "entries": 38,
+          "index_described": 0,
+          "index_len": 39,
+          "index_unresolved": 0,
+          "name": "IMPROVEMENT"
+        },
+        {
+          "entries": 28,
+          "index_described": 28,
+          "index_len": 28,
+          "index_unresolved": 0,
+          "name": "WONDER"
+        },
+        {
+          "entries": 80,
+          "index_described": 0,
+          "index_len": 80,
+          "index_unresolved": 0,
+          "name": "UNIT"
+        },
+        {
+          "entries": 33,
+          "index_described": 0,
+          "index_len": 33,
+          "index_unresolved": 0,
+          "name": "TERRAIN_AND_RESOURCE"
+        },
+        {
+          "entries": 7,
+          "index_described": 7,
+          "index_len": 7,
+          "index_unresolved": 0,
+          "name": "GOVERNMENT"
+        },
+        {
+          "entries": 25,
+          "index_described": null,
+          "index_len": null,
+          "index_unresolved": null,
+          "name": "CONCEPT"
+        }
+      ],
+      "sha256": "e76454193ed4a413226ba1292f6974ec5effa2f3d85e6655742e1e7c170b6d1d"
+    },
+    "Scenario/china/Describe.txt": {
+      "bytes": 94936,
+      "sections": [
+        {
+          "entries": 89,
+          "index_described": 89,
+          "index_len": 100,
+          "index_unresolved": 0,
+          "name": "ADVANCE"
+        },
+        {
+          "entries": 33,
+          "index_described": 32,
+          "index_len": 39,
+          "index_unresolved": 0,
+          "name": "IMPROVEMENT"
+        },
+        {
+          "entries": 25,
+          "index_described": 0,
+          "index_len": 28,
+          "index_unresolved": 0,
+          "name": "WONDER"
+        },
+        {
+          "entries": 16,
+          "index_described": 181,
+          "index_len": 189,
+          "index_unresolved": 0,
+          "name": "UNIT"
+        },
+        {
+          "entries": 49,
+          "index_described": 69,
+          "index_len": 75,
+          "index_unresolved": 0,
+          "name": "TERRAIN_AND_RESOURCE"
+        },
+        {
+          "entries": 7,
+          "index_described": 7,
+          "index_len": 7,
+          "index_unresolved": 0,
+          "name": "GOVERNMENT"
+        },
+        {
+          "entries": 17,
+          "index_described": null,
+          "index_len": null,
+          "index_unresolved": null,
+          "name": "CONCEPT"
+        }
+      ],
+      "sha256": "4304e0aacc52541f6a4cea915d9b644a3b8a10481db04b43c5afa618bf8fa1da"
+    },
+    "Scifi/Describe.txt": {
+      "bytes": 295776,
+      "sections": [
+        {
+          "entries": 96,
+          "index_described": 96,
+          "index_len": 100,
+          "index_unresolved": 0,
+          "name": "ADVANCE"
+        },
+        {
+          "entries": 39,
+          "index_described": 39,
+          "index_len": 40,
+          "index_unresolved": 0,
+          "name": "IMPROVEMENT"
+        },
+        {
+          "entries": 28,
+          "index_described": 28,
+          "index_len": 28,
+          "index_unresolved": 0,
+          "name": "WONDER"
+        },
+        {
+          "entries": 62,
+          "index_described": 62,
+          "index_len": 80,
+          "index_unresolved": 0,
+          "name": "UNIT"
+        },
+        {
+          "entries": 104,
+          "index_described": 131,
+          "index_len": 132,
+          "index_unresolved": 0,
+          "name": "TERRAIN_AND_RESOURCE"
+        },
+        {
+          "entries": 7,
+          "index_described": 7,
+          "index_len": 7,
+          "index_unresolved": 0,
+          "name": "GOVERNMENT"
+        },
+        {
+          "entries": 41,
+          "index_described": null,
+          "index_len": null,
+          "index_unresolved": null,
+          "name": "CONCEPT"
+        }
+      ],
+      "sha256": "cbfa6dc24c650d666d334c937be9e415a7498aa22ec2d809c696b4de939a44f0"
+    }
+  },
+  "note": "Counts and hashes only; Describe.txt text is copyrighted and never committed.",
+  "schema": 1
+}

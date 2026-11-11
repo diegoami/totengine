@@ -4419,3 +4419,22 @@ Chromium input: 69 steps, nine checkpoints, byte-identical in the recorder and b
 clients, with the dialog title checked after every step. Recorder, runners and
 commands: [v0.18.0 readiness](../v0.18.0-readiness.md). Windows input and owner
 acceptance are not part of this evidence.
+
+## Civilopedia text structure (#201)
+
+[pedia-structure-v1.json](pedia-structure-v1.json) summarizes every `Describe.txt` of the
+reference install (root, five rulesets, three scenarios): size, SHA-256 and, per section,
+entry count, index length, described entries and unresolved index values. Counts and hashes
+only; the copyrighted text is never committed. Reproduce:
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT python3 tools/pedia_inventory.py --out /tmp/pedia.json
+cmp docs/evidence/pedia-structure-v1.json /tmp/pedia.json
+CIVTOT_HOME=/path/to/CIVTOT cargo test -p tot-kit --test pedia_install
+```
+
+The Rust decoder and the Python inventory are independent implementations and agree on every
+count. The file's own header documents the format; shipped files deviate in two harmless
+ways (index numbers without the trailing comma, and indentation), recorded in
+[the milestone note](../ui/reports-milestone.md). Whether the native loader tolerates the
+same deviations was not verified.

@@ -1167,7 +1167,7 @@ fn cmd_observe(args: &[String]) -> ExitCode {
                     .open(path)
                     .map_err(|e| format!("create {path}: {e}"))?;
                 file.write_all(observer.log().as_bytes())
-                    .map_err(|e| format!("write {path}: {e}"))?;
+                    .map_err(|e| e.to_string())?;
             }
             eprintln!("wrote {path}");
         } else {

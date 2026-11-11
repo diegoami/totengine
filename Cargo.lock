@@ -433,6 +433,8 @@ name = "totctl"
 version = "0.18.0"
 dependencies = [
  "engine",
+ "serde",
+ "serde_json",
  "tot-kit",
  "totui",
 ]

@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Headless MCP server `totctl mcp` (#250 stage 1, unreleased): stdio JSON-RPC
+  transport with six read-only tools (`rules_summary`, `map_summary`,
+  `events_summary`, `save_summary`, `run_turns`, `campaign_run`) whose results
+  are byte-identical to the equivalent CLI invocations; campaign checkpoints and
+  logs are returned inline for resume. Filesystem reads are bounded to
+  `--root`/`CIVTOT_HOME`; the server writes nothing. No client attach, observer
+  queries or acting tools yet — see docs/mcp-server.md.
 - Own-civilization reports on both clients (#201/#202, unreleased; owner acceptance pending):
   City status (F1), Defense (F2), Attitude (F4), Trade (F5) and Wonders (F7) with sortable columns, row selection, paging
   and drill-down into an own city that returns to the report. Engine views

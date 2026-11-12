@@ -10,7 +10,8 @@ use crate::newgame::NewGameConfig;
 use crate::player::Game;
 use tot_kit::Rules;
 
-const MAX_ROUNDS: u32 = 30_000;
+/// Upper bound on rounds a campaign may run in total.
+pub const MAX_ROUNDS: u32 = 30_000;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Outcome {

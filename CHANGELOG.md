@@ -10,8 +10,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   `events_summary`, `save_summary`, `run_turns`, `campaign_run`) whose results
   are byte-identical to the equivalent CLI invocations; campaign checkpoints and
   logs are returned inline for resume. Filesystem reads are bounded to
-  `--root`/`CIVTOT_HOME`; the server writes nothing. No client attach, observer
-  queries or acting tools yet — see docs/mcp-server.md.
+  `--root`/`CIVTOT_HOME`; the server writes nothing. No client attach or acting
+  tools yet — see docs/mcp-server.md.
+- MCP observation follow-up (#250 stage 1): `campaign_observe` returns observer
+  v1 frames of a generated campaign, as all views (byte-identical to the new
+  `totctl campaign --stream OUT` NDJSON), the spectator view or one civ's
+  fogged view; `worldgen_summary` generates a world in memory. Existing CLI
+  output is unchanged.
 - Own-civilization reports on both clients (#201/#202, unreleased; owner acceptance pending):
   City status (F1), Defense (F2), Attitude (F4), Trade (F5) and Wonders (F7) with sortable columns, row selection, paging
   and drill-down into an own city that returns to the report. Engine views

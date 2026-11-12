@@ -172,8 +172,8 @@ pub fn value(rules: &ValueRules, state: &ValueContext, advance: usize) -> Option
             if rules.requires(32, advance) {
                 result += 2;
             }
-            for id in 36..=38 {
-                if rules.improvement_prerequisites[id] == advance as i8 {
+            for &prerequisite in &rules.improvement_prerequisites[36..=38] {
+                if prerequisite == advance as i8 {
                     result += 3;
                 }
             }

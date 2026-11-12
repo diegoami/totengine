@@ -46,6 +46,12 @@ previews, games or saves.
 | `session_observe` | `session`, `view="all"` | one observer v1 frame (events since the previous call) |
 | `session_checkpoint` | `session`, `format="checkpoint"\|"recording"` | `--checkpoint` text, or a `.totrec` recording |
 | `session_close` | `session` | — |
+| `agent_start` *(experimental)* | `rules`, `agent`, `civ=1`, setup options, or `resume_checkpoint` | — (#256) |
+| `agent_view` *(experimental)* | `game` | — |
+| `agent_map` *(experimental)* | `game`, `x`, `y`, `radius=3` (max 10) | — |
+| `agent_submit` *(experimental)* | `game`, `revision`, `request_id`, `command` | — |
+| `agent_checkpoint` *(experimental)* | `game`, `format="checkpoint"\|"recording"` | — |
+| `agent_close` *(experimental)* | `game` | — |
 | `worldgen_summary` | `seed?`, `width?`, `height?`, `land_percent?` (no path; nothing written) | `totctl worldgen <out.mp> ...` minus its final `map` line |
 
 Every tool's first result block is byte-identical to the equivalent CLI stdout:
@@ -83,6 +89,59 @@ since the session's previous observation. `session_checkpoint` with
 `recording_verify` and `totctl record verify` accept. At most 4 sessions are
 open; they live only in the server process and end with it or with
 `session_close`. Nothing is written to disk.
+
+### Agent play (`agent_*`, experimental, #256)
+
+An MCP client can **play one civilization** of a headless generated campaign
+against built-in `builtin-1` opponents. The owner allowed this on 2026-11-12
+for headless, generated-campaign, experimental play only (decision 0008 §MCP
+follow-up decisions). It does not cover client games, scenarios or delegated
+actions in a human game (#257).
+
+- **Same driver as the playable clients.** An agent game is an
+  `engine::human::HumanSession`. The agent occupies the human seat, so it gets
+  the same filtered view and the same validated commands, and no engine change
+  was needed.
+- **What the agent sees.** `agent_view` returns:
+  - revision, phase, turn, treasury, research and rates;
+  - the pending decision, with an `answer_with` template;
+  - own units and cities as `{slot, id}` entities, with legal production choices;
+  - visible foreign units, known foreign cities, notices and the remaining
+    action budget.
+
+  `agent_map` returns only tiles this civilization has seen.
+- **What the agent does.** `agent_submit` takes one JSON command with a `type`:
+  - units: `move`, `occupy`, `skip`, `found` (then `name_city` or `cancel_found`);
+  - cities: `production`, `worker`, `specialist`;
+  - civilization: `research`, `goal`, `rates`, `revolution`, `government`,
+    `review_rates`;
+  - `end_turn`.
+
+  Unknown fields and types are rejected.
+- **Checks on every command.**
+  - `revision` must be current, or the command is rejected as stale.
+  - `request_id` must be new: repeating one with the identical request returns
+    the recorded response without executing again, and reusing it for anything
+    else is rejected.
+  - Ownership and legality are checked by the engine, and illegal orders come
+    back as `accepted: false` with a reason.
+- **Turns.** `end_turn` runs the opponents and returns when it is the agent's
+  turn again. Each turn allows 200 commands, the built-in players' per-turn
+  bound (`ACTION_CAP`); after that only `end_turn` is accepted.
+- **Recording.** `agent_checkpoint` returns the session checkpoint, which
+  `agent_start` can resume, or a `.totrec` recording whose producer names the
+  agent (`totctl mcp agent (experimental, #256): <agent>`). Verification replays
+  the recorded commands without the agent.
+- **Identity binding.** Checkpoints bind the Rules and a fixed headless
+  resource identity, `totengine-headless-agent 1`.
+- **Not offered yet:**
+  - purchases, sales and quoted production switches, which need engine quotes;
+  - more than one agent civilization per game, since the human driver has one seat;
+  - opponents other than `builtin-1`;
+  - scenarios.
+
+  No playing-strength claim is made; #187 measures strength separately.
+  At most 4 agent games are open per server.
 
 ### Observation (`campaign_observe`)
 
@@ -123,6 +182,20 @@ resume, error paths, checkpoint/log writes). The observation follow-up was
 checked the same way for `worldgen` (stdout and map bytes) and `campaign`
 (builtin-1 and ai-v1, checkpoint/log/resume, round-limit and overwrite errors)
 over three seeds.
+
+Agent tests play a scripted agent to turn 6 entirely through `agent_submit`:
+it answers research prompts, founds and names a city, and ends turns. They
+check that:
+- a second identical run gives a byte-identical checkpoint;
+- a resumed game has the same view;
+- the exported recording names the agent and verifies by replay;
+- a repeated request ID returns the recorded response without executing;
+- reused IDs, stale revisions, unknown units and invalid or extra-field
+  commands are rejected;
+- the 200-command budget allows only `end_turn` once spent, and resets on the
+  next turn.
+
+A stdio test answers a decision and ends a turn in a real `totctl mcp` process.
 
 Session tests check that 3 + 4 rounds equal one 7-round run byte for byte
 (report and checkpoint), that a resumed session continues identically,

@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Experimental MCP agent play (#256, unreleased; owner-relaxed gate for
+  headless generated campaigns only): `agent_start`, `agent_view`, `agent_map`,
+  `agent_submit`, `agent_checkpoint`, `agent_close`. An MCP client plays one
+  civilization against builtin-1 opponents through the human session driver:
+  filtered view only, validated revision/request-ID commands, a 200-command
+  per-turn budget, and checkpoints/recordings that replay without the agent.
 - MCP recording and session tools (#250 stage 1, unreleased): `recording_info`,
   `recording_verify` and `recording_log` (order-log slices by turn/civ) over
   `.totrec` bundles; live in-memory campaign sessions (`session_start`,

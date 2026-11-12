@@ -8,6 +8,7 @@ use std::process::ExitCode;
 use engine::rng::GameRng as _;
 
 mod mcp;
+mod mcp_agent;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().collect();

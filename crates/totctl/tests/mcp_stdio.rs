@@ -197,3 +197,53 @@ fn stdio_sessions_keep_state_between_messages() {
     assert_eq!(responses[4]["result"]["isError"], true);
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn stdio_agent_game_answers_a_decision_and_ends_a_turn() {
+    let root = std::env::temp_dir().join(format!("totengine-mcp-agent-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir(&root).unwrap();
+    let rules = root.join("Rules.txt");
+    std::fs::write(
+        &rules,
+        format!(
+            "{}\n{}",
+            include_str!("../../engine/tests/fixtures/campaign-rules.txt"),
+            include_str!("../../engine/tests/fixtures/builtin-settings.txt")
+        ),
+    )
+    .unwrap();
+    let responses = mcp_session(
+        &root,
+        &[
+            tool_call(
+                1,
+                "agent_start",
+                json!({"rules": rules.to_str().unwrap(), "agent": "stdio-test", "seed": 5, "width": 40, "height": 30}),
+            ),
+            tool_call(
+                2,
+                "agent_submit",
+                json!({"game": 1, "revision": 0, "request_id": 1,
+                       "command": {"type": "research", "decision": 1, "advance": 0}}),
+            ),
+            tool_call(
+                3,
+                "agent_submit",
+                json!({"game": 1, "revision": 1, "request_id": 2, "command": {"type": "end_turn"}}),
+            ),
+        ],
+    );
+    let first: Value = serde_json::from_str(&blocks(&responses[0])[1]).unwrap();
+    assert_eq!(first["turn"], 1);
+    assert_eq!(first["decision"]["type"], "research");
+    let research: Value = serde_json::from_str(&blocks(&responses[1])[0]).unwrap();
+    assert_eq!(research["accepted"], true);
+    let ended: Value = serde_json::from_str(&blocks(&responses[2])[0]).unwrap();
+    assert_eq!(
+        ended["turn"], 2,
+        "opponents ran and control returned: {ended}"
+    );
+    assert_eq!(ended["phase"], "your-turn");
+    std::fs::remove_dir_all(root).unwrap();
+}

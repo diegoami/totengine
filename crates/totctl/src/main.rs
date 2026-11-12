@@ -808,18 +808,23 @@ impl CampaignReport {
     }
 }
 
-fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
-    use std::fmt::Write as _;
+/// Create or restore the campaign a request describes, without running it.
+/// Shared by `campaign_report` and the MCP session tools.
+fn campaign_open(req: &CampaignRequest) -> Result<engine::campaign::Campaign, String> {
     if req.resume_checkpoint.is_some() && req.changed_setup {
         return Err("resume uses the checkpoint setup; omit setup options".into());
     }
     let bytes =
         std::fs::read(&req.rules_path).map_err(|e| format!("read {}: {e}", req.rules_path))?;
     let rules = tot_kit::parse_rules(&tot_kit::latin1(&bytes));
-    let mut campaign = match &req.resume_checkpoint {
-        Some(saved) => engine::campaign::Campaign::restore(rules, saved)?,
-        None => engine::campaign::Campaign::with_policy(req.config, rules, req.policy)?,
-    };
+    match &req.resume_checkpoint {
+        Some(saved) => engine::campaign::Campaign::restore(rules, saved),
+        None => engine::campaign::Campaign::with_policy(req.config, rules, req.policy),
+    }
+}
+
+fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
+    let mut campaign = campaign_open(&req)?;
     let mut frames = Vec::new();
     let start_round = campaign.rounds();
     let mut journal = match &req.record {
@@ -874,6 +879,31 @@ fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
     } else {
         campaign.advance(req.turns)?
     };
+    let out = campaign_summary(&campaign, &outcome);
+    let bundle = req.record.as_ref().map(|_| {
+        let observer = req.observe.then(|| tot_record::Observer {
+            perspective: tot_record::Perspective::AllViews,
+            from_round: start_round,
+            frames: frames.iter().map(|f| f.to_json() + "\n").collect(),
+        });
+        tot_record::Bundle::campaign(&campaign, outcome.into(), "totctl campaign", observer)
+    });
+    Ok(CampaignReport {
+        text: out,
+        checkpoint: campaign.checkpoint(),
+        log: campaign.game.log().to_string(),
+        frames,
+        bundle,
+    })
+}
+
+/// The `totctl campaign` stdout for a campaign's current state. Shared with
+/// the MCP campaign and session tools.
+fn campaign_summary(
+    campaign: &engine::campaign::Campaign,
+    outcome: &engine::campaign::Outcome,
+) -> String {
+    use std::fmt::Write as _;
     let world = &campaign.game.world;
     let mut out = String::new();
     let _ = writeln!(
@@ -897,21 +927,7 @@ fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
         out,
         "outcome     : {outcome:?} (observed state; original victory rules not claimed)"
     );
-    let bundle = req.record.as_ref().map(|_| {
-        let observer = req.observe.then(|| tot_record::Observer {
-            perspective: tot_record::Perspective::AllViews,
-            from_round: start_round,
-            frames: frames.iter().map(|f| f.to_json() + "\n").collect(),
-        });
-        tot_record::Bundle::campaign(&campaign, outcome.into(), "totctl campaign", observer)
-    });
-    Ok(CampaignReport {
-        text: out,
-        checkpoint: campaign.checkpoint(),
-        log: campaign.game.log().to_string(),
-        frames,
-        bundle,
-    })
+    out
 }
 
 fn cmd_worldgen(args: &[String]) -> ExitCode {
@@ -964,24 +980,11 @@ fn cmd_record(args: &[String]) -> ExitCode {
     let run = || -> Result<(), String> {
         match args {
             [cmd, bundle] if cmd == "info" => {
-                let b = tot_record::Bundle::decode(&tot_record::read_limited(Path::new(bundle))?)?;
-                print!("{}", record_summary(&b));
+                print!("{}", record_info_report(bundle)?);
                 Ok(())
             }
             [cmd, bundle, rules] if cmd == "verify" => {
-                let b = tot_record::Bundle::decode(&tot_record::read_limited(Path::new(bundle))?)?;
-                let bytes = std::fs::read(rules).map_err(|e| format!("read {rules}: {e}"))?;
-                let rules = tot_kit::parse_rules(&tot_kit::latin1(&bytes));
-                let verified = b.verify(&rules)?;
-                print!("{}", record_summary(&b));
-                match verified.fingerprint {
-                    Some(f) => println!(
-                        "verified    : replay reproduces the recording; fingerprint {f:016x}"
-                    ),
-                    None => {
-                        println!("verified    : view-only; identities match, nothing to replay")
-                    }
-                }
+                print!("{}", record_verify_report(bundle, rules)?);
                 Ok(())
             }
             [cmd, journal, out] if cmd == "recover" => {
@@ -1005,6 +1008,33 @@ fn cmd_record(args: &[String]) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// `totctl record info` stdout; shared with the MCP `recording_info` tool.
+fn record_info_report(path: &str) -> Result<String, String> {
+    let b = tot_record::Bundle::decode(&tot_record::read_limited(std::path::Path::new(path))?)?;
+    Ok(record_summary(&b))
+}
+
+/// `totctl record verify` stdout; shared with the MCP `recording_verify` tool.
+fn record_verify_report(path: &str, rules_path: &str) -> Result<String, String> {
+    use std::fmt::Write as _;
+    let b = tot_record::Bundle::decode(&tot_record::read_limited(std::path::Path::new(path))?)?;
+    let bytes = std::fs::read(rules_path).map_err(|e| format!("read {rules_path}: {e}"))?;
+    let rules = tot_kit::parse_rules(&tot_kit::latin1(&bytes));
+    let verified = b.verify(&rules)?;
+    let mut out = record_summary(&b);
+    let _ = match verified.fingerprint {
+        Some(f) => writeln!(
+            out,
+            "verified    : replay reproduces the recording; fingerprint {f:016x}"
+        ),
+        None => writeln!(
+            out,
+            "verified    : view-only; identities match, nothing to replay"
+        ),
+    };
+    Ok(out)
 }
 
 fn record_summary(b: &tot_record::Bundle) -> String {

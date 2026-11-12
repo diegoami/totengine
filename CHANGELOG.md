@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- MCP recording and session tools (#250 stage 1, unreleased): `recording_info`,
+  `recording_verify` and `recording_log` (order-log slices by turn/civ) over
+  `.totrec` bundles; live in-memory campaign sessions (`session_start`,
+  `session_advance`, `session_observe`, `session_checkpoint`, `session_close`)
+  whose reports and checkpoints equal straight `totctl campaign` runs. Design
+  proposal for the client-attached advisor (stage 2): docs/mcp-client-attach.md.
 - Session recording bundles, format 1 (#206 first slice, unreleased): new crate
   `tot-record` with versioned `.totrec` bundles that separate reproducible
   gameplay checkpoints, derived observer frames (perspective-labelled) and inert

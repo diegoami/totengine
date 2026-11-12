@@ -37,6 +37,14 @@ previews, games or saves.
 | `run_turns` | `path`, `turns=50`, `seed=1`, `rules?`, `no_rules=false` | `totctl run <file.sav\|scn> --turns N` |
 | `campaign_run` | `rules`, `policy?`, `turns=100`, setup options (`seed`, `width`, `height`, `land_percent`, `civs`, `difficulty`), `resume_checkpoint?`, `include_checkpoint?`, `include_log?` | `totctl campaign <Rules.txt> ...` |
 | `campaign_observe` | as `campaign_run` (no `include_*`), plus `view="all"`, `from?`, `count=1` (max 8) | `totctl campaign <Rules.txt> ... --stream OUT` |
+| `recording_info` | `path` | `totctl record info <bundle.totrec>` |
+| `recording_verify` | `path`, `rules` | `totctl record verify <bundle.totrec> <Rules.txt>` |
+| `recording_log` | `path`, `from_turn?`, `to_turn?`, `civ?` | lines of the run's `totctl campaign --log` file |
+| `session_start` | as `campaign_run` setup, or `resume_checkpoint` | `totctl campaign` report of the starting state |
+| `session_advance` | `session`, `rounds` (1..1000) | `totctl campaign --turns k` report after k rounds in total |
+| `session_observe` | `session`, `view="all"` | one observer v1 frame (events since the previous call) |
+| `session_checkpoint` | `session`, `format="checkpoint"\|"recording"` | `--checkpoint` text, or a `.totrec` recording |
+| `session_close` | `session` | — |
 | `worldgen_summary` | `seed?`, `width?`, `height?`, `land_percent?` (no path; nothing written) | `totctl worldgen <out.mp> ...` minus its final `map` line |
 
 Every tool's first result block is byte-identical to the equivalent CLI stdout:
@@ -48,6 +56,32 @@ would write); `resume_checkpoint` takes a checkpoint text from a previous run
 and rejects setup options, mirroring the CLI's `--resume`. Sibling `Rules.txt`/
 `Events.txt` discovery next to a save behaves exactly like the CLI (the parent
 directory is inside a root whenever the save path is).
+
+### Recordings (`recording_*`)
+
+`recording_info` and `recording_verify` return exactly what `totctl record
+info|verify` print for a [recording bundle](recording-bundles.md). `recording_log`
+returns the canonical order log of a recorded campaign without replaying it,
+sliced by turn and optionally by civ: `T <turn> C <civ> …` lines plus the
+`R <n> <checksum>` lines closing turn n−1, always with the 3 header lines. The
+unfiltered result is byte-identical to the run's `--log` file. It is full-state
+content: every civilization's orders. Recovery writes a file, so it stays
+CLI-only (`totctl record recover`).
+
+### Live sessions (`session_*`)
+
+Each `campaign_*` call re-simulates from setup or from a checkpoint. Sessions keep
+a campaign in memory instead, so an assistant can explore step by step: start,
+advance a few rounds, observe, advance again. Determinism is unchanged: after k
+rounds in total, in any split, `session_advance` returns the report
+`totctl campaign --turns k` prints, and `session_checkpoint` returns the same
+checkpoint text. A session resumed from that checkpoint continues identically.
+`session_observe` uses one recorder per session, so a frame's events are those
+since the session's previous observation. `session_checkpoint` with
+`format: "recording"` returns a `.totrec` bundle (stop reason `stopped`) that
+`recording_verify` and `totctl record verify` accept. At most 4 sessions are
+open; they live only in the server process and end with it or with
+`session_close`. Nothing is written to disk.
 
 ### Observation (`campaign_observe`)
 
@@ -89,6 +123,14 @@ checked the same way for `worldgen` (stdout and map bytes) and `campaign`
 (builtin-1 and ai-v1, checkpoint/log/resume, round-limit and overwrite errors)
 over three seeds.
 
+Session tests check that 3 + 4 rounds equal one 7-round run byte for byte
+(report and checkpoint), that a resumed session continues identically,
+per-view observation and events-since-last-call, exported recordings verifying
+through the recording tools, the 4-session limit, and argument errors. A stdio
+test drives a session across messages in a real `totctl mcp` process.
+`recording_log` tests check the unfiltered slice against the `--log` file and a
+turn/civ window.
+
 Further unit tests cover `campaign_observe` windows, the default last frame,
 per-civ and spectator filtering, resumed-frame checksums and argument errors;
 `builtin-1` runs and resumes through the tool using the authored
@@ -107,8 +149,10 @@ install-backed check.
 
 ## Not in this slice
 
-Client attach (loopback advisory access to `totplay`/`totdesktop`), observer
-queries over `.SAV`/`.SCN` games (`totctl observe`/`replay`, which need
-install-backed tests), recording bundles (#186), author-assistance lint tools (#208), acting/delegated
+Client attach (loopback advisory access to `totplay`/`totdesktop`, #255; design
+proposal in [mcp-client-attach.md](mcp-client-attach.md)), observer
+queries over `.SAV`/`.SCN` games and the scenario inspector (#254, which needs
+install-backed tests), an agent playing a civilization (#256) or delegated
+actions in a human game (#257), recording bundles (#186), author-assistance lint tools (#208), acting/delegated
 orders, and any original-asset responses. No milestone, version or release is
 assigned; owner acceptance and the independent review process are unchanged.

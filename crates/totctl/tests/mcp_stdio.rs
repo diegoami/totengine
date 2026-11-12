@@ -152,3 +152,48 @@ fn stdio_observer_frames_and_worldgen_match_the_cli() {
     );
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn stdio_sessions_keep_state_between_messages() {
+    let root = std::env::temp_dir().join(format!("totengine-mcp-session-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&root);
+    std::fs::create_dir(&root).unwrap();
+    let rules = root.join("Rules.txt");
+    std::fs::write(
+        &rules,
+        include_str!("../../engine/tests/fixtures/campaign-rules.txt"),
+    )
+    .unwrap();
+    let rules_arg = rules.to_str().unwrap();
+    let setup = [
+        "--policy", "ai-v1", "--seed", "4", "--width", "40", "--height", "30",
+    ];
+    let cli = totctl()
+        .args(["campaign", rules_arg])
+        .args(setup)
+        .args(["--turns", "6"])
+        .output()
+        .unwrap();
+    assert!(cli.status.success());
+    let start =
+        json!({"rules": rules_arg, "policy": "ai-v1", "seed": 4, "width": 40, "height": 30});
+    let responses = mcp_session(
+        &root,
+        &[
+            tool_call(1, "session_start", start),
+            tool_call(2, "session_advance", json!({"session": 1, "rounds": 2})),
+            tool_call(3, "session_advance", json!({"session": 1, "rounds": 4})),
+            tool_call(4, "session_close", json!({"session": 1})),
+            tool_call(5, "session_advance", json!({"session": 1, "rounds": 1})),
+        ],
+    );
+    assert_eq!(blocks(&responses[0])[0], "session 1\n");
+    assert_eq!(
+        blocks(&responses[2])[0],
+        String::from_utf8(cli.stdout).unwrap(),
+        "2 + 4 session rounds == `totctl campaign --turns 6`"
+    );
+    assert_eq!(blocks(&responses[3])[0], "closed session 1\n");
+    assert_eq!(responses[4]["result"]["isError"], true);
+    std::fs::remove_dir_all(root).unwrap();
+}

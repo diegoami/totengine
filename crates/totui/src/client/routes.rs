@@ -385,7 +385,7 @@ impl Client {
         };
         match modal {
             Modal::Rates { .. } => {
-                for row in 0..3 {
+                for (row, &locked) in self.rate_locks.iter().enumerate() {
                     let y = 178. + row as f64 * 64.;
                     add(676., y, 40., 30., "−".into(), Action::RateStep(row, -1));
                     add(722., y, 40., 30., "+".into(), Action::RateStep(row, 1));
@@ -394,12 +394,7 @@ impl Client {
                         y,
                         68.,
                         30.,
-                        if self.rate_locks[row] {
-                            "Locked"
-                        } else {
-                            "Lock"
-                        }
-                        .into(),
+                        if locked { "Locked" } else { "Lock" }.into(),
                         Action::RateLock(row),
                     );
                 }

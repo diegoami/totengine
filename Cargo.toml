@@ -6,6 +6,7 @@ members = [
     "crates/lua-host",
     "crates/totctl",
     "crates/totui",
+    "crates/tot-record",
 ]
 
 [workspace.package]

@@ -70,7 +70,7 @@ pub(crate) fn cmd_mcp(args: &[String]) -> ExitCode {
     if roots.is_empty() {
         eprintln!("totctl mcp: no roots configured; file tools will reject every path");
     }
-    let server = Server { roots };
+    let server = Server::new(roots);
     let stdin = std::io::stdin();
     let stdout = std::io::stdout();
     run(&server, &mut stdin.lock(), &mut stdout.lock())
@@ -104,9 +104,38 @@ fn run<R: BufRead, W: Write>(server: &Server, reader: &mut R, writer: &mut W) ->
 
 struct Server {
     roots: Vec<PathBuf>,
+    /// Live in-memory campaign sessions (`session_*` tools). Lost when the
+    /// server exits; `session_checkpoint` is how a client keeps one.
+    sessions: std::cell::RefCell<Sessions>,
 }
 
+#[derive(Default)]
+struct Sessions {
+    next: u32,
+    open: std::collections::BTreeMap<u32, Session>,
+}
+
+struct Session {
+    campaign: engine::campaign::Campaign,
+    /// Captures for `session_observe`; events are those since the last call.
+    recorder: engine::observer::Recorder,
+}
+
+/// Concurrently open sessions per server.
+const MAX_SESSIONS: usize = 4;
+/// Rounds one `session_advance` call may run.
+const MAX_SESSION_ADVANCE: u32 = 1000;
+/// Lines one `recording_log` call may return.
+const MAX_LOG_LINES: usize = 5000;
+
 impl Server {
+    fn new(roots: Vec<PathBuf>) -> Self {
+        Server {
+            roots,
+            sessions: Default::default(),
+        }
+    }
+
     /// One line in, an optional JSON-RPC response out (notifications get none).
     fn handle(&self, line: &str) -> Option<String> {
         let msg: Value = match serde_json::from_str(line) {
@@ -231,6 +260,72 @@ impl Server {
                 let a: ObserveArgs = parse_args(args)?;
                 self.campaign_observe(a)
             }
+            "recording_info" => {
+                let a: PathArgs = parse_args(args)?;
+                Ok(vec![crate::record_info_report(self.path(&a.path)?)?])
+            }
+            "recording_verify" => {
+                let a: VerifyArgs = parse_args(args)?;
+                let rules = self.path(&a.rules)?.to_string();
+                Ok(vec![crate::record_verify_report(
+                    self.path(&a.path)?,
+                    &rules,
+                )?])
+            }
+            "recording_log" => {
+                let a: LogArgs = parse_args(args)?;
+                self.recording_log(a)
+            }
+            "session_start" => {
+                let a: SessionStartArgs = parse_args(args)?;
+                self.session_start(a)
+            }
+            "session_advance" => {
+                let a: SessionAdvanceArgs = parse_args(args)?;
+                self.with_session(a.session, |s| {
+                    if a.rounds == 0 || a.rounds > MAX_SESSION_ADVANCE {
+                        return Err(format!("rounds must be 1..={MAX_SESSION_ADVANCE}"));
+                    }
+                    let outcome = s.campaign.advance(a.rounds)?;
+                    Ok(vec![crate::campaign_summary(&s.campaign, &outcome)])
+                })
+            }
+            "session_observe" => {
+                let a: SessionObserveArgs = parse_args(args)?;
+                let keep = parse_view(a.view.as_deref())?;
+                self.with_session(a.session, |s| {
+                    let mut frame = s.recorder.capture(&s.campaign.game);
+                    if let Some(civ) = keep {
+                        frame.views.retain(|v| v.civ == civ);
+                    }
+                    Ok(vec![frame.to_json()])
+                })
+            }
+            "session_checkpoint" => {
+                let a: SessionCheckpointArgs = parse_args(args)?;
+                self.with_session(a.session, |s| {
+                    match a.format.as_deref().unwrap_or("checkpoint") {
+                        "checkpoint" => Ok(vec![s.campaign.checkpoint()]),
+                        "recording" => Ok(vec![tot_record::Bundle::campaign(
+                            &s.campaign,
+                            tot_record::StopReason::Stopped,
+                            "totctl mcp session",
+                            None,
+                        )
+                        .encode()?]),
+                        other => Err(format!(
+                            "invalid format {other}: expected \"checkpoint\" or \"recording\""
+                        )),
+                    }
+                })
+            }
+            "session_close" => {
+                let a: SessionArgs = parse_args(args)?;
+                match self.sessions.borrow_mut().open.remove(&a.session) {
+                    Some(_) => Ok(vec![format!("closed session {}\n", a.session)]),
+                    None => Err(format!("no open session {}", a.session)),
+                }
+            }
             "worldgen_summary" => {
                 let a: WorldgenArgs = parse_args(args)?;
                 let mut config = engine::worldgen::WorldConfig::default();
@@ -303,6 +398,7 @@ impl Server {
             changed_setup,
             resume_checkpoint,
             observe,
+            record: None,
         })
     }
 
@@ -334,18 +430,7 @@ impl Server {
     /// `totctl campaign --stream` file; otherwise the frame keeps only the
     /// requested view (spectator = full state, or one civ's fogged view).
     fn campaign_observe(&self, a: ObserveArgs) -> std::result::Result<Vec<String>, String> {
-        let keep = match a.view.as_deref().unwrap_or("all") {
-            "all" => None,
-            "spectator" => Some(None),
-            civ => match civ.parse::<u8>() {
-                Ok(c @ 1..=7) => Some(Some(c)),
-                _ => {
-                    return Err(format!(
-                        "invalid view {civ}: expected \"all\", \"spectator\" or a civ 1..7"
-                    ))
-                }
-            },
-        };
+        let keep = parse_view(a.view.as_deref())?;
         if a.count == 0 || a.count > MAX_OBSERVE_FRAMES {
             return Err(format!("count must be 1..={MAX_OBSERVE_FRAMES}"));
         }
@@ -383,6 +468,109 @@ impl Server {
             });
         }
         Ok(blocks)
+    }
+
+    fn session_start(&self, a: SessionStartArgs) -> std::result::Result<Vec<String>, String> {
+        if self.sessions.borrow().open.len() >= MAX_SESSIONS {
+            return Err(format!(
+                "at most {MAX_SESSIONS} sessions may be open; close one with session_close"
+            ));
+        }
+        let setup = CampaignSetup {
+            policy: a.policy,
+            seed: a.seed,
+            width: a.width,
+            height: a.height,
+            land_percent: a.land_percent,
+            civs: a.civs,
+            difficulty: a.difficulty,
+        };
+        let request = self.campaign_request(&a.rules, 0, setup, a.resume_checkpoint, false)?;
+        let campaign = crate::campaign_open(&request)?;
+        let summary = crate::campaign_summary(&campaign, &campaign.outcome());
+        let mut sessions = self.sessions.borrow_mut();
+        sessions.next += 1;
+        let id = sessions.next;
+        sessions.open.insert(
+            id,
+            Session {
+                campaign,
+                recorder: Default::default(),
+            },
+        );
+        Ok(vec![format!("session {id}\n"), summary])
+    }
+
+    fn with_session(
+        &self,
+        id: u32,
+        f: impl FnOnce(&mut Session) -> std::result::Result<Vec<String>, String>,
+    ) -> std::result::Result<Vec<String>, String> {
+        let mut sessions = self.sessions.borrow_mut();
+        let session = sessions
+            .open
+            .get_mut(&id)
+            .ok_or_else(|| format!("no open session {id}"))?;
+        f(session)
+    }
+
+    /// Canonical order-log lines of a recorded campaign, sliced by turn and
+    /// optionally by civilization. Read from the bundle without replay.
+    fn recording_log(&self, a: LogArgs) -> std::result::Result<Vec<String>, String> {
+        let text = tot_record::read_limited(Path::new(self.path(&a.path)?))?;
+        let bundle = tot_record::Bundle::decode(&text)?;
+        if bundle.manifest.kind != tot_record::Kind::Campaign {
+            return Err("only campaign recordings carry an order log; use recording_verify".into());
+        }
+        let gameplay = bundle
+            .gameplay
+            .as_deref()
+            .ok_or("view-only recording has no order log")?;
+        let log = gameplay
+            .split_once("\nlog ")
+            .and_then(|(_, rest)| rest.split_once('\n'))
+            .map(|(_, log)| log)
+            .ok_or("campaign checkpoint has no order log")?;
+        let from = a.from_turn.unwrap_or(0);
+        let to = a.to_turn.unwrap_or(u32::MAX);
+        if from > to {
+            return Err("from_turn is after to_turn".into());
+        }
+        let mut out = String::new();
+        let mut count = 0;
+        for (n, line) in log.lines().enumerate() {
+            let keep = if n < 3 {
+                true // format, setup and Rules identity header
+            } else if let Some(rest) = line.strip_prefix("T ") {
+                let mut fields = rest.split(' ');
+                let turn: Option<u32> = fields.next().and_then(|t| t.parse().ok());
+                let civ: Option<u8> = match (fields.next(), fields.next()) {
+                    (Some("C"), Some(c)) => c.parse().ok(),
+                    _ => None,
+                };
+                turn.is_some_and(|t| (from..=to).contains(&t))
+                    && a.civ.is_none_or(|c| civ == Some(c))
+            } else if let Some(rest) = line.strip_prefix("R ") {
+                // `R n` closes turn n-1.
+                rest.split(' ')
+                    .next()
+                    .and_then(|n| n.parse::<u32>().ok())
+                    .is_some_and(|n| (from..=to).contains(&n.saturating_sub(1)))
+            } else {
+                true
+            };
+            if keep {
+                count += 1;
+                if count > MAX_LOG_LINES {
+                    return Err(format!(
+                        "more than {MAX_LOG_LINES} lines; narrow from_turn/to_turn or civ"
+                    ));
+                }
+                out.push_str(line);
+                out.push('\n');
+            }
+        }
+        Ok(vec![out])
     }
 
     /// Canonicalize a requested path and require it inside a configured root.
@@ -542,6 +730,90 @@ struct WorldgenArgs {
     land_percent: Option<u8>,
 }
 
+/// `None` = all views; `Some(None)` = spectator; `Some(Some(c))` = civ c.
+fn parse_view(view: Option<&str>) -> std::result::Result<Option<Option<u8>>, String> {
+    match view.unwrap_or("all") {
+        "all" => Ok(None),
+        "spectator" => Ok(Some(None)),
+        civ => match civ.parse::<u8>() {
+            Ok(c @ 1..=7) => Ok(Some(Some(c))),
+            _ => Err(format!(
+                "invalid view {civ}: expected \"all\", \"spectator\" or a civ 1..7"
+            )),
+        },
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct VerifyArgs {
+    path: String,
+    rules: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct LogArgs {
+    path: String,
+    #[serde(default)]
+    from_turn: Option<u32>,
+    #[serde(default)]
+    to_turn: Option<u32>,
+    #[serde(default)]
+    civ: Option<u8>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SessionStartArgs {
+    rules: String,
+    #[serde(default)]
+    policy: Option<String>,
+    #[serde(default)]
+    seed: Option<u32>,
+    #[serde(default)]
+    width: Option<u16>,
+    #[serde(default)]
+    height: Option<u16>,
+    #[serde(default)]
+    land_percent: Option<u8>,
+    #[serde(default)]
+    civs: Option<u8>,
+    #[serde(default)]
+    difficulty: Option<u8>,
+    #[serde(default)]
+    resume_checkpoint: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SessionArgs {
+    session: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SessionAdvanceArgs {
+    session: u32,
+    rounds: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SessionObserveArgs {
+    session: u32,
+    #[serde(default)]
+    view: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SessionCheckpointArgs {
+    session: u32,
+    #[serde(default)]
+    format: Option<String>,
+}
+
 fn default_observe_count() -> usize {
     1
 }
@@ -668,6 +940,110 @@ fn tools() -> Vec<Value> {
             }
         }),
         json!({
+            "name": "recording_info",
+            "description": "Describe a .totrec session recording without replaying it: kind, content class (reproducible or view-only), identities it needs, progress, stop reason and labelled sections. Byte-identical to `totctl record info`.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"path": path_prop()},
+                "required": ["path"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "recording_verify",
+            "description": "Replay a .totrec recording against a Rules.txt and check every claim (engine, Rules/resources identity, progress, stop reason, observer frames). Byte-identical to `totctl record verify`.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"path": path_prop(), "rules": path_prop()},
+                "required": ["path", "rules"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "recording_log",
+            "description": "Canonical order-log lines of a recorded campaign (`T <turn> C <civ> <order> = <result>`, and `R <n> <checksum>` closing turn n-1), sliced by turn range and optionally one civ; the 3 header lines are always included. Read from the recording without replay. Full-state content (every civ's orders); the lines are those of the run's `totctl campaign --log` file.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "path": path_prop(),
+                    "from_turn": {"type": "integer", "minimum": 0},
+                    "to_turn": {"type": "integer", "minimum": 0},
+                    "civ": {"type": "integer", "minimum": 1, "maximum": 7},
+                },
+                "required": ["path"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "session_start",
+            "description": "Open a live in-memory generated campaign (no rounds run yet) and return its id and the `totctl campaign` report of its starting state. Sessions avoid re-simulating on every call; at most 4 are open; they end with the server or session_close.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "rules": path_prop(),
+                    "policy": {"type": "string", "enum": ["ai-v1", "builtin-1"], "default": "builtin-1"},
+                    "seed": {"type": "integer", "minimum": 0},
+                    "width": {"type": "integer", "minimum": 20, "maximum": 65535},
+                    "height": {"type": "integer", "minimum": 20, "maximum": 65535},
+                    "land_percent": {"type": "integer", "minimum": 1, "maximum": 100},
+                    "civs": {"type": "integer", "minimum": 2, "maximum": 255},
+                    "difficulty": {"type": "integer", "minimum": 0, "maximum": 5},
+                    "resume_checkpoint": {"type": "string", "description": "checkpoint text; rejects setup options like the CLI"},
+                },
+                "required": ["rules"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "session_advance",
+            "description": "Run more rounds of an open session and return the `totctl campaign` report. After k rounds in total the report is byte-identical to `totctl campaign --turns k` with the same setup.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "session": {"type": "integer", "minimum": 1},
+                    "rounds": {"type": "integer", "minimum": 1, "maximum": MAX_SESSION_ADVANCE},
+                },
+                "required": ["session", "rounds"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "session_observe",
+            "description": "Observer v1 frame of an open session's current state, with the events since the previous session_observe. view: \"all\" (default), \"spectator\" (full state) or a civ number (that civ's fogged view).",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "session": {"type": "integer", "minimum": 1},
+                    "view": {"type": "string", "default": "all"},
+                },
+                "required": ["session"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "session_checkpoint",
+            "description": "Return an open session as text: a campaign checkpoint (default; resumable with campaign_run or session_start) or a .totrec recording (format \"recording\") that recording_verify and `totctl record verify` accept. Nothing is written.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "session": {"type": "integer", "minimum": 1},
+                    "format": {"type": "string", "enum": ["checkpoint", "recording"], "default": "checkpoint"},
+                },
+                "required": ["session"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "session_close",
+            "description": "Close an open session and free it.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"session": {"type": "integer", "minimum": 1}},
+                "required": ["session"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
             "name": "worldgen_summary",
             "description": "Generate an engine-designed world in memory (not an original-algorithm port) and summarize it. Byte-identical to `totctl worldgen` stdout without its final `map` line; no map file is written.",
             "inputSchema": {
@@ -693,9 +1069,7 @@ mod tests {
     }
 
     fn server() -> Server {
-        Server {
-            roots: vec![std::fs::canonicalize(fixtures()).unwrap()],
-        }
+        Server::new(vec![std::fs::canonicalize(fixtures()).unwrap()])
     }
 
     fn call(server: &Server, name: &str, arguments: Value) -> Value {
@@ -779,12 +1153,25 @@ mod tests {
                 "run_turns",
                 "campaign_run",
                 "campaign_observe",
+                "recording_info",
+                "recording_verify",
+                "recording_log",
+                "session_start",
+                "session_advance",
+                "session_observe",
+                "session_checkpoint",
+                "session_close",
                 "worldgen_summary"
             ]
         );
         for t in tools {
             assert_eq!(t["inputSchema"]["type"], "object");
-            assert!(t["description"].as_str().unwrap().contains("totctl"));
+            let name = t["name"].as_str().unwrap();
+            let description = t["description"].as_str().unwrap();
+            assert!(
+                description.contains("totctl") || name.starts_with("session_"),
+                "{name}"
+            );
         }
     }
 
@@ -805,7 +1192,7 @@ mod tests {
             error_text(&response).contains("outside the configured roots"),
             "{response}"
         );
-        let no_roots = Server { roots: vec![] };
+        let no_roots = Server::new(vec![]);
         let path = fixtures().join("campaign-rules.txt");
         let response = call(&no_roots, "rules_summary", json!({"path": path}));
         assert!(error_text(&response).contains("no filesystem roots"));
@@ -879,6 +1266,7 @@ mod tests {
             changed_setup: true,
             resume_checkpoint: None,
             observe: false,
+            record: None,
         })
         .unwrap();
         assert_eq!(result_text(&full), cli.text);
@@ -967,9 +1355,7 @@ mod tests {
     #[test]
     fn builtin_policy_runs_and_resumes_through_the_tool() {
         let (dir, rules) = builtin_rules_root("builtin");
-        let s = Server {
-            roots: vec![std::fs::canonicalize(&dir).unwrap()],
-        };
+        let s = Server::new(vec![std::fs::canonicalize(&dir).unwrap()]);
         let small =
             json!({"rules": rules, "seed": 5, "width": 40, "height": 30, "policy": "builtin-1"});
         let mut first_args = small.clone();
@@ -1025,6 +1411,7 @@ mod tests {
             changed_setup: true,
             resume_checkpoint: None,
             observe: true,
+            record: None,
         })
         .unwrap();
         let stream: Vec<String> = cli.stream().lines().map(str::to_string).collect();
@@ -1114,8 +1501,206 @@ mod tests {
         let response = call(&s, "worldgen_summary", json!({"path": "x.mp"}));
         assert!(error_text(&response).contains("invalid arguments"));
         // Generation needs no filesystem root.
-        let rootless = Server { roots: vec![] };
+        let rootless = Server::new(vec![]);
         let response = call(&rootless, "worldgen_summary", json!({}));
         assert!(result_text(&response).contains("generator"));
+    }
+
+    #[test]
+    fn sessions_advance_incrementally_and_match_straight_runs() {
+        let (dir, rules) = builtin_rules_root("session");
+        let s = Server::new(vec![std::fs::canonicalize(&dir).unwrap()]);
+        let setup = json!({"rules": rules, "seed": 6, "width": 40, "height": 30});
+        let started = texts(&call(&s, "session_start", setup.clone()));
+        assert_eq!(started[0], "session 1\n");
+        assert!(started[1].contains("rounds      : 0\n"));
+        let id = json!(1);
+
+        // First observation: no events yet; civ view only.
+        let first = texts(&call(
+            &s,
+            "session_observe",
+            json!({"session": id, "view": "2"}),
+        ));
+        let frame: Value = serde_json::from_str(&first[0]).unwrap();
+        assert_eq!(frame["views"].as_array().unwrap().len(), 1);
+        assert_eq!(frame["views"][0]["civ"], 2);
+        assert_eq!(frame["events"], json!([]));
+
+        call(&s, "session_advance", json!({"session": id, "rounds": 3}));
+        let after = texts(&call(
+            &s,
+            "session_advance",
+            json!({"session": id, "rounds": 4}),
+        ));
+        // 3 + 4 rounds in a session == one 7-round run, byte for byte.
+        let mut straight = setup.clone();
+        straight["turns"] = json!(7);
+        straight["include_checkpoint"] = json!(true);
+        let straight = texts(&call(&s, "campaign_run", straight));
+        assert_eq!(after[0], straight[0]);
+        let checkpoint = texts(&call(&s, "session_checkpoint", json!({"session": id})));
+        assert_eq!(checkpoint[0], straight[1]);
+
+        // Events since the previous observation are reported once.
+        let second = texts(&call(&s, "session_observe", json!({"session": id})));
+        let frame: Value = serde_json::from_str(&second[0]).unwrap();
+        assert!(!frame["events"].as_array().unwrap().is_empty());
+        let third = texts(&call(
+            &s,
+            "session_observe",
+            json!({"session": id, "view": "spectator"}),
+        ));
+        let frame: Value = serde_json::from_str(&third[0]).unwrap();
+        assert_eq!(frame["events"], json!([]));
+        assert_eq!(frame["views"][0]["civ"], Value::Null);
+
+        // A session exported as a recording verifies through the recording tools.
+        let recording = texts(&call(
+            &s,
+            "session_checkpoint",
+            json!({"session": id, "format": "recording"}),
+        ));
+        let path = dir.join("session.totrec");
+        std::fs::write(&path, &recording[0]).unwrap();
+        let path = path.to_string_lossy().into_owned();
+        let info = texts(&call(&s, "recording_info", json!({"path": path})));
+        assert_eq!(info[0], crate::record_info_report(&path).unwrap());
+        assert!(info[0].contains("progress    : 7\n"));
+        let verified = texts(&call(
+            &s,
+            "recording_verify",
+            json!({"path": path, "rules": rules}),
+        ));
+        assert_eq!(
+            verified[0],
+            crate::record_verify_report(&path, &rules).unwrap()
+        );
+        assert!(verified[0].contains("replay reproduces the recording"));
+
+        // Resuming a session from its checkpoint continues identically.
+        let resumed = texts(&call(
+            &s,
+            "session_start",
+            json!({"rules": rules, "resume_checkpoint": checkpoint[0]}),
+        ));
+        assert_eq!(resumed[0], "session 2\n");
+        assert_eq!(resumed[1], after[0]);
+        let conflict = call(
+            &s,
+            "session_start",
+            json!({"rules": rules, "resume_checkpoint": "x", "seed": 1}),
+        );
+        assert!(error_text(&conflict).contains("omit setup options"));
+
+        // Limits and errors.
+        for n in 3..=4 {
+            assert_eq!(
+                texts(&call(&s, "session_start", setup.clone()))[0],
+                format!("session {n}\n")
+            );
+        }
+        assert!(error_text(&call(&s, "session_start", setup.clone())).contains("at most 4"));
+        assert_eq!(
+            texts(&call(&s, "session_close", json!({"session": 3})))[0],
+            "closed session 3\n"
+        );
+        assert_eq!(
+            texts(&call(&s, "session_start", setup.clone()))[0],
+            "session 5\n"
+        );
+        for (tool, args, message) in [
+            (
+                "session_advance",
+                json!({"session": 3, "rounds": 1}),
+                "no open session 3",
+            ),
+            ("session_close", json!({"session": 3}), "no open session 3"),
+            (
+                "session_advance",
+                json!({"session": 1, "rounds": 0}),
+                "rounds must be",
+            ),
+            (
+                "session_advance",
+                json!({"session": 1, "rounds": 1001}),
+                "rounds must be",
+            ),
+            (
+                "session_observe",
+                json!({"session": 1, "view": "9"}),
+                "invalid view",
+            ),
+            (
+                "session_checkpoint",
+                json!({"session": 1, "format": "sav"}),
+                "invalid format",
+            ),
+        ] {
+            let response = call(&s, tool, args);
+            assert!(
+                error_text(&response).contains(message),
+                "{tool}: {response}"
+            );
+        }
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn recording_log_slices_the_canonical_order_log() {
+        let (dir, rules) = builtin_rules_root("log");
+        let s = Server::new(vec![std::fs::canonicalize(&dir).unwrap()]);
+        let started = texts(&call(
+            &s,
+            "session_start",
+            json!({"rules": rules, "seed": 2, "width": 40, "height": 30}),
+        ));
+        assert_eq!(started[0], "session 1\n");
+        call(&s, "session_advance", json!({"session": 1, "rounds": 5}));
+        let recording = texts(&call(
+            &s,
+            "session_checkpoint",
+            json!({"session": 1, "format": "recording"}),
+        ));
+        let path = dir.join("log.totrec").to_string_lossy().into_owned();
+        std::fs::write(&path, &recording[0]).unwrap();
+        // The unfiltered slice is exactly the run's --log file.
+        let full = texts(&call(&s, "recording_log", json!({"path": path})));
+        let mut run = json!({"rules": rules, "seed": 2, "width": 40, "height": 30, "turns": 5, "include_log": true});
+        let log = texts(&call(&s, "campaign_run", run.take()));
+        assert_eq!(full[0], log[1]);
+        // A turn and civ window.
+        let window = texts(&call(
+            &s,
+            "recording_log",
+            json!({"path": path, "from_turn": 2, "to_turn": 3, "civ": 1}),
+        ));
+        let lines: Vec<&str> = window[0].lines().collect();
+        assert_eq!(lines[..3], full[0].lines().take(3).collect::<Vec<_>>()[..]);
+        let body = &lines[3..];
+        assert!(body.iter().any(|l| l.starts_with("T 2 C 1 ")));
+        assert!(body.iter().any(|l| l.starts_with("T 3 C 1 ")));
+        for line in body {
+            assert!(
+                line.starts_with("T 2 C 1 ")
+                    || line.starts_with("T 3 C 1 ")
+                    || line.starts_with("R 3 ")
+                    || line.starts_with("R 4 "),
+                "{line}"
+            );
+        }
+        for (args, message) in [
+            (
+                json!({"path": path, "from_turn": 4, "to_turn": 2}),
+                "after to_turn",
+            ),
+            (
+                json!({"path": path, "civ": 1, "extra": 1}),
+                "invalid arguments",
+            ),
+        ] {
+            assert!(error_text(&call(&s, "recording_log", args)).contains(message));
+        }
+        std::fs::remove_dir_all(dir).unwrap();
     }
 }

@@ -48,7 +48,7 @@ milestone 14's owner acceptance and independent review unchanged.
 | Observer | Live/replay browser observer, full/per-civ views, turn controls and archives | Scenario presentation/objectives/events, supported map layers, comparison and recording integration |
 | AI | Versioned built-in/legacy policies and partial original-derived decisions | Per-faction policy selection, bounded candidate comparisons, external plugins and independently measured native fidelity |
 | Scenario tools | Format inspection/diffs, pinned private corpus and released read-only capability inspector/conditional entry contract | Actual native import/admission, event/extension coverage, run diagnostics, safe editing/export and creation assistance |
-| Recordings | Canonical order logs, observer NDJSON and replay checkpoints | Unified session manifests, view/annotation streams, recording controls/recovery, then audio/video capture |
+| Recordings | Canonical order logs, observer NDJSON, replay checkpoints and [recording bundles v1](recording-bundles.md) (campaign CLI, human library, journal recovery) | Unified session manifests, view/annotation streams, recording controls/recovery, then audio/video capture |
 | MCP agent interface | `totctl` inspection/campaign/observer commands, `engine::player` observations/orders, `engine::human` sessions | MCP server over stdio/loopback: headless inspection/runs/observer queries, then client-attached filtered/advisory access on both clients, then acting agents under the plugin gate |
 
 Artwork/recovery, setup feedback and planning PRs #181/#182/#191/#212/#214/#215

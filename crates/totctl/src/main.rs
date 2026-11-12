@@ -26,6 +26,7 @@ fn main() -> ExitCode {
         Some("edit") => cmd_edit(&args[2..]),
         Some("events") => cmd_events(&args[2..]),
         Some("mcp") => mcp::cmd_mcp(&args[2..]),
+        Some("record") => cmd_record(&args[2..]),
         Some("--version") | Some("-V") => {
             println!("totctl {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
@@ -33,7 +34,9 @@ fn main() -> ExitCode {
         _ => {
             eprintln!(
                 "usage: {prog} worldgen <out.mp> [--seed S] [--width W] [--height H] [--land-percent P]\n\
-                        {prog} campaign <Rules.txt> [--policy ai-v1|builtin-1] [--turns N] [--seed S] [--civs C] [--difficulty D] [--width W] [--height H] [--land-percent P] [--checkpoint OUT] [--resume FILE] [--log OUT] [--stream OUT]\n\
+                        {prog} campaign <Rules.txt> [--policy ai-v1|builtin-1] [--turns N] [--seed S] [--civs C] [--difficulty D] [--width W] [--height H] [--land-percent P] [--checkpoint OUT] [--resume FILE] [--log OUT] [--stream OUT] [--record OUT.totrec [--record-every K]]\n\
+                        {prog} record info <bundle.totrec> | verify <bundle.totrec> <Rules.txt> | recover <journal> <out.totrec>\n\
+                        \x20                        — inspect, replay-verify or recover session recordings (#206)\n\
                         {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
                         {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai | --ai-v1 | --builtin]\n\
@@ -630,6 +633,8 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
         let mut resume = None;
         let mut log_path = None;
         let mut stream_path = None;
+        let mut record_path = None;
+        let mut record_every = 10u32;
         let (options, remainder) = args[1..].as_chunks::<2>();
         for option in options {
             let key = option[0].as_str();
@@ -645,6 +650,13 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
                 "--resume" => resume = Some(value),
                 "--log" => log_path = Some(value),
                 "--stream" => stream_path = Some(value),
+                "--record" => record_path = Some(value),
+                "--record-every" => {
+                    record_every = value.parse().map_err(|_| bad())?;
+                    if record_every == 0 {
+                        return Err(bad());
+                    }
+                }
                 "--seed" => {
                     config.world.seed = value.parse().map_err(|_| bad())?;
                     config.gameplay_seed = config.world.seed;
@@ -682,7 +694,15 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
         if stream_path.is_some() && (stream_path == checkpoint || stream_path == log_path) {
             return Err("stream output path must differ from checkpoint and log".into());
         }
-        for path in [checkpoint, log_path, stream_path].into_iter().flatten() {
+        let journal_path = record_path.map(|p| format!("{p}.journal"));
+        if record_path.is_some() && [checkpoint, log_path, stream_path].contains(&record_path) {
+            return Err("record output path must differ from the other outputs".into());
+        }
+        for path in [checkpoint, log_path, stream_path, record_path]
+            .into_iter()
+            .flatten()
+            .chain(journal_path.as_ref())
+        {
             if std::path::Path::new(path).exists() {
                 return Err(format!("output already exists: {path}"));
             }
@@ -701,6 +721,10 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
             changed_setup,
             resume_checkpoint,
             observe: stream_path.is_some(),
+            record: journal_path.as_ref().map(|journal| RecordOptions {
+                journal: journal.into(),
+                every: record_every,
+            }),
         })?;
         let stream = report.stream();
         for (path, contents) in [
@@ -717,6 +741,13 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
                 file.write_all(contents.as_bytes())
                     .map_err(|e| format!("write {path}: {e}"))?;
             }
+        }
+        if let (Some(path), Some(bundle), Some(journal)) =
+            (record_path, &report.bundle, &journal_path)
+        {
+            tot_record::write_new(std::path::Path::new(path), &bundle.encode()?)?;
+            // The bundle is durable; the journal is no longer needed.
+            std::fs::remove_file(journal).map_err(|e| format!("remove {journal}: {e}"))?;
         }
         print!("{}", report.text);
         Ok(())
@@ -743,6 +774,15 @@ struct CampaignRequest {
     /// Capture an observer v1 frame before the first round and after each
     /// completed round (`--stream`, MCP `campaign_observe`).
     observe: bool,
+    /// Keep a crash-recoverable journal while running and build a recording
+    /// bundle at the end (`--record`). The MCP tools never record.
+    record: Option<RecordOptions>,
+}
+
+struct RecordOptions {
+    journal: std::path::PathBuf,
+    /// Journal a checkpoint every this many rounds (and at the end).
+    every: u32,
 }
 
 /// Campaign run outputs. `text` is byte-identical to the CLI stdout;
@@ -754,6 +794,8 @@ struct CampaignReport {
     /// Observer frames when requested: the starting state of this
     /// invocation, then one per completed round. Empty otherwise.
     frames: Vec<engine::observer::Snapshot>,
+    /// The recording bundle when `record` was requested.
+    bundle: Option<tot_record::Bundle>,
 }
 
 impl CampaignReport {
@@ -766,20 +808,42 @@ impl CampaignReport {
     }
 }
 
-fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
-    use std::fmt::Write as _;
+/// Create or restore the campaign a request describes, without running it.
+/// Shared by `campaign_report` and the MCP session tools.
+fn campaign_open(req: &CampaignRequest) -> Result<engine::campaign::Campaign, String> {
     if req.resume_checkpoint.is_some() && req.changed_setup {
         return Err("resume uses the checkpoint setup; omit setup options".into());
     }
     let bytes =
         std::fs::read(&req.rules_path).map_err(|e| format!("read {}: {e}", req.rules_path))?;
     let rules = tot_kit::parse_rules(&tot_kit::latin1(&bytes));
-    let mut campaign = match &req.resume_checkpoint {
-        Some(saved) => engine::campaign::Campaign::restore(rules, saved)?,
-        None => engine::campaign::Campaign::with_policy(req.config, rules, req.policy)?,
-    };
+    match &req.resume_checkpoint {
+        Some(saved) => engine::campaign::Campaign::restore(rules, saved),
+        None => engine::campaign::Campaign::with_policy(req.config, rules, req.policy),
+    }
+}
+
+fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
+    let mut campaign = campaign_open(&req)?;
     let mut frames = Vec::new();
-    let outcome = if req.observe {
+    let start_round = campaign.rounds();
+    let mut journal = match &req.record {
+        Some(options) => {
+            let manifest = tot_record::Bundle::campaign(
+                &campaign,
+                tot_record::StopReason::Stopped,
+                "totctl campaign",
+                None,
+            )
+            .manifest;
+            let mut journal = tot_record::Journal::create(&options.journal, &manifest)?;
+            // The starting state, so an early interruption is recoverable too.
+            journal.record(campaign.rounds(), &campaign.checkpoint())?;
+            Some(journal)
+        }
+        None => None,
+    };
+    let outcome = if req.observe || journal.is_some() {
         // Same limit check as `advance`, before any round runs.
         if req.turns > engine::campaign::MAX_ROUNDS - campaign.rounds() {
             return Err(format!(
@@ -788,7 +852,10 @@ fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
             ));
         }
         let mut recorder = engine::observer::Recorder::default();
-        frames.push(recorder.capture(&campaign.game));
+        if req.observe {
+            frames.push(recorder.capture(&campaign.game));
+        }
+        let every = req.record.as_ref().map_or(0, |r| r.every);
         let mut outcome = campaign.outcome();
         for _ in 0..req.turns {
             let before = campaign.rounds();
@@ -796,12 +863,47 @@ fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
             if campaign.rounds() == before {
                 break; // fewer than two civilizations remain
             }
-            frames.push(recorder.capture(&campaign.game));
+            if req.observe {
+                frames.push(recorder.capture(&campaign.game));
+            }
+            if let Some(journal) = journal.as_mut() {
+                if (campaign.rounds() - start_round) % every == 0 {
+                    journal.record(campaign.rounds(), &campaign.checkpoint())?;
+                }
+            }
+        }
+        if let Some(journal) = journal.as_mut() {
+            journal.record(campaign.rounds(), &campaign.checkpoint())?;
         }
         outcome
     } else {
         campaign.advance(req.turns)?
     };
+    let out = campaign_summary(&campaign, &outcome);
+    let bundle = req.record.as_ref().map(|_| {
+        let observer = req.observe.then(|| tot_record::Observer {
+            perspective: tot_record::Perspective::AllViews,
+            from_round: start_round,
+            frames: frames.iter().map(|f| f.to_json() + "\n").collect(),
+        });
+        tot_record::Bundle::campaign(&campaign, outcome.into(), "totctl campaign", observer)
+    });
+    Ok(CampaignReport {
+        text: out,
+        checkpoint: campaign.checkpoint(),
+        log: campaign.game.log().to_string(),
+        frames,
+        bundle,
+    })
+}
+
+/// The `totctl campaign` stdout for a campaign's current state. Shared with
+/// the MCP campaign and session tools.
+fn campaign_summary(
+    campaign: &engine::campaign::Campaign,
+    outcome: &engine::campaign::Outcome,
+) -> String {
+    use std::fmt::Write as _;
     let world = &campaign.game.world;
     let mut out = String::new();
     let _ = writeln!(
@@ -825,12 +927,7 @@ fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
         out,
         "outcome     : {outcome:?} (observed state; original victory rules not claimed)"
     );
-    Ok(CampaignReport {
-        text: out,
-        checkpoint: campaign.checkpoint(),
-        log: campaign.game.log().to_string(),
-        frames,
-    })
+    out
 }
 
 fn cmd_worldgen(args: &[String]) -> ExitCode {
@@ -874,6 +971,114 @@ fn cmd_worldgen(args: &[String]) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// `totctl record`: inspect, verify or recover recording bundles (#206).
+fn cmd_record(args: &[String]) -> ExitCode {
+    use std::path::Path;
+    let usage = "usage: totctl record info <bundle.totrec>\n       totctl record verify <bundle.totrec> <Rules.txt>\n       totctl record recover <journal> <out.totrec>";
+    let run = || -> Result<(), String> {
+        match args {
+            [cmd, bundle] if cmd == "info" => {
+                print!("{}", record_info_report(bundle)?);
+                Ok(())
+            }
+            [cmd, bundle, rules] if cmd == "verify" => {
+                print!("{}", record_verify_report(bundle, rules)?);
+                Ok(())
+            }
+            [cmd, journal, out] if cmd == "recover" => {
+                let recovered =
+                    tot_record::recover(&tot_record::read_limited(Path::new(journal))?)?;
+                tot_record::write_new(Path::new(out), &recovered.bundle.encode()?)?;
+                print!("{}", record_summary(&recovered.bundle));
+                println!(
+                    "recovered   : {} complete record(s); {} trailing byte(s) discarded; journal kept",
+                    recovered.records, recovered.discarded_bytes
+                );
+                Ok(())
+            }
+            _ => Err(usage.into()),
+        }
+    };
+    match run() {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            eprintln!("error: {e}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+/// `totctl record info` stdout; shared with the MCP `recording_info` tool.
+fn record_info_report(path: &str) -> Result<String, String> {
+    let b = tot_record::Bundle::decode(&tot_record::read_limited(std::path::Path::new(path))?)?;
+    Ok(record_summary(&b))
+}
+
+/// `totctl record verify` stdout; shared with the MCP `recording_verify` tool.
+fn record_verify_report(path: &str, rules_path: &str) -> Result<String, String> {
+    use std::fmt::Write as _;
+    let b = tot_record::Bundle::decode(&tot_record::read_limited(std::path::Path::new(path))?)?;
+    let bytes = std::fs::read(rules_path).map_err(|e| format!("read {rules_path}: {e}"))?;
+    let rules = tot_kit::parse_rules(&tot_kit::latin1(&bytes));
+    let verified = b.verify(&rules)?;
+    let mut out = record_summary(&b);
+    let _ = match verified.fingerprint {
+        Some(f) => writeln!(
+            out,
+            "verified    : replay reproduces the recording; fingerprint {f:016x}"
+        ),
+        None => writeln!(
+            out,
+            "verified    : view-only; identities match, nothing to replay"
+        ),
+    };
+    Ok(out)
+}
+
+fn record_summary(b: &tot_record::Bundle) -> String {
+    use std::fmt::Write as _;
+    let m = &b.manifest;
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "recording   : {} ({:?})",
+        tot_record::FORMAT,
+        b.content()
+    );
+    let _ = writeln!(out, "kind        : {:?}", m.kind);
+    let _ = writeln!(out, "engine      : {}", m.engine);
+    let _ = writeln!(out, "setup       : {}", m.setup);
+    let _ = writeln!(out, "policy      : {}", m.policy);
+    if let Some(human) = m.human {
+        let _ = writeln!(out, "human civ   : {human}");
+    }
+    let _ = writeln!(out, "rules       : {}", m.rules);
+    if let Some(resources) = &m.resources {
+        let _ = writeln!(out, "resources   : {}", tot_record::identity(resources));
+    }
+    let _ = writeln!(out, "progress    : {}", m.progress);
+    let _ = writeln!(out, "stop        : {:?}", m.stop);
+    let _ = writeln!(out, "producer    : {}", m.producer);
+    if let Some(o) = &b.observer {
+        let _ = writeln!(
+            out,
+            "observer    : {} frame(s) from round {}, {} ({})",
+            o.frames.lines().count(),
+            o.from_round,
+            o.perspective.encode(),
+            if o.perspective.full_state() {
+                "full state"
+            } else {
+                "one civ's fogged view"
+            }
+        );
+    }
+    if let Some(p) = &b.presentation {
+        let _ = writeln!(out, "presentation: {} inert entr(ies)", p.lines().count());
+    }
+    out
 }
 
 /// Generate a world in memory and describe it. Shared by `totctl worldgen`

@@ -15,7 +15,8 @@ Exact original-AI #117 remains separate, not a prerequisite for every AI option.
 ## Layout
 
 - `crates/` — Rust workspace: `tot-kit` (format decoders), `engine`,
-  `lua-host`, `totctl` (CLI, successor of the Python probe), `totui`
+  `lua-host`, `totctl` (CLI, successor of the Python probe), `totui`,
+  `tot-record` (session recording bundles, #206)
 - `tools/totctl.py` — Python format probe (rules/map/save/diff/scnmap);
   stdlib only
 - `tools/oracle/` — headless-Wine rig that drives the original game as a

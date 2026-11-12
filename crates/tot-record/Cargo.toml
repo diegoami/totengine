@@ -1,0 +1,15 @@
+[package]
+name = "tot-record"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "ToTEngine session recording bundles: versioned, verifiable, crash-recoverable (#206)"
+
+[dependencies]
+engine = { path = "../engine" }
+tot-kit = { path = "../tot-kit" }
+serde_json = "1"
+tempfile = "3"
+
+[lints]
+workspace = true

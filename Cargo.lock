@@ -432,6 +432,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tot-record"
+version = "0.18.0"
+dependencies = [
+ "engine",
+ "serde_json",
+ "tempfile",
+ "tot-kit",
+]
+
+[[package]]
 name = "totctl"
 version = "0.18.0"
 dependencies = [
@@ -439,6 +449,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tot-kit",
+ "tot-record",
  "totui",
 ]
 

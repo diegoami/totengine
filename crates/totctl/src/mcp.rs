@@ -303,6 +303,7 @@ impl Server {
             changed_setup,
             resume_checkpoint,
             observe,
+            record: None,
         })
     }
 
@@ -879,6 +880,7 @@ mod tests {
             changed_setup: true,
             resume_checkpoint: None,
             observe: false,
+            record: None,
         })
         .unwrap();
         assert_eq!(result_text(&full), cli.text);
@@ -1025,6 +1027,7 @@ mod tests {
             changed_setup: true,
             resume_checkpoint: None,
             observe: true,
+            record: None,
         })
         .unwrap();
         let stream: Vec<String> = cli.stream().lines().map(str::to_string).collect();

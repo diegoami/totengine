@@ -5,6 +5,14 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Session recording bundles, format 1 (#206 first slice, unreleased): new crate
+  `tot-record` with versioned `.totrec` bundles that separate reproducible
+  gameplay checkpoints, derived observer frames (perspective-labelled) and inert
+  presentation notes, and bind engine/Rules/resources identities. Saves are
+  atomic and never overwrite; a journal kept while recording makes interrupted
+  runs recoverable. CLI: `totctl campaign --record`, `totctl record
+  info|verify|recover`. Human bundles are supported in the library; client
+  controls are #207. See docs/recording-bundles.md.
 - Headless MCP server `totctl mcp` (#250 stage 1, unreleased): stdio JSON-RPC
   transport with six read-only tools (`rules_summary`, `map_summary`,
   `events_summary`, `save_summary`, `run_turns`, `campaign_run`) whose results

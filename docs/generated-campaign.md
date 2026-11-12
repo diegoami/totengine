@@ -31,7 +31,9 @@ NDJSON file: one frame for the state this invocation starts from, then one per
 completed round (all fog views plus the full-state spectator view). On resume
 the first frame is the restored state and carries no events. Capturing frames
 never changes the run: stdout, checkpoint and log are identical with or without
-it.
+it. `--record OUT.totrec [--record-every K]` writes a verifiable
+[recording bundle](recording-bundles.md), keeping a recoverable journal while the
+run is in progress.
 The default is an 80×50 logical world, 47% land, five AI civs, difficulty 2,
 seed 1, and 100 rounds. Generator bounds are documented by `totctl worldgen`;
 campaign setup can additionally reject excessive land/sea regions or a

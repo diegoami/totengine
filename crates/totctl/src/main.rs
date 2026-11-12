@@ -33,7 +33,7 @@ fn main() -> ExitCode {
         _ => {
             eprintln!(
                 "usage: {prog} worldgen <out.mp> [--seed S] [--width W] [--height H] [--land-percent P]\n\
-                        {prog} campaign <Rules.txt> [--policy ai-v1|builtin-1] [--turns N] [--seed S] [--civs C] [--difficulty D] [--width W] [--height H] [--land-percent P] [--checkpoint OUT] [--resume FILE] [--log OUT]\n\
+                        {prog} campaign <Rules.txt> [--policy ai-v1|builtin-1] [--turns N] [--seed S] [--civs C] [--difficulty D] [--width W] [--height H] [--land-percent P] [--checkpoint OUT] [--resume FILE] [--log OUT] [--stream OUT]\n\
                         {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
                         {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai | --ai-v1 | --builtin]\n\
@@ -47,7 +47,7 @@ fn main() -> ExitCode {
                         {prog} tech <Rules.txt>    — advance tree + wonders (reachability run)\n\
                         {prog} run <file.sav|scn> --turns N [--seed S] [--rules P | --no-rules]\n\
                         \x20                        — deterministic N-turn headless run (per-turn checksums)\n\
-                        {prog} mcp [--root PATH]...   — stdio MCP server: read-only inspection/run tools (#250)
+                        {prog} mcp [--root PATH]...   — stdio MCP server: read-only inspection/run/observer tools (#250)
 \
                         {prog} edit <in> <out> [--turn N] [--year N] [--difficulty N]\n\
                         \x20      [--rivals N] [--unit-pos IDX X Y] [--city-name IDX NAME]\n\
@@ -629,6 +629,7 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
         let mut checkpoint = None;
         let mut resume = None;
         let mut log_path = None;
+        let mut stream_path = None;
         let (options, remainder) = args[1..].as_chunks::<2>();
         for option in options {
             let key = option[0].as_str();
@@ -643,6 +644,7 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
                 "--checkpoint" => checkpoint = Some(value),
                 "--resume" => resume = Some(value),
                 "--log" => log_path = Some(value),
+                "--stream" => stream_path = Some(value),
                 "--seed" => {
                     config.world.seed = value.parse().map_err(|_| bad())?;
                     config.gameplay_seed = config.world.seed;
@@ -677,7 +679,10 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
         if checkpoint.is_some() && checkpoint == log_path {
             return Err("checkpoint and log output paths must differ".into());
         }
-        for path in [checkpoint, log_path].into_iter().flatten() {
+        if stream_path.is_some() && (stream_path == checkpoint || stream_path == log_path) {
+            return Err("stream output path must differ from checkpoint and log".into());
+        }
+        for path in [checkpoint, log_path, stream_path].into_iter().flatten() {
             if std::path::Path::new(path).exists() {
                 return Err(format!("output already exists: {path}"));
             }
@@ -695,8 +700,14 @@ fn cmd_campaign(args: &[String]) -> ExitCode {
             config,
             changed_setup,
             resume_checkpoint,
+            observe: stream_path.is_some(),
         })?;
-        for (path, contents) in [(checkpoint, &report.checkpoint), (log_path, &report.log)] {
+        let stream = report.stream();
+        for (path, contents) in [
+            (checkpoint, &report.checkpoint),
+            (log_path, &report.log),
+            (stream_path, &stream),
+        ] {
             if let Some(path) = path {
                 let mut file = std::fs::OpenOptions::new()
                     .write(true)
@@ -729,6 +740,9 @@ struct CampaignRequest {
     config: engine::newgame::NewGameConfig,
     changed_setup: bool,
     resume_checkpoint: Option<String>,
+    /// Capture an observer v1 frame before the first round and after each
+    /// completed round (`--stream`, MCP `campaign_observe`).
+    observe: bool,
 }
 
 /// Campaign run outputs. `text` is byte-identical to the CLI stdout;
@@ -737,6 +751,19 @@ struct CampaignReport {
     text: String,
     checkpoint: String,
     log: String,
+    /// Observer frames when requested: the starting state of this
+    /// invocation, then one per completed round. Empty otherwise.
+    frames: Vec<engine::observer::Snapshot>,
+}
+
+impl CampaignReport {
+    /// Observer v1 NDJSON, exactly what `--stream` writes.
+    fn stream(&self) -> String {
+        self.frames
+            .iter()
+            .map(|frame| frame.to_json() + "\n")
+            .collect()
+    }
 }
 
 fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
@@ -751,7 +778,30 @@ fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
         Some(saved) => engine::campaign::Campaign::restore(rules, saved)?,
         None => engine::campaign::Campaign::with_policy(req.config, rules, req.policy)?,
     };
-    let outcome = campaign.advance(req.turns)?;
+    let mut frames = Vec::new();
+    let outcome = if req.observe {
+        // Same limit check as `advance`, before any round runs.
+        if req.turns > engine::campaign::MAX_ROUNDS - campaign.rounds() {
+            return Err(format!(
+                "campaign supports at most {} rounds",
+                engine::campaign::MAX_ROUNDS
+            ));
+        }
+        let mut recorder = engine::observer::Recorder::default();
+        frames.push(recorder.capture(&campaign.game));
+        let mut outcome = campaign.outcome();
+        for _ in 0..req.turns {
+            let before = campaign.rounds();
+            outcome = campaign.advance(1)?;
+            if campaign.rounds() == before {
+                break; // fewer than two civilizations remain
+            }
+            frames.push(recorder.capture(&campaign.game));
+        }
+        outcome
+    } else {
+        campaign.advance(req.turns)?
+    };
     let world = &campaign.game.world;
     let mut out = String::new();
     let _ = writeln!(
@@ -779,6 +829,7 @@ fn campaign_report(req: CampaignRequest) -> Result<CampaignReport, String> {
         text: out,
         checkpoint: campaign.checkpoint(),
         log: campaign.game.log().to_string(),
+        frames,
     })
 }
 
@@ -802,7 +853,7 @@ fn cmd_worldgen(args: &[String]) -> ExitCode {
                 _ => return Err(format!("unknown worldgen option {key}")),
             }
         }
-        let world = engine::worldgen::generate(config)?;
+        let (report, world) = worldgen_report(config)?;
         // create_new prevents a typo from overwriting a user's original map.
         use std::io::Write;
         let mut file = std::fs::OpenOptions::new()
@@ -812,20 +863,7 @@ fn cmd_worldgen(args: &[String]) -> ExitCode {
             .map_err(|e| format!("create {path}: {e}"))?;
         file.write_all(&world.mp_bytes())
             .map_err(|e| format!("write {path}: {e}"))?;
-        println!(
-            "generator     : engine-designed v{} (not an original-algorithm port)",
-            engine::worldgen::ALGORITHM_VERSION
-        );
-        println!("seed          : {}", config.seed);
-        println!(
-            "dimensions    : {} x {} logical",
-            config.width, config.height
-        );
-        println!("terrain counts: {:?}", world.terrain_histogram());
-        println!(
-            "river tiles   : {}",
-            world.river.iter().filter(|&&r| r).count()
-        );
+        print!("{report}");
         println!("map           : {path}");
         Ok(())
     })();
@@ -836,6 +874,35 @@ fn cmd_worldgen(args: &[String]) -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// Generate a world in memory and describe it. Shared by `totctl worldgen`
+/// (which then writes the map and adds a `map` line) and the MCP
+/// `worldgen_summary` tool (which writes nothing).
+fn worldgen_report(
+    config: engine::worldgen::WorldConfig,
+) -> Result<(String, engine::worldgen::GeneratedWorld), String> {
+    use std::fmt::Write as _;
+    let world = engine::worldgen::generate(config)?;
+    let mut out = String::new();
+    let _ = writeln!(
+        out,
+        "generator     : engine-designed v{} (not an original-algorithm port)",
+        engine::worldgen::ALGORITHM_VERSION
+    );
+    let _ = writeln!(out, "seed          : {}", config.seed);
+    let _ = writeln!(
+        out,
+        "dimensions    : {} x {} logical",
+        config.width, config.height
+    );
+    let _ = writeln!(out, "terrain counts: {:?}", world.terrain_histogram());
+    let _ = writeln!(
+        out,
+        "river tiles   : {}",
+        world.river.iter().filter(|&&r| r).count()
+    );
+    Ok((out, world))
 }
 
 fn cmd_mp(args: &[String]) -> ExitCode {

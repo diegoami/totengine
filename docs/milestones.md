@@ -62,7 +62,9 @@ of complete client delivery after the listed UI slices.
    is a separate route; its A0 is not a prerequisite for every AI alternative.
 6. MCP interface #250 (owner request, 2026-11-11) has no package milestone yet.
    Its headless/read-only slice and client-attached advisory slice can be scoped
-   as separate packages; acting MCP agents share milestone 27's plugin gate.
+   as separate packages. Headless experimental MCP agent play (#256) is exempt
+   from the client gate by owner decision (2026-11-12); agents in client games,
+   in scenarios, or delegated actions (#257) still share milestone 27's plugin gate.
 7. Umbrella programs remain unassigned to these new release packages and link
    to their child milestones. Close a bounded story on its evidence; do not
    close the whole scenario/recording/client program after one slice. The older

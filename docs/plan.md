@@ -49,7 +49,7 @@ milestone 14's owner acceptance and independent review unchanged.
 | AI | Versioned built-in/legacy policies and partial original-derived decisions | Per-faction policy selection, bounded candidate comparisons, external plugins and independently measured native fidelity |
 | Scenario tools | Format inspection/diffs, pinned private corpus and released read-only capability inspector/conditional entry contract | Actual native import/admission, event/extension coverage, run diagnostics, safe editing/export and creation assistance |
 | Recordings | Canonical order logs, observer NDJSON, replay checkpoints and [recording bundles v1](recording-bundles.md) (campaign CLI, human library, journal recovery) | Unified session manifests, view/annotation streams, recording controls/recovery, then audio/video capture |
-| MCP agent interface | `totctl` inspection/campaign/observer commands, `engine::player` observations/orders, `engine::human` sessions | MCP server over stdio/loopback: headless inspection/runs/observer queries, then client-attached filtered/advisory access on both clients, then acting agents under the plugin gate |
+| MCP agent interface | `totctl` inspection/campaign/observer commands, `engine::player` observations/orders, `engine::human` sessions | MCP server over stdio/loopback: headless inspection/runs/observer queries, then client-attached filtered/advisory access on both clients, then headless experimental agent play (#256, gate relaxed by the owner) and later client/scenario agents under the plugin gate |
 
 Artwork/recovery, setup feedback and planning PRs #181/#182/#191/#212/#214/#215
 shipped in v0.16.0. Combined packaged Chromium/Linux/Windows routes and CI pass;
@@ -111,8 +111,11 @@ release candidate. Refine/split each package from evidence.
    depend on #92; built-in-policy scenario experiments #184 do not.
    MCP (#250) is staged across these gates: read-only/headless tools can ship
    as a tooling slice at any stage; client-attached advisory access needs a
-   both-client attach contract; MCP agents that act for a faction are external
-   policies and wait for the complete-client gate with #92.
+   both-client attach contract. MCP agents that act for a faction are external
+   policies: the owner relaxed the gate on 2026-11-12 for **headless,
+   generated-campaign, experimental** agent play only (#256). Agents in client
+   games, in scenarios, or acting in a human game (#257) still wait for the
+   complete-client gate with #92.
 
 Scenario authors may supply goals/behavior not expressible by a general policy.
 Define explicit capabilities/constraints and unknowns; do not assume an AI can

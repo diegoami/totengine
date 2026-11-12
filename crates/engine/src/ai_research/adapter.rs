@@ -78,8 +78,8 @@ impl ValueRules {
         if improvements.rows.len() != 68 {
             return Err("research scoring requires the classic 68 improvement rows".into());
         }
-        for id in 0..68 {
-            result.improvement_prerequisites[id] = reference(rules.improvement_prereq_raw(id))?;
+        for (id, prerequisite) in result.improvement_prerequisites.iter_mut().enumerate() {
+            *prerequisite = reference(rules.improvement_prereq_raw(id))?;
         }
         let expiry = rules.section("ENDWONDER").ok_or("missing ENDWONDER")?;
         if expiry.rows.len() < 28 {

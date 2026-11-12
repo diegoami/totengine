@@ -6,3 +6,10 @@ license.workspace = true
 description = "world state model + deterministic turn kernel (T1-2)"
 [dependencies]
 tot-kit = { path = "../tot-kit" }
+
+[lints.clippy]
+# Clippy 1.100 newly flags index loops such as `for civ in 1..8 { players[civ] }`.
+# Engine code mirrors decoded native routines index by index, and one instance is
+# in a scenario-baseline file (player.rs), which can only change with the
+# install-backed baseline refresh.
+needless_range_loop = "allow"

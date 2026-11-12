@@ -107,6 +107,14 @@ struct Server {
     /// Live in-memory campaign sessions (`session_*` tools). Lost when the
     /// server exits; `session_checkpoint` is how a client keeps one.
     sessions: std::cell::RefCell<Sessions>,
+    /// Experimental agent games (`agent_*` tools, #256).
+    agents: std::cell::RefCell<Agents>,
+}
+
+#[derive(Default)]
+struct Agents {
+    next: u32,
+    open: std::collections::BTreeMap<u32, crate::mcp_agent::AgentGame>,
 }
 
 #[derive(Default)]
@@ -133,6 +141,7 @@ impl Server {
         Server {
             roots,
             sessions: Default::default(),
+            agents: Default::default(),
         }
     }
 
@@ -326,6 +335,49 @@ impl Server {
                     None => Err(format!("no open session {}", a.session)),
                 }
             }
+            "agent_start" => {
+                let a: AgentStartArgs = parse_args(args)?;
+                self.agent_start(a)
+            }
+            "agent_view" => {
+                let a: AgentArgs = parse_args(args)?;
+                self.with_agent(a.game, |g| Ok(vec![g.view_json().to_string()]))
+            }
+            "agent_map" => {
+                let a: AgentMapArgs = parse_args(args)?;
+                self.with_agent(a.game, |g| {
+                    Ok(vec![g
+                        .map_json(a.x, a.y, a.radius.unwrap_or(3))?
+                        .to_string()])
+                })
+            }
+            "agent_submit" => {
+                let a: AgentSubmitArgs = parse_args(args)?;
+                self.with_agent(a.game, |g| {
+                    Ok(vec![g
+                        .submit(a.revision, a.request_id, &a.command)?
+                        .to_string()])
+                })
+            }
+            "agent_checkpoint" => {
+                let a: AgentCheckpointArgs = parse_args(args)?;
+                self.with_agent(a.game, |g| {
+                    match a.format.as_deref().unwrap_or("checkpoint") {
+                        "checkpoint" => Ok(vec![g.checkpoint()]),
+                        "recording" => Ok(vec![g.recording()?]),
+                        other => Err(format!(
+                            "invalid format {other}: expected \"checkpoint\" or \"recording\""
+                        )),
+                    }
+                })
+            }
+            "agent_close" => {
+                let a: AgentArgs = parse_args(args)?;
+                match self.agents.borrow_mut().open.remove(&a.game) {
+                    Some(_) => Ok(vec![format!("closed agent game {}\n", a.game)]),
+                    None => Err(format!("no open agent game {}", a.game)),
+                }
+            }
             "worldgen_summary" => {
                 let a: WorldgenArgs = parse_args(args)?;
                 let mut config = engine::worldgen::WorldConfig::default();
@@ -499,6 +551,63 @@ impl Server {
             },
         );
         Ok(vec![format!("session {id}\n"), summary])
+    }
+
+    fn agent_start(&self, a: AgentStartArgs) -> std::result::Result<Vec<String>, String> {
+        if self.agents.borrow().open.len() >= MAX_SESSIONS {
+            return Err(format!(
+                "at most {MAX_SESSIONS} agent games may be open; close one with agent_close"
+            ));
+        }
+        let setup = CampaignSetup {
+            policy: None,
+            seed: a.seed,
+            width: a.width,
+            height: a.height,
+            land_percent: a.land_percent,
+            civs: a.civs,
+            difficulty: a.difficulty,
+        };
+        let changed = a.seed.is_some()
+            || a.width.is_some()
+            || a.height.is_some()
+            || a.land_percent.is_some()
+            || a.civs.is_some()
+            || a.difficulty.is_some()
+            || a.civ.is_some();
+        if a.resume_checkpoint.is_some() && changed {
+            return Err("resume uses the checkpoint setup; omit setup options".into());
+        }
+        let request = self.campaign_request(&a.rules, 0, setup, None, false)?;
+        let bytes = std::fs::read(&request.rules_path)
+            .map_err(|e| format!("read {}: {e}", request.rules_path))?;
+        let rules = tot_kit::parse_rules(&tot_kit::latin1(&bytes));
+        let game = crate::mcp_agent::AgentGame::start(
+            request.config,
+            rules,
+            a.civ.unwrap_or(1),
+            a.agent,
+            a.resume_checkpoint.as_deref(),
+        )?;
+        let view = game.view_json();
+        let mut agents = self.agents.borrow_mut();
+        agents.next += 1;
+        let id = agents.next;
+        agents.open.insert(id, game);
+        Ok(vec![format!("agent game {id}\n"), view.to_string()])
+    }
+
+    fn with_agent(
+        &self,
+        id: u32,
+        f: impl FnOnce(&mut crate::mcp_agent::AgentGame) -> std::result::Result<Vec<String>, String>,
+    ) -> std::result::Result<Vec<String>, String> {
+        let mut agents = self.agents.borrow_mut();
+        let game = agents
+            .open
+            .get_mut(&id)
+            .ok_or_else(|| format!("no open agent game {id}"))?;
+        f(game)
     }
 
     fn with_session(
@@ -787,6 +896,64 @@ struct SessionStartArgs {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+struct AgentStartArgs {
+    rules: String,
+    /// Free-text identity of the playing agent, recorded in exports.
+    agent: String,
+    /// The civilization the agent plays (default 1).
+    #[serde(default)]
+    civ: Option<u8>,
+    #[serde(default)]
+    seed: Option<u32>,
+    #[serde(default)]
+    width: Option<u16>,
+    #[serde(default)]
+    height: Option<u16>,
+    #[serde(default)]
+    land_percent: Option<u8>,
+    #[serde(default)]
+    civs: Option<u8>,
+    #[serde(default)]
+    difficulty: Option<u8>,
+    #[serde(default)]
+    resume_checkpoint: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AgentArgs {
+    game: u32,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AgentCheckpointArgs {
+    game: u32,
+    #[serde(default)]
+    format: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AgentMapArgs {
+    game: u32,
+    x: u16,
+    y: u16,
+    #[serde(default)]
+    radius: Option<u16>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AgentSubmitArgs {
+    game: u32,
+    revision: u64,
+    request_id: u64,
+    command: Value,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct SessionArgs {
     session: u32,
 }
@@ -1044,6 +1211,90 @@ fn tools() -> Vec<Value> {
             }
         }),
         json!({
+            "name": "agent_start",
+            "description": "EXPERIMENTAL (#256): start a headless generated campaign in which you play one civilization against built-in (builtin-1) opponents. You see only that civilization's filtered view and act through validated commands (agent_submit). Returns the game id and your first view.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "rules": path_prop(),
+                    "agent": {"type": "string", "description": "your name/model/version, recorded in exports"},
+                    "civ": {"type": "integer", "minimum": 1, "maximum": 7, "default": 1},
+                    "seed": {"type": "integer", "minimum": 0},
+                    "width": {"type": "integer", "minimum": 20, "maximum": 65535},
+                    "height": {"type": "integer", "minimum": 20, "maximum": 65535},
+                    "land_percent": {"type": "integer", "minimum": 1, "maximum": 100},
+                    "civs": {"type": "integer", "minimum": 2, "maximum": 7},
+                    "difficulty": {"type": "integer", "minimum": 0, "maximum": 5},
+                    "resume_checkpoint": {"type": "string", "description": "checkpoint text from agent_checkpoint; rejects setup options"},
+                },
+                "required": ["rules", "agent"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "agent_view",
+            "description": "EXPERIMENTAL (#256): your civilization's current filtered view: revision, phase, turn, treasury, research, rates, pending decision (with how to answer it), own units and cities (with entity ids and legal production choices), visible foreign units, known foreign cities, notices and remaining action budget.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"game": {"type": "integer", "minimum": 1}},
+                "required": ["game"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "agent_map",
+            "description": "EXPERIMENTAL (#256): tiles your civilization has seen around (x, y): [x, y, terrain, river, road, rail], with terrain names. radius at most 10 rows.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "game": {"type": "integer", "minimum": 1},
+                    "x": {"type": "integer", "minimum": 0},
+                    "y": {"type": "integer", "minimum": 0},
+                    "radius": {"type": "integer", "minimum": 0, "maximum": 10, "default": 3},
+                },
+                "required": ["game", "x", "y"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "agent_submit",
+            "description": "EXPERIMENTAL (#256): submit one command for your civilization. `revision` must be the current view revision; `request_id` must be new (repeating an id with the same command returns the recorded response without executing twice). Commands (field `type`): move {unit, to:[x,y]}, occupy {unit, city}, skip {unit}, found {unit}, name_city {decision, name}, cancel_found {decision}, production {city, item}, worker {city, tile}, specialist {city, slot}, research {decision, advance}, goal {advance|null}, rates {science, tax}, revolution, government {decision, government}, review_rates {decision, science, tax}, end_turn. Units/cities are {slot, id} from agent_view. end_turn runs the opponents and returns when it is your turn again. At most 200 commands per turn, then only end_turn.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "game": {"type": "integer", "minimum": 1},
+                    "revision": {"type": "integer", "minimum": 0},
+                    "request_id": {"type": "integer", "minimum": 1},
+                    "command": {"type": "object", "description": "e.g. {\"type\": \"move\", \"unit\": {\"slot\": 3, \"id\": 17}, \"to\": [10, 12]}"},
+                },
+                "required": ["game", "revision", "request_id", "command"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "agent_checkpoint",
+            "description": "EXPERIMENTAL (#256): export the agent game as a checkpoint (default; resumable with agent_start) or a .totrec recording (format \"recording\") naming the agent, which replays without the agent (recording_verify, `totctl record verify`). Nothing is written.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "game": {"type": "integer", "minimum": 1},
+                    "format": {"type": "string", "enum": ["checkpoint", "recording"], "default": "checkpoint"},
+                },
+                "required": ["game"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "agent_close",
+            "description": "EXPERIMENTAL (#256): close an agent game and free it.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {"game": {"type": "integer", "minimum": 1}},
+                "required": ["game"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
             "name": "worldgen_summary",
             "description": "Generate an engine-designed world in memory (not an original-algorithm port) and summarize it. Byte-identical to `totctl worldgen` stdout without its final `map` line; no map file is written.",
             "inputSchema": {
@@ -1161,6 +1412,12 @@ mod tests {
                 "session_observe",
                 "session_checkpoint",
                 "session_close",
+                "agent_start",
+                "agent_view",
+                "agent_map",
+                "agent_submit",
+                "agent_checkpoint",
+                "agent_close",
                 "worldgen_summary"
             ]
         );
@@ -1169,7 +1426,9 @@ mod tests {
             let name = t["name"].as_str().unwrap();
             let description = t["description"].as_str().unwrap();
             assert!(
-                description.contains("totctl") || name.starts_with("session_"),
+                description.contains("totctl")
+                    || name.starts_with("session_")
+                    || name.starts_with("agent_"),
                 "{name}"
             );
         }
@@ -1701,6 +1960,231 @@ mod tests {
         ] {
             assert!(error_text(&call(&s, "recording_log", args)).contains(message));
         }
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    /// A simple scripted agent: answer decisions, found one city, end turns.
+    /// Every command goes through `agent_submit`. Returns the final view.
+    fn scripted_agent(s: &Server, game: u32, until_turn: i64, next_id: &mut u64) -> Value {
+        let view = |s: &Server| -> Value {
+            serde_json::from_str(&texts(&call(s, "agent_view", json!({"game": game})))[0]).unwrap()
+        };
+        for _ in 0..500 {
+            let v = view(s);
+            if v["turn"].as_i64().unwrap() >= until_turn || v["phase"] != "your-turn" {
+                return v;
+            }
+            let d = &v["decision"];
+            let command = match d["type"].as_str() {
+                Some("research") => json!({"type": "research", "decision": d["decision"],
+                                           "advance": d["available"][0]["advance"]}),
+                Some("founding") => json!({"type": "name_city", "decision": d["decision"],
+                                           "name": format!("Agent City {}", next_id)}),
+                Some("government") => json!({"type": "government", "decision": d["decision"],
+                                             "government": d["eligible"][0]}),
+                Some("rates") => json!({"type": "review_rates", "decision": d["decision"],
+                                        "science": d["opening"]["science"], "tax": d["opening"]["tax"]}),
+                _ if v["cities"].as_array().unwrap().is_empty()
+                    && !v["units"].as_array().unwrap().is_empty() =>
+                {
+                    json!({"type": "found", "unit": v["units"][0]["unit"]})
+                }
+                _ => json!({"type": "end_turn"}),
+            };
+            *next_id += 1;
+            let response = call(
+                s,
+                "agent_submit",
+                json!({"game": game, "revision": v["revision"], "request_id": *next_id, "command": command}),
+            );
+            let r: Value = serde_json::from_str(&texts(&response)[0]).unwrap();
+            assert_eq!(r["accepted"], true, "{command} -> {r}");
+        }
+        panic!("scripted agent did not reach turn {until_turn}");
+    }
+
+    #[test]
+    fn an_agent_plays_through_validated_commands_and_the_game_replays_without_it() {
+        let (dir, rules) = builtin_rules_root("agent");
+        let s = Server::new(vec![std::fs::canonicalize(&dir).unwrap()]);
+        let start =
+            json!({"rules": rules, "agent": "test-agent v1", "seed": 3, "width": 40, "height": 30});
+        let started = texts(&call(&s, "agent_start", start.clone()));
+        assert_eq!(started[0], "agent game 1\n");
+        let first: Value = serde_json::from_str(&started[1]).unwrap();
+        assert_eq!(first["phase"], "your-turn");
+        assert_eq!(first["decision"]["type"], "research");
+
+        let mut ids = 0;
+        let end = scripted_agent(&s, 1, 6, &mut ids);
+        assert_eq!(end["turn"], 6);
+        assert_eq!(end["cities"].as_array().unwrap().len(), 1, "{end}");
+        assert!(end["cities"][0]["name"]
+            .as_str()
+            .unwrap()
+            .starts_with("Agent City"));
+        // Only this civilization's units and cities appear as its own.
+        assert!(end["units"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|u| u["unit"]["slot"].is_u64()));
+
+        // The same commands in a fresh game give a byte-identical checkpoint.
+        let checkpoint = texts(&call(&s, "agent_checkpoint", json!({"game": 1})))[0].clone();
+        call(&s, "agent_start", start.clone());
+        let mut ids2 = 0;
+        scripted_agent(&s, 2, 6, &mut ids2);
+        assert_eq!(
+            texts(&call(&s, "agent_checkpoint", json!({"game": 2})))[0],
+            checkpoint
+        );
+
+        // Resume from the checkpoint: the same view (budget aside).
+        let resumed = texts(&call(
+            &s,
+            "agent_start",
+            json!({"rules": rules, "agent": "test-agent v1", "resume_checkpoint": checkpoint}),
+        ));
+        let mut a: Value = serde_json::from_str(&resumed[1]).unwrap();
+        let mut b = end.clone();
+        a.as_object_mut().unwrap().remove("actions_left");
+        b.as_object_mut().unwrap().remove("actions_left");
+        assert_eq!(a, b);
+
+        // The recording names the agent and verifies by replay without it.
+        let recording = texts(&call(
+            &s,
+            "agent_checkpoint",
+            json!({"game": 1, "format": "recording"}),
+        ));
+        let path = dir.join("agent.totrec");
+        std::fs::write(&path, &recording[0]).unwrap();
+        let path = path.to_string_lossy().into_owned();
+        let info = texts(&call(&s, "recording_info", json!({"path": path})))[0].clone();
+        assert!(info.contains("kind        : Human\n"), "{info}");
+        assert!(
+            info.contains("producer    : totctl mcp agent (experimental, #256): test-agent v1\n"),
+            "{info}"
+        );
+        let verified = texts(&call(
+            &s,
+            "recording_verify",
+            json!({"path": path, "rules": rules}),
+        ));
+        assert!(verified[0].contains("replay reproduces the recording"));
+
+        // Limits: four open games, then close one.
+        call(&s, "agent_start", start.clone());
+        assert!(error_text(&call(&s, "agent_start", start.clone())).contains("at most 4"));
+        assert_eq!(
+            texts(&call(&s, "agent_close", json!({"game": 2})))[0],
+            "closed agent game 2\n"
+        );
+        assert!(error_text(&call(&s, "agent_view", json!({"game": 2})))
+            .contains("no open agent game 2"));
+        for (args, message) in [
+            (json!({"rules": rules, "agent": ""}), "agent must be"),
+            (
+                json!({"rules": rules, "agent": "x", "resume_checkpoint": "y", "seed": 1}),
+                "omit setup options",
+            ),
+            (
+                json!({"rules": rules, "agent": "x", "resume_checkpoint": "not a checkpoint"}),
+                "unsupported human checkpoint",
+            ),
+        ] {
+            assert!(error_text(&call(&s, "agent_start", args)).contains(message));
+        }
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn agent_commands_are_validated_idempotent_and_budgeted() {
+        let (dir, rules) = builtin_rules_root("agent-rules");
+        let s = Server::new(vec![std::fs::canonicalize(&dir).unwrap()]);
+        call(
+            &s,
+            "agent_start",
+            json!({"rules": rules, "agent": "t", "seed": 8, "width": 40, "height": 30}),
+        );
+        let mut ids = 0;
+        let v = scripted_agent(&s, 1, 2, &mut ids);
+        let revision = v["revision"].as_u64().unwrap();
+        let submit = |revision: u64, id: u64, command: Value| {
+            call(
+                &s,
+                "agent_submit",
+                json!({"game": 1, "revision": revision, "request_id": id, "command": command}),
+            )
+        };
+        let rates = json!({"type": "rates", "science": 6, "tax": 4});
+        let first = submit(revision, 1000, rates.clone());
+        let r: Value = serde_json::from_str(&texts(&first)[0]).unwrap();
+        assert_eq!(r["accepted"], true, "{r}");
+        let after = r["revision"].as_u64().unwrap();
+        assert!(after > revision);
+        // Same id + same command: the recorded response, nothing executes again.
+        let again: Value =
+            serde_json::from_str(&texts(&submit(revision, 1000, rates.clone()))[0]).unwrap();
+        assert_eq!(again["revision"].as_u64().unwrap(), after);
+        // Same id, other command; stale revision; unknown unit; bad schema.
+        assert!(
+            error_text(&submit(after, 1000, json!({"type": "end_turn"})))
+                .contains("request ID already used")
+        );
+        assert!(
+            error_text(&submit(revision, 1001, rates.clone())).contains("stale session revision")
+        );
+        let ghost = submit(
+            after,
+            1002,
+            json!({"type": "move", "unit": {"slot": 999, "id": 42}, "to": [1, 1]}),
+        );
+        let ghost_rejected = ghost["result"]["isError"] == true
+            || serde_json::from_str::<Value>(&texts(&ghost)[0]).unwrap()["accepted"] == false;
+        assert!(ghost_rejected, "{ghost}");
+        assert!(
+            error_text(&submit(after, 1003, json!({"type": "teleport"})))
+                .contains("invalid command")
+        );
+        assert!(
+            error_text(&submit(after, 1004, json!({"type": "end_turn", "x": 1})))
+                .contains("invalid command")
+        );
+
+        // Budget: at most ACTION_BUDGET commands this turn, then only end_turn.
+        let mut id = 2000;
+        let mut accepted = 0;
+        let message = loop {
+            let current: Value =
+                serde_json::from_str(&texts(&call(&s, "agent_view", json!({"game": 1})))[0])
+                    .unwrap();
+            id += 1;
+            let response = submit(current["revision"].as_u64().unwrap(), id, rates.clone());
+            if response["result"]["isError"] == true {
+                break error_text(&response).to_string();
+            }
+            accepted += 1;
+            assert!(
+                accepted <= crate::mcp_agent::ACTION_BUDGET,
+                "budget never enforced"
+            );
+        };
+        assert!(message.contains("action budget"), "{message}");
+        let current: Value =
+            serde_json::from_str(&texts(&call(&s, "agent_view", json!({"game": 1})))[0]).unwrap();
+        assert_eq!(current["actions_left"], 0);
+        let ended: Value = serde_json::from_str(
+            &texts(&submit(
+                current["revision"].as_u64().unwrap(),
+                id + 1,
+                json!({"type": "end_turn"}),
+            ))[0],
+        )
+        .unwrap();
+        assert_eq!(ended["turn"], 3);
+        assert_eq!(ended["actions_left"], crate::mcp_agent::ACTION_BUDGET);
         std::fs::remove_dir_all(dir).unwrap();
     }
 }

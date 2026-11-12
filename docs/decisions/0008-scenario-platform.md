@@ -95,3 +95,24 @@ checkpoints and session recordings. It is staged across the existing gates:
 
 Original assets are never returned through MCP; transports stay local (stdio,
 loopback). No milestone, version or implementation is assigned by this entry.
+
+## MCP follow-up decisions — owner, 2026-11-12
+
+Answering the questions in [mcp-client-attach.md](../mcp-client-attach.md) and
+[#256](https://github.com/diegoami/totengine/issues/256):
+
+1. **Item 6 is relaxed for one narrow case.** An MCP agent may play one or more
+   civilizations in **headless, generated-campaign** runs now, labelled
+   experimental (#256). It uses the existing validated order boundary, records
+   its identity and replays without the agent. Agents in client games, in
+   scenarios, and delegated actions in a human game (#257) remain behind the
+   complete-client gate with #92. No strength claim is implied; #187 measures
+   strength separately.
+2. **Client-attached advisor (#255): MCP is served inside each client** over
+   loopback Streamable HTTP. A shared MCP core and shared advisor code keep one
+   implementation for both clients.
+3. **Allow advisor** is an in-game menu switch, off by default.
+4. **Civilopedia text** may be shared with the advisor only through a separate,
+   explicit opt-in switch. This is a player-chosen exception to the
+   no-original-assets rule, limited to text. Images and sounds are never sent.
+5. Several advisors at once was not decided; the default is one connection.

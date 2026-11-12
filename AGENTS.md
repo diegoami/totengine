@@ -10,6 +10,8 @@ and sequencing: `docs/mission.md`, `docs/plan.md`, `BACKLOG.md` and decision 000
 Freeciv/C-evo AI/client/workflow reuse is an assessment candidate, not adopted
 rules or a license change. Full-AI/plugin implementation stays behind complete
 playable clients; source study and existing-policy scenario tools may proceed.
+Sole exception (owner, 2026-11-12): headless, generated-campaign, experimental
+MCP agent play (#256); decision 0008 §MCP follow-up decisions.
 Exact original-AI #117 remains separate, not a prerequisite for every AI option.
 
 ## Layout

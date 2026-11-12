@@ -4,8 +4,9 @@ Status: **implemented as a tooling slice; not released, not owner-accepted.**
 This is stage 1 of the [MCP agent interface](https://github.com/diegoami/totengine/issues/250)
 as staged in [decision 0008](decisions/0008-scenario-platform.md): read-only
 inspection and existing-policy runs over a local transport. Client-attached
-advisory access (stage 2) and acting agents (stage 3, behind the complete-client
-gate with #92) are not part of this slice.
+advisory access (stage 2, #255) and acting agents (stage 3: headless agent play
+#256, relaxed by the owner on 2026-11-12; delegated actions #257, still behind
+the complete-client gate) are not part of this slice.
 
 ## Running
 

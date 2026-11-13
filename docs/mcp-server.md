@@ -27,6 +27,56 @@ root; with no roots at all, file tools reject every request. The server
 back inline (see `campaign_run`), so attaching a client cannot touch owner
 previews, games or saves.
 
+## Quickstart: let Claude play or watch a game (#259)
+
+1. **Build `totctl`.**
+
+   ```sh
+   cargo build --release -p totctl
+   # Linux/macOS: target/release/totctl    Windows: target\release\totctl.exe
+   ```
+
+2. **Choose a root folder.** The server reads files only inside its roots.
+   Use your Test of Time installation, for example `D:\games\CIVTOT`, or any
+   folder holding a `Rules.txt`. The Original profile's `Rules.txt` gives real
+   unit and advance names. Without `--root`, `CIVTOT_HOME` is used if set.
+
+3. **Register the server.**
+   - **Claude Code:** run once in a terminal:
+
+     ```sh
+     claude mcp add totengine -- /path/to/totctl mcp --root /path/to/CIVTOT
+     ```
+
+   - **Claude Desktop:** add this to `claude_desktop_config.json` (Settings →
+     Developer → Edit config), then restart the app:
+
+     ```json
+     {
+       "mcpServers": {
+         "totengine": {
+           "command": "D:\\totengine\\target\\release\\totctl.exe",
+           "args": ["mcp", "--root", "D:\\games\\CIVTOT"]
+         }
+       }
+     }
+     ```
+
+4. **Ask.** Example prompts:
+   - *"Start an agent game with my Original Rules.txt, seed 7, and play 10
+     turns. Explain each decision, then show me the agent report."*
+   - *"Run a builtin-1 campaign for 50 rounds with seed 3, then show what civ 2
+     could see at round 50."*
+   - *"Export the agent game as a recording."*
+
+   Claude receives text; to keep a recording, save its `.totrec` text to a file
+   yourself, since the server never writes files. Then check it outside Claude
+   with `totctl record verify game.totrec Rules.txt`.
+
+Agent play is **experimental** (#256): one civilization against built-in
+opponents on generated maps. Claude sees only that civilization's view, and the
+engine checks every order. Nothing here claims how strong the agent plays.
+
 ## Tools
 
 | Tool | Arguments | Equivalent CLI |
@@ -50,6 +100,8 @@ previews, games or saves.
 | `agent_view` *(experimental)* | `game` | — |
 | `agent_map` *(experimental)* | `game`, `x`, `y`, `radius=3` (max 10) | — |
 | `agent_submit` *(experimental)* | `game`, `revision`, `request_id`, `command` | — |
+| `agent_quote` *(experimental)* | `game`, `city`, `item` | — (read-only production-switch preview) |
+| `agent_report` *(experimental)* | `game` or `path` | — (turn summaries and command statistics) |
 | `agent_checkpoint` *(experimental)* | `game`, `format="checkpoint"\|"recording"` | — |
 | `agent_close` *(experimental)* | `game` | — |
 | `worldgen_summary` | `seed?`, `width?`, `height?`, `land_percent?` (no path; nothing written) | `totctl worldgen <out.mp> ...` minus its final `map` line |
@@ -105,14 +157,19 @@ actions in a human game (#257).
 - **What the agent sees.** `agent_view` returns:
   - revision, phase, turn, treasury, research and rates;
   - the pending decision, with an `answer_with` template;
-  - own units and cities as `{slot, id}` entities, with legal production choices;
+  - own units and cities as `{slot, id}` entities, with legal production
+    choices, shields remaining, turns to complete, the current **buy** price
+    (or why buying is unavailable) and each improvement's **sale** income (or
+    why it can't be sold);
   - visible foreign units, known foreign cities, notices and the remaining
     action budget.
 
   `agent_map` returns only tiles this civilization has seen.
 - **What the agent does.** `agent_submit` takes one JSON command with a `type`:
   - units: `move`, `occupy`, `skip`, `found` (then `name_city` or `cancel_found`);
-  - cities: `production`, `worker`, `specialist`;
+  - cities: `production` (applies the engine's switch quote; preview it with
+    `agent_quote`), `worker`, `specialist`, `close_production`, `buy {city,
+    price}`, `sell {city, improvement, income}`;
   - civilization: `research`, `goal`, `rates`, `revolution`, `government`,
     `review_rates`;
   - `end_turn`.
@@ -125,6 +182,10 @@ actions in a human game (#257).
     else is rejected.
   - Ownership and legality are checked by the engine, and illegal orders come
     back as `accepted: false` with a reason.
+  - `buy` and `sell` carry the price or income the agent saw in `agent_view`.
+    They execute only if that still equals the current engine quote; otherwise
+    they are refused with "quote changed" and nothing is spent. These are the
+    clients' immutable-quote rules (#260).
 - **Turns.** `end_turn` runs the opponents and returns when it is the agent's
   turn again. Each turn allows 200 commands, the built-in players' per-turn
   bound (`ACTION_CAP`); after that only `end_turn` is accepted.
@@ -134,8 +195,18 @@ actions in a human game (#257).
   the recorded commands without the agent.
 - **Identity binding.** Checkpoints bind the Rules and a fixed headless
   resource identity, `totengine-headless-agent 1`.
+- **Reports (#263).** `agent_report` gives one summary of the agent's
+  civilization per turn reached: cities, population, units, treasury, number of
+  advances, research target and government. It also gives command statistics:
+  submitted, accepted, engine-rejected by reason, refused before the game by
+  message, and turns where the budget ran out.
+  - A recording stores the summaries and statistics as notes in its inert
+    presentation stream, so `agent_report {path}` on the `.totrec` gives the
+    same report as the live game.
+  - These notes are labelled agent-reported and are not verified by replay.
+    The gameplay section is.
+  - A resumed game's history starts at the resume turn.
 - **Not offered yet:**
-  - purchases, sales and quoted production switches, which need engine quotes;
   - more than one agent civilization per game, since the human driver has one seat;
   - opponents other than `builtin-1`;
   - scenarios.
@@ -196,6 +267,19 @@ check that:
   next turn.
 
 A stdio test answers a decision and ends a turn in a real `totctl mcp` process.
+
+Quote and report tests (#260, #263):
+- An agent raises taxes, switches to an improvement and buys it once
+  affordable. A price it did not see is refused as "quote changed", and the
+  treasury drops by exactly the quoted price.
+- When the improvement is built, it is sold at the listed income. A wrong
+  income or a missing improvement is refused.
+- `agent_quote` is read-only: the revision is unchanged.
+- The recording, with purchase and sale, still replays exactly.
+- `agent_report` has one summary per turn and counts accepted and refused
+  submissions. It is identical live and read from the recording, whose notes
+  leave replay verification intact. Campaign recordings and ambiguous
+  arguments are refused.
 
 Session tests check that 3 + 4 rounds equal one 7-round run byte for byte
 (report and checkpoint), that a resumed session continues identically,

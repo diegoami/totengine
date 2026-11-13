@@ -3,6 +3,7 @@ name = "totui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Shared client resources and local browser interfaces for ToTEngine"
 [dependencies]
 engine = { path = "../engine" }
@@ -21,3 +22,6 @@ desktop = ["dep:sdl2", "dep:fontdue"]
 [[bin]]
 name = "totdesktop"
 required-features = ["desktop"]
+
+[lints]
+workspace = true

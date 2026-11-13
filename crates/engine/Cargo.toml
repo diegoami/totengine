@@ -3,9 +3,13 @@ name = "engine"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "world state model + deterministic turn kernel (T1-2)"
 [dependencies]
 tot-kit = { path = "../tot-kit" }
+
+[lints.rust]
+unsafe_code = "forbid"
 
 [lints.clippy]
 # Clippy 1.100 newly flags index loops such as `for civ in 1..8 { players[civ] }`.

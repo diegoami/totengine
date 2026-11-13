@@ -5,6 +5,16 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Agent play follow-ups (#259, #260, #263, unreleased):
+  - a quickstart for registering `totctl mcp` in Claude Code and Claude
+    Desktop;
+  - agents can buy, sell and close production at the quote shown in
+    `agent_view`, refused as "quote changed" otherwise;
+  - `agent_quote` previews a production switch;
+  - `agent_report` gives per-turn civilization summaries and command
+    statistics, live or from a recording's inert notes.
+
+  Crates now inherit the workspace lints and repository field.
 - Experimental MCP agent play (#256, unreleased; owner-relaxed gate for
   headless generated campaigns only): `agent_start`, `agent_view`, `agent_map`,
   `agent_submit`, `agent_checkpoint`, `agent_close`. An MCP client plays one

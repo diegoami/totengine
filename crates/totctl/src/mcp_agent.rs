@@ -33,6 +33,34 @@ pub(crate) struct AgentGame {
     civ: u8,
     turn: i16,
     actions_this_turn: usize,
+    /// One summary of the agent's civilization per turn reached (#263).
+    history: Vec<Value>,
+    stats: CommandStats,
+}
+
+/// What happened to the agent's submissions (#263).
+#[derive(Default)]
+struct CommandStats {
+    submitted: usize,
+    accepted: usize,
+    /// Orders the engine executed as "nothing changed", by reason.
+    engine_rejected: std::collections::BTreeMap<String, usize>,
+    /// Submissions refused before reaching the game, by message.
+    refused: std::collections::BTreeMap<String, usize>,
+    /// Turns in which the action budget ran out.
+    budget_exhausted_turns: std::collections::BTreeSet<i16>,
+}
+
+impl CommandStats {
+    fn json(&self) -> Value {
+        json!({
+            "submitted": self.submitted,
+            "accepted": self.accepted,
+            "engine_rejected": self.engine_rejected,
+            "refused": self.refused,
+            "budget_exhausted_turns": self.budget_exhausted_turns,
+        })
+    }
 }
 
 impl AgentGame {
@@ -58,6 +86,8 @@ impl AgentGame {
             civ,
             turn: 0,
             actions_this_turn: 0,
+            history: Vec::new(),
+            stats: CommandStats::default(),
         };
         game.settle()?;
         Ok(game)
@@ -77,8 +107,56 @@ impl AgentGame {
         if turn != self.turn {
             self.turn = turn;
             self.actions_this_turn = 0;
+            self.history.push(self.summary());
         }
         Ok(())
+    }
+
+    /// The agent civilization's state at the start of its turn.
+    fn summary(&self) -> Value {
+        let view = self.session.view();
+        let o = &view.observation;
+        let own: Vec<_> = o.cities.iter().filter(|c| c.owner == self.civ).collect();
+        json!({
+            "turn": o.turn,
+            "cities": own.len(),
+            "population": own.iter().map(|c| u32::from(c.size)).sum::<u32>(),
+            "units": o.units.iter().filter(|u| u.owner == self.civ).count(),
+            "treasury": o.treasury,
+            "advances": known_advances(&o.techs).len(),
+            "research": o.research.target,
+            "government": o.government,
+        })
+    }
+
+    /// Turn-by-turn summary and command statistics. Observed state only; no
+    /// strength claim.
+    pub(crate) fn report_json(&self) -> Value {
+        report(
+            &self.agent,
+            self.civ,
+            i64::from(self.turn),
+            &self.history,
+            self.stats.json(),
+        )
+    }
+
+    /// Preview a production switch: the engine quote the `production`
+    /// command would apply now (retained shields and penalty).
+    pub(crate) fn quote_production(&self, city: &Value, item: i8) -> Result<Value, String> {
+        let city: EntityArg =
+            serde_json::from_value(city.clone()).map_err(|e| format!("invalid city: {e}"))?;
+        let q = self
+            .session
+            .preview_production(city.into(), item)
+            .map_err(|e| format!("no quote: {e}"))?;
+        Ok(json!({
+            "item": q.item, "name": self.item_name(q.item),
+            "current_item": q.current_item, "current_shields": q.current_shields,
+            "retained_shields": q.retained, "penalty_percent": q.penalty,
+            "target_cost": q.target_cost,
+            "note": "submit {\"type\": \"production\", \"city\": ..., \"item\": ...} to switch at this quote",
+        }))
     }
 
     pub(crate) fn submit(
@@ -87,8 +165,23 @@ impl AgentGame {
         request_id: u64,
         command: &Value,
     ) -> Result<Value, String> {
-        let command = parse_command(command)?;
+        self.stats.submitted += 1;
+        let outcome = self.submit_inner(revision, request_id, command);
+        if let Err(message) = &outcome {
+            *self.stats.refused.entry(message.clone()).or_default() += 1;
+        }
+        outcome
+    }
+
+    fn submit_inner(
+        &mut self,
+        revision: u64,
+        request_id: u64,
+        command: &Value,
+    ) -> Result<Value, String> {
+        let command = self.resolve(parse_command(command)?)?;
         if command != Command::EndTurn && self.actions_this_turn >= ACTION_BUDGET {
+            self.stats.budget_exhausted_turns.insert(self.turn);
             return Err(format!(
                 "action budget of {ACTION_BUDGET} commands this turn is spent; submit end_turn"
             ));
@@ -107,6 +200,16 @@ impl AgentGame {
             response.result,
             Some(engine::player::OrderResult::Rejected(_))
         );
+        match &response.result {
+            Some(engine::player::OrderResult::Rejected(reason)) => {
+                *self
+                    .stats
+                    .engine_rejected
+                    .entry(reason.to_string())
+                    .or_default() += 1;
+            }
+            _ => self.stats.accepted += 1,
+        }
         let result = response.result.map(|r| r.to_string());
         let ended = command == Command::EndTurn;
         if ended {
@@ -122,6 +225,56 @@ impl AgentGame {
             "decision": view.decision.as_ref().map(|d| decision_json(d, &self.rules)),
             "actions_left": ACTION_BUDGET.saturating_sub(self.actions_this_turn),
         }))
+    }
+
+    /// Turn quote-bound commands into engine commands. The agent passes the
+    /// price or income it saw in `agent_view`; the command executes only if
+    /// that is still the current quote (quotes are immutable, as in the
+    /// clients).
+    fn resolve(&self, parsed: Parsed) -> Result<Command, String> {
+        let production = |city: &Entity| {
+            self.session
+                .view()
+                .city_production
+                .into_iter()
+                .find(|p| p.index == city.slot)
+                .ok_or_else(|| "not one of your cities".to_string())
+        };
+        match parsed {
+            Parsed::Direct(command) => Ok(command),
+            Parsed::Buy { city, price } => {
+                let quote = production(&city)?
+                    .hurry
+                    .map_err(|e| format!("cannot buy: {e}"))?;
+                if quote.price != price {
+                    return Err(format!(
+                        "quote changed: buying now costs {}, not {price}",
+                        quote.price
+                    ));
+                }
+                Ok(Command::Buy { city, quote })
+            }
+            Parsed::Sell {
+                city,
+                improvement,
+                income,
+            } => {
+                let quote = production(&city)?
+                    .improvements
+                    .into_iter()
+                    .find(|(id, _)| *id == improvement)
+                    .ok_or("the city has no such improvement")?
+                    .1
+                    .map_err(|e| format!("cannot sell: {e}"))?;
+                if quote.income != income {
+                    return Err(format!(
+                        "quote changed: selling now yields {}, not {income}",
+                        quote.income
+                    ));
+                }
+                Ok(Command::Sell { city, quote })
+            }
+        }
     }
 
     /// The agent's filtered view: own state, legal choices and what it sees.
@@ -163,6 +316,22 @@ impl AgentGame {
                                 .collect::<Vec<_>>()
                         })
                         .unwrap_or_default();
+                    let production = view.city_production.iter().find(|p| p.index == e.slot);
+                    let buy = production.map(|p| match &p.hurry {
+                        Ok(q) => json!({"price": q.price, "stored": q.stored, "required": q.required}),
+                        Err(why) => json!({"unavailable": why}),
+                    });
+                    let sell: Vec<Value> = production
+                        .map(|p| {
+                            p.improvements
+                                .iter()
+                                .map(|(id, q)| match q {
+                                    Ok(q) => json!({"improvement": id, "name": self.improvement_name(*id), "income": q.income}),
+                                    Err(why) => json!({"improvement": id, "name": self.improvement_name(*id), "unavailable": why}),
+                                })
+                                .collect()
+                        })
+                        .unwrap_or_default();
                     json!({
                         "city": entity(e),
                         "name": c.name,
@@ -170,7 +339,12 @@ impl AgentGame {
                         "size": c.size,
                         "building": c.building.map(|i| json!({"item": i, "name": self.item_name(i)})),
                         "shield_box": c.shield_box,
+                        "remaining_shields": production.and_then(|p| p.remaining),
+                        "turns_to_complete": production.and_then(|p| p.turns),
+                        "net_shields": production.map(|p| p.net_shields),
                         "production_choices": choices,
+                        "buy": buy,
+                        "sell": sell,
                     })
                 })
             })
@@ -216,6 +390,7 @@ impl AgentGame {
             "cities": cities,
             "visible_foreign_units": foreign_units,
             "known_foreign_cities": foreign_cities,
+            "production_context_city": view.production_context_city.as_ref().map(entity),
             "map": {"width": o.w2, "height": o.h},
             "actions_left": ACTION_BUDGET.saturating_sub(self.actions_this_turn),
         })
@@ -263,15 +438,32 @@ impl AgentGame {
         self.session.checkpoint(AGENT_RESOURCES)
     }
 
+    /// A `.totrec` recording. Its inert presentation stream carries the
+    /// per-turn summaries and command statistics as agent-reported notes
+    /// (not verified by replay), so a report can be read back from the file.
     pub(crate) fn recording(&self) -> Result<String, String> {
-        tot_record::Bundle::human(
+        let mut bundle = tot_record::Bundle::human(
             &self.checkpoint(),
             &self.rules,
             AGENT_RESOURCES,
             tot_record::StopReason::Stopped,
-            &format!("totctl mcp agent (experimental, #256): {}", self.agent),
-        )?
-        .encode()
+            &format!("{AGENT_PRODUCER}{}", self.agent),
+        )?;
+        let mut notes = String::new();
+        for summary in &self.history {
+            let mut entry = summary.clone();
+            entry["round"] = summary["turn"].clone();
+            entry["kind"] = json!("agent-summary");
+            notes.push_str(&entry.to_string());
+            notes.push('\n');
+        }
+        let mut stats = self.stats.json();
+        stats["round"] = json!(self.turn.max(0));
+        stats["kind"] = json!("agent-commands");
+        notes.push_str(&stats.to_string());
+        notes.push('\n');
+        bundle.presentation = Some(notes);
+        bundle.encode()
     }
 
     fn item_name(&self, item: i8) -> String {
@@ -290,12 +482,66 @@ impl AgentGame {
         }
     }
 
+    fn improvement_name(&self, id: u8) -> String {
+        self.rules
+            .section("IMPROVE")
+            .and_then(|s| s.rows.get(usize::from(id)))
+            .and_then(|r| r.first())
+            .cloned()
+            .unwrap_or_else(|| format!("Improvement {id}"))
+    }
+
     fn advance_name(&self, id: usize) -> String {
         self.rules
             .tech_defs()
             .get(id)
             .map_or_else(|| format!("Advance {id}"), |t| t.name.clone())
     }
+}
+
+/// Prefix of the recording producer for agent games.
+pub(crate) const AGENT_PRODUCER: &str = "totctl mcp agent (experimental, #256): ";
+
+fn report(agent: &str, civ: u8, turn: i64, history: &[Value], commands: Value) -> Value {
+    json!({
+        "agent": agent,
+        "civ": civ,
+        "turn": turn,
+        "history": history,
+        "commands": commands,
+        "note": "observed state of the agent's civilization; no playing-strength claim",
+    })
+}
+
+/// The same report, read back from an agent recording's presentation notes.
+pub(crate) fn report_from_recording(bundle: &tot_record::Bundle) -> Result<Value, String> {
+    let agent = bundle
+        .manifest
+        .producer
+        .strip_prefix(AGENT_PRODUCER)
+        .ok_or("not an agent recording")?;
+    let civ = bundle.manifest.human.ok_or("not an agent recording")?;
+    let mut history = Vec::new();
+    let mut commands = None;
+    for line in bundle.presentation.as_deref().unwrap_or_default().lines() {
+        let mut entry: Value = serde_json::from_str(line).map_err(|e| e.to_string())?;
+        let kind = entry["kind"].as_str().unwrap_or_default().to_string();
+        let object = entry.as_object_mut().ok_or("invalid note")?;
+        object.remove("kind");
+        object.remove("round");
+        match kind.as_str() {
+            "agent-summary" => history.push(entry),
+            "agent-commands" => commands = Some(entry),
+            _ => {}
+        }
+    }
+    Ok(report(
+        agent,
+        civ,
+        i64::from(bundle.manifest.progress),
+        &history,
+        commands.ok_or("recording has no agent command statistics")?,
+    ))
 }
 
 fn entity(e: &Entity) -> Value {
@@ -372,31 +618,114 @@ impl From<EntityArg> for Entity {
 #[derive(Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 enum CommandArg {
-    Move { unit: EntityArg, to: (u16, u16) },
-    Occupy { unit: EntityArg, city: EntityArg },
-    Skip { unit: EntityArg },
-    Found { unit: EntityArg },
-    NameCity { decision: u64, name: String },
-    CancelFound { decision: u64 },
-    Production { city: EntityArg, item: i8 },
-    Worker { city: EntityArg, tile: u8 },
-    Specialist { city: EntityArg, slot: u8 },
-    Research { decision: u64, advance: usize },
-    Goal { advance: Option<usize> },
-    Rates { science: u8, tax: u8 },
+    Move {
+        unit: EntityArg,
+        to: (u16, u16),
+    },
+    Occupy {
+        unit: EntityArg,
+        city: EntityArg,
+    },
+    Skip {
+        unit: EntityArg,
+    },
+    Found {
+        unit: EntityArg,
+    },
+    NameCity {
+        decision: u64,
+        name: String,
+    },
+    CancelFound {
+        decision: u64,
+    },
+    Production {
+        city: EntityArg,
+        item: i8,
+    },
+    Worker {
+        city: EntityArg,
+        tile: u8,
+    },
+    Specialist {
+        city: EntityArg,
+        slot: u8,
+    },
+    Buy {
+        city: EntityArg,
+        price: i32,
+    },
+    Sell {
+        city: EntityArg,
+        improvement: u8,
+        income: i32,
+    },
+    CloseProduction {
+        city: EntityArg,
+    },
+    Research {
+        decision: u64,
+        advance: usize,
+    },
+    Goal {
+        advance: Option<usize>,
+    },
+    Rates {
+        science: u8,
+        tax: u8,
+    },
     // Empty struct variants (not unit variants) so that unknown fields are
     // rejected: serde ignores `deny_unknown_fields` for internally tagged
     // unit variants.
     Revolution {},
-    Government { decision: u64, government: u8 },
-    ReviewRates { decision: u64, science: u8, tax: u8 },
+    Government {
+        decision: u64,
+        government: u8,
+    },
+    ReviewRates {
+        decision: u64,
+        science: u8,
+        tax: u8,
+    },
     EndTurn {},
 }
 
-fn parse_command(value: &Value) -> Result<Command, String> {
+/// A parsed command; quote-bound ones are resolved against the current view.
+enum Parsed {
+    Direct(Command),
+    Buy {
+        city: Entity,
+        price: i32,
+    },
+    Sell {
+        city: Entity,
+        improvement: u8,
+        income: i32,
+    },
+}
+
+fn parse_command(value: &Value) -> Result<Parsed, String> {
     let arg: CommandArg =
         serde_json::from_value(value.clone()).map_err(|e| format!("invalid command: {e}"))?;
-    Ok(match arg {
+    Ok(Parsed::Direct(match arg {
+        CommandArg::Buy { city, price } => {
+            return Ok(Parsed::Buy {
+                city: city.into(),
+                price,
+            })
+        }
+        CommandArg::Sell {
+            city,
+            improvement,
+            income,
+        } => {
+            return Ok(Parsed::Sell {
+                city: city.into(),
+                improvement,
+                income,
+            })
+        }
+        CommandArg::CloseProduction { city } => Command::CloseProduction { city: city.into() },
         CommandArg::Move { unit, to } => Command::Move {
             unit: unit.into(),
             to,
@@ -445,5 +774,5 @@ fn parse_command(value: &Value) -> Result<Command, String> {
             tax,
         },
         CommandArg::EndTurn {} => Command::EndTurn,
-    })
+    }))
 }

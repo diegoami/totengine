@@ -44,7 +44,7 @@ milestone 14's owner acceptance and independent review unchanged.
 | Capability | Available foundation | Remaining target |
 | --- | --- | --- |
 | Native/browser clients | Shared human sessions, generated surface games, movement/founding/research, checkpoints, workers/specialists, production transactions and city panels | Complete UI coverage: science/government, diplomacy, reports/help/audio, advanced orders, original imports, scenarios/multiple maps and sustained campaigns on both clients |
-| Headless | Save/scenario boot, modeled macro events, original-derived mechanics, built-in policies, generated campaigns and deterministic order replay | Admitted scenario campaigns, parameter sweeps, objective-aware reports and author regressions |
+| Headless | Save/scenario boot, modeled macro events, original-derived mechanics, built-in policies, generated campaigns, deterministic order replay and [experiment manifests v1](experiment-manifests.md) for generated starts | Admitted scenario campaigns, parameter sweeps, objective-aware reports and author regressions |
 | Observer | Live/replay browser observer, full/per-civ views, turn controls and archives | Scenario presentation/objectives/events, supported map layers, comparison and recording integration |
 | AI | Versioned built-in/legacy policies and partial original-derived decisions | Per-faction policy selection, bounded candidate comparisons, external plugins and independently measured native fidelity |
 | Scenario tools | Format inspection/diffs, pinned private corpus and released read-only capability inspector/conditional entry contract | Actual native import/admission, event/extension coverage, run diagnostics, safe editing/export and creation assistance |

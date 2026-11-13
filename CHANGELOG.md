@@ -5,6 +5,16 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Headless experiment manifests, format 1 (#203 generated-world slice,
+  unreleased): `totctl experiment check|run`.
+  - A JSON manifest declares a generated start, a policy, rounds, seeds (random
+    variation) and named variants (deliberate changes).
+  - Running it writes a verifiable `.totrec` per run and deterministic
+    `summary.json`/`summary.txt` into a new folder; it never overwrites.
+  - Scenario starts (#197) and mixed per-civilization policies are refused
+    rather than approximated.
+
+  See docs/experiment-manifests.md.
 - Agent play follow-ups (#259, #260, #263, unreleased):
   - a quickstart for registering `totctl mcp` in Claude Code and Claude
     Desktop;

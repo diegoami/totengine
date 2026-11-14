@@ -3,6 +3,7 @@ name = "tot-record"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "ToTEngine session recording bundles: versioned, verifiable, crash-recoverable (#206)"
 
 [dependencies]

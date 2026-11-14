@@ -3,9 +3,13 @@ name = "tot-kit"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Civilization II: Test of Time format readers and writers (Rules.txt, .MP, .SAV/.SCN)"
 
 [dependencies]
 
 [dev-dependencies]
 serde_json = "1"
+
+[lints]
+workspace = true

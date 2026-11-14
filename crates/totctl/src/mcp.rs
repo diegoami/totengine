@@ -359,6 +359,28 @@ impl Server {
                         .to_string()])
                 })
             }
+            "agent_quote" => {
+                let a: AgentQuoteArgs = parse_args(args)?;
+                self.with_agent(a.game, |g| {
+                    Ok(vec![g.quote_production(&a.city, a.item)?.to_string()])
+                })
+            }
+            "agent_report" => {
+                let a: AgentReportArgs = parse_args(args)?;
+                match (a.game, a.path) {
+                    (Some(game), None) => {
+                        self.with_agent(game, |g| Ok(vec![g.report_json().to_string()]))
+                    }
+                    (None, Some(path)) => {
+                        let text = tot_record::read_limited(Path::new(self.path(&path)?))?;
+                        let bundle = tot_record::Bundle::decode(&text)?;
+                        Ok(vec![
+                            crate::mcp_agent::report_from_recording(&bundle)?.to_string()
+                        ])
+                    }
+                    _ => Err("give exactly one of game or path".into()),
+                }
+            }
             "agent_checkpoint" => {
                 let a: AgentCheckpointArgs = parse_args(args)?;
                 self.with_agent(a.game, |g| {
@@ -927,6 +949,23 @@ struct AgentArgs {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+struct AgentQuoteArgs {
+    game: u32,
+    city: Value,
+    item: i8,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AgentReportArgs {
+    #[serde(default)]
+    game: Option<u32>,
+    #[serde(default)]
+    path: Option<String>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct AgentCheckpointArgs {
     game: u32,
     #[serde(default)]
@@ -1258,7 +1297,7 @@ fn tools() -> Vec<Value> {
         }),
         json!({
             "name": "agent_submit",
-            "description": "EXPERIMENTAL (#256): submit one command for your civilization. `revision` must be the current view revision; `request_id` must be new (repeating an id with the same command returns the recorded response without executing twice). Commands (field `type`): move {unit, to:[x,y]}, occupy {unit, city}, skip {unit}, found {unit}, name_city {decision, name}, cancel_found {decision}, production {city, item}, worker {city, tile}, specialist {city, slot}, research {decision, advance}, goal {advance|null}, rates {science, tax}, revolution, government {decision, government}, review_rates {decision, science, tax}, end_turn. Units/cities are {slot, id} from agent_view. end_turn runs the opponents and returns when it is your turn again. At most 200 commands per turn, then only end_turn.",
+            "description": "EXPERIMENTAL (#256): submit one command for your civilization. `revision` must be the current view revision; `request_id` must be new (repeating an id with the same command returns the recorded response without executing twice). Commands (field `type`): move {unit, to:[x,y]}, occupy {unit, city}, skip {unit}, found {unit}, name_city {decision, name}, cancel_found {decision}, production {city, item}, worker {city, tile}, specialist {city, slot}, research {decision, advance}, goal {advance|null}, rates {science, tax}, revolution, government {decision, government}, review_rates {decision, science, tax}, end_turn, buy {city, price}, sell {city, improvement, income}, close_production {city}. Units/cities are {slot, id} from agent_view; buy/sell execute only if the price/income still equals the current quote shown in agent_view. end_turn runs the opponents and returns when it is your turn again. At most 200 commands per turn, then only end_turn.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -1268,6 +1307,32 @@ fn tools() -> Vec<Value> {
                     "command": {"type": "object", "description": "e.g. {\"type\": \"move\", \"unit\": {\"slot\": 3, \"id\": 17}, \"to\": [10, 12]}"},
                 },
                 "required": ["game", "revision", "request_id", "command"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "agent_quote",
+            "description": "EXPERIMENTAL (#256): preview switching a city's production to `item`: retained shields and the switch penalty the `production` command would apply now. Read-only.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "game": {"type": "integer", "minimum": 1},
+                    "city": {"type": "object", "description": "{slot, id} from agent_view"},
+                    "item": {"type": "integer", "description": "a production choice item from agent_view"},
+                },
+                "required": ["game", "city", "item"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "agent_report",
+            "description": "EXPERIMENTAL (#256): turn-by-turn summary of the agent's civilization (cities, population, units, treasury, advances, research, government) and command statistics (accepted, engine-rejected and refused by reason, budget-exhausted turns). Give `game` for a live game or `path` for an agent .totrec recording; both give the same report. Observed state only, no strength claim.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "game": {"type": "integer", "minimum": 1},
+                    "path": path_prop(),
+                },
                 "additionalProperties": false,
             }
         }),
@@ -1416,6 +1481,8 @@ mod tests {
                 "agent_view",
                 "agent_map",
                 "agent_submit",
+                "agent_quote",
+                "agent_report",
                 "agent_checkpoint",
                 "agent_close",
                 "worldgen_summary"
@@ -2185,6 +2252,300 @@ mod tests {
         .unwrap();
         assert_eq!(ended["turn"], 3);
         assert_eq!(ended["actions_left"], crate::mcp_agent::ACTION_BUDGET);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    /// Drive an agent game: answer decisions and found a first city like
+    /// `scripted_agent`, but let `extra` choose a command before ending each
+    /// turn (return None to end the turn). Stops when `done` holds.
+    fn drive(
+        s: &Server,
+        game: u32,
+        next_id: &mut u64,
+        max_turn: i64,
+        mut extra: impl FnMut(&Value) -> Option<Value>,
+        mut done: impl FnMut(&Value) -> bool,
+    ) -> Value {
+        for _ in 0..5000 {
+            let v: Value =
+                serde_json::from_str(&texts(&call(s, "agent_view", json!({"game": game})))[0])
+                    .unwrap();
+            if done(&v) || v["turn"].as_i64().unwrap() >= max_turn || v["phase"] != "your-turn" {
+                return v;
+            }
+            let d = &v["decision"];
+            let command = match d["type"].as_str() {
+                Some("research") => json!({"type": "research", "decision": d["decision"],
+                                           "advance": d["available"][0]["advance"]}),
+                Some("founding") => {
+                    json!({"type": "name_city", "decision": d["decision"], "name": "Treasury"})
+                }
+                Some("government") => json!({"type": "government", "decision": d["decision"],
+                                             "government": d["eligible"][0]}),
+                Some("rates") => json!({"type": "review_rates", "decision": d["decision"],
+                                        "science": d["opening"]["science"], "tax": d["opening"]["tax"]}),
+                _ if v["cities"].as_array().unwrap().is_empty()
+                    && !v["units"].as_array().unwrap().is_empty() =>
+                {
+                    json!({"type": "found", "unit": v["units"][0]["unit"]})
+                }
+                _ => extra(&v).unwrap_or(json!({"type": "end_turn"})),
+            };
+            *next_id += 1;
+            let response = call(
+                s,
+                "agent_submit",
+                json!({"game": game, "revision": v["revision"], "request_id": *next_id, "command": command}),
+            );
+            let r: Value = serde_json::from_str(&texts(&response)[0]).unwrap();
+            assert_eq!(r["accepted"], true, "{command} -> {r}");
+        }
+        panic!("agent game did not finish");
+    }
+
+    #[test]
+    fn agents_buy_and_sell_only_at_the_quote_they_saw() {
+        let (dir, rules) = builtin_rules_root("agent-buy");
+        let s = Server::new(vec![std::fs::canonicalize(&dir).unwrap()]);
+        call(
+            &s,
+            "agent_start",
+            json!({"rules": rules, "agent": "t", "seed": 3, "width": 40, "height": 30}),
+        );
+        let mut ids = 0;
+        // Taxes up, then build improvement 2 and wait until it is affordable.
+        let taxed = std::cell::Cell::new(false);
+        let switched = std::cell::Cell::new(false);
+        let v = drive(
+            &s,
+            1,
+            &mut ids,
+            80,
+            |v| {
+                if !taxed.get() {
+                    taxed.set(true);
+                    return Some(json!({"type": "rates", "science": 0, "tax": 6}));
+                }
+                if !switched.get() {
+                    switched.set(true);
+                    return Some(
+                        json!({"type": "production", "city": v["cities"][0]["city"], "item": -2}),
+                    );
+                }
+                None
+            },
+            |v| {
+                let buy = &v["cities"][0]["buy"]["price"];
+                switched.get()
+                    && buy.is_i64()
+                    && buy.as_i64().unwrap() > 0
+                    && buy.as_i64().unwrap() <= v["treasury"].as_i64().unwrap()
+            },
+        );
+        let city = v["cities"][0]["city"].clone();
+        assert_eq!(v["cities"][0]["building"]["item"], -2, "{v}");
+        let price = v["cities"][0]["buy"]["price"].as_i64().unwrap();
+        let treasury = v["treasury"].as_i64().unwrap();
+        let submit = |id: u64, revision: &Value, command: Value| {
+            call(
+                &s,
+                "agent_submit",
+                json!({"game": 1, "revision": revision, "request_id": id, "command": command}),
+            )
+        };
+        // A price the agent did not see is refused, and nothing is spent.
+        let wrong = submit(
+            9000,
+            &v["revision"],
+            json!({"type": "buy", "city": city, "price": price + 1}),
+        );
+        assert!(error_text(&wrong).contains("quote changed"), "{wrong}");
+        let bought: Value = serde_json::from_str(
+            &texts(&submit(
+                9001,
+                &v["revision"],
+                json!({"type": "buy", "city": city, "price": price}),
+            ))[0],
+        )
+        .unwrap();
+        assert_eq!(bought["accepted"], true, "{bought}");
+        let after: Value =
+            serde_json::from_str(&texts(&call(&s, "agent_view", json!({"game": 1})))[0]).unwrap();
+        assert_eq!(after["treasury"].as_i64().unwrap(), treasury - price);
+
+        // Once built, the improvement is listed for sale with its income.
+        let v = drive(
+            &s,
+            1,
+            &mut ids,
+            120,
+            |_| None,
+            |v| {
+                v["cities"][0]["sell"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|i| i["improvement"] == 2 && i["income"].is_i64())
+            },
+        );
+        let offer = v["cities"][0]["sell"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|i| i["improvement"] == 2)
+            .unwrap()
+            .clone();
+        let income = offer["income"].as_i64().unwrap();
+        let treasury = v["treasury"].as_i64().unwrap();
+        let wrong = submit(
+            9100,
+            &v["revision"],
+            json!({"type": "sell", "city": city, "improvement": 2, "income": income + 1}),
+        );
+        assert!(error_text(&wrong).contains("quote changed"));
+        let missing = submit(
+            9101,
+            &v["revision"],
+            json!({"type": "sell", "city": city, "improvement": 40, "income": 0}),
+        );
+        assert!(error_text(&missing).contains("no such improvement"));
+        let sold: Value = serde_json::from_str(
+            &texts(&submit(
+                9102,
+                &v["revision"],
+                json!({"type": "sell", "city": city, "improvement": 2, "income": income}),
+            ))[0],
+        )
+        .unwrap();
+        assert_eq!(sold["accepted"], true, "{sold}");
+        let after: Value =
+            serde_json::from_str(&texts(&call(&s, "agent_view", json!({"game": 1})))[0]).unwrap();
+        assert_eq!(after["treasury"].as_i64().unwrap(), treasury + income);
+
+        // The production-switch preview is read-only and matches the engine quote.
+        let quote: Value = serde_json::from_str(
+            &texts(&call(
+                &s,
+                "agent_quote",
+                json!({"game": 1, "city": city, "item": -3}),
+            ))[0],
+        )
+        .unwrap();
+        assert_eq!(quote["item"], -3);
+        assert!(
+            quote["retained_shields"].is_u64() && quote["penalty_percent"].is_u64(),
+            "{quote}"
+        );
+        let unchanged: Value =
+            serde_json::from_str(&texts(&call(&s, "agent_view", json!({"game": 1})))[0]).unwrap();
+        assert_eq!(unchanged["revision"], after["revision"]);
+        assert!(error_text(&call(
+            &s,
+            "agent_quote",
+            json!({"game": 1, "city": {"slot": 99, "id": 1}, "item": -3})
+        ))
+        .contains("no quote"));
+
+        // The recording, with purchases and a sale, still replays exactly.
+        let recording = texts(&call(
+            &s,
+            "agent_checkpoint",
+            json!({"game": 1, "format": "recording"}),
+        ));
+        let path = dir.join("buy.totrec");
+        std::fs::write(&path, &recording[0]).unwrap();
+        let verified = texts(&call(
+            &s,
+            "recording_verify",
+            json!({"path": path.to_string_lossy(), "rules": rules}),
+        ));
+        assert!(verified[0].contains("replay reproduces the recording"));
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn agent_reports_are_the_same_live_and_from_the_recording() {
+        let (dir, rules) = builtin_rules_root("agent-report");
+        let s = Server::new(vec![std::fs::canonicalize(&dir).unwrap()]);
+        call(
+            &s,
+            "agent_start",
+            json!({"rules": rules, "agent": "reporter v2", "seed": 3, "width": 40, "height": 30}),
+        );
+        let mut ids = 0;
+        let v = scripted_agent(&s, 1, 5, &mut ids);
+        // A submission refused before reaching the game is counted too.
+        call(
+            &s,
+            "agent_submit",
+            json!({"game": 1, "revision": v["revision"], "request_id": 5000,
+                                        "command": {"type": "teleport"}}),
+        );
+        let live: Value =
+            serde_json::from_str(&texts(&call(&s, "agent_report", json!({"game": 1})))[0]).unwrap();
+        assert_eq!(live["agent"], "reporter v2");
+        assert_eq!(live["turn"], 5);
+        let history = live["history"].as_array().unwrap();
+        assert_eq!(history.first().unwrap()["turn"], 1);
+        assert_eq!(history.last().unwrap()["turn"], 5);
+        assert_eq!(history.len(), 5, "one summary per turn: {live}");
+        assert_eq!(history.last().unwrap()["cities"], 1);
+        let commands = &live["commands"];
+        assert_eq!(commands["submitted"].as_u64().unwrap(), ids + 1);
+        assert_eq!(commands["accepted"].as_u64().unwrap(), ids);
+        assert_eq!(
+            commands["refused"].as_object().unwrap().len(),
+            1,
+            "{commands}"
+        );
+
+        // The same report is read back from the exported recording.
+        let recording = texts(&call(
+            &s,
+            "agent_checkpoint",
+            json!({"game": 1, "format": "recording"}),
+        ));
+        let path = dir.join("report.totrec");
+        std::fs::write(&path, &recording[0]).unwrap();
+        let path = path.to_string_lossy().into_owned();
+        let from_file: Value =
+            serde_json::from_str(&texts(&call(&s, "agent_report", json!({"path": path})))[0])
+                .unwrap();
+        assert_eq!(from_file, live);
+        // The notes are inert: the recording still verifies by replay.
+        let verified = texts(&call(
+            &s,
+            "recording_verify",
+            json!({"path": path, "rules": rules}),
+        ));
+        assert!(verified[0].contains("replay reproduces the recording"));
+        let info = texts(&call(&s, "recording_info", json!({"path": path})))[0].clone();
+        assert!(info.contains("presentation: 6 inert entr(ies)"), "{info}");
+
+        // A campaign recording is not an agent recording; exactly one source.
+        call(
+            &s,
+            "session_start",
+            json!({"rules": rules, "seed": 2, "width": 40, "height": 30}),
+        );
+        let campaign = texts(&call(
+            &s,
+            "session_checkpoint",
+            json!({"session": 1, "format": "recording"}),
+        ));
+        let other = dir.join("campaign.totrec");
+        std::fs::write(&other, &campaign[0]).unwrap();
+        assert!(error_text(&call(
+            &s,
+            "agent_report",
+            json!({"path": other.to_string_lossy()})
+        ))
+        .contains("not an agent recording"));
+        assert!(error_text(&call(&s, "agent_report", json!({}))).contains("exactly one"));
+        assert!(
+            error_text(&call(&s, "agent_report", json!({"game": 1, "path": path})))
+                .contains("exactly one")
+        );
         std::fs::remove_dir_all(dir).unwrap();
     }
 }

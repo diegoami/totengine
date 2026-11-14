@@ -7,6 +7,7 @@ use std::process::ExitCode;
 
 use engine::rng::GameRng as _;
 
+mod experiment;
 mod mcp;
 mod mcp_agent;
 
@@ -28,6 +29,7 @@ fn main() -> ExitCode {
         Some("events") => cmd_events(&args[2..]),
         Some("mcp") => mcp::cmd_mcp(&args[2..]),
         Some("record") => cmd_record(&args[2..]),
+        Some("experiment") => experiment::cmd_experiment(&args[2..]),
         Some("--version") | Some("-V") => {
             println!("totctl {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
@@ -36,6 +38,8 @@ fn main() -> ExitCode {
             eprintln!(
                 "usage: {prog} worldgen <out.mp> [--seed S] [--width W] [--height H] [--land-percent P]\n\
                         {prog} campaign <Rules.txt> [--policy ai-v1|builtin-1] [--turns N] [--seed S] [--civs C] [--difficulty D] [--width W] [--height H] [--land-percent P] [--checkpoint OUT] [--resume FILE] [--log OUT] [--stream OUT] [--record OUT.totrec [--record-every K]]\n\
+                        {prog} experiment check <manifest.json> | run <manifest.json> --out <new-folder>\n\
+                        \x20                        — validate or run a headless experiment manifest (#203)\n\
                         {prog} record info <bundle.totrec> | verify <bundle.totrec> <Rules.txt> | recover <journal> <out.totrec>\n\
                         \x20                        — inspect, replay-verify or recover session recordings (#206)\n\
                         {prog} mp <file.mp>   — decode an .MP map header and tiles\n\

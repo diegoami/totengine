@@ -3,6 +3,7 @@ name = "totctl"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "CLI for ToTEngine: inspect ToT game data (successor of the Python probe)"
 
 [[bin]]
@@ -16,3 +17,6 @@ tot-record = { path = "../tot-record" }
 totui = { path = "../totui" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[lints]
+workspace = true

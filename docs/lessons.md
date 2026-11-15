@@ -34,6 +34,25 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   2026-11-02, see `docs/milestone-review.md` + AGENTS.md hard rules) — print
   the template and stop.
 
+- **Rig regression, 2026-11-15 (open): in-world input dead, world window
+  unenumerable.** Symptom: after any save loads to the world (RAM reads fine,
+  world renders), no input lands — winject SendInput keys, XTest keys and
+  X-level focus all leave turn/active-unit/RNG frozen — and `winject wins`
+  (64- and 32-bit builds) lists only `Default IME` while dialog-phase windows
+  in the same run enumerated fine. The game also died silently twice ~4–5 min
+  after loading derived #194 fixtures (pristine baseline survived 7+ min
+  idle); Xvfb died once mid-session when a wrapping `timeout` SIGTERM'd a
+  restart script — start Xvfb with `setsid nohup` so it outlives shells.
+  Ruled out: fixture bytes (pristine input also dead), wine bitness, missing
+  foreground focus alone. Before the next live-UI experiment, fix the input
+  path first (likely wine-10/wow64 window-management behavior at the
+  DirectDraw switch; `winject focus` needs the HWND it can no longer find).
+  Diagnostic shortcuts that paid off: `/proc/<pid>/status` State Z exposes a
+  dead game while memspool still lists it; compare the pristine save side by
+  side before blaming edited bytes; `pgrep -af '[x]yz'` self-matches when the
+  literal appears anywhere else in the command line (it matched
+  `memspool_ctrl.sh` once more).
+
 - **A static decode of "initial values" is a claim about saved records
   too — check it against saves before shipping.** v0.6.0 claimed
   `create_city` sets flags `0x20000` (true at `0x432b2f`), and the engine

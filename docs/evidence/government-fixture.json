@@ -35,5 +35,24 @@
     }
   },
   "vectors_sha256": "970828821b364d49a91ae186ceef429925970ccbc7af70480c65983e1108efaf",
-  "scope": "Author second-government fixtures from the installed reference save (#194).\n\nDerives two private saves from Original/Ph_Auto2.SAV into --out (never\ncommitted): `monarchy.SAV` gives the human civ Monarchy and its prerequisite\nclosure while it stays in Despotism, and `anarchy.SAV` additionally puts it in\nAnarchy. Only hashes, the patch description and native route vectors are\nretained as evidence.\n\nNative routines are executed on the derived saves exactly as in\nrates_government_check.py: 0x525468 (eligibility, chooser list), 0x40966b (cap),\n0x409704 (redistribution) and 0x5292d6 (anarchy resolution; 0x52588e recorded\nand returns 0). The advance record table is not loaded by the harness, so the\nenabled byte of the five government advances is set from the installed Rules.txt\n(prerequisite 1 not nil). Live load of the derived saves in the original game\nhas NOT been exercised."
+  "scope": "Author second-government fixtures from the installed reference save (#194).\n\nDerives two private saves from Original/Ph_Auto2.SAV into --out (never\ncommitted): `monarchy.SAV` gives the human civ Monarchy and its prerequisite\nclosure while it stays in Despotism, and `anarchy.SAV` additionally puts it in\nAnarchy. Only hashes, the patch description and native route vectors are\nretained as evidence.\n\nNative routines are executed on the derived saves exactly as in\nrates_government_check.py: 0x525468 (eligibility, chooser list), 0x40966b (cap),\n0x409704 (redistribution) and 0x5292d6 (anarchy resolution; 0x52588e recorded\nand returns 0). The advance record table is not loaded by the harness, so the\nenabled byte of the five government advances is set from the installed Rules.txt\n(prerequisite 1 not nil). Live load of the derived saves in the original game\nhas NOT been exercised.",
+  "live_load": {
+    "date": "2026-11-15",
+    "what": "original-game load of the derived saves under the Wine oracle rig (tools/oracle/load_save.sh, Xvfb :99, ToTPP civ2.exe)",
+    "results": {
+      "accepted_at_load": {
+        "anarchy": "loaded to the world twice: RAM turn 43, 38 units, 10 cities; world UI rendered (menu bar, fogged map, globe minimap)",
+        "monarchy": "bytes identical to anarchy.SAV outside the civ block; same load path (not separately driven)",
+        "baseline_Ph_Auto2": "loaded to the world and stayed alive 7+ minutes idle"
+      },
+      "not_observed": [
+        "the turn-44 government chooser: in-world input did not land in this session (see regression below), so the on-screen chooser list is still unconfirmed in the live original",
+        "monarchy.SAV alone was not loaded interactively"
+      ],
+      "divergence": "both anarchy.SAV loads exited silently ~4-5 minutes after world entry (no Wine backtrace, civ2.log stops at the MIDI warnings); the pristine Ph_Auto2.SAV stayed alive. Reproduced twice; cause unknown",
+      "rig_regression": "in-world input dead for every save including the pristine baseline: SendInput keys (winject), XTest keys (xtool) and X-level focus all produced no state change (turn 43, active unit 9, both RNG slots frozen); the game's world window is not enumerable by any external wine process (winject wins, 64- and 32-bit builds, list only Default IME) while dialog-phase windows were enumerable during the same run. Xvfb also died once mid-session and was restarted detached. Chooser observation deferred until the input path works again"
+    },
+    "retained": "numeric/textual only; screenshots stayed outside the repository",
+    "install_state": "autosave slots Ph_Auto/Ph_Auto2/Ca_Auto2 restored and sha256-verified after the runs; fixture saves removed from Original/"
+  }
 }

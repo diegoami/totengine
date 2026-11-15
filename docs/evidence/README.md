@@ -3017,9 +3017,23 @@ set from `Rules.txt` because the harness does not load that table):
 - Anarchy resolution (`0x5292d6`, saved flags): the chooser opens at turns 44, 48
   and 52 and at none of 43, 45–47, 49–51.
 
-**Not done:** loading the derived saves in the original game (no live Wine run, so
-the original's acceptance of the patched bytes and its on-screen chooser are not
-confirmed) and an engine/client fixture; both belong to the #195/#196 routes.
+**Live load, 2026-11-15:** the original (ToTPP `civ2.exe`, Wine oracle)
+accepts the derived bytes — `anarchy.SAV` loaded to the world twice (RAM turn
+43, 38 units, 10 cities; menu bar, fogged map and globe minimap rendered), and
+the pristine `Ph_Auto2.SAV` baseline loaded and stayed alive idle. Both fixture
+loads then exited silently after ~4–5 minutes in-world (no backtrace; the
+baseline did not), and the session's in-world input path was dead for every
+save (SendInput, XTest and window-focus all produced no state change; the
+game's world window was not enumerable by external wine processes while its
+dialog windows were). The on-screen turn-44 chooser therefore remains
+**unconfirmed in the live original**; the rig regression is recorded in
+`docs/lessons.md`. Autosave slots were restored and sha256-verified after the
+runs; no screenshots retained. Full record:
+[government-fixture.json](government-fixture.json) `live_load`.
+
+**Not done:** the on-screen government chooser at turn 44 in the live original
+(input-path regression above), and an engine/client version of this fixture;
+the latter belongs to the #195/#196 routes.
 
 #### Research selection, goal and mid-project changes (#194)
 

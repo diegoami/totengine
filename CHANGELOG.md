@@ -5,30 +5,39 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
-- Client setup memory (#266 shortlist, unreleased): both clients remember the
+## [0.19.0] — MCP agent interface, session recordings, headless experiments and the reports slice
+
+Owner-called milestone, 2026-11-15. Everything since v0.18.0: the experimental
+MCP agent interface (decision 0008 §MCP follow-up decisions; owner-relaxed
+gate for headless generated campaigns), versioned session recording bundles,
+the first headless experiment manifests, the eight-family reports slice with
+the Civilopedia on both clients, MCP save tools for original saves, and client
+setup memory. Source/CLI release without new client archives.
+
+- Client setup memory (#266 shortlist): both clients remember the
   last successfully started setup — ToT directory, civilization count, human
   civilization, difficulty and map size — in a host-side `setup.json` beside
   the saves, prefilled on the next launch. `CIVTOT_HOME` still wins over the
   remembered directory; the seed is not remembered; a corrupt or out-of-range
   file quietly falls back to defaults.
-- Agent report outcome (#263, unreleased): every per-turn summary now records
+- Agent report outcome (#263): every per-turn summary now records
   the living civilizations and the phase (`your-turn`/`opponents`/
   `eliminated`/`turn-limit`), so a report shows how the game ended, not just
   the agent's own economy. Recordings made before this change simply lack the
   two fields in their notes.
-- Agent opponent policy choice (#261, unreleased): `agent_start` accepts
+- Agent opponent policy choice (#261): `agent_start` accepts
   `opponents: "builtin-1"` (default) or `"ai-v1"`. The choice is recorded in
   human checkpoints (`policy ai-v1`), restored on resume — which refuses to
   re-choose it — and replayed exactly; pre-#261 checkpoints are unchanged.
-- MCP save tools (#254, unreleased): `save_observe` returns observer v1 frames
+- MCP save tools (#254): `save_observe` returns observer v1 frames
   of an original `.SAV`/`.SCN` AI run — with `view: "all"` byte-identical to
   `totctl observe --stream` lines, CLI-matching defaults and the same
   window/view options as `campaign_observe` — and `save_replay_verify`
   re-drives a save from an inline order log, returning the CLI replay line.
   Install-backed stdio tests compare both against the CLI on the corpus save;
   the scenario inspector stays a CLI-only Python tool, documented as such.
-- Headless experiment manifests, format 1 (#203 generated-world slice,
-  unreleased): `totctl experiment check|run`.
+- Headless experiment manifests, format 1 (#203 generated-world slice):
+  `totctl experiment check|run`.
   - A JSON manifest declares a generated start, a policy, rounds, seeds (random
     variation) and named variants (deliberate changes).
   - Running it writes a verifiable `.totrec` per run and deterministic
@@ -37,7 +46,7 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
     rather than approximated.
 
   See docs/experiment-manifests.md.
-- Agent play follow-ups (#259, #260, #263, unreleased):
+- Agent play follow-ups (#259, #260, #263):
   - a quickstart for registering `totctl mcp` in Claude Code and Claude
     Desktop;
   - agents can buy, sell and close production at the quote shown in
@@ -47,19 +56,19 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
     statistics, live or from a recording's inert notes.
 
   Crates now inherit the workspace lints and repository field.
-- Experimental MCP agent play (#256, unreleased; owner-relaxed gate for
+- Experimental MCP agent play (#256,; owner-relaxed gate for
   headless generated campaigns only): `agent_start`, `agent_view`, `agent_map`,
   `agent_submit`, `agent_checkpoint`, `agent_close`. An MCP client plays one
   civilization against builtin-1 opponents through the human session driver:
   filtered view only, validated revision/request-ID commands, a 200-command
   per-turn budget, and checkpoints/recordings that replay without the agent.
-- MCP recording and session tools (#250 stage 1, unreleased): `recording_info`,
+- MCP recording and session tools (#250 stage 1): `recording_info`,
   `recording_verify` and `recording_log` (order-log slices by turn/civ) over
   `.totrec` bundles; live in-memory campaign sessions (`session_start`,
   `session_advance`, `session_observe`, `session_checkpoint`, `session_close`)
   whose reports and checkpoints equal straight `totctl campaign` runs. Design
   proposal for the client-attached advisor (stage 2): docs/mcp-client-attach.md.
-- Session recording bundles, format 1 (#206 first slice, unreleased): new crate
+- Session recording bundles, format 1 (#206 first slice): new crate
   `tot-record` with versioned `.totrec` bundles that separate reproducible
   gameplay checkpoints, derived observer frames (perspective-labelled) and inert
   presentation notes, and bind engine/Rules/resources identities. Saves are
@@ -67,7 +76,7 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   runs recoverable. CLI: `totctl campaign --record`, `totctl record
   info|verify|recover`. Human bundles are supported in the library; client
   controls are #207. See docs/recording-bundles.md.
-- Headless MCP server `totctl mcp` (#250 stage 1, unreleased): stdio JSON-RPC
+- Headless MCP server `totctl mcp` (#250 stage 1): stdio JSON-RPC
   transport with six read-only tools (`rules_summary`, `map_summary`,
   `events_summary`, `save_summary`, `run_turns`, `campaign_run`) whose results
   are byte-identical to the equivalent CLI invocations; campaign checkpoints and
@@ -79,18 +88,18 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   `totctl campaign --stream OUT` NDJSON), the spectator view or one civ's
   fogged view; `worldgen_summary` generates a world in memory. Existing CLI
   output is unchanged.
-- Own-civilization reports on both clients (#201/#202, unreleased; owner acceptance pending):
+- Own-civilization reports on both clients (#201/#202,; owner acceptance pending):
   City status (F1), Defense (F2), Attitude (F4), Trade (F5) and Wonders (F7) with sortable columns, row selection, paging
   and drill-down into an own city that returns to the report. Engine views
   (`HumanSession::report`) are derived from the filtered view only and are inert.
-- Public-figure reports on both clients (#201/#202, unreleased): Ranked cities
+- Public-figure reports on both clients (#201/#202): Ranked cities
   (F8), Score (F9) and Demographics (F11). Like the original's public reports
   (U23/U24) they list every living civilization; the score is the engine's
   native power score with its standard components, demographics give your
   value, the best civilization's and your rank. Built through
   `HumanSession::any_report` from public world figures only, and as inert as
   the own-civ views.
-- Civilopedia reference lookup on both clients (#201/#202, unreleased): `tot_kit::Pedia` decodes the
+- Civilopedia reference lookup on both clients (#201/#202): `tot_kit::Pedia` decodes the
   profile's own `Describe.txt` (checked against an independent inventory of all nine installed files),
   with category browsing, reading, and a help button in the required research prompt that returns to
   the same choice. Unavailable in the open demo; text is never committed.

@@ -3639,7 +3639,7 @@ contract; original new-game initialization parity is not claimed.
 
 [generated-campaign-v1.json](generated-campaign-v1.json) records Rules hashes,
 setup and validation context. [The full authored-rules checkpoint golden](generated-campaign-v1.ctc)
-is regenerated for engine v0.18.0; only the exact-version header changes from
+is regenerated for engine v0.19.0; only the exact-version header changes from
 the v0.16 fixture, with metadata hash/version refreshed. It still contains every
 order and round fingerprint for 100 rounds of AI v1, including
 the final fingerprint `b22e4340b6ab8bf6`. It reaches 20 cities, 27 population,

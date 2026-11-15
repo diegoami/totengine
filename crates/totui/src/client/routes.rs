@@ -4,6 +4,7 @@
 //! state only (draft shares, locks, which dialog is open). Every committed change
 //! goes through an engine `Command`; required decisions (`Government`, rate
 //! review, research) cannot be dismissed into the map.
+use super::style;
 use super::*;
 use engine::rates::{max_rate, redistribute, Slider};
 
@@ -441,17 +442,17 @@ impl Client {
                         u32::from(*cap) * 10
                     ),
                     14,
-                    "#eee8d4",
+                    style::TEXT,
                 );
                 for (i, name) in ROWS.iter().enumerate() {
                     let y = 178. + i as f64 * 64.;
                     if i == *row {
-                        draws.push(rect(206., y - 6., 636., 42., "#6b7057"));
+                        draws.push(rect(206., y - 6., 636., 42., style::SELECT));
                     }
-                    line(draws, y + 6., name, 17, "#fff0b5");
+                    line(draws, y + 6., name, 17, style::TEXT_BRIGHT);
                     for cell in 0..10u8 {
                         let color = if cell < draft[i] {
-                            "#e8c85a"
+                            style::GOLD
                         } else if cell < *cap {
                             "#2c3326"
                         } else {
@@ -464,7 +465,7 @@ impl Client {
                         y + 6.,
                         &format!("{}%", u32::from(draft[i]) * 10),
                         17,
-                        "#f4eedb",
+                        style::TEXT_FIELD,
                     ));
                 }
                 if let Some(q) = quote {
@@ -479,7 +480,7 @@ impl Client {
                             q.net_income()
                         ),
                         16,
-                        "#eee8d4",
+                        style::TEXT,
                     );
                     line(
                         draws,
@@ -489,7 +490,7 @@ impl Client {
                             q.science_output, q.luxuries
                         ),
                         16,
-                        "#eee8d4",
+                        style::TEXT,
                     );
                     if q.disorder_cities > 0 {
                         line(
@@ -497,19 +498,19 @@ impl Client {
                             444.,
                             &format!("{} city(ies) would be in disorder", q.disorder_cities),
                             16,
-                            "#ffba8a",
+                            style::WARN,
                         );
                     }
                 }
                 let (hint, color) = if review.is_some() {
                     (
                         "Required after the government change · Enter applies · Esc resets the split",
-                        "#ffba8a",
+                        style::WARN,
                     )
                 } else {
                     (
                         "Up/Down row · Left/Right change · L lock · Enter applies · Esc discards",
-                        "#eee8d4",
+                        style::TEXT,
                     )
                 };
                 line(draws, 500., hint, 13, color);
@@ -519,7 +520,7 @@ impl Client {
                         524.,
                         "Locked shares keep their value while the others move.",
                         13,
-                        "#eee8d4",
+                        style::TEXT,
                     );
                 }
             }
@@ -538,7 +539,7 @@ impl Client {
                 .iter()
                 .enumerate()
                 {
-                    line(draws, 190. + i as f64 * 40., s, 17, "#eee8d4");
+                    line(draws, 190. + i as f64 * 40., s, 17, style::TEXT);
                 }
             }
             Modal::Government { .. } => {
@@ -547,7 +548,7 @@ impl Client {
                     151.,
                     "Choose your new government · required · Esc keeps this open",
                     13,
-                    "#ffba8a",
+                    style::WARN,
                 );
             }
             Modal::Science => {
@@ -586,7 +587,7 @@ impl Client {
                 .iter()
                 .enumerate()
                 {
-                    line(draws, 240. + i as f64 * 34., s, 17, "#eee8d4");
+                    line(draws, 240. + i as f64 * 34., s, 17, style::TEXT);
                 }
             }
             Modal::Goal => {
@@ -595,7 +596,7 @@ impl Client {
                     151.,
                     "Arrow keys select · Enter sets the goal · Esc returns to the advisor",
                     13,
-                    "#eee8d4",
+                    style::TEXT,
                 );
             }
             _ => (),

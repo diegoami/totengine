@@ -109,6 +109,9 @@ fn key(k: Keycode, shift: bool, ctrl: bool) -> Option<String> {
         Keycode::F5 => "F5",
         Keycode::F6 => "F6",
         Keycode::F7 => "F7",
+        Keycode::F8 => "F8",
+        Keycode::F9 => "F9",
+        Keycode::F11 => "F11",
         Keycode::Tab => {
             if shift {
                 "ShiftTab"
@@ -877,6 +880,9 @@ mod tests {
             (Keycode::F1, "F1"),
             (Keycode::F2, "F2"),
             (Keycode::F5, "F5"),
+            (Keycode::F8, "F8"),
+            (Keycode::F9, "F9"),
+            (Keycode::F11, "F11"),
         ] {
             assert_eq!(key(k, false, false).as_deref(), Some(want));
         }

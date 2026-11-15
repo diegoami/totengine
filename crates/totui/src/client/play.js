@@ -25,6 +25,14 @@ function id() {
 function resize() {
   scale = Math.min(innerWidth / 1024, innerHeight / 768);
   stage.style.transform = `translate(${(innerWidth - 1024 * scale) / 2}px,${(innerHeight - 768 * scale) / 2}px) scale(${scale})`;
+  // Native-resolution backing store (#281): the element stays 1024x768 CSS px
+  // and the stage transform scales it, so on-screen device pixels are
+  // 1024*scale*dpr wide — exactly the backing store below. Text renders
+  // vector-crisp through the draw transform; sprites stay nearest-neighbour.
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(1024 * scale * dpr);
+  canvas.height = Math.round(768 * scale * dpr);
+  drawCanvas();
 }
 addEventListener("resize", resize);
 resize();
@@ -58,6 +66,11 @@ async function sprite(key) {
 let paintedFrame = null, paintedImages = new Map();
 function drawCanvas() {
   if (!paintedFrame) return;
+  // Draw in logical 1024x768 coordinates; the transform maps them onto the
+  // native-resolution backing store set in resize() (#281).
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+  ctx.clearRect(0, 0, 1024, 768);
   ctx.imageSmoothingEnabled = false;
   for (const d of paintedFrame.draws) {
     switch (d.kind) {

@@ -48,6 +48,12 @@ difficulty and map size are prefilled on the next launch. An explicit
 deliberately not remembered — it regenerates per launch. Delete the file to
 reset the prefill.
 
+Both clients scale the 1024×768 logical stage to any window size. The browser
+renders at native resolution (text stays vector-crisp at any scale and pixel
+art stays nearest-neighbour); the desktop opens at the largest comfortable
+default for the display — 2× on 4K, 1.5× on 1440p, the logical size on
+1080p-and-below — and is freely resizable.
+
 ## Checkpoint versions
 
 Engine checkpoints are version-bound. The v0.16 candidate loads v0.16 engine

@@ -677,6 +677,12 @@ impl Client {
                     && (100.0..680.0).contains(&y)
                 {
                     self.map_click(x, y, id)
+                } else if self.view().is_some_and(|v| v.decision.is_some()) {
+                    // A click that lands on nothing while a required choice is
+                    // pending gets the same visible reason the keys give
+                    // (#283/#284: no silent dead zones during acceptance).
+                    self.status = "Resolve the required choice first; Esc returns to inspection, the toolbar Research button reopens it.".into();
+                    Ok(())
                 } else {
                     Ok(())
                 }

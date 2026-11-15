@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Turn-transition feedback (#283, UI quality U1c first slice): the title bar
+  now always carries the current round (`… · Turn 12`), and while the
+  opponents run a framed strip over the map says what is happening and that
+  waiting or reconnecting is safe — the end-of-turn wait is no longer a
+  silent status line. The typography ladder consolidation from #283 remains
+  for a visually verified follow-up.
 - One styling system for every screen (#282, UI quality U1b): a single
   `style` module now owns the palette (parchment/olive tokens, the
   near-duplicate golds and text shades consolidated), the shared modal frame

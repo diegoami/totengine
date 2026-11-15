@@ -173,22 +173,6 @@ fn font_path() -> PathBuf {
         PathBuf::from("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
     }
 }
-/// Raw window mouse coordinates → the logical 1024×768 stage, including SDL
-/// logical-size scaling and letterbox centering (#281). Pure math for tests.
-fn logical_coords(lw: u32, lh: u32, ow: u32, oh: u32, x: i32, y: i32) -> (i32, i32) {
-    if ow == 0 || oh == 0 || (lw == 0 || lh == 0) || (ow == lw && oh == lh) {
-        return (x, y);
-    }
-    let (lw, lh, ow, oh) = (f64::from(lw), f64::from(lh), f64::from(ow), f64::from(oh));
-    let scale = (ow / lw).min(oh / lh);
-    let ox = (ow - lw * scale) / 2.0;
-    let oy = (oh - lh * scale) / 2.0;
-    (
-        ((f64::from(x) - ox) / scale).round() as i32,
-        ((f64::from(y) - oy) / scale).round() as i32,
-    )
-}
-
 /// The default window size (#281): the largest of 2×, 1.5× or 1× of the
 /// logical 1024×768 stage that fits about 80% of the display, or a fitted
 /// fallback on screens smaller than the stage. Never below the logical size.
@@ -298,12 +282,10 @@ pub fn run(mut client: Client) -> Result<(), String> {
                     clicks,
                     ..
                 } => {
-                    // SDL delivers raw window coordinates; map them onto the
-                    // logical stage (scale + letterbox) so clicks land on the
-                    // button the pointer is over at any window size (#281).
-                    let (lw, lh) = canvas.logical_size();
-                    let (ow, oh) = canvas.output_size().unwrap_or((lw, lh));
-                    let (x, y) = logical_coords(lw, lh, ow, oh, x, y);
+                    // With set_logical_size, SDL's renderer event watch has
+                    // already mapped these onto the logical 1024x768 stage
+                    // (scale, letterbox and high-DPI). Mapping them again
+                    // double-scaled every click at non-1x sizes (#292).
                     Some(pointer_input(&client, x, y, clicks))
                 }
                 Event::TextInput { text, .. } => {
@@ -623,24 +605,6 @@ pub fn run(mut client: Client) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn mouse_coordinates_map_onto_the_logical_stage_at_any_window_size() {
-        // 1x window: identity.
-        assert_eq!(logical_coords(1024, 768, 1024, 768, 324, 67), (324, 67));
-        // 1.5x window (the 1440p default): a click on the Research button's
-        // raw position lands on the same logical point.
-        assert_eq!(logical_coords(1024, 768, 1536, 1152, 486, 100), (324, 67));
-        // 2x window: same logical point again.
-        assert_eq!(logical_coords(1024, 768, 2048, 1536, 648, 134), (324, 67));
-        // Letterboxed non-16:10 window: the stage is centered horizontally.
-        // 1600x900 window: scale = 900/768 = 1.171875, offset x = 200.
-        // x=580 -> (580-200)/1.171875 = 324.27 -> 324.
-        assert_eq!(logical_coords(1024, 768, 1600, 900, 580, 78), (324, 67));
-        assert_eq!(logical_coords(1024, 768, 1600, 900, 579, 78), (323, 67));
-        // Degenerate sizes pass through unchanged.
-        assert_eq!(logical_coords(1024, 768, 0, 0, 5, 6), (5, 6));
-    }
 
     #[test]
     fn default_window_size_picks_the_largest_comfortable_scale() {

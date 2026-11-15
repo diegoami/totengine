@@ -936,7 +936,13 @@ impl Client {
                 let unit = self.active.ok_or("Select an own settler first")?;
                 self.order(Command::BeginFound { unit })?;
             }
-            Action::Research => self.required(),
+            // A pending required choice reopens; with none, the toolbar
+            // button shows the Science advisor (current topic and goal)
+            // instead of silently doing nothing (#292).
+            Action::Research => match self.view().and_then(|v| v.decision) {
+                Some(_) => self.required(),
+                None => self.open_science()?,
+            },
             Action::Rates => self.open_rates()?,
             Action::Report(family) => self.open_report(family)?,
             Action::Pedia => self.open_pedia()?,

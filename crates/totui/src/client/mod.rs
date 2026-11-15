@@ -761,7 +761,17 @@ impl Client {
                 }
                 "PageDown" => self.action(Action::Page(1)),
                 "PageUp" => self.action(Action::Page(-1)),
-                _ => Ok(()),
+                // A key the open modal does not handle: during a REQUIRED
+                // choice, say so instead of swallowing it silently — live,
+                // the route keys looked "not connected" (#283/#284).
+                _ => {
+                    if self.view().is_some_and(|v| v.decision.is_some())
+                        && (key.starts_with('F') || key.len() == 1)
+                    {
+                        self.status = "Resolve the required choice first; Esc returns to inspection, the toolbar Research button reopens it.".into();
+                    }
+                    Ok(())
+                }
             }
         } else if self.city_open {
             self.city_key(key)

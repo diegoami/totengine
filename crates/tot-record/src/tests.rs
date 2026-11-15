@@ -312,6 +312,70 @@ fn human_session() -> HumanSession {
 }
 
 #[test]
+fn human_recordings_carry_the_actual_opponent_policy_and_reject_mismatches() {
+    // An ai-v1 recording labels itself ai-v1 and verifies (#276).
+    let mut s = HumanSession::generated_with_policy(
+        config(7),
+        rules(),
+        1,
+        engine::campaign::AiPolicy::AiV1,
+    )
+    .unwrap();
+    let mut guard = 0;
+    while s.phase() == engine::human::Phase::Opponents {
+        assert!(s.advance(64) > 0);
+        guard += 1;
+        assert!(guard < 1000);
+    }
+    if let Some(engine::human::Decision::Research { id, available, .. }) = s.view().decision {
+        let request = engine::human::Request {
+            civ: 1,
+            revision: s.view().revision,
+            id: 1,
+            command: engine::human::Command::Research {
+                decision: id,
+                advance: available[0],
+            },
+        };
+        s.submit(request).unwrap();
+    }
+    let checkpoint = s.checkpoint("authored-test-resources-v1");
+    assert!(checkpoint.contains("\npolicy ai-v1\n"));
+    let b = Bundle::human(
+        &checkpoint,
+        &rules(),
+        "authored-test-resources-v1",
+        StopReason::Stopped,
+        "test",
+    )
+    .unwrap();
+    assert_eq!(b.manifest.policy, "ai-v1");
+    assert_eq!(b.verify(&rules()).unwrap().content, Content::Reproducible);
+    // A manifest that lies about the policy is rejected by verification.
+    let mut tampered = b.clone();
+    tampered.manifest.policy = "builtin-1".into();
+    assert!(tampered
+        .verify(&rules())
+        .unwrap_err()
+        .contains("manifest policy builtin-1 differs"));
+    // The default policy still round-trips unchanged.
+    let d = human_session();
+    let plain = Bundle::human(
+        &d.checkpoint("authored-test-resources-v1"),
+        &rules(),
+        "authored-test-resources-v1",
+        StopReason::Stopped,
+        "test",
+    )
+    .unwrap();
+    assert_eq!(plain.manifest.policy, "builtin-1");
+    assert_eq!(
+        plain.verify(&rules()).unwrap().content,
+        Content::Reproducible
+    );
+}
+
+#[test]
 fn human_recordings_bind_resources_and_replay() {
     let s = human_session();
     let checkpoint = s.checkpoint("authored-test-resources-v1");

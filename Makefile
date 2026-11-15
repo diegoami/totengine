@@ -19,6 +19,7 @@ test: rust
 	python3 -m unittest discover -s tools -p 'test_preview_client.py'
 	python3 -m unittest discover -s tools -p 'test_prepare_isotrident.py'
 	python3 -m unittest discover -s tools -p 'test_scenario_inventory.py'
+	python3 -m unittest discover -s tools -p 'test_evidence_metadata.py'
 	python3 -m py_compile tools/scenario_inventory.py
 	python3 -m py_compile tools/preview_client.py
 	python3 -m py_compile tools/worldgen_compare.py tools/worldgen_capture_manifest.py tools/oracle/dialog_guard.py tools/ai_research_choice_check.py tools/ai_research_value_check.py tools/ai_research_adapter_check.py tools/ai_production_compare.py tools/ai_campaign_audit.py tools/capture_check.py

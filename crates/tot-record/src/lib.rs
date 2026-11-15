@@ -545,12 +545,19 @@ impl Bundle {
             .nth(2)
             .and_then(|l| l.strip_prefix("setup "))
             .ok_or("human checkpoint has no setup line")?;
+        // The manifest carries the opponents' policy the checkpoint records
+        // (#276): derive it, never assume the default.
+        let policy = checkpoint
+            .lines()
+            .find_map(|l| l.strip_prefix("policy "))
+            .ok_or("human checkpoint has no policy line")?
+            .to_string();
         Ok(Bundle {
             manifest: Manifest {
                 kind: Kind::Human,
                 engine: env!("CARGO_PKG_VERSION").into(),
                 setup: setup.into(),
-                policy: "builtin-1".into(),
+                policy,
                 human: Some(view.observation.civ),
                 rules: rules_identity(rules),
                 resources: Some(resources.into()),
@@ -635,6 +642,19 @@ impl Bundle {
                     || u32::try_from(view.observation.turn).ok() != Some(m.progress)
                 {
                     return Err("manifest human/progress differ from the gameplay".into());
+                }
+                // The declared opponents' policy must be the one the gameplay
+                // checkpoint actually restores (#276).
+                let restored = session.checkpoint(resources);
+                let recorded = restored
+                    .lines()
+                    .find_map(|l| l.strip_prefix("policy "))
+                    .ok_or("replayed human checkpoint has no policy line")?;
+                if recorded != m.policy {
+                    return Err(format!(
+                        "manifest policy {policy} differs from the gameplay's {recorded}",
+                        policy = m.policy
+                    ));
                 }
                 if self.observer.is_some() {
                     return Err("observer frames for human recordings are not supported".into());

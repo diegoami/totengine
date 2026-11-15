@@ -201,5 +201,33 @@ fn mcp_save_tools_match_the_cli_for_a_corpus_save() {
         "{}",
         outside[0]
     );
+    // #275: an outside-root symlink to an in-root save, with an authored
+    // sibling Rules.txt beside the link, cannot smuggle that read past the
+    // root boundary (first review round reproduction).
+    let link_dir = dir.join("outside-link");
+    std::fs::create_dir_all(&link_dir).unwrap();
+    std::fs::write(link_dir.join("Rules.txt"), "@CIVILIZE\n").unwrap();
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(
+        home.join("Original/Ph_Auto2.SAV"),
+        link_dir.join("Linked.SAV"),
+    )
+    .unwrap();
+    #[cfg(unix)]
+    {
+        let smuggle = mcp_session(
+            &home,
+            &[tool_call(
+                1,
+                "save_summary",
+                json!({"path": link_dir.join("Linked.SAV")}),
+            )],
+        );
+        assert!(
+            error_text(&smuggle[0]).contains("outside the configured roots"),
+            "{}",
+            smuggle[0]
+        );
+    }
     std::fs::remove_dir_all(dir).unwrap();
 }

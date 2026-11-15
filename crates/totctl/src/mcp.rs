@@ -242,23 +242,18 @@ impl Server {
             }
             "save_summary" => {
                 let a: SaveArgs = parse_args(args)?;
+                let path = self.path(&a.path)?;
+                self.check_save_siblings(path)?;
                 let rules = self.optional_path(a.rules)?;
-                Ok(vec![crate::boot_report(
-                    self.path(&a.path)?,
-                    rules,
-                    a.turns,
-                    a.seed,
-                )?])
+                Ok(vec![crate::boot_report(path, rules, a.turns, a.seed)?])
             }
             "run_turns" => {
                 let a: RunArgs = parse_args(args)?;
+                let path = self.path(&a.path)?;
+                self.check_save_siblings(path)?;
                 let rules = self.optional_path(a.rules)?;
                 Ok(vec![crate::run_report(
-                    self.path(&a.path)?,
-                    a.turns,
-                    a.seed,
-                    rules,
-                    a.no_rules,
+                    path, a.turns, a.seed, rules, a.no_rules,
                 )?])
             }
             "save_observe" => {
@@ -267,7 +262,9 @@ impl Server {
             }
             "save_replay_verify" => {
                 let a: SaveReplayArgs = parse_args(args)?;
-                let line = crate::replay_report(self.path(&a.path)?, &a.log)
+                let path = self.path(&a.path)?;
+                self.check_save_siblings(path)?;
+                let line = crate::replay_report(path, &a.log)
                     .map_err(|e| format!("replay FAILED: {e}"))?;
                 Ok(vec![line])
             }
@@ -577,8 +574,9 @@ impl Server {
                 ))
             }
         };
-        let path = self.path(&a.path)?;
-        let mut observer = crate::live_observer(path, a.turns, a.seed, ai)?;
+        let path = self.path(&a.path)?.to_string();
+        self.check_save_siblings(&path)?;
+        let mut observer = crate::live_observer(&path, a.turns, a.seed, ai)?;
         let mut bytes = Vec::new();
         observer.export(&mut bytes).map_err(|e| e.to_string())?;
         let text = String::from_utf8(bytes).map_err(|e| e.to_string())?;
@@ -594,7 +592,7 @@ impl Server {
             Some(from) => from,
             None => total.saturating_sub(a.count),
         };
-        let name = std::path::Path::new(path)
+        let name = std::path::Path::new(&path)
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default();
@@ -786,13 +784,23 @@ impl Server {
     }
 
     /// Canonicalize a requested path and require it inside a configured root.
+    /// Both the requested path itself (made absolute without following
+    /// symlinks) and its canonical target must be inside a root (#275):
+    /// otherwise a symlink outside the roots whose target lives inside one
+    /// would smuggle sibling-relative reads past the boundary.
     fn path<'p>(&self, requested: &'p str) -> std::result::Result<&'p str, String> {
         if self.roots.is_empty() {
             return Err("no filesystem roots configured".into());
         }
+        let lexical = normalize(
+            &std::path::absolute(requested)
+                .map_err(|e| format!("cannot resolve {requested}: {e}"))?,
+        );
         let canonical = std::fs::canonicalize(requested)
             .map_err(|e| format!("cannot resolve {requested}: {e}"))?;
-        if self.roots.iter().any(|root| canonical.starts_with(root)) {
+        if self.roots.iter().any(|root| lexical.starts_with(root))
+            && self.roots.iter().any(|root| canonical.starts_with(root))
+        {
             Ok(requested)
         } else {
             Err(format!(
@@ -806,6 +814,26 @@ impl Server {
         }
     }
 
+    /// Save tools discover `Rules.txt`/`Events.txt` next to the save; those
+    /// implicit reads must stay inside the configured roots too (#275),
+    /// including when a sibling is itself a symlink pointing out.
+    fn check_save_siblings(&self, path: &str) -> std::result::Result<(), String> {
+        let folder = std::path::Path::new(path)
+            .parent()
+            .ok_or("save has no parent folder")?;
+        for name in ["Rules.txt", "Events.txt"] {
+            if let Ok(canonical) = std::fs::canonicalize(folder.join(name)) {
+                if !self.roots.iter().any(|root| canonical.starts_with(root)) {
+                    return Err(format!(
+                        "{} resolves outside the configured roots",
+                        folder.join(name).display()
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
     fn optional_path(&self, path: Option<String>) -> std::result::Result<Option<String>, String> {
         path.map(|p| self.path(&p).map(str::to_string)).transpose()
     }
@@ -813,6 +841,24 @@ impl Server {
 
 fn parse_args<T: for<'de> Deserialize<'de>>(args: &Value) -> std::result::Result<T, String> {
     serde_json::from_value(args.clone()).map_err(|e| format!("invalid arguments: {e}"))
+}
+
+/// Lexically normalize `.` and `..` components without following symlinks:
+/// a requested path that climbs and re-enters a root still passes the
+/// boundary check, while a symlinked final component stays visible to it
+/// (#275).
+fn normalize(path: &std::path::Path) -> std::path::PathBuf {
+    let mut out = std::path::PathBuf::new();
+    for component in path.components() {
+        match component {
+            std::path::Component::CurDir => {}
+            std::path::Component::ParentDir => {
+                out.pop();
+            }
+            other => out.push(other.as_os_str()),
+        }
+    }
+    out
 }
 
 #[derive(Deserialize)]
@@ -1679,6 +1725,47 @@ mod tests {
         let path = fixtures().join("campaign-rules.txt");
         let response = call(&no_roots, "rules_summary", json!({"path": path}));
         assert!(error_text(&response).contains("no filesystem roots"));
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn save_paths_and_siblings_cannot_smuggle_reads_past_the_roots() {
+        let dir = std::env::temp_dir().join(format!("totctl-mcp-symlink-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        let root = dir.join("root");
+        let outside = dir.join("outside");
+        std::fs::create_dir_all(root.join("saves")).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        std::fs::write(root.join("saves/game.SAV"), b"stub").unwrap();
+        std::fs::write(outside.join("Rules.txt"), b"@CIVILIZE\n").unwrap();
+        let s = Server::new(vec![root.clone()]);
+        // An outside-root symlink whose target lives inside a root is
+        // rejected outright: its sibling-relative reads would escape (#275).
+        std::os::unix::fs::symlink(root.join("saves/game.SAV"), dir.join("Linked.SAV")).unwrap();
+        assert!(s
+            .path(dir.join("Linked.SAV").to_str().unwrap())
+            .unwrap_err()
+            .contains("outside the configured roots"));
+        // An in-root save whose sibling Rules.txt resolves outside a root is
+        // rejected for the save tools that discover siblings.
+        std::os::unix::fs::symlink(outside.join("Rules.txt"), root.join("saves/Rules.txt"))
+            .unwrap();
+        let save = root.join("saves/game.SAV");
+        assert!(s
+            .check_save_siblings(save.to_str().unwrap())
+            .unwrap_err()
+            .contains("resolves outside"));
+        // A plain in-root sibling is fine, and `..` paths that re-enter the
+        // root still work.
+        std::fs::remove_file(root.join("saves/Rules.txt")).unwrap();
+        std::fs::write(root.join("saves/Rules.txt"), b"@CIVILIZE\n").unwrap();
+        assert!(s.check_save_siblings(save.to_str().unwrap()).is_ok());
+        let climbing = dir.join("root/saves/../saves/game.SAV");
+        assert_eq!(
+            s.path(climbing.to_str().unwrap()).unwrap(),
+            climbing.to_str().unwrap()
+        );
+        std::fs::remove_dir_all(&dir).unwrap();
     }
 
     #[test]

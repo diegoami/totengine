@@ -43,15 +43,26 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   after loading derived #194 fixtures (pristine baseline survived 7+ min
   idle); Xvfb died once mid-session when a wrapping `timeout` SIGTERM'd a
   restart script — start Xvfb with `setsid nohup` so it outlives shells.
-  Ruled out: fixture bytes (pristine input also dead), wine bitness, missing
-  foreground focus alone. Before the next live-UI experiment, fix the input
-  path first (likely wine-10/wow64 window-management behavior at the
-  DirectDraw switch; `winject focus` needs the HWND it can no longer find).
-  Diagnostic shortcuts that paid off: `/proc/<pid>/status` State Z exposes a
-  dead game while memspool still lists it; compare the pristine save side by
-  side before blaming edited bytes; `pgrep -af '[x]yz'` self-matches when the
-  literal appears anywhere else in the command line (it matched
-  `memspool_ctrl.sh` once more).
+  Afternoon triage added: the enumeration loss happens **exactly at world
+  entry** (dialogs list fine seconds earlier); a frozen PPM surface does NOT
+  prove a hang — the main thread sits in a wineserver `select` waiting for
+  input, which is normal idle (check `/proc/<pid>/task/*/wchan`, expect
+  `anon_pipe_read`, before calling a wedge); walking child windows
+  (`EnumChildWindows`, now in `winject wins`) finds nothing either, the game's
+  windows are simply not in any external process's Win32 window set; a 16-bit
+  Xvfb breaks the wizard (launcher_pick cannot read the radio) — stay on x24.
+  Not the cause: wine version (unchanged since Nov 1), the prefix, bitness,
+  missing CD/audio (none configured, same as working sessions). Next steps
+  when picking this up: WINEDEBUG=+relay,+event tail around world entry for
+  the window-destroy/recreate sequence, a fresh test prefix, or a winedbg
+  thread backtrace at the blocked select. Machine rebooted 08:37 the same
+  morning; the previous post-reboot rig note (2026-11-02) needed only
+  explicit `winject focus`. Diagnostic shortcuts that paid off: `/proc/<pid>/
+  status` State Z exposes a dead game while memspool still lists it; compare
+  the pristine save side by side before blaming edited bytes; `pgrep -af
+  '[x]yz'` self-matches when the literal appears anywhere else in the command
+  line; never open `/proc/<pid>/fd/*` entries with a reader (grep hung on a
+  pipe endpoint) — `ls` only.
 
 - **A static decode of "initial values" is a claim about saved records
   too — check it against saves before shipping.** v0.6.0 claimed

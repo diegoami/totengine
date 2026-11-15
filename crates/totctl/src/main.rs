@@ -1308,30 +1308,85 @@ fn cmd_play(args: &[String]) -> ExitCode {
 }
 
 /// `totctl replay`: re-drive a game from its order log.
+/// The AI line-up `totctl observe` runs for every civilization (CLI
+/// `--builtin` default, `--ai-v1`, `--ai`). Shared with the MCP `save_observe`
+/// tool so both surfaces always build the same game (#254).
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ObserveAi {
+    Builtin,
+    AiV1,
+    AiV0,
+}
+
+/// Build the live observer for a save/scenario file: engine boot, sibling
+/// rules/events and the selected AI for every non-human civilization. The
+/// same path `totctl observe` takes without `--replay`.
+pub(crate) fn live_observer(
+    path: &str,
+    turns: usize,
+    seed: u64,
+    ai: ObserveAi,
+) -> Result<totui::Observer, String> {
+    let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
+    let (rules, events) = sibling_rules_events(path)?;
+    let name = std::path::Path::new(path)
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .into_owned();
+    let mut game = engine::player::Game::new(&name, &bytes, seed, rules, events)?;
+    for civ in 1..8 {
+        game.players[civ] = match ai {
+            ObserveAi::Builtin => Some(Box::new(engine::ai::BuiltInAi::new(
+                &game.rules,
+                seed,
+                civ as u8,
+            )?)),
+            ObserveAi::AiV1 => Some(Box::new(engine::ai::AiV1::new(
+                &game.rules,
+                seed,
+                civ as u8,
+            ))),
+            ObserveAi::AiV0 => Some(Box::new(engine::ai::AiV0::new(
+                &game.rules,
+                seed,
+                civ as u8,
+            ))),
+        };
+    }
+    Ok(totui::Observer::live(game, turns))
+}
+
+/// `totctl replay` and the MCP `save_replay_verify` tool: re-drive a save
+/// from its canonical order log. Ok carries the CLI's stdout line; Err is the
+/// failure reason the CLI prefixes with "replay FAILED".
+pub(crate) fn replay_report(path: &str, log: &str) -> Result<String, String> {
+    let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
+    let (rules, events) = sibling_rules_events(path)?;
+    let name = std::path::Path::new(path)
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let game = engine::player::Game::replay(&name, &bytes, rules, events, log)?;
+    Ok(format!(
+        "replay ok: turn {} checksum {:016x}\n",
+        game.world.turn,
+        game.world.checksum()
+    ))
+}
+
 fn cmd_replay(args: &[String]) -> ExitCode {
     let [path, log] = args else {
         eprintln!("usage: totctl replay <file.sav|scn> <order.log>");
         return ExitCode::from(2);
     };
-    let run = || -> Result<engine::player::Game, String> {
-        let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
+    let run = || -> Result<(), String> {
         let text = std::fs::read_to_string(log).map_err(|e| format!("read {log}: {e}"))?;
-        let (rules, events) = sibling_rules_events(path)?;
-        let name = std::path::Path::new(path)
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_default();
-        engine::player::Game::replay(&name, &bytes, rules, events, &text)
+        print!("{}", replay_report(path, &text)?);
+        Ok(())
     };
     match run() {
-        Ok(g) => {
-            println!(
-                "replay ok: turn {} checksum {:016x}",
-                g.world.turn,
-                g.world.checksum()
-            );
-            ExitCode::SUCCESS
-        }
+        Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("replay FAILED: {e}");
             ExitCode::from(1)
@@ -1391,40 +1446,25 @@ fn cmd_observe(args: &[String]) -> ExitCode {
                 "--log requires --stream; the live viewer offers an order-log download".into(),
             );
         }
-        let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
-        let (rules, events) = sibling_rules_events(path)?;
-        let name = std::path::Path::new(path)
-            .file_name()
-            .unwrap_or_default()
-            .to_string_lossy();
         let mut observer = if let Some(replay) = replay {
+            let bytes = std::fs::read(path).map_err(|e| format!("read {path}: {e}"))?;
+            let (rules, events) = sibling_rules_events(path)?;
+            let name = std::path::Path::new(path)
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy();
             let text =
                 std::fs::read_to_string(replay).map_err(|e| format!("read {replay}: {e}"))?;
             totui::Observer::replay(&name, &bytes, rules, events, &text)?
         } else {
-            let mut game = engine::player::Game::new(&name, &bytes, seed, rules, events)?;
-            for civ in 1..8 {
-                game.players[civ] = if builtin {
-                    Some(Box::new(engine::ai::BuiltInAi::new(
-                        &game.rules,
-                        seed,
-                        civ as u8,
-                    )?))
-                } else if ai_v1 {
-                    Some(Box::new(engine::ai::AiV1::new(
-                        &game.rules,
-                        seed,
-                        civ as u8,
-                    )))
-                } else {
-                    Some(Box::new(engine::ai::AiV0::new(
-                        &game.rules,
-                        seed,
-                        civ as u8,
-                    )))
-                };
-            }
-            totui::Observer::live(game, turns)
+            let ai = if builtin {
+                ObserveAi::Builtin
+            } else if ai_v1 {
+                ObserveAi::AiV1
+            } else {
+                ObserveAi::AiV0
+            };
+            live_observer(path, turns, seed, ai)?
         };
         if let Some(path) = stream {
             // Refuse accidental overwrites, including the user's input save.

@@ -358,6 +358,13 @@ fn human_recordings_carry_the_actual_opponent_policy_and_reject_mismatches() {
         .verify(&rules())
         .unwrap_err()
         .contains("manifest policy builtin-1 differs"));
+    // A manifest that lies about the setup is rejected too (#276 round 2).
+    let mut wrong_setup = b.clone();
+    wrong_setup.manifest.setup = "1 2 80 50 47 5 5 5 2".into();
+    assert!(wrong_setup
+        .verify(&rules())
+        .unwrap_err()
+        .contains("manifest setup 1 2 80 50 47 5 5 5 2 differs"));
     // The default policy still round-trips unchanged.
     let d = human_session();
     let plain = Bundle::human(

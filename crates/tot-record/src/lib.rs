@@ -643,16 +643,26 @@ impl Bundle {
                 {
                     return Err("manifest human/progress differ from the gameplay".into());
                 }
-                // The declared opponents' policy must be the one the gameplay
-                // checkpoint actually restores (#276).
+                // The declared setup and opponents' policy must be the ones
+                // the gameplay checkpoint actually restores (#276).
                 let restored = session.checkpoint(resources);
-                let recorded = restored
-                    .lines()
+                let mut lines = restored.lines();
+                let recorded_setup = lines
+                    .nth(2)
+                    .and_then(|l| l.strip_prefix("setup "))
+                    .ok_or("replayed human checkpoint has no setup line")?;
+                if recorded_setup != m.setup {
+                    return Err(format!(
+                        "manifest setup {setup} differs from the gameplay's {recorded_setup}",
+                        setup = m.setup
+                    ));
+                }
+                let recorded_policy = lines
                     .find_map(|l| l.strip_prefix("policy "))
                     .ok_or("replayed human checkpoint has no policy line")?;
-                if recorded != m.policy {
+                if recorded_policy != m.policy {
                     return Err(format!(
-                        "manifest policy {policy} differs from the gameplay's {recorded}",
+                        "manifest policy {policy} differs from the gameplay's {recorded_policy}",
                         policy = m.policy
                     ));
                 }

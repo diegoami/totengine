@@ -17,6 +17,14 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   management lives in scripts (`tools/oracle/stop_game.sh`,
   `restart_game.sh`, `memspool_ctrl.sh`); interactive commands only ever
   call those scripts.
+- **Verify client input by the coordinates delivered, not by one lucky
+  screenshot.** #289 "fixed" desktop clicks by mapping window coordinates
+  onto the logical stage, and one Xvfb screenshot seemed to confirm it. But
+  SDL's renderer already performs that mapping whenever `set_logical_size` is
+  in effect, so every click at 1.5×/2× was scaled twice and missed (#292). Log the raw
+  event coordinates once (`eprintln!` in a scratch build) and drive a
+  complete route (start, choose, toolbar) at a non-1× window before claiming
+  an input fix. Run the client yourself; don't stop at the unit test.
 - **Force the rig display.** A caller's inherited `DISPLAY=:0` leaked through
   `${DISPLAY:-:99}` and the game silently opened windows on the wrong screen
   (zero windows on :99, looked like a hung game). Rig scripts

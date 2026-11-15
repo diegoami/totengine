@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Desktop clicks land where the pointer is again at every window size (#292):
+  SDL already maps mouse events onto the 1024×768 logical stage when a
+  logical size is set, so the extra mapping added for #281 scaled every click
+  a second time. At the 1.5× and 2× default windows, toolbar buttons such as
+  Research and Cities were effectively unclickable. The toolbar Research
+  button also stops being a silent no-op once a topic is chosen: it now opens
+  the Science advisor (current topic, progress, goal), like F6.
 - Turn-transition feedback (#283, UI quality U1c first slice): the title bar
   now always carries the current round (`… · Turn 12`), and while the
   opponents run a framed strip over the map says what is happening and that

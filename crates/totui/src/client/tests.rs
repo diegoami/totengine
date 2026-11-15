@@ -3237,6 +3237,12 @@ fn blocked_routes_give_a_visible_reason_during_required_choices() {
             ..
         })
     ));
+    // With no choice pending, the toolbar Research button is not a dead
+    // button: it shows the Science advisor (#292, live owner report).
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    button(&mut c, "Research");
+    assert!(matches!(c.modal, Some(Modal::Science)), "{}", c.status);
 }
 
 #[test]

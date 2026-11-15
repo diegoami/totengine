@@ -1481,7 +1481,7 @@ fn tools() -> Vec<Value> {
         }),
         json!({
             "name": "agent_report",
-            "description": "EXPERIMENTAL (#256): turn-by-turn summary of the agent's civilization (cities, population, units, treasury, advances, research, government) and command statistics (accepted, engine-rejected and refused by reason, budget-exhausted turns). Give `game` for a live game or `path` for an agent .totrec recording; both give the same report. Observed state only, no strength claim.",
+            "description": "EXPERIMENTAL (#256): turn-by-turn summary of the agent's civilization (cities, population, units, treasury, advances, research, government) with the outcome so far (living civilizations, phase), plus command statistics (accepted, engine-rejected and refused by reason, budget-exhausted turns). Give `game` for a live game or `path` for an agent .totrec recording; both give the same report. Observed state only, no strength claim.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -2766,6 +2766,15 @@ mod tests {
         assert_eq!(history.last().unwrap()["turn"], 5);
         assert_eq!(history.len(), 5, "one summary per turn: {live}");
         assert_eq!(history.last().unwrap()["cities"], 1);
+        // The outcome so far: living civilizations and the phase (#263).
+        let last = history.last().unwrap();
+        let living = last["living_civs"].as_array().unwrap();
+        assert!(
+            living.contains(&json!(1)),
+            "the agent's civ is alive: {last}"
+        );
+        assert!(living.len() >= 2, "opponents are alive too: {last}");
+        assert_eq!(last["phase"], "your-turn", "{last}");
         let commands = &live["commands"];
         assert_eq!(commands["submitted"].as_u64().unwrap(), ids + 1);
         assert_eq!(commands["accepted"].as_u64().unwrap(), ids);

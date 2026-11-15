@@ -3210,6 +3210,36 @@ fn public_reports_open_from_keys_and_list_the_whole_world() {
 }
 
 #[test]
+fn blocked_routes_give_a_visible_reason_during_required_choices() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    button(&mut c, "Start Original");
+    // The opening research choice is pending; the report and route keys are
+    // refused, and the refusal must be VISIBLE (#283/#284: keys looked
+    // "not connected" live because the status never changed).
+    for k in ["F1", "F8", "F9", "F11", "F6"] {
+        key(&mut c, k);
+        assert!(
+            c.status.contains("required choice"),
+            "{k} refusal must be visible, status was: {}",
+            c.status
+        );
+    }
+    // Answer the choice; now the same keys work.
+    c.required();
+    key(&mut c, "ArrowDown");
+    key(&mut c, "Enter");
+    key(&mut c, "F8");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::RankedCities,
+            ..
+        })
+    ));
+}
+
+#[test]
 fn turn_feedback_banner_and_title_round() {
     let f = Fixture::new();
     let mut c = f.client();

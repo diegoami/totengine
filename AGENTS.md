@@ -68,6 +68,25 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+**v0.19.0 is RELEASED** at exactly reviewed/tagged SHA
+`3529baaabaefc3776b3e93dd2596f23ebfe7e53c` (Kimi K3.1 Pro AGREE on #274,
+round three, after two BLOCK rounds whose findings — #275 symlink boundary,
+#276 recording setup/policy verification, #277 F8/F9/F9/F11 adapters, #278
+golden metadata — were fixed in #279/#280 and re-verified). Theme: the
+experimental MCP agent interface under the owner-relaxed gate (decision 0008),
+session recording bundles v1 (#206 slice), the headless MCP server with save
+observe/replay CLI parity (#250 stage 1, #254), experiment manifests format 1
+(#203 slice), the eight-family reports slice with the Civilopedia on both
+clients (#201/#202 slices) and client setup memory. Reviewer reproduced the
+full install-backed suite: 337 Rust tests, 45 Python, goldens 24/24,
+desktop-feature tests, byte-identical evidence regeneration and the campaign
+golden. Source/CLI release without client archives; milestones 16 and 19 stay
+open pending the owner's acceptance routes; #259's formal acceptance is not
+yet recorded. The oracle in-world input regression (docs/lessons.md,
+2026-11-15) is open and blocks only the #194 on-screen chooser observation.
+Release record: `docs/evidence/mcp-v019-release.json`. Keep the tag at the
+exact reviewed SHA.
+
 **v0.17.0 is RELEASED** at exactly reviewed/tagged SHA
 `70dea8d7e61e74125c9faa027bf7a6abb7cbdaff` (Kimi K3.1 Pro AGREE on #224,
 round three). Milestone 15 and #192/#193/#224 are closed. The reviewer

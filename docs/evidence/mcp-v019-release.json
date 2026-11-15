@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "tag": "v0.19.0",
+  "released": "2026-11-15",
+  "sha": "3529baaabaefc3776b3e93dd2596f23ebfe7e53c",
+  "theme": "MCP agent interface, session recordings, headless experiments and the reports slice",
+  "milestone_issue": 274,
+  "review": {
+    "verdict": "AGREE",
+    "reviewer_model": "Kimi K3.1 Pro (implemented none of the candidate)",
+    "rounds": 3,
+    "round_history": [
+      {"round": 1, "verdict": "BLOCK", "must_fix": [275, 276, 278], "follow_up": [277], "fixed_in": 279},
+      {"round": 2, "verdict": "BLOCK", "must_fix": [276], "note": "residual setup comparison", "fixed_in": 280},
+      {"round": 3, "verdict": "AGREE", "issues_opened": 0}
+    ]
+  },
+  "checks_on_candidate": {
+    "make_test_with_install": "337 Rust passed / 0 failed / 10 ignored; 45 Python across five suites; golden corpus 24/24",
+    "fmt_clippy": "clean (workspace, all targets, -D warnings)",
+    "desktop_feature_tests": "47 passed / 0 failed / 9 ignored",
+    "evidence_regeneration": "scenario compact inventory and Civilopedia inventory byte-identical; 13/13 baseline source hashes match",
+    "campaign_golden": "927ec8498aad66987f0304b34798f2ffd49155ed3cf314a023145e15afeabd30 matches metadata"
+  },
+  "shipped_prs_since_v018": [246, 247, 248, 249, 251, 252, 253, 258, 264, 265, 267, 268, 269, 270, 271, 272, 273, 279, 280],
+  "shipped": [
+    "Experimental MCP agent play under the owner-relaxed gate (#256; #259-#263 delivered, #260/#261/#263 closed)",
+    "totctl mcp server stage 1 with save observation/replay CLI parity (#250 stage 1, #254)",
+    "Session recording bundles v1 with journal recovery (#206 first slice; #207 continues)",
+    "Headless experiment manifests format 1 (#203 generated-world slice; #204 continues)",
+    "Eight-family reports + Civilopedia on both clients (#201/#202 slices; owner acceptance pending)",
+    "Client setup memory (#266 shortlist item 1)"
+  ],
+  "explicit_limits": [
+    "No native importer or scenario runtime admission activated (#197/#198 open)",
+    "Source/CLI release: no client archives packaged",
+    "Milestones 16 and 19 not closed by this tag (owner acceptance routes pending)",
+    "Oracle in-world input regression open (docs/lessons.md 2026-11-15); #194 on-screen chooser unconfirmed",
+    "#259 formal owner acceptance not yet recorded; #221 CI wiring credential-blocked"
+  ]
+}

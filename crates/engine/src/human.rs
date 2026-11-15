@@ -211,6 +211,8 @@ pub struct HumanSession {
     config: NewGameConfig,
     game: Game,
     human: u8,
+    /// The opponents' policy (#261); recorded in checkpoints.
+    policy: crate::campaign::AiPolicy,
     revision: u64,
     cursor: u8,
     actions: usize,
@@ -242,17 +244,36 @@ impl HumanSession {
             .ok_or("human request IDs exhausted")
     }
     pub fn generated(config: NewGameConfig, rules: Rules, human: u8) -> Result<Self, String> {
+        Self::generated_with_policy(config, rules, human, crate::campaign::AiPolicy::BuiltIn1)
+    }
+
+    /// `generated` with the opponents' policy (#261). The human seat has no
+    /// AI player either way; only the opponents' line-up changes, and the
+    /// choice is recorded in checkpoints so replays restore it.
+    pub fn generated_with_policy(
+        config: NewGameConfig,
+        rules: Rules,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+    ) -> Result<Self, String> {
         if !(1..=config.civilizations).contains(&human) {
             return Err("human civilization is outside the generated setup".into());
         }
         let mut game = Game::generated_human(config, rules, human)?;
         for civ in 1..=config.civilizations {
             if civ != human {
-                game.players[civ as usize] = Some(Box::new(BuiltInAi::new(
-                    &game.rules,
-                    u64::from(config.gameplay_seed),
-                    civ,
-                )?));
+                game.players[civ as usize] = match policy {
+                    crate::campaign::AiPolicy::AiV1 => Some(Box::new(crate::ai::AiV1::new(
+                        &game.rules,
+                        u64::from(config.gameplay_seed),
+                        civ,
+                    ))),
+                    crate::campaign::AiPolicy::BuiltIn1 => Some(Box::new(BuiltInAi::new(
+                        &game.rules,
+                        u64::from(config.gameplay_seed),
+                        civ,
+                    )?)),
+                };
             }
         }
         let mut session = Self {
@@ -262,6 +283,7 @@ impl HumanSession {
             config,
             game,
             human,
+            policy,
             revision: 0,
             cursor: 1,
             actions: 0,

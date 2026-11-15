@@ -676,9 +676,10 @@ impl Server {
             || a.civs.is_some()
             || a.difficulty.is_some()
             || a.civ.is_some();
-        if a.resume_checkpoint.is_some() && changed {
+        if a.resume_checkpoint.is_some() && (changed || a.opponents.is_some()) {
             return Err("resume uses the checkpoint setup; omit setup options".into());
         }
+        let opponents = agent_opponents(a.opponents.as_deref())?;
         let request = self.campaign_request(&a.rules, 0, setup, None, false)?;
         let bytes = std::fs::read(&request.rules_path)
             .map_err(|e| format!("read {}: {e}", request.rules_path))?;
@@ -688,6 +689,7 @@ impl Server {
             rules,
             a.civ.unwrap_or(1),
             a.agent,
+            opponents,
             a.resume_checkpoint.as_deref(),
         )?;
         let view = game.view_json();
@@ -1046,8 +1048,17 @@ struct AgentStartArgs {
     civs: Option<u8>,
     #[serde(default)]
     difficulty: Option<u8>,
+    /// The opponents' policy: "builtin-1" (default) or "ai-v1" (#261).
+    #[serde(default)]
+    opponents: Option<String>,
     #[serde(default)]
     resume_checkpoint: Option<String>,
+}
+
+/// The opponents' policy for an agent game (#261).
+fn agent_opponents(id: Option<&str>) -> std::result::Result<engine::campaign::AiPolicy, String> {
+    engine::campaign::AiPolicy::parse(id.unwrap_or("builtin-1"))
+        .map_err(|e| format!("opponents: {e}"))
 }
 
 #[derive(Deserialize)]
@@ -1394,7 +1405,7 @@ fn tools() -> Vec<Value> {
         }),
         json!({
             "name": "agent_start",
-            "description": "EXPERIMENTAL (#256): start a headless generated campaign in which you play one civilization against built-in (builtin-1) opponents. You see only that civilization's filtered view and act through validated commands (agent_submit). Returns the game id and your first view.",
+            "description": "EXPERIMENTAL (#256): start a headless generated campaign in which you play one civilization against AI opponents — \"builtin-1\" (default) or \"ai-v1\" (#261). You see only that civilization's filtered view and act through validated commands (agent_submit). Returns the game id and your first view.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
@@ -1407,7 +1418,8 @@ fn tools() -> Vec<Value> {
                     "land_percent": {"type": "integer", "minimum": 1, "maximum": 100},
                     "civs": {"type": "integer", "minimum": 2, "maximum": 7},
                     "difficulty": {"type": "integer", "minimum": 0, "maximum": 5},
-                    "resume_checkpoint": {"type": "string", "description": "checkpoint text from agent_checkpoint; rejects setup options"},
+                    "opponents": {"type": "string", "enum": ["builtin-1", "ai-v1"], "default": "builtin-1", "description": "the opponents' policy; recorded in checkpoints"},
+                    "resume_checkpoint": {"type": "string", "description": "checkpoint text from agent_checkpoint; rejects setup options (including opponents)"},
                 },
                 "required": ["rules", "agent"],
                 "additionalProperties": false,
@@ -2507,6 +2519,64 @@ mod tests {
             assert_eq!(r["accepted"], true, "{command} -> {r}");
         }
         panic!("agent game did not finish");
+    }
+
+    #[test]
+    fn agent_games_can_choose_the_opponent_policy_and_restore_it() {
+        let (dir, rules) = builtin_rules_root("agent-policy");
+        let s = Server::new(vec![std::fs::canonicalize(&dir).unwrap()]);
+        // An unknown policy is refused before anything starts.
+        let bad = call(
+            &s,
+            "agent_start",
+            json!({"rules": rules, "agent": "t", "opponents": "deep-blue"}),
+        );
+        assert!(
+            error_text(&bad).contains("unsupported campaign AI policy"),
+            "{bad}"
+        );
+        call(
+            &s,
+            "agent_start",
+            json!({"rules": rules, "agent": "t", "seed": 5, "width": 40, "height": 30,
+                   "opponents": "ai-v1"}),
+        );
+        let mut ids = 0;
+        let v = scripted_agent(&s, 1, 2, &mut ids);
+        assert_eq!(v["turn"], 2, "ai-v1 opponents ran their turns: {v}");
+        // The checkpoint records the policy, restores it, and resume refuses
+        // to re-choose it (the checkpoint setup wins).
+        let checkpoint = texts(&call(&s, "agent_checkpoint", json!({"game": 1})))[0].clone();
+        assert!(
+            checkpoint.contains("\npolicy ai-v1\n"),
+            "checkpoint records the chosen policy"
+        );
+        let resumed = call(
+            &s,
+            "agent_start",
+            json!({"rules": rules, "agent": "t", "resume_checkpoint": checkpoint,
+                   "opponents": "builtin-1"}),
+        );
+        assert!(
+            error_text(&resumed).contains("omit setup options"),
+            "{resumed}"
+        );
+        call(
+            &s,
+            "agent_start",
+            json!({"rules": rules, "agent": "t", "resume_checkpoint": texts(&call(
+                &s,
+                "agent_checkpoint",
+                json!({"game": 1}),
+            ))[0]}),
+        );
+        let v: Value =
+            serde_json::from_str(&texts(&call(&s, "agent_view", json!({"game": 2})))[0]).unwrap();
+        assert_eq!(
+            v["turn"], 2,
+            "resumed at the same turn with ai-v1 opponents"
+        );
+        std::fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

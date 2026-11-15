@@ -349,6 +349,7 @@ impl Client {
 
     /// Explicit configuration also lets tests avoid process-global environment.
     pub fn with_fallback(home: String, saves: PathBuf, fallback_pack: Option<PathBuf>) -> Self {
+        let memory = storage::load_setup_memory(&saves);
         let (seed, status) = match random_seed() {
             Ok(seed) => (
                 seed,
@@ -361,12 +362,18 @@ impl Client {
             closed: false,
             advancing: false,
             saves,
-            home,
+            // An explicit home (e.g. CIVTOT_HOME) wins; otherwise the last
+            // successfully started ToT directory is remembered (#266).
+            home: if home.is_empty() {
+                memory.as_ref().map(|m| m.home.clone()).unwrap_or_default()
+            } else {
+                home
+            },
             seed,
-            civs: 5,
-            human: 1,
-            difficulty: 2,
-            size: 0,
+            civs: memory.as_ref().map_or(5, |m| m.civs),
+            human: memory.as_ref().map_or(1, |m| m.human),
+            difficulty: memory.as_ref().map_or(2, |m| m.difficulty),
+            size: memory.as_ref().map_or(0, |m| m.size),
             revision: 0,
             receipts: BTreeMap::new(),
             status,
@@ -861,6 +868,18 @@ impl Client {
                 });
                 self.assets = storage::nonce()?;
                 self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
+                // Remember this setup for the next launch (#266); best-effort.
+                let _ = storage::save_setup_memory(
+                    &self.saves,
+                    &storage::SetupMemory {
+                        format: "totengine-setup 1".into(),
+                        home: self.home.clone(),
+                        civs: self.civs,
+                        human: self.human,
+                        difficulty: self.difficulty,
+                        size: self.size,
+                    },
+                );
                 self.city_panel = CityPanel::Info;
                 self.city_panel_page = 0;
                 self.editing.clear();

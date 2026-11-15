@@ -40,6 +40,14 @@ No original artwork, Rules, saves or fonts are included. Desktop reads a system
 DejaVu Sans font on Linux or Arial on Windows; `TOTENGINE_FONT` selects another
 owned TTF if required.
 
+The clients remember the last successfully started setup host-side (a small
+`setup.json` beside the saves folder, shared by the browser and desktop
+clients): the ToT directory, civilization count, human civilization,
+difficulty and map size are prefilled on the next launch. An explicit
+`CIVTOT_HOME` still wins over the remembered directory, and the seed is
+deliberately not remembered — it regenerates per launch. Delete the file to
+reset the prefill.
+
 ## Checkpoint versions
 
 Engine checkpoints are version-bound. The v0.16 candidate loads v0.16 engine

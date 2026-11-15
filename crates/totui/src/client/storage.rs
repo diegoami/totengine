@@ -85,3 +85,60 @@ pub fn save(root: &Path, name: &str, text: &str) -> Result<(), String> {
         .map(|_| ())
         .map_err(|e| format!("Could not create checkpoint; choose a new name: {e}"))
 }
+
+/// Host-side setup memory (#266 shortlist): the last successfully started
+/// setup, so the ToT directory and the world choices do not have to be
+/// re-entered on every launch. One file beside the saves folder serves both
+/// clients; the seed is deliberately not remembered (it regenerates per
+/// launch by design). Delete the file to reset.
+#[derive(Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SetupMemory {
+    pub format: String,
+    pub home: String,
+    pub civs: u8,
+    pub human: u8,
+    pub difficulty: u8,
+    /// Map-size index: 0 standard, 1 medium, 2 small.
+    pub size: usize,
+}
+
+pub fn setup_memory_path(root: &Path) -> Option<PathBuf> {
+    root.parent().map(|p| p.join("setup.json"))
+}
+
+/// Bounded read and strict parse; every failure means "no memory", never a
+/// blocked startup.
+pub fn load_setup_memory(root: &Path) -> Option<SetupMemory> {
+    let path = setup_memory_path(root)?;
+    let mut bytes = Vec::new();
+    fs::File::open(path)
+        .ok()?
+        .take(4096 + 1)
+        .read_to_end(&mut bytes)
+        .ok()?;
+    if bytes.len() > 4096 {
+        return None;
+    }
+    let m: SetupMemory = serde_json::from_slice(&bytes).ok()?;
+    (m.format == "totengine-setup 1"
+        && (2..=7).contains(&m.civs)
+        && (1..=7).contains(&m.human)
+        && m.difficulty <= 5
+        && m.size <= 2
+        && m.home.len() <= 4096)
+        .then_some(m)
+}
+
+/// Best-effort; a failed write leaves the game untouched.
+pub fn save_setup_memory(root: &Path, memory: &SetupMemory) -> Result<(), String> {
+    let path = setup_memory_path(root).ok_or("no setup memory path")?;
+    let parent = path.parent().ok_or("no parent")?;
+    fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    let mut temp = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
+    let text = serde_json::to_string(memory).map_err(|e| e.to_string())?;
+    temp.write_all(text.as_bytes())
+        .and_then(|_| temp.as_file().sync_all())
+        .map_err(|e| e.to_string())?;
+    temp.persist(&path).map(|_| ()).map_err(|e| e.to_string())
+}

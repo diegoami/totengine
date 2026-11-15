@@ -406,6 +406,12 @@ impl Fixture {
     pub(super) fn client(&self) -> Client {
         seeded_client(self.0.to_str().unwrap().into(), self.0.join("saves"))
     }
+    pub(super) fn saves(&self) -> PathBuf {
+        self.0.join("saves")
+    }
+    pub(super) fn rules_root(&self) -> PathBuf {
+        self.0.clone()
+    }
 }
 impl Drop for Fixture {
     fn drop(&mut self) {
@@ -3201,6 +3207,42 @@ fn public_reports_open_from_keys_and_list_the_whole_world() {
     assert_eq!(c.view().unwrap().revision, revision);
     key(&mut c, "Escape");
     assert!(c.modal.is_none());
+}
+
+#[test]
+fn setup_memory_round_trips_and_survives_garbage() {
+    let f = Fixture::new();
+    let saves = f.saves();
+    let home = f.rules_root();
+    // First client: change the choices, start a game, memory is written.
+    let mut c = Client::new(home.to_string_lossy().into_owned(), saves.clone());
+    c.civs = 6;
+    c.difficulty = 4;
+    c.size = 1;
+    button(&mut c, "Start Original");
+    assert!(c.loaded.is_some(), "{}", c.status);
+    let written = super::storage::load_setup_memory(&saves).unwrap();
+    assert_eq!(written.format, "totengine-setup 1");
+    assert_eq!(written.home, home.to_string_lossy());
+    assert_eq!((written.civs, written.difficulty, written.size), (6, 4, 1));
+    // Second client with no explicit home: setup is prefilled from memory.
+    let c2 = Client::new(String::new(), saves.clone());
+    assert_eq!(c2.home, home.to_string_lossy(), "ToT dir remembered");
+    assert_eq!((c2.civs, c2.difficulty, c2.size), (6, 4, 1));
+    // An explicit home still wins over memory (CIVTOT_HOME semantics).
+    let c3 = Client::new("/elsewhere".into(), saves.clone());
+    assert_eq!(c3.home, "/elsewhere");
+    // Garbage or out-of-range memory falls back to the defaults, quietly.
+    let path = super::storage::setup_memory_path(&saves).unwrap();
+    std::fs::write(&path, b"{\"format\":\"nope\"}").unwrap();
+    let c4 = Client::new(String::new(), saves.clone());
+    assert_eq!(
+        (c4.home.as_str(), c4.civs, c4.difficulty, c4.size),
+        ("", 5, 2, 0)
+    );
+    std::fs::write(&path, b"not json at all").unwrap();
+    let c5 = Client::new(String::new(), saves.clone());
+    assert_eq!(c5.civs, 5);
 }
 
 #[test]

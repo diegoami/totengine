@@ -10,11 +10,11 @@
     "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
     "crates/engine/src/player.rs": "5b6233ce96993634f1804a72b67283583a0c7fabeee5a90c8c4370c48aecc794",
-    "crates/engine/src/human.rs": "3e2b4a64da8bda07e5a4e2cb684f6d0c1d24448cd4b5b8b5ba0bdb930e26484c",
+    "crates/engine/src/human.rs": "e46046f75a033891f75c9bfc54c758847980f2dbccca411f5866573958b30147",
     "crates/engine/src/human/checkpoint.rs": "bb39018c5f461908ac706e00978995292be0572e6c061af94f23c0b758e72059",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "c902108105bc13981afe4fc22985e8586086e64ef80864888aef0c2956fad7af",
+    "crates/totui/src/client/mod.rs": "839329995e5293d7702953f216f871409a81f3729e05ef318dba95f70f64df23",
     "crates/totui/src/resources.rs": "2bb8ef62098b871ef7e6fb1b7464e93ba4ff36eb15b50674349b2e248bc07d4c",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -203,6 +203,14 @@
         "crates/engine/src/human/checkpoint.rs"
       ],
       "finding": "Opponent AI line-up selection only: the human seat still has no AI player, commands, decisions, views, required choices and journal/replay semantics are unchanged, and every pre-#261 checkpoint (policy builtin-1) restores byte-identically. No trigger or action coverage, scenario event path, classic-entry or runtime admission changed; the trigger/action tables above are unchanged."
+    },
+    {
+      "change": "#266 shortlist setup memory: clients prefill the setup screen from a host-side setup.json beside the saves (ToT directory, civs, human civ, difficulty, map size) and rewrite it after a successful Start. Also corrects the human.rs source hash recorded by the #261 refresh, which captured the pre-formatting file",
+      "files": [
+        "crates/totui/src/client/mod.rs",
+        "crates/engine/src/human.rs"
+      ],
+      "finding": "Presentation/persistence convenience only: the memory is written after the validated game start and read before the setup screen; it cannot alter commands, engine sessions, checkpoints, resource identities or any gameplay path. The human.rs entry is a hash correction of the same file content #261 merged (no new change): its recorded digest was taken before the final cargo fmt pass. No order, event, trigger, action, scenario-entry or runtime-admission path changed and the checkpoint identity is unchanged; the trigger/action tables above are unchanged."
     }
   ]
 }

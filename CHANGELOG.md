@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Client setup memory (#266 shortlist, unreleased): both clients remember the
+  last successfully started setup — ToT directory, civilization count, human
+  civilization, difficulty and map size — in a host-side `setup.json` beside
+  the saves, prefilled on the next launch. `CIVTOT_HOME` still wins over the
+  remembered directory; the seed is not remembered; a corrupt or out-of-range
+  file quietly falls back to defaults.
 - Agent report outcome (#263, unreleased): every per-turn summary now records
   the living civilizations and the phase (`your-turn`/`opponents`/
   `eliminated`/`turn-limit`), so a report shows how the game ended, not just

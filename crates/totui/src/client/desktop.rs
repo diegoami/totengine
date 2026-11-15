@@ -173,6 +173,24 @@ fn font_path() -> PathBuf {
         PathBuf::from("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
     }
 }
+/// The default window size (#281): the largest of 2×, 1.5× or 1× of the
+/// logical 1024×768 stage that fits about 80% of the display, or a fitted
+/// fallback on screens smaller than the stage. Never below the logical size.
+fn default_window_size(screen: (u32, u32)) -> (u32, u32) {
+    let (w, h) = (f64::from(screen.0), f64::from(screen.1));
+    for factor in [2.0, 1.5, 1.0] {
+        let (sw, sh) = (f64::from(WIDTH) * factor, f64::from(HEIGHT) * factor);
+        if sw <= w * 0.8 && sh <= h * 0.8 {
+            return (sw as u32, sh as u32);
+        }
+    }
+    // Screens smaller than the logical stage: fit 80% and let SDL letterbox.
+    (
+        ((w * 0.8) as u32).max(WIDTH),
+        ((h * 0.8) as u32).max(HEIGHT),
+    )
+}
+
 pub fn run(mut client: Client) -> Result<(), String> {
     let font = fontdue::Font::from_bytes(
         std::fs::read(font_path()).map_err(|e| {
@@ -184,8 +202,14 @@ pub fn run(mut client: Client) -> Result<(), String> {
     let animation_start = Instant::now();
     let sdl = sdl2::init()?;
     let video = sdl.video()?;
+    // Comfortable default size from the primary display (#281); freely
+    // resizable afterwards, with SDL logical-size mouse mapping unchanged.
+    let (default_w, default_h) = video
+        .display_bounds(0)
+        .map(|b| (b.width(), b.height()))
+        .map_or((WIDTH, HEIGHT), default_window_size);
     let window = video
-        .window("ToTEngine — playable desktop", WIDTH, HEIGHT)
+        .window("ToTEngine — playable desktop", default_w, default_h)
         .resizable()
         .allow_highdpi()
         .position_centered()
@@ -575,6 +599,21 @@ pub fn run(mut client: Client) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn default_window_size_picks_the_largest_comfortable_scale() {
+        // 4K: 2x of the logical stage fits 80% of the display.
+        assert_eq!(default_window_size((3840, 2160)), (2048, 1536));
+        // 1440p: 2x is too tall for 80%, 1.5x fits exactly.
+        assert_eq!(default_window_size((2560, 1440)), (1536, 1152));
+        // 1080p: 1.5x fits 80% (1536x1152 <= 1536x864 is false for height,
+        // so the largest fitting factor is 1x).
+        assert_eq!(default_window_size((1920, 1080)), (1024, 768));
+        // Exactly the logical size: 1x fits.
+        assert_eq!(default_window_size((1280, 1024)), (1024, 768));
+        // Smaller than the stage: never below the logical size.
+        assert_eq!(default_window_size((800, 600)), (1024, 768));
+    }
     #[test]
     fn city_keys_in_one_sdl_batch_are_preserved_without_crossing_workspace() {
         let fixture = super::super::tests::Fixture::new();

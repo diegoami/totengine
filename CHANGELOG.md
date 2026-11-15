@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Crisp client scaling (#281, UI quality U1a): the browser now renders at
+  native device resolution at any window size (text vector-crisp, pixel art
+  nearest-neighbour) instead of CSS-upscaling a fixed 1024×768 canvas; the
+  desktop opens at the largest comfortable default for the display (2× on 4K,
+  1.5× on 1440p, logical size on 1080p and below) and remains freely
+  resizable. Logical coordinates and input mappings are unchanged.
+
 ## [0.19.0] — MCP agent interface, session recordings, headless experiments and the reports slice
 
 Owner-called milestone, 2026-11-15. Everything since v0.18.0: the experimental

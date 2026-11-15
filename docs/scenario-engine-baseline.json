@@ -10,8 +10,8 @@
     "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
     "crates/engine/src/player.rs": "5b6233ce96993634f1804a72b67283583a0c7fabeee5a90c8c4370c48aecc794",
-    "crates/engine/src/human.rs": "4ac836aa2cb8eb41872b50911c3c12fd480ac69cbb1b7c125196b39eabf34f01",
-    "crates/engine/src/human/checkpoint.rs": "362b517c5cb057da8b62fcf19f4fd58bd2109ee03ae3909b3b5775c373a4167b",
+    "crates/engine/src/human.rs": "3e2b4a64da8bda07e5a4e2cb684f6d0c1d24448cd4b5b8b5ba0bdb930e26484c",
+    "crates/engine/src/human/checkpoint.rs": "bb39018c5f461908ac706e00978995292be0572e6c061af94f23c0b758e72059",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
     "crates/totui/src/client/mod.rs": "c902108105bc13981afe4fc22985e8586086e64ef80864888aef0c2956fad7af",
@@ -195,6 +195,14 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Client-only F8/F9/F11 key routing to read-only report presentation; the engine additions are inert view builders in crates/engine/src/human/reports.rs plus tests, which are not source-audited files. No order, driver, trigger, action, scenario-entry or runtime-admission path changed and the checkpoint identity is unchanged; the trigger/action tables above are unchanged."
+    },
+    {
+      "change": "#261 agent opponent policy: HumanSession::generated_with_policy(AiPolicy) for the opponents' line-up; checkpoints write/restore the actual policy line (builtin-1 stays byte-identical, ai-v1 added)",
+      "files": [
+        "crates/engine/src/human.rs",
+        "crates/engine/src/human/checkpoint.rs"
+      ],
+      "finding": "Opponent AI line-up selection only: the human seat still has no AI player, commands, decisions, views, required choices and journal/replay semantics are unchanged, and every pre-#261 checkpoint (policy builtin-1) restores byte-identically. No trigger or action coverage, scenario event path, classic-entry or runtime admission changed; the trigger/action tables above are unchanged."
     }
   ]
 }

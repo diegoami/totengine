@@ -69,6 +69,7 @@ impl AgentGame {
         rules: tot_kit::Rules,
         civ: u8,
         agent: String,
+        opponents: engine::campaign::AiPolicy,
         resume_checkpoint: Option<&str>,
     ) -> Result<Self, String> {
         if agent.is_empty() || agent.len() > 80 || agent.chars().any(char::is_control) {
@@ -76,7 +77,7 @@ impl AgentGame {
         }
         let session = match resume_checkpoint {
             Some(text) => HumanSession::restore(rules.clone(), AGENT_RESOURCES, text)?,
-            None => HumanSession::generated(config, rules.clone(), civ)?,
+            None => HumanSession::generated_with_policy(config, rules.clone(), civ, opponents)?,
         };
         let civ = session.view().observation.civ;
         let mut game = AgentGame {

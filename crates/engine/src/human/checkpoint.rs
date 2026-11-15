@@ -14,8 +14,8 @@ impl HumanSession {
     pub fn checkpoint(&self, resources: &str) -> String {
         let rules = tot_kit::emit_rules(&self.game.rules);
         let mut text = format!(
-            "totengine-human 2\nengine {}\nsetup {}\nhuman {}\npolicy builtin-1\nrules {} {:016x}\nresources {} {:016x}\nworld {:016x}\nknowledge {:016x}\nlog {} {:016x}\n",
-            env!("CARGO_PKG_VERSION"), self.config.descriptor(), self.human,
+            "totengine-human 2\nengine {}\nsetup {}\nhuman {}\npolicy {}\nrules {} {:016x}\nresources {} {:016x}\nworld {:016x}\nknowledge {:016x}\nlog {} {:016x}\n",
+            env!("CARGO_PKG_VERSION"), self.config.descriptor(), self.human, self.policy.id(),
             rules.len(), fingerprint(rules.as_bytes()), resources.len(), fingerprint(resources.as_bytes()),
             self.game.world.checksum(), self.knowledge_fingerprint(), self.game.log().len(), fingerprint(self.game.log().as_bytes()),
         );
@@ -59,9 +59,15 @@ impl HumanSession {
             .and_then(|l| l.strip_prefix("human "))
             .and_then(|n| n.parse().ok())
             .ok_or("invalid human owner")?;
-        if lines.next() != Some("policy builtin-1") {
-            return Err("unsupported human opponent policy".into());
-        }
+        // The opponents' policy (#261); "builtin-1" is what every pre-#261
+        // checkpoint recorded.
+        let policy = crate::campaign::AiPolicy::parse(
+            lines
+                .next()
+                .and_then(|l| l.strip_prefix("policy "))
+                .ok_or("unsupported human opponent policy")?,
+        )
+        .map_err(|_| "unsupported human opponent policy")?;
         let canonical_rules = tot_kit::emit_rules(&rules);
         if lines.next()
             != Some(&format!(
@@ -85,7 +91,7 @@ impl HumanSession {
         lines.next().ok_or("missing world fingerprint")?;
         lines.next().ok_or("missing knowledge fingerprint")?;
         lines.next().ok_or("missing order-log identity")?;
-        let mut session = Self::generated(config, rules, human)?;
+        let mut session = Self::generated_with_policy(config, rules, human, policy)?;
         let mut ended = false;
         for (count, line) in lines.by_ref().enumerate() {
             if count > 200_000 {

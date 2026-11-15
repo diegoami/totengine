@@ -5,6 +5,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Agent opponent policy choice (#261, unreleased): `agent_start` accepts
+  `opponents: "builtin-1"` (default) or `"ai-v1"`. The choice is recorded in
+  human checkpoints (`policy ai-v1`), restored on resume — which refuses to
+  re-choose it — and replayed exactly; pre-#261 checkpoints are unchanged.
 - MCP save tools (#254, unreleased): `save_observe` returns observer v1 frames
   of an original `.SAV`/`.SCN` AI run — with `view: "all"` byte-identical to
   `totctl observe --stream` lines, CLI-matching defaults and the same

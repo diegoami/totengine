@@ -21,6 +21,33 @@ fn config() -> NewGameConfig {
 fn session(human: u8) -> HumanSession {
     HumanSession::generated(config(), rules(), human).unwrap()
 }
+#[test]
+fn opponent_policy_is_recorded_and_round_trips_through_checkpoints() {
+    // The default policy's checkpoints stay byte-identical to pre-#261 ones.
+    let mut a = session(1);
+    choose(&mut a);
+    let text = a.checkpoint("assets");
+    assert!(text.contains("\npolicy builtin-1\n"), "{text}");
+    assert_eq!(
+        HumanSession::restore(rules(), "assets", &text)
+            .unwrap()
+            .checkpoint("assets"),
+        text
+    );
+    // An ai-v1 line-up records its policy and replays identically.
+    let mut b =
+        HumanSession::generated_with_policy(config(), rules(), 1, crate::campaign::AiPolicy::AiV1)
+            .unwrap();
+    choose(&mut b);
+    let text = b.checkpoint("assets");
+    assert!(text.contains("\npolicy ai-v1\n"), "{text}");
+    assert_eq!(
+        HumanSession::restore(rules(), "assets", &text)
+            .unwrap()
+            .checkpoint("assets"),
+        text
+    );
+}
 fn send(s: &mut HumanSession, command: Command) -> Request {
     let r = Request {
         civ: s.human,

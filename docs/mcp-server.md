@@ -147,7 +147,9 @@ open; they live only in the server process and end with it or with
 ### Agent play (`agent_*`, experimental, #256)
 
 An MCP client can **play one civilization** of a headless generated campaign
-against built-in `builtin-1` opponents. The owner allowed this on 2026-11-12
+against AI opponents — `builtin-1` (default) or `ai-v1` (#261), chosen with
+`agent_start`'s `opponents` and recorded in checkpoints. The owner allowed this
+on 2026-11-12
 for headless, generated-campaign, experimental play only (decision 0008 §MCP
 follow-up decisions). It does not cover client games, scenarios or delegated
 actions in a human game (#257).
@@ -209,8 +211,7 @@ actions in a human game (#257).
     The gameplay section is.
   - A resumed game's history starts at the resume turn.
 - **Not offered yet:**
-  - more than one agent civilization per game, since the human driver has one seat;
-  - opponents other than `builtin-1`;
+  - more than one agent civilization per game, since the human driver has one seat (the #262 design note covers it);
   - scenarios.
 - **Original-save tools (#254):** `save_observe` runs an original `.SAV`/`.SCN`
   with the selected AI line-up and returns observer v1 frames; with

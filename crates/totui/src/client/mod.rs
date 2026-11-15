@@ -946,6 +946,12 @@ impl Client {
             Action::RateLock(row) => self.rate_lock(row),
             Action::City => {
                 if let Some(v) = self.view() {
+                    if v.cities.is_empty() {
+                        self.status =
+                            "No cities yet: select a settler and press B to found one first."
+                                .into();
+                        return Ok(());
+                    }
                     let next = v
                         .cities
                         .iter()

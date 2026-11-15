@@ -261,6 +261,16 @@ impl Server {
                     a.no_rules,
                 )?])
             }
+            "save_observe" => {
+                let a: SaveObserveArgs = parse_args(args)?;
+                self.save_observe(a)
+            }
+            "save_replay_verify" => {
+                let a: SaveReplayArgs = parse_args(args)?;
+                let line = crate::replay_report(self.path(&a.path)?, &a.log)
+                    .map_err(|e| format!("replay FAILED: {e}"))?;
+                Ok(vec![line])
+            }
             "campaign_run" => {
                 let a: CampaignArgs = parse_args(args)?;
                 self.campaign_run(a)
@@ -544,6 +554,75 @@ impl Server {
         Ok(blocks)
     }
 
+    /// Observer v1 frames of an original save/scenario run (#254): every
+    /// civilization plays the selected AI for `turns` turns from the saved
+    /// state, exactly like `totctl observe <save>`. The first block is a
+    /// short header (ours; the CLI writes none); with `view: "all"` every
+    /// further block is one line of the CLI's `--stream` file, byte for
+    /// byte. A filtered view keeps only the requested view's JSON (the CLI
+    /// has no view filtering, so no byte parity is claimed there). Rules and
+    /// events come from the save's folder, as in the CLI.
+    fn save_observe(&self, a: SaveObserveArgs) -> std::result::Result<Vec<String>, String> {
+        let keep = parse_view(a.view.as_deref())?;
+        if a.count == 0 || a.count > MAX_OBSERVE_FRAMES {
+            return Err(format!("count must be 1..={MAX_OBSERVE_FRAMES}"));
+        }
+        let ai = match a.ai.as_deref() {
+            None | Some("builtin") => crate::ObserveAi::Builtin,
+            Some("ai-v1") => crate::ObserveAi::AiV1,
+            Some("ai-v0") => crate::ObserveAi::AiV0,
+            Some(other) => {
+                return Err(format!(
+                    "invalid ai {other}: expected \"builtin\", \"ai-v1\" or \"ai-v0\""
+                ))
+            }
+        };
+        let path = self.path(&a.path)?;
+        let mut observer = crate::live_observer(path, a.turns, a.seed, ai)?;
+        let mut bytes = Vec::new();
+        observer.export(&mut bytes).map_err(|e| e.to_string())?;
+        let text = String::from_utf8(bytes).map_err(|e| e.to_string())?;
+        let frames: Vec<&str> = text.lines().collect();
+        let total = frames.len();
+        let from = match a.from {
+            Some(from) if from >= total => {
+                return Err(format!(
+                    "frame {from} is out of range: this run has frames 0..={}",
+                    total - 1
+                ))
+            }
+            Some(from) => from,
+            None => total.saturating_sub(a.count),
+        };
+        let name = std::path::Path::new(path)
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let mut blocks = vec![format!(
+            "save        : {name}\nturns       : {}\nseed        : {}\nai          : {}\nframes      : {}\n",
+            a.turns,
+            a.seed,
+            a.ai.as_deref().unwrap_or("builtin"),
+            total
+        )];
+        for frame in frames.iter().skip(from).take(a.count) {
+            blocks.push(match keep {
+                None => (*frame).to_string(),
+                Some(civ) => {
+                    let mut v: Value = serde_json::from_str(frame).map_err(|e| e.to_string())?;
+                    if let Some(views) = v.get_mut("views").and_then(Value::as_array_mut) {
+                        views.retain(|view| match civ {
+                            None => view["civ"].is_null(),
+                            Some(c) => view["civ"].as_u64() == Some(u64::from(c)),
+                        });
+                    }
+                    serde_json::to_string(&v).map_err(|e| e.to_string())?
+                }
+            });
+        }
+        Ok(blocks)
+    }
+
     fn session_start(&self, a: SessionStartArgs) -> std::result::Result<Vec<String>, String> {
         if self.sessions.borrow().open.len() >= MAX_SESSIONS {
             return Err(format!(
@@ -764,6 +843,36 @@ struct RunArgs {
     rules: Option<String>,
     #[serde(default)]
     no_rules: bool,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SaveObserveArgs {
+    path: String,
+    /// Turns to run; the CLI's default is 100.
+    #[serde(default = "default_save_turns")]
+    turns: usize,
+    #[serde(default = "default_seed")]
+    seed: u64,
+    /// "builtin" (default), "ai-v1" or "ai-v0" (the CLI's --builtin/--ai-v1/--ai).
+    #[serde(default)]
+    ai: Option<String>,
+    /// "all" (default), "spectator" or a civ number "1".."7".
+    #[serde(default)]
+    view: Option<String>,
+    /// First frame index (0 = starting state); default: the last `count`.
+    #[serde(default)]
+    from: Option<usize>,
+    #[serde(default = "default_observe_count")]
+    count: usize,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SaveReplayArgs {
+    path: String,
+    /// The canonical order-log text (what `totctl replay <save> <log>` reads).
+    log: String,
 }
 
 #[derive(Deserialize)]
@@ -1030,6 +1139,9 @@ fn default_seed() -> u64 {
 fn default_run_turns() -> usize {
     50
 }
+fn default_save_turns() -> usize {
+    100
+}
 fn default_campaign_turns() -> u32 {
     100
 }
@@ -1095,6 +1207,37 @@ fn tools() -> Vec<Value> {
                     "no_rules": {"type": "boolean", "default": false, "description": "advance only the turn counter"},
                 },
                 "required": ["path"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "save_observe",
+            "description": "Observer v1 frames of an original .SAV/.SCN run: every civilization plays the selected AI for `turns` turns from the saved state. The first block is a header; each further block is one frame (frame 0 = saved state, frame k = after turn k). With view \"all\" a frame block is byte-identical to a line of `totctl observe <save> --stream`; \"spectator\" keeps only the full-state view, a civ number that civ's fogged view (CLI has no view filter; no parity claimed there). Rules/Events come from the save's folder, like the CLI. Same window options as campaign_observe.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "path": path_prop(),
+                    "turns": {"type": "integer", "minimum": 0, "default": 100},
+                    "seed": {"type": "integer", "minimum": 0, "default": 1},
+                    "ai": {"type": "string", "enum": ["builtin", "ai-v1", "ai-v0"], "default": "builtin", "description": "the CLI's --builtin/--ai-v1/--ai"},
+                    "view": {"type": "string", "description": "\"all\" (default), \"spectator\", or a civ number \"1\"..\"7\"", "default": "all"},
+                    "from": {"type": "integer", "minimum": 0, "description": "first frame index; default: the last `count` frames"},
+                    "count": {"type": "integer", "minimum": 1, "maximum": MAX_OBSERVE_FRAMES, "default": 1},
+                },
+                "required": ["path"],
+                "additionalProperties": false,
+            }
+        }),
+        json!({
+            "name": "save_replay_verify",
+            "description": "Verify a canonical order log against an original save — the equivalent of `totctl replay <save> <log>` with the log passed inline (the server writes no files). Returns the same \"replay ok: turn N checksum X\" line as the CLI, or fails with the CLI's \"replay FAILED\" reason.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "path": path_prop(),
+                    "log": {"type": "string", "description": "the order-log text an observe run produces"},
+                },
+                "required": ["path", "log"],
                 "additionalProperties": false,
             }
         }),
@@ -1467,6 +1610,8 @@ mod tests {
                 "events_summary",
                 "save_summary",
                 "run_turns",
+                "save_observe",
+                "save_replay_verify",
                 "campaign_run",
                 "campaign_observe",
                 "recording_info",
@@ -1522,6 +1667,67 @@ mod tests {
         let path = fixtures().join("campaign-rules.txt");
         let response = call(&no_roots, "rules_summary", json!({"path": path}));
         assert!(error_text(&response).contains("no filesystem roots"));
+    }
+
+    #[test]
+    fn save_tool_arguments_are_validated_before_anything_runs() {
+        let s = server();
+        // Argument validation happens before the save is touched.
+        let response = call(
+            &s,
+            "save_observe",
+            json!({"path": "whatever.SAV", "ai": "deep-blue"}),
+        );
+        assert!(
+            error_text(&response).contains("invalid ai deep-blue"),
+            "{response}"
+        );
+        let response = call(
+            &s,
+            "save_observe",
+            json!({"path": "whatever.SAV", "view": "everyone"}),
+        );
+        assert!(
+            error_text(&response).contains("invalid view everyone"),
+            "{response}"
+        );
+        let response = call(
+            &s,
+            "save_observe",
+            json!({"path": "whatever.SAV", "count": 0}),
+        );
+        assert!(
+            error_text(&response).contains("count must be 1..="),
+            "{response}"
+        );
+        let response = call(
+            &s,
+            "save_observe",
+            json!({"path": "whatever.SAV", "extra": true}),
+        );
+        assert!(error_text(&response).contains("invalid arguments"));
+        // Unknown fields are rejected on the replay tool too.
+        let response = call(
+            &s,
+            "save_replay_verify",
+            json!({"path": "whatever.SAV", "log": "R x", "turn": 3}),
+        );
+        assert!(error_text(&response).contains("invalid arguments"));
+        // A real path outside the roots is refused by the save tools as well.
+        let response = call(&s, "save_observe", json!({"path": "/etc/hostname"}));
+        assert!(
+            error_text(&response).contains("outside the configured roots"),
+            "{response}"
+        );
+        let response = call(
+            &s,
+            "save_replay_verify",
+            json!({"path": "/etc/hostname", "log": ""}),
+        );
+        assert!(
+            error_text(&response).contains("outside the configured roots"),
+            "{response}"
+        );
     }
 
     #[test]

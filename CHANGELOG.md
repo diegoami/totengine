@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- MCP save tools (#254, unreleased): `save_observe` returns observer v1 frames
+  of an original `.SAV`/`.SCN` AI run — with `view: "all"` byte-identical to
+  `totctl observe --stream` lines, CLI-matching defaults and the same
+  window/view options as `campaign_observe` — and `save_replay_verify`
+  re-drives a save from an inline order log, returning the CLI replay line.
+  Install-backed stdio tests compare both against the CLI on the corpus save;
+  the scenario inspector stays a CLI-only Python tool, documented as such.
 - Headless experiment manifests, format 1 (#203 generated-world slice,
   unreleased): `totctl experiment check|run`.
   - A JSON manifest declares a generated start, a policy, rounds, seeds (random

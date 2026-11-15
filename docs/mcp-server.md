@@ -86,6 +86,8 @@ engine checks every order. Nothing here claims how strong the agent plays.
 | `events_summary` | `path` | `totctl events <Events.txt>` |
 | `save_summary` | `path`, `rules?`, `turns=0`, `seed=1` | `totctl boot <file.sav\|scn>` |
 | `run_turns` | `path`, `turns=50`, `seed=1`, `rules?`, `no_rules=false` | `totctl run <file.sav\|scn> --turns N` |
+| `save_observe` *(install-backed)* | `path`, `turns=100`, `seed=1`, `ai="builtin"`, `view="all"`, `from?`, `count=1` (max 8) | `totctl observe <save> --stream` (frame blocks are its lines; header is ours) |
+| `save_replay_verify` *(install-backed)* | `path`, `log` (inline text) | `totctl replay <save> <log>` |
 | `campaign_run` | `rules`, `policy?`, `turns=100`, setup options (`seed`, `width`, `height`, `land_percent`, `civs`, `difficulty`), `resume_checkpoint?`, `include_checkpoint?`, `include_log?` | `totctl campaign <Rules.txt> ...` |
 | `campaign_observe` | as `campaign_run` (no `include_*`), plus `view="all"`, `from?`, `count=1` (max 8) | `totctl campaign <Rules.txt> ... --stream OUT` |
 | `recording_info` | `path` | `totctl record info <bundle.totrec>` |
@@ -210,6 +212,16 @@ actions in a human game (#257).
   - more than one agent civilization per game, since the human driver has one seat;
   - opponents other than `builtin-1`;
   - scenarios.
+- **Original-save tools (#254):** `save_observe` runs an original `.SAV`/`.SCN`
+  with the selected AI line-up and returns observer v1 frames; with
+  `view: "all"` each frame block is byte-identical to a line of
+  `totctl observe <save> --stream`. Defaults match the CLI (100 turns, seed 1,
+  builtin); rules and events come from the save's folder. `save_replay_verify`
+  re-drives the save from an inline canonical order log and returns exactly
+  `totctl replay`'s line. The scenario
+  inspector/entry-contract diagnostics (#192/#193) stay CLI-only Python tools
+  (`tools/scenario_inventory.py`) — running them needs the repository
+  checkout, which an MCP root over the install does not imply; use the CLI.
 
   No playing-strength claim is made; #187 measures strength separately.
   At most 4 agent games are open per server.
@@ -239,6 +251,13 @@ supplied checkpoint; there is no server-side session state.
 Errors are reported as tool errors (`isError: true`) with the CLI's message
 text; malformed requests are JSON-RPC errors. Unknown arguments are rejected
 (`deny_unknown_fields`).
+
+An install-backed stdio test (#254, `crates/totctl/tests/mcp_save_install.rs`,
+self-skips without `CIVTOT_HOME`) runs the corpus save `Original/Ph_Auto2.SAV`
+both ways: `save_observe`'s frame blocks equal the `--stream` file's lines in
+any window (first eight, default last-eight, out-of-range refused), a filtered
+view keeps only the requested civilization, `save_replay_verify` returns the
+CLI replay's stdout line, and a path outside the configured roots never runs.
 
 ## Tests and acceptance
 

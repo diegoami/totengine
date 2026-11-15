@@ -1287,6 +1287,88 @@ fn attitude_and_wonder_reports_cover_only_own_cities_and_hosts() {
     assert!(s.view().cities.contains(&rows[0].city));
 }
 
+#[test]
+fn public_reports_list_every_civilization_and_stay_inert() {
+    let mut s = session(1);
+    choose(&mut s);
+    let unit = s.view().units[0];
+    send(&mut s, Command::BeginFound { unit });
+    let Some(Decision::Founding { id, .. }) = s.decision else {
+        panic!()
+    };
+    send(
+        &mut s,
+        Command::NameCity {
+            decision: id,
+            name: CityName::new("Metropolis").unwrap(),
+        },
+    );
+    // Close a round so the population/power caches refresh, then grow the city
+    // so the size ranking has a clear winner.
+    next_round(&mut s);
+    s.game.world.cities[0].size = 9;
+    *s.view_cache.borrow_mut() = None;
+    let before = s.checkpoint("assets");
+    let revision = s.revision;
+
+    // F8: the world's five largest cities, this player's among them.
+    let Report::RankedCities(rows) = s.any_report(ReportFamily::RankedCities) else {
+        panic!()
+    };
+    assert!(!rows.is_empty());
+    assert!(rows.len() <= 5);
+    assert_eq!(
+        (rows[0].rank, rows[0].name.as_str(), rows[0].civ),
+        (1, "Metropolis", 1)
+    );
+    assert!(rows.windows(2).all(|w| w[0].size >= w[1].size));
+    assert!(rows
+        .iter()
+        .enumerate()
+        .all(|(i, r)| i64::from(r.rank) == i as i64 + 1));
+
+    // F9: one row per living civilization, standard components, native score.
+    let Report::Score { rows, scenario } = s.any_report(ReportFamily::Score) else {
+        panic!()
+    };
+    assert!(!scenario);
+    let alive = (1u8..8).filter(|c| s.game.world.ai_state.alive_mask & (1 << c) != 0);
+    assert_eq!(rows.len(), alive.count());
+    for r in &rows {
+        assert!(r.alive);
+        assert_eq!(
+            r.score,
+            3 * r.advances + 8 * r.population + (r.treasury >> 5),
+            "civ {}",
+            r.civ
+        );
+    }
+    let own = rows.iter().find(|r| r.civ == 1).unwrap();
+    assert_eq!(own.advances, i32::from(s.game.world.research[1].acquired));
+
+    // F11: five categories with this civilization's value, the best civ and rank.
+    let Report::Demographics(rows) = s.any_report(ReportFamily::Demographics) else {
+        panic!()
+    };
+    assert_eq!(
+        rows.iter().map(|r| r.category).collect::<Vec<_>>(),
+        ["Population", "Cities", "Military", "Advances", "Treasury"]
+    );
+    let cities = rows.iter().find(|r| r.category == "Cities").unwrap();
+    assert_eq!(cities.own, 1);
+    let military = rows.iter().find(|r| r.category == "Military").unwrap();
+    assert_eq!(military.own, 0, "the founder was consumed");
+    for r in &rows {
+        assert!(r.rank >= 1);
+        assert!(r.best_civ >= 1 && r.best_civ <= 7);
+        assert!(r.own <= r.best || r.best_civ == 1);
+    }
+
+    // Public reports are as inert as the own-civilization ones.
+    assert_eq!(s.revision, revision);
+    assert_eq!(s.checkpoint("assets"), before);
+}
+
 fn next_round(s: &mut HumanSession) {
     choose(s);
     send(s, Command::EndTurn);

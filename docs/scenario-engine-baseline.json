@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "362b517c5cb057da8b62fcf19f4fd58bd2109ee03ae3909b3b5775c373a4167b",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "334283c6f3d70510ccd5846cc7278ea810971c9b49a84666238143534be5eaf3",
+    "crates/totui/src/client/mod.rs": "c902108105bc13981afe4fc22985e8586086e64ef80864888aef0c2956fad7af",
     "crates/totui/src/resources.rs": "2bb8ef62098b871ef7e6fb1b7464e93ba4ff36eb15b50674349b2e248bc07d4c",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -188,6 +188,13 @@
         "crates/totui/src/resources.rs"
       ],
       "finding": "Reference-text loading and read-only client presentation only; no order, event, trigger, action, hut or scenario-entry path changed and the checkpoint identity is unchanged; the trigger/action tables above are unchanged."
+    },
+    {
+      "change": "#201/#202 reports extension: public-figure families Ranked cities (F8), Score (F9) and Demographics (F11) through HumanSession::any_report (engine::human/reports.rs) and client key/tab wiring",
+      "files": [
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Client-only F8/F9/F11 key routing to read-only report presentation; the engine additions are inert view builders in crates/engine/src/human/reports.rs plus tests, which are not source-audited files. No order, driver, trigger, action, scenario-entry or runtime-admission path changed and the checkpoint identity is unchanged; the trigger/action tables above are unchanged."
     }
   ]
 }

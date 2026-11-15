@@ -2119,17 +2119,24 @@ impl Client {
         draws.push(text(
             16.,
             16.,
-            self.loaded
-                .as_ref()
-                .map_or("ToTEngine — surface game", |l| {
-                    if l.resources.profile.starts_with("Open demo") {
+            &self.loaded.as_ref().map_or_else(
+                || "ToTEngine — surface game".to_string(),
+                |l| {
+                    let name = if l.resources.profile.starts_with("Open demo") {
                         "ToTEngine — Open demo / Isotrident"
                     } else if l.resources.isotrident.is_some() {
                         "ToTEngine — ToT rules / Isotrident"
                     } else {
                         "ToTEngine — Original surface game"
+                    };
+                    // The current round in the title keeps the turn visible
+                    // through opponent phases (#283).
+                    match self.view().map(|v| v.observation.turn) {
+                        Some(turn) if turn > 0 => format!("{name} · Turn {turn}"),
+                        _ => name.to_string(),
                     }
-                }),
+                },
+            ),
             24,
             style::TEXT_BRIGHT,
         ));
@@ -2539,6 +2546,25 @@ impl Client {
             draws.push(rect(e.x - 1., e.y - 1., e.w + 2., e.h + 2., style::GOLD));
             draws.push(rect(e.x, e.y, e.w, e.h, style::FIELD));
             draws.push(text(e.x + 7., e.y + 10., &e.value, 18, style::TEXT_FIELD));
+        }
+        // Clear turn-transition feedback (#283): while the opponents run, a
+        // framed strip over the map says so; the title bar carries the round.
+        if self.advancing {
+            style::modal(&mut draws, 212., 360., 460., 52.);
+            draws.push(text(
+                228.,
+                368.,
+                "Opponents are moving — your turn continues when they finish.",
+                16,
+                style::TEXT_BRIGHT,
+            ));
+            draws.push(text(
+                228.,
+                388.,
+                "You can reconnect or wait; nothing is lost.",
+                13,
+                style::TEXT_DIM,
+            ));
         }
         draws.push(rect(0., 744., 1024., 24., style::STATUS_BG));
         draws.push(text(

@@ -3210,6 +3210,34 @@ fn public_reports_open_from_keys_and_list_the_whole_world() {
 }
 
 #[test]
+fn turn_feedback_banner_and_title_round() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    button(&mut c, "Start Original");
+    // The title bar carries the round once the game runs.
+    let title = |c: &Client| {
+        c.frame().draws.iter().find_map(|d| match d {
+            Draw::Text {
+                x, y, size, text, ..
+            } if (*x, *y, *size) == (16., 16., 24) => Some(text.clone()),
+            _ => None,
+        })
+    };
+    assert!(title(&c).unwrap().contains("· Turn 1"), "{:?}", title(&c));
+    // While the opponents run, a framed strip explains the wait (#283).
+    c.advancing = true;
+    let has = |c: &Client, s: &str| {
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Text{text,..} if text.starts_with(s)))
+    };
+    assert!(has(&c, "Opponents are moving"));
+    c.advancing = false;
+    assert!(!has(&c, "Opponents are moving"));
+}
+
+#[test]
 fn setup_memory_round_trips_and_survives_garbage() {
     let f = Fixture::new();
     let saves = f.saves();

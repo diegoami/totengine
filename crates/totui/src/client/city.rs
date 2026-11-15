@@ -1,4 +1,5 @@
 //! Shared own-city workspace; adapters receive only filtered presentation.
+use super::style;
 use super::*;
 use engine::yields::{RADIUS_DX, RADIUS_DY};
 
@@ -155,7 +156,7 @@ impl Client {
     }
 
     pub(super) fn city_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
-        draws.push(rect(0., 0., 1024., 744., "#20251f"));
+        draws.push(rect(0., 0., 1024., 744., style::BG));
         let Some(city) = self.city else { return };
         let Some(c) = v
             .observation
@@ -173,7 +174,7 @@ impl Client {
             14.,
             &format!("{} — population {}", c.name, c.size),
             24,
-            "#fff0b5",
+            style::TEXT_BRIGHT,
         ));
         for (x, w) in [(12., 266.), (730., 282.)] {
             draws.push(Draw::Tile {
@@ -206,7 +207,7 @@ impl Client {
                 format!("Upkeep {}", e.upkeep),
             ];
             for (i, line) in lines.iter().enumerate() {
-                draws.push(text(22., 116. + i as f64 * 24., line, 16, "#eee8d4"));
+                draws.push(text(22., 116. + i as f64 * 24., line, 16, style::TEXT));
             }
             let warning = if detail.food_box < 0 {
                 "Food debt: famine pending"
@@ -219,9 +220,15 @@ impl Client {
             } else {
                 "Growth and mood stable"
             };
-            draws.push(text(22., 330., warning, 15, "#ffcf8c"));
+            draws.push(text(22., 330., warning, 15, style::WARN));
         }
-        draws.push(text(22., 358., "Currently producing:", 16, "#fff0b5"));
+        draws.push(text(
+            22.,
+            358.,
+            "Currently producing:",
+            16,
+            style::TEXT_BRIGHT,
+        ));
         let item = c
             .building
             .map(|id| self.item_name(id))
@@ -238,7 +245,7 @@ impl Client {
                 382. + row as f64 * 19.,
                 &chunk.iter().collect::<String>(),
                 16,
-                "#ffffff",
+                style::WHITE,
             ));
         }
         if let Some(p) = v.city_production.iter().find(|p| p.index == city.slot) {
@@ -246,21 +253,21 @@ impl Client {
                 || format!("Shields: {}", p.stored),
                 |cost| format!("Shields: {} / {cost}", p.stored),
             );
-            draws.push(text(22., 444., &shields, 16, "#eee8d4"));
+            draws.push(text(22., 444., &shields, 16, style::TEXT));
             let estimate = match (p.remaining, p.turns) {
                 (Some(0), _) => "Funded — next production phase".into(),
                 (Some(n), Some(turns)) => format!("Remaining: {n} (~{turns} turns)"),
                 (Some(n), None) => format!("Remaining: {n}; no current output"),
                 _ => "No finite shield target".into(),
             };
-            draws.push(text(22., 472., &estimate, 14, "#eee8d4"));
+            draws.push(text(22., 472., &estimate, 14, style::TEXT));
         }
         draws.push(text(
             305.,
             112.,
             "City radius · click a tile to change its worker",
             16,
-            "#fff0b5",
+            style::TEXT_BRIGHT,
         ));
         // Back-to-front diamonds, with yields and authored work/selection markers.
         let mut tiles = (0..21).collect::<Vec<_>>();
@@ -296,12 +303,12 @@ impl Client {
                         y: y + 6.,
                         x2: x + 12.,
                         y2: y + 6.,
-                        color: if t.river { "#4e9ac4" } else { "#c1a780" }.into(),
+                        color: if t.river { style::LINK } else { "#c1a780" }.into(),
                         width: 2.,
                     });
                 }
             } else {
-                draws.push(rect(x - 35., y - 15., 70., 30., "#090d08"));
+                draws.push(rect(x - 35., y - 15., 70., 30., style::INSET));
             }
             if k == 20 {
                 draws.push(Draw::Sprite {
@@ -313,10 +320,10 @@ impl Client {
                 });
             }
             if t.worked {
-                draws.push(rect(x - 4., y - 20., 8., 8., "#f4e59a"));
+                draws.push(rect(x - 4., y - 20., 8., 8., style::GOLD));
             }
             if !t.available && k != 20 {
-                draws.push(text(x - 20., y - 12., "×", 18, "#ff9988"));
+                draws.push(text(x - 20., y - 12., "×", 18, style::WARN));
             }
             if self.city_tile as usize == k {
                 for (a, b, cc, dd) in [
@@ -330,7 +337,7 @@ impl Client {
                         y: b,
                         x2: cc,
                         y2: dd,
-                        color: "#ffe77c".into(),
+                        color: style::GOLD.into(),
                         width: 2.,
                     });
                 }
@@ -340,7 +347,7 @@ impl Client {
                 y + 2.,
                 &format!("{}/{}/{}", t.yields[0], t.yields[1], t.yields[2]),
                 12,
-                "#ffffff",
+                style::WHITE,
             ));
         }
         self.city_panel_draw(draws, v);
@@ -362,10 +369,16 @@ impl Client {
                 detail.specialists.len()
             ),
             16,
-            "#fff0b5",
+            style::TEXT_BRIGHT,
         ));
         if v.decision.is_some() {
-            draws.push(text(744., 568., "Research/choice required.", 11, "#ffba8a"));
+            draws.push(text(
+                744.,
+                568.,
+                "Research/choice required.",
+                11,
+                style::WARN,
+            ));
         }
     }
 }

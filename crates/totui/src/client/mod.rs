@@ -10,6 +10,7 @@ mod editor;
 mod isotrident;
 mod selection;
 pub mod storage;
+mod style;
 use crate::resources::Resources;
 pub use atlas::{Atlas, Sprite};
 use engine::human::{
@@ -2100,13 +2101,13 @@ impl Client {
                 advancing: false,
                 city_click: None,
                 draws: vec![
-                    rect(0., 0., 1024., 768., "#20251f"),
+                    rect(0., 0., 1024., 768., style::BG),
                     text(
                         100.,
                         200.,
                         "Client closed. Launch again to resume a saved checkpoint.",
                         22,
-                        "#fff0b5",
+                        style::TEXT_BRIGHT,
                     ),
                 ],
                 entry: None,
@@ -2114,7 +2115,7 @@ impl Client {
                 assets: "none".into(),
             };
         }
-        let mut draws = vec![rect(0., 0., 1024., 768., "#20251f")];
+        let mut draws = vec![rect(0., 0., 1024., 768., style::BG)];
         draws.push(text(
             16.,
             16.,
@@ -2130,7 +2131,7 @@ impl Client {
                     }
                 }),
             24,
-            "#fff0b5",
+            style::TEXT_BRIGHT,
         ));
         let view = self.view();
         if let Some(v) = &view {
@@ -2144,7 +2145,7 @@ impl Client {
                     h: 580.,
                     sprite: "panel".into(),
                 });
-                draws.push(rect(12., 100., 740., 580., "#050906"));
+                draws.push(rect(12., 100., 740., 580., style::INSET));
                 self.map_draw(&mut draws, v);
                 let o = &v.observation;
                 for (i, line) in [
@@ -2179,7 +2180,7 @@ impl Client {
                 .into_iter()
                 .enumerate()
                 {
-                    draws.push(text(770., 110. + i as f64 * 30., &line, 17, "#eee8d4"));
+                    draws.push(text(770., 110. + i as f64 * 30., &line, 17, style::TEXT));
                 }
                 if let Some(target) = o.research.target {
                     draws.push(text(
@@ -2187,7 +2188,7 @@ impl Client {
                         220.,
                         &format!("Topic: {}", self.tech_name(target)),
                         12,
-                        "#fff0b5",
+                        style::TEXT_BRIGHT,
                     ));
                 }
                 if let Some(u) = self
@@ -2209,14 +2210,14 @@ impl Client {
                         240.,
                         &format!("{name} #{}", u.index),
                         17,
-                        "#ffef9a",
+                        style::GOLD,
                     ));
                     draws.push(text(
                         770.,
                         268.,
                         &format!("({}, {}) · moves {}/3", u.x, u.y, u.moves_left),
                         17,
-                        "#eee8d4",
+                        style::TEXT,
                     ));
                 }
                 if let Some((_, hp, max)) = self
@@ -2228,7 +2229,7 @@ impl Client {
                         285.,
                         &format!("Health: {hp}/{max}"),
                         13,
-                        "#ddd9bd",
+                        style::TEXT_DIM,
                     ));
                 }
                 if let Some(c) = self
@@ -2240,7 +2241,7 @@ impl Client {
                         300.,
                         &format!("{} · size {}", c.name, c.size),
                         17,
-                        "#ffef9a",
+                        style::GOLD,
                     ));
                     draws.push(text(
                         770.,
@@ -2251,7 +2252,7 @@ impl Client {
                             c.shield_box.unwrap_or(0)
                         ),
                         15,
-                        "#eee8d4",
+                        style::TEXT,
                     ));
                 }
                 if let Some(e) = self
@@ -2266,7 +2267,13 @@ impl Client {
                     .into_iter()
                     .enumerate()
                     {
-                        draws.push(text(770., 422. + i as f64 * 16., &line, 14, "#ddd9bd"));
+                        draws.push(text(
+                            770.,
+                            422. + i as f64 * 16.,
+                            &line,
+                            14,
+                            style::TEXT_DIM,
+                        ));
                     }
                 }
                 let notices=v.notices.iter().map(|n| {
@@ -2287,7 +2294,7 @@ impl Client {
                     724.,
                     &notices.chars().take(110).collect::<String>(),
                     14,
-                    "#ddd9bd",
+                    style::TEXT_DIM,
                 ));
             }
         } else {
@@ -2296,22 +2303,22 @@ impl Client {
                 62.,
                 "ToT directory (optional). Leave blank for the open demo.",
                 16,
-                "#eee8d4",
+                style::TEXT,
             ));
-            draws.push(text(100., 160., "Isotrident / Freeciv artwork: GPL-2.0-or-later. Credits and editable source in the artwork pack.", 10, "#d9d4b7"));
+            draws.push(text(100., 160., "Isotrident / Freeciv artwork: GPL-2.0-or-later. Credits and editable source in the artwork pack.", 10, style::TEXT_DIM));
             if self.editing != "seed" {
-                draws.push(text(110., 320., &self.seed, 18, "#f4eedb"));
+                draws.push(text(110., 320., &self.seed, 18, style::TEXT_FIELD));
             }
             draws.push(text(
                 100.,
                 570.,
                 "First slice: generated land play, production, research and engine checkpoints.",
                 18,
-                "#ddd9bd",
+                style::TEXT_DIM,
             ));
         }
         if let Some(modal) = &self.modal {
-            draws.push(rect(180., 105., 664., 550., "#53564a"));
+            style::modal(&mut draws, 180., 105., 664., 550.);
             let title = match modal {
                 Modal::Name => "Name your city",
                 Modal::Research => "Choose research explicitly",
@@ -2334,7 +2341,7 @@ impl Client {
                 Modal::NewGame => "Start a new game? Unsaved progress will be lost.",
                 Modal::Quit => "Close client? Save first if you want to resume.",
             };
-            draws.push(text(212., 125., title, 22, "#fff0b5"));
+            draws.push(text(212., 125., title, 22, style::TEXT_BRIGHT));
             self.route_draws(modal, &mut draws);
             self.report_draws(&mut draws);
             self.pedia_draws(&mut draws);
@@ -2352,7 +2359,7 @@ impl Client {
                             562.,
                             &format!("Draft: {} · {cost}", self.item_name(q.item)),
                             14,
-                            "#fff0b5",
+                            style::TEXT_BRIGHT,
                         ));
                         let difference = i32::from(q.retained) - i32::from(q.current_shields);
                         let effect = if difference < 0 {
@@ -2367,10 +2374,10 @@ impl Client {
                             580.,
                             &format!("Shields: {} → {} · {effect}", q.current_shields, q.retained),
                             12,
-                            "#eee8d4",
+                            style::TEXT,
                         ));
                     }
-                    Err(why) => draws.push(text(212., 570., why, 14, "#ffcf8c")),
+                    Err(why) => draws.push(text(212., 570., why, 14, style::WARN)),
                 }
             }
             if let Modal::Purchase { quote, .. } = modal {
@@ -2395,7 +2402,7 @@ impl Client {
                     .into(),
                 ];
                 for (i, line) in lines.iter().enumerate() {
-                    draws.push(text(212., 190. + i as f64 * 40., line, 17, "#eee8d4"));
+                    draws.push(text(212., 190. + i as f64 * 40., line, 17, style::TEXT));
                 }
             }
             if let Modal::Sale { preview, .. } = modal {
@@ -2429,7 +2436,7 @@ impl Client {
                     "Single-city sale. One improvement sale per turn.".into(),
                 ];
                 for (i, line) in lines.iter().enumerate() {
-                    draws.push(text(212., 180. + i as f64 * 40., line, 17, "#eee8d4"));
+                    draws.push(text(212., 180. + i as f64 * 40., line, 17, style::TEXT));
                 }
             }
             if matches!(
@@ -2444,21 +2451,21 @@ impl Client {
                     220.,
                     "Capture covers ownership, treasury, population and buildings.",
                     17,
-                    "#eee8d4",
+                    style::TEXT,
                 ));
                 draws.push(text(
                     212.,
                     250.,
                     "Capital relocation, civil war, technology plunder and respawn",
                     17,
-                    "#eee8d4",
+                    style::TEXT,
                 ));
                 draws.push(text(
                     212.,
                     280.,
                     "are not implemented in this slice.",
                     17,
-                    "#eee8d4",
+                    style::TEXT,
                 ));
             }
             if matches!(
@@ -2473,29 +2480,25 @@ impl Client {
                     151.,
                     "Arrow keys select · Enter accepts · Esc returns to inspection",
                     13,
-                    "#eee8d4",
+                    style::TEXT,
                 ));
             }
         }
         for (i, b) in self.buttons().iter().enumerate() {
             let primary = matches!(b.action, Action::QuickStart);
-            draws.push(rect(
-                b.x,
-                b.y,
-                b.w,
-                b.h,
-                if primary {
-                    if i == self.focus_button {
-                        "#f4d46c"
-                    } else {
-                        "#d9b85a"
-                    }
-                } else if i == self.focus_button {
-                    "#6b7057"
+            let focused = i == self.focus_button;
+            let fill = if primary {
+                if focused {
+                    style::PRIMARY_FOCUS
                 } else {
-                    "#41483b"
-                },
-            ));
+                    style::PRIMARY
+                }
+            } else if focused {
+                style::SELECT
+            } else {
+                style::BUTTON
+            };
+            style::button(&mut draws, b.x, b.y, b.w, b.h, fill, focused);
             if self.loaded.is_some() {
                 draws.push(Draw::Tile {
                     x: b.x + 2.,
@@ -2510,7 +2513,11 @@ impl Client {
                 b.y + 7.,
                 &b.label,
                 if primary { 24 } else { 16 },
-                if primary { "#172015" } else { "#f4eedb" },
+                if primary {
+                    style::ON_PRIMARY
+                } else {
+                    style::TEXT_FIELD
+                },
             ));
             if let Action::Specialist(city, slot) = &b.action {
                 let role = view
@@ -2529,17 +2536,17 @@ impl Client {
             }
         }
         if let Some(e) = self.entry_meta() {
-            draws.push(rect(e.x - 1., e.y - 1., e.w + 2., e.h + 2., "#d6c885"));
-            draws.push(rect(e.x, e.y, e.w, e.h, "#121811"));
-            draws.push(text(e.x + 7., e.y + 10., &e.value, 18, "#f4eedb"));
+            draws.push(rect(e.x - 1., e.y - 1., e.w + 2., e.h + 2., style::GOLD));
+            draws.push(rect(e.x, e.y, e.w, e.h, style::FIELD));
+            draws.push(text(e.x + 7., e.y + 10., &e.value, 18, style::TEXT_FIELD));
         }
-        draws.push(rect(0., 744., 1024., 24., "#3b4034"));
+        draws.push(rect(0., 744., 1024., 24., style::STATUS_BG));
         draws.push(text(
             10.,
             749.,
             &self.feedback().chars().take(145).collect::<String>(),
             13,
-            "#fff0c6",
+            style::GOLD,
         ));
         Frame {
             city_click: self.pending_city_click.map(|g| g.first),
@@ -2629,7 +2636,7 @@ impl Client {
                     y: py,
                     x2: px + 12. * self.zoom,
                     y2: py,
-                    color: "#4e9ac4".into(),
+                    color: style::LINK.into(),
                     width: 2. * self.zoom,
                 });
             }
@@ -2693,11 +2700,11 @@ impl Client {
                     36. * ratio,
                     4.,
                     if ratio > 0.6 {
-                        "#81cd59"
+                        style::MOVE_OK
                     } else if ratio > 0.3 {
-                        "#edd35a"
+                        style::MOVE_SOME
                     } else {
-                        "#e57660"
+                        style::MOVE_NONE
                     },
                 ));
             }
@@ -2711,7 +2718,12 @@ impl Client {
                     y: py,
                     w: 64. * self.zoom,
                     h: 32. * self.zoom,
-                    color: if self.moving { "#ffff8c" } else { "#f0eee0" }.into(),
+                    color: if self.moving {
+                        style::GOLD
+                    } else {
+                        style::TEXT
+                    }
+                    .into(),
                     blink: self.focused && self.modal.is_none() && v.phase == Phase::Human,
                 });
             }

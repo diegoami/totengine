@@ -4,6 +4,7 @@
 //! their own), decoded by `tot_kit::Pedia`; nothing is rewritten or invented, and no
 //! text is stored in the repository. The open demo has no such file, so the lookup
 //! says it is unavailable there. Reading never touches game state.
+use super::style;
 use super::*;
 
 const SECTIONS: [(&str, &str); 7] = [
@@ -320,16 +321,16 @@ impl Client {
         };
         // The open category is marked with an underline under its tab.
         if let Some(slot) = self.pedia_present().iter().position(|i| i == section) {
-            draws.push(rect(TEXT_X + slot as f64 * 86., 179., 84., 3., "#e8c85a"));
+            draws.push(rect(TEXT_X + slot as f64 * 86., 179., 84., 3., style::GOLD));
         }
         if *reading {
             let Some(entry) = s.entries.get(*selected) else {
                 return;
             };
-            draws.push(text(TEXT_X, 188., &entry.title, 19, "#fff0b5"));
+            draws.push(text(TEXT_X, 188., &entry.title, 19, style::TEXT_BRIGHT));
             let lines = self.pedia_lines(*section, *selected);
             for (i, line) in lines.iter().skip(*scroll).take(READ_LINES).enumerate() {
-                draws.push(text(TEXT_X, 218. + i as f64 * 19., line, 13, "#eee8d4"));
+                draws.push(text(TEXT_X, 218. + i as f64 * 19., line, 13, style::TEXT));
             }
             draws.push(text(
                 TEXT_X,
@@ -341,7 +342,7 @@ impl Client {
                     lines.len()
                 ),
                 13,
-                "#ddd9bd",
+                style::TEXT_DIM,
             ));
         } else {
             let page = selected / LIST_ROWS;
@@ -353,9 +354,9 @@ impl Client {
             {
                 let y = LIST_Y + (i - page * LIST_ROWS) as f64 * ROW_H;
                 if i == *selected {
-                    draws.push(rect(TEXT_X - 4., y - 2., 608., ROW_H - 1., "#6b7057"));
+                    draws.push(rect(TEXT_X - 4., y - 2., 608., ROW_H - 1., style::SELECT));
                 }
-                draws.push(text(TEXT_X + 4., y + 3., title, 15, "#eee8d4"));
+                draws.push(text(TEXT_X + 4., y + 3., title, 15, style::TEXT));
             }
             draws.push(text(
                 TEXT_X,
@@ -367,7 +368,7 @@ impl Client {
                     s.entries.len().div_ceil(LIST_ROWS).max(1)
                 ),
                 13,
-                "#ddd9bd",
+                style::TEXT_DIM,
             ));
         }
         let source = self
@@ -379,7 +380,7 @@ impl Client {
             566.,
             &format!("Text from this profile's Describe.txt ({source})."),
             12,
-            "#c9c4a8",
+            style::TEXT_DIM,
         ));
     }
 }

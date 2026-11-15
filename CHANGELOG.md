@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- One styling system for every screen (#282, UI quality U1b): a single
+  `style` module now owns the palette (parchment/olive tokens, the
+  near-duplicate golds and text shades consolidated), the shared modal frame
+  (a gold hairline around the panel fill) and focused-button chrome (a gold
+  hairline so keyboard focus is always visible). Screens reference tokens
+  instead of literal colors; game-data colors (civ palette, terrain accents)
+  remain literal by design.
 - Crisp client scaling (#281, UI quality U1a): the browser now renders at
   native device resolution at any window size (text vector-crisp, pixel art
   nearest-neighbour) instead of CSS-upscaling a fixed 1024×768 canvas; the

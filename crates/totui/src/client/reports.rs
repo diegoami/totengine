@@ -3,6 +3,7 @@
 //! report views; sorting, selection and paging are presentation only, and
 //! opening a report never submits a command. An own-city row drills into the
 //! city workspace and Esc returns to the same report, sort and selection.
+use super::style;
 use super::*;
 use engine::human::{Report, ReportFamily};
 
@@ -610,7 +611,7 @@ impl Client {
                 ROW_Y + 8.,
                 "Nothing to report yet.",
                 16,
-                "#eee8d4",
+                style::TEXT,
             ));
         }
         for (i, row) in t
@@ -622,16 +623,22 @@ impl Client {
         {
             let y = ROW_Y + (i - page * PAGE_ROWS) as f64 * ROW_H;
             if i == *selected {
-                draws.push(rect(TABLE_X - 4., y - 2., 608., ROW_H - 1., "#6b7057"));
+                draws.push(rect(TABLE_X - 4., y - 2., 608., ROW_H - 1., style::SELECT));
             }
-            let color = if row.warn { "#ffba8a" } else { "#eee8d4" };
+            let color = if row.warn { style::WARN } else { style::TEXT };
             for (cell, (x, _)) in row.cells.iter().zip(&t.columns) {
                 draws.push(text(TABLE_X + x + 4., y + 3., cell, 13, color));
             }
         }
         let foot_y = ROW_Y + PAGE_ROWS as f64 * ROW_H + 8.;
         for (i, line) in t.footer.iter().enumerate() {
-            draws.push(text(TABLE_X, foot_y + i as f64 * 18., line, 13, "#ddd9bd"));
+            draws.push(text(
+                TABLE_X,
+                foot_y + i as f64 * 18.,
+                line,
+                13,
+                style::TEXT_DIM,
+            ));
         }
         draws.push(text(
             TABLE_X + 470.,
@@ -644,7 +651,7 @@ impl Client {
                 pages
             ),
             13,
-            "#eee8d4",
+            style::TEXT,
         ));
     }
 

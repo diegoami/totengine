@@ -12,7 +12,9 @@
 //! returns the recorded response instead of executing twice. The session's
 //! checkpoint and `.totrec` recording replay the game without the agent.
 
-use engine::human::{Command, Decision, Entity, HumanSession, Phase, Request};
+use engine::human::{
+    Command, Decision, Entity, HumanSession, Phase, Report, ReportFamily, Request,
+};
 use serde::Deserialize;
 use serde_json::{json, Value};
 
@@ -113,11 +115,17 @@ impl AgentGame {
         Ok(())
     }
 
-    /// The agent civilization's state at the start of its turn.
+    /// The agent civilization's state at the start of its turn. Living
+    /// civilizations and the phase describe the outcome so far (#263); they
+    /// are public figures, like the original's public reports.
     fn summary(&self) -> Value {
         let view = self.session.view();
         let o = &view.observation;
         let own: Vec<_> = o.cities.iter().filter(|c| c.owner == self.civ).collect();
+        let living = match self.session.any_report(ReportFamily::Score) {
+            Report::Score { rows, .. } => rows.iter().map(|r| r.civ).collect::<Vec<_>>(),
+            _ => Vec::new(),
+        };
         json!({
             "turn": o.turn,
             "cities": own.len(),
@@ -127,6 +135,8 @@ impl AgentGame {
             "advances": known_advances(&o.techs).len(),
             "research": o.research.target,
             "government": o.government,
+            "living_civs": living,
+            "phase": phase_name(self.session.phase()),
         })
     }
 

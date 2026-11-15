@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Agent report outcome (#263, unreleased): every per-turn summary now records
+  the living civilizations and the phase (`your-turn`/`opponents`/
+  `eliminated`/`turn-limit`), so a report shows how the game ended, not just
+  the agent's own economy. Recordings made before this change simply lack the
+  two fields in their notes.
 - Agent opponent policy choice (#261, unreleased): `agent_start` accepts
   `opponents: "builtin-1"` (default) or `"ai-v1"`. The choice is recorded in
   human checkpoints (`policy ai-v1`), restored on resume — which refuses to

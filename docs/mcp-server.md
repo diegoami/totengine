@@ -201,7 +201,9 @@ actions in a human game (#257).
   resource identity, `totengine-headless-agent 1`.
 - **Reports (#263).** `agent_report` gives one summary of the agent's
   civilization per turn reached: cities, population, units, treasury, number of
-  advances, research target and government. It also gives command statistics:
+  advances, research target and government, plus the outcome so far — the
+  living civilizations and the phase (`your-turn`, `opponents`, `eliminated`,
+  `turn-limit`). It also gives command statistics:
   submitted, accepted, engine-rejected by reason, refused before the game by
   message, and turns where the budget ran out.
   - A recording stores the summaries and statistics as notes in its inert

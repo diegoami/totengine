@@ -61,6 +61,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   City status (F1), Defense (F2), Attitude (F4), Trade (F5) and Wonders (F7) with sortable columns, row selection, paging
   and drill-down into an own city that returns to the report. Engine views
   (`HumanSession::report`) are derived from the filtered view only and are inert.
+- Public-figure reports on both clients (#201/#202, unreleased): Ranked cities
+  (F8), Score (F9) and Demographics (F11). Like the original's public reports
+  (U23/U24) they list every living civilization; the score is the engine's
+  native power score with its standard components, demographics give your
+  value, the best civilization's and your rank. Built through
+  `HumanSession::any_report` from public world figures only, and as inert as
+  the own-civ views.
 - Civilopedia reference lookup on both clients (#201/#202, unreleased): `tot_kit::Pedia` decodes the
   profile's own `Describe.txt` (checked against an independent inventory of all nine installed files),
   with category browsing, reading, and a help button in the required research prompt that returns to

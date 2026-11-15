@@ -7,11 +7,18 @@
 //! U23): city identity/outputs/item/progress; unit statistics with active and
 //! in-production counts; per-city tax, science and improvement maintenance.
 //! Layout, sorting and the F-keys are client presentation. Attitude (F4) lists
-//! citizen moods per city and Wonders (F7) the wonders this civilization hosts;
-//! foreign, ranking, score, demographics and spaceship reports are not part of
-//! this slice. Wonder expiry is not shown: it depends on every civilization's
+//! citizen moods per city and Wonders (F7) the wonders this civilization hosts.
+//! Wonder expiry is not shown: it depends on every civilization's
 //! knowledge, whose visibility to the player is unverified.
-use super::{Entity, HumanView};
+//!
+//! Ranked cities (F8), Score (F9) and Demographics (F11) are the original's
+//! *public* reports (U23/U24): like the power ranking, the original shows them
+//! for every civilization, independent of the player's exploration. They are
+//! therefore built from the world's public figures through
+//! [`HumanSession::any_report`], never from private foreign state, and they are
+//! as inert as the own-civ views. Foreign/intelligence (F3) needs the diplomacy
+//! model and spaceship (F12) remains unscoped.
+use super::{Entity, HumanSession, HumanView};
 use tot_kit::Rules;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,6 +28,9 @@ pub enum ReportFamily {
     Trade,
     Attitude,
     Wonders,
+    RankedCities,
+    Score,
+    Demographics,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -108,6 +118,46 @@ pub struct WonderRow {
     pub city_name: String,
 }
 
+/// One of the world's largest cities (F8). Public in the original (U23):
+/// foreign entries appear regardless of this player's exploration.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RankedCityRow {
+    /// 1-based world rank by size.
+    pub rank: u8,
+    pub name: String,
+    pub civ: u8,
+    pub size: u16,
+    /// Wonders this city hosts.
+    pub wonders: u32,
+}
+
+/// One civilization's public power score (F9, U24). The score is the engine's
+/// original-decoded power score; the components are the standard-mode terms.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScoreRow {
+    pub civ: u8,
+    pub alive: bool,
+    pub score: i32,
+    /// Standard-mode component: acquired advances (×3).
+    pub advances: i32,
+    /// Standard-mode component: population (×8).
+    pub population: i32,
+    /// Standard-mode component: treasury (÷32).
+    pub treasury: i32,
+}
+
+/// One demographics category (F11, U23): your value, the best civilization's
+/// value and your rank among the living civilizations.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DemographicsRow {
+    pub category: &'static str,
+    pub own: i64,
+    pub best: i64,
+    pub best_civ: u8,
+    /// 1-based; civilizations with a strictly greater value rank ahead.
+    pub rank: u8,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Report {
     CityStatus(Vec<CityStatusRow>),
@@ -118,6 +168,14 @@ pub enum Report {
     },
     Attitude(Vec<AttitudeRow>),
     Wonders(Vec<WonderRow>),
+    RankedCities(Vec<RankedCityRow>),
+    Score {
+        rows: Vec<ScoreRow>,
+        /// Scenario objectives mode (scenario research flag 128): scores count
+        /// objectives/wonders instead of the standard components.
+        scenario: bool,
+    },
+    Demographics(Vec<DemographicsRow>),
 }
 
 fn improvement_count(buildings: &[u8; 5]) -> u32 {
@@ -304,5 +362,115 @@ pub fn build(family: ReportFamily, view: &HumanView, rules: &Rules) -> Report {
         }
         ReportFamily::Attitude => Report::Attitude(attitude(view)),
         ReportFamily::Wonders => Report::Wonders(wonders(view, rules)),
+        // The public families route through `any_report`, which has the world.
+        family
+        @ (ReportFamily::RankedCities | ReportFamily::Score | ReportFamily::Demographics) => {
+            unreachable!("public family {family:?} needs the world, not the filtered view")
+        }
+    }
+}
+
+/// The world's five largest surface cities, ties in ascending slot order.
+fn ranked_cities(world: &crate::WorldState) -> Vec<RankedCityRow> {
+    let mut all: Vec<_> = world
+        .cities
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| c.city_id != 0 && c.map_id == 0)
+        .collect();
+    all.sort_by(|a, b| b.1.size.cmp(&a.1.size).then(a.0.cmp(&b.0)));
+    all.truncate(5);
+    all.into_iter()
+        .enumerate()
+        .map(|(i, (slot, c))| RankedCityRow {
+            rank: i as u8 + 1,
+            name: c.name.clone(),
+            civ: (c.owner & 15) as u8,
+            size: c.size,
+            wonders: world.wonders.iter().filter(|&&w| w == slot as i16).count() as u32,
+        })
+        .collect()
+}
+
+/// Public power scores with the standard-mode components per living civ.
+fn score(world: &crate::WorldState) -> (Vec<ScoreRow>, bool) {
+    let scenario = world.research_settings.flags & 128 != 0;
+    let scores = world.power_scores().unwrap_or([0; 8]);
+    let rows = (1u8..8)
+        .filter(|c| world.ai_state.alive_mask & (1 << c) != 0)
+        .map(|c| ScoreRow {
+            civ: c,
+            alive: true,
+            score: scores[usize::from(c)],
+            advances: i32::from(world.research[usize::from(c)].acquired),
+            population: i32::from(world.ai_state.population[usize::from(c)]),
+            treasury: world.treasury[usize::from(c)],
+        })
+        .collect();
+    (rows, scenario)
+}
+
+/// One row per category: this civilization's value, the best living civ's
+/// value and this civilization's rank among the living.
+fn demographics(world: &crate::WorldState, human: u8) -> Vec<DemographicsRow> {
+    let civs: Vec<u8> = (1u8..8)
+        .filter(|c| world.ai_state.alive_mask & (1 << c) != 0)
+        .collect();
+    let value = |category: &str, c: u8| -> i64 {
+        match category {
+            "Population" => i64::from(world.ai_state.population[usize::from(c)]),
+            "Cities" => world
+                .cities
+                .iter()
+                .filter(|c2| c2.city_id != 0 && c2.map_id == 0 && c2.owner & 15 == u16::from(c))
+                .count() as i64,
+            "Military" => world
+                .units
+                .iter()
+                .filter(|u| u.id != 0 && u.owner == c)
+                .count() as i64,
+            "Advances" => i64::from(world.research[usize::from(c)].acquired),
+            _ => i64::from(world.treasury[usize::from(c)]),
+        }
+    };
+    ["Population", "Cities", "Military", "Advances", "Treasury"]
+        .into_iter()
+        .map(|category| {
+            let own = value(category, human);
+            let (best, best_civ) = civs
+                .iter()
+                .map(|&c| (value(category, c), c))
+                .max_by(|a, b| a.0.cmp(&b.0).then(b.1.cmp(&a.1)))
+                .unwrap_or((0, human));
+            let ahead = civs.iter().filter(|&&c| value(category, c) > own).count() as u8;
+            DemographicsRow {
+                category,
+                own,
+                best,
+                best_civ,
+                rank: ahead + 1,
+            }
+        })
+        .collect()
+}
+
+impl HumanSession {
+    /// Every report family. The own-civilization families (F1/F2/F4/F5/F7)
+    /// come from the filtered view like [`HumanSession::report`]; the public
+    /// families (F8/F9/F11) are built from the world's public figures, which
+    /// the original reports for every civilization. All families are equally
+    /// inert: no journal entry, no randomness, no revision bump.
+    pub fn any_report(&self, family: ReportFamily) -> Report {
+        match family {
+            ReportFamily::RankedCities => Report::RankedCities(ranked_cities(&self.game.world)),
+            ReportFamily::Score => {
+                let (rows, scenario) = score(&self.game.world);
+                Report::Score { rows, scenario }
+            }
+            ReportFamily::Demographics => {
+                Report::Demographics(demographics(&self.game.world, self.human))
+            }
+            own => build(own, &self.view(), &self.game.rules),
+        }
     }
 }

@@ -1,8 +1,9 @@
 # Milestone 19 — own-civilization reports on both clients (#201, #202)
 
 Status: **first slice open as PR #247, extended with Attitude and Wonders on a stacked
-branch; not released, not owner-accepted.** Scope is deliberately small: five report
-families whose fields the engine already computes and verifies, shared by the browser and
+branch; extended again with the public families Ranked cities/Score/Demographics;
+not released, not owner-accepted.** Scope is deliberately small: report families
+whose fields the engine already computes and verifies, shared by the browser and
 desktop clients.
 
 ## Admitted families
@@ -14,16 +15,29 @@ desktop clients.
 | Attitude (tab *Mood*) | F4 | city, size, happy, content, unhappy citizens, entertainers, tax collectors, scientists | `engine::human::attitude`: `city_economy` mood plus the citizen view's specialist roles; content is the remainder |
 | Trade | F5 | city, credited taxes, science, luxury, improvement maintenance, improvement count; totals row (taxes, upkeep, net, science, luxury, treasury) | `engine::human::trade` |
 | Wonders | F7 | wonder, host city | `engine::human::wonders`: own wonder hosts only, names from the `@ENDWONDER` row comments (physical row ids); expiry and foreign wonders are not shown |
+| Ranked cities | F8 | rank, city, civ, size, wonders | `engine::human` public figures: the world's five largest surface cities, ties in slot order. Public in the original (U23), so foreign cities are listed |
+| Score | F9 | civ, score, advances, population, treasury | `WorldState::power_scores` (the native-decoded power score) with its standard components (3×advances + 8×population + treasury÷32); scenario-objectives mode is reported in the footer |
+| Demographics | F11 | category, you, best, best civ, rank | public figures per living civilization: population, cities, military units, advances, treasury |
 
 Field sets follow the inspected original reports (discovery U05 city status, U23
-defense/trade). **Layout, column order, labels and the sort/paging controls are ours**:
-the original's exact column set, sorting and drill-down behavior were not traced, so no
-native-parity claim is made. Not in this slice: Foreign (F3),
-Ranked cities (F8), Score (F9), Demographics (F11), Spaceships (F12), the defense
-casualty timeline, supply/demand, and the Civilopedia/reference lookup.
+defense/trade/ranked/demographics, U24 score). **Layout, column order, labels and
+the sort/paging controls are ours**: the original's exact column set, sorting and
+drill-down behavior were not traced, so no native-parity claim is made (the
+demographics categories in particular are our own selection). Not in this slice:
+Foreign (F3, needs the diplomacy model), the
+defense casualty timeline, supply/demand, Spaceships (F12) and the
+Civilopedia/reference lookup — the last now ships separately through
+`tot_kit::Pedia`.
 
 ## Rules for the views
 
+- The public families (F8/F9/F11) go through `HumanSession::any_report` and use
+  the world's *public figures* — the data the original itself reports for every
+  civilization (U23/U24): city sizes for the ranking, the native power score
+  and its components, population/cities/units/advances/treasury for
+  demographics. They never read private foreign state beyond those public
+  figures, and are exactly as inert as the own-civ views (test
+  `public_reports_list_every_civilization_and_stay_inert`).
 - Built only from the human's own filtered `HumanView` and the loaded rules, so a report
   cannot expose foreign hidden data; `HumanSession::report` journals nothing, consumes no
   randomness and bumps no revision (test

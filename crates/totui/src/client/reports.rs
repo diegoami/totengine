@@ -73,18 +73,22 @@ pub(super) fn sort_table(t: &mut Table, sort: usize, descending: bool) {
 
 pub(super) fn family_label(f: ReportFamily) -> &'static str {
     match f {
-        ReportFamily::CityStatus => "City status [F1]",
+        ReportFamily::CityStatus => "Status [F1]",
         ReportFamily::Defense => "Defense [F2]",
         ReportFamily::Trade => "Trade [F5]",
         ReportFamily::Attitude => "Mood [F4]",
         ReportFamily::Wonders => "Wonders [F7]",
+        ReportFamily::RankedCities => "Ranked [F8]",
+        ReportFamily::Score => "Score [F9]",
+        ReportFamily::Demographics => "Demog [F11]",
     }
 }
 
 impl Client {
     pub(super) fn report_table(&self, family: ReportFamily) -> Option<Table> {
         let l = self.loaded.as_ref()?;
-        let report = l.session.report(family);
+        let own = self.view().map(|v| v.observation.civ).unwrap_or(0);
+        let report = l.session.any_report(family);
         Some(match report {
             Report::CityStatus(rows) => Table {
                 headers: vec![
@@ -261,6 +265,118 @@ impl Client {
                     })
                     .collect(),
             },
+            Report::RankedCities(rows) => Table {
+                headers: vec!["Rank", "City", "Civ", "Size", "Wonders"],
+                columns: layout(&[52., 178., 96., 64., 96.]),
+                footer: vec![
+                    "The world's five largest cities. Public in the original: foreign cities are listed too.".into(),
+                    "No drill-down here; open your own cities from City status.".into(),
+                ],
+                rows: rows
+                    .into_iter()
+                    .map(|r| {
+                        let civ = if r.civ == own {
+                            format!("{} (you)", r.civ)
+                        } else {
+                            r.civ.to_string()
+                        };
+                        TableRow {
+                            cells: vec![
+                                r.rank.to_string(),
+                                clip(&r.name, 21),
+                                civ,
+                                r.size.to_string(),
+                                r.wonders.to_string(),
+                            ],
+                            keys: vec![
+                                num_key(i64::from(r.rank)),
+                                text_key(&r.name),
+                                num_key(i64::from(r.civ)),
+                                num_key(i64::from(r.size)),
+                                num_key(i64::from(r.wonders)),
+                            ],
+                            city: None,
+                            warn: false,
+                        }
+                    })
+                    .collect(),
+            },
+            Report::Score { rows, scenario } => Table {
+                headers: vec!["Civ", "Score", "Adv", "Pop", "Gold"],
+                columns: layout(&[96., 96., 80., 104., 110.]),
+                footer: vec![
+                    if scenario {
+                        "Scenario objectives mode: scores count scenario objectives and wonders.".into()
+                    } else {
+                        "Standard score = 3×advances + 8×population + treasury÷32 (the engine's native power score).".into()
+                    },
+                    "Shown for every living civilization, as in the original score report.".into(),
+                ],
+                rows: rows
+                    .into_iter()
+                    .map(|r| {
+                        let civ = if r.civ == own {
+                            format!("{} (you)", r.civ)
+                        } else {
+                            r.civ.to_string()
+                        };
+                        TableRow {
+                            cells: vec![
+                                civ,
+                                r.score.to_string(),
+                                r.advances.to_string(),
+                                r.population.to_string(),
+                                r.treasury.to_string(),
+                            ],
+                            keys: vec![
+                                num_key(i64::from(r.civ)),
+                                num_key(i64::from(r.score)),
+                                num_key(i64::from(r.advances)),
+                                num_key(i64::from(r.population)),
+                                num_key(i64::from(r.treasury)),
+                            ],
+                            city: None,
+                            warn: false,
+                        }
+                    })
+                    .collect(),
+            },
+            Report::Demographics(rows) => Table {
+                headers: vec!["Category", "You", "Best", "Best civ", "Rank"],
+                columns: layout(&[150., 96., 96., 110., 70.]),
+                footer: vec![
+                    "Your value, the best living civilization's value and your rank among them.".into(),
+                    "Categories and layout are ours; the original F11 was only inspected at a coarse level.".into(),
+                ],
+                rows: rows
+                    .into_iter()
+                    .map(|r| {
+                        let best_civ = if r.best_civ == own {
+                            format!("{} (you)", r.best_civ)
+                        } else {
+                            r.best_civ.to_string()
+                        };
+                        TableRow {
+                            cells: vec![
+                                r.category.into(),
+                                r.own.to_string(),
+                                r.best.to_string(),
+                                best_civ,
+                                format!("#{}", r.rank),
+                            ],
+                            keys: vec![
+                                text_key(r.category),
+                                num_key(r.own),
+                                num_key(r.best),
+                                num_key(i64::from(r.best_civ)),
+                                num_key(i64::from(r.rank)),
+                            ],
+                            city: None,
+                            warn: false,
+                        }
+                    })
+                    .collect(),
+            },
         })
     }
 
@@ -433,14 +549,17 @@ impl Client {
             ReportFamily::Attitude,
             ReportFamily::Trade,
             ReportFamily::Wonders,
+            ReportFamily::RankedCities,
+            ReportFamily::Score,
+            ReportFamily::Demographics,
         ]
         .into_iter()
         .enumerate()
         {
             b.push(Button {
-                x: TABLE_X + i as f64 * 122.,
+                x: TABLE_X + i as f64 * 100.,
                 y: 150.,
-                w: 118.,
+                w: 96.,
                 h: 28.,
                 label: family_label(f).into(),
                 action: Action::ReportFamily(f),
@@ -545,6 +664,9 @@ impl Client {
             "F4" => self.report_family(ReportFamily::Attitude),
             "F5" => self.report_family(ReportFamily::Trade),
             "F7" => self.report_family(ReportFamily::Wonders),
+            "F8" => self.report_family(ReportFamily::RankedCities),
+            "F9" => self.report_family(ReportFamily::Score),
+            "F11" => self.report_family(ReportFamily::Demographics),
             _ => return None,
         }
         Some(Ok(()))

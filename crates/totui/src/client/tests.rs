@@ -3149,6 +3149,61 @@ fn report_sorting_is_stable_numeric_and_text_aware() {
 }
 
 #[test]
+fn public_reports_open_from_keys_and_list_the_whole_world() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    button(&mut c, "Start Original");
+    c.required();
+    key(&mut c, "ArrowDown");
+    key(&mut c, "Enter");
+    founding(&mut c);
+    let before = c.checkpoint().unwrap();
+    let revision = c.view().unwrap().revision;
+    let has = |c: &Client, s: &str| {
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Text{text,..} if text.contains(s)))
+    };
+    // F8: the own city is ranked first among the world's cities.
+    key(&mut c, "F8");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::RankedCities,
+            ..
+        })
+    ));
+    assert!(has(&c, "Athena"), "ranked rows list the own city");
+    assert!(has(&c, "(you)"), "the own civilization is marked");
+    // Switching tabs inside the report reaches Score and Demographics.
+    key(&mut c, "F9");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::Score,
+            ..
+        })
+    ));
+    assert!(has(&c, "Standard score = 3"), "native score formula footer");
+    key(&mut c, "F11");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Report {
+            family: ReportFamily::Demographics,
+            ..
+        })
+    ));
+    assert!(has(&c, "Population"));
+    assert!(has(&c, "Treasury"));
+    // Opening the public families mutates nothing.
+    assert_eq!(c.checkpoint().unwrap(), before);
+    assert_eq!(c.view().unwrap().revision, revision);
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+}
+
+#[test]
 fn reports_open_switch_sort_drill_down_and_return_without_mutation() {
     let f = Fixture::new();
     let mut c = f.client();

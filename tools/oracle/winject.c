@@ -52,6 +52,24 @@ static void move_to(int x, int y)
 
 static void nap(int ms) { Sleep(ms); }
 
+static BOOL CALLBACK enum_child_cb(HWND hwnd, LPARAM lp)
+{
+    char title[256], cls[256];
+    DWORD pid = 0;
+    GetWindowTextA(hwnd, title, sizeof(title));
+    GetClassNameA(hwnd, cls, sizeof(cls));
+    GetWindowThreadProcessId(hwnd, &pid);
+    RECT r;
+    GetWindowRect(hwnd, &r);
+    printf("child=%08lx pid=%lu vis=%d rect=%ld,%ld %ldx%ld [%s] %s\n",
+           (unsigned long)(DWORD_PTR)hwnd, (unsigned long)pid,
+           IsWindowVisible(hwnd), r.left, r.top,
+           r.right - r.left, r.bottom - r.top, cls, title);
+    EnumChildWindows(hwnd, enum_child_cb, 0);
+    (void)lp;
+    return TRUE;
+}
+
 static BOOL CALLBACK enum_cb(HWND hwnd, LPARAM lp)
 {
     char title[256];
@@ -66,6 +84,10 @@ static BOOL CALLBACK enum_cb(HWND hwnd, LPARAM lp)
                IsWindowVisible(hwnd), r.left, r.top,
                r.right - r.left, r.bottom - r.top, title);
     }
+    /* 2026-11-15 post-reboot rig: the game's world window is not a top-level
+       window any more (wine desktop/explorer owns it), so EnumWindows alone
+       never finds it and SendInput keys land on the shell. Walk children. */
+    EnumChildWindows(hwnd, enum_child_cb, 0);
     (void)lp;
     return TRUE;
 }

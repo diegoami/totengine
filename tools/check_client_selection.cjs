@@ -50,7 +50,7 @@ exports.run=async({page,state,key,click,save,load,idle,fixture,saves,out})=>{
  await compare('selectionskip','after-skip');
  await key('Enter');await page.waitForFunction(turn=>frame.phase==='Human'&&frame.draws.some(d=>d.text?.startsWith('Turn '+turn+' ')),meta.turn+1);
  await idle();
- if((await state()).draws.some(d=>d.text==='Choose research explicitly')){await key('ArrowDown');await key('Enter')}
+ if((await state()).draws.some(d=>d.text==='Choose research')){await key('ArrowDown');await key('Enter')}
  if(!(await state()).draws.some(d=>d.kind==='unit_sprite'&&d.selected&&d.blink&&d.moves_left>0))throw Error('new human turn did not select a ready unit');
  await compare('selectionturn','after-turn');
  await page.screenshot({path:path.join(out,'selection.png')});

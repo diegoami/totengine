@@ -150,7 +150,7 @@ def run():
                     t=next(d for d in scene()["draws"] if d.get("kind")=="text" and d.get("text")==label)
                     click_at(t["x"]+12,t["y"]+8)
                 def research():
-                    if has(scene(),"Choose research explicitly"):
+                    if has(scene(),"Choose research"):
                         key("Down");key("Return");wait(lambda s:s["status"]=="research-set")
                 def save_dialog(name):
                     write(name);wait(lambda s:s.get("entry") and s["entry"]["value"]==name);key("Return")
@@ -159,7 +159,7 @@ def run():
                 for _ in range(len(scene()["entry"]["value"])): key("BackSpace")
                 write("7")
                 button(start_label)
-                wait(lambda s:has(s,"Choose research explicitly"));button("Save pending choice");save_dialog("research");research()
+                wait(lambda s:has(s,"Choose research"));button("Save pending choice");save_dialog("research");research()
                 key("b");wait(lambda s:has(s,"Name your city"));button("Save pending choice");save_dialog("founding")
                 wait(lambda s:has(s,"Name your city"));write("athenx");key("BackSpace");key("a");key("Return");wait(lambda s:s["status"]=="founded 0")
                 button("Choose production")
@@ -324,7 +324,7 @@ def run():
                 pedia=os.environ.get("TOTENGINE_PEDIA_FIXTURES")
                 if pedia:
                     from check_government_route import run_government
-                    run_government(scene,key,click_button,save_dialog,load,wait,work,pedia,start="pedstart",start_title="Choose research explicitly")
+                    run_government(scene,key,click_button,save_dialog,load,wait,work,pedia,start="pedstart",start_title="Choose research")
                 panels=os.environ.get("TOTENGINE_PANELS_FIXTURES")
                 if panels:
                     from check_city_panels import run_panels

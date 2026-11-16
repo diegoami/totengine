@@ -5,6 +5,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Two overlaps fixed: the research chooser title ("Choose research") is no
+  longer covered by its Civilopedia / Save pending choice buttons, which now
+  fit their labels, and the setup screen's scope line no longer runs under
+  the Load engine checkpoint button.
 - The toolbar **Cities** button opens a city window (#292, owner choice
   2026-11-16): each click opens the next own city's workspace. With no
   cities, a small notice explains how to found one. Before this, the button

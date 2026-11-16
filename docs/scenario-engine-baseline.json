@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "bb39018c5f461908ac706e00978995292be0572e6c061af94f23c0b758e72059",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "e7ea975e835f627e641d061007c0398e636d7f2bb4987a5179c6239438566bfd",
+    "crates/totui/src/client/mod.rs": "18773d509239bb99dc6d36131ca2e468dc07a0f22d5ce3f743daf21ce101d08e",
     "crates/totui/src/resources.rs": "2bb8ef62098b871ef7e6fb1b7464e93ba4ff36eb15b50674349b2e248bc07d4c",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -225,6 +225,13 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Client routing/presentation only: it reuses the existing read-only city-open path and adds an inert notice modal. No command, order, event, trigger, action, checkpoint, scenario-entry or runtime-admission path changed; the trigger/action tables above are unchanged."
+    },
+    {
+      "change": "UI overlap fixes: the research chooser title is shortened to 'Choose research' and its header buttons are re-laid out so they no longer cover the title; the setup screen's stale scope line moves below the Load button it overlapped",
+      "files": [
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Layout and label text only. No command, order, event, trigger, action, checkpoint, scenario-entry or runtime-admission path changed; the trigger/action tables above are unchanged."
     }
   ]
 }

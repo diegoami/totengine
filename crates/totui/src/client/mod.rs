@@ -1876,9 +1876,9 @@ impl Client {
                 }
             ) {
                 add(
-                    650.,
+                    622.,
                     120.,
-                    160.,
+                    190.,
                     30.,
                     "Save pending choice".into(),
                     Action::Save,
@@ -1889,7 +1889,7 @@ impl Client {
                     add(
                         480.,
                         120.,
-                        160.,
+                        134.,
                         30.,
                         "Civilopedia".into(),
                         Action::PediaFor,
@@ -1899,7 +1899,7 @@ impl Client {
                     add(
                         480.,
                         120.,
-                        160.,
+                        134.,
                         30.,
                         "Load checkpoint".into(),
                         Action::Load,
@@ -2363,9 +2363,9 @@ impl Client {
             }
             draws.push(text(
                 100.,
-                570.,
-                "First slice: generated land play, production, research and engine checkpoints.",
-                18,
+                604.,
+                "Generated surface games: land play, cities, research, government, reports and checkpoints.",
+                14,
                 style::TEXT_DIM,
             ));
         }
@@ -2373,7 +2373,7 @@ impl Client {
             style::modal(&mut draws, 180., 105., 664., 550.);
             let title = match modal {
                 Modal::Name => "Name your city",
-                Modal::Research => "Choose research explicitly",
+                Modal::Research => "Choose research",
                 Modal::Rates { review: None, .. } => "Tax, luxury and science rates",
                 Modal::Rates { .. } => "Review your rates",
                 Modal::Revolution => "Revolution",

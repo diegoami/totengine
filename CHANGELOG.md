@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Map tooltips (#284, UI package U2), a new option under **Settings**, off by
+  default: resting the pointer on a known map tile for about half a second
+  shows its terrain and coordinates, river/road/railroad, any city (size,
+  yours or which civ) and the units there (type, veteran, your units' number
+  and moves left). It uses only what your civilization knows, and unknown
+  tiles have no tip. Any click, key or wheel hides it. Both clients draw the
+  same box. Showing a tip sends no input, so it never changes the game.
 - Scrolling and sorting for long lists (#284, UI package U2): the mouse
   wheel pages the list under the pointer on both clients: reports, the
   Civilopedia (lists and articles), the message log, choice lists (research,

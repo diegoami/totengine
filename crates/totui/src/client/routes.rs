@@ -458,6 +458,11 @@ impl Client {
                 "Confirm every move",
                 self.enhancements.confirm_moves,
             ),
+            (
+                Enhancement::MapTooltips,
+                "Map tooltips",
+                self.enhancements.map_tooltips,
+            ),
         ]
     }
 
@@ -465,6 +470,7 @@ impl Client {
         let explain = [
             "Lists a turn's new notices over the map, with Open messages and Dismiss.",
             "Asks before every unit move; attacks and captures always ask.",
+            "Resting the pointer on a known tile describes its terrain, city and units.",
         ];
         for (i, line) in explain.iter().enumerate() {
             draws.push(text(

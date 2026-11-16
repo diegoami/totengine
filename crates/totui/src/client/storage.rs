@@ -156,6 +156,10 @@ pub struct Enhancements {
     pub notice_overlay: bool,
     /// Ask before every move, not only attacks and captures.
     pub confirm_moves: bool,
+    /// Describe the tile, city and units under a resting pointer on the map.
+    /// Absent in files written before it existed, so it defaults off.
+    #[serde(default)]
+    pub map_tooltips: bool,
 }
 
 pub const ENHANCEMENTS_FORMAT: &str = "totengine-enhancements 1";

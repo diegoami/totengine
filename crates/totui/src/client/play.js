@@ -25,6 +25,8 @@ function id() {
 // Declared before the first resize() below: drawCanvas() reads it, and a
 // `let` used before its declaration throws and stops the whole script (#298).
 let paintedFrame = null, paintedImages = new Map();
+// Map-tooltip pointer state (#284); declared before any paint, like the above.
+let hover = null, hoverTimer = null;
 function resize() {
   scale = Math.min(innerWidth / 1024, innerHeight / 768);
   stage.style.transform = `translate(${(innerWidth - 1024 * scale) / 2}px,${(innerHeight - 768 * scale) / 2}px) scale(${scale})`;
@@ -74,7 +76,8 @@ function drawCanvas() {
   ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
   ctx.clearRect(0, 0, 1024, 768);
   ctx.imageSmoothingEnabled = false;
-  for (const d of paintedFrame.draws) {
+  const tip = hoverTip();
+  for (const d of tip ? paintedFrame.draws.concat(tip.draws) : paintedFrame.draws) {
     switch (d.kind) {
       case "rect":
         ctx.fillStyle = d.color;
@@ -114,6 +117,38 @@ function drawCanvas() {
     }
   }
 }
+// Map tooltips (#284, opt-in under Settings): the frame carries each tip's
+// hit area and draws; one shows after the pointer rests 450 ms (the desktop
+// client's TIP_DELAY_MS). Any click, key or wheel restarts the wait.
+function hoverTip() {
+  if (!hover || !hover.rested || !document.hasFocus()) return null;
+  for (const t of paintedFrame.tips || []) {
+    const inside = t.diamond
+      ? Math.abs(hover.x - t.x) / t.hw + Math.abs(hover.y - t.y) / t.hh <= 1
+      : hover.x >= t.x && hover.x < t.x + 2 * t.hw && hover.y >= t.y && hover.y < t.y + 2 * t.hh;
+    if (inside) return t;
+  }
+  return null;
+}
+function restartHover() {
+  clearTimeout(hoverTimer);
+  const shown = hover?.rested;
+  if (hover) hover.rested = false;
+  if (shown) drawCanvas();
+  if (hover && paintedFrame?.tips?.length)
+    hoverTimer = setTimeout(() => { if (hover) { hover.rested = true; drawCanvas(); } }, 450);
+}
+canvas.addEventListener("mousemove", (e) => {
+  const r = canvas.getBoundingClientRect();
+  const x = (e.clientX - r.left) / scale, y = (e.clientY - r.top) / scale;
+  if (hover && hover.x === x && hover.y === y) return;
+  hover = { x, y, rested: false };
+  restartHover();
+});
+canvas.addEventListener("mouseleave", () => { hover = null; restartHover(); drawCanvas(); });
+canvas.addEventListener("mousedown", restartHover);
+addEventListener("keydown", restartHover, true);
+canvas.addEventListener("wheel", restartHover, { passive: true });
 // Animation only redraws the canvas. No input, network, DOM editing or game tick.
 setInterval(() => {
   if (paintedFrame?.draws.some(d => (d.kind === "unit_sprite" || d.kind === "cursor") && d.blink)) drawCanvas();

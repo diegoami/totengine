@@ -4005,3 +4005,108 @@ fn city_panel_lists_sort_by_presentation_order_only() {
     c.city_panel_sort = CitySort::Name;
     assert_eq!(order(&c), [1, 2, 3], "same names keep the listed order");
 }
+
+#[test]
+fn map_tooltips_are_opt_in_describe_the_filtered_view_and_never_touch_the_game() {
+    use super::tips::moves_text;
+    assert_eq!(
+        [moves_text(3), moves_text(4), moves_text(2), moves_text(0)],
+        ["1", "1 1/3", "2/3", "0"]
+    );
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    // Off by default: the frame carries no tips and serializes none.
+    assert!(!c.enhancements.map_tooltips);
+    assert!(c.frame().tips.is_empty());
+    assert!(!serde_json::to_string(&c.frame())
+        .unwrap()
+        .contains("\"tips\""));
+    let before = c.checkpoint().unwrap();
+    button(&mut c, "Settings");
+    button(&mut c, "[ ] Map tooltips");
+    assert!(c.enhancements.map_tooltips);
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    let v = c.view().unwrap();
+    let own = v
+        .observation
+        .units
+        .iter()
+        .find(|u| u.owner == v.observation.civ)
+        .unwrap()
+        .clone();
+    let frame = c.frame();
+    assert!(!frame.tips.is_empty());
+    let (px, py) = (
+        c.pan.0 + f64::from(own.x) * 32. * c.zoom,
+        c.pan.1 + f64::from(own.y) * 16. * c.zoom,
+    );
+    let lines = |t: &Tip| -> Vec<String> {
+        t.draws
+            .iter()
+            .filter_map(|d| match d {
+                Draw::Text { text, .. } => Some(text.clone()),
+                _ => None,
+            })
+            .collect()
+    };
+    // Both the unit sprite (above the tile) and the tile diamond describe it.
+    for (x, y) in [(px, py - 30.), (px + 20., py)] {
+        let tip = tip_at(&frame.tips, x, y).expect("tip under the unit");
+        let text = lines(tip);
+        assert!(
+            text[0].ends_with(&format!("({}, {})", own.x, own.y)),
+            "{text:?}"
+        );
+        assert!(
+            text.iter()
+                .any(|l| l.contains(&format!("#{} · moves", own.index))),
+            "{text:?}"
+        );
+    }
+    // Every tip is a known tile and its box stays on the map.
+    for t in &frame.tips {
+        for d in &t.draws {
+            if let Draw::Rect { x, y, w, h, .. } = d {
+                assert!(*x >= 12. && x + w <= 752. && *y >= 100. && y + h <= 680.);
+            }
+        }
+    }
+    let o = &v.observation;
+    let unknown = o.seen.iter().position(Option::is_none).unwrap();
+    let uy = (unknown / (usize::from(o.w2) / 2)) as u16;
+    let ux = ((unknown % (usize::from(o.w2) / 2)) * 2) as u16 + (uy & 1);
+    assert!(
+        c.tip_lines(&v, ux, uy).is_none(),
+        "unknown tiles have no tip"
+    );
+    // Dialogs and the city window hide the map tips.
+    button(&mut c, "Settings");
+    assert!(c.frame().tips.is_empty());
+    key(&mut c, "Escape");
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "tooltips are presentation-only"
+    );
+    founding(&mut c);
+    button(&mut c, "Manage city");
+    assert!(c.frame().tips.is_empty());
+    key(&mut c, "Escape");
+    let city = c.frame();
+    let tip = tip_at(&city.tips, px, py - 30.).expect("city tip");
+    assert!(lines(tip)
+        .iter()
+        .any(|l| l.starts_with("Athena · size 1 · yours")));
+    // A file from before the option existed still loads, with it off.
+    let saved = storage::load_enhancements(&f.saves());
+    assert!(saved.map_tooltips);
+    let path = storage::enhancements_path(&f.saves()).unwrap();
+    std::fs::write(
+        &path,
+        br#"{"format":"totengine-enhancements 1","notice_overlay":false,"confirm_moves":false}"#,
+    )
+    .unwrap();
+    assert!(!storage::load_enhancements(&f.saves()).map_tooltips);
+}

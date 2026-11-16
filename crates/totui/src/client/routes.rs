@@ -267,7 +267,7 @@ impl Client {
                 })?;
                 Ok(Some(true))
             }
-            Modal::Science | Modal::Notice { .. } | Modal::Help => Ok(Some(true)),
+            Modal::Science | Modal::Notice { .. } | Modal::Help | Modal::Messages => Ok(Some(true)),
             Modal::Pedia { .. } => {
                 self.pedia_accept()?;
                 Ok(Some(false))
@@ -329,7 +329,7 @@ impl Client {
                 self.open(Modal::Science);
                 true
             }
-            Some(Modal::Notice { .. } | Modal::Help) => {
+            Some(Modal::Notice { .. } | Modal::Help | Modal::Messages) => {
                 self.modal = None;
                 true
             }
@@ -404,6 +404,12 @@ impl Client {
                     );
                 }
             }
+            Modal::Messages => {
+                if self.notice_log.len() > super::MESSAGE_ROWS {
+                    add(212., 529., 120., 28., "Newer".into(), Action::Page(-1));
+                    add(342., 529., 120., 28., "Older".into(), Action::Page(1));
+                }
+            }
             Modal::Science => {
                 add(212., 170., 220., 34., "Set goal…".into(), Action::GoalList);
                 if self.view().is_some_and(|v| v.goal.is_some()) {
@@ -420,6 +426,54 @@ impl Client {
             _ => (),
         }
         b
+    }
+
+    /// The message log (#284): newest first, one page of rows.
+    fn message_draws(&self, draws: &mut Vec<Draw>) {
+        let rows = super::MESSAGE_ROWS;
+        if self.notice_log.is_empty() {
+            draws.push(text(
+                212.,
+                170.,
+                "No messages yet. Each turn's notices are kept here.",
+                style::TYPE_BODY,
+                style::TEXT,
+            ));
+            return;
+        }
+        let pages = self.notice_log.len().div_ceil(rows);
+        draws.push(text(
+            700.,
+            132.,
+            &format!("page {}/{}", self.page + 1, pages),
+            style::TYPE_SMALL,
+            style::TEXT,
+        ));
+        for (i, (turn, line)) in self
+            .notice_log
+            .iter()
+            .rev()
+            .skip(self.page * rows)
+            .take(rows)
+            .enumerate()
+        {
+            let y = 166. + i as f64 * 22.;
+            draws.push(text(
+                212.,
+                y,
+                &format!("Turn {turn}"),
+                style::TYPE_SMALL,
+                style::GOLD,
+            ));
+            draws.push(text(300., y, line, style::TYPE_SMALL, style::TEXT));
+        }
+        draws.push(text(
+            212.,
+            570.,
+            "Kept for this session only; checkpoints do not store messages.",
+            style::TYPE_SMALL,
+            style::TEXT_DIM,
+        ));
     }
 
     pub(super) fn route_draws(&self, modal: &Modal, draws: &mut Vec<Draw>) {
@@ -553,6 +607,7 @@ impl Client {
                 }
             }
             Modal::Help => help_draws(draws),
+            Modal::Messages => self.message_draws(draws),
             Modal::Notice { lines, .. } => {
                 for (i, s) in lines.iter().enumerate() {
                     line(

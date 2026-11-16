@@ -3768,3 +3768,78 @@ fn keyboard_help_opens_from_map_button_and_city_and_is_inert() {
     key(&mut c, "Escape");
     assert!(c.modal.is_none() && c.city_open);
 }
+
+#[test]
+fn notice_log_keeps_each_turn_once_with_an_inert_overlay_and_paged_dialog() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    let shows = |c: &Client, s: &str| {
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Text{text,..} if text.starts_with(s)))
+    };
+    assert!(c.notice_log.is_empty());
+    assert!(!shows(&c, "Turn 1 — new messages"));
+    // Play until the engine reports notices (growth, production, discovery).
+    for _ in 0..30 {
+        research(&mut c);
+        if c.modal.is_some() {
+            key(&mut c, "Escape");
+        }
+        key(&mut c, "Ctrl+n");
+        if matches!(c.modal, Some(Modal::Confirm { .. })) {
+            key(&mut c, "Enter");
+        }
+        ready(&mut c);
+        if !c.notice_log.is_empty() {
+            break;
+        }
+    }
+    assert!(!c.notice_log.is_empty(), "no notices in 30 turns");
+    let turn = c.notice_turn.unwrap();
+    let logged = c.notice_log.len();
+    // Visible as an overlay on the map, and logged once however often the
+    // client handles input during the same turn.
+    research(&mut c);
+    assert!(
+        c.modal.is_some() || shows(&c, &format!("Turn {turn} — new messages")),
+        "overlay missing"
+    );
+    if c.modal.is_some() {
+        key(&mut c, "Escape");
+    }
+    key(&mut c, "c");
+    key(&mut c, "c");
+    assert_eq!(c.notice_log.len(), logged, "a turn is logged once");
+    let before = c.checkpoint().unwrap();
+    // A click on the overlay body dismisses it and is never a map order.
+    if c.notice_overlay() {
+        let (_, (x, y, _, _)) = c.notice_overlay_rect();
+        input(
+            &mut c,
+            Input::Click {
+                x: x + 30.,
+                y: y + 20.,
+            },
+        );
+        assert!(!c.notice_overlay());
+    }
+    // The log dialog lists the entries newest first.
+    button(&mut c, &format!("Messages ({logged})"));
+    assert!(matches!(c.modal, Some(Modal::Messages)));
+    assert!(shows(&c, &format!("Turn {turn}")));
+    assert!(shows(&c, &c.notice_log.last().unwrap().1.clone()));
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "messages are presentation-only"
+    );
+    // A new game starts an empty log.
+    c.reset_notices();
+    assert!(c.notice_log.is_empty() && !c.notice_overlay());
+}

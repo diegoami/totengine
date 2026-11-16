@@ -100,6 +100,7 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
 - **B** opens founding for an eligible settler. Type the name and accept;
   Escape cancels without consuming the settler. **Cities** opens the next own city's window (a notice explains how to found one when you have none).
 - Press **?** (or click **Keys [?]**) for the keyboard help: original keys plus ToTEngine additions.
+- **Messages** (side panel) keeps every turn's notices for the session, newest first and paged. When a turn brings new notices, a small overlay on the map lists them; **Dismiss** or a click on it hides it. Messages are presentation-only: checkpoints do not store them.
 - **Double-click an own city on the map** (including its garrison) or use
   **Manage city** to open its workspace. The first city click only selects or
   inspects; use movement keys to move into an own city. Click a radius tile

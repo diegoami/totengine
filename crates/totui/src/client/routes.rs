@@ -267,7 +267,11 @@ impl Client {
                 })?;
                 Ok(Some(true))
             }
-            Modal::Science | Modal::Notice { .. } | Modal::Help | Modal::Messages => Ok(Some(true)),
+            Modal::Science
+            | Modal::Notice { .. }
+            | Modal::Help
+            | Modal::Messages
+            | Modal::Settings => Ok(Some(true)),
             Modal::Pedia { .. } => {
                 self.pedia_accept()?;
                 Ok(Some(false))
@@ -329,7 +333,7 @@ impl Client {
                 self.open(Modal::Science);
                 true
             }
-            Some(Modal::Notice { .. } | Modal::Help | Modal::Messages) => {
+            Some(Modal::Notice { .. } | Modal::Help | Modal::Messages | Modal::Settings) => {
                 self.modal = None;
                 true
             }
@@ -404,6 +408,18 @@ impl Client {
                     );
                 }
             }
+            Modal::Settings => {
+                for (i, (e, label, on)) in self.settings_rows().into_iter().enumerate() {
+                    add(
+                        212.,
+                        170. + i as f64 * 80.,
+                        600.,
+                        34.,
+                        format!("[{}] {label}", if on { "x" } else { " " }),
+                        Action::Toggle(e),
+                    );
+                }
+            }
             Modal::Messages => {
                 if self.notice_log.len() > super::MESSAGE_ROWS {
                     add(212., 529., 120., 28., "Newer".into(), Action::Page(-1));
@@ -426,6 +442,54 @@ impl Client {
             _ => (),
         }
         b
+    }
+
+    /// Enhancement toggles in display order: (toggle, label, current state).
+    fn settings_rows(&self) -> Vec<(super::Enhancement, &'static str, bool)> {
+        use super::Enhancement;
+        vec![
+            (
+                Enhancement::NoticeOverlay,
+                "New-messages overlay on the map",
+                self.enhancements.notice_overlay,
+            ),
+            (
+                Enhancement::ConfirmMoves,
+                "Confirm every move",
+                self.enhancements.confirm_moves,
+            ),
+        ]
+    }
+
+    fn settings_draws(&self, draws: &mut Vec<Draw>) {
+        let explain = [
+            "Lists a turn's new notices over the map, with Open messages and Dismiss.",
+            "Asks before every unit move; attacks and captures always ask.",
+        ];
+        for (i, line) in explain.iter().enumerate() {
+            draws.push(text(
+                222.,
+                210. + i as f64 * 80.,
+                line,
+                style::TYPE_SMALL,
+                style::TEXT_DIM,
+            ));
+        }
+        for (i, line) in [
+            "These change the client, never the game: checkpoints, recordings and",
+            "rules are unaffected. Saved beside your saves for both clients.",
+        ]
+        .iter()
+        .enumerate()
+        {
+            draws.push(text(
+                212.,
+                520. + i as f64 * 20.,
+                line,
+                style::TYPE_SMALL,
+                style::TEXT,
+            ));
+        }
     }
 
     /// The message log (#284): newest first, one page of rows.
@@ -477,6 +541,11 @@ impl Client {
     }
 
     pub(super) fn route_draws(&self, modal: &Modal, draws: &mut Vec<Draw>) {
+        // Settings also opens from the setup screen, before any game exists.
+        if matches!(modal, Modal::Settings) {
+            self.settings_draws(draws);
+            return;
+        }
         let Some(v) = self.view() else { return };
         let line = |draws: &mut Vec<Draw>, y: f64, s: &str, size: u32, color: &str| {
             draws.push(text(212., y, s, size, color));
@@ -608,6 +677,7 @@ impl Client {
             }
             Modal::Help => help_draws(draws),
             Modal::Messages => self.message_draws(draws),
+            Modal::Settings => {}
             Modal::Notice { lines, .. } => {
                 for (i, s) in lines.iter().enumerate() {
                     line(

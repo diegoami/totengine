@@ -5,6 +5,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- The toolbar **Cities** button opens a city window (#292, owner choice
+  2026-11-16): each click opens the next own city's workspace. With no
+  cities, a small notice explains how to found one. Before this, the button
+  only selected a city and scrolled the map, so it looked dead.
 - Desktop clicks land where the pointer is again at every window size (#292):
   SDL already maps mouse events onto the 1024×768 logical stage when a
   logical size is set, so the extra mapping added for #281 scaled every click

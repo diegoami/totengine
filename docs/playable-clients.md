@@ -98,7 +98,7 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
 - **C** centers on the active unit. **Z / X** zoom in/out; **Shift+Z** restores
   standard zoom. The **+ / -** buttons and keys remain available as conveniences.
 - **B** opens founding for an eligible settler. Type the name and accept;
-  Escape cancels without consuming the settler. **Cities** cycles own cities.
+  Escape cancels without consuming the settler. **Cities** opens the next own city's window (a notice explains how to found one when you have none).
 - **Double-click an own city on the map** (including its garrison) or use
   **Manage city** to open its workspace. The first city click only selects or
   inspects; use movement keys to move into an own city. Click a radius tile

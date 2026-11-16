@@ -34,7 +34,7 @@ def run_government(scene, key, click_button, save_dialog, load, wait, work, fixt
         elif op == 'entry':
             save_dialog(step['value'])
         elif op == 'research':
-            if any(d.get('text') == 'Choose research explicitly' for d in scene()['draws']):
+            if any(d.get('text') == 'Choose research' for d in scene()['draws']):
                 key('Down'); key('Return'); wait(lambda s: s['status'] == 'research-set')
         elif op == 'endturn':
             turn = int(next(d['text'] for d in scene()['draws'] if d.get('text', '').startswith('Turn ')).split()[1])

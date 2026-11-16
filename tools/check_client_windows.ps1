@@ -191,7 +191,7 @@ try {
     }
     function Research {
         $scene=Read-Scene
-        if(Has-Text $scene 'Choose research explicitly') {
+        if(Has-Text $scene 'Choose research') {
             Send-Key 40;Send-Key 13
             [void](Wait-Scene {param($s) $s.status -eq 'research-set'})
         }
@@ -208,10 +208,10 @@ try {
     for($n=0;$n -lt $seedLength;$n++){Send-Key 8}
     Send-Text '7'
     Focus-Button $startLabel
-    [void](Wait-Scene {param($s) Has-Text $s 'Choose research explicitly'})
+    [void](Wait-Scene {param($s) Has-Text $s 'Choose research'})
     Focus-Button 'Save pending choice'
     Save-Dialog 'research'
-    [void](Wait-Scene {param($s) Has-Text $s 'Choose research explicitly'})
+    [void](Wait-Scene {param($s) Has-Text $s 'Choose research'})
     Research
     Send-Text 'b'
     [void](Wait-Scene {param($s) Has-Text $s 'Name your city'})

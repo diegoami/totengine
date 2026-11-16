@@ -16,7 +16,7 @@ fs.mkdirSync(out,{recursive:true});
  async function click(label){const f=await state();const t=f.draws.find(d=>d.kind==='text'&&d.text===label);if(!t)throw Error('Missing '+label+' '+f.status);await page.mouse.click(t.x+18,t.y+9);await idle()}
  async function fill(value){await idle();await page.locator('#entry').fill(value);await page.waitForFunction(v=>frame.entry?.value===v&&!busy,value);await idle()}
  function has(f,t){return f.draws.some(d=>d.kind==='text'&&d.text===t)}
- async function research(){if(has(await state(),'Choose research explicitly')){await key('ArrowDown');await key('Enter');await page.waitForFunction(()=>frame.status==='research-set')}}
+ async function research(){if(has(await state(),'Choose research')){await key('ArrowDown');await key('Enter');await page.waitForFunction(()=>frame.status==='research-set')}}
  async function save(name){await fill(name);await key('Enter')}
  async function restoreFocus(){
   const posted=page.waitForRequest(request=>request.url().endsWith('/input')&&request.method()==='POST'&&request.postDataJSON()?.input?.type==='focus'&&request.postDataJSON().input.focused===true);
@@ -203,7 +203,7 @@ fs.mkdirSync(out,{recursive:true});
  }
  if(process.env.TOTENGINE_GOVERNMENT_FIXTURES)await require('./check_government_route.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_GOVERNMENT_FIXTURES,saves:process.env.TOTENGINE_CLIENT_SAVES,out});
  if(process.env.TOTENGINE_REPORTS_FIXTURES)await require('./check_government_route.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_REPORTS_FIXTURES,saves:process.env.TOTENGINE_CLIENT_SAVES,out,start:'repstart',shot:'reports-route-final.png'});
- if(process.env.TOTENGINE_PEDIA_FIXTURES)await require('./check_government_route.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_PEDIA_FIXTURES,saves:process.env.TOTENGINE_CLIENT_SAVES,out,start:'pedstart',startTitle:'Choose research explicitly',shot:'pedia-route-final.png'});
+ if(process.env.TOTENGINE_PEDIA_FIXTURES)await require('./check_government_route.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_PEDIA_FIXTURES,saves:process.env.TOTENGINE_CLIENT_SAVES,out,start:'pedstart',startTitle:'Choose research',shot:'pedia-route-final.png'});
  if(process.env.TOTENGINE_PANELS_FIXTURES)await require('./check_city_panels.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_PANELS_FIXTURES,saves:process.env.TOTENGINE_CLIENT_SAVES,out});
  if(process.env.TOTENGINE_CITY_OPEN_FIXTURE)await require('./check_city_open.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_CITY_OPEN_FIXTURE,saves:process.env.TOTENGINE_CLIENT_SAVES,out});
  if(process.env.TOTENGINE_CITY_OPEN_FIXTURE)await require('./check_city_gesture_races.cjs').run({page,state,key,click,save,load,idle,fixture:process.env.TOTENGINE_CITY_OPEN_FIXTURE,saves:process.env.TOTENGINE_CLIENT_SAVES,out});

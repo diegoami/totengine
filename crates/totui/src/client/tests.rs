@@ -3676,7 +3676,7 @@ fn generated_pedia_route() {
     assert_eq!(title(&c), "Civilopedia");
     assert!(matches!(c.modal, Some(Modal::Pedia { reading: true, .. })));
     r.key(&mut c, "Escape");
-    assert_eq!(title(&c), "Choose research explicitly");
+    assert_eq!(title(&c), "Choose research");
     r.key(&mut c, "Enter");
     assert_eq!(title(&c), serde_json::Value::Null);
     // The main lookup: categories, reading, scrolling, back.

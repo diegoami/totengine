@@ -78,7 +78,7 @@ exports.run = async ({page, state, key, click, save, load, idle, fixture, saves}
   async function finishTurn() {
     await page.waitForFunction(() => frame.phase !== 'Opponents' && !busy);
     if (isCity(await state())) await key('Escape');
-    if ((await state()).draws.some(d => d.text === 'Choose research explicitly')) {
+    if ((await state()).draws.some(d => d.text === 'Choose research')) {
       await key('ArrowDown'); await key('Enter');
     }
   }

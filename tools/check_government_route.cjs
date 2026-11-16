@@ -11,7 +11,7 @@ exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out,start=
   if(step.op==='key')await key(keys[step.key]||step.key);
   else if(step.op==='button')await click(step.label);
   else if(step.op==='entry')await save(step.value);
-  else if(step.op==='research'){const f=await state();if(f.draws.some(d=>d.text==='Choose research explicitly')){await key('ArrowDown');await key('Enter');await page.waitForFunction(()=>frame.status==='research-set')}}
+  else if(step.op==='research'){const f=await state();if(f.draws.some(d=>d.text==='Choose research')){await key('ArrowDown');await key('Enter');await page.waitForFunction(()=>frame.status==='research-set')}}
   else if(step.op==='endturn'){
    const f=await state();const turn=parseInt(f.draws.find(d=>d.text?.startsWith('Turn ')).text.split(' ')[1]);
    await key('Control+n');if((await state()).draws.some(d=>d.text==='End your turn with movable units?'))await key('Enter');

@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "bb39018c5f461908ac706e00978995292be0572e6c061af94f23c0b758e72059",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "ab5b94bf6b92da2f29b4023741fc86cbbea19c9745483f2b718322a974ba7cf8",
+    "crates/totui/src/client/mod.rs": "b63768ea51506b706f062fecb1b6cf647c6c41d82b334b088637d5bb42742a5b",
     "crates/totui/src/resources.rs": "2bb8ef62098b871ef7e6fb1b7464e93ba4ff36eb15b50674349b2e248bc07d4c",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -260,6 +260,13 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Presentation only: the log is derived from the existing filtered notices and is not checkpointed; overlay clicks never reach map orders. No command, order, event, trigger, action, checkpoint, scenario-entry or runtime-admission path changed; the trigger/action tables above are unchanged."
+    },
+    {
+      "change": "#284 Enhancements settings screen: opt-in client toggles (new-messages overlay, confirm every move), all off by default, persisted in enhancements.json beside the saves; the bottom-bar Confirm all moves toggle moves into it",
+      "files": [
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Client presentation and confirmation preferences only. Confirm-every-move adds a client-side confirmation before the same Move command. No command, order, event, trigger, action, checkpoint, scenario-entry or runtime-admission path changed; the trigger/action tables above are unchanged."
     }
   ]
 }

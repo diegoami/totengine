@@ -3773,6 +3773,9 @@ fn keyboard_help_opens_from_map_button_and_city_and_is_inert() {
 fn notice_log_keeps_each_turn_once_with_an_inert_overlay_and_paged_dialog() {
     let f = Fixture::new();
     let mut c = f.client();
+    // The overlay is an opt-in enhancement (#284), off by default.
+    assert!(!c.enhancements.notice_overlay);
+    c.enhancements.notice_overlay = true;
     start(&mut c);
     founding(&mut c);
     let shows = |c: &Client, s: &str| {
@@ -3842,4 +3845,50 @@ fn notice_log_keeps_each_turn_once_with_an_inert_overlay_and_paged_dialog() {
     // A new game starts an empty log.
     c.reset_notices();
     assert!(c.notice_log.is_empty() && !c.notice_overlay());
+}
+
+#[test]
+fn enhancements_default_off_toggle_persist_and_never_touch_the_game() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    assert!(!c.enhancements.notice_overlay);
+    assert!(!c.enhancements.confirm_moves);
+    let shows = |c: &Client, s: &str| {
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Text{text,..} if text.starts_with(s)))
+    };
+    // Reachable from the setup screen, before any game exists.
+    button(&mut c, "Enhancements…");
+    assert!(matches!(c.modal, Some(Modal::Settings)));
+    assert!(shows(&c, "Lists a turn's new notices"));
+    button(&mut c, "[ ] Confirm every move");
+    assert!(c.enhancements.confirm_moves, "{}", c.status);
+    assert!(shows(&c, "[x] Confirm every move"));
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    // Persisted beside the saves: a second client sees the same choice.
+    let c2 = f.client();
+    assert!(c2.enhancements.confirm_moves);
+    assert!(!c2.enhancements.notice_overlay);
+    // In game: Settings replaces the old bottom-bar toggle and is inert.
+    start(&mut c);
+    let before = c.checkpoint().unwrap();
+    button(&mut c, "Settings");
+    assert!(matches!(c.modal, Some(Modal::Settings)));
+    button(&mut c, "[ ] New-messages overlay on the map");
+    button(&mut c, "[x] Confirm every move");
+    assert!(c.enhancements.notice_overlay && !c.enhancements.confirm_moves);
+    key(&mut c, "Escape");
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "enhancements never reach the game"
+    );
+    // Garbage on disk means "all off", never a failed start.
+    let path = super::storage::enhancements_path(&c.saves).unwrap();
+    fs::write(&path, b"{not json").unwrap();
+    let c3 = f.client();
+    assert!(!c3.enhancements.notice_overlay && !c3.enhancements.confirm_moves);
 }

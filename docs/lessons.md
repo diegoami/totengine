@@ -25,6 +25,11 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   event coordinates once (`eprintln!` in a scratch build) and drive a
   complete route (start, choose, toolbar) at a non-1× window before claiming
   an input fix. Run the client yourself; don't stop at the unit test.
+- **Point scripted client runs at scratch saves.** Clients write host-side
+  files beside the saves folder (`setup.json` on Start, `enhancements.json`
+  on a settings toggle). A scripted Xvfb run without `TOTENGINE_SAVES` writes
+  into the owner's real `~/.local/share/totengine/`. Export
+  `TOTENGINE_SAVES=<scratch>/saves` in every rig script.
 - **Force the rig display.** A caller's inherited `DISPLAY=:0` leaked through
   `${DISPLAY:-:99}` and the game silently opened windows on the wrong screen
   (zero windows on :99, looked like a hung game). Rig scripts

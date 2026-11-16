@@ -142,3 +142,58 @@ pub fn save_setup_memory(root: &Path, memory: &SetupMemory) -> Result<(), String
         .map_err(|e| e.to_string())?;
     temp.persist(&path).map(|_| ()).map_err(|e| e.to_string())
 }
+
+/// Opt-in client enhancements (#284 item 6, the B layer of #266): QoL that
+/// differs from the original, every option off by default. One file beside
+/// the saves folder serves both clients; delete it to reset. Presentation and
+/// confirmation preferences only: nothing here reaches the engine or a
+/// checkpoint.
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Enhancements {
+    pub format: String,
+    /// Show a turn's new notices in an overlay on the map.
+    pub notice_overlay: bool,
+    /// Ask before every move, not only attacks and captures.
+    pub confirm_moves: bool,
+}
+
+pub const ENHANCEMENTS_FORMAT: &str = "totengine-enhancements 1";
+
+pub fn enhancements_path(root: &Path) -> Option<PathBuf> {
+    root.parent().map(|p| p.join("enhancements.json"))
+}
+
+/// Bounded read and strict parse; any failure means "all off".
+pub fn load_enhancements(root: &Path) -> Enhancements {
+    let read = || -> Option<Enhancements> {
+        let mut bytes = Vec::new();
+        fs::File::open(enhancements_path(root)?)
+            .ok()?
+            .take(4096 + 1)
+            .read_to_end(&mut bytes)
+            .ok()?;
+        if bytes.len() > 4096 {
+            return None;
+        }
+        let e: Enhancements = serde_json::from_slice(&bytes).ok()?;
+        (e.format == ENHANCEMENTS_FORMAT).then_some(e)
+    };
+    read().unwrap_or_else(|| Enhancements {
+        format: ENHANCEMENTS_FORMAT.into(),
+        ..Enhancements::default()
+    })
+}
+
+/// Atomic write; a failure leaves the previous file in place.
+pub fn save_enhancements(root: &Path, e: &Enhancements) -> Result<(), String> {
+    let path = enhancements_path(root).ok_or("no enhancements path")?;
+    let parent = path.parent().ok_or("no parent")?;
+    fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    let mut temp = tempfile::NamedTempFile::new_in(parent).map_err(|e| e.to_string())?;
+    let text = serde_json::to_string(e).map_err(|e| e.to_string())?;
+    temp.write_all(text.as_bytes())
+        .and_then(|_| temp.as_file().sync_all())
+        .map_err(|e| e.to_string())?;
+    temp.persist(&path).map(|_| ()).map_err(|e| e.to_string())
+}

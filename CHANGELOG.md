@@ -5,6 +5,14 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Enhancements settings screen (#284, the opt-in B layer of #266): **Settings**
+  in the bottom bar, or **Enhancements…** on the setup screen, holds the
+  optional improvements that differ from the original, all off by default.
+  They are saved in `enhancements.json` beside the saves folder and shared by
+  both clients. First options: *New-messages overlay on the map* (the
+  overlay from the message log, now opt-in) and *Confirm every move* (moved
+  here from the bottom-bar toggle). None of them reach the game, checkpoints
+  or recordings.
 - Message log (#284, UI package U2): each turn's notices (growth,
   starvation, completed production, discoveries, losses, anarchy) are now
   kept for the session instead of overwriting one line. When a turn brings

@@ -146,6 +146,12 @@ pub struct Frame {
 mod pedia;
 mod reports;
 mod routes;
+/// One opt-in enhancement toggle on the settings screen (#284).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum Enhancement {
+    NoticeOverlay,
+    ConfirmMoves,
+}
 #[derive(Clone)]
 enum Modal {
     Name,
@@ -176,6 +182,8 @@ enum Modal {
     Help,
     /// The persistent message log (#284), newest first, paged.
     Messages,
+    /// Opt-in enhancements (#284): the B-layer settings, all off by default.
+    Settings,
     Goal,
     /// Civilopedia reference text; `back` is the dialog (and research choice) to
     /// return to when it was opened from one.
@@ -232,9 +240,12 @@ enum Action {
     Difficulty,
     Size,
     Mode,
-    ConfirmMoves,
     Work,
     Found,
+    /// Opens the enhancements settings.
+    Settings,
+    /// Flips one enhancement.
+    Toggle(Enhancement),
     /// Opens the message log.
     Messages,
     /// Hides the new-messages overlay on the map.
@@ -359,7 +370,8 @@ pub struct Client {
     report_return: Option<Modal>,
     inspect: Option<(u16, u16)>,
     moving: bool,
-    confirm_moves: bool,
+    /// Opt-in enhancements (#284), persisted beside the saves; all off by default.
+    enhancements: storage::Enhancements,
     pan: (f64, f64),
     zoom: f64,
     assets: String,
@@ -378,6 +390,7 @@ impl Client {
 
     /// Explicit configuration also lets tests avoid process-global environment.
     pub fn with_fallback(home: String, saves: PathBuf, fallback_pack: Option<PathBuf>) -> Self {
+        let enhancements = storage::load_enhancements(&saves);
         let memory = storage::load_setup_memory(&saves);
         let (seed, status) = match random_seed() {
             Ok(seed) => (
@@ -428,7 +441,7 @@ impl Client {
             report_return: None,
             inspect: None,
             moving: false,
-            confirm_moves: false,
+            enhancements,
             pan: (0., 0.),
             zoom: 1.,
             assets: "none".into(),
@@ -537,7 +550,29 @@ impl Client {
     }
     /// The new-messages overlay (#284) shows on the map until dismissed.
     fn notice_overlay(&self) -> bool {
-        self.notice_unread && self.modal.is_none() && !self.city_open && self.loaded.is_some()
+        self.enhancements.notice_overlay
+            && self.notice_unread
+            && self.modal.is_none()
+            && !self.city_open
+            && self.loaded.is_some()
+    }
+    /// Flips one opt-in enhancement and persists it (best effort).
+    fn toggle_enhancement(&mut self, e: Enhancement) {
+        let (flag, name) = match e {
+            Enhancement::NoticeOverlay => (
+                &mut self.enhancements.notice_overlay,
+                "New-messages overlay",
+            ),
+            Enhancement::ConfirmMoves => {
+                (&mut self.enhancements.confirm_moves, "Confirm every move")
+            }
+        };
+        *flag = !*flag;
+        let state = if *flag { "on" } else { "off" };
+        self.status = match storage::save_enhancements(&self.saves, &self.enhancements) {
+            Ok(()) => format!("{name}: {state}."),
+            Err(why) => format!("{name}: {state} for this session (not saved: {why})."),
+        };
     }
     /// The overlay's latest-turn lines and its frame `(x, y, w, h)`.
     fn notice_overlay_rect(&self) -> (Vec<&str>, (f64, f64, f64, f64)) {
@@ -1052,7 +1087,8 @@ impl Client {
                     self.status = "Moving: keypad, cursor arrows or adjacent empty terrain. Click an own unit to select it.".into();
                 }
             }
-            Action::ConfirmMoves => self.confirm_moves = !self.confirm_moves,
+            Action::Toggle(e) => self.toggle_enhancement(e),
+            Action::Settings => self.open(Modal::Settings),
             Action::Found => {
                 let unit = self.active.ok_or("Select an own settler first")?;
                 self.order(Command::BeginFound { unit })?;
@@ -1267,6 +1303,7 @@ impl Client {
                     | Modal::Notice { .. }
                     | Modal::Help
                     | Modal::Messages
+                    | Modal::Settings
                     | Modal::Report { .. }
                     | Modal::Pedia { .. }
                     | Modal::Goal => unreachable!("handled by route_accept"),
@@ -1628,7 +1665,7 @@ impl Client {
             unit,
             city: *city,
         });
-        if enemy || capture.is_some() || self.confirm_moves {
+        if enemy || capture.is_some() || self.enhancements.confirm_moves {
             self.open(Modal::Confirm {
                 command,
                 revision: v.revision,
@@ -2042,9 +2079,11 @@ impl Client {
                         Modal::Rates { review: None, .. } => "Apply [Enter]",
                         Modal::Rates { .. } => "Apply rates [Enter]",
                         Modal::Revolution => "Yes, revolt [Enter]",
-                        Modal::Science | Modal::Notice { .. } | Modal::Help | Modal::Messages => {
-                            "Close [Enter]"
-                        }
+                        Modal::Science
+                        | Modal::Notice { .. }
+                        | Modal::Help
+                        | Modal::Messages
+                        | Modal::Settings => "Close [Enter]",
                         Modal::Report { .. } => "Open city [Enter]",
                         Modal::Pedia { reading: false, .. } => "Read [Enter]",
                         Modal::Pedia { .. } => "Back to list [Enter]",
@@ -2070,6 +2109,7 @@ impl Client {
                         | Modal::Notice { .. }
                         | Modal::Help
                         | Modal::Messages
+                        | Modal::Settings
                         | Modal::Report { .. }
                         | Modal::Pedia { .. } => "Close [Esc]",
                         _ => "Cancel / inspect [Esc]",
@@ -2158,6 +2198,14 @@ impl Client {
                 "Load engine checkpoint".into(),
                 Action::Load,
             );
+            add(
+                100.,
+                632.,
+                300.,
+                36.,
+                "Enhancements…".into(),
+                Action::Settings,
+            );
             return b;
         }
         for (i, (label, action)) in [
@@ -2189,14 +2237,7 @@ impl Client {
         add(770., 392., 78., 26., "Rates".into(), Action::Rates);
         add(852., 392., 78., 26., "Revolt".into(), Action::Revolution);
         add(934., 392., 78., 26., "Science".into(), Action::Science);
-        add(
-            12.,
-            685.,
-            230.,
-            30.,
-            format!("Confirm all moves: {}", self.confirm_moves),
-            Action::ConfirmMoves,
-        );
+        add(12., 685., 230., 30., "Settings".into(), Action::Settings);
         add(250., 685., 110., 30., "New game".into(), Action::NewGame);
         add(368., 685., 120., 30., "Close client".into(), Action::Quit);
         add(
@@ -2553,6 +2594,7 @@ impl Client {
                 Modal::Notice { title, .. } => title,
                 Modal::Help => "Keys",
                 Modal::Messages => "Messages",
+                Modal::Settings => "Enhancements (optional, off by default)",
                 Modal::Report { .. } => "Reports",
                 Modal::Pedia { .. } => "Civilopedia",
                 Modal::Goal => "Choose a research goal",

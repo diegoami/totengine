@@ -50,10 +50,11 @@ pub const TYPE_FINE: u32 = 11;
 
 /// Label size for a non-primary button `w` wide: body text when the label
 /// fits, the small step when it would clip (report tabs, table headers).
-/// Width is estimated from the bundled sans face (about 0.55 em per char).
+/// Width is estimated from the bundled sans face (measured at about 0.54 em
+/// per character for mixed-case labels with bracketed key hints).
 pub fn button_label_size(label: &str, w: f64) -> u32 {
     let chars = label.chars().count() as f64;
-    if chars * 0.55 * f64::from(TYPE_BODY) <= w - 12. {
+    if chars * 0.54 * f64::from(TYPE_BODY) <= w - 10. {
         TYPE_BODY
     } else {
         TYPE_SMALL

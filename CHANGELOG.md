@@ -5,6 +5,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Button labels are sized per row (#283): when any label in a row would clip
+  at body size, the whole row uses the small step, so toolbars never mix two
+  sizes.
 - Typography ladder (#283, UI quality U1c): every client text size now comes
   from one of five steps in the shared `style` module: display 24, title 20,
   body 16, small 13 and fine 11. This replaces twelve ad-hoc sizes that were

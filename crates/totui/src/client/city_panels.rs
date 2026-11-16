@@ -163,7 +163,7 @@ impl Client {
                 if info { 744. } else { 778. },
                 y,
                 &format!("{} #{}", short(&name, 19), u.slot),
-                14,
+                style::TYPE_SMALL,
                 style::TEXT,
             ));
             if !info {
@@ -175,7 +175,7 @@ impl Client {
                         u.shields.unwrap_or(0),
                         u.food.unwrap_or(0)
                     ),
-                    12,
+                    style::TYPE_SMALL,
                     style::TEXT_DIM,
                 ));
             }
@@ -196,7 +196,7 @@ impl Client {
             744.,
             193.,
             self.city_panel.label(),
-            16,
+            style::TYPE_BODY,
             style::TEXT_BRIGHT,
         ));
         match self.city_panel {
@@ -224,32 +224,44 @@ impl Client {
                     .into(),
                 ];
                 for (i, line) in lines.iter().enumerate() {
-                    draws.push(text(744., 220. + i as f64 * 23., line, 15, style::TEXT));
+                    draws.push(text(
+                        744.,
+                        220. + i as f64 * 23.,
+                        line,
+                        style::TYPE_BODY,
+                        style::TEXT,
+                    ));
                 }
                 draws.push(text(
                     744.,
                     342.,
                     "Arrows select; Space edits.",
-                    14,
+                    style::TYPE_SMALL,
                     style::TEXT,
                 ));
                 draws.push(text(
                     744.,
                     365.,
                     "Edits commit immediately.",
-                    14,
+                    style::TYPE_SMALL,
                     style::GOLD,
                 ));
                 draws.push(text(
                     744.,
                     391.,
                     &format!("Own units present: {}", d.present.len()),
-                    15,
+                    style::TYPE_BODY,
                     style::TEXT_BRIGHT,
                 ));
                 self.panel_units(draws, &d.present, 416., page, true);
                 if d.present.is_empty() {
-                    draws.push(text(744., 416., "No own units here.", 14, style::TEXT));
+                    draws.push(text(
+                        744.,
+                        416.,
+                        "No own units here.",
+                        style::TYPE_SMALL,
+                        style::TEXT,
+                    ));
                 }
             }
             CityPanel::Support => {
@@ -259,14 +271,14 @@ impl Client {
                     744.,
                     221.,
                     &format!("Supported units: {}", d.supported.len()),
-                    15,
+                    style::TYPE_BODY,
                     style::TEXT,
                 ));
                 draws.push(text(
                     744.,
                     245.,
                     &format!("Shields {shields} · food {food}"),
-                    15,
+                    style::TYPE_BODY,
                     style::TEXT,
                 ));
                 self.panel_units(draws, &d.supported, 278., page, false);
@@ -275,7 +287,7 @@ impl Client {
                         744.,
                         278.,
                         "No units supported here.",
-                        14,
+                        style::TYPE_SMALL,
                         style::TEXT,
                     ));
                 }
@@ -283,7 +295,7 @@ impl Client {
                     744.,
                     484.,
                     "Inspection only; no unit orders.",
-                    13,
+                    style::TYPE_SMALL,
                     style::TEXT_DIM,
                 ));
             }
@@ -300,7 +312,7 @@ impl Client {
                         744.,
                         y,
                         &short(&self.item_name(-(item.id as i8)), 21),
-                        14,
+                        style::TYPE_SMALL,
                         style::TEXT,
                     ));
                     let status = if item.wonder {
@@ -312,14 +324,20 @@ impl Client {
                     } else {
                         format!("Upkeep: {} gold", item.upkeep)
                     };
-                    draws.push(text(744., y + 20., &status, 13, style::TEXT_DIM));
+                    draws.push(text(
+                        744.,
+                        y + 20.,
+                        &status,
+                        style::TYPE_SMALL,
+                        style::TEXT_DIM,
+                    ));
                 }
                 if d.improvements.is_empty() {
                     draws.push(text(
                         744.,
                         228.,
                         "No improvements or wonders.",
-                        14,
+                        style::TYPE_SMALL,
                         style::TEXT,
                     ));
                 }
@@ -327,7 +345,7 @@ impl Client {
                     744.,
                     484.,
                     "Sale requires confirmation.",
-                    13,
+                    style::TYPE_SMALL,
                     style::TEXT_DIM,
                 ));
             }
@@ -350,7 +368,7 @@ impl Client {
                     }
                     let y = 222. + row as f64 * 51.;
                     row += 1;
-                    draws.push(text(744., y, label, 15, style::TEXT_BRIGHT));
+                    draws.push(text(744., y, label, style::TYPE_BODY, style::TEXT_BRIGHT));
                     draws.push(text(
                         744.,
                         y + 20.,
@@ -358,7 +376,7 @@ impl Client {
                             "Happy {} · unhappy {} · angry {}",
                             stage.happy, stage.unhappy, stage.angry
                         ),
-                        13,
+                        style::TYPE_SMALL,
                         style::TEXT,
                     ));
                 }
@@ -371,14 +389,14 @@ impl Client {
                     } else {
                         "Final mood stable"
                     },
-                    14,
+                    style::TYPE_SMALL,
                     style::WARN,
                 ));
                 draws.push(text(
                     744.,
                     516.,
                     "Unchanged stages are omitted.",
-                    13,
+                    style::TYPE_SMALL,
                     style::TEXT_DIM,
                 ));
             }
@@ -388,7 +406,7 @@ impl Client {
                 744.,
                 552.,
                 &format!("List {} / {pages}", page + 1),
-                13,
+                style::TYPE_SMALL,
                 style::TEXT_DIM,
             ));
         }

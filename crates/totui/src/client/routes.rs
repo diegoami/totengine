@@ -445,7 +445,7 @@ impl Client {
                         government_name(*government),
                         u32::from(*cap) * 10
                     ),
-                    14,
+                    style::TYPE_SMALL,
                     style::TEXT,
                 );
                 for (i, name) in ROWS.iter().enumerate() {
@@ -453,7 +453,7 @@ impl Client {
                     if i == *row {
                         draws.push(rect(206., y - 6., 636., 42., style::SELECT));
                     }
-                    line(draws, y + 6., name, 17, style::TEXT_BRIGHT);
+                    line(draws, y + 6., name, style::TYPE_BODY, style::TEXT_BRIGHT);
                     for cell in 0..10u8 {
                         let color = if cell < draft[i] {
                             style::GOLD
@@ -468,7 +468,7 @@ impl Client {
                         620.,
                         y + 6.,
                         &format!("{}%", u32::from(draft[i]) * 10),
-                        17,
+                        style::TYPE_BODY,
                         style::TEXT_FIELD,
                     ));
                 }
@@ -483,7 +483,7 @@ impl Client {
                             q.maintenance,
                             q.net_income()
                         ),
-                        16,
+                        style::TYPE_BODY,
                         style::TEXT,
                     );
                     line(
@@ -493,7 +493,7 @@ impl Client {
                             "Science {} per turn · luxury {}",
                             q.science_output, q.luxuries
                         ),
-                        16,
+                        style::TYPE_BODY,
                         style::TEXT,
                     );
                     if q.disorder_cities > 0 {
@@ -501,7 +501,7 @@ impl Client {
                             draws,
                             444.,
                             &format!("{} city(ies) would be in disorder", q.disorder_cities),
-                            16,
+                            style::TYPE_BODY,
                             style::WARN,
                         );
                     }
@@ -517,13 +517,13 @@ impl Client {
                         style::TEXT,
                     )
                 };
-                line(draws, 500., hint, 13, color);
+                line(draws, 500., hint, style::TYPE_SMALL, color);
                 if self.rate_locks.iter().any(|l| *l) {
                     line(
                         draws,
                         524.,
                         "Locked shares keep their value while the others move.",
-                        13,
+                        style::TYPE_SMALL,
                         style::TEXT,
                     );
                 }
@@ -543,12 +543,24 @@ impl Client {
                 .iter()
                 .enumerate()
                 {
-                    line(draws, 190. + i as f64 * 40., s, 17, style::TEXT);
+                    line(
+                        draws,
+                        190. + i as f64 * 40.,
+                        s,
+                        style::TYPE_BODY,
+                        style::TEXT,
+                    );
                 }
             }
             Modal::Notice { lines, .. } => {
                 for (i, s) in lines.iter().enumerate() {
-                    line(draws, 190. + i as f64 * 40., s, 17, style::TEXT);
+                    line(
+                        draws,
+                        190. + i as f64 * 40.,
+                        s,
+                        style::TYPE_BODY,
+                        style::TEXT,
+                    );
                 }
             }
             Modal::Government { .. } => {
@@ -556,7 +568,7 @@ impl Client {
                     draws,
                     151.,
                     "Choose your new government · required · Esc keeps this open",
-                    13,
+                    style::TYPE_SMALL,
                     style::WARN,
                 );
             }
@@ -596,7 +608,13 @@ impl Client {
                 .iter()
                 .enumerate()
                 {
-                    line(draws, 240. + i as f64 * 34., s, 17, style::TEXT);
+                    line(
+                        draws,
+                        240. + i as f64 * 34.,
+                        s,
+                        style::TYPE_BODY,
+                        style::TEXT,
+                    );
                 }
             }
             Modal::Goal => {
@@ -604,7 +622,7 @@ impl Client {
                     draws,
                     151.,
                     "Arrow keys select · Enter sets the goal · Esc returns to the advisor",
-                    13,
+                    style::TYPE_SMALL,
                     style::TEXT,
                 );
             }

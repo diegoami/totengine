@@ -2151,7 +2151,7 @@ impl Client {
                         100.,
                         200.,
                         "Client closed. Launch again to resume a saved checkpoint.",
-                        22,
+                        style::TYPE_TITLE,
                         style::TEXT_BRIGHT,
                     ),
                 ],
@@ -2182,7 +2182,7 @@ impl Client {
                     }
                 },
             ),
-            24,
+            style::TYPE_DISPLAY,
             style::TEXT_BRIGHT,
         ));
         let view = self.view();
@@ -2232,14 +2232,20 @@ impl Client {
                 .into_iter()
                 .enumerate()
                 {
-                    draws.push(text(770., 110. + i as f64 * 30., &line, 17, style::TEXT));
+                    draws.push(text(
+                        770.,
+                        110. + i as f64 * 30.,
+                        &line,
+                        style::TYPE_BODY,
+                        style::TEXT,
+                    ));
                 }
                 if let Some(target) = o.research.target {
                     draws.push(text(
                         770.,
                         220.,
                         &format!("Topic: {}", self.tech_name(target)),
-                        12,
+                        style::TYPE_SMALL,
                         style::TEXT_BRIGHT,
                     ));
                 }
@@ -2261,14 +2267,14 @@ impl Client {
                         770.,
                         240.,
                         &format!("{name} #{}", u.index),
-                        17,
+                        style::TYPE_BODY,
                         style::GOLD,
                     ));
                     draws.push(text(
                         770.,
                         268.,
                         &format!("({}, {}) · moves {}/3", u.x, u.y, u.moves_left),
-                        17,
+                        style::TYPE_BODY,
                         style::TEXT,
                     ));
                 }
@@ -2280,7 +2286,7 @@ impl Client {
                         770.,
                         285.,
                         &format!("Health: {hp}/{max}"),
-                        13,
+                        style::TYPE_SMALL,
                         style::TEXT_DIM,
                     ));
                 }
@@ -2292,7 +2298,7 @@ impl Client {
                         770.,
                         300.,
                         &format!("{} · size {}", c.name, c.size),
-                        17,
+                        style::TYPE_BODY,
                         style::GOLD,
                     ));
                     draws.push(text(
@@ -2303,7 +2309,7 @@ impl Client {
                             self.item_name(c.building.unwrap_or(0)),
                             c.shield_box.unwrap_or(0)
                         ),
-                        15,
+                        style::TYPE_BODY,
                         style::TEXT,
                     ));
                 }
@@ -2323,7 +2329,7 @@ impl Client {
                             770.,
                             422. + i as f64 * 16.,
                             &line,
-                            14,
+                            style::TYPE_SMALL,
                             style::TEXT_DIM,
                         ));
                     }
@@ -2345,7 +2351,7 @@ impl Client {
                     16.,
                     724.,
                     &notices.chars().take(110).collect::<String>(),
-                    14,
+                    style::TYPE_SMALL,
                     style::TEXT_DIM,
                 ));
             }
@@ -2354,18 +2360,24 @@ impl Client {
                 100.,
                 62.,
                 "ToT directory (optional). Leave blank for the open demo.",
-                16,
+                style::TYPE_BODY,
                 style::TEXT,
             ));
-            draws.push(text(100., 160., "Isotrident / Freeciv artwork: GPL-2.0-or-later. Credits and editable source in the artwork pack.", 10, style::TEXT_DIM));
+            draws.push(text(100., 160., "Isotrident / Freeciv artwork: GPL-2.0-or-later. Credits and editable source in the artwork pack.", style::TYPE_FINE, style::TEXT_DIM));
             if self.editing != "seed" {
-                draws.push(text(110., 320., &self.seed, 18, style::TEXT_FIELD));
+                draws.push(text(
+                    110.,
+                    320.,
+                    &self.seed,
+                    style::TYPE_TITLE,
+                    style::TEXT_FIELD,
+                ));
             }
             draws.push(text(
                 100.,
                 604.,
                 "Generated surface games: land play, cities, research, government, reports and checkpoints.",
-                14,
+                style::TYPE_SMALL,
                 style::TEXT_DIM,
             ));
         }
@@ -2394,7 +2406,13 @@ impl Client {
                 Modal::NewGame => "Start a new game? Unsaved progress will be lost.",
                 Modal::Quit => "Close client? Save first if you want to resume.",
             };
-            draws.push(text(212., 125., title, 22, style::TEXT_BRIGHT));
+            draws.push(text(
+                212.,
+                125.,
+                title,
+                style::TYPE_TITLE,
+                style::TEXT_BRIGHT,
+            ));
             self.route_draws(modal, &mut draws);
             self.report_draws(&mut draws);
             self.pedia_draws(&mut draws);
@@ -2411,7 +2429,7 @@ impl Client {
                             212.,
                             562.,
                             &format!("Draft: {} · {cost}", self.item_name(q.item)),
-                            14,
+                            style::TYPE_SMALL,
                             style::TEXT_BRIGHT,
                         ));
                         let difference = i32::from(q.retained) - i32::from(q.current_shields);
@@ -2426,11 +2444,11 @@ impl Client {
                             212.,
                             580.,
                             &format!("Shields: {} → {} · {effect}", q.current_shields, q.retained),
-                            12,
+                            style::TYPE_SMALL,
                             style::TEXT,
                         ));
                     }
-                    Err(why) => draws.push(text(212., 570., why, 14, style::WARN)),
+                    Err(why) => draws.push(text(212., 570., why, style::TYPE_SMALL, style::WARN)),
                 }
             }
             if let Modal::Purchase { quote, .. } = modal {
@@ -2455,7 +2473,13 @@ impl Client {
                     .into(),
                 ];
                 for (i, line) in lines.iter().enumerate() {
-                    draws.push(text(212., 190. + i as f64 * 40., line, 17, style::TEXT));
+                    draws.push(text(
+                        212.,
+                        190. + i as f64 * 40.,
+                        line,
+                        style::TYPE_BODY,
+                        style::TEXT,
+                    ));
                 }
             }
             if let Modal::Sale { preview, .. } = modal {
@@ -2489,7 +2513,13 @@ impl Client {
                     "Single-city sale. One improvement sale per turn.".into(),
                 ];
                 for (i, line) in lines.iter().enumerate() {
-                    draws.push(text(212., 180. + i as f64 * 40., line, 17, style::TEXT));
+                    draws.push(text(
+                        212.,
+                        180. + i as f64 * 40.,
+                        line,
+                        style::TYPE_BODY,
+                        style::TEXT,
+                    ));
                 }
             }
             if matches!(
@@ -2503,21 +2533,21 @@ impl Client {
                     212.,
                     220.,
                     "Capture covers ownership, treasury, population and buildings.",
-                    17,
+                    style::TYPE_BODY,
                     style::TEXT,
                 ));
                 draws.push(text(
                     212.,
                     250.,
                     "Capital relocation, civil war, technology plunder and respawn",
-                    17,
+                    style::TYPE_BODY,
                     style::TEXT,
                 ));
                 draws.push(text(
                     212.,
                     280.,
                     "are not implemented in this slice.",
-                    17,
+                    style::TYPE_BODY,
                     style::TEXT,
                 ));
             }
@@ -2532,7 +2562,7 @@ impl Client {
                     212.,
                     151.,
                     "Arrow keys select · Enter accepts · Esc returns to inspection",
-                    13,
+                    style::TYPE_SMALL,
                     style::TEXT,
                 ));
             }
@@ -2561,11 +2591,20 @@ impl Client {
                     sprite: "chrome".into(),
                 });
             }
+            let size = if primary {
+                style::TYPE_DISPLAY
+            } else if matches!(b.action, Action::ReportSort(_)) {
+                // Column headers match the table cells beneath them.
+                style::TYPE_SMALL
+            } else {
+                style::button_label_size(&b.label, b.w)
+            };
             draws.push(text(
                 b.x + 7.,
-                b.y + 7.,
+                // A smaller label keeps the same visual centre.
+                b.y + 7. + f64::from(style::TYPE_BODY.saturating_sub(size)) / 2.,
                 &b.label,
-                if primary { 24 } else { 16 },
+                size,
                 if primary {
                     style::ON_PRIMARY
                 } else {
@@ -2591,7 +2630,13 @@ impl Client {
         if let Some(e) = self.entry_meta() {
             draws.push(rect(e.x - 1., e.y - 1., e.w + 2., e.h + 2., style::GOLD));
             draws.push(rect(e.x, e.y, e.w, e.h, style::FIELD));
-            draws.push(text(e.x + 7., e.y + 10., &e.value, 18, style::TEXT_FIELD));
+            draws.push(text(
+                e.x + 7.,
+                e.y + 10.,
+                &e.value,
+                style::TYPE_TITLE,
+                style::TEXT_FIELD,
+            ));
         }
         // Clear turn-transition feedback (#283): while the opponents run, a
         // framed strip over the map says so; the title bar carries the round.
@@ -2601,14 +2646,14 @@ impl Client {
                 228.,
                 368.,
                 "Opponents are moving — your turn continues when they finish.",
-                16,
+                style::TYPE_BODY,
                 style::TEXT_BRIGHT,
             ));
             draws.push(text(
                 228.,
                 388.,
                 "You can reconnect or wait; nothing is lost.",
-                13,
+                style::TYPE_SMALL,
                 style::TEXT_DIM,
             ));
         }
@@ -2617,7 +2662,7 @@ impl Client {
             10.,
             749.,
             &self.feedback().chars().take(145).collect::<String>(),
-            13,
+            style::TYPE_SMALL,
             style::GOLD,
         ));
         Frame {
@@ -2736,7 +2781,13 @@ impl Client {
                 sprite: format!("city-{}", u8::from(c.size > 4)),
             });
             draws.push(rect(px - 5., py - 30., 10., 8., color(c.owner)));
-            draws.push(text(px - 30., py + 20., &c.name, 14, color(c.owner)));
+            draws.push(text(
+                px - 30.,
+                py + 20.,
+                &c.name,
+                style::TYPE_SMALL,
+                color(c.owner),
+            ));
         }
         for u in self.display_units(v) {
             let (px, py) = point(u.x, u.y);

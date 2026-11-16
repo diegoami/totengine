@@ -173,7 +173,7 @@ impl Client {
             18.,
             14.,
             &format!("{} — population {}", c.name, c.size),
-            24,
+            style::TYPE_DISPLAY,
             style::TEXT_BRIGHT,
         ));
         for (x, w) in [(12., 266.), (730., 282.)] {
@@ -207,7 +207,13 @@ impl Client {
                 format!("Upkeep {}", e.upkeep),
             ];
             for (i, line) in lines.iter().enumerate() {
-                draws.push(text(22., 116. + i as f64 * 24., line, 16, style::TEXT));
+                draws.push(text(
+                    22.,
+                    116. + i as f64 * 24.,
+                    line,
+                    style::TYPE_BODY,
+                    style::TEXT,
+                ));
             }
             let warning = if detail.food_box < 0 {
                 "Food debt: famine pending"
@@ -220,13 +226,13 @@ impl Client {
             } else {
                 "Growth and mood stable"
             };
-            draws.push(text(22., 330., warning, 15, style::WARN));
+            draws.push(text(22., 330., warning, style::TYPE_BODY, style::WARN));
         }
         draws.push(text(
             22.,
             358.,
             "Currently producing:",
-            16,
+            style::TYPE_BODY,
             style::TEXT_BRIGHT,
         ));
         let item = c
@@ -244,7 +250,7 @@ impl Client {
                 22.,
                 382. + row as f64 * 19.,
                 &chunk.iter().collect::<String>(),
-                16,
+                style::TYPE_BODY,
                 style::WHITE,
             ));
         }
@@ -253,20 +259,20 @@ impl Client {
                 || format!("Shields: {}", p.stored),
                 |cost| format!("Shields: {} / {cost}", p.stored),
             );
-            draws.push(text(22., 444., &shields, 16, style::TEXT));
+            draws.push(text(22., 444., &shields, style::TYPE_BODY, style::TEXT));
             let estimate = match (p.remaining, p.turns) {
                 (Some(0), _) => "Funded — next production phase".into(),
                 (Some(n), Some(turns)) => format!("Remaining: {n} (~{turns} turns)"),
                 (Some(n), None) => format!("Remaining: {n}; no current output"),
                 _ => "No finite shield target".into(),
             };
-            draws.push(text(22., 472., &estimate, 14, style::TEXT));
+            draws.push(text(22., 472., &estimate, style::TYPE_SMALL, style::TEXT));
         }
         draws.push(text(
             305.,
             112.,
             "City radius · click a tile to change its worker",
-            16,
+            style::TYPE_BODY,
             style::TEXT_BRIGHT,
         ));
         // Back-to-front diamonds, with yields and authored work/selection markers.
@@ -323,7 +329,7 @@ impl Client {
                 draws.push(rect(x - 4., y - 20., 8., 8., style::GOLD));
             }
             if !t.available && k != 20 {
-                draws.push(text(x - 20., y - 12., "×", 18, style::WARN));
+                draws.push(text(x - 20., y - 12., "×", style::TYPE_TITLE, style::WARN));
             }
             if self.city_tile as usize == k {
                 for (a, b, cc, dd) in [
@@ -346,7 +352,7 @@ impl Client {
                 x - 25.,
                 y + 2.,
                 &format!("{}/{}/{}", t.yields[0], t.yields[1], t.yields[2]),
-                12,
+                style::TYPE_SMALL,
                 style::WHITE,
             ));
         }
@@ -368,7 +374,7 @@ impl Client {
                 "Workers {workers} · specialists {} · click to cycle roles",
                 detail.specialists.len()
             ),
-            16,
+            style::TYPE_BODY,
             style::TEXT_BRIGHT,
         ));
         if v.decision.is_some() {
@@ -376,7 +382,7 @@ impl Client {
                 744.,
                 568.,
                 "Research/choice required.",
-                11,
+                style::TYPE_FINE,
                 style::WARN,
             ));
         }

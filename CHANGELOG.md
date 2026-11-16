@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Typography ladder (#283, UI quality U1c): every client text size now comes
+  from one of five steps in the shared `style` module: display 24, title 20,
+  body 16, small 13 and fine 11. This replaces twelve ad-hoc sizes that were
+  often one point apart. Button labels fall back to the small step instead of
+  clipping. Report tabs wrap onto two rows that fit the dialog (the eighth tab
+  used to run past its edge), and column headers match the table cells.
 - Two overlaps fixed: the research chooser title ("Choose research") is no
   longer covered by its Civilopedia / Save pending choice buttons, which now
   fit their labels, and the setup screen's scope line no longer runs under

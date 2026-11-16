@@ -34,6 +34,32 @@ pub const ON_PRIMARY: &str = "#172015";
 /// Borders, dividers, markers and accent text; consolidates the gold family.
 pub const GOLD: &str = "#e8c85a";
 
+// Type ladder (#283): every text size is one of these five steps. Body copy
+// is 16 at the 1024x768 logical stage; each step is a clear visual change,
+// not a one-point nudge.
+/// Screen titles (title bar, city name) and primary buttons.
+pub const TYPE_DISPLAY: u32 = 24;
+/// Dialog titles and section headings.
+pub const TYPE_TITLE: u32 = 20;
+/// Body text, buttons and list rows.
+pub const TYPE_BODY: u32 = 16;
+/// Secondary lines, table cells, hints and the status bar.
+pub const TYPE_SMALL: u32 = 13;
+/// Fine print: credits and compact badges.
+pub const TYPE_FINE: u32 = 11;
+
+/// Label size for a non-primary button `w` wide: body text when the label
+/// fits, the small step when it would clip (report tabs, table headers).
+/// Width is estimated from the bundled sans face (about 0.55 em per char).
+pub fn button_label_size(label: &str, w: f64) -> u32 {
+    let chars = label.chars().count() as f64;
+    if chars * 0.55 * f64::from(TYPE_BODY) <= w - 12. {
+        TYPE_BODY
+    } else {
+        TYPE_SMALL
+    }
+}
+
 // Text
 /// Primary text.
 pub const TEXT: &str = "#eee8d4";

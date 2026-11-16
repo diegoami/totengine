@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Message log (#284, UI package U2): each turn's notices (growth,
+  starvation, completed production, discoveries, losses, anarchy) are now
+  kept for the session instead of overwriting one line. When a turn brings
+  new notices, a small overlay on the map lists them, with **Open messages**
+  and **Dismiss**. The side-panel **Messages (N)** button opens the full log,
+  newest first, with paging. Production notices name the completed item.
+  Presentation-only: checkpoints do not store messages.
 - The browser client loads again (#298): since #285 its script threw at load,
   because a variable was read before its declaration, so the page stayed
   blank. It also now uses the same sans face as the desktop client (DejaVu

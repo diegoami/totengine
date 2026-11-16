@@ -24,6 +24,11 @@ use std::path::{Path, PathBuf};
 
 use city_panels::CityPanel;
 
+/// Message log rows per page and retained entries (#284).
+const MESSAGE_ROWS: usize = 16;
+const MESSAGE_LOG_CAP: usize = 500;
+const NOTICE_OVERLAY_LINES: usize = 6;
+
 pub const WIDTH: u32 = 1024;
 pub const HEIGHT: u32 = 768;
 // Presentation labels for the authored demo, kept separate from its versioned
@@ -169,6 +174,8 @@ enum Modal {
     },
     /// The keyboard help overlay (#284): original keys plus our additions.
     Help,
+    /// The persistent message log (#284), newest first, paged.
+    Messages,
     Goal,
     /// Civilopedia reference text; `back` is the dialog (and research choice) to
     /// return to when it was opened from one.
@@ -228,6 +235,10 @@ enum Action {
     ConfirmMoves,
     Work,
     Found,
+    /// Opens the message log.
+    Messages,
+    /// Hides the new-messages overlay on the map.
+    DismissNotices,
     /// Opens the keyboard help overlay.
     Help,
     Research,
@@ -307,6 +318,13 @@ struct CityClick {
 }
 pub struct Client {
     loaded: Option<Loaded>,
+    /// Presentation-only message log (#284): each turn's notices, oldest
+    /// first. Not part of checkpoints; a new game or a load starts it empty.
+    notice_log: Vec<(i16, String)>,
+    /// The turn whose notices were last appended, so each turn logs once.
+    notice_turn: Option<i16>,
+    /// New notices arrived since the log or overlay was last dismissed.
+    notice_unread: bool,
     pub closed: bool,
     advancing: bool,
     saves: PathBuf,
@@ -372,6 +390,9 @@ impl Client {
             loaded: None,
             closed: false,
             advancing: false,
+            notice_log: Vec::new(),
+            notice_turn: None,
+            notice_unread: false,
             saves,
             // An explicit home (e.g. CIVTOT_HOME) wins; otherwise the last
             // successfully started ToT directory is remembered (#266).
@@ -514,6 +535,84 @@ impl Client {
             }
         }
     }
+    /// The new-messages overlay (#284) shows on the map until dismissed.
+    fn notice_overlay(&self) -> bool {
+        self.notice_unread && self.modal.is_none() && !self.city_open && self.loaded.is_some()
+    }
+    /// The overlay's latest-turn lines and its frame `(x, y, w, h)`.
+    fn notice_overlay_rect(&self) -> (Vec<&str>, (f64, f64, f64, f64)) {
+        let turn = self.notice_turn;
+        let lines: Vec<&str> = self
+            .notice_log
+            .iter()
+            .filter(|(t, _)| Some(*t) == turn)
+            .map(|(_, s)| s.as_str())
+            .take(NOTICE_OVERLAY_LINES)
+            .collect();
+        let h = 44. + lines.len() as f64 * 20. + 40.;
+        (lines, (24., 112., 400., h))
+    }
+    fn reset_notices(&mut self) {
+        self.notice_log.clear();
+        self.notice_turn = None;
+        self.notice_unread = false;
+    }
+    /// Appends the current turn's notices to the log once (#284).
+    fn sync_notices(&mut self) {
+        let Some(v) = self.view() else {
+            self.reset_notices();
+            return;
+        };
+        let turn = v.observation.turn;
+        if v.notices.is_empty() || self.notice_turn == Some(turn) {
+            return;
+        }
+        self.notice_turn = Some(turn);
+        for n in &v.notices {
+            let line = self.notice_text(&v, n);
+            self.notice_log.push((turn, line));
+        }
+        let excess = self.notice_log.len().saturating_sub(MESSAGE_LOG_CAP);
+        self.notice_log.drain(..excess);
+        self.notice_unread = true;
+    }
+    fn notice_text(&self, v: &HumanView, n: &engine::human::Notice) -> String {
+        use engine::human::Notice;
+        let city_name = |id: usize| {
+            v.observation
+                .cities
+                .iter()
+                .find(|c| c.index == id)
+                .map_or_else(|| format!("City {id}"), |c| c.name.clone())
+        };
+        match n {
+            Notice::Grew(id) => format!("{} grew", city_name(*id)),
+            Notice::Starved(id) => format!("{} starved", city_name(*id)),
+            Notice::CityDestroyed(id) => format!("City {id} was lost"),
+            Notice::UnitDisbanded(id) => format!("Unit {id} disbanded for support"),
+            Notice::Production(id, built) => {
+                use engine::production::Built;
+                let item = match built {
+                    Built::Unit(unit) => v
+                        .observation
+                        .units
+                        .iter()
+                        .find(|u| u.index == *unit)
+                        .map(|u| self.item_name(u.type_id as i8)),
+                    Built::Improvement(i) => Some(self.item_name(-(*i as i8))),
+                    Built::Wonder(w) => Some(self.item_name(-((*w + 40) as i8))),
+                };
+                match item {
+                    Some(item) => format!("{} completed {item}", city_name(*id)),
+                    None => format!("{} completed production", city_name(*id)),
+                }
+            }
+            Notice::Discovery(id) => format!("Discovered {}", self.tech_name(*id)),
+            Notice::Revolution => {
+                "Your government fell into anarchy; save to preserve this unsupported choice".into()
+            }
+        }
+    }
     fn refresh(&mut self) {
         if let Some(v) = self.view() {
             if self.active.is_none_or(|a| !v.units.contains(&a)) {
@@ -590,6 +689,7 @@ impl Client {
         if let Err(error) = &result {
             self.status = error.clone();
         }
+        self.sync_notices();
         self.revision += 1;
         self.receipts.insert(id, (revision, input));
         if let Some(path) = std::env::var_os("TOTENGINE_CLIENT_TRACE") {
@@ -680,6 +780,15 @@ impl Client {
                 }
                 if self.modal.is_none() && self.city_open {
                     return self.city_click(x, y);
+                }
+                if self.notice_overlay() {
+                    let (_, (ox, oy, ow, oh)) = self.notice_overlay_rect();
+                    if (ox..ox + ow).contains(&x) && (oy..oy + oh).contains(&y) {
+                        // The overlay sits over the map: a click on it
+                        // dismisses it and never becomes a map order.
+                        self.notice_unread = false;
+                        return Ok(());
+                    }
                 }
                 if self.modal.is_none()
                     && self.loaded.is_some()
@@ -888,6 +997,7 @@ impl Client {
                     resources.rules.clone(),
                     self.human,
                 )?;
+                self.reset_notices();
                 self.loaded = Some(Loaded {
                     resources,
                     atlas,
@@ -956,6 +1066,11 @@ impl Client {
             },
             Action::Rates => self.open_rates()?,
             Action::Help => self.open(Modal::Help),
+            Action::Messages => {
+                self.notice_unread = false;
+                self.open(Modal::Messages);
+            }
+            Action::DismissNotices => self.notice_unread = false,
             Action::Report(family) => self.open_report(family)?,
             Action::Pedia => self.open_pedia()?,
             Action::PediaSection(i) => self.pedia_section(i),
@@ -1090,10 +1205,12 @@ impl Client {
             Action::Choose(id) => self.choice = Some(id),
             Action::Slot(name) => self.entry = name,
             Action::Page(delta) => {
-                self.page = self
-                    .page
-                    .saturating_add_signed(delta as isize)
-                    .min(self.current_choices().len().saturating_sub(1) / 12)
+                let last = if matches!(self.modal, Some(Modal::Messages)) {
+                    self.notice_log.len().saturating_sub(1) / MESSAGE_ROWS
+                } else {
+                    self.current_choices().len().saturating_sub(1) / 12
+                };
+                self.page = self.page.saturating_add_signed(delta as isize).min(last)
             }
             Action::Accept => {
                 let modal = self.modal.clone().ok_or("No dialog to accept")?;
@@ -1149,6 +1266,7 @@ impl Client {
                     | Modal::Science
                     | Modal::Notice { .. }
                     | Modal::Help
+                    | Modal::Messages
                     | Modal::Report { .. }
                     | Modal::Pedia { .. }
                     | Modal::Goal => unreachable!("handled by route_accept"),
@@ -1262,6 +1380,7 @@ impl Client {
                             let session =
                                 HumanSession::restore(resources.rules.clone(), &identity, &text)?;
                             let assets = storage::nonce()?;
+                            self.reset_notices();
                             self.loaded = Some(Loaded {
                                 resources,
                                 atlas,
@@ -1923,7 +2042,9 @@ impl Client {
                         Modal::Rates { review: None, .. } => "Apply [Enter]",
                         Modal::Rates { .. } => "Apply rates [Enter]",
                         Modal::Revolution => "Yes, revolt [Enter]",
-                        Modal::Science | Modal::Notice { .. } | Modal::Help => "Close [Enter]",
+                        Modal::Science | Modal::Notice { .. } | Modal::Help | Modal::Messages => {
+                            "Close [Enter]"
+                        }
                         Modal::Report { .. } => "Open city [Enter]",
                         Modal::Pedia { reading: false, .. } => "Read [Enter]",
                         Modal::Pedia { .. } => "Back to list [Enter]",
@@ -1948,6 +2069,7 @@ impl Client {
                         Modal::Science
                         | Modal::Notice { .. }
                         | Modal::Help
+                        | Modal::Messages
                         | Modal::Report { .. }
                         | Modal::Pedia { .. } => "Close [Esc]",
                         _ => "Cancel / inspect [Esc]",
@@ -2097,6 +2219,41 @@ impl Client {
             );
         }
         add(930., 685., 80., 30., "Keys [?]".into(), Action::Help);
+        // The opponents' Pause/Continue button owns this slot while they move;
+        // no new notices can arrive then.
+        if self.view().is_some_and(|v| v.phase != Phase::Opponents) {
+            add(
+                770.,
+                528.,
+                240.,
+                28.,
+                if self.notice_log.is_empty() {
+                    "Messages".into()
+                } else {
+                    format!("Messages ({})", self.notice_log.len())
+                },
+                Action::Messages,
+            );
+        }
+        if self.notice_overlay() {
+            let (_, (x, y, w, h)) = self.notice_overlay_rect();
+            add(
+                x + 16.,
+                y + h - 38.,
+                170.,
+                28.,
+                "Open messages".into(),
+                Action::Messages,
+            );
+            add(
+                x + w - 136.,
+                y + h - 38.,
+                120.,
+                28.,
+                "Dismiss".into(),
+                Action::DismissNotices,
+            );
+        }
         if self.view().is_some_and(|v| v.phase == Phase::Opponents) {
             add(
                 770.,
@@ -2343,19 +2500,12 @@ impl Client {
                         ));
                     }
                 }
-                let notices=v.notices.iter().map(|n| {
-                use engine::human::Notice;
-                let city_name=|id:usize|o.cities.iter().find(|c|c.index==id).map_or_else(||format!("City {id}"),|c|c.name.clone());
-                match n {
-                    Notice::Grew(id)=>format!("{} grew",city_name(*id)),
-                    Notice::Starved(id)=>format!("{} starved",city_name(*id)),
-                    Notice::CityDestroyed(id)=>format!("City {id} was lost"),
-                    Notice::UnitDisbanded(id)=>format!("Unit {id} disbanded for support"),
-                    Notice::Production(id,_)=>format!("{} completed production",city_name(*id)),
-                    Notice::Discovery(id)=>format!("Discovered {}",self.tech_name(*id)),
-                    Notice::Revolution=>"Your government fell into anarchy; save to preserve this unsupported choice".into(),
-                }
-            }).collect::<Vec<_>>().join(" · ");
+                let notices = v
+                    .notices
+                    .iter()
+                    .map(|n| self.notice_text(v, n))
+                    .collect::<Vec<_>>()
+                    .join(" · ");
                 draws.push(text(
                     16.,
                     724.,
@@ -2402,6 +2552,7 @@ impl Client {
                 Modal::Science => "Science advisor",
                 Modal::Notice { title, .. } => title,
                 Modal::Help => "Keys",
+                Modal::Messages => "Messages",
                 Modal::Report { .. } => "Reports",
                 Modal::Pedia { .. } => "Civilopedia",
                 Modal::Goal => "Choose a research goal",
@@ -2574,6 +2725,41 @@ impl Client {
                     "Arrow keys select · Enter accepts · Esc returns to inspection",
                     style::TYPE_SMALL,
                     style::TEXT,
+                ));
+            }
+        }
+        if self.notice_overlay() {
+            let (lines, (x, y, w, h)) = self.notice_overlay_rect();
+            style::modal(&mut draws, x, y, w, h);
+            let more = self
+                .notice_log
+                .iter()
+                .filter(|(t, _)| Some(*t) == self.notice_turn)
+                .count()
+                .saturating_sub(lines.len());
+            draws.push(text(
+                x + 16.,
+                y + 12.,
+                &format!("Turn {} — new messages", self.notice_turn.unwrap_or(0)),
+                style::TYPE_BODY,
+                style::TEXT_BRIGHT,
+            ));
+            for (i, line) in lines.iter().enumerate() {
+                draws.push(text(
+                    x + 16.,
+                    y + 42. + i as f64 * 20.,
+                    line,
+                    style::TYPE_SMALL,
+                    style::TEXT,
+                ));
+            }
+            if more > 0 {
+                draws.push(text(
+                    x + 200.,
+                    y + 12.,
+                    &format!("+{more} more in the log"),
+                    style::TYPE_SMALL,
+                    style::TEXT_DIM,
                 ));
             }
         }

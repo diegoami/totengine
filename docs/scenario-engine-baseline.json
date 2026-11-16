@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "bb39018c5f461908ac706e00978995292be0572e6c061af94f23c0b758e72059",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "415636cebce24367bb8f332d5129b1cc8b1fdc94c3aa97a84ba2e7333e664c92",
+    "crates/totui/src/client/mod.rs": "3c7c47b7f86b392424b9756bdabdc66a6f5a41edb2e79ee333a47d35c5cbe117",
     "crates/totui/src/resources.rs": "2bb8ef62098b871ef7e6fb1b7464e93ba4ff36eb15b50674349b2e248bc07d4c",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -281,6 +281,13 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Adds Frame.tips (hover areas with prebuilt draws from the filtered HumanView, empty unless the map_tooltips enhancement is on and no dialog/city window is open), Tip/tip_at/TIP_DELAY_MS and the MapTooltips toggle. Clients show tips locally; no input, engine, order, checkpoint or scenario-path change."
+    },
+    {
+      "change": "Opt-in path preview with turn counts (#284 item 3)",
+      "files": [
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Adds Frame.route (RouteStep list), Tip.route, tip_draws, the PathPreview enhancement toggle and the paths module declaration. Presentation-only: the route is computed client-side from the filtered HumanView, sends no input and leaves engine state, checkpoints, receipts and replay unchanged; route and tips serialize only when non-empty."
     }
   ]
 }

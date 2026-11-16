@@ -463,6 +463,11 @@ impl Client {
                 "Map tooltips",
                 self.enhancements.map_tooltips,
             ),
+            (
+                Enhancement::PathPreview,
+                "Path preview with turn counts",
+                self.enhancements.path_preview,
+            ),
         ]
     }
 
@@ -471,6 +476,7 @@ impl Client {
             "Lists a turn's new notices over the map, with Open messages and Dismiss.",
             "Asks before every unit move; attacks and captures always ask.",
             "Resting the pointer on a known tile describes its terrain, city and units.",
+            "With a unit selected, a resting pointer shows the known route and its turns.",
         ];
         for (i, line) in explain.iter().enumerate() {
             draws.push(text(

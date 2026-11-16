@@ -4110,3 +4110,176 @@ fn map_tooltips_are_opt_in_describe_the_filtered_view_and_never_touch_the_game()
     .unwrap();
     assert!(!storage::load_enhancements(&f.saves()).map_tooltips);
 }
+
+#[test]
+fn path_preview_is_opt_in_knowledge_bounded_and_never_touches_the_game() {
+    use super::paths::{logical, plan, stored};
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    assert!(!c.enhancements.path_preview);
+    assert!(c.frame().route.is_empty());
+    let before = c.checkpoint().unwrap();
+    let revision = c.revision;
+    button(&mut c, "Settings");
+    button(&mut c, "[ ] Path preview with turn counts");
+    assert!(c.enhancements.path_preview && !c.enhancements.map_tooltips);
+    key(&mut c, "Escape");
+    let v = c.view().unwrap();
+    let o = v.observation.clone();
+    let active = c.active.expect("a unit is selected to move");
+    let unit = o
+        .units
+        .iter()
+        .find(|u| u.index == active.slot)
+        .unwrap()
+        .clone();
+    let rules = c.loaded.as_ref().unwrap().resources.rules.clone();
+
+    // Search rules on a controlled copy of the view: every tile known, flat
+    // land of move cost 1, the unit with one full move (three thirds).
+    let flat = (0..rules.base_terrain_names().len())
+        .find(|&t| t != 10 && rules.terrain_move_cost(t) == Some(1))
+        .unwrap() as u8;
+    let mut w = o.clone();
+    for t in w.seen.iter_mut() {
+        *t = Some(engine::player::TileView {
+            terrain: flat,
+            river: false,
+            special: false,
+            road: false,
+            rail: false,
+        });
+    }
+    w.units.retain(|u| u.owner == w.civ);
+    w.cities.clear();
+    let mut u = unit.clone();
+    (u.x, u.y, u.moves_left) = (20, 20, 3);
+    assert_eq!(rules.unit_move(u.type_id as usize), Some(1), "Settlers");
+    let half = usize::from(w.w2) / 2;
+    let at = |p: &super::paths::Plan, x: u16, y: u16| {
+        p.reach[usize::from(y) * half + usize::from(x) / 2]
+    };
+    let p = plan(&rules, &w, &u);
+    assert_eq!(at(&p, 22, 20).unwrap().turns, 0, "one step this turn");
+    assert_eq!(at(&p, 24, 20).unwrap().turns, 1);
+    assert_eq!(
+        at(&p, 30, 20).unwrap().turns,
+        4,
+        "five steps, four turn ends"
+    );
+    // The route walks back to the unit along parents.
+    let mut steps = 0;
+    let mut i = stored(&w, 30, 20);
+    while let Some(parent) = p.reach[i].unwrap().parent {
+        i = parent;
+        steps += 1;
+    }
+    assert_eq!((i, steps), (p.origin, 5));
+    // Roads: three tiles per move; railroad: free.
+    for t in w.seen.iter_mut().flatten() {
+        t.road = true;
+    }
+    let p = plan(&rules, &w, &u);
+    assert_eq!(at(&p, 26, 20).unwrap().turns, 0);
+    assert_eq!(at(&p, 28, 20).unwrap().turns, 1);
+    for t in w.seen.iter_mut().flatten() {
+        t.rail = true;
+    }
+    assert_eq!(at(&plan(&rules, &w, &u), 60, 20).unwrap().turns, 0);
+    for t in w.seen.iter_mut().flatten() {
+        (t.road, t.rail) = (false, false);
+    }
+    // Unknown tiles and ocean wall the land unit in; a gap lets it through.
+    for i in 0..w.seen.len() {
+        let (x, _) = logical(&w, i);
+        if x == 24 || x == 25 {
+            w.seen[i] = None;
+        }
+    }
+    let p = plan(&rules, &w, &u);
+    assert!(at(&p, 30, 20).is_none(), "unknown column blocks");
+    for i in 0..w.seen.len() {
+        let (x, y) = logical(&w, i);
+        if x == 24 || x == 25 {
+            w.seen[i] = Some(engine::player::TileView {
+                terrain: if y == 22 { flat } else { 10 },
+                river: false,
+                special: false,
+                road: false,
+                rail: false,
+            });
+        }
+    }
+    let gap = at(&plan(&rules, &w, &u), 30, 20).expect("around through the gap");
+    assert!(gap.turns > 4);
+    // A visible foreign unit blocks its tile and its zone of control ends
+    // the turn when moving between tiles next to it.
+    let mut z = w.clone();
+    for t in z.seen.iter_mut() {
+        if t.is_none() || t.unwrap().terrain == 10 {
+            *t = w.seen[stored(&w, 20, 20)];
+        }
+    }
+    u.moves_left = 9;
+    let free = at(&plan(&rules, &z, &u), 24, 20).unwrap();
+    assert_eq!((free.turns, free.left), (0, 3));
+    let mut enemy = u.clone();
+    (enemy.owner, enemy.x, enemy.y) = (z.civ % 7 + 1, 23, 19);
+    z.units.push(enemy);
+    let p = plan(&rules, &z, &u);
+    assert!(at(&p, 23, 19).is_none(), "foreign unit tile is not a route");
+    let zoc = at(&p, 24, 20).unwrap();
+    assert_eq!(
+        (zoc.turns, zoc.left),
+        (0, 0),
+        "zone of control ends the move"
+    );
+    let next = at(&p, 26, 20).unwrap();
+    assert_eq!(next.turns, 1, "the next step waits a turn");
+
+    // On the client: tips carry the path line and route steps, tooltips off.
+    let frame = c.frame();
+    assert!(!frame.tips.is_empty());
+    assert!(!frame.route.is_empty());
+    let texts = |draws: &[Draw]| -> Vec<String> {
+        draws
+            .iter()
+            .filter_map(|d| match d {
+                Draw::Text { text, .. } => Some(text.clone()),
+                _ => None,
+            })
+            .collect()
+    };
+    let real = plan(&rules, &o, &unit);
+    let mut checked = 0;
+    for t in &frame.tips {
+        let lines = texts(&t.draws);
+        assert_eq!(lines.len(), 1, "path line only: {lines:?}");
+        assert!(lines[0].starts_with("Path: "), "{lines:?}");
+        if t.route.is_some() {
+            let all = tip_draws(&frame.route, t);
+            assert!(all.len() > t.draws.len() || lines[0].contains("this turn"));
+            checked += 1;
+        }
+    }
+    assert!(checked > 0);
+    let reachable = real.reach.iter().filter(|r| r.is_some()).count();
+    assert!(reachable > 1, "the start area is reachable");
+    // The unit's own tile has no tip; an unknown tile has none either.
+    let (px, py) = (
+        c.pan.0 + f64::from(unit.x) * 32. * c.zoom,
+        c.pan.1 + f64::from(unit.y) * 16. * c.zoom,
+    );
+    assert!(tip_at(&frame.tips, px + 20., py).is_none());
+    // Viewing mode and dialogs show no route.
+    button(&mut c, "Settings");
+    assert!(c.frame().route.is_empty());
+    key(&mut c, "Escape");
+    assert_eq!(c.checkpoint().unwrap(), before, "presentation only");
+    assert!(
+        c.revision > revision,
+        "only the settings toggles changed it"
+    );
+    assert!(storage::load_enhancements(&f.saves()).path_preview);
+}

@@ -2567,7 +2567,19 @@ impl Client {
                 ));
             }
         }
-        for (i, b) in self.buttons().iter().enumerate() {
+        let buttons = self.buttons();
+        // One label size per button row (#283): if any label in a row would
+        // clip at body size, the whole row uses the small step, so a toolbar
+        // never mixes two sizes.
+        let row_size = |y: f64| {
+            buttons
+                .iter()
+                .filter(|o| (o.y - y).abs() < 1. && !matches!(o.action, Action::QuickStart))
+                .map(|o| style::button_label_size(&o.label, o.w))
+                .min()
+                .unwrap_or(style::TYPE_BODY)
+        };
+        for (i, b) in buttons.iter().enumerate() {
             let primary = matches!(b.action, Action::QuickStart);
             let focused = i == self.focus_button;
             let fill = if primary {
@@ -2597,7 +2609,7 @@ impl Client {
                 // Column headers match the table cells beneath them.
                 style::TYPE_SMALL
             } else {
-                style::button_label_size(&b.label, b.w)
+                row_size(b.y)
             };
             draws.push(text(
                 b.x + 7.,

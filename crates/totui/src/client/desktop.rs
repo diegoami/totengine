@@ -251,6 +251,10 @@ pub fn run(mut client: Client) -> Result<(), String> {
     // SDL2 0.38 wheel events carry no position; the last motion event's
     // position is already on the logical stage (#292), so remember it.
     let mut pointer = (0i32, 0i32);
+    // Map tooltips (#284) show once the pointer has rested this long; any
+    // click or key restarts the wait, so a tip never hides what was clicked.
+    let mut rested_since = Instant::now();
+    let mut pointer_inside = false;
     'running: loop {
         let before = client.frame();
         if let Some(entry) = &before.entry {
@@ -265,6 +269,19 @@ pub fn run(mut client: Client) -> Result<(), String> {
             video.text_input().stop()
         }
         for event in pump.poll_iter() {
+            if matches!(
+                event,
+                Event::KeyDown { .. } | Event::MouseButtonDown { .. } | Event::MouseWheel { .. }
+            ) {
+                rested_since = Instant::now();
+            }
+            if let Event::Window { win_event, .. } = &event {
+                match win_event {
+                    WindowEvent::Enter => pointer_inside = true,
+                    WindowEvent::Leave => pointer_inside = false,
+                    _ => (),
+                }
+            }
             if matches!(event, Event::KeyDown { .. }) {
                 if let Some(path) = std::env::var_os("TOTENGINE_CLIENT_TRACE") {
                     use std::io::Write;
@@ -310,7 +327,11 @@ pub fn run(mut client: Client) -> Result<(), String> {
                     Some(pointer_input(&client, x, y, clicks))
                 }
                 Event::MouseMotion { x, y, .. } => {
+                    if (x, y) != pointer {
+                        rested_since = Instant::now();
+                    }
                     pointer = (x, y);
+                    pointer_inside = true;
                     None
                 }
                 Event::MouseWheel { y, direction, .. } if y != 0 => {
@@ -440,7 +461,18 @@ pub fn run(mut client: Client) -> Result<(), String> {
                     .map(|data| (PathBuf::from(p).with_extension("painted.json"), data))
             });
         let revision = frame.revision;
-        for draw in frame.draws {
+        let mut draws = frame.draws;
+        if pointer_inside
+            && client.focused
+            && rested_since.elapsed().as_millis() >= super::TIP_DELAY_MS
+        {
+            if let Some(tip) =
+                super::tip_at(&frame.tips, f64::from(pointer.0), f64::from(pointer.1))
+            {
+                draws.extend(tip.draws.iter().cloned());
+            }
+        }
+        for draw in draws {
             if matches!(&draw, Draw::UnitSprite { blink: true, .. })
                 && !(animation_start.elapsed().as_millis() / 500).is_multiple_of(2)
             {

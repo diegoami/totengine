@@ -8,6 +8,7 @@ pub mod desktop;
 #[cfg(any(feature = "desktop", test))]
 mod editor;
 mod isotrident;
+mod paths;
 mod selection;
 pub mod storage;
 mod style;
@@ -171,6 +172,17 @@ pub struct Frame {
     /// view only; showing one never sends input.
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub tips: Vec<Tip>,
+    /// Path preview (#284): the route steps tips point into. A tip with a
+    /// `route` also shows each step from there back along `parent`.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub route: Vec<RouteStep>,
+}
+/// One step of a previewed route: its marker draws (empty off the map or at
+/// the unit itself) and the step before it.
+#[derive(Clone, Serialize)]
+pub struct RouteStep {
+    pub parent: Option<usize>,
+    pub draws: Vec<Draw>,
 }
 /// One hover area: a diamond centred on `(x, y)` with half-extents `(hw, hh)`
 /// when `diamond`, else the rectangle `x, y, hw*2, hh*2` from its corner.
@@ -182,6 +194,9 @@ pub struct Tip {
     pub hh: f64,
     pub diamond: bool,
     pub draws: Vec<Draw>,
+    /// Path preview: the last route step before this tip's tile.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub route: Option<usize>,
 }
 impl Tip {
     pub fn contains(&self, px: f64, py: f64) -> bool {
@@ -198,6 +213,21 @@ impl Tip {
 pub fn tip_at(tips: &[Tip], x: f64, y: f64) -> Option<&Tip> {
     tips.iter().find(|t| t.contains(x, y))
 }
+/// What a shown tip adds to the frame: its route's step markers, then its
+/// own draws on top. Bounded by the route length, so a bad parent cannot loop.
+pub fn tip_draws(route: &[RouteStep], tip: &Tip) -> Vec<Draw> {
+    let mut draws = Vec::new();
+    let mut at = tip.route;
+    for _ in 0..route.len() {
+        let Some(step) = at.and_then(|i| route.get(i)) else {
+            break;
+        };
+        draws.extend(step.draws.iter().cloned());
+        at = step.parent;
+    }
+    draws.extend(tip.draws.iter().cloned());
+    draws
+}
 /// How long the pointer must rest before a tip shows, in both clients.
 pub const TIP_DELAY_MS: u128 = 450;
 mod pedia;
@@ -209,6 +239,7 @@ pub(crate) enum Enhancement {
     NoticeOverlay,
     ConfirmMoves,
     MapTooltips,
+    PathPreview,
 }
 #[derive(Clone)]
 enum Modal {
@@ -629,6 +660,7 @@ impl Client {
                 (&mut self.enhancements.confirm_moves, "Confirm every move")
             }
             Enhancement::MapTooltips => (&mut self.enhancements.map_tooltips, "Map tooltips"),
+            Enhancement::PathPreview => (&mut self.enhancements.path_preview, "Path preview"),
         };
         *flag = !*flag;
         let state = if *flag { "on" } else { "off" };
@@ -2468,6 +2500,7 @@ impl Client {
                 status: self.status.clone(),
                 assets: "none".into(),
                 tips: Vec::new(),
+                route: Vec::new(),
             };
         }
         let mut draws = vec![rect(0., 0., 1024., 768., style::BG)];
@@ -3018,7 +3051,9 @@ impl Client {
             style::TYPE_SMALL,
             style::GOLD,
         ));
-        let tips = view.as_ref().map_or_else(Vec::new, |v| self.map_tips(v));
+        let (tips, route) = view
+            .as_ref()
+            .map_or_else(Default::default, |v| self.map_tips(v));
         Frame {
             city_click: self.pending_city_click.map(|g| g.first),
             revision: self.revision,
@@ -3029,6 +3064,7 @@ impl Client {
             status: self.status.clone(),
             assets: self.assets.clone(),
             tips,
+            route,
         }
     }
     fn feedback(&self) -> String {

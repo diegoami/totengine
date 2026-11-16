@@ -469,7 +469,7 @@ pub fn run(mut client: Client) -> Result<(), String> {
             if let Some(tip) =
                 super::tip_at(&frame.tips, f64::from(pointer.0), f64::from(pointer.1))
             {
-                draws.extend(tip.draws.iter().cloned());
+                draws.extend(super::tip_draws(&frame.route, tip));
             }
         }
         for draw in draws {

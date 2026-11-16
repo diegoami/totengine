@@ -160,6 +160,10 @@ pub struct Enhancements {
     /// Absent in files written before it existed, so it defaults off.
     #[serde(default)]
     pub map_tooltips: bool,
+    /// While a unit is selected, show the route and turns to the tile under
+    /// a resting pointer. Defaults off for older files.
+    #[serde(default)]
+    pub path_preview: bool,
 }
 
 pub const ENHANCEMENTS_FORMAT: &str = "totengine-enhancements 1";

@@ -77,7 +77,7 @@ function drawCanvas() {
   ctx.clearRect(0, 0, 1024, 768);
   ctx.imageSmoothingEnabled = false;
   const tip = hoverTip();
-  for (const d of tip ? paintedFrame.draws.concat(tip.draws) : paintedFrame.draws) {
+  for (const d of tip ? paintedFrame.draws.concat(tipDraws(tip)) : paintedFrame.draws) {
     switch (d.kind) {
       case "rect":
         ctx.fillStyle = d.color;
@@ -129,6 +129,17 @@ function hoverTip() {
     if (inside) return t;
   }
   return null;
+}
+// A shown tip's route markers (path preview) walk back along each step's
+// parent, as the desktop client's tip_draws does, then the tip's own draws.
+function tipDraws(tip) {
+  const route = paintedFrame.route || [], out = [];
+  let at = tip.route;
+  for (let n = 0; n < route.length && at != null && route[at]; n++) {
+    out.push(...route[at].draws);
+    at = route[at].parent;
+  }
+  return out.concat(tip.draws);
 }
 function restartHover() {
   clearTimeout(hoverTimer);

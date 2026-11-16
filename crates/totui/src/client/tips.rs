@@ -103,13 +103,17 @@ impl Client {
         draws
     }
 
-    /// Tips for the visible map, when the enhancement is on and the map is
-    /// the active surface (no dialog, no city window).
-    pub(super) fn map_tips(&self, v: &HumanView) -> Vec<Tip> {
-        if !self.enhancements.map_tooltips || self.modal.is_some() || self.city_open {
-            return Vec::new();
+    /// Tips for the visible map, when map tooltips or the path preview are
+    /// on and the map is the active surface (no dialog, no city window), with
+    /// the route steps the path-preview tips point into.
+    pub(super) fn map_tips(&self, v: &HumanView) -> (Vec<Tip>, Vec<RouteStep>) {
+        let e = &self.enhancements;
+        if !(e.map_tooltips || e.path_preview) || self.modal.is_some() || self.city_open {
+            return Default::default();
         }
         let o = &v.observation;
+        let plan = self.path_plan(v);
+        let mut tree = plan.as_ref().map(paths::RouteTree::new);
         let point = |x: u16, y: u16| {
             (
                 self.pan.0 + f64::from(x) * 32. * self.zoom,
@@ -117,6 +121,50 @@ impl Client {
             )
         };
         let on_map = |px: f64, py: f64| (12.0..752.0).contains(&px) && (100.0..680.0).contains(&py);
+        let screen = |i: usize| {
+            let (x, y) = paths::logical(o, i);
+            let (px, py) = point(x, y);
+            on_map(px, py).then_some((px, py))
+        };
+        // The description and route for one tile; `None` when it has neither.
+        let mut tip = |x: u16, y: u16, area: (f64, f64, f64, f64, bool)| -> Option<Tip> {
+            let mut lines = if e.map_tooltips {
+                self.tip_lines(v, x, y)?
+            } else {
+                o.seen
+                    .get(paths::stored(o, x, y))
+                    .copied()
+                    .flatten()
+                    .map(|_| Vec::new())?
+            };
+            let (px, py) = point(x, y);
+            let mut draws = Vec::new();
+            let mut route = None;
+            if let (Some(p), Some(t)) = (plan.as_ref(), tree.as_mut()) {
+                if let Some(line) = paths::path_line(p, o, x, y) {
+                    let target = paths::stored(o, x, y);
+                    if p.reach.get(target).copied().flatten().is_some() {
+                        route = t.before(target, screen);
+                        draws.extend(paths::target_draws(px, py));
+                    }
+                    lines.push(line);
+                }
+            }
+            if lines.is_empty() {
+                return None;
+            }
+            draws.extend(Self::tip_box(&lines, px, py));
+            let (tx, ty, hw, hh, diamond) = area;
+            Some(Tip {
+                x: tx,
+                y: ty,
+                hw,
+                hh,
+                diamond,
+                draws,
+                route,
+            })
+        };
         let mut sprites = Vec::new();
         let mut tiles = Vec::new();
         // Unit and city sprites stand above their tile; their rectangles win
@@ -130,39 +178,43 @@ impl Client {
             if !(44.0..720.0).contains(&px) || !(150.0..640.0).contains(&py) {
                 continue;
             }
-            if let Some(lines) = self.tip_lines(v, x, y) {
-                sprites.push(Tip {
-                    x: px - 18. * self.zoom,
-                    y: py - 44. * self.zoom,
-                    hw: 18. * self.zoom,
-                    hh: 22. * self.zoom,
-                    diamond: false,
-                    draws: Self::tip_box(&lines, px, py),
-                });
-            }
+            let z = self.zoom;
+            sprites.extend(tip(
+                x,
+                y,
+                (px - 18. * z, py - 44. * z, 18. * z, 22. * z, false),
+            ));
         }
-        for (i, tile) in o.seen.iter().enumerate() {
-            if tile.is_none() || sprites.len() + tiles.len() >= MAX_TIPS {
+        for (i, known) in o.seen.iter().enumerate() {
+            if known.is_none() || sprites.len() + tiles.len() >= MAX_TIPS {
                 continue;
             }
-            let y = (i / (usize::from(o.w2) / 2)) as u16;
-            let x = ((i % (usize::from(o.w2) / 2)) * 2) as u16 + (y & 1);
+            let (x, y) = paths::logical(o, i);
             let (px, py) = point(x, y);
             if !on_map(px, py) {
                 continue;
             }
-            if let Some(lines) = self.tip_lines(v, x, y) {
-                tiles.push(Tip {
-                    x: px,
-                    y: py,
-                    hw: 32. * self.zoom,
-                    hh: 16. * self.zoom,
-                    diamond: true,
-                    draws: Self::tip_box(&lines, px, py),
-                });
-            }
+            let z = self.zoom;
+            tiles.extend(tip(x, y, (px, py, 32. * z, 16. * z, true)));
         }
         sprites.extend(tiles);
-        sprites
+        let route = tree.map(|t| t.steps).unwrap_or_default();
+        (sprites, route)
+    }
+
+    /// The route plan for the unit selected to move, when the path preview
+    /// is on.
+    fn path_plan(&self, v: &HumanView) -> Option<paths::Plan> {
+        if !self.enhancements.path_preview || !self.moving {
+            return None;
+        }
+        let o = &v.observation;
+        let active = self.active?;
+        let unit = o
+            .units
+            .iter()
+            .find(|u| u.owner == o.civ && u.index == active.slot)?;
+        let rules = &self.loaded.as_ref()?.resources.rules;
+        Some(paths::plan(rules, o, unit))
     }
 }

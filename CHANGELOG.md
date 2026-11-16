@@ -5,6 +5,17 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Path preview with turn counts (#284, UI package U2), a new option under
+  **Settings**, off by default: with a unit selected to move, resting the
+  pointer on a known tile shows the cheapest route there as gold dots, a
+  number where each turn's moves run out, and "Path: arrives this turn" or
+  "arrives in N turns" (or "no known route"). The search uses only what your
+  civilization knows: unseen tiles are impassable, and only the foreign units
+  it can see block the way or exert zone of control. It follows the engine's
+  move costs (terrain, road, railroad, land/sea, zone of control) and is an
+  estimate: damage, expired wonders and anything unseen can change the real
+  moves. Works with or without map tooltips, on both clients; it sends no
+  input, and there is no goto order yet.
 - Map tooltips (#284, UI package U2), a new option under **Settings**, off by
   default: resting the pointer on a known map tile for about half a second
   shows its terrain and coordinates, river/road/railroad, any city (size,

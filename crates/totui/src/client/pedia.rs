@@ -327,10 +327,22 @@ impl Client {
             let Some(entry) = s.entries.get(*selected) else {
                 return;
             };
-            draws.push(text(TEXT_X, 188., &entry.title, 19, style::TEXT_BRIGHT));
+            draws.push(text(
+                TEXT_X,
+                188.,
+                &entry.title,
+                style::TYPE_TITLE,
+                style::TEXT_BRIGHT,
+            ));
             let lines = self.pedia_lines(*section, *selected);
             for (i, line) in lines.iter().skip(*scroll).take(READ_LINES).enumerate() {
-                draws.push(text(TEXT_X, 218. + i as f64 * 19., line, 13, style::TEXT));
+                draws.push(text(
+                    TEXT_X,
+                    218. + i as f64 * 19.,
+                    line,
+                    style::TYPE_SMALL,
+                    style::TEXT,
+                ));
             }
             draws.push(text(
                 TEXT_X,
@@ -341,7 +353,7 @@ impl Client {
                     (*scroll + READ_LINES).min(lines.len()),
                     lines.len()
                 ),
-                13,
+                style::TYPE_SMALL,
                 style::TEXT_DIM,
             ));
         } else {
@@ -356,7 +368,13 @@ impl Client {
                 if i == *selected {
                     draws.push(rect(TEXT_X - 4., y - 2., 608., ROW_H - 1., style::SELECT));
                 }
-                draws.push(text(TEXT_X + 4., y + 3., title, 15, style::TEXT));
+                draws.push(text(
+                    TEXT_X + 4.,
+                    y + 3.,
+                    title,
+                    style::TYPE_BODY,
+                    style::TEXT,
+                ));
             }
             draws.push(text(
                 TEXT_X,
@@ -367,7 +385,7 @@ impl Client {
                     page + 1,
                     s.entries.len().div_ceil(LIST_ROWS).max(1)
                 ),
-                13,
+                style::TYPE_SMALL,
                 style::TEXT_DIM,
             ));
         }
@@ -379,7 +397,7 @@ impl Client {
             TEXT_X,
             566.,
             &format!("Text from this profile's Describe.txt ({source})."),
-            12,
+            style::TYPE_SMALL,
             style::TEXT_DIM,
         ));
     }

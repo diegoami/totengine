@@ -2957,7 +2957,7 @@ pub(super) fn title(c: &Client) -> serde_json::Value {
         .find_map(|d| match d {
             Draw::Text {
                 x, y, text, size, ..
-            } if (*x, *y, *size) == (212., 125., 22) => Some(text.clone().into()),
+            } if (*x, *y, *size) == (212., 125., style::TYPE_TITLE) => Some(text.clone().into()),
             _ => None,
         })
         .unwrap_or(serde_json::Value::Null)
@@ -3255,7 +3255,7 @@ fn turn_feedback_banner_and_title_round() {
         c.frame().draws.iter().find_map(|d| match d {
             Draw::Text {
                 x, y, size, text, ..
-            } if (*x, *y, *size) == (16., 16., 24) => Some(text.clone()),
+            } if (*x, *y, *size) == (16., 16., style::TYPE_DISPLAY) => Some(text.clone()),
             _ => None,
         })
     };
@@ -3341,7 +3341,7 @@ fn reports_open_switch_sort_drill_down_and_return_without_mutation() {
         c.frame().draws.iter().find_map(|d| match d {
             Draw::Text {
                 x, y, text, size, ..
-            } if (*x, *y, *size) == (212., 125., 22) => Some(text.clone()),
+            } if (*x, *y, *size) == (212., 125., style::TYPE_TITLE) => Some(text.clone()),
             _ => None,
         })
     };

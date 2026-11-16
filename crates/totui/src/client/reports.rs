@@ -9,9 +9,11 @@ use engine::human::{Report, ReportFamily};
 
 const PAGE_ROWS: usize = 12;
 const TABLE_X: f64 = 212.;
-const HEADER_Y: f64 = 186.;
-const ROW_Y: f64 = 214.;
-const ROW_H: f64 = 27.;
+// Two tab rows (152, 182) sit above the table (#283: eight tabs on one row
+// overflowed the 600 px dialog).
+const HEADER_Y: f64 = 216.;
+const ROW_Y: f64 = 244.;
+const ROW_H: f64 = 25.;
 
 /// A sort value: numbers compare numerically, text case-insensitively.
 type SortKey = (i64, String);
@@ -558,9 +560,9 @@ impl Client {
         .enumerate()
         {
             b.push(Button {
-                x: TABLE_X + i as f64 * 100.,
-                y: 150.,
-                w: 96.,
+                x: TABLE_X + (i % 4) as f64 * 150.,
+                y: 152. + (i / 4) as f64 * 30.,
+                w: 146.,
                 h: 28.,
                 label: family_label(f).into(),
                 action: Action::ReportFamily(f),
@@ -610,7 +612,7 @@ impl Client {
                 TABLE_X,
                 ROW_Y + 8.,
                 "Nothing to report yet.",
-                16,
+                style::TYPE_BODY,
                 style::TEXT,
             ));
         }
@@ -627,7 +629,13 @@ impl Client {
             }
             let color = if row.warn { style::WARN } else { style::TEXT };
             for (cell, (x, _)) in row.cells.iter().zip(&t.columns) {
-                draws.push(text(TABLE_X + x + 4., y + 3., cell, 13, color));
+                draws.push(text(
+                    TABLE_X + x + 4.,
+                    y + 3.,
+                    cell,
+                    style::TYPE_SMALL,
+                    color,
+                ));
             }
         }
         let foot_y = ROW_Y + PAGE_ROWS as f64 * ROW_H + 8.;
@@ -636,7 +644,7 @@ impl Client {
                 TABLE_X,
                 foot_y + i as f64 * 18.,
                 line,
-                13,
+                style::TYPE_SMALL,
                 style::TEXT_DIM,
             ));
         }
@@ -650,7 +658,7 @@ impl Client {
                 page + 1,
                 pages
             ),
-            13,
+            style::TYPE_SMALL,
             style::TEXT,
         ));
     }

@@ -5,6 +5,17 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+## [0.20.0] — Client polish and opt-in conveniences on both clients
+
+Owner-called milestone, 2026-11-16. Everything since v0.19.0: UI quality
+package U1 (#281–#283: crisp scaling, one styling system, typography ladder,
+turn feedback, overlap and click fixes) and UI package U2 (#284, all six
+shortlist items from #266: message log, map tooltips, path preview with turn
+counts, keyboard help, list scrolling and sorting, and the enhancements
+settings screen that holds the opt-in conveniences, all off by default).
+Every change is presentation-only: no orders, rules, checkpoints or
+recordings change. Source release without new client archives.
+
 - Path preview with turn counts (#284, UI package U2), a new option under
   **Settings**, off by default: with a unit selected to move, resting the
   pointer on a known tile shows the cheapest route there as gold dots, a

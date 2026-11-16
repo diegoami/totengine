@@ -5,6 +5,15 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- The browser client loads again (#298): since #285 its script threw at load,
+  because a variable was read before its declaration, so the page stayed
+  blank. It also now uses the same sans face as the desktop client (DejaVu
+  Sans) instead of Georgia, so both clients share the same type ladder.
+- Keyboard help (#284, UI package U2): press **?** on the map or in a city
+  window, or click **Keys [?]**, to see every key: the original map orders,
+  advisors (F1–F11, Shift+T, Shift+R), city-window and dialog keys, plus our
+  additions. On desktop `?` comes from text input, so it works on any
+  keyboard layout.
 - Button labels are sized per row (#283): when any label in a row would clip
   at body size, the whole row uses the small step, so toolbars never mix two
   sizes.

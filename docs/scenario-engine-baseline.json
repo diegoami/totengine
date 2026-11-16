@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "bb39018c5f461908ac706e00978995292be0572e6c061af94f23c0b758e72059",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "e51a02a3874e6aa736c2c44d029fd70fbe3c65a243e4d69413cf4117b48aecc2",
+    "crates/totui/src/client/mod.rs": "5eeff9090cbfa43d4883679fd740bdf6fecd421f924c85ea06558f937857786a",
     "crates/totui/src/resources.rs": "2bb8ef62098b871ef7e6fb1b7464e93ba4ff36eb15b50674349b2e248bc07d4c",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -246,6 +246,13 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Presentation only: label draw sizes. No command, order, event, trigger, action, checkpoint, scenario-entry or runtime-admission path changed; the trigger/action tables above are unchanged."
+    },
+    {
+      "change": "#284 keyboard help overlay: '?' (map and city window) and a Keys [?] button open an inert Help dialog listing original and added keys",
+      "files": [
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Presentation only: a read-only dialog and its routing. No command, order, event, trigger, action, checkpoint, scenario-entry or runtime-admission path changed; the trigger/action tables above are unchanged."
     }
   ]
 }

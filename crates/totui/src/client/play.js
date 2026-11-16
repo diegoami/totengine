@@ -22,6 +22,9 @@ const prefix = crypto.getRandomValues(new Uint32Array(1))[0] >>> 0;
 function id() {
   return prefix * 1048576 + ++counter;
 } // below Number.MAX_SAFE_INTEGER
+// Declared before the first resize() below: drawCanvas() reads it, and a
+// `let` used before its declaration throws and stops the whole script (#298).
+let paintedFrame = null, paintedImages = new Map();
 function resize() {
   scale = Math.min(innerWidth / 1024, innerHeight / 768);
   stage.style.transform = `translate(${(innerWidth - 1024 * scale) / 2}px,${(innerHeight - 768 * scale) / 2}px) scale(${scale})`;
@@ -63,7 +66,6 @@ async function sprite(key) {
   sprites.set(key, promise);
   return promise;
 }
-let paintedFrame = null, paintedImages = new Map();
 function drawCanvas() {
   if (!paintedFrame) return;
   // Draw in logical 1024x768 coordinates; the transform maps them onto the
@@ -80,7 +82,9 @@ function drawCanvas() {
         break;
       case "text":
         ctx.fillStyle = d.color;
-        ctx.font = `${d.size}px Georgia,serif`;
+        // Same face family as the desktop client (DejaVu Sans), so both clients
+        // share one type ladder and label-width estimate (#283).
+        ctx.font = `${d.size}px "DejaVu Sans",Verdana,"Segoe UI",sans-serif`;
         ctx.textBaseline = "top";
         ctx.fillText(d.text, d.x, d.y);
         break;
@@ -292,11 +296,12 @@ addEventListener("keydown", (e) => {
     key = "Ctrl+" + key;
   } else if (e.shiftKey && ["z", "t", "r"].includes(key)) key = "Shift+" + key;
   else if (e.shiftKey && /^[a-z]$/.test(key)) return;
+  // "?" (Shift+/ on most layouts) opens the keyboard help (#284).
   if (["Enter", "Escape", "Tab", "ShiftTab", "ArrowLeft", "ArrowRight",
        "ArrowUp", "ArrowDown", "PageUp", "PageDown", " ", "+", "-", "=",
        "Ctrl+s", "Ctrl+l", "Ctrl+n", "Shift+z", "Shift+t", "Shift+r",
        "F1", "F2", "F4", "F5", "F6", "F7", "F8", "F9", "F11"].includes(key) ||
-      (!editing && /^[abvcwzxfremosl123456789]$/.test(key))) {
+      (!editing && /^[abvcwzxfremosl123456789?]$/.test(key))) {
     e.preventDefault();
     send({ type: "key", key });
   }

@@ -3735,3 +3735,36 @@ fn toolbar_cities_opens_a_city_window_or_explains_why_not() {
     assert_eq!(c.city, Some(c.view().unwrap().cities[0]));
     assert_eq!(c.checkpoint().unwrap(), snapshot, "opening is inert");
 }
+
+#[test]
+fn keyboard_help_opens_from_map_button_and_city_and_is_inert() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    let before = c.checkpoint().unwrap();
+    let shows = |c: &Client, s: &str| {
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Text{text,..} if text == s))
+    };
+    key(&mut c, "?");
+    assert!(matches!(c.modal, Some(Modal::Help)), "{}", c.status);
+    assert!(shows(&c, "Keys"));
+    assert!(shows(&c, "City status"));
+    assert!(shows(&c, "This help (our addition)"));
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    button(&mut c, "Keys [?]");
+    assert!(matches!(c.modal, Some(Modal::Help)));
+    key(&mut c, "Enter");
+    assert!(c.modal.is_none());
+    assert_eq!(c.checkpoint().unwrap(), before, "help is inert");
+    founding(&mut c);
+    button(&mut c, "Manage city");
+    assert!(c.city_open);
+    key(&mut c, "?");
+    assert!(matches!(c.modal, Some(Modal::Help)));
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none() && c.city_open);
+}

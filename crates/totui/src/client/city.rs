@@ -48,6 +48,7 @@ impl Client {
             )),
             "Ctrl+s" => self.action(Action::Save),
             "Ctrl+l" => self.action(Action::Load),
+            "?" => self.action(Action::Help),
             _ => Ok(()),
         }
     }

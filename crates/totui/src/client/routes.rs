@@ -267,7 +267,7 @@ impl Client {
                 })?;
                 Ok(Some(true))
             }
-            Modal::Science | Modal::Notice { .. } => Ok(Some(true)),
+            Modal::Science | Modal::Notice { .. } | Modal::Help => Ok(Some(true)),
             Modal::Pedia { .. } => {
                 self.pedia_accept()?;
                 Ok(Some(false))
@@ -329,7 +329,7 @@ impl Client {
                 self.open(Modal::Science);
                 true
             }
-            Some(Modal::Notice { .. }) => {
+            Some(Modal::Notice { .. } | Modal::Help) => {
                 self.modal = None;
                 true
             }
@@ -552,6 +552,7 @@ impl Client {
                     );
                 }
             }
+            Modal::Help => help_draws(draws),
             Modal::Notice { lines, .. } => {
                 for (i, s) in lines.iter().enumerate() {
                     line(
@@ -627,6 +628,67 @@ impl Client {
                 );
             }
             _ => (),
+        }
+    }
+}
+
+/// The keyboard help overlay (#284): two columns of key / meaning pairs.
+/// Original Civilization II keys come first; our additions are marked.
+const HELP: [&[(&str, &str)]; 2] = [
+    &[
+        ("Map", ""),
+        ("v", "Moving / Viewing"),
+        ("1-9, arrows", "Move unit (Moving)"),
+        ("Arrows", "Scroll map (Viewing)"),
+        ("b", "Found a city"),
+        ("w", "Wait: unit comes back"),
+        ("Space", "Skip this unit"),
+        ("a", "Activate unit at cursor"),
+        ("c", "Center on unit"),
+        ("z / x", "Zoom in / out"),
+        ("Shift+Z", "Reset zoom"),
+        ("Ctrl+N", "End turn"),
+        ("Ctrl+S / L", "Save / load checkpoint"),
+        ("", ""),
+        ("City window", ""),
+        ("PgUp / PgDn", "Previous / next city"),
+        ("Arrows", "Pick a tile"),
+        ("Space", "Toggle its worker"),
+        ("Esc", "Back to the map"),
+    ],
+    &[
+        ("Advisors", ""),
+        ("F1", "City status"),
+        ("F2", "Defense (units)"),
+        ("F4", "Attitude (mood)"),
+        ("F5", "Trade"),
+        ("F6", "Science"),
+        ("F7", "Wonders"),
+        ("F8", "Top cities"),
+        ("F9", "Score"),
+        ("F11", "Demographics"),
+        ("Shift+T", "Tax / lux / science rates"),
+        ("Shift+R", "Revolution"),
+        ("", ""),
+        ("Dialogs", ""),
+        ("Arrows", "Select"),
+        ("Enter / Esc", "Accept / cancel"),
+        ("Tab", "Move button focus"),
+        ("?", "This help (our addition)"),
+    ],
+];
+
+fn help_draws(draws: &mut Vec<Draw>) {
+    for (col, rows) in HELP.iter().enumerate() {
+        let x = 212. + col as f64 * 305.;
+        for (i, (key, meaning)) in rows.iter().enumerate() {
+            let y = 162. + i as f64 * 22.;
+            if meaning.is_empty() {
+                draws.push(text(x, y, key, style::TYPE_SMALL, style::TEXT_BRIGHT));
+            } else {
+                draws.push(text(x, y, key, style::TYPE_SMALL, style::GOLD));
+                draws.push(text(x + 92., y, meaning, style::TYPE_SMALL, style::TEXT));
+            }
         }
     }
 }

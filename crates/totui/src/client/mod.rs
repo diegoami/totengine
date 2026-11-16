@@ -167,6 +167,8 @@ enum Modal {
         title: &'static str,
         lines: Vec<String>,
     },
+    /// The keyboard help overlay (#284): original keys plus our additions.
+    Help,
     Goal,
     /// Civilopedia reference text; `back` is the dialog (and research choice) to
     /// return to when it was opened from one.
@@ -226,6 +228,8 @@ enum Action {
     ConfirmMoves,
     Work,
     Found,
+    /// Opens the keyboard help overlay.
+    Help,
     Research,
     Rates,
     Revolution,
@@ -790,6 +794,7 @@ impl Client {
         } else {
             match key {
                 "b" => self.action(Action::Found),
+                "?" => self.action(Action::Help),
                 "Shift+t" => self.action(Action::Rates),
                 "Shift+r" => self.action(Action::Revolution),
                 "F6" => self.action(Action::Science),
@@ -950,6 +955,7 @@ impl Client {
                 None => self.open_science()?,
             },
             Action::Rates => self.open_rates()?,
+            Action::Help => self.open(Modal::Help),
             Action::Report(family) => self.open_report(family)?,
             Action::Pedia => self.open_pedia()?,
             Action::PediaSection(i) => self.pedia_section(i),
@@ -1142,6 +1148,7 @@ impl Client {
                     | Modal::Government { .. }
                     | Modal::Science
                     | Modal::Notice { .. }
+                    | Modal::Help
                     | Modal::Report { .. }
                     | Modal::Pedia { .. }
                     | Modal::Goal => unreachable!("handled by route_accept"),
@@ -1916,7 +1923,7 @@ impl Client {
                         Modal::Rates { review: None, .. } => "Apply [Enter]",
                         Modal::Rates { .. } => "Apply rates [Enter]",
                         Modal::Revolution => "Yes, revolt [Enter]",
-                        Modal::Science | Modal::Notice { .. } => "Close [Enter]",
+                        Modal::Science | Modal::Notice { .. } | Modal::Help => "Close [Enter]",
                         Modal::Report { .. } => "Open city [Enter]",
                         Modal::Pedia { reading: false, .. } => "Read [Enter]",
                         Modal::Pedia { .. } => "Back to list [Enter]",
@@ -1940,6 +1947,7 @@ impl Client {
                         Modal::Goal => "Back [Esc]",
                         Modal::Science
                         | Modal::Notice { .. }
+                        | Modal::Help
                         | Modal::Report { .. }
                         | Modal::Pedia { .. } => "Close [Esc]",
                         _ => "Cancel / inspect [Esc]",
@@ -2082,12 +2090,13 @@ impl Client {
             add(
                 752.,
                 685.,
-                258.,
+                170.,
                 30.,
                 "Manage city".into(),
                 Action::OpenCity,
             );
         }
+        add(930., 685., 80., 30., "Keys [?]".into(), Action::Help);
         if self.view().is_some_and(|v| v.phase == Phase::Opponents) {
             add(
                 770.,
@@ -2392,6 +2401,7 @@ impl Client {
                 Modal::Government { .. } => "Choose a government",
                 Modal::Science => "Science advisor",
                 Modal::Notice { title, .. } => title,
+                Modal::Help => "Keys",
                 Modal::Report { .. } => "Reports",
                 Modal::Pedia { .. } => "Civilopedia",
                 Modal::Goal => "Choose a research goal",

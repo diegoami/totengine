@@ -293,15 +293,21 @@ pub fn run(mut client: Client) -> Result<(), String> {
                         .frame()
                         .entry
                         .filter(|e| Some(&e.id) == original_field.as_ref());
-                    entry.map(|mut e| {
-                        editor.insert(&text);
-                        e.value = editor.value.clone();
-                        revision = client.frame().revision;
-                        Input::Edit {
-                            field: e.id,
-                            value: e.value,
+                    match entry {
+                        Some(mut e) => {
+                            editor.insert(&text);
+                            e.value = editor.value.clone();
+                            revision = client.frame().revision;
+                            Some(Input::Edit {
+                                field: e.id,
+                                value: e.value,
+                            })
                         }
-                    })
+                        // "?" opens the keyboard help (#284). Taken from text
+                        // input, not a keycode, so it works on any layout.
+                        None if text == "?" => Some(Input::Key { key: "?".into() }),
+                        None => None,
+                    }
                 }
                 Event::KeyDown {
                     keycode: Some(k),

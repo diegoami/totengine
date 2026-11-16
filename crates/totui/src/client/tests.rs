@@ -3698,3 +3698,40 @@ fn generated_pedia_route() {
     )
     .unwrap();
 }
+
+#[test]
+fn toolbar_cities_opens_a_city_window_or_explains_why_not() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    // No cities yet: a visible notice, not a silent status line (#292).
+    let before = c.checkpoint().unwrap();
+    button(&mut c, "Cities");
+    assert!(
+        matches!(
+            &c.modal,
+            Some(Modal::Notice {
+                title: "Cities",
+                ..
+            })
+        ),
+        "{}",
+        c.status
+    );
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::Text{text,..} if text == "You have no cities yet.")));
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    assert_eq!(c.checkpoint().unwrap(), before, "the notice is inert");
+    // With a city, Cities opens that city's window directly.
+    founding(&mut c);
+    assert!(!c.city_open);
+    let snapshot = c.checkpoint().unwrap();
+    button(&mut c, "Cities");
+    assert!(c.city_open, "{}", c.status);
+    assert_eq!(c.city, Some(c.view().unwrap().cities[0]));
+    assert_eq!(c.checkpoint().unwrap(), snapshot, "opening is inert");
+}

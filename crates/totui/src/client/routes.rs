@@ -267,7 +267,7 @@ impl Client {
                 })?;
                 Ok(Some(true))
             }
-            Modal::Science => Ok(Some(true)),
+            Modal::Science | Modal::Notice { .. } => Ok(Some(true)),
             Modal::Pedia { .. } => {
                 self.pedia_accept()?;
                 Ok(Some(false))
@@ -327,6 +327,10 @@ impl Client {
             }
             Some(Modal::Goal) => {
                 self.open(Modal::Science);
+                true
+            }
+            Some(Modal::Notice { .. }) => {
+                self.modal = None;
                 true
             }
             _ => false,
@@ -539,6 +543,11 @@ impl Client {
                 .iter()
                 .enumerate()
                 {
+                    line(draws, 190. + i as f64 * 40., s, 17, style::TEXT);
+                }
+            }
+            Modal::Notice { lines, .. } => {
+                for (i, s) in lines.iter().enumerate() {
                     line(draws, 190. + i as f64 * 40., s, 17, style::TEXT);
                 }
             }

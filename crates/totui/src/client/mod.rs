@@ -161,6 +161,12 @@ enum Modal {
         decision: u64,
     },
     Science,
+    /// A plain informational dialog: `title` and its lines, closed with
+    /// Enter or Esc (#292: a toolbar button that cannot act explains why).
+    Notice {
+        title: &'static str,
+        lines: Vec<String>,
+    },
     Goal,
     /// Civilopedia reference text; `back` is the dialog (and research choice) to
     /// return to when it was opened from one.
@@ -956,31 +962,40 @@ impl Client {
             Action::ClearGoal => self.set_goal(None)?,
             Action::RateStep(row, delta) => self.rate_step(row, delta)?,
             Action::RateLock(row) => self.rate_lock(row),
+            // Cities opens the next own city's window directly; each further
+            // click cycles on. Without cities a notice says how to found one
+            // (#292: select-and-scroll alone read as a dead button).
             Action::City => {
-                if let Some(v) = self.view() {
-                    if v.cities.is_empty() {
-                        self.status =
-                            "No cities yet: select a settler and press B to found one first."
-                                .into();
-                        return Ok(());
-                    }
-                    let next = v
-                        .cities
-                        .iter()
-                        .position(|e| Some(*e) == self.city)
-                        .map_or(0, |i| (i + 1) % v.cities.len().max(1));
-                    self.city = v.cities.get(next).copied();
-                    if let Some(c) = self
-                        .city
-                        .and_then(|e| v.observation.cities.iter().find(|c| c.index == e.slot))
-                    {
-                        self.pan = (
-                            380. - f64::from(c.x) * 32. * self.zoom,
-                            390. - f64::from(c.y) * 16. * self.zoom,
-                        );
-                    }
+                let Some(v) = self.view() else {
+                    return Ok(());
+                };
+                if v.cities.is_empty() {
+                    self.open(Modal::Notice {
+                        title: "Cities",
+                        lines: vec![
+                            "You have no cities yet.".into(),
+                            "Select a settler and press B (or Found) to found one;".into(),
+                            "Cities then opens each city's window in turn.".into(),
+                        ],
+                    });
+                    return Ok(());
                 }
-                self.status = "Own city selected; Production opens its explicit picker.".into();
+                let next = v
+                    .cities
+                    .iter()
+                    .position(|e| Some(*e) == self.city)
+                    .map_or(0, |i| (i + 1) % v.cities.len().max(1));
+                self.city = v.cities.get(next).copied();
+                if let Some(c) = self
+                    .city
+                    .and_then(|e| v.observation.cities.iter().find(|c| c.index == e.slot))
+                {
+                    self.pan = (
+                        380. - f64::from(c.x) * 32. * self.zoom,
+                        390. - f64::from(c.y) * 16. * self.zoom,
+                    );
+                }
+                self.action(Action::OpenCity)?;
             }
             Action::OpenCity => {
                 self.refresh();
@@ -1126,6 +1141,7 @@ impl Client {
                     | Modal::Revolution
                     | Modal::Government { .. }
                     | Modal::Science
+                    | Modal::Notice { .. }
                     | Modal::Report { .. }
                     | Modal::Pedia { .. }
                     | Modal::Goal => unreachable!("handled by route_accept"),
@@ -1900,7 +1916,7 @@ impl Client {
                         Modal::Rates { review: None, .. } => "Apply [Enter]",
                         Modal::Rates { .. } => "Apply rates [Enter]",
                         Modal::Revolution => "Yes, revolt [Enter]",
-                        Modal::Science => "Close [Enter]",
+                        Modal::Science | Modal::Notice { .. } => "Close [Enter]",
                         Modal::Report { .. } => "Open city [Enter]",
                         Modal::Pedia { reading: false, .. } => "Read [Enter]",
                         Modal::Pedia { .. } => "Back to list [Enter]",
@@ -1922,9 +1938,10 @@ impl Client {
                         Modal::Rates { .. } => "Reset split [Esc]",
                         Modal::Revolution => "Cancel [Esc]",
                         Modal::Goal => "Back [Esc]",
-                        Modal::Science | Modal::Report { .. } | Modal::Pedia { .. } => {
-                            "Close [Esc]"
-                        }
+                        Modal::Science
+                        | Modal::Notice { .. }
+                        | Modal::Report { .. }
+                        | Modal::Pedia { .. } => "Close [Esc]",
                         _ => "Cancel / inspect [Esc]",
                     }
                     .into(),
@@ -2362,6 +2379,7 @@ impl Client {
                 Modal::Revolution => "Revolution",
                 Modal::Government { .. } => "Choose a government",
                 Modal::Science => "Science advisor",
+                Modal::Notice { title, .. } => title,
                 Modal::Report { .. } => "Reports",
                 Modal::Pedia { .. } => "Civilopedia",
                 Modal::Goal => "Choose a research goal",

@@ -55,6 +55,9 @@ impl InputBatch {
             || matches!(&input, Input::Key { key } if key == "Tab" || key == "ShiftTab")
             || (same_dialog && matches!(&input, Input::Key { .. } | Input::Edit { .. }))
             || (same_city && matches!(&input, Input::Key { .. }))
+            // Wheel notches only scroll lists in the same dialog or city
+            // window; several in one batch must all apply (#284).
+            || ((same_dialog || same_city) && matches!(&input, Input::Wheel { .. }))
         {
             revision = client.revision;
         }
@@ -74,6 +77,20 @@ fn pointer_input(client: &Client, x: i32, y: i32, clicks: u8) -> Input {
     Input::Click {
         x: f64::from(x),
         y: f64::from(y),
+    }
+}
+/// SDL reports wheel-away-from-the-user as positive y; the client scrolls
+/// down (later rows) on a positive delta. "Flipped" is natural scrolling.
+fn wheel_input(pointer: (i32, i32), y: i32, direction: sdl2::mouse::MouseWheelDirection) -> Input {
+    let y = if direction == sdl2::mouse::MouseWheelDirection::Flipped {
+        -y
+    } else {
+        y
+    };
+    Input::Wheel {
+        x: f64::from(pointer.0),
+        y: f64::from(pointer.1),
+        delta: -y.signum(),
     }
 }
 fn color(s: &str) -> Color {
@@ -231,6 +248,9 @@ pub fn run(mut client: Client) -> Result<(), String> {
     let mut id = 0u64;
     let mut painted_revision = None;
     let mut editor = super::editor::Editor::default();
+    // SDL2 0.38 wheel events carry no position; the last motion event's
+    // position is already on the logical stage (#292), so remember it.
+    let mut pointer = (0i32, 0i32);
     'running: loop {
         let before = client.frame();
         if let Some(entry) = &before.entry {
@@ -286,7 +306,15 @@ pub fn run(mut client: Client) -> Result<(), String> {
                     // already mapped these onto the logical 1024x768 stage
                     // (scale, letterbox and high-DPI). Mapping them again
                     // double-scaled every click at non-1x sizes (#292).
+                    pointer = (x, y);
                     Some(pointer_input(&client, x, y, clicks))
+                }
+                Event::MouseMotion { x, y, .. } => {
+                    pointer = (x, y);
+                    None
+                }
+                Event::MouseWheel { y, direction, .. } if y != 0 => {
+                    Some(wheel_input(pointer, y, direction))
                 }
                 Event::TextInput { text, .. } => {
                     let entry = client
@@ -611,6 +639,27 @@ pub fn run(mut client: Client) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn wheel_away_scrolls_up_natural_scrolling_flips_and_keeps_the_pointer() {
+        use sdl2::mouse::MouseWheelDirection::{Flipped, Normal};
+        assert_eq!(
+            wheel_input((800, 300), 1, Normal),
+            Input::Wheel {
+                x: 800.,
+                y: 300.,
+                delta: -1
+            }
+        );
+        assert!(matches!(
+            wheel_input((0, 0), -3, Normal),
+            Input::Wheel { delta: 1, .. }
+        ));
+        assert!(matches!(
+            wheel_input((0, 0), 2, Flipped),
+            Input::Wheel { delta: 1, .. }
+        ));
+    }
 
     #[test]
     fn default_window_size_picks_the_largest_comfortable_scale() {

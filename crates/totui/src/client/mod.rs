@@ -26,6 +26,8 @@ use city_panels::CityPanel;
 
 /// Message log rows per page and retained entries (#284).
 const MESSAGE_ROWS: usize = 16;
+/// Checkpoint names per Load page (#284: more than one page now scrolls).
+const LOAD_ROWS: usize = 8;
 const MESSAGE_LOG_CAP: usize = 500;
 const NOTICE_OVERLAY_LINES: usize = 6;
 
@@ -56,11 +58,32 @@ fn random_seed() -> Result<String, String> {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Input {
-    Click { x: f64, y: f64 },
-    DoubleClick { x: f64, y: f64, first_click: u64 },
-    Key { key: String },
-    Edit { field: String, value: String },
-    Focus { focused: bool },
+    Click {
+        x: f64,
+        y: f64,
+    },
+    DoubleClick {
+        x: f64,
+        y: f64,
+        first_click: u64,
+    },
+    Key {
+        key: String,
+    },
+    /// One mouse-wheel notch over a logical position: positive scrolls down
+    /// (later rows). Presentation-only; it never issues an order (#284).
+    Wheel {
+        x: f64,
+        y: f64,
+        delta: i32,
+    },
+    Edit {
+        field: String,
+        value: String,
+    },
+    Focus {
+        focused: bool,
+    },
     Tick,
 }
 #[derive(Clone, Serialize)]
@@ -272,6 +295,8 @@ enum Action {
     CityStep(i32),
     CityPanel(CityPanel),
     CityPanelPage(i32),
+    /// Next presentation order of the open city panel's list (#284).
+    CityPanelSort,
     InspectSale(Entity, u8),
     Worker(Entity, u8),
     Specialist(Entity, u8),
@@ -363,6 +388,7 @@ pub struct Client {
     pending_city_click: Option<CityClick>,
     city_panel: CityPanel,
     city_panel_page: usize,
+    city_panel_sort: city_panels::CitySort,
     /// Slider locks persist for the client session only (the original keeps
     /// them in globals); they are never engine state or checkpointed.
     rate_locks: [bool; 3],
@@ -437,6 +463,7 @@ impl Client {
             pending_city_click: None,
             city_panel: CityPanel::Info,
             city_panel_page: 0,
+            city_panel_sort: city_panels::CitySort::Listed,
             rate_locks: [false; 3],
             report_return: None,
             inspect: None,
@@ -842,7 +869,32 @@ impl Client {
                 }
             }
             Input::Key { key } => self.key(&key),
+            Input::Wheel { x, y, delta } => {
+                if !x.is_finite() || !y.is_finite() {
+                    return Err("Invalid pointer position".into());
+                }
+                self.wheel(x, delta.signum());
+                Ok(())
+            }
         }
+    }
+    /// Scroll the list under the pointer one page per notch. Only lists
+    /// scroll: over the map or a dialog without a list the wheel does
+    /// nothing, so it can never move a unit or change a game choice.
+    fn wheel(&mut self, x: f64, delta: i32) {
+        if delta == 0 {
+            return;
+        }
+        let key = if delta > 0 { "PageDown" } else { "PageUp" };
+        let _ = match &self.modal {
+            Some(Modal::Report { .. }) => self.report_key(key).unwrap_or(Ok(())),
+            Some(Modal::Pedia { .. }) => self.pedia_key(key).unwrap_or(Ok(())),
+            Some(Modal::Messages | Modal::Load) => self.action(Action::Page(delta)),
+            Some(_) if !self.current_choices().is_empty() => self.action(Action::Page(delta)),
+            Some(_) => Ok(()),
+            None if self.city_open && x >= 736. => self.action(Action::CityPanelPage(delta)),
+            None => Ok(()),
+        };
     }
     fn key(&mut self, key: &str) -> Result<(), String> {
         if key == "Tab" || key == "ShiftTab" {
@@ -1178,8 +1230,10 @@ impl Client {
             Action::CityPanel(panel) => {
                 self.city_panel = panel;
                 self.city_panel_page = 0;
+                self.city_panel_sort = city_panels::CitySort::Listed;
                 self.focus_button = 0;
             }
+            Action::CityPanelSort => self.city_panel_sort_next(),
             Action::CityPanelPage(delta) => {
                 self.city_panel_page = self
                     .city_panel_page
@@ -1243,6 +1297,8 @@ impl Client {
             Action::Page(delta) => {
                 let last = if matches!(self.modal, Some(Modal::Messages)) {
                     self.notice_log.len().saturating_sub(1) / MESSAGE_ROWS
+                } else if matches!(self.modal, Some(Modal::Load)) {
+                    storage::list(&self.saves).len().saturating_sub(1) / LOAD_ROWS
                 } else {
                     self.current_choices().len().saturating_sub(1) / 12
                 };
@@ -1975,8 +2031,10 @@ impl Client {
                 | Modal::Production { .. }
                 | Modal::Units { .. }
                 | Modal::Improvements { .. } => {
-                    for (row, (id, label)) in self
-                        .current_choices()
+                    let choices = self.current_choices();
+                    // Page buttons only when the list is longer than a page (#284).
+                    let paged = choices.len() > 12;
+                    for (row, (id, label)) in choices
                         .into_iter()
                         .skip(self.page * 12)
                         .take(12)
@@ -1998,14 +2056,18 @@ impl Client {
                             Action::Choose(id),
                         );
                     }
-                    add(212., 529., 120., 28., "Previous".into(), Action::Page(-1));
-                    add(352., 529., 120., 28., "Next page".into(), Action::Page(1));
+                    if paged {
+                        add(212., 529., 120., 28., "Previous".into(), Action::Page(-1));
+                        add(352., 529., 120., 28., "Next page".into(), Action::Page(1));
+                    }
                 }
                 Modal::Load => {
-                    for (row, name) in storage::list(&self.saves)
+                    let saves = storage::list(&self.saves);
+                    let paged = saves.len() > LOAD_ROWS;
+                    for (row, name) in saves
                         .into_iter()
-                        .skip(self.page * 8)
-                        .take(8)
+                        .skip(self.page * LOAD_ROWS)
+                        .take(LOAD_ROWS)
                         .enumerate()
                     {
                         add(
@@ -2016,6 +2078,10 @@ impl Client {
                             name.clone(),
                             Action::Slot(name),
                         );
+                    }
+                    if paged {
+                        add(212., 529., 120., 28., "Previous".into(), Action::Page(-1));
+                        add(352., 529., 120., 28., "Next page".into(), Action::Page(1));
                     }
                 }
                 _ => (),

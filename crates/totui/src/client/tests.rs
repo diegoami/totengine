@@ -3892,3 +3892,116 @@ fn enhancements_default_off_toggle_persist_and_never_touch_the_game() {
     let c3 = f.client();
     assert!(!c3.enhancements.notice_overlay && !c3.enhancements.confirm_moves);
 }
+
+#[test]
+fn mouse_wheel_scrolls_lists_only_and_never_touches_the_game() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    let wheel = |c: &mut Client, x: f64, delta: i32| input(c, Input::Wheel { x, y: 300., delta });
+    // Over the map the wheel does nothing: no pan, no selection, no order.
+    let before = c.checkpoint().unwrap();
+    let (pan, frame) = (c.pan, c.frame().draws.len());
+    wheel(&mut c, 300., 1);
+    wheel(&mut c, 300., -1);
+    assert_eq!((c.pan, c.frame().draws.len()), (pan, frame));
+    assert_eq!(c.checkpoint().unwrap(), before);
+    // More than one page of checkpoints now pages, by buttons and wheel.
+    for n in 0..=LOAD_ROWS {
+        key(&mut c, "Ctrl+s");
+        edit(&mut c, &format!("wheel{n:02}"));
+        key(&mut c, "Enter");
+        assert!(c.modal.is_none(), "{}", c.status);
+    }
+    key(&mut c, "Ctrl+l");
+    let slots = |c: &Client| {
+        c.buttons()
+            .into_iter()
+            .filter(|b| matches!(b.action, Action::Slot(_)))
+            .count()
+    };
+    assert_eq!(slots(&c), LOAD_ROWS);
+    assert!(c.buttons().iter().any(|b| b.label == "Next page"));
+    wheel(&mut c, 400., 1);
+    assert_eq!(c.page, 1);
+    assert!(slots(&c) >= 1);
+    wheel(&mut c, 400., 5);
+    assert_eq!(c.page, 1, "the wheel stops at the last page");
+    wheel(&mut c, 400., -1);
+    assert_eq!(c.page, 0);
+    key(&mut c, "Escape");
+    // The Civilopedia list moves one page per notch (it needs the
+    // install's Describe.txt, which the asset-free fixture lacks).
+    button(&mut c, "Civilopedia");
+    if c.modal.is_some() {
+        wheel(&mut c, 400., 1);
+        assert!(matches!(c.modal, Some(Modal::Pedia { selected, .. }) if selected > 0));
+        wheel(&mut c, 400., -1);
+        assert!(matches!(c.modal, Some(Modal::Pedia { selected: 0, .. })));
+        key(&mut c, "Escape");
+    }
+    // In the city window only the panel scrolls; one page stays put.
+    button(&mut c, "Manage city");
+    wheel(&mut c, 300., 1);
+    wheel(&mut c, 900., 1);
+    assert_eq!(c.city_panel_page, 0);
+    assert!(c.city_open);
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "the wheel is presentation-only"
+    );
+}
+
+#[test]
+fn city_panel_lists_sort_by_presentation_order_only() {
+    use super::city_panels::CitySort;
+    use engine::city_info::CityUnitInfo;
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    button(&mut c, "Manage city");
+    let before = c.checkpoint().unwrap();
+    let sort_label = |c: &Client| {
+        c.buttons()
+            .into_iter()
+            .find(|b| matches!(b.action, Action::CityPanelSort))
+            .map(|b| b.label)
+    };
+    button(&mut c, "Support");
+    assert_eq!(sort_label(&c).as_deref(), Some("Sort: listed"));
+    for want in ["Sort: name", "Sort: shields", "Sort: food", "Sort: listed"] {
+        c.action(Action::CityPanelSort).unwrap();
+        assert_eq!(sort_label(&c).as_deref(), Some(want));
+    }
+    button(&mut c, "Improvements");
+    assert_eq!(sort_label(&c).as_deref(), Some("Sort: listed"));
+    c.action(Action::CityPanelSort).unwrap();
+    c.action(Action::CityPanelSort).unwrap();
+    assert_eq!(sort_label(&c).as_deref(), Some("Sort: upkeep"));
+    button(&mut c, "Happy");
+    assert_eq!(sort_label(&c), None, "Happy has no list to sort");
+    assert_eq!(c.checkpoint().unwrap(), before, "sorting issues no order");
+    // Numeric orders put the largest first; ties keep the listed order.
+    let unit = |slot, shields, food| CityUnitInfo {
+        slot,
+        id: slot as u32,
+        type_id: 0,
+        position: (0, 0),
+        shields: Some(shields),
+        food: Some(food),
+    };
+    let units = [unit(1, 0, 1), unit(2, 1, 0), unit(3, 1, 1)];
+    let order =
+        |c: &Client| -> Vec<usize> { c.sorted_units(&units).iter().map(|u| u.slot).collect() };
+    button(&mut c, "Support");
+    assert_eq!(order(&c), [1, 2, 3]);
+    c.city_panel_sort = CitySort::Shields;
+    assert_eq!(order(&c), [2, 3, 1]);
+    c.city_panel_sort = CitySort::Food;
+    assert_eq!(order(&c), [1, 3, 2]);
+    c.city_panel_sort = CitySort::Name;
+    assert_eq!(order(&c), [1, 2, 3], "same names keep the listed order");
+}

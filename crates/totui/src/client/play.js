@@ -197,6 +197,8 @@ async function send(input, requestId = id()) {
     else if (input.type === "edit") editPending = true;
     else if (input.type === "key" && !entry.hidden)
       pendingKey = { input, field: entry.dataset.field };
+    // Wheel notches only scroll lists; dropping one while busy is harmless.
+    else if (input.type === "wheel") return;
     else if (input.type !== "tick") showError("Input is pending; wait for the refreshed selection");
     return;
   }
@@ -274,6 +276,18 @@ canvas.addEventListener("click", (e) => {
     send({type:"click", x, y}, lastClick);
   }
 });
+// The wheel scrolls lists one page per notch (#284). Touchpads send many
+// small pixel deltas, so those accumulate to one notch first.
+let wheelAccum = 0;
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  wheelAccum += e.deltaMode === 0 ? e.deltaY : Math.sign(e.deltaY) * 100;
+  if (Math.abs(wheelAccum) < 50) return;
+  const delta = Math.sign(wheelAccum);
+  wheelAccum = 0;
+  const r = canvas.getBoundingClientRect();
+  send({type:"wheel", x:(e.clientX - r.left) / scale, y:(e.clientY - r.top) / scale, delta});
+}, { passive: false });
 entry.addEventListener("input", () => {
   editPending = true;
   if (!busy) {

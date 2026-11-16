@@ -5,6 +5,16 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Scrolling and sorting for long lists (#284, UI package U2): the mouse
+  wheel pages the list under the pointer on both clients: reports, the
+  Civilopedia (lists and articles), the message log, choice lists (research,
+  production, government…), the checkpoint list and the city window's
+  panels. Over the map the wheel does nothing. The city window's Info,
+  Support and Improvements panels get a **Sort** button (listed order, name,
+  shields, food or upkeep; numbers largest first). The checkpoint dialog now
+  pages past eight saves; before, the ninth and later checkpoints could not
+  be reached from it. Short choice lists no longer show page buttons.
+  Presentation-only: no orders, checkpoints unchanged.
 - Enhancements settings screen (#284, the opt-in B layer of #266): **Settings**
   in the bottom bar, or **Enhancements…** on the setup screen, holds the
   optional improvements that differ from the original, all off by default.

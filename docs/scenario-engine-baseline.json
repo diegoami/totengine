@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "bb39018c5f461908ac706e00978995292be0572e6c061af94f23c0b758e72059",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "b63768ea51506b706f062fecb1b6cf647c6c41d82b334b088637d5bb42742a5b",
+    "crates/totui/src/client/mod.rs": "96b7a18bcc70759349ec180b7efb142d707a85d05d7b2d85f4691a4f116d8df8",
     "crates/totui/src/resources.rs": "2bb8ef62098b871ef7e6fb1b7464e93ba4ff36eb15b50674349b2e248bc07d4c",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -267,6 +267,13 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Client presentation and confirmation preferences only. Confirm-every-move adds a client-side confirmation before the same Move command. No command, order, event, trigger, action, checkpoint, scenario-entry or runtime-admission path changed; the trigger/action tables above are unchanged."
+    },
+    {
+      "change": "Mouse-wheel list scrolling, Load paging and city-panel sort (#284 item 5)",
+      "files": [
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Adds Input::Wheel (presentation-only paging of the list under the pointer; inert over the map), LOAD_ROWS paging for the checkpoint list, CityPanelSort presentation order, and hides page buttons on single-page choice lists. No engine, order, checkpoint or scenario-path change."
     }
   ]
 }

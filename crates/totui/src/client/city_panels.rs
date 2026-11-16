@@ -1,7 +1,10 @@
 //! City information is presentation state; inspecting it never issues an order.
 use super::style;
 use super::*;
-use engine::{city_info::CityUnitInfo, happiness::Happiness};
+use engine::{
+    city_info::{CityImprovementInfo, CityInfo, CityUnitInfo},
+    happiness::Happiness,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum CityPanel {
@@ -20,6 +23,36 @@ impl CityPanel {
         }
     }
 }
+/// Presentation order of a city panel list (#284). `Listed` is the engine's
+/// order; numeric orders put the largest first; ties keep the listed order.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum CitySort {
+    Listed,
+    Name,
+    Shields,
+    Food,
+    Upkeep,
+}
+impl CitySort {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Listed => "Sort: listed",
+            Self::Name => "Sort: name",
+            Self::Shields => "Sort: shields",
+            Self::Food => "Sort: food",
+            Self::Upkeep => "Sort: upkeep",
+        }
+    }
+    /// The orders a panel offers; panels without a list offer none.
+    pub(super) fn cycle(panel: CityPanel) -> &'static [CitySort] {
+        match panel {
+            CityPanel::Info => &[Self::Listed, Self::Name],
+            CityPanel::Support => &[Self::Listed, Self::Name, Self::Shields, Self::Food],
+            CityPanel::Improvements => &[Self::Listed, Self::Name, Self::Upkeep],
+            CityPanel::Happy => &[],
+        }
+    }
+}
 const ROWS: usize = 5;
 fn short(value: &str, max: usize) -> String {
     let mut chars = value.chars();
@@ -31,6 +64,50 @@ fn short(value: &str, max: usize) -> String {
 }
 
 impl Client {
+    fn unit_name(&self, type_id: u8) -> String {
+        self.loaded
+            .as_ref()
+            .and_then(|l| {
+                l.resources
+                    .rules
+                    .unit_names()
+                    .get(type_id as usize)
+                    .map(ToString::to_string)
+            })
+            .unwrap_or_else(|| format!("Unit {type_id}"))
+    }
+    /// A unit list in the panel's current order.
+    pub(super) fn sorted_units<'a>(&self, units: &'a [CityUnitInfo]) -> Vec<&'a CityUnitInfo> {
+        let mut out: Vec<&CityUnitInfo> = units.iter().collect();
+        match self.city_panel_sort {
+            CitySort::Name => out.sort_by_cached_key(|u| self.unit_name(u.type_id).to_lowercase()),
+            CitySort::Shields => out.sort_by_key(|u| std::cmp::Reverse(u.shields.unwrap_or(0))),
+            CitySort::Food => out.sort_by_key(|u| std::cmp::Reverse(u.food.unwrap_or(0))),
+            CitySort::Listed | CitySort::Upkeep => (),
+        }
+        out
+    }
+    /// Improvements and wonders in the panel's current order.
+    pub(super) fn sorted_improvements<'a>(&self, d: &'a CityInfo) -> Vec<&'a CityImprovementInfo> {
+        let mut out: Vec<&CityImprovementInfo> = d.improvements.iter().collect();
+        match self.city_panel_sort {
+            CitySort::Name => {
+                out.sort_by_cached_key(|i| self.item_name(-(i.id as i8)).to_lowercase())
+            }
+            CitySort::Upkeep => out.sort_by_key(|i| std::cmp::Reverse(i.upkeep)),
+            _ => (),
+        }
+        out
+    }
+    pub(super) fn city_panel_sort_next(&mut self) {
+        let orders = CitySort::cycle(self.city_panel);
+        if let Some(at) = orders.iter().position(|o| *o == self.city_panel_sort) {
+            self.city_panel_sort = orders[(at + 1) % orders.len()];
+        } else if let Some(first) = orders.first() {
+            self.city_panel_sort = *first;
+        }
+        self.city_panel_page = 0;
+    }
     pub(super) fn city_panel_pages(&self) -> usize {
         let Some(v) = self.view() else { return 1 };
         let Some(d) = self
@@ -73,6 +150,16 @@ impl Client {
                 action: Action::CityPanel(panel),
             });
         }
+        if !CitySort::cycle(self.city_panel).is_empty() {
+            b.push(Button {
+                x: 880.,
+                y: 188.,
+                w: 124.,
+                h: 26.,
+                label: self.city_panel_sort.label().into(),
+                action: Action::CityPanelSort,
+            });
+        }
         let pages = self.city_panel_pages();
         if pages > 1 {
             b.push(Button {
@@ -96,9 +183,9 @@ impl Client {
             if let (Some(city), Some(v)) = (self.city, self.view()) {
                 if let Some(d) = v.city_info.iter().find(|d| d.index == city.slot) {
                     let page = self.city_panel_page.min(pages - 1);
-                    for (row, item) in d
-                        .improvements
-                        .iter()
+                    for (row, item) in self
+                        .sorted_improvements(d)
+                        .into_iter()
                         .skip(page * ROWS)
                         .take(ROWS)
                         .enumerate()
@@ -137,19 +224,15 @@ impl Client {
         info: bool,
     ) {
         let rows = if info { 4 } else { ROWS };
-        for (row, u) in units.iter().skip(page * rows).take(rows).enumerate() {
+        for (row, u) in self
+            .sorted_units(units)
+            .into_iter()
+            .skip(page * rows)
+            .take(rows)
+            .enumerate()
+        {
             let y = start + row as f64 * if info { 25. } else { 40. };
-            let name = self
-                .loaded
-                .as_ref()
-                .and_then(|l| {
-                    l.resources
-                        .rules
-                        .unit_names()
-                        .get(u.type_id as usize)
-                        .map(ToString::to_string)
-                })
-                .unwrap_or_else(|| format!("Unit {}", u.type_id));
+            let name = self.unit_name(u.type_id);
             if !info {
                 draws.push(Draw::Sprite {
                     x: 742.,
@@ -300,9 +383,9 @@ impl Client {
                 ));
             }
             CityPanel::Improvements => {
-                for (row, item) in d
-                    .improvements
-                    .iter()
+                for (row, item) in self
+                    .sorted_improvements(d)
+                    .into_iter()
                     .skip(page * ROWS)
                     .take(ROWS)
                     .enumerate()

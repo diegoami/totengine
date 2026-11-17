@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "bb39018c5f461908ac706e00978995292be0572e6c061af94f23c0b758e72059",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "bb6639a8ad7834aa0ebd06404ed3ce1e26c228adb411a14bdc384ada8a676df0",
+    "crates/totui/src/client/mod.rs": "fdb0104bebe160bc73dc97a02a6e6a679ac4a3b1765e666f4d506c717b8e7869",
     "crates/totui/src/resources.rs": "2bb8ef62098b871ef7e6fb1b7464e93ba4ff36eb15b50674349b2e248bc07d4c",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -302,6 +302,13 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Adds the science module declaration, the GoalEstimates enhancement toggle, a presentation-only ScienceSort action and science_by_name client field, and draws the menu bar over the city window. The city window and F6 advisor only change placement and read-only text; their commands are the same existing actions. Engine state, checkpoints, receipts and replay are unchanged."
+    },
+    {
+      "change": "Opt-in order strip and message dock (#312, #313)",
+      "files": [
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Adds the OrderStrip and MessageDock enhancement toggles, routes map hit-testing and culling through the Client's map_rect (shorter only while the strip shows) and draws the strip. Strip buttons run the same Actions as their keys; the dock is read-only text plus the existing Messages action. Engine state, checkpoints, receipts and replay are unchanged."
     }
   ]
 }

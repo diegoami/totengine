@@ -26,7 +26,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use chrome::{in_view, on_map};
 use city_panels::CityPanel;
 
 /// Message log rows per page and retained entries (#284).
@@ -244,6 +243,8 @@ pub(crate) enum Enhancement {
     MapTooltips,
     PathPreview,
     GoalEstimates,
+    OrderStrip,
+    MessageDock,
 }
 #[derive(Clone)]
 enum Modal {
@@ -683,6 +684,8 @@ impl Client {
             Enhancement::MapTooltips => (&mut self.enhancements.map_tooltips, "Map tooltips"),
             Enhancement::PathPreview => (&mut self.enhancements.path_preview, "Path preview"),
             Enhancement::GoalEstimates => (&mut self.enhancements.goal_estimates, "Goal estimates"),
+            Enhancement::OrderStrip => (&mut self.enhancements.order_strip, "Order strip"),
+            Enhancement::MessageDock => (&mut self.enhancements.message_dock, "Message dock"),
         };
         *flag = !*flag;
         let state = if *flag { "on" } else { "off" };
@@ -958,7 +961,7 @@ impl Client {
                         return Ok(());
                     }
                 }
-                if self.modal.is_none() && self.loaded.is_some() && on_map(x, y) {
+                if self.modal.is_none() && self.loaded.is_some() && self.on_map(x, y) {
                     self.map_click(x, y, id)
                 } else if self.view().is_some_and(|v| v.decision.is_some()) {
                     // A click that lands on nothing while a required choice is
@@ -1767,7 +1770,7 @@ impl Client {
             // diamond would leave the visible workspace.
             let px = self.pan.0 + f64::from(x) * 32. * self.zoom;
             let py = self.pan.1 + f64::from(y) * 16. * self.zoom;
-            let (mx, my, mw, mh) = chrome::MAP;
+            let (mx, my, mw, mh) = self.map_rect();
             self.pan.0 +=
                 px.clamp(mx + 32. + 32. * self.zoom, mx + mw - 32. - 32. * self.zoom) - px;
             self.pan.1 +=
@@ -2491,10 +2494,11 @@ impl Client {
                 self.city_draw(&mut draws, v);
                 self.menu_bar_draw(&mut draws, &title);
             } else {
-                let (mx, my, mw, mh) = chrome::MAP;
+                let (mx, my, mw, mh) = self.map_rect();
                 draws.push(rect(mx, my, mw, mh, style::INSET));
                 self.map_draw(&mut draws, v);
                 self.column_draw(&mut draws, v);
+                self.strip_draw(&mut draws, v);
                 self.menu_bar_draw(&mut draws, &title);
                 let notices = v
                     .notices
@@ -2920,7 +2924,7 @@ impl Client {
     fn map_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
         let o = &v.observation;
         let color = chrome::civ_color;
-        let (mx, my, mw, mh) = chrome::MAP;
+        let (mx, my, mw, mh) = self.map_rect();
         let point = |x: u16, y: u16| {
             (
                 self.pan.0 + f64::from(x) * 32. * self.zoom,
@@ -2982,7 +2986,7 @@ impl Client {
         }
         for c in &o.cities {
             let (px, py) = point(c.x, c.y);
-            if !in_view(px, py) {
+            if !self.in_view(px, py) {
                 continue;
             }
             draws.push(Draw::Sprite {
@@ -3003,7 +3007,7 @@ impl Client {
         }
         for u in self.display_units(v) {
             let (px, py) = point(u.x, u.y);
-            if !in_view(px, py) {
+            if !self.in_view(px, py) {
                 continue;
             }
             let selected = self.active.is_some_and(|e| e.slot == u.index);
@@ -3047,7 +3051,7 @@ impl Client {
         let cursor = if self.moving { None } else { self.inspect };
         if let Some((x, y)) = cursor {
             let (px, py) = point(x, y);
-            if in_view(px, py) {
+            if self.in_view(px, py) {
                 draws.push(Draw::Cursor {
                     x: px,
                     y: py,

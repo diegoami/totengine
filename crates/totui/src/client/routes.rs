@@ -18,8 +18,8 @@ pub(super) const GOVERNMENTS: [&str; 7] = [
     "Democracy",
 ];
 const ROWS: [&str; 3] = ["Tax", "Luxury", "Science"];
-/// Vertical step between Settings rows (five rows fit above the footer note).
-const SETTINGS_STEP: f64 = 66.;
+/// Vertical step between Settings rows (seven rows fit above the footer note).
+const SETTINGS_STEP: f64 = 52.;
 
 pub(super) fn government_name(id: u8) -> String {
     GOVERNMENTS
@@ -414,9 +414,9 @@ impl Client {
                 for (i, (e, label, on)) in self.settings_rows().into_iter().enumerate() {
                     add(
                         212.,
-                        170. + i as f64 * SETTINGS_STEP,
+                        162. + i as f64 * SETTINGS_STEP,
                         600.,
-                        34.,
+                        30.,
                         format!("[{}] {label}", if on { "x" } else { " " }),
                         Action::Toggle(e),
                     );
@@ -467,6 +467,16 @@ impl Client {
                 "Goal estimates in the science advisor",
                 self.enhancements.goal_estimates,
             ),
+            (
+                Enhancement::OrderStrip,
+                "Order buttons under the map",
+                self.enhancements.order_strip,
+            ),
+            (
+                Enhancement::MessageDock,
+                "Message log in the right column",
+                self.enhancements.message_dock,
+            ),
         ]
     }
 
@@ -477,11 +487,13 @@ impl Client {
             "Resting the pointer on a known tile describes its terrain, city and units.",
             "With a unit selected, a resting pointer shows the known route and its turns.",
             "F6 shows the path to your goal with a turn estimate, and sorts advances.",
+            "Buttons for the selected unit's orders, with their keys; the map gets shorter.",
+            "The latest messages stay visible beside the map, with a link to the full log.",
         ];
         for (i, line) in explain.iter().enumerate() {
             draws.push(text(
                 222.,
-                210. + i as f64 * SETTINGS_STEP,
+                196. + i as f64 * SETTINGS_STEP,
                 line,
                 style::TYPE_SMALL,
                 style::TEXT_DIM,
@@ -496,7 +508,7 @@ impl Client {
         {
             draws.push(text(
                 212.,
-                520. + i as f64 * 20.,
+                540. + i as f64 * 18.,
                 line,
                 style::TYPE_SMALL,
                 style::TEXT,

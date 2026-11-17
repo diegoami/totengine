@@ -168,6 +168,12 @@ pub struct Enhancements {
     /// sorting the available advances (#315). Defaults off for older files.
     #[serde(default)]
     pub goal_estimates: bool,
+    /// Order buttons for the active unit under the map (#312).
+    #[serde(default)]
+    pub order_strip: bool,
+    /// The message log docked in the map's right column (#313).
+    #[serde(default)]
+    pub message_dock: bool,
 }
 
 pub const ENHANCEMENTS_FORMAT: &str = "totengine-enhancements 1";

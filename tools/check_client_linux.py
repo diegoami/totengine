@@ -128,7 +128,10 @@ def run():
                 def button(label):
                     for _ in range(30):
                         s=scene(); t=next(d for d in s["draws"] if d.get("text")==label)
-                        if any(d.get("kind")=="rect" and d["x"]==t["x"]-7 and d["y"]==t["y"]-7 and d["color"]=="#6b7057" for d in s["draws"]):key("Return");return
+                        # Focused chrome (#282, style::button): a gold hairline at the
+                        # button corner and the select fill inset by one pixel.
+                        rects=[(d["x"],d["y"],d["color"]) for d in s["draws"] if d.get("kind")=="rect"]
+                        if (t["x"]-7,t["y"]-7,"#e8c85a") in rects and (t["x"]-6,t["y"]-6,"#6b7057") in rects:key("Return");return
                         key("Tab")
                     raise RuntimeError("button could not focus: "+label)
                 motion=bind(xt,"XTestFakeMotionEvent",c.c_int,ptr,c.c_int,c.c_int,c.c_int,ul)

@@ -25,6 +25,14 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   event coordinates once (`eprintln!` in a scratch build) and drive a
   complete route (start, choose, toolbar) at a non-1× window before claiming
   an input fix. Run the client yourself; don't stop at the unit test.
+- **A chrome change must re-run the real-input scripts to completion.** The
+  desktop acceptance checks (`tools/check_client_linux.py`,
+  `tools/check_client_windows.ps1`) find a focused button by its exact draw
+  rects. #286's gold focus hairline moved the select fill one pixel inward,
+  so neither script could focus any button; nobody noticed because the
+  release ran only its own scratch rig (v0.20 review, #307). After touching
+  `style::button` or other draw geometry, run
+  `python3 tools/check_client_linux.py` to the end, not just the unit tests.
 - **Point scripted client runs at scratch saves.** Clients write host-side
   files beside the saves folder (`setup.json` on Start, `enhancements.json`
   on a settings toggle). A scripted Xvfb run without `TOTENGINE_SAVES` writes

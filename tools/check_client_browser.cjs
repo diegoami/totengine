@@ -1,7 +1,7 @@
 const {chromium}=require('playwright');
 const fs=require('fs');
 const demo=process.env.TOTENGINE_OPEN_DEMO==='1';
-const startLabel=demo?'Start open demo':'Start Original surface game';
+const startLabel=demo?'Start open demo':'Start game (Original rules)';
 const unitChoice=demo?'Guards':'Warriors';
 const origin=process.env.TOTENGINE_CLIENT_ORIGIN||'http://127.0.0.1:8773';
 const out=process.env.TOTENGINE_CLIENT_REPORT||'/tmp/totengine-client';

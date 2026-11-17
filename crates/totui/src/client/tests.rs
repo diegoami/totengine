@@ -39,7 +39,7 @@ fn random_setup_and_quick_start_keep_explicit_games_reproducible() {
     assert!(quick.seed.parse::<u32>().is_ok());
     let mut explicit = f.client();
     explicit.seed = quick.seed.clone();
-    button(&mut explicit, "Start Original");
+    button(&mut explicit, "Start game");
     assert_eq!(quick.checkpoint(), explicit.checkpoint());
     assert_eq!(
         quick.tech_name(0),
@@ -501,7 +501,7 @@ fn ready(c: &mut Client) {
     panic!("no human turn")
 }
 pub(super) fn start(c: &mut Client) {
-    button(c, "Start Original");
+    button(c, "Start game");
     assert!(c.loaded.is_some(), "{}", c.status);
     research(c);
 }
@@ -517,7 +517,7 @@ pub(super) fn founding(c: &mut Client) {
 fn shared_ui_plays_ten_rounds_and_resumes_required_choices() {
     let f = Fixture::new();
     let mut c = f.client();
-    button(&mut c, "Start Original");
+    button(&mut c, "Start game");
     assert!(matches!(c.modal, Some(Modal::Research)));
     button(&mut c, "Save pending");
     edit(&mut c, "initial-research");
@@ -2951,7 +2951,7 @@ fn revolution_cancel_confirm_chooser_review_and_reload() {
 fn science_advisor_sets_and_clears_the_goal_and_marks_the_suggestion() {
     let f = Fixture::new();
     let mut c = f.client();
-    button(&mut c, "Start Original");
+    button(&mut c, "Start game");
     let Some(Decision::Research { available, .. }) = c.view().unwrap().decision else {
         panic!()
     };
@@ -3189,7 +3189,7 @@ fn report_sorting_is_stable_numeric_and_text_aware() {
 fn public_reports_open_from_keys_and_list_the_whole_world() {
     let f = Fixture::new();
     let mut c = f.client();
-    button(&mut c, "Start Original");
+    button(&mut c, "Start game");
     c.required();
     key(&mut c, "ArrowDown");
     key(&mut c, "Enter");
@@ -3244,7 +3244,7 @@ fn public_reports_open_from_keys_and_list_the_whole_world() {
 fn blocked_routes_give_a_visible_reason_during_required_choices() {
     let f = Fixture::new();
     let mut c = f.client();
-    button(&mut c, "Start Original");
+    button(&mut c, "Start game");
     // The opening research choice is pending; the report and route keys are
     // refused, and the refusal must be VISIBLE (#283/#284: keys looked
     // "not connected" live because the status never changed).
@@ -3280,12 +3280,14 @@ fn blocked_routes_give_a_visible_reason_during_required_choices() {
 fn turn_feedback_banner_and_title_round() {
     let f = Fixture::new();
     let mut c = f.client();
-    button(&mut c, "Start Original");
+    button(&mut c, "Start game");
     // The title, at the right end of the menu bar (layout B, #310), carries
     // the round once the game runs.
     let title = |c: &Client| {
         c.frame().draws.iter().find_map(|d| match d {
-            Draw::Text { y, text, .. } if *y < chrome::MENU_H && text.contains(" game") => {
+            Draw::Text { y, text, .. }
+                if *y < chrome::MENU_H && text.starts_with("Original rules") =>
+            {
                 Some(text.clone())
             }
             _ => None,
@@ -3315,7 +3317,7 @@ fn setup_memory_round_trips_and_survives_garbage() {
     c.civs = 6;
     c.difficulty = 4;
     c.size = 1;
-    button(&mut c, "Start Original");
+    button(&mut c, "Start game");
     assert!(c.loaded.is_some(), "{}", c.status);
     let written = super::storage::load_setup_memory(&saves).unwrap();
     assert_eq!(written.format, "totengine-setup 1");
@@ -3345,7 +3347,7 @@ fn setup_memory_round_trips_and_survives_garbage() {
 fn reports_open_switch_sort_drill_down_and_return_without_mutation() {
     let f = Fixture::new();
     let mut c = f.client();
-    button(&mut c, "Start Original");
+    button(&mut c, "Start game");
     // A required choice blocks the reports; nothing opens.
     key(&mut c, "Escape");
     key(&mut c, "F1");
@@ -3644,7 +3646,7 @@ fn research_help_describes_the_highlighted_advance_and_returns_to_the_choice() {
     let f = Fixture::new();
     fs::write(f.0.join("Describe.txt"), synthetic_pedia()).unwrap();
     let mut c = f.client();
-    button(&mut c, "Start Original");
+    button(&mut c, "Start game");
     assert!(matches!(c.modal, Some(Modal::Research)));
     let before = c.checkpoint().unwrap();
     // Nothing is highlighted yet.
@@ -3687,7 +3689,7 @@ fn generated_pedia_route() {
     fs::create_dir_all(&out).unwrap();
     let home = std::env::var("CIVTOT_HOME").unwrap();
     let mut c = seeded_client(home.clone(), out.clone());
-    button(&mut c, "Start Original");
+    button(&mut c, "Start game");
     assert!(matches!(c.modal, Some(Modal::Research)));
     button(&mut c, "Save pending");
     edit(&mut c, "pedstart");

@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "bb39018c5f461908ac706e00978995292be0572e6c061af94f23c0b758e72059",
     "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "ab9a980744f43290b633710198a00afddb40a45aaf827b0750e4b08ff5af53bc",
+    "crates/totui/src/client/mod.rs": "d6b54ec50c89915ef510b280d4ed01a8f422ec8e4ebff8dec287d7b40f19b5d0",
     "crates/totui/src/resources.rs": "2bb8ef62098b871ef7e6fb1b7464e93ba4ff36eb15b50674349b2e248bc07d4c",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -316,6 +316,13 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Adds the presentation-only Input::Display (stage width, full-screen state; accepted at any revision and never forwarded to the engine), Frame.width/fullscreen, stage_width(), the FullScreen action and Alt+Enter, and centres dialogs, the city window and setup by shifting their draws, buttons and click coordinates. Engine state, checkpoints, receipts of game inputs and replay are unchanged."
+    },
+    {
+      "change": "Player-facing rename: no 'surface game' (owner decision)",
+      "files": [
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Only display strings change: the window/menu-bar title, the setup start button and the setup note. No behaviour, engine state, checkpoint, receipt or replay change."
     }
   ]
 }

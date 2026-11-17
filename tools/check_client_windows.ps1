@@ -1,7 +1,7 @@
 # Real OS input only; traces are private test instrumentation, never endpoints.
 param([string]$Binary = "$PSScriptRoot\..\target\x86_64-pc-windows-gnullvm\debug\totdesktop.exe", [string]$Work = "$PSScriptRoot\..\target\client-windows-check", [switch]$MovementOnly, [switch]$SelectionOnly)
 $openDemo = $env:TOTENGINE_OPEN_DEMO -eq '1'
-$startLabel = if ($openDemo) { 'Start open demo' } else { 'Start Original surface game' }
+$startLabel = if ($openDemo) { 'Start open demo' } else { 'Start game (Original rules)' }
 $unitChoice = if ($openDemo) { 'Guards' } else { 'Warriors' }
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Windows.Forms
@@ -85,7 +85,7 @@ public static class SpikeWindow {
             uint owner; GetWindowThreadProcessId(h, out owner);
             if (owner == pid) {
                 var title = new StringBuilder(256); GetWindowText(h, title, title.Capacity);
-                if (title.ToString().StartsWith("ToTEngine")) { found = h; return false; }
+                if (title.ToString().StartsWith("ToT Engine")) { found = h; return false; }
             }
             return true;
         }, IntPtr.Zero);

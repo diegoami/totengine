@@ -16,7 +16,7 @@ place it in `isotrident/` beside the executables. It retains GPL-2.0-or-later an
 artist credits separately from the MIT engine. No original ToT resources are
 included. The published v0.15 packages predate this candidate.
 
-The clients support generated Original-profile surface games,
+The clients support generated single-map games with the Original rules,
 one human civilization and the existing built-in opponents. Both clients use
 the same validated human session, presentation, owned artwork and checkpoints.
 

@@ -42,7 +42,7 @@ resources. See [launch/controls](docs/playable-clients.md),
 
 | Available foundation | Current boundary |
 | --- | --- |
-| Both playable clients: generated surface games, unit input, founding/research, workers/specialists, quoted production/buy/sell, city panels and checkpoints | Complete original UI, original-save/scenario import, diplomacy/government/report depth and sustained scenario campaigns remain unfinished |
+| Both playable clients: generated single-map games, unit input, founding/research, workers/specialists, quoted production/buy/sell, city panels and checkpoints | Complete original UI, original-save/scenario import, diplomacy/government/report depth and sustained scenario campaigns remain unfinished |
 | Headless save/scenario boot and modeled turns/events, deterministic order replay, generated campaigns | A successful parse/boot is not full scenario compatibility; general scenario parameter sweeps and objective-aware reports remain planned |
 | Browser observer: live turns, cached replay, full/per-civ views, turn controls and archives | Scenario-specific presentation, complete event/objective inspection and recording integration need further work |
 | Versioned built-in opponent and legacy policies | Original-derived research and supported land campaigns are partial; full native AI and external plugins are not shipped |

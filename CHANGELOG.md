@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Player-facing names drop the internal word "surface" (owner decision,
+  2026-11-17). The title and menu bar read **ToT Engine — Original rules ·
+  Turn N**, the start button **Start game (Original rules)**, the setup note
+  "Generated games: …", and the desktop window and browser page are titled
+  **ToT Engine**. Engine internals and historical records keep their wording.
 - Use the whole screen (#321), on both clients. The logical stage stays 768
   high and widens with the window up to 21:9, so a 16:9 full screen no longer
   shows black side bars: the map screen's map grows, the right column and menu

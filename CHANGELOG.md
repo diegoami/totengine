@@ -5,6 +5,17 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Layout B city window and science advisor (#314, #315), on both clients. The
+  city window is one framed window under the menu bar: a title bar with
+  Previous/Next city, a citizens strip (workers, then the specialists to
+  click), City resources, Food storage and production on the left, the radius
+  map in the middle, the Info/Support/Improvements/Happy panels on the right
+  and the window buttons in a footer. The F6 science advisor shows the running
+  project with a progress bar, the goal, the advances available next and the
+  ones you know. A new option under **Settings**, off by default, *Goal
+  estimates in the science advisor*, adds the path to the goal, a turn
+  estimate (a lower bound at today's science rate) and name sorting of the
+  available list. Presentation only; research rules and goals are unchanged.
 - Layout B map screen (#310, #311; owner choice recorded in
   `docs/ui/layout-b.md`), on both clients. A **menu bar** (Game, Kingdom, View,
   Orders, Advisors, World, Civilopedia) replaces the two button bars: every

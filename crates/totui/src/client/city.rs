@@ -3,6 +3,11 @@ use super::style;
 use super::*;
 use engine::yields::{RADIUS_DX, RADIUS_DY};
 
+/// Top of the city window's footer row (layout B, #314).
+const FOOTER_Y: f64 = 700.;
+/// Top of the window body under the citizens strip.
+const BODY_Y: f64 = 182.;
+
 pub(super) fn spot(k: usize) -> (f64, f64) {
     (
         500. + f64::from(RADIUS_DX[k]) * 45.,
@@ -65,48 +70,50 @@ impl Client {
                 action,
             })
         };
+        // Layout B (#314): the classic city window. Return to map stays the
+        // first button, so Enter on a freshly opened window still returns.
         add(
-            12.,
-            48.,
+            792.,
+            FOOTER_Y,
             220.,
-            38.,
+            34.,
             "Return to map [Esc]",
             Action::CloseCity,
         );
         add(
-            245.,
-            48.,
-            180.,
-            38.,
+            12.,
+            36.,
+            200.,
+            26.,
             "Previous city [PgUp]",
             Action::CityStep(-1),
         );
         add(
-            438.,
-            48.,
-            180.,
-            38.,
+            812.,
+            36.,
+            200.,
+            26.,
             "Next city [PgDn]",
             Action::CityStep(1),
         );
-        add(632., 48., 120., 38., "Save [Ctrl+S]", Action::Save);
-        add(764., 48., 120., 38., "Load [Ctrl+L]", Action::Load);
-        add(896., 48., 116., 38., "Research", Action::Research);
+        add(16., FOOTER_Y, 140., 34., "Save [Ctrl+S]", Action::Save);
+        add(164., FOOTER_Y, 140., 34., "Load [Ctrl+L]", Action::Load);
+        add(312., FOOTER_Y, 140., 34., "Research", Action::Research);
         if let Some(city) = self.city {
             add(
-                20.,
-                510.,
-                250.,
-                36.,
+                24.,
+                598.,
+                244.,
+                28.,
                 "Choose production",
                 Action::Production(city),
             );
-            add(20., 556., 250., 36., "Buy production", Action::Buy(city));
+            add(24., 630., 244., 28., "Buy production", Action::Buy(city));
             add(
-                20.,
-                602.,
-                250.,
-                36.,
+                24.,
+                662.,
+                244.,
+                28.,
                 "Improvements / sell",
                 Action::Improvements(city),
             );
@@ -134,7 +141,8 @@ impl Client {
                 .view()
                 .and_then(|v| v.city_citizens.into_iter().find(|c| c.index == city.slot))
             {
-                for (i, role) in detail.specialists.iter().take(16).enumerate() {
+                // The citizens strip: specialists, six to a row under the workers.
+                for (i, role) in detail.specialists.iter().take(12).enumerate() {
                     let name = match role {
                         1 => "Entertainer",
                         2 => "Tax collector",
@@ -142,10 +150,10 @@ impl Client {
                         _ => "Unused",
                     };
                     add(
-                        300. + (i % 4) as f64 * 175.,
-                        580. + (i / 4) as f64 * 34.,
-                        168.,
-                        30.,
+                        16. + (i % 6) as f64 * 166.,
+                        108. + (i / 6) as f64 * 36.,
+                        160.,
+                        32.,
                         &format!("{}: {name}", i + 1),
                         Action::Specialist(city, i as u8),
                     );
@@ -170,22 +178,60 @@ impl Client {
         let Some(detail) = v.city_citizens.iter().find(|d| d.index == city.slot) else {
             return;
         };
+        // Layout B (#314): one framed window under the (inactive) menu bar,
+        // with a title bar, the citizens strip, three columns and a footer.
+        draws.push(rect(4., 30., 1016., 712., style::GOLD));
+        draws.push(rect(6., 32., 1012., 708., style::BG));
+        draws.push(rect(6., 32., 1012., 34., style::MENU_SELECT));
+        let title = format!("{} — population {}", c.name, c.size);
+        let w = title.chars().count() as f64 * 0.56 * f64::from(style::TYPE_TITLE);
         draws.push(text(
-            18.,
-            14.,
-            &format!("{} — population {}", c.name, c.size),
-            style::TYPE_DISPLAY,
+            (512. - w / 2.).max(220.),
+            38.,
+            &title,
+            style::TYPE_TITLE,
+            style::MENU_SELECT_TEXT,
+        ));
+        draws.push(rect(6., 66., 1012., 1., style::GOLD_DIM));
+        draws.push(rect(6., BODY_Y - 6., 1012., 1., style::GOLD_DIM));
+        draws.push(rect(6., FOOTER_Y - 6., 1012., 1., style::GOLD_DIM));
+        // Citizens strip: the workers, then the specialists (buttons).
+        let workers = detail.radius.iter().take(20).filter(|t| t.worked).count();
+        for i in 0..workers.min(16) {
+            draws.push(Draw::Sprite {
+                x: 16. + i as f64 * 28.,
+                y: 70.,
+                w: 27.,
+                h: 32.,
+                sprite: "citizen-0".into(),
+            });
+        }
+        draws.push(text(
+            24. + workers.min(16) as f64 * 28.,
+            78.,
+            &format!(
+                "Workers {workers} · specialists {} · click a specialist to cycle its role",
+                detail.specialists.len()
+            ),
+            style::TYPE_SMALL,
             style::TEXT_BRIGHT,
         ));
-        for (x, w) in [(12., 266.), (730., 282.)] {
+        for (x, y, w, h) in [(12., BODY_Y, 264., 508.), (730., BODY_Y, 282., 508.)] {
             draws.push(Draw::Tile {
                 x,
-                y: 102.,
+                y,
                 w,
-                h: 620.,
+                h,
                 sprite: "panel".into(),
             });
         }
+        draws.push(text(
+            22.,
+            BODY_Y + 6.,
+            "City resources",
+            style::TYPE_BODY,
+            style::TEXT_BRIGHT,
+        ));
         if let Some(e) = v
             .observation
             .city_economy
@@ -195,10 +241,6 @@ impl Client {
             let output = c.output.unwrap_or_default();
             let lines = [
                 format!("Food surplus {:+}", e.food_surplus),
-                format!(
-                    "Food store {} / {}",
-                    detail.food_box, detail.growth_threshold
-                ),
                 format!("Shields {} (support {})", e.net_shields, detail.support),
                 format!("Trade {} · corruption {}", output.trade, output.corruption),
                 format!("Waste {}", output.waste),
@@ -210,9 +252,9 @@ impl Client {
             for (i, line) in lines.iter().enumerate() {
                 draws.push(text(
                     22.,
-                    116. + i as f64 * 24.,
+                    BODY_Y + 30. + i as f64 * 20.,
                     line,
-                    style::TYPE_BODY,
+                    style::TYPE_SMALL,
                     style::TEXT,
                 ));
             }
@@ -227,11 +269,34 @@ impl Client {
             } else {
                 "Growth and mood stable"
             };
-            draws.push(text(22., 330., warning, style::TYPE_BODY, style::WARN));
+            draws.push(text(22., 372., warning, style::TYPE_SMALL, style::WARN));
         }
+        // Food storage.
         draws.push(text(
             22.,
-            358.,
+            400.,
+            "Food storage",
+            style::TYPE_BODY,
+            style::TEXT_BRIGHT,
+        ));
+        let full = f64::from(detail.growth_threshold.max(1));
+        let stored = f64::from(detail.food_box.max(0)).min(full);
+        draws.push(rect(24., 424., 240., 10., style::INSET));
+        draws.push(rect(24., 424., 240. * stored / full, 10., style::MOVE_OK));
+        draws.push(text(
+            22.,
+            440.,
+            &format!(
+                "Food store {} / {}",
+                detail.food_box, detail.growth_threshold
+            ),
+            style::TYPE_SMALL,
+            style::TEXT,
+        ));
+        // Production.
+        draws.push(text(
+            22.,
+            466.,
             "Currently producing:",
             style::TYPE_BODY,
             style::TEXT_BRIGHT,
@@ -240,38 +305,43 @@ impl Client {
             .building
             .map(|id| self.item_name(id))
             .unwrap_or_else(|| "Unavailable".into());
-        // Keep long scenario names inside the left panel without clipping.
+        // Keep long scenario names inside the left column without clipping.
         let mut name: Vec<_> = item.chars().collect();
-        if name.len() > 69 {
-            name.truncate(68);
+        if name.len() > 50 {
+            name.truncate(49);
             name.push('…');
         }
-        for (row, chunk) in name.chunks(23).enumerate() {
+        for (row, chunk) in name.chunks(25).enumerate() {
             draws.push(text(
                 22.,
-                382. + row as f64 * 19.,
+                488. + row as f64 * 18.,
                 &chunk.iter().collect::<String>(),
                 style::TYPE_BODY,
                 style::WHITE,
             ));
         }
         if let Some(p) = v.city_production.iter().find(|p| p.index == city.slot) {
+            if let Some(cost) = p.required.filter(|c| *c > 0) {
+                let done = (f64::from(p.stored) / f64::from(cost)).clamp(0., 1.);
+                draws.push(rect(24., 528., 240., 10., style::INSET));
+                draws.push(rect(24., 528., 240. * done, 10., style::GOLD));
+            }
             let shields = p.required.map_or_else(
                 || format!("Shields: {}", p.stored),
                 |cost| format!("Shields: {} / {cost}", p.stored),
             );
-            draws.push(text(22., 444., &shields, style::TYPE_BODY, style::TEXT));
+            draws.push(text(22., 544., &shields, style::TYPE_SMALL, style::TEXT));
             let estimate = match (p.remaining, p.turns) {
                 (Some(0), _) => "Funded — next production phase".into(),
                 (Some(n), Some(turns)) => format!("Remaining: {n} (~{turns} turns)"),
                 (Some(n), None) => format!("Remaining: {n}; no current output"),
                 _ => "No finite shield target".into(),
             };
-            draws.push(text(22., 472., &estimate, style::TYPE_SMALL, style::TEXT));
+            draws.push(text(22., 562., &estimate, style::TYPE_SMALL, style::TEXT));
         }
         draws.push(text(
             305.,
-            112.,
+            BODY_Y,
             "City radius · click a tile to change its worker",
             style::TYPE_BODY,
             style::TEXT_BRIGHT,
@@ -358,32 +428,12 @@ impl Client {
             ));
         }
         self.city_panel_draw(draws, v);
-        let workers = detail.radius.iter().take(20).filter(|t| t.worked).count();
-        for i in 0..workers.min(12) {
-            draws.push(Draw::Sprite {
-                x: 305. + i as f64 * 28.,
-                y: 402.,
-                w: 27.,
-                h: 32.,
-                sprite: "citizen-0".into(),
-            });
-        }
-        draws.push(text(
-            300.,
-            542.,
-            &format!(
-                "Workers {workers} · specialists {} · click to cycle roles",
-                detail.specialists.len()
-            ),
-            style::TYPE_BODY,
-            style::TEXT_BRIGHT,
-        ));
         if v.decision.is_some() {
             draws.push(text(
-                744.,
-                568.,
-                "Research/choice required.",
-                style::TYPE_FINE,
+                320.,
+                536.,
+                "Research or another choice is required.",
+                style::TYPE_SMALL,
                 style::WARN,
             ));
         }

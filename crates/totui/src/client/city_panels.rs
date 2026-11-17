@@ -54,6 +54,8 @@ impl CitySort {
     }
 }
 const ROWS: usize = 5;
+/// The panel sits under the city window's citizens strip (layout B, #314).
+const PANEL_DY: f64 = 80.;
 fn short(value: &str, max: usize) -> String {
     let mut chars = value.chars();
     let mut s = chars.by_ref().take(max).collect::<String>();
@@ -143,7 +145,7 @@ impl Client {
         {
             b.push(Button {
                 x: 740. + (i % 2) as f64 * 134.,
-                y: 110. + (i / 2) as f64 * 40.,
+                y: 110. + PANEL_DY + (i / 2) as f64 * 40.,
                 w: 130.,
                 h: 34.,
                 label: panel.label().into(),
@@ -153,7 +155,7 @@ impl Client {
         if !CitySort::cycle(self.city_panel).is_empty() {
             b.push(Button {
                 x: 880.,
-                y: 188.,
+                y: 188. + PANEL_DY,
                 w: 124.,
                 h: 26.,
                 label: self.city_panel_sort.label().into(),
@@ -164,7 +166,7 @@ impl Client {
         if pages > 1 {
             b.push(Button {
                 x: 740.,
-                y: 510.,
+                y: 510. + PANEL_DY,
                 w: 124.,
                 h: 30.,
                 label: "Previous list".into(),
@@ -172,7 +174,7 @@ impl Client {
             });
             b.push(Button {
                 x: 874.,
-                y: 510.,
+                y: 510. + PANEL_DY,
                 w: 124.,
                 h: 30.,
                 label: "Next list".into(),
@@ -202,7 +204,7 @@ impl Client {
                         if saleable {
                             b.push(Button {
                                 x: 930.,
-                                y: 228. + row as f64 * 48.,
+                                y: 228. + PANEL_DY + row as f64 * 48.,
                                 w: 70.,
                                 h: 28.,
                                 label: "Sell…".into(),
@@ -277,7 +279,7 @@ impl Client {
         let page = self.city_panel_page.min(pages - 1);
         draws.push(text(
             744.,
-            193.,
+            193. + PANEL_DY,
             self.city_panel.label(),
             style::TYPE_BODY,
             style::TEXT_BRIGHT,
@@ -309,7 +311,7 @@ impl Client {
                 for (i, line) in lines.iter().enumerate() {
                     draws.push(text(
                         744.,
-                        220. + i as f64 * 23.,
+                        220. + PANEL_DY + i as f64 * 23.,
                         line,
                         style::TYPE_BODY,
                         style::TEXT,
@@ -317,30 +319,30 @@ impl Client {
                 }
                 draws.push(text(
                     744.,
-                    342.,
+                    342. + PANEL_DY,
                     "Arrows select; Space edits.",
                     style::TYPE_SMALL,
                     style::TEXT,
                 ));
                 draws.push(text(
                     744.,
-                    365.,
+                    365. + PANEL_DY,
                     "Edits commit immediately.",
                     style::TYPE_SMALL,
                     style::GOLD,
                 ));
                 draws.push(text(
                     744.,
-                    391.,
+                    391. + PANEL_DY,
                     &format!("Own units present: {}", d.present.len()),
                     style::TYPE_BODY,
                     style::TEXT_BRIGHT,
                 ));
-                self.panel_units(draws, &d.present, 416., page, true);
+                self.panel_units(draws, &d.present, 416. + PANEL_DY, page, true);
                 if d.present.is_empty() {
                     draws.push(text(
                         744.,
-                        416.,
+                        416. + PANEL_DY,
                         "No own units here.",
                         style::TYPE_SMALL,
                         style::TEXT,
@@ -352,23 +354,23 @@ impl Client {
                 let food: i32 = d.supported.iter().filter_map(|u| u.food).sum();
                 draws.push(text(
                     744.,
-                    221.,
+                    221. + PANEL_DY,
                     &format!("Supported units: {}", d.supported.len()),
                     style::TYPE_BODY,
                     style::TEXT,
                 ));
                 draws.push(text(
                     744.,
-                    245.,
+                    245. + PANEL_DY,
                     &format!("Shields {shields} · food {food}"),
                     style::TYPE_BODY,
                     style::TEXT,
                 ));
-                self.panel_units(draws, &d.supported, 278., page, false);
+                self.panel_units(draws, &d.supported, 278. + PANEL_DY, page, false);
                 if d.supported.is_empty() {
                     draws.push(text(
                         744.,
-                        278.,
+                        278. + PANEL_DY,
                         "No units supported here.",
                         style::TYPE_SMALL,
                         style::TEXT,
@@ -376,7 +378,7 @@ impl Client {
                 }
                 draws.push(text(
                     744.,
-                    484.,
+                    484. + PANEL_DY,
                     "Inspection only; no unit orders.",
                     style::TYPE_SMALL,
                     style::TEXT_DIM,
@@ -390,7 +392,7 @@ impl Client {
                     .take(ROWS)
                     .enumerate()
                 {
-                    let y = 228. + row as f64 * 48.;
+                    let y = 228. + PANEL_DY + row as f64 * 48.;
                     draws.push(text(
                         744.,
                         y,
@@ -418,7 +420,7 @@ impl Client {
                 if d.improvements.is_empty() {
                     draws.push(text(
                         744.,
-                        228.,
+                        228. + PANEL_DY,
                         "No improvements or wonders.",
                         style::TYPE_SMALL,
                         style::TEXT,
@@ -426,7 +428,7 @@ impl Client {
                 }
                 draws.push(text(
                     744.,
-                    484.,
+                    484. + PANEL_DY,
                     "Sale requires confirmation.",
                     style::TYPE_SMALL,
                     style::TEXT_DIM,
@@ -449,7 +451,7 @@ impl Client {
                     if i > 0 && stage == d.happiness[i - 1] {
                         continue;
                     }
-                    let y = 222. + row as f64 * 51.;
+                    let y = 222. + PANEL_DY + row as f64 * 51.;
                     row += 1;
                     draws.push(text(744., y, label, style::TYPE_BODY, style::TEXT_BRIGHT));
                     draws.push(text(
@@ -466,7 +468,7 @@ impl Client {
                 let Happiness { happy, unhappy, .. } = d.happiness[4];
                 draws.push(text(
                     744.,
-                    491.,
+                    491. + PANEL_DY,
                     if unhappy > happy {
                         "Unrest: disorder risk"
                     } else {
@@ -477,7 +479,7 @@ impl Client {
                 ));
                 draws.push(text(
                     744.,
-                    516.,
+                    516. + PANEL_DY,
                     "Unchanged stages are omitted.",
                     style::TYPE_SMALL,
                     style::TEXT_DIM,
@@ -487,7 +489,7 @@ impl Client {
         if pages > 1 {
             draws.push(text(
                 744.,
-                552.,
+                552. + PANEL_DY,
                 &format!("List {} / {pages}", page + 1),
                 style::TYPE_SMALL,
                 style::TEXT_DIM,

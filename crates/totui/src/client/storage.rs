@@ -164,6 +164,10 @@ pub struct Enhancements {
     /// a resting pointer. Defaults off for older files.
     #[serde(default)]
     pub path_preview: bool,
+    /// In the science advisor, estimate the turns to the goal and allow
+    /// sorting the available advances (#315). Defaults off for older files.
+    #[serde(default)]
+    pub goal_estimates: bool,
 }
 
 pub const ENHANCEMENTS_FORMAT: &str = "totengine-enhancements 1";

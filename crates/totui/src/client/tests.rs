@@ -4471,3 +4471,111 @@ fn layout_b_menus_and_column_reach_every_command_and_never_touch_the_game() {
         "menus, the column and the minimap never touch the game"
     );
 }
+
+/// No two buttons of the current screen overlap (layout B windows).
+fn assert_no_overlaps(c: &Client, screen: &str) {
+    let b = c.buttons();
+    for (i, p) in b.iter().enumerate() {
+        for q in &b[i + 1..] {
+            let apart =
+                p.x + p.w <= q.x || q.x + q.w <= p.x || p.y + p.h <= q.y || q.y + q.h <= p.y;
+            assert!(apart, "{screen}: {} overlaps {}", p.label, q.label);
+        }
+    }
+}
+
+#[test]
+fn layout_b_city_and_science_windows_rearrange_without_touching_the_game() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    let before = c.checkpoint().unwrap();
+    let texts = |c: &Client| -> Vec<(f64, f64, String, String)> {
+        c.frame()
+            .draws
+            .into_iter()
+            .filter_map(|d| match d {
+                Draw::Text {
+                    x, y, text, color, ..
+                } => Some((x, y, text, color)),
+                _ => None,
+            })
+            .collect()
+    };
+    // #314: the city window is one framed window with a title bar, the
+    // citizens strip, three columns and a footer.
+    button(&mut c, "Manage city");
+    assert!(c.city_open);
+    assert!(matches!(c.buttons()[0].action, Action::CloseCity));
+    assert!(texts(&c)
+        .iter()
+        .any(|(_, y, t, _)| (30.0..66.0).contains(y) && t.contains(" — population ")));
+    // The menu bar stays visible but inert over the city window.
+    assert!(texts(&c).iter().any(|(_, y, t, color)| *y < chrome::MENU_H
+        && t == "Orders"
+        && color == style::MENU_DISABLED));
+    key(&mut c, "F10");
+    assert_eq!(c.menu, None);
+    for panel in ["Info", "Support", "Improvements", "Happy"] {
+        button(&mut c, panel);
+        assert_no_overlaps(&c, panel);
+        for b in c.buttons() {
+            assert!(
+                b.x >= 4. && b.x + b.w <= 1020. && b.y >= 30. && b.y + b.h <= 742.,
+                "{} leaves the city window",
+                b.label
+            );
+        }
+    }
+    button(&mut c, "Info");
+    assert!(texts(&c).iter().any(|(_, _, t, _)| t == "City resources"));
+    assert!(texts(&c).iter().any(|(_, _, t, _)| t == "Food storage"));
+    assert!(texts(&c).iter().any(|(_, _, t, _)| t.starts_with("Tile ")));
+    key(&mut c, "PageDown");
+    assert!(c.city_open);
+    key(&mut c, "Escape");
+    assert!(!c.city_open);
+    // #315: the science advisor window.
+    key(&mut c, "F6");
+    assert!(matches!(c.modal, Some(Modal::Science)), "{}", c.status);
+    assert_no_overlaps(&c, "science");
+    let shows = |c: &Client, s: &str| texts(c).iter().any(|(_, _, t, _)| t.starts_with(s));
+    assert!(shows(&c, "Researching: "));
+    assert!(shows(&c, "Goal: none"));
+    assert!(shows(&c, "Available next ("));
+    assert!(shows(&c, "Known advances ("));
+    assert!(!shows(&c, "Path: "), "estimates are opt-in");
+    assert!(!c
+        .buttons()
+        .iter()
+        .any(|b| matches!(b.action, Action::ScienceSort)));
+    key(&mut c, "Escape");
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "the rearranged windows are inert"
+    );
+    // The opt-in estimates: the fifth Settings row.
+    button(&mut c, "Settings");
+    assert_no_overlaps(&c, "settings");
+    button(&mut c, "[ ] Goal estimates in the science advisor");
+    assert!(c.enhancements.goal_estimates);
+    assert!(storage::load_enhancements(&f.saves()).goal_estimates);
+    key(&mut c, "Escape");
+    key(&mut c, "F6");
+    button(&mut c, "Sort: listed");
+    assert!(c.science_by_name);
+    assert_no_overlaps(&c, "science with estimates");
+    assert_eq!(c.checkpoint().unwrap(), before, "sorting is presentation");
+    // A goal shows its path and a labelled estimate.
+    button(&mut c, "Set goal…");
+    assert!(matches!(c.modal, Some(Modal::Goal)));
+    key(&mut c, "ArrowDown");
+    key(&mut c, "Enter");
+    assert!(matches!(c.modal, Some(Modal::Science)), "{}", c.status);
+    assert!(shows(&c, "Path: "));
+    assert!(texts(&c)
+        .iter()
+        .any(|(_, _, t, _)| t.contains("(estimate)") || t.contains("no estimate")));
+}

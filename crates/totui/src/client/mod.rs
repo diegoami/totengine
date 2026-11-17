@@ -10,6 +10,7 @@ pub mod desktop;
 mod editor;
 mod isotrident;
 mod paths;
+mod science;
 mod selection;
 pub mod storage;
 mod style;
@@ -242,6 +243,7 @@ pub(crate) enum Enhancement {
     ConfirmMoves,
     MapTooltips,
     PathPreview,
+    GoalEstimates,
 }
 #[derive(Clone)]
 enum Modal {
@@ -385,6 +387,8 @@ enum Action {
     Menu(usize),
     /// Runs one menu entry: `(menu, row)`.
     MenuItem(usize, usize),
+    /// Flips the science advisor's available-advances order (#315).
+    ScienceSort,
     Pan(f64, f64),
     Save,
     Load,
@@ -478,6 +482,8 @@ pub struct Client {
     /// presentation only.
     menu: Option<usize>,
     menu_row: Option<usize>,
+    /// The science advisor lists available advances by name (#315).
+    science_by_name: bool,
     assets: String,
     fallback_pack: Option<PathBuf>,
 }
@@ -551,6 +557,7 @@ impl Client {
             zoom: 1.,
             menu: None,
             menu_row: None,
+            science_by_name: false,
             assets: "none".into(),
             fallback_pack,
         }
@@ -675,6 +682,7 @@ impl Client {
             }
             Enhancement::MapTooltips => (&mut self.enhancements.map_tooltips, "Map tooltips"),
             Enhancement::PathPreview => (&mut self.enhancements.path_preview, "Path preview"),
+            Enhancement::GoalEstimates => (&mut self.enhancements.goal_estimates, "Goal estimates"),
         };
         *flag = !*flag;
         let state = if *flag { "on" } else { "off" };
@@ -1671,6 +1679,7 @@ impl Client {
                 self.menu_row = None;
             }
             Action::MenuItem(m, row) => self.menu_item(m, row)?,
+            Action::ScienceSort => self.science_by_name = !self.science_by_name,
             Action::Zoom(f) => {
                 self.zoom = (self.zoom * f).clamp(0.5, 2.);
                 self.center();
@@ -2463,9 +2472,10 @@ impl Client {
                 }
             },
         );
-        // Layout B (#310): on the map screen the title sits at the right end
-        // of the menu bar; setup and the city window keep the large title.
-        let map_screen = self.loaded.is_some() && !self.city_open;
+        // Layout B (#310/#314): with a game loaded the title sits at the right
+        // end of the menu bar, over the map and the city window alike; setup
+        // keeps the large title.
+        let map_screen = self.loaded.is_some();
         if !map_screen {
             draws.push(text(
                 16.,
@@ -2479,6 +2489,7 @@ impl Client {
         if let Some(v) = &view {
             if self.city_open {
                 self.city_draw(&mut draws, v);
+                self.menu_bar_draw(&mut draws, &title);
             } else {
                 let (mx, my, mw, mh) = chrome::MAP;
                 draws.push(rect(mx, my, mw, mh, style::INSET));

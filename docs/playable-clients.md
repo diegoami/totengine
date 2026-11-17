@@ -89,6 +89,12 @@ The map screen follows the original's frame (layout B, [design record](ui/layout
   and **Civilopedia**. Click a title, or press **F10** and use the arrows and
   Enter; Esc closes. An entry that cannot run right now is greyed and says why.
   Keys work exactly as before; the menus only make the commands visible.
+- **Wide and full-screen windows** (#321): the picture keeps 768 logical
+  pixels of height and grows as wide as the window allows, up to 21:9. On the
+  map screen the extra width goes to the map, and the right column stays at the
+  right edge. Dialogs, the city window and setup keep their layout, centred. **Alt+Enter** or
+  **View > Full screen** toggles full screen (the browser asks for its own full
+  screen; Esc there returns to a window). A 4:3 window looks as before.
 - The **right column** shows a **minimap** of what your civilization has seen
   (a click centres the map there), your turn, government, treasury, rates and
   research, the selected unit, the selected city with **Manage city** and

@@ -18,8 +18,7 @@ pub(super) const STRIP_H: f64 = 46.;
 pub(super) const COLUMN: (f64, f64, f64, f64) = (784., 34., 232., 682.);
 /// The minimap inside the column's top box.
 const MINIMAP: (f64, f64, f64, f64) = (790., 40., 220., 126.);
-/// Left edge and width of text and buttons inside the column.
-const CX: f64 = 790.;
+/// Width of text and buttons inside the column.
 const CW: f64 = 220.;
 const ITEM_H: f64 = 26.;
 const DROP_W: f64 = 250.;
@@ -88,13 +87,42 @@ impl Client {
         self.loaded.is_some() && self.modal.is_none() && !self.city_open && !self.closed
     }
 
+    /// How far the 1024-wide screens (dialogs, city window, setup) move right
+    /// to sit centred on a wider stage (#321); 0 at 4:3.
+    pub(super) fn dx(&self) -> f64 {
+        ((self.stage_w - f64::from(WIDTH)) / 2.).floor()
+    }
+
+    /// Whether the current screen is one of the centred 1024-wide ones.
+    pub(super) fn centred(&self) -> bool {
+        self.modal.is_some() || self.city_open || self.loaded.is_none()
+    }
+
+    /// Where centring puts a tile on the map: the same point as at 4:3, moved
+    /// to the middle of a wider map.
+    pub(super) fn anchor(&self) -> (f64, f64) {
+        (380. + (self.stage_w - f64::from(WIDTH)) / 2., 390.)
+    }
+
+    /// Left edge of the right column: anchored to the stage's right edge, so
+    /// a wide window gives the map the extra width (#321).
+    pub(super) fn column_x(&self) -> f64 {
+        self.stage_w - (1024. - COLUMN.0)
+    }
+
+    /// Left edge of text and buttons inside the column.
+    fn cx(&self) -> f64 {
+        self.column_x() + 6.
+    }
+
     /// The map viewport `(x, y, w, h)`: shorter while the order strip shows.
     pub(super) fn map_rect(&self) -> (f64, f64, f64, f64) {
         let (x, y, w, h) = MAP;
+        let w = w + self.stage_w - 1024.;
         if self.enhancements.order_strip {
             (x, y, w, h - STRIP_H)
         } else {
-            MAP
+            (x, y, w, h)
         }
     }
 
@@ -153,6 +181,15 @@ impl Client {
                 item("Zoom in", "Z", Action::Zoom(1.25)),
                 item("Zoom out", "X", Action::Zoom(0.8)),
                 item("Standard zoom", "Shift+Z", Action::ZoomReset),
+                item(
+                    if self.fullscreen {
+                        "Window"
+                    } else {
+                        "Full screen"
+                    },
+                    "Alt+Enter",
+                    Action::FullScreen,
+                ),
             ],
             3 => vec![
                 order("Found city", "B", Action::Found, true),
@@ -223,7 +260,7 @@ impl Client {
             })
             .collect();
         if let Some(m) = self.menu {
-            let x = title_x(m).min(1024. - DROP_W - 4.);
+            let x = title_x(m).min(self.stage_w - DROP_W - 4.);
             for (row, it) in self.menu_items(m).into_iter().enumerate() {
                 b.push(Button {
                     x,
@@ -297,14 +334,14 @@ impl Client {
     /// The menu bar, drawn under the column and map: its background and the
     /// window title at the right end.
     pub(super) fn menu_bar_draw(&self, draws: &mut Vec<Draw>, title: &str) {
-        draws.push(rect(0., 0., 1024., MENU_H, style::MENU_BAR));
-        draws.push(rect(0., MENU_H, 1024., 1., style::MENU_EDGE));
+        draws.push(rect(0., 0., self.stage_w, MENU_H, style::MENU_BAR));
+        draws.push(rect(0., MENU_H, self.stage_w, 1., style::MENU_EDGE));
         // The menu bar already says which application this is.
         let title = title.strip_prefix("ToTEngine — ").unwrap_or(title);
         let w = title.chars().count() as f64 * 0.58 * f64::from(style::TYPE_SMALL);
         draws.push(text(
             // The browser's licence link sits at the top-right corner.
-            (826. - w).max(title_x(MENUS.len()) + 8.),
+            (self.stage_w - 198. - w).max(title_x(MENUS.len()) + 8.),
             7.,
             title,
             style::TYPE_SMALL,
@@ -340,7 +377,7 @@ impl Client {
         let Some(m) = self.menu else { return };
         let items = self.menu_items(m);
         let n = items.len() as f64;
-        let x = title_x(m).min(1024. - DROP_W - 4.);
+        let x = title_x(m).min(self.stage_w - DROP_W - 4.);
         draws.push(rect(
             x + 3.,
             MENU_H + 3.,
@@ -397,7 +434,7 @@ impl Client {
         let stack = self.stack_at_cursor(v).len().min(3) as f64;
         if !self.enhancements.message_dock {
             return ColumnLayout {
-                minimap: MINIMAP,
+                minimap: (self.cx(), MINIMAP.1, MINIMAP.2, MINIMAP.3),
                 status: 176.,
                 unit: 304.,
                 city: self.city.map(|_| 484.),
@@ -409,7 +446,7 @@ impl Client {
         let city = self.city.map(|_| unit_end + 4.);
         let top = city.map_or(unit_end, |c| c + 146.) + 4.;
         ColumnLayout {
-            minimap: (MINIMAP.0, MINIMAP.1, MINIMAP.2, 74.),
+            minimap: (self.cx(), MINIMAP.1, MINIMAP.2, 74.),
             status: 124.,
             unit,
             city,
@@ -491,6 +528,7 @@ impl Client {
     /// Buttons in the right column: the stack under the cursor, the selected
     /// city's two entries and the end-of-turn slot.
     pub(super) fn column_buttons(&self, v: &HumanView) -> Vec<Button> {
+        let cx = self.cx();
         let l = self.column_layout(v);
         let mut b = self.strip_buttons(v);
         let mut add = |x, y, w, h, label: String, action| {
@@ -505,7 +543,7 @@ impl Client {
         };
         for (i, e) in self.stack_at_cursor(v).iter().take(3).enumerate() {
             add(
-                CX,
+                cx,
                 l.unit + 96. + i as f64 * 28.,
                 CW,
                 26.,
@@ -515,7 +553,7 @@ impl Client {
         }
         if let (Some(city), Some(top)) = (self.city, l.city) {
             add(
-                CX,
+                cx,
                 top + 80.,
                 CW,
                 28.,
@@ -523,7 +561,7 @@ impl Client {
                 Action::OpenCity,
             );
             add(
-                CX,
+                cx,
                 top + 112.,
                 CW,
                 28.,
@@ -533,7 +571,7 @@ impl Client {
         }
         if v.phase == Phase::Opponents {
             add(
-                CX,
+                cx,
                 672.,
                 CW,
                 38.,
@@ -546,11 +584,11 @@ impl Client {
                 Action::Work,
             );
         } else {
-            add(CX, 672., CW, 38., "End turn [Ctrl+N]".into(), Action::End);
+            add(cx, 672., CW, 38., "End turn [Ctrl+N]".into(), Action::End);
         }
         if let Some((_, bottom)) = l.dock {
             add(
-                CX,
+                cx,
                 bottom - 30.,
                 CW,
                 26.,
@@ -563,7 +601,9 @@ impl Client {
 
     /// The column's frames, minimap and text (its buttons draw with the rest).
     pub(super) fn column_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
-        let (x, y, w, h) = COLUMN;
+        let cx = self.cx();
+        let (_, y, w, h) = COLUMN;
+        let x = self.column_x();
         draws.push(Draw::Tile {
             x,
             y,
@@ -583,7 +623,7 @@ impl Client {
         self.minimap_draw(draws, v);
         let o = &v.observation;
         let mut line = |y: f64, s: &str, size: u32, color: &str| {
-            draws.push(text(CX, y, s, size, color));
+            draws.push(text(cx, y, s, size, color));
         };
         // Status: turn, government, treasury, rates and research.
         line(
@@ -625,13 +665,13 @@ impl Client {
             style::TEXT_BRIGHT,
         );
         let cost = o.research.cost.unwrap_or(0);
-        draws.push(rect(CX, l.status + 90., CW, 8., style::INSET));
+        draws.push(rect(cx, l.status + 90., CW, 8., style::INSET));
         if cost > 0 {
             let done = (f64::from(o.research.progress) / f64::from(cost)).clamp(0., 1.);
-            draws.push(rect(CX, l.status + 90., CW * done, 8., style::LINK));
+            draws.push(rect(cx, l.status + 90., CW * done, 8., style::LINK));
         }
         draws.push(text(
-            CX,
+            cx,
             l.status + 104.,
             &format!(
                 "Research: {} / {}",
@@ -656,7 +696,7 @@ impl Client {
                 .map_or_else(|| "Unit".to_string(), ToString::to_string);
             let vet = if u.veteran { " (veteran)" } else { "" };
             draws.push(text(
-                CX,
+                cx,
                 l.unit + 6.,
                 &format!("{name} #{}{vet}", u.index),
                 style::TYPE_BODY,
@@ -668,7 +708,7 @@ impl Client {
                 .find(|(slot, _, _)| *slot == u.index)
                 .map_or_else(String::new, |(_, hp, max)| format!(" · health {hp}/{max}"));
             draws.push(text(
-                CX,
+                cx,
                 l.unit + 28.,
                 &format!("Moves {}{health}", tips::moves_text(u.moves_left)),
                 style::TYPE_SMALL,
@@ -688,7 +728,7 @@ impl Client {
                     ""
                 };
                 draws.push(text(
-                    CX,
+                    cx,
                     l.unit + 46.,
                     &format!("{terrain} ({}, {}){extra}", u.x, u.y),
                     style::TYPE_SMALL,
@@ -702,7 +742,7 @@ impl Client {
                 .count();
             if others > 0 {
                 draws.push(text(
-                    CX,
+                    cx,
                     l.unit + 64.,
                     &format!(
                         "{others} more unit{} here",
@@ -714,7 +754,7 @@ impl Client {
             }
         } else {
             draws.push(text(
-                CX,
+                cx,
                 l.unit + 6.,
                 "No unit selected",
                 style::TYPE_SMALL,
@@ -728,14 +768,14 @@ impl Client {
             l.city,
         ) {
             draws.push(text(
-                CX,
+                cx,
                 top + 6.,
                 &format!("{} · size {}", c.name, c.size),
                 style::TYPE_BODY,
                 style::GOLD,
             ));
             draws.push(text(
-                CX,
+                cx,
                 top + 28.,
                 &format!(
                     "{} · shields {}",
@@ -747,7 +787,7 @@ impl Client {
             ));
             if let Some(e) = o.city_economy.iter().find(|e| e.index == c.index) {
                 draws.push(text(
-                    CX,
+                    cx,
                     top + 44.,
                     &format!(
                         "Food {:+} · shields {} · sci {}",
@@ -757,7 +797,7 @@ impl Client {
                     style::TEXT_DIM,
                 ));
                 draws.push(text(
-                    CX,
+                    cx,
                     top + 60.,
                     &format!(
                         "Tax {} · happy {} · unhappy {}",
@@ -771,7 +811,7 @@ impl Client {
         // The message dock (#313): newest first, as many as fit.
         if let Some((top, bottom)) = l.dock {
             draws.push(text(
-                CX,
+                cx,
                 top + 6.,
                 "Messages",
                 style::TYPE_SMALL,
@@ -780,7 +820,7 @@ impl Client {
             let rows = ((bottom - 34. - (top + 26.)) / 16.).floor().max(0.) as usize;
             if self.notice_log.is_empty() {
                 draws.push(text(
-                    CX,
+                    cx,
                     top + 26.,
                     "No messages yet.",
                     style::TYPE_SMALL,
@@ -793,7 +833,7 @@ impl Client {
                     s = s.chars().take(30).collect::<String>() + "…";
                 }
                 draws.push(text(
-                    CX,
+                    cx,
                     top + 26. + i as f64 * 16.,
                     &s,
                     style::TYPE_SMALL,
@@ -813,7 +853,7 @@ impl Client {
             Phase::TurnLimit => "Turn limit reached",
         };
         draws.push(text(
-            CX,
+            cx,
             640.,
             phase,
             style::TYPE_BODY,
@@ -825,7 +865,7 @@ impl Client {
         ));
         if phase == "End of turn" {
             draws.push(text(
-                CX,
+                cx,
                 656.,
                 "(Press Enter or Ctrl+N)",
                 style::TYPE_SMALL,
@@ -912,7 +952,8 @@ impl Client {
         let (cw, ch) = Self::minimap_cell(&v.observation, m);
         let lx = (x - mx) / (cw / 2.);
         let ly = (y - my) / ch;
-        self.pan = (380. - lx * 32. * self.zoom, 390. - ly * 16. * self.zoom);
+        let (ax, ay) = self.anchor();
+        self.pan = (ax - lx * 32. * self.zoom, ay - ly * 16. * self.zoom);
         self.status = "Map centred from the minimap.".into();
         true
     }

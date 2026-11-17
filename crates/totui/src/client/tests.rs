@@ -4671,3 +4671,106 @@ fn layout_b_order_strip_and_message_dock_are_opt_in_and_inert() {
         "the strip's Wait, the dock and the settings never touch the game"
     );
 }
+
+#[test]
+fn wide_stage_widens_the_map_centres_windows_and_toggles_full_screen() {
+    use super::{stage_width, MAX_WIDTH};
+    assert_eq!(stage_width(1024, 768), WIDTH);
+    assert_eq!(stage_width(1920, 1080), 1365);
+    assert_eq!(stage_width(2560, 1080), MAX_WIDTH);
+    assert_eq!(stage_width(800, 600), WIDTH);
+    assert_eq!(stage_width(1000, 0), WIDTH);
+    let f = Fixture::new();
+    let mut c = f.client();
+    // Setup is centred too.
+    let display = |c: &mut Client, width: u32, fullscreen: bool| {
+        let id = c.receipts.len() as u64 + 1;
+        // Accepted at any revision: a window can resize at any time.
+        c.input(
+            c.revision.saturating_sub(3),
+            id,
+            Input::Display { width, fullscreen },
+        )
+        .unwrap();
+    };
+    display(&mut c, 1365, false);
+    let quick = c
+        .buttons()
+        .into_iter()
+        .find(|b| matches!(b.action, Action::QuickStart))
+        .unwrap();
+    assert_eq!(quick.x, 100. + 170.);
+    start(&mut c);
+    founding(&mut c);
+    let before = c.checkpoint().unwrap();
+    assert_eq!(c.frame().width, 1365.);
+    display(&mut c, 4000, false);
+    assert_eq!(c.frame().width, f64::from(MAX_WIDTH));
+    display(&mut c, 500, false);
+    assert_eq!(c.frame().width, f64::from(WIDTH));
+    display(&mut c, 1365, false);
+    // The map takes the extra width; the column stays at the right edge.
+    let (mx, _, mw, _) = c.map_rect();
+    assert_eq!((mx, mw), (8., 768. + 341.));
+    assert!(c.on_map(1000., 300.));
+    assert_eq!(c.column_x(), 1365. - 240.);
+    for b in c.buttons() {
+        if !matches!(b.action, Action::Menu(_)) {
+            assert!(b.x >= c.column_x(), "{} left of the column", b.label);
+        }
+    }
+    assert!(c.frame().draws.iter().any(
+        |d| matches!(d, Draw::Rect { w, color, .. } if *w == 1365. && color == style::MENU_BAR)
+    ));
+    // Centring keeps a unit in the middle of the wider map.
+    c.action(Action::Center).unwrap();
+    if c.active.is_none() {
+        let city = c.view().unwrap().observation.cities[0].clone();
+        let px = c.pan.0 + f64::from(city.x) * 32. * c.zoom;
+        assert_eq!(px, 380. + 170.5);
+    }
+    // Dialogs keep their layout, centred: Help's Close sits 170 px right.
+    key(&mut c, "?");
+    let close = c
+        .buttons()
+        .into_iter()
+        .find(|b| matches!(b.action, Action::Accept))
+        .unwrap();
+    assert_eq!(close.x, 212. + 170.);
+    input(
+        &mut c,
+        Input::Click {
+            x: close.x + 3.,
+            y: close.y + 3.,
+        },
+    );
+    assert!(c.modal.is_none());
+    key(&mut c, "Ctrl+s");
+    assert_eq!(c.frame().entry.unwrap().x, 212. + 170.);
+    key(&mut c, "Escape");
+    // The city window too.
+    button(&mut c, "Manage city");
+    for b in c.buttons() {
+        assert!(
+            b.x >= 170. && b.x + b.w <= 170. + 1024.,
+            "{} outside the centred city window",
+            b.label
+        );
+    }
+    key(&mut c, "Escape");
+    // Full screen: Alt+Enter or View > Full screen asks; the adapter reports.
+    key(&mut c, "Alt+Enter");
+    assert!(c.frame().fullscreen);
+    assert!(c.menu_items(2).iter().any(|i| i.label == "Window"));
+    button(&mut c, "Window");
+    assert!(!c.frame().fullscreen);
+    button(&mut c, "Full screen");
+    assert!(c.frame().fullscreen);
+    display(&mut c, 1365, false);
+    assert!(!c.frame().fullscreen, "the adapter's report wins");
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "display changes are presentation"
+    );
+}

@@ -68,6 +68,22 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+**v0.20.0 is RELEASED** at exactly reviewed/tagged SHA
+`4d72676c996be1550ab96cff67537e9b36bfc8ca` (GLM-5.3 AGREE on #306, round
+two, after round one's BLOCK on #307 — the desktop real-input focus detector
+missed the #286 button chrome — fixed in #308 and re-verified by a completed
+Linux real-input run). Theme: client polish and opt-in conveniences on both
+clients — UI quality U1 (#281/#282 closed; #283 open for the owner's type and
+2× legibility review) and U2 (#284 open for owner acceptance): message log,
+map tooltips, path preview with turn counts (a preview only, no goto order),
+keyboard help, list scrolling/sorting/Load paging and the Settings screen;
+conveniences are opt-in and off by default, all presentation-only. Reviewer
+reproduced 347 Rust tests, 59 desktop-feature tests, goldens 24/24, strict
+Clippy, byte-identical inventory and real browser/Linux input; the Windows
+input script was parsed, not run. Source release without client archives.
+Next (owner direction): a design phase proposing CIV UI layouts with mocks and
+screenshots. Keep the tag at the exact reviewed SHA.
+
 **v0.19.0 is RELEASED** at exactly reviewed/tagged SHA
 `3529baaabaefc3776b3e93dd2596f23ebfe7e53c` (Kimi K3.1 Pro AGREE on #274,
 round three, after two BLOCK rounds whose findings — #275 symlink boundary,

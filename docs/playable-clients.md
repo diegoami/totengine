@@ -117,7 +117,7 @@ The map screen follows the original's frame (layout B, [design record](ui/layout
 - Press **?** (or **Game > Keys…**) for the keyboard help: original keys plus ToTEngine additions.
 - **Messages** (**World** menu) keeps every turn's notices for the session, newest first and paged. Messages are presentation-only: checkpoints do not store them.
 - **Mouse wheel** pages the list under the pointer: reports, Civilopedia, Messages, choice lists, the checkpoint list and the city panels. It does nothing over the map. In the city window, the **Sort** button reorders the Info, Support and Improvements lists (listed order, name, shields, food or upkeep, largest numbers first); it only changes the display.
-- **Settings** (**Game** menu), or **Enhancements…** on the setup screen, holds optional improvements that differ from the original. All are off by default and saved in `enhancements.json` beside the saves folder, shared by both clients; delete the file to reset. *New-messages overlay on the map* lists a turn's notices over the map (with **Open messages** / **Dismiss**). *Confirm every move* asks before each unit move; attacks and captures always ask. *Map tooltips* describes a known tile when the pointer rests on it: terrain, river/road, city and units, from your civilization's view only. *Path preview with turn counts* works the same way while a unit is selected to move: the tip shows the cheapest route over tiles your civilization knows (gold dots, a number where each turn's moves run out) and how many turns it takes; it follows the engine's move costs and only the foreign units you can see, so it is an estimate, and it gives no goto order. None of them affect checkpoints, recordings or rules.
+- **Settings** (**Game** menu), or **Enhancements…** on the setup screen, holds optional improvements that differ from the original. All are off by default and saved in `enhancements.json` beside the saves folder, shared by both clients; delete the file to reset. *New-messages overlay on the map* lists a turn's notices over the map (with **Open messages** / **Dismiss**). *Confirm every move* asks before each unit move; attacks and captures always ask. *Map tooltips* describes a known tile when the pointer rests on it: terrain, river/road, city and units, from your civilization's view only. *Goal estimates in the science advisor* adds the goal path and turn estimate to F6 (see below). *Path preview with turn counts* works the same way while a unit is selected to move: the tip shows the cheapest route over tiles your civilization knows (gold dots, a number where each turn's moves run out) and how many turns it takes; it follows the engine's move costs and only the foreign units you can see, so it is an estimate, and it gives no goto order. None of them affect checkpoints, recordings or rules.
 - **Double-click an own city on the map** (including its garrison) or use
   **Manage city** to open its workspace. The first city click only selects or
   inspects; use movement keys to move into an own city. Click a radius tile
@@ -127,6 +127,11 @@ The map screen follows the original's frame (layout B, [design record](ui/layout
   five. Outputs/mood refresh immediately, without collecting income or ending
   the turn. **PageUp/PageDown** navigate your cities; **Escape** returns to the
   map and keeps accepted edits. **Ctrl+S / Ctrl+L** save/load inside the city too.
+  The city window follows the classic arrangement (layout B, #314): a title bar
+  with Previous/Next city, the citizens strip (workers, then specialists to
+  click), City resources, Food storage and production with Choose/Buy/Improvements
+  on the left, the radius map in the middle, the panels on the right and
+  Save, Load, Research and Return to map along the bottom.
 - v0.15 adds **Info / Support / Improvements / Happy** panels.
   Support distinguishes units supported here from units present in Info. Building
   sale rows retain explicit confirmation. Happy omits unchanged stages. The
@@ -162,8 +167,12 @@ The map screen follows the original's frame (layout B, [design record](ui/layout
   Enter confirms) and names the turn at which the government chooser opens. That
   chooser and the rate review after it are **required**: Esc keeps them open
   (Esc in the review resets the split), and Save pending / Load checkpoint stay available.
-  Science is a small advisor (topic, progress, goal) with a goal list; the goal
-  only suggests the next research choice. Locks last for the client session.
+  Science (F6) is a window with the running project and its progress bar, the
+  goal with **Set goal… / Clear goal**, the advances available next and the
+  advances you know (#315); the goal only suggests the next research choice.
+  With *Goal estimates in the science advisor* on (Settings), it also shows the
+  path to the goal, a turn estimate (a lower bound at today's science rate) and
+  a sort button for the available list. Locks last for the client session.
 - **Reports (F1, F2, F4, F5, F7)**, also in the **Advisors** and **World** menus, open own-civilization
   reports: City status, Defense, Attitude (the *Mood* tab), Trade and Wonders. Up/Down select a row, PageUp/PageDown page, **S** (or a header
   button) sorts, Enter opens the selected city and Esc there returns to the report; Esc closes.

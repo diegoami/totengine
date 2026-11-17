@@ -305,6 +305,12 @@ impl Client {
         let focused = buttons.get(focus).map(|b| &b.action);
         for (m, title) in MENUS.iter().enumerate() {
             let on = self.menu == Some(m) || matches!(focused, Some(Action::Menu(f)) if *f == m);
+            // Over a dialog or the city window the titles are inert, and look it.
+            let idle = if self.map_surface() {
+                style::MENU_TEXT
+            } else {
+                style::MENU_DISABLED
+            };
             let x = title_x(m);
             if on {
                 draws.push(rect(x, 1., title_w(title), MENU_H - 2., style::MENU_SELECT));
@@ -314,11 +320,7 @@ impl Client {
                 5.,
                 title,
                 style::TYPE_BODY,
-                if on {
-                    style::MENU_SELECT_TEXT
-                } else {
-                    style::MENU_TEXT
-                },
+                if on { style::MENU_SELECT_TEXT } else { idle },
             ));
         }
         let Some(m) = self.menu else { return };

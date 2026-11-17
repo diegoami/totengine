@@ -18,6 +18,8 @@ pub(super) const GOVERNMENTS: [&str; 7] = [
     "Democracy",
 ];
 const ROWS: [&str; 3] = ["Tax", "Luxury", "Science"];
+/// Vertical step between Settings rows (five rows fit above the footer note).
+const SETTINGS_STEP: f64 = 66.;
 
 pub(super) fn government_name(id: u8) -> String {
     GOVERNMENTS
@@ -412,7 +414,7 @@ impl Client {
                 for (i, (e, label, on)) in self.settings_rows().into_iter().enumerate() {
                     add(
                         212.,
-                        170. + i as f64 * 80.,
+                        170. + i as f64 * SETTINGS_STEP,
                         600.,
                         34.,
                         format!("[{}] {label}", if on { "x" } else { " " }),
@@ -427,16 +429,8 @@ impl Client {
                 }
             }
             Modal::Science => {
-                add(212., 170., 220., 34., "Set goal…".into(), Action::GoalList);
-                if self.view().is_some_and(|v| v.goal.is_some()) {
-                    add(
-                        442.,
-                        170.,
-                        180.,
-                        34.,
-                        "Clear goal".into(),
-                        Action::ClearGoal,
-                    );
+                for sb in self.science_buttons() {
+                    add(sb.x, sb.y, sb.w, sb.h, sb.label, sb.action);
                 }
             }
             _ => (),
@@ -468,6 +462,11 @@ impl Client {
                 "Path preview with turn counts",
                 self.enhancements.path_preview,
             ),
+            (
+                Enhancement::GoalEstimates,
+                "Goal estimates in the science advisor",
+                self.enhancements.goal_estimates,
+            ),
         ]
     }
 
@@ -477,11 +476,12 @@ impl Client {
             "Asks before every unit move; attacks and captures always ask.",
             "Resting the pointer on a known tile describes its terrain, city and units.",
             "With a unit selected, a resting pointer shows the known route and its turns.",
+            "F6 shows the path to your goal with a turn estimate, and sorts advances.",
         ];
         for (i, line) in explain.iter().enumerate() {
             draws.push(text(
                 222.,
-                210. + i as f64 * 80.,
+                210. + i as f64 * SETTINGS_STEP,
                 line,
                 style::TYPE_SMALL,
                 style::TEXT_DIM,
@@ -710,51 +710,7 @@ impl Client {
                     style::WARN,
                 );
             }
-            Modal::Science => {
-                let o = &v.observation;
-                let topic = o
-                    .research
-                    .target
-                    .map_or_else(|| "none yet".to_string(), |t| self.tech_name(t));
-                let progress = format!(
-                    "{} / {}",
-                    o.research.progress,
-                    o.research
-                        .cost
-                        .map_or_else(|| "?".to_string(), |c| c.to_string())
-                );
-                let science = v
-                    .rates
-                    .and_then(|r| {
-                        self.loaded
-                            .as_ref()?
-                            .session
-                            .preview_rates(r.science, r.tax)
-                            .ok()
-                    })
-                    .map_or_else(|| "?".to_string(), |q| q.science_output.to_string());
-                let goal = v
-                    .goal
-                    .map_or_else(|| "none".to_string(), |g| self.tech_name(g));
-                for (i, s) in [
-                    format!("Current topic: {topic}"),
-                    format!("Progress: {progress} · science {science} per turn"),
-                    format!("Long-term goal: {goal}"),
-                    "The goal only steers the suggested topic of the next".to_string(),
-                    "research choice; it never changes the running project.".to_string(),
-                ]
-                .iter()
-                .enumerate()
-                {
-                    line(
-                        draws,
-                        240. + i as f64 * 34.,
-                        s,
-                        style::TYPE_BODY,
-                        style::TEXT,
-                    );
-                }
-            }
+            Modal::Science => self.science_draws(draws, &v),
             Modal::Goal => {
                 line(
                     draws,

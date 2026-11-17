@@ -458,7 +458,7 @@ try {
         $city=@((Read-Scene).draws | Where-Object {$_.kind -eq 'sprite' -and $_.sprite.StartsWith('city-')})[0]
         if(-not $city){throw 'city sprite absent'}
         [SpikeWindow]::DoubleClick($window,$app.Id,($city.x+$city.w/2),($city.y+$city.h*0.6))
-        [void](Wait-Scene {param($s) @($s.draws | Where-Object {$_.kind -eq 'text' -and $_.x -eq 18 -and $_.y -eq 14 -and $_.text.Contains('population')}).Count -gt 0})
+        [void](Wait-Scene {param($s) @($s.draws | Where-Object {$_.kind -eq 'text' -and $_.y -lt 66 -and $_.text.Contains(' — population ')}).Count -gt 0})
         Send-Chord 83;Save-Dialog 'citydouble'
         if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES 'citydouble.cth')).Hash -ne (Get-FileHash $env:TOTENGINE_CITY_OPEN_FIXTURE).Hash){throw 'double click changed gameplay'}
         Send-Key 27

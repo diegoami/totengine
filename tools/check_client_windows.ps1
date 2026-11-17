@@ -183,7 +183,11 @@ try {
             $scene=Read-Scene
             $labelDraw=@($scene.draws | Where-Object {$_.kind -eq 'text' -and $_.text -eq $Label})[0]
             if(-not $labelDraw){throw "Button absent: $Label"}
-            $selected=@($scene.draws | Where-Object {$_.kind -eq 'rect' -and $_.x -eq ($labelDraw.x-7) -and $_.y -eq ($labelDraw.y-7) -and $_.color -eq '#6b7057'}).Count -gt 0
+            # Focused chrome (#282, style::button): a gold hairline at the button
+            # corner and the select fill inset by one pixel.
+            $hairline=@($scene.draws | Where-Object {$_.kind -eq 'rect' -and $_.x -eq ($labelDraw.x-7) -and $_.y -eq ($labelDraw.y-7) -and $_.color -eq '#e8c85a'}).Count -gt 0
+            $fill=@($scene.draws | Where-Object {$_.kind -eq 'rect' -and $_.x -eq ($labelDraw.x-6) -and $_.y -eq ($labelDraw.y-6) -and $_.color -eq '#6b7057'}).Count -gt 0
+            $selected=$hairline -and $fill
             if($selected){Send-Key 13;return}
             Send-Key 9
         }

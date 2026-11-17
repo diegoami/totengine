@@ -9,8 +9,11 @@ use super::*;
 
 /// Height of the menu bar along the top of the map screen.
 pub(super) const MENU_H: f64 = 26.;
-/// The map viewport `(x, y, w, h)`.
+/// The map viewport `(x, y, w, h)` with every option off; the optional order
+/// strip (#312) takes its bottom edge.
 pub(super) const MAP: (f64, f64, f64, f64) = (8., 34., 768., 682.);
+/// Height the order strip takes from the map (#312).
+pub(super) const STRIP_H: f64 = 46.;
 /// The right column `(x, y, w, h)`.
 pub(super) const COLUMN: (f64, f64, f64, f64) = (784., 34., 232., 682.);
 /// The minimap inside the column's top box.
@@ -32,18 +35,6 @@ pub(super) const MENUS: [&str; 7] = [
     "World",
     "Civilopedia",
 ];
-
-/// Whether `(x, y)` is on the map viewport.
-pub(super) fn on_map(x: f64, y: f64) -> bool {
-    (MAP.0..MAP.0 + MAP.2).contains(&x) && (MAP.1..MAP.1 + MAP.3).contains(&y)
-}
-
-/// Whether a tile centre `(px, py)` is far enough inside the viewport for
-/// its unit or city sprite to be drawn and hit-tested.
-pub(super) fn in_view(px: f64, py: f64) -> bool {
-    (MAP.0 + 32.0..MAP.0 + MAP.2 - 32.).contains(&px)
-        && (MAP.1 + 50.0..MAP.1 + MAP.3 - 40.).contains(&py)
-}
 
 /// The civilization palette shared by map and minimap markers.
 pub(super) fn civ_color(owner: u8) -> &'static str {
@@ -95,6 +86,29 @@ impl Client {
     /// or city window is open.
     pub(super) fn map_surface(&self) -> bool {
         self.loaded.is_some() && self.modal.is_none() && !self.city_open && !self.closed
+    }
+
+    /// The map viewport `(x, y, w, h)`: shorter while the order strip shows.
+    pub(super) fn map_rect(&self) -> (f64, f64, f64, f64) {
+        let (x, y, w, h) = MAP;
+        if self.enhancements.order_strip {
+            (x, y, w, h - STRIP_H)
+        } else {
+            MAP
+        }
+    }
+
+    /// Whether `(x, y)` is on the map viewport.
+    pub(super) fn on_map(&self, x: f64, y: f64) -> bool {
+        let (mx, my, mw, mh) = self.map_rect();
+        (mx..mx + mw).contains(&x) && (my..my + mh).contains(&y)
+    }
+
+    /// Whether a tile centre `(px, py)` is far enough inside the viewport for
+    /// its unit or city sprite to be drawn and hit-tested.
+    pub(super) fn in_view(&self, px: f64, py: f64) -> bool {
+        let (mx, my, mw, mh) = self.map_rect();
+        (mx + 32.0..mx + mw - 32.).contains(&px) && (my + 50.0..my + mh - 40.).contains(&py)
     }
 
     pub(super) fn menu_items(&self, m: usize) -> Vec<MenuItem> {
@@ -376,10 +390,109 @@ impl Client {
         }
     }
 
+    /// Where the right column's boxes start. With the message dock off these
+    /// are the fixed positions of #311; the dock (#313) takes the space the
+    /// minimap and empty rows leave.
+    fn column_layout(&self, v: &HumanView) -> ColumnLayout {
+        let stack = self.stack_at_cursor(v).len().min(3) as f64;
+        if !self.enhancements.message_dock {
+            return ColumnLayout {
+                minimap: MINIMAP,
+                status: 176.,
+                unit: 304.,
+                city: self.city.map(|_| 484.),
+                dock: None,
+            };
+        }
+        let unit = 252.;
+        let unit_end = unit + 96. + stack * 28.;
+        let city = self.city.map(|_| unit_end + 4.);
+        let top = city.map_or(unit_end, |c| c + 146.) + 4.;
+        ColumnLayout {
+            minimap: (MINIMAP.0, MINIMAP.1, MINIMAP.2, 74.),
+            status: 124.,
+            unit,
+            city,
+            dock: (630. - top >= 62.).then_some((top, 630.)),
+        }
+    }
+
+    /// Own units on the inspected tile, in view order.
+    fn stack_at_cursor(&self, v: &HumanView) -> Vec<Entity> {
+        v.units
+            .iter()
+            .filter(|e| {
+                v.observation
+                    .units
+                    .iter()
+                    .any(|u| u.index == e.slot && self.inspect == Some((u.x, u.y)))
+            })
+            .copied()
+            .collect()
+    }
+
+    /// The order strip under the map (#312): the active unit's orders that
+    /// the client supports, each sending exactly what its key sends.
+    fn strip_buttons(&self, v: &HumanView) -> Vec<Button> {
+        if !self.enhancements.order_strip || v.phase != Phase::Human {
+            return Vec::new();
+        }
+        let (_, my, _, mh) = self.map_rect();
+        let y = my + mh + 6.;
+        let mut x = 84.;
+        [
+            (
+                if self.moving { "View [V]" } else { "Move [V]" },
+                100.,
+                Action::Mode,
+            ),
+            ("Wait [W]", 100., Action::Wait),
+            ("Skip [Space]", 130., Action::Skip),
+            ("Found city [B]", 140., Action::Found),
+            ("Activate [A]", 120., Action::Activate),
+        ]
+        .into_iter()
+        .map(|(label, w, action)| {
+            let b = Button {
+                x,
+                y,
+                w,
+                h: 34.,
+                label: label.into(),
+                action,
+            };
+            x += w + 6.;
+            b
+        })
+        .collect()
+    }
+
+    /// The order strip's frame and caption.
+    pub(super) fn strip_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
+        if !self.enhancements.order_strip {
+            return;
+        }
+        let (mx, my, mw, mh) = self.map_rect();
+        draws.push(rect(mx, my + mh, mw, STRIP_H, style::STATUS_BG));
+        draws.push(rect(mx, my + mh, mw, 1., style::GOLD_DIM));
+        draws.push(text(
+            mx + 8.,
+            my + mh + 16.,
+            if v.phase == Phase::Human {
+                "Orders:"
+            } else {
+                "Orders wait for your turn."
+            },
+            style::TYPE_SMALL,
+            style::TEXT_BRIGHT,
+        ));
+    }
+
     /// Buttons in the right column: the stack under the cursor, the selected
     /// city's two entries and the end-of-turn slot.
     pub(super) fn column_buttons(&self, v: &HumanView) -> Vec<Button> {
-        let mut b = Vec::new();
+        let l = self.column_layout(v);
+        let mut b = self.strip_buttons(v);
         let mut add = |x, y, w, h, label: String, action| {
             b.push(Button {
                 x,
@@ -390,32 +503,28 @@ impl Client {
                 action,
             })
         };
-        for (i, e) in v
-            .units
-            .iter()
-            .filter(|e| {
-                v.observation
-                    .units
-                    .iter()
-                    .any(|u| u.index == e.slot && self.inspect == Some((u.x, u.y)))
-            })
-            .take(3)
-            .enumerate()
-        {
+        for (i, e) in self.stack_at_cursor(v).iter().take(3).enumerate() {
             add(
                 CX,
-                400. + i as f64 * 28.,
+                l.unit + 96. + i as f64 * 28.,
                 CW,
                 26.,
                 format!("Activate unit {}", e.slot),
                 Action::Unit(*e),
             );
         }
-        if let Some(city) = self.city {
-            add(CX, 564., CW, 28., "Manage city".into(), Action::OpenCity);
+        if let (Some(city), Some(top)) = (self.city, l.city) {
             add(
                 CX,
-                596.,
+                top + 80.,
+                CW,
+                28.,
+                "Manage city".into(),
+                Action::OpenCity,
+            );
+            add(
+                CX,
+                top + 112.,
                 CW,
                 28.,
                 "Choose production".into(),
@@ -439,6 +548,16 @@ impl Client {
         } else {
             add(CX, 672., CW, 38., "End turn [Ctrl+N]".into(), Action::End);
         }
+        if let Some((_, bottom)) = l.dock {
+            add(
+                CX,
+                bottom - 30.,
+                CW,
+                26.,
+                format!("All messages ({})", self.notice_log.len()),
+                Action::Messages,
+            );
+        }
         b
     }
 
@@ -452,17 +571,14 @@ impl Client {
             h,
             sprite: "panel".into(),
         });
-        for (top, bottom) in [
-            (34., 172.),
-            (176., 300.),
-            (304., 480.),
-            (484., 630.),
-            (634., 716.),
-        ] {
-            draws.push(rect(x, bottom, w, 1., style::INSET));
-            if top > 34. {
-                draws.push(rect(x, top - 1., w, 1., style::GOLD_DIM));
-            }
+        let l = self.column_layout(v);
+        let mut tops = vec![l.status, l.unit];
+        tops.extend(l.city);
+        tops.extend(l.dock.map(|(t, _)| t));
+        tops.push(634.);
+        for top in tops {
+            draws.push(rect(x, top - 4., w, 1., style::INSET));
+            draws.push(rect(x, top - 1., w, 1., style::GOLD_DIM));
         }
         self.minimap_draw(draws, v);
         let o = &v.observation;
@@ -471,7 +587,7 @@ impl Client {
         };
         // Status: turn, government, treasury, rates and research.
         line(
-            182.,
+            l.status + 6.,
             &format!(
                 "Turn {} · {}",
                 o.turn,
@@ -481,14 +597,14 @@ impl Client {
             style::TEXT_BRIGHT,
         );
         line(
-            204.,
+            l.status + 28.,
             &format!("Treasury: {} gold", o.treasury),
             style::TYPE_BODY,
             style::TEXT,
         );
         if let Some(r) = &v.rates {
             line(
-                226.,
+                l.status + 50.,
                 &format!(
                     "Tax {}% · Lux {}% · Sci {}%",
                     u32::from(r.tax) * 10,
@@ -500,7 +616,7 @@ impl Client {
             );
         }
         line(
-            246.,
+            l.status + 70.,
             &o.research.target.map_or_else(
                 || "Topic: none chosen".into(),
                 |t| format!("Topic: {}", self.tech_name(t)),
@@ -509,14 +625,14 @@ impl Client {
             style::TEXT_BRIGHT,
         );
         let cost = o.research.cost.unwrap_or(0);
-        draws.push(rect(CX, 266., CW, 8., style::INSET));
+        draws.push(rect(CX, l.status + 90., CW, 8., style::INSET));
         if cost > 0 {
             let done = (f64::from(o.research.progress) / f64::from(cost)).clamp(0., 1.);
-            draws.push(rect(CX, 266., CW * done, 8., style::LINK));
+            draws.push(rect(CX, l.status + 90., CW * done, 8., style::LINK));
         }
         draws.push(text(
             CX,
-            280.,
+            l.status + 104.,
             &format!(
                 "Research: {} / {}",
                 o.research.progress,
@@ -541,7 +657,7 @@ impl Client {
             let vet = if u.veteran { " (veteran)" } else { "" };
             draws.push(text(
                 CX,
-                310.,
+                l.unit + 6.,
                 &format!("{name} #{}{vet}", u.index),
                 style::TYPE_BODY,
                 style::GOLD,
@@ -553,7 +669,7 @@ impl Client {
                 .map_or_else(String::new, |(_, hp, max)| format!(" · health {hp}/{max}"));
             draws.push(text(
                 CX,
-                332.,
+                l.unit + 28.,
                 &format!("Moves {}{health}", tips::moves_text(u.moves_left)),
                 style::TYPE_SMALL,
                 style::TEXT,
@@ -573,7 +689,7 @@ impl Client {
                 };
                 draws.push(text(
                     CX,
-                    350.,
+                    l.unit + 46.,
                     &format!("{terrain} ({}, {}){extra}", u.x, u.y),
                     style::TYPE_SMALL,
                     style::TEXT_DIM,
@@ -587,7 +703,7 @@ impl Client {
             if others > 0 {
                 draws.push(text(
                     CX,
-                    368.,
+                    l.unit + 64.,
                     &format!(
                         "{others} more unit{} here",
                         if others == 1 { "" } else { "s" }
@@ -599,27 +715,28 @@ impl Client {
         } else {
             draws.push(text(
                 CX,
-                310.,
+                l.unit + 6.,
                 "No unit selected",
                 style::TYPE_SMALL,
                 style::TEXT_DIM,
             ));
         }
         // The selected own city.
-        if let Some(c) = self
-            .city
-            .and_then(|e| o.cities.iter().find(|c| c.index == e.slot))
-        {
+        if let (Some(c), Some(top)) = (
+            self.city
+                .and_then(|e| o.cities.iter().find(|c| c.index == e.slot)),
+            l.city,
+        ) {
             draws.push(text(
                 CX,
-                490.,
+                top + 6.,
                 &format!("{} · size {}", c.name, c.size),
                 style::TYPE_BODY,
                 style::GOLD,
             ));
             draws.push(text(
                 CX,
-                512.,
+                top + 28.,
                 &format!(
                     "{} · shields {}",
                     self.item_name(c.building.unwrap_or(0)),
@@ -631,7 +748,7 @@ impl Client {
             if let Some(e) = o.city_economy.iter().find(|e| e.index == c.index) {
                 draws.push(text(
                     CX,
-                    528.,
+                    top + 44.,
                     &format!(
                         "Food {:+} · shields {} · sci {}",
                         e.food_surplus, e.net_shields, e.finance.science
@@ -641,13 +758,46 @@ impl Client {
                 ));
                 draws.push(text(
                     CX,
-                    544.,
+                    top + 60.,
                     &format!(
                         "Tax {} · happy {} · unhappy {}",
                         e.finance.taxes, e.happy, e.unhappy
                     ),
                     style::TYPE_SMALL,
                     style::TEXT_DIM,
+                ));
+            }
+        }
+        // The message dock (#313): newest first, as many as fit.
+        if let Some((top, bottom)) = l.dock {
+            draws.push(text(
+                CX,
+                top + 6.,
+                "Messages",
+                style::TYPE_SMALL,
+                style::TEXT_BRIGHT,
+            ));
+            let rows = ((bottom - 34. - (top + 26.)) / 16.).floor().max(0.) as usize;
+            if self.notice_log.is_empty() {
+                draws.push(text(
+                    CX,
+                    top + 26.,
+                    "No messages yet.",
+                    style::TYPE_SMALL,
+                    style::TEXT_DIM,
+                ));
+            }
+            for (i, (turn, line)) in self.notice_log.iter().rev().take(rows).enumerate() {
+                let mut s = format!("T{turn} {line}");
+                if s.chars().count() > 31 {
+                    s = s.chars().take(30).collect::<String>() + "…";
+                }
+                draws.push(text(
+                    CX,
+                    top + 26. + i as f64 * 16.,
+                    &s,
+                    style::TYPE_SMALL,
+                    style::TEXT,
                 ));
             }
         }
@@ -685,17 +835,18 @@ impl Client {
     }
 
     /// Minimap cell size `(w, h)` for the observed map.
-    fn minimap_cell(o: &engine::player::Observation) -> (f64, f64) {
+    fn minimap_cell(o: &engine::player::Observation, m: (f64, f64, f64, f64)) -> (f64, f64) {
         let cols = f64::from(o.w2 / 2).max(1.);
         let rows = f64::from(o.h).max(1.);
-        (MINIMAP.2 / (cols + 0.5), MINIMAP.3 / rows)
+        (m.2 / (cols + 0.5), m.3 / rows)
     }
 
     fn minimap_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
-        let (mx, my, mw, mh) = MINIMAP;
+        let m = self.column_layout(v).minimap;
+        let (mx, my, mw, mh) = m;
         draws.push(rect(mx, my, mw, mh, style::FIELD));
         let o = &v.observation;
-        let (cw, ch) = Self::minimap_cell(o);
+        let (cw, ch) = Self::minimap_cell(o, m);
         let cols = usize::from(o.w2 / 2);
         // One rectangle per run of equal colour in a row keeps frames small.
         for row in 0..usize::from(o.h) {
@@ -733,10 +884,11 @@ impl Client {
         let z = self.zoom;
         let lx = |sx: f64| ((sx - self.pan.0) / (32. * z)).clamp(0., f64::from(o.w2));
         let ly = |sy: f64| ((sy - self.pan.1) / (16. * z)).clamp(0., f64::from(o.h));
-        let (x0, y0) = (mx + lx(MAP.0) * cw / 2., my + ly(MAP.1) * ch);
+        let map = self.map_rect();
+        let (x0, y0) = (mx + lx(map.0) * cw / 2., my + ly(map.1) * ch);
         let (x1, y1) = (
-            (mx + lx(MAP.0 + MAP.2) * cw / 2.).min(mx + mw - 1.),
-            (my + ly(MAP.1 + MAP.3) * ch).min(my + mh - 1.),
+            (mx + lx(map.0 + map.2) * cw / 2.).min(mx + mw - 1.),
+            (my + ly(map.1 + map.3) * ch).min(my + mh - 1.),
         );
         for (x, y, w, h) in [
             (x0, y0, x1 - x0, 1.),
@@ -751,16 +903,26 @@ impl Client {
     /// A click on the minimap centres the map there; it never selects or
     /// orders anything. `false` when the point is not on the minimap.
     pub(super) fn minimap_click(&mut self, x: f64, y: f64) -> bool {
-        let (mx, my, mw, mh) = MINIMAP;
+        let Some(v) = self.view() else { return false };
+        let m = self.column_layout(&v).minimap;
+        let (mx, my, mw, mh) = m;
         if !self.map_surface() || !(mx..mx + mw).contains(&x) || !(my..my + mh).contains(&y) {
             return false;
         }
-        let Some(v) = self.view() else { return false };
-        let (cw, ch) = Self::minimap_cell(&v.observation);
+        let (cw, ch) = Self::minimap_cell(&v.observation, m);
         let lx = (x - mx) / (cw / 2.);
         let ly = (y - my) / ch;
         self.pan = (380. - lx * 32. * self.zoom, 390. - ly * 16. * self.zoom);
         self.status = "Map centred from the minimap.".into();
         true
     }
+}
+
+/// Top edges of the right column's boxes (#311/#313).
+struct ColumnLayout {
+    minimap: (f64, f64, f64, f64),
+    status: f64,
+    unit: f64,
+    city: Option<f64>,
+    dock: Option<(f64, f64)>,
 }

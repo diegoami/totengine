@@ -4579,3 +4579,95 @@ fn layout_b_city_and_science_windows_rearrange_without_touching_the_game() {
         .iter()
         .any(|(_, _, t, _)| t.contains("(estimate)") || t.contains("no estimate")));
 }
+
+#[test]
+fn layout_b_order_strip_and_message_dock_are_opt_in_and_inert() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    // Off by default: the map keeps its full height, no strip, no dock.
+    assert_eq!(c.map_rect(), chrome::MAP);
+    let has_button = |c: &Client, s: &str| c.buttons().iter().any(|b| b.label.starts_with(s));
+    assert!(!has_button(&c, "Wait [W]"));
+    assert!(!has_button(&c, "All messages"));
+    // Play two turns so the log has messages.
+    for _ in 0..2 {
+        key(&mut c, "Ctrl+n");
+        if matches!(c.modal, Some(Modal::Confirm { .. })) {
+            key(&mut c, "Enter");
+        }
+        while c.advancing {
+            input(&mut c, Input::Tick);
+        }
+        research(&mut c);
+        if c.modal.is_some() {
+            key(&mut c, "Escape");
+        }
+    }
+    let before = c.checkpoint().unwrap();
+    button(&mut c, "Settings");
+    assert_no_overlaps(&c, "settings with seven rows");
+    button(&mut c, "[ ] Order buttons under the map");
+    button(&mut c, "[ ] Message log in the right column");
+    key(&mut c, "Escape");
+    let saved = storage::load_enhancements(&f.saves());
+    assert!(saved.order_strip && saved.message_dock);
+    // #312: the map is shorter by the strip; the strip's buttons sit under it.
+    let (mx, my, mw, mh) = c.map_rect();
+    assert_eq!(mh, chrome::MAP.3 - chrome::STRIP_H);
+    for label in [
+        "Move [V]",
+        "Wait [W]",
+        "Skip [Space]",
+        "Found city [B]",
+        "Activate [A]",
+    ] {
+        let b = c
+            .buttons()
+            .into_iter()
+            .find(|b| b.label == label || (label == "Move [V]" && b.label == "View [V]"))
+            .unwrap_or_else(|| panic!("no strip button {label}"));
+        assert!(
+            b.y >= my + mh && b.x >= mx && b.x + b.w <= mx + mw,
+            "{label}"
+        );
+    }
+    assert!(!c.on_map(400., my + mh + 10.), "the strip is not map");
+    // A strip button sends what its key sends: Wait cycles the active unit.
+    let active = c.active;
+    button(&mut c, "Wait [W]");
+    assert!(c.active.is_some() || active.is_none());
+    // #313: the dock lists the latest messages, newest first.
+    let texts: Vec<String> = c
+        .frame()
+        .draws
+        .into_iter()
+        .filter_map(|d| match d {
+            Draw::Text { x, text, .. } if x >= chrome::COLUMN.0 => Some(text),
+            _ => None,
+        })
+        .collect();
+    assert!(texts.iter().any(|t| t == "Messages"));
+    let newest = c.notice_log.last().map(|(t, _)| format!("T{t} "));
+    if let Some(prefix) = newest {
+        assert!(texts.iter().any(|t| t.starts_with(&prefix)), "{texts:?}");
+    }
+    assert_no_overlaps(&c, "map with strip and dock");
+    button(&mut c, "All messages");
+    assert!(matches!(c.modal, Some(Modal::Messages)));
+    key(&mut c, "Escape");
+    // Still no overlaps with a stack inspected and the dock squeezed.
+    let city = c.view().unwrap().observation.cities[0].clone();
+    c.inspect = Some((city.x, city.y));
+    assert_no_overlaps(&c, "map with a stack, strip and dock");
+    // A minimap click still only scrolls in the dock layout.
+    let pan = c.pan;
+    input(&mut c, Input::Click { x: 1000., y: 100. });
+    assert_ne!(c.pan, pan);
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "the strip's Wait, the dock and the settings never touch the game"
+    );
+}

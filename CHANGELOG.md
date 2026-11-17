@@ -5,6 +5,14 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Two more opt-in Settings options for the map screen (#312, #313), off by
+  default, on both clients. *Order buttons under the map* adds a strip with
+  the selected unit's orders the client supports (Move/View, Wait, Skip,
+  Found city, Activate), each sending exactly what its key sends; the map
+  gets shorter by the strip. *Message log in the right column* docks the
+  latest messages, newest first, with **All messages** opening the full log;
+  the minimap shrinks to make room. Settings now lists seven options.
+  Presentation only.
 - Layout B city window and science advisor (#314, #315), on both clients. The
   city window is one framed window under the menu bar: a title bar with
   Previous/Next city, a citizens strip (workers, then the specialists to

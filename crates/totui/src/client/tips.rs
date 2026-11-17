@@ -127,7 +127,7 @@ impl Client {
         let screen = |i: usize| {
             let (x, y) = paths::logical(o, i);
             let (px, py) = point(x, y);
-            on_map(px, py).then_some((px, py))
+            self.on_map(px, py).then_some((px, py))
         };
         // The description and route for one tile; `None` when it has neither.
         let mut tip = |x: u16, y: u16, area: (f64, f64, f64, f64, bool)| -> Option<Tip> {
@@ -178,7 +178,7 @@ impl Client {
         stacks.dedup();
         for (x, y) in stacks {
             let (px, py) = point(x, y);
-            if !in_view(px, py) {
+            if !self.in_view(px, py) {
                 continue;
             }
             let z = self.zoom;
@@ -194,7 +194,7 @@ impl Client {
             }
             let (x, y) = paths::logical(o, i);
             let (px, py) = point(x, y);
-            if !on_map(px, py) {
+            if !self.on_map(px, py) {
                 continue;
             }
             let z = self.zoom;

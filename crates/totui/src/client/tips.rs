@@ -108,7 +108,11 @@ impl Client {
     /// the route steps the path-preview tips point into.
     pub(super) fn map_tips(&self, v: &HumanView) -> (Vec<Tip>, Vec<RouteStep>) {
         let e = &self.enhancements;
-        if !(e.map_tooltips || e.path_preview) || self.modal.is_some() || self.city_open {
+        if !(e.map_tooltips || e.path_preview)
+            || self.modal.is_some()
+            || self.city_open
+            || self.menu.is_some()
+        {
             return Default::default();
         }
         let o = &v.observation;
@@ -120,7 +124,6 @@ impl Client {
                 self.pan.1 + f64::from(y) * 16. * self.zoom,
             )
         };
-        let on_map = |px: f64, py: f64| (12.0..752.0).contains(&px) && (100.0..680.0).contains(&py);
         let screen = |i: usize| {
             let (x, y) = paths::logical(o, i);
             let (px, py) = point(x, y);
@@ -175,7 +178,7 @@ impl Client {
         stacks.dedup();
         for (x, y) in stacks {
             let (px, py) = point(x, y);
-            if !(44.0..720.0).contains(&px) || !(150.0..640.0).contains(&py) {
+            if !in_view(px, py) {
                 continue;
             }
             let z = self.zoom;

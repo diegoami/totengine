@@ -5,6 +5,18 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Layout B map screen (#310, #311; owner choice recorded in
+  `docs/ui/layout-b.md`), on both clients. A **menu bar** (Game, Kingdom, View,
+  Orders, Advisors, World, Civilopedia) replaces the two button bars: every
+  map command is in a menu with its key, F10 opens the bar from the keyboard,
+  and an entry that cannot run right now is greyed and says why. The **right
+  column** now has a minimap of the known world (a click centres the map), a
+  status box (turn, government, treasury, rates, research progress), the
+  selected unit, the selected city with Manage city / Choose production, and
+  the end-of-turn prompt with End turn. Keys are unchanged. Presentation only:
+  no orders, rules, checkpoints or recordings change. The real-input checks
+  close the client through the Game menu (F10 on Linux, mouse on Windows).
+
 ## [0.20.0] — Client polish and opt-in conveniences on both clients
 
 Owner-called milestone, 2026-11-16. Everything since v0.19.0: UI quality

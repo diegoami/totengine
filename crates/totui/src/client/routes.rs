@@ -811,6 +811,7 @@ const HELP: [&[(&str, &str)]; 2] = [
         ("Arrows", "Select"),
         ("Enter / Esc", "Accept / cancel"),
         ("Tab", "Move button focus"),
+        ("F10", "Menu bar (arrows, Enter)"),
         ("?", "This help (our addition)"),
     ],
 ];

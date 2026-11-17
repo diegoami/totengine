@@ -425,20 +425,51 @@ fn input(c: &mut Client, i: Input) {
 fn key(c: &mut Client, k: &str) {
     input(c, Input::Key { key: k.into() });
 }
+/// Clicks the button labelled `label`; a map-screen command that lives in a
+/// menu (layout B, #310) is reached the way a player does: click the menu
+/// title, then the entry.
 fn button(c: &mut Client, label: &str) {
     let buttons = c.buttons();
     let b = buttons
         .iter()
         .find(|b| b.label == label)
         .or_else(|| buttons.iter().find(|b| b.label.contains(label)))
+        .filter(|b| !matches!(b.action, Action::Menu(_)));
+    if let Some(b) = b {
+        let (x, y) = (b.x + 3., b.y + 3.);
+        input(c, Input::Click { x, y });
+        return;
+    }
+    let (m, row) = (0..chrome::MENUS.len())
+        .find_map(|m| {
+            let items = c.menu_items(m);
+            items
+                .iter()
+                .position(|i| i.label == label)
+                .or_else(|| items.iter().position(|i| i.label.contains(label)))
+                .map(|row| (m, row))
+        })
         .unwrap_or_else(|| panic!("missing button {label}"));
-    input(
+    menu_entry(c, m, row);
+}
+/// Opens menu `m` by clicking its title and clicks entry `row`.
+fn menu_entry(c: &mut Client, m: usize, row: usize) {
+    let find = |c: &Client, a: &dyn Fn(&Action) -> bool| {
+        c.buttons()
+            .into_iter()
+            .find(|b| a(&b.action))
+            .map(|b| (b.x + 3., b.y + 3.))
+    };
+    let (x, y) = find(c, &|a| matches!(a, Action::Menu(n) if *n == m)).expect("menu title");
+    input(c, Input::Click { x, y });
+    assert_eq!(c.menu, Some(m), "menu {m} did not open: {}", c.status);
+    let (x, y) = find(
         c,
-        Input::Click {
-            x: b.x + 3.,
-            y: b.y + 3.,
-        },
-    );
+        &|a| matches!(a, Action::MenuItem(n, r) if (*n, *r) == (m, row)),
+    )
+    .expect("menu entry");
+    input(c, Input::Click { x, y });
+    assert_eq!(c.menu, None);
 }
 fn edit(c: &mut Client, value: &str) {
     let field = c.entry_meta().unwrap().id;
@@ -3250,12 +3281,13 @@ fn turn_feedback_banner_and_title_round() {
     let f = Fixture::new();
     let mut c = f.client();
     button(&mut c, "Start Original");
-    // The title bar carries the round once the game runs.
+    // The title, at the right end of the menu bar (layout B, #310), carries
+    // the round once the game runs.
     let title = |c: &Client| {
         c.frame().draws.iter().find_map(|d| match d {
-            Draw::Text {
-                x, y, size, text, ..
-            } if (*x, *y, *size) == (16., 16., style::TYPE_DISPLAY) => Some(text.clone()),
+            Draw::Text { y, text, .. } if *y < chrome::MENU_H && text.contains(" game") => {
+                Some(text.clone())
+            }
             _ => None,
         })
     };
@@ -3435,7 +3467,7 @@ fn reports_open_switch_sort_drill_down_and_return_without_mutation() {
     assert!(c.status.contains("no city"), "{}", c.status);
     key(&mut c, "Escape");
     // The toolbar button opens the same report; none of this changed the game.
-    button(&mut c, "Reports");
+    button(&mut c, "City status");
     assert!(matches!(
         c.modal,
         Some(Modal::Report {
@@ -3501,7 +3533,7 @@ fn generated_reports_route() {
         })
     ));
     r.key(&mut c, "Escape");
-    r.button(&mut c, "Reports");
+    r.button(&mut c, "City status");
     assert_eq!(title(&c), "Reports");
     r.key(&mut c, "Escape");
     r.save(&mut c, "repdone");
@@ -3755,7 +3787,7 @@ fn keyboard_help_opens_from_map_button_and_city_and_is_inert() {
     assert!(shows(&c, "This help (our addition)"));
     key(&mut c, "Escape");
     assert!(c.modal.is_none());
-    button(&mut c, "Keys [?]");
+    button(&mut c, "Keys");
     assert!(matches!(c.modal, Some(Modal::Help)));
     key(&mut c, "Enter");
     assert!(c.modal.is_none());
@@ -4282,4 +4314,160 @@ fn path_preview_is_opt_in_knowledge_bounded_and_never_touches_the_game() {
         "only the settings toggles changed it"
     );
     assert!(storage::load_enhancements(&f.saves()).path_preview);
+}
+
+#[test]
+fn layout_b_menus_and_column_reach_every_command_and_never_touch_the_game() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    assert!(c.modal.is_none(), "{}", c.status);
+    let before = c.checkpoint().unwrap();
+    // The two button bars are gone: map-screen buttons are menu titles or
+    // live in the right column (#310/#311).
+    for b in c.buttons() {
+        assert!(
+            matches!(b.action, Action::Menu(_)) || b.x >= chrome::COLUMN.0,
+            "stray map-screen button {} at ({}, {})",
+            b.label,
+            b.x,
+            b.y
+        );
+    }
+    let labels: Vec<String> = (0..chrome::MENUS.len())
+        .flat_map(|m| c.menu_items(m).into_iter().map(|i| i.label))
+        .collect();
+    for want in [
+        "Save game…",
+        "Load game…",
+        "New game…",
+        "Settings…",
+        "Keys…",
+        "Close client",
+        "Tax rates…",
+        "Revolution…",
+        "Cities",
+        "Center view",
+        "Zoom in",
+        "Zoom out",
+        "Standard zoom",
+        "Found city",
+        "Wait",
+        "Skip turn",
+        "Activate unit",
+        "End player turn",
+        "City status",
+        "Defense",
+        "Attitude",
+        "Trade",
+        "Science",
+        "Research…",
+        "Wonders of the World",
+        "Top cities",
+        "Civilization score",
+        "Demographics",
+        "Civilopedia…",
+    ] {
+        assert!(labels.iter().any(|l| l == want), "no menu entry {want}");
+    }
+    assert!(labels.iter().any(|l| l.starts_with("Messages")));
+    assert!(labels.iter().any(|l| l.starts_with("Switch to")));
+    // Every menu opens and closes by mouse; a click elsewhere only closes it
+    // and never reaches the map underneath.
+    let title = |c: &Client, m: usize| {
+        c.buttons()
+            .into_iter()
+            .find(|b| matches!(b.action, Action::Menu(n) if n == m))
+            .map(|b| (b.x + 4., b.y + 4.))
+            .unwrap()
+    };
+    let inspect = c.inspect;
+    for m in 0..chrome::MENUS.len() {
+        let (x, y) = title(&c, m);
+        input(&mut c, Input::Click { x, y });
+        assert_eq!(c.menu, Some(m));
+        assert!(c
+            .frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Rect { color, .. } if color == style::MENU_DROP)));
+        assert!(c.frame().tips.is_empty(), "no map tips under an open menu");
+        input(&mut c, Input::Click { x: 380., y: 390. });
+        assert_eq!(c.menu, None);
+        assert!(c.modal.is_none());
+    }
+    assert_eq!(
+        c.inspect, inspect,
+        "the closing click did not reach the map"
+    );
+    // Keyboard: F10 opens Game, arrows move, Escape closes; other keys close
+    // the menu and keep their meaning.
+    key(&mut c, "F10");
+    assert_eq!((c.menu, c.menu_row), (Some(0), Some(0)));
+    key(&mut c, "ArrowRight");
+    key(&mut c, "ArrowDown");
+    assert_eq!((c.menu, c.menu_row), (Some(1), Some(1)));
+    key(&mut c, "ArrowLeft");
+    key(&mut c, "ArrowLeft");
+    assert_eq!(c.menu, Some(chrome::MENUS.len() - 1));
+    key(&mut c, "Escape");
+    assert_eq!(c.menu, None);
+    key(&mut c, "F10");
+    key(&mut c, "?");
+    assert_eq!(c.menu, None);
+    assert!(matches!(c.modal, Some(Modal::Help)));
+    key(&mut c, "Escape");
+    // Enter runs the highlighted entry: Game > Save game… opens the dialog.
+    key(&mut c, "F10");
+    key(&mut c, "Enter");
+    assert!(matches!(c.modal, Some(Modal::Save)), "{}", c.status);
+    key(&mut c, "Escape");
+    // Menus only open over the map, never over a dialog.
+    key(&mut c, "?");
+    key(&mut c, "F10");
+    assert_eq!(c.menu, None);
+    key(&mut c, "Escape");
+    // An unavailable entry explains itself and does nothing.
+    c.active = None;
+    button(&mut c, "Found city");
+    assert_eq!(c.status, "Select an own unit first.");
+    assert!(c.modal.is_none());
+    // Menu entries run the same actions the keys do.
+    button(&mut c, "City status");
+    assert!(
+        matches!(c.modal, Some(Modal::Report { .. })),
+        "{}",
+        c.status
+    );
+    key(&mut c, "Escape");
+    button(&mut c, "Zoom in");
+    assert!(c.zoom > 1.);
+    button(&mut c, "Standard zoom");
+    assert_eq!(c.zoom, 1.);
+    // The right column: minimap, status and the end-of-turn slot.
+    let shows = |c: &Client, s: &str| {
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Text { text, x, .. } if *x >= chrome::COLUMN.0 && text.starts_with(s)))
+    };
+    assert!(shows(&c, "Turn "));
+    assert!(shows(&c, "Treasury: "));
+    assert!(shows(&c, "Research: "));
+    assert!(shows(&c, "Athena · size 1"));
+    assert!(c
+        .buttons()
+        .iter()
+        .any(|b| matches!(b.action, Action::End) && b.x >= chrome::COLUMN.0));
+    // A minimap click only scrolls.
+    let pan = c.pan;
+    input(&mut c, Input::Click { x: 1000., y: 160. });
+    assert_ne!(c.pan, pan);
+    assert!(c.modal.is_none() && c.menu.is_none());
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "menus, the column and the minimap never touch the game"
+    );
 }

@@ -1,6 +1,7 @@
 //! One controller, filtered presentation and persistence for both native adapters.
 mod atlas;
 pub mod browser;
+mod chrome;
 mod city;
 mod city_panels;
 #[cfg(feature = "desktop")]
@@ -24,6 +25,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+use chrome::{in_view, on_map};
 use city_panels::CityPanel;
 
 /// Message log rows per page and retained entries (#284).
@@ -377,6 +379,12 @@ enum Action {
     Skip,
     Center,
     Zoom(f64),
+    /// Standard zoom, centred (Shift+Z).
+    ZoomReset,
+    /// Opens or closes one menu of the menu bar (#310).
+    Menu(usize),
+    /// Runs one menu entry: `(menu, row)`.
+    MenuItem(usize, usize),
     Pan(f64, f64),
     Save,
     Load,
@@ -466,6 +474,10 @@ pub struct Client {
     enhancements: storage::Enhancements,
     pan: (f64, f64),
     zoom: f64,
+    /// The open menu of the menu bar (#310) and its highlighted row;
+    /// presentation only.
+    menu: Option<usize>,
+    menu_row: Option<usize>,
     assets: String,
     fallback_pack: Option<PathBuf>,
 }
@@ -537,6 +549,8 @@ impl Client {
             enhancements,
             pan: (0., 0.),
             zoom: 1.,
+            menu: None,
+            menu_row: None,
             assets: "none".into(),
             fallback_pack,
         }
@@ -898,8 +912,24 @@ impl Client {
                     return Err("Invalid pointer position".into());
                 }
                 let buttons = self.buttons();
+                // An open menu takes the click: an entry runs, a title
+                // switches menus, anywhere else only closes it (#310).
+                if self.menu.is_some() {
+                    if let Some(b) = buttons.into_iter().find(|b| {
+                        matches!(b.action, Action::Menu(_) | Action::MenuItem(..))
+                            && b.contains(x, y)
+                    }) {
+                        return self.action(b.action);
+                    }
+                    self.menu = None;
+                    self.menu_row = None;
+                    return Ok(());
+                }
                 if let Some(b) = buttons.into_iter().find(|b| b.contains(x, y)) {
                     return self.action(b.action);
+                }
+                if self.minimap_click(x, y) {
+                    return Ok(());
                 }
                 if matches!(self.modal, Some(Modal::Report { .. })) {
                     return self.report_click(x, y);
@@ -920,17 +950,13 @@ impl Client {
                         return Ok(());
                     }
                 }
-                if self.modal.is_none()
-                    && self.loaded.is_some()
-                    && (12.0..752.0).contains(&x)
-                    && (100.0..680.0).contains(&y)
-                {
+                if self.modal.is_none() && self.loaded.is_some() && on_map(x, y) {
                     self.map_click(x, y, id)
                 } else if self.view().is_some_and(|v| v.decision.is_some()) {
                     // A click that lands on nothing while a required choice is
                     // pending gets the same visible reason the keys give
                     // (#283/#284: no silent dead zones during acceptance).
-                    self.status = "Resolve the required choice first; Esc returns to inspection, the toolbar Research button reopens it.".into();
+                    self.status = "Resolve the required choice first; Esc returns to inspection, Advisors > Research reopens it.".into();
                     Ok(())
                 } else {
                     Ok(())
@@ -965,6 +991,14 @@ impl Client {
         };
     }
     fn key(&mut self, key: &str) -> Result<(), String> {
+        if let Some(result) = self.menu_key(key) {
+            return result;
+        }
+        if key == "F10" && self.map_surface() {
+            self.menu = Some(0);
+            self.menu_row = Some(0);
+            return Ok(());
+        }
         if key == "Tab" || key == "ShiftTab" {
             let count = self.buttons().len();
             if count > 0 {
@@ -1048,7 +1082,7 @@ impl Client {
                     if self.view().is_some_and(|v| v.decision.is_some())
                         && (key.starts_with('F') || key.len() == 1)
                     {
-                        self.status = "Resolve the required choice first; Esc returns to inspection, the toolbar Research button reopens it.".into();
+                        self.status = "Resolve the required choice first; Esc returns to inspection, Advisors > Research reopens it.".into();
                     }
                     Ok(())
                 }
@@ -1080,11 +1114,7 @@ impl Client {
                 "Ctrl+l" => self.action(Action::Load),
                 "z" | "+" | "=" => self.action(Action::Zoom(1.25)),
                 "x" | "-" => self.action(Action::Zoom(0.8)),
-                "Shift+z" => {
-                    self.zoom = 1.;
-                    self.center();
-                    Ok(())
-                }
+                "Shift+z" => self.action(Action::ZoomReset),
                 "ArrowLeft" if self.moving => self.step(-2, 0),
                 "ArrowRight" if self.moving => self.step(2, 0),
                 "ArrowUp" if self.moving => self.step(0, -2),
@@ -1628,6 +1658,19 @@ impl Client {
                 })?;
             }
             Action::Center => self.center(),
+            Action::ZoomReset => {
+                self.zoom = 1.;
+                self.center();
+            }
+            Action::Menu(m) => {
+                if self.menu == Some(m) {
+                    self.menu = None;
+                } else if self.map_surface() {
+                    self.menu = Some(m);
+                }
+                self.menu_row = None;
+            }
+            Action::MenuItem(m, row) => self.menu_item(m, row)?,
             Action::Zoom(f) => {
                 self.zoom = (self.zoom * f).clamp(0.5, 2.);
                 self.center();
@@ -1715,8 +1758,11 @@ impl Client {
             // diamond would leave the visible workspace.
             let px = self.pan.0 + f64::from(x) * 32. * self.zoom;
             let py = self.pan.1 + f64::from(y) * 16. * self.zoom;
-            self.pan.0 += px.clamp(44. + 32. * self.zoom, 720. - 32. * self.zoom) - px;
-            self.pan.1 += py.clamp(150. + 16. * self.zoom, 639. - 16. * self.zoom) - py;
+            let (mx, my, mw, mh) = chrome::MAP;
+            self.pan.0 +=
+                px.clamp(mx + 32. + 32. * self.zoom, mx + mw - 32. - 32. * self.zoom) - px;
+            self.pan.1 +=
+                py.clamp(my + 50. + 16. * self.zoom, my + mh - 41. - 16. * self.zoom) - py;
             self.status = format!("Viewing ({x}, {y}); A activates an own unit, V changes mode.");
             return Ok(());
         }
@@ -2342,73 +2388,13 @@ impl Client {
             );
             return b;
         }
-        for (i, (label, action)) in [
-            (
-                if self.moving {
-                    "Moving [V]"
-                } else {
-                    "Viewing [V]"
-                },
-                Action::Mode,
-            ),
-            ("Found [B]", Action::Found),
-            ("Research", Action::Research),
-            ("Cities", Action::City),
-            ("Wait [W]", Action::Wait),
-            ("Skip [Space]", Action::Skip),
-            ("Save [Ctrl+S]", Action::Save),
-            ("Load [Ctrl+L]", Action::Load),
-        ]
-        .into_iter()
-        .enumerate()
-        {
-            add(12. + i as f64 * 126., 48., 120., 38., label.into(), action);
-        }
-        add(770., 622., 240., 50., "End [Ctrl+N]".into(), Action::End);
-        add(770., 574., 115., 36., "Center".into(), Action::Center);
-        add(895., 574., 52., 36., "+".into(), Action::Zoom(1.25));
-        add(955., 574., 55., 36., "−".into(), Action::Zoom(0.8));
-        add(770., 392., 78., 26., "Rates".into(), Action::Rates);
-        add(852., 392., 78., 26., "Revolt".into(), Action::Revolution);
-        add(934., 392., 78., 26., "Science".into(), Action::Science);
-        add(12., 685., 230., 30., "Settings".into(), Action::Settings);
-        add(250., 685., 110., 30., "New game".into(), Action::NewGame);
-        add(368., 685., 120., 30., "Close client".into(), Action::Quit);
-        add(
-            496.,
-            685.,
-            110.,
-            30.,
-            "Reports".into(),
-            Action::Report(ReportFamily::CityStatus),
-        );
-        add(614., 685., 130., 30., "Civilopedia".into(), Action::Pedia);
-        if self.city.is_some() {
-            add(
-                752.,
-                685.,
-                170.,
-                30.,
-                "Manage city".into(),
-                Action::OpenCity,
-            );
-        }
-        add(930., 685., 80., 30., "Keys [?]".into(), Action::Help);
-        // The opponents' Pause/Continue button owns this slot while they move;
-        // no new notices can arrive then.
-        if self.view().is_some_and(|v| v.phase != Phase::Opponents) {
-            add(
-                770.,
-                528.,
-                240.,
-                28.,
-                if self.notice_log.is_empty() {
-                    "Messages".into()
-                } else {
-                    format!("Messages ({})", self.notice_log.len())
-                },
-                Action::Messages,
-            );
+        // Layout B (#310/#311): every map-screen command lives in the menu
+        // bar; the right column keeps the stack under the cursor, the
+        // selected city's two entries and the end-of-turn slot.
+        if let Some(v) = self.view() {
+            for cb in self.column_buttons(&v) {
+                add(cb.x, cb.y, cb.w, cb.h, cb.label, cb.action);
+            }
         }
         if self.notice_overlay() {
             let (_, (x, y, w, h)) = self.notice_overlay_rect();
@@ -2429,53 +2415,8 @@ impl Client {
                 Action::DismissNotices,
             );
         }
-        if self.view().is_some_and(|v| v.phase == Phase::Opponents) {
-            add(
-                770.,
-                530.,
-                240.,
-                36.,
-                if self.advancing {
-                    "Pause opponents"
-                } else {
-                    "Continue opponents"
-                }
-                .into(),
-                Action::Work,
-            );
-        }
-        if let Some(city) = self.city {
-            add(
-                770.,
-                350.,
-                240.,
-                38.,
-                "Choose production".into(),
-                Action::Production(city),
-            );
-        }
-        if let Some(v) = self.view() {
-            for (i, e) in v
-                .units
-                .iter()
-                .filter(|e| {
-                    v.observation
-                        .units
-                        .iter()
-                        .any(|u| u.index == e.slot && self.inspect == Some((u.x, u.y)))
-                })
-                .take(3)
-                .enumerate()
-            {
-                add(
-                    770.,
-                    475. + i as f64 * 30.,
-                    240.,
-                    28.,
-                    format!("Activate unit {}", e.slot),
-                    Action::Unit(*e),
-                );
-            }
+        for mb in self.menu_buttons() {
+            add(mb.x, mb.y, mb.w, mb.h, mb.label, mb.action);
         }
         b
     }
@@ -2504,179 +2445,46 @@ impl Client {
             };
         }
         let mut draws = vec![rect(0., 0., 1024., 768., style::BG)];
-        draws.push(text(
-            16.,
-            16.,
-            &self.loaded.as_ref().map_or_else(
-                || "ToTEngine — surface game".to_string(),
-                |l| {
-                    let name = if l.resources.profile.starts_with("Open demo") {
-                        "ToTEngine — Open demo / Isotrident"
-                    } else if l.resources.isotrident.is_some() {
-                        "ToTEngine — ToT rules / Isotrident"
-                    } else {
-                        "ToTEngine — Original surface game"
-                    };
-                    // The current round in the title keeps the turn visible
-                    // through opponent phases (#283).
-                    match self.view().map(|v| v.observation.turn) {
-                        Some(turn) if turn > 0 => format!("{name} · Turn {turn}"),
-                        _ => name.to_string(),
-                    }
-                },
-            ),
-            style::TYPE_DISPLAY,
-            style::TEXT_BRIGHT,
-        ));
+        let title: String = self.loaded.as_ref().map_or_else(
+            || "ToTEngine — surface game".to_string(),
+            |l| {
+                let name = if l.resources.profile.starts_with("Open demo") {
+                    "ToTEngine — Open demo / Isotrident"
+                } else if l.resources.isotrident.is_some() {
+                    "ToTEngine — ToT rules / Isotrident"
+                } else {
+                    "ToTEngine — Original surface game"
+                };
+                // The current round in the title keeps the turn visible
+                // through opponent phases (#283).
+                match self.view().map(|v| v.observation.turn) {
+                    Some(turn) if turn > 0 => format!("{name} · Turn {turn}"),
+                    _ => name.to_string(),
+                }
+            },
+        );
+        // Layout B (#310): on the map screen the title sits at the right end
+        // of the menu bar; setup and the city window keep the large title.
+        let map_screen = self.loaded.is_some() && !self.city_open;
+        if !map_screen {
+            draws.push(text(
+                16.,
+                16.,
+                &title,
+                style::TYPE_DISPLAY,
+                style::TEXT_BRIGHT,
+            ));
+        }
         let view = self.view();
         if let Some(v) = &view {
             if self.city_open {
                 self.city_draw(&mut draws, v);
             } else {
-                draws.push(Draw::Tile {
-                    x: 764.,
-                    y: 100.,
-                    w: 250.,
-                    h: 580.,
-                    sprite: "panel".into(),
-                });
-                draws.push(rect(12., 100., 740., 580., style::INSET));
+                let (mx, my, mw, mh) = chrome::MAP;
+                draws.push(rect(mx, my, mw, mh, style::INSET));
                 self.map_draw(&mut draws, v);
-                let o = &v.observation;
-                for (i, line) in [
-                    format!("Turn {} · Civ {}", o.turn, o.civ),
-                    format!("Treasury: {}", o.treasury),
-                    format!(
-                        "Research: {} / {}",
-                        o.research.progress,
-                        o.research
-                            .cost
-                            .map_or_else(|| "unavailable".into(), |n| n.to_string())
-                    ),
-                    match v.phase {
-                        Phase::Human if v.decision.is_some() => "Choice required",
-                        Phase::Human if self.moving => "Moving units",
-                        Phase::Human
-                            if !v
-                                .observation
-                                .units
-                                .iter()
-                                .any(|u| u.owner == o.civ && u.moves_left > 0) =>
-                        {
-                            "End of turn"
-                        }
-                        Phase::Human => "Viewing pieces",
-                        Phase::Opponents => "Opponents playing",
-                        Phase::Eliminated => "Your civilization is eliminated",
-                        Phase::TurnLimit => "Turn limit reached",
-                    }
-                    .into(),
-                ]
-                .into_iter()
-                .enumerate()
-                {
-                    draws.push(text(
-                        770.,
-                        110. + i as f64 * 30.,
-                        &line,
-                        style::TYPE_BODY,
-                        style::TEXT,
-                    ));
-                }
-                if let Some(target) = o.research.target {
-                    draws.push(text(
-                        770.,
-                        220.,
-                        &format!("Topic: {}", self.tech_name(target)),
-                        style::TYPE_SMALL,
-                        style::TEXT_BRIGHT,
-                    ));
-                }
-                if let Some(u) = self
-                    .active
-                    .and_then(|e| o.units.iter().find(|u| u.index == e.slot))
-                {
-                    let name = self
-                        .loaded
-                        .as_ref()
-                        .unwrap()
-                        .resources
-                        .rules
-                        .unit_names()
-                        .get(u.type_id as usize)
-                        .unwrap_or(&"Unit")
-                        .to_string();
-                    draws.push(text(
-                        770.,
-                        240.,
-                        &format!("{name} #{}", u.index),
-                        style::TYPE_BODY,
-                        style::GOLD,
-                    ));
-                    draws.push(text(
-                        770.,
-                        268.,
-                        &format!("({}, {}) · moves {}/3", u.x, u.y, u.moves_left),
-                        style::TYPE_BODY,
-                        style::TEXT,
-                    ));
-                }
-                if let Some((_, hp, max)) = self
-                    .active
-                    .and_then(|e| v.unit_health.iter().find(|(slot, _, _)| *slot == e.slot))
-                {
-                    draws.push(text(
-                        770.,
-                        285.,
-                        &format!("Health: {hp}/{max}"),
-                        style::TYPE_SMALL,
-                        style::TEXT_DIM,
-                    ));
-                }
-                if let Some(c) = self
-                    .city
-                    .and_then(|e| o.cities.iter().find(|c| c.index == e.slot))
-                {
-                    draws.push(text(
-                        770.,
-                        300.,
-                        &format!("{} · size {}", c.name, c.size),
-                        style::TYPE_BODY,
-                        style::GOLD,
-                    ));
-                    draws.push(text(
-                        770.,
-                        325.,
-                        &format!(
-                            "{} · shields {}",
-                            self.item_name(c.building.unwrap_or(0)),
-                            c.shield_box.unwrap_or(0)
-                        ),
-                        style::TYPE_BODY,
-                        style::TEXT,
-                    ));
-                }
-                if let Some(e) = self
-                    .city
-                    .and_then(|city| o.city_economy.iter().find(|e| e.index == city.slot))
-                {
-                    for (i, line) in [
-                        format!("Food {:+} · shields {}", e.food_surplus, e.net_shields),
-                        format!("Science {} · tax {}", e.finance.science, e.finance.taxes),
-                        format!("Happy {} · unhappy {}", e.happy, e.unhappy),
-                    ]
-                    .into_iter()
-                    .enumerate()
-                    {
-                        draws.push(text(
-                            770.,
-                            422. + i as f64 * 16.,
-                            &line,
-                            style::TYPE_SMALL,
-                            style::TEXT_DIM,
-                        ));
-                    }
-                }
+                self.column_draw(&mut draws, v);
+                self.menu_bar_draw(&mut draws, &title);
                 let notices = v
                     .notices
                     .iter()
@@ -2685,8 +2493,8 @@ impl Client {
                     .join(" · ");
                 draws.push(text(
                     16.,
-                    724.,
-                    &notices.chars().take(110).collect::<String>(),
+                    722.,
+                    &notices.chars().take(100).collect::<String>(),
                     style::TYPE_SMALL,
                     style::TEXT_DIM,
                 ));
@@ -2954,6 +2762,9 @@ impl Client {
                 .unwrap_or(style::TYPE_BODY)
         };
         for (i, b) in buttons.iter().enumerate() {
+            if matches!(b.action, Action::Menu(_) | Action::MenuItem(..)) {
+                continue;
+            }
             let primary = matches!(b.action, Action::QuickStart);
             let focused = i == self.focus_button;
             let fill = if primary {
@@ -3012,6 +2823,9 @@ impl Client {
                     sprite: format!("citizen-{role}"),
                 });
             }
+        }
+        if map_screen {
+            self.menu_draw(&mut draws, &buttons, self.focus_button);
         }
         if let Some(e) = self.entry_meta() {
             draws.push(rect(e.x - 1., e.y - 1., e.w + 2., e.h + 2., style::GOLD));
@@ -3094,12 +2908,8 @@ impl Client {
     }
     fn map_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
         let o = &v.observation;
-        let color = |owner: u8| {
-            [
-                "#aaa79a", "#e8c55b", "#709de5", "#e77e72", "#77c98a", "#c68add", "#5ac7d0",
-                "#efb775",
-            ][usize::from(owner.min(7))]
-        };
+        let color = chrome::civ_color;
+        let (mx, my, mw, mh) = chrome::MAP;
         let point = |x: u16, y: u16| {
             (
                 self.pan.0 + f64::from(x) * 32. * self.zoom,
@@ -3111,8 +2921,8 @@ impl Client {
             let y = (i / (usize::from(o.w2) / 2)) as u16;
             let x = ((i % (usize::from(o.w2) / 2)) * 2) as u16 + (y & 1);
             let (px, py) = point(x, y);
-            if !(12. + 32. * self.zoom..752. - 32. * self.zoom).contains(&px)
-                || !(100. + 48. * self.zoom..680. - 16. * self.zoom).contains(&py)
+            if !(mx + 32. * self.zoom..mx + mw - 32. * self.zoom).contains(&px)
+                || !(my + 48. * self.zoom..my + mh - 16. * self.zoom).contains(&py)
             {
                 continue;
             }
@@ -3161,7 +2971,7 @@ impl Client {
         }
         for c in &o.cities {
             let (px, py) = point(c.x, c.y);
-            if !(44.0..720.0).contains(&px) || !(150.0..640.0).contains(&py) {
+            if !in_view(px, py) {
                 continue;
             }
             draws.push(Draw::Sprite {
@@ -3182,7 +2992,7 @@ impl Client {
         }
         for u in self.display_units(v) {
             let (px, py) = point(u.x, u.y);
-            if !(44.0..720.0).contains(&px) || !(150.0..640.0).contains(&py) {
+            if !in_view(px, py) {
                 continue;
             }
             let selected = self.active.is_some_and(|e| e.slot == u.index);
@@ -3226,7 +3036,7 @@ impl Client {
         let cursor = if self.moving { None } else { self.inspect };
         if let Some((x, y)) = cursor {
             let (px, py) = point(x, y);
-            if (44.0..720.0).contains(&px) && (150.0..640.0).contains(&py) {
+            if in_view(px, py) {
                 draws.push(Draw::Cursor {
                     x: px,
                     y: py,

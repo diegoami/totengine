@@ -1,5 +1,5 @@
 //! Native SDL presentation: direct calls to the shared controller; no HTTP.
-use super::{Client, Draw, Input, HEIGHT, WIDTH};
+use super::{stage_width, Client, Draw, Input, HEIGHT, WIDTH};
 use sdl2::{
     event::{Event, WindowEvent},
     keyboard::{Keycode, Mod},
@@ -256,7 +256,30 @@ pub fn run(mut client: Client) -> Result<(), String> {
     // click or key restarts the wait, so a tip never hides what was clicked.
     let mut rested_since = Instant::now();
     let mut pointer_inside = false;
+    // The stage width and full-screen state last reported to the client
+    // (#321): the logical stage widens with the window, 768 high.
+    let mut display = (WIDTH, false);
     'running: loop {
+        {
+            let (w, h) = canvas.window().size();
+            let fullscreen = canvas.window().fullscreen_state() != sdl2::video::FullscreenType::Off;
+            let now = (stage_width(w, h), fullscreen);
+            if now != display {
+                display = now;
+                canvas
+                    .set_logical_size(now.0, HEIGHT)
+                    .map_err(|e| e.to_string())?;
+                id += 1;
+                let _ = client.input(
+                    client.frame().revision,
+                    id,
+                    Input::Display {
+                        width: now.0,
+                        fullscreen: now.1,
+                    },
+                );
+            }
+        }
         let before = client.frame();
         if let Some(entry) = &before.entry {
             editor.sync(entry);
@@ -420,6 +443,14 @@ pub fn run(mut client: Client) -> Result<(), String> {
                         } else {
                             None
                         }
+                    } else if !repeat
+                        && k == Keycode::Return
+                        && keymod.intersects(Mod::LALTMOD | Mod::RALTMOD)
+                    {
+                        // Full screen toggle (#321).
+                        Some(Input::Key {
+                            key: "Alt+Enter".into(),
+                        })
                     } else if !repeat && !keymod.intersects(Mod::LALTMOD | Mod::RALTMOD) {
                         key(
                             k,
@@ -448,6 +479,15 @@ pub fn run(mut client: Client) -> Result<(), String> {
             break;
         }
         let frame = client.frame();
+        // Apply the player's full-screen choice (#321); the next pass reports
+        // the window's actual state back to the client.
+        if frame.fullscreen != display.1 {
+            let _ = canvas.window_mut().set_fullscreen(if frame.fullscreen {
+                sdl2::video::FullscreenType::Desktop
+            } else {
+                sdl2::video::FullscreenType::Off
+            });
+        }
         if frame.assets != assets {
             assets = frame.assets.clone();
             sprites.clear();

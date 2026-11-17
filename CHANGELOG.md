@@ -5,6 +5,14 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Use the whole screen (#321), on both clients. The logical stage stays 768
+  high and widens with the window up to 21:9, so a 16:9 full screen no longer
+  shows black side bars: the map screen's map grows, the right column and menu
+  bar follow the right edge, and dialogs, the city window and setup stay
+  centred. **Alt+Enter** or **View > Full screen** toggles full screen
+  (desktop: borderless full screen; browser: the Fullscreen API). Adapters
+  report the stage width and full-screen state through a presentation-only
+  `display` input; 4:3 windows are unchanged.
 - Two more opt-in Settings options for the map screen (#312, #313), off by
   default, on both clients. *Order buttons under the map* adds a strip with
   the selected unit's orders the client supports (Move/View, Wait, Skip,

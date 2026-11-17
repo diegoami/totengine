@@ -27,19 +27,41 @@ function id() {
 let paintedFrame = null, paintedImages = new Map();
 // Map-tooltip pointer state (#284); declared before any paint, like the above.
 let hover = null, hoverTimer = null;
+// Logical stage width (#321): 768 high, as wide as the window allows from
+// 1024 (4:3) to 1792 (21:9). The core draws for the width it was told;
+// `stageW` is the width of the frame on screen.
+let stageW = 1024, pendingDisplay = false, displaySent = false;
+function wantedWidth() {
+  return Math.min(1792, Math.max(1024, Math.floor(innerWidth * 768 / Math.max(1, innerHeight))));
+}
+// Reported on load, on resize and on full-screen changes only, never in
+// answer to a frame: two tabs of different sizes must not take turns
+// overriding each other. The last one resized wins; the other letterboxes.
+function sendDisplay() {
+  if (!frame) return;
+  if (busy) pendingDisplay = true;
+  else send({ type: "display", width: wantedWidth(), fullscreen: !!document.fullscreenElement });
+}
 function resize() {
-  scale = Math.min(innerWidth / 1024, innerHeight / 768);
-  stage.style.transform = `translate(${(innerWidth - 1024 * scale) / 2}px,${(innerHeight - 768 * scale) / 2}px) scale(${scale})`;
-  // Native-resolution backing store (#281): the element stays 1024x768 CSS px
+  stageW = paintedFrame?.width || 1024;
+  scale = Math.min(innerWidth / stageW, innerHeight / 768);
+  for (const el of [stage, canvas]) el.style.width = stageW + "px";
+  stage.style.transform = `translate(${(innerWidth - stageW * scale) / 2}px,${(innerHeight - 768 * scale) / 2}px) scale(${scale})`;
+  // Native-resolution backing store (#281): the element stays stageW x 768 CSS px
   // and the stage transform scales it, so on-screen device pixels are
-  // 1024*scale*dpr wide — exactly the backing store below. Text renders
+  // stageW*scale*dpr wide — exactly the backing store below. Text renders
   // vector-crisp through the draw transform; sprites stay nearest-neighbour.
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.round(1024 * scale * dpr);
+  canvas.width = Math.round(stageW * scale * dpr);
   canvas.height = Math.round(768 * scale * dpr);
   drawCanvas();
 }
-addEventListener("resize", resize);
+addEventListener("resize", () => {
+  resize();
+  sendDisplay();
+});
+// Leaving full screen with the browser's own keys reports the real state.
+document.addEventListener("fullscreenchange", sendDisplay);
 resize();
 function showError(s) {
   error.textContent = s;
@@ -70,11 +92,11 @@ async function sprite(key) {
 }
 function drawCanvas() {
   if (!paintedFrame) return;
-  // Draw in logical 1024x768 coordinates; the transform maps them onto the
+  // Draw in logical stageW x 768 coordinates; the transform maps them onto the
   // native-resolution backing store set in resize() (#281).
   const dpr = window.devicePixelRatio || 1;
   ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
-  ctx.clearRect(0, 0, 1024, 768);
+  ctx.clearRect(0, 0, stageW, 768);
   ctx.imageSmoothingEnabled = false;
   const tip = hoverTip();
   for (const d of tip ? paintedFrame.draws.concat(tipDraws(tip)) : paintedFrame.draws) {
@@ -183,7 +205,18 @@ async function paint(next) {
   if (serial !== paintSerial) return;
   paintedFrame = next;
   paintedImages = ready;
-  drawCanvas();
+  if (next.width !== stageW) resize();
+  else drawCanvas();
+  // Full screen follows the player's choice (#321). A refused request (no
+  // recent user gesture) reports the real state back.
+  if (next.fullscreen && !document.fullscreenElement)
+    document.documentElement.requestFullscreen().catch(sendDisplay);
+  else if (!next.fullscreen && document.fullscreenElement)
+    document.exitFullscreen().catch(() => {});
+  if (!displaySent) {
+    displaySent = true;
+    setTimeout(sendDisplay, 0);
+  }
   const meta = next.entry;
   if (meta) {
     if (entry.dataset.field !== meta.id) {
@@ -245,6 +278,8 @@ async function send(input, requestId = id()) {
       pendingKey = { input, field: entry.dataset.field };
     // Wheel notches only scroll lists; dropping one while busy is harmless.
     else if (input.type === "wheel") return;
+    // Re-sent once the request in flight finishes.
+    else if (input.type === "display") { pendingDisplay = true; return; }
     else if (input.type !== "tick") showError("Input is pending; wait for the refreshed selection");
     return;
   }
@@ -307,6 +342,10 @@ async function send(input, requestId = id()) {
       if (!entry.hidden && entry.dataset.field === pending.field)
         setTimeout(() => send(pending.input), 0);
     }
+    if (pendingDisplay) {
+      pendingDisplay = false;
+      setTimeout(sendDisplay, 0);
+    }
     // Every acknowledged response can be the last request before opponents
     // need another tick, including a queued double click or focus transition.
     if (receivedFrame) resumeOpponents();
@@ -342,6 +381,11 @@ entry.addEventListener("input", () => {
   }
 });
 addEventListener("keydown", (e) => {
+  if (!e.repeat && e.altKey && e.key === "Enter") {
+    e.preventDefault();
+    send({ type: "key", key: "Alt+Enter" });
+    return;
+  }
   if (e.repeat || e.altKey) return;
   const editing = document.activeElement === entry;
   if (editing && !["Enter", "Escape", "Tab"].includes(e.key)) return;

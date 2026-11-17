@@ -37,6 +37,16 @@ const NOTICE_OVERLAY_LINES: usize = 6;
 
 pub const WIDTH: u32 = 1024;
 pub const HEIGHT: u32 = 768;
+/// Widest logical stage (21:9 at 768 high); wider windows letterbox (#321).
+pub const MAX_WIDTH: u32 = 1792;
+/// The logical stage width for a window `w`×`h` pixels: 768 high, as wide as
+/// the window's aspect allows, from 1024 (4:3) up to `MAX_WIDTH`.
+pub fn stage_width(w: u32, h: u32) -> u32 {
+    if h == 0 {
+        return WIDTH;
+    }
+    ((f64::from(w) * f64::from(HEIGHT) / f64::from(h)).floor() as u32).clamp(WIDTH, MAX_WIDTH)
+}
 // Presentation labels for the authored demo, kept separate from its versioned
 // rules so existing demo checkpoints retain their original identity.
 const DEMO_TECH_NAMES: [&str; 12] = [
@@ -87,6 +97,13 @@ pub enum Input {
     },
     Focus {
         focused: bool,
+    },
+    /// The adapter's display (#321): the logical stage width that fits the
+    /// window at 768 high, and whether it is full screen. Presentation-only
+    /// and accepted at any revision, since a window can resize at any time.
+    Display {
+        width: u32,
+        fullscreen: bool,
     },
     Tick,
 }
@@ -169,6 +186,11 @@ pub struct Frame {
     pub entry: Option<Entry>,
     pub status: String,
     pub assets: String,
+    /// Logical width the draws use (#321); the height is always 768.
+    pub width: f64,
+    /// The player asked for full screen (View menu or Alt+Enter); adapters
+    /// apply it and report back through `Input::Display`.
+    pub fullscreen: bool,
     /// Map tooltips (#284), when enabled: each client shows a tip's draws
     /// after the pointer rests inside its hit area. Built from the filtered
     /// view only; showing one never sends input.
@@ -390,6 +412,8 @@ enum Action {
     MenuItem(usize, usize),
     /// Flips the science advisor's available-advances order (#315).
     ScienceSort,
+    /// Asks the adapter for full screen, or back to a window (#321).
+    FullScreen,
     Pan(f64, f64),
     Save,
     Load,
@@ -483,6 +507,10 @@ pub struct Client {
     /// presentation only.
     menu: Option<usize>,
     menu_row: Option<usize>,
+    /// Logical stage width reported by the adapter (#321).
+    stage_w: f64,
+    /// Full screen as requested by the player (#321).
+    fullscreen: bool,
     /// The science advisor lists available advances by name (#315).
     science_by_name: bool,
     assets: String,
@@ -558,6 +586,8 @@ impl Client {
             zoom: 1.,
             menu: None,
             menu_row: None,
+            stage_w: f64::from(WIDTH),
+            fullscreen: false,
             science_by_name: false,
             assets: "none".into(),
             fallback_pack,
@@ -656,9 +686,10 @@ impl Client {
                         .map(|c| (c.x, c.y))
                 });
             if let Some((x, y)) = spot {
+                let (ax, ay) = self.anchor();
                 self.pan = (
-                    380. - f64::from(x) * 32. * self.zoom,
-                    390. - f64::from(y) * 16. * self.zoom,
+                    ax - f64::from(x) * 32. * self.zoom,
+                    ay - f64::from(y) * 16. * self.zoom,
                 );
             }
         }
@@ -829,6 +860,14 @@ impl Client {
         if self.receipts.len() >= 100_000 {
             return Err("Client input limit reached; save and restart".into());
         }
+        if let Input::Display { width, fullscreen } = input {
+            // A window can resize at any time; never stale (#321).
+            self.stage_w = f64::from(width.clamp(WIDTH, MAX_WIDTH));
+            self.fullscreen = fullscreen;
+            self.revision += 1;
+            self.receipts.insert(id, (revision, input));
+            return Ok(());
+        }
         if revision != self.revision {
             return Err("Stale input: inspect the refreshed selection before acting".into());
         }
@@ -942,15 +981,17 @@ impl Client {
                 if self.minimap_click(x, y) {
                     return Ok(());
                 }
+                // Dialogs and the city window are centred on a wide stage.
+                let cx = x - self.dx();
                 if matches!(self.modal, Some(Modal::Report { .. })) {
-                    return self.report_click(x, y);
+                    return self.report_click(cx, y);
                 }
                 if matches!(self.modal, Some(Modal::Pedia { .. })) {
-                    self.pedia_click(x, y);
+                    self.pedia_click(cx, y);
                     return Ok(());
                 }
                 if self.modal.is_none() && self.city_open {
-                    return self.city_click(x, y);
+                    return self.city_click(cx, y);
                 }
                 if self.notice_overlay() {
                     let (_, (ox, oy, ow, oh)) = self.notice_overlay_rect();
@@ -974,6 +1015,7 @@ impl Client {
                 }
             }
             Input::Key { key } => self.key(&key),
+            Input::Display { .. } => Ok(()),
             Input::Wheel { x, y, delta } => {
                 if !x.is_finite() || !y.is_finite() {
                     return Err("Invalid pointer position".into());
@@ -997,13 +1039,18 @@ impl Client {
             Some(Modal::Messages | Modal::Load) => self.action(Action::Page(delta)),
             Some(_) if !self.current_choices().is_empty() => self.action(Action::Page(delta)),
             Some(_) => Ok(()),
-            None if self.city_open && x >= 736. => self.action(Action::CityPanelPage(delta)),
+            None if self.city_open && x - self.dx() >= 736. => {
+                self.action(Action::CityPanelPage(delta))
+            }
             None => Ok(()),
         };
     }
     fn key(&mut self, key: &str) -> Result<(), String> {
         if let Some(result) = self.menu_key(key) {
             return result;
+        }
+        if key == "Alt+Enter" {
+            return self.action(Action::FullScreen);
         }
         if key == "F10" && self.map_surface() {
             self.menu = Some(0);
@@ -1308,9 +1355,10 @@ impl Client {
                     .city
                     .and_then(|e| v.observation.cities.iter().find(|c| c.index == e.slot))
                 {
+                    let (ax, ay) = self.anchor();
                     self.pan = (
-                        380. - f64::from(c.x) * 32. * self.zoom,
-                        390. - f64::from(c.y) * 16. * self.zoom,
+                        ax - f64::from(c.x) * 32. * self.zoom,
+                        ay - f64::from(c.y) * 16. * self.zoom,
                     );
                 }
                 self.action(Action::OpenCity)?;
@@ -1683,6 +1731,15 @@ impl Client {
             }
             Action::MenuItem(m, row) => self.menu_item(m, row)?,
             Action::ScienceSort => self.science_by_name = !self.science_by_name,
+            Action::FullScreen => {
+                self.fullscreen = !self.fullscreen;
+                self.status = if self.fullscreen {
+                    "Full screen: Alt+Enter or View > Window returns to a window."
+                } else {
+                    "Windowed."
+                }
+                .into();
+            }
             Action::Zoom(f) => {
                 self.zoom = (self.zoom * f).clamp(0.5, 2.);
                 self.center();
@@ -2119,7 +2176,7 @@ impl Client {
                 } else {
                     self.seed.clone()
                 },
-                x: 100.,
+                x: 100. + self.dx(),
                 y: if self.editing == "home" { 220. } else { 310. },
                 w: 824.,
                 h: 42.,
@@ -2129,7 +2186,7 @@ impl Client {
             Some(Modal::Name | Modal::Save | Modal::Load) => Some(Entry {
                 id: format!("dialog-{}", self.modal_id),
                 value: self.entry.clone(),
-                x: 212.,
+                x: 212. + self.dx(),
                 y: 230.,
                 w: 600.,
                 h: 42.,
@@ -2137,7 +2194,19 @@ impl Client {
             _ => None,
         }
     }
+    /// Every button of the current screen. Dialogs, the city window and setup
+    /// keep their 1024-wide layout and are centred on a wider stage (#321).
     fn buttons(&self) -> Vec<Button> {
+        let mut b = self.screen_buttons();
+        if self.centred() {
+            let dx = self.dx();
+            for button in &mut b {
+                button.x += dx;
+            }
+        }
+        b
+    }
+    fn screen_buttons(&self) -> Vec<Button> {
         let mut b = Vec::new();
         let mut add = |x, y, w, h, label: String, action| {
             b.push(Button {
@@ -2440,9 +2509,9 @@ impl Client {
                 advancing: false,
                 city_click: None,
                 draws: vec![
-                    rect(0., 0., 1024., 768., style::BG),
+                    rect(0., 0., self.stage_w, 768., style::BG),
                     text(
-                        100.,
+                        100. + self.dx(),
                         200.,
                         "Client closed. Launch again to resume a saved checkpoint.",
                         style::TYPE_TITLE,
@@ -2452,11 +2521,13 @@ impl Client {
                 entry: None,
                 status: self.status.clone(),
                 assets: "none".into(),
+                width: self.stage_w,
+                fullscreen: self.fullscreen,
                 tips: Vec::new(),
                 route: Vec::new(),
             };
         }
-        let mut draws = vec![rect(0., 0., 1024., 768., style::BG)];
+        let mut draws = vec![rect(0., 0., self.stage_w, 768., style::BG)];
         let title: String = self.loaded.as_ref().map_or_else(
             || "ToTEngine — surface game".to_string(),
             |l| {
@@ -2479,6 +2550,7 @@ impl Client {
         // end of the menu bar, over the map and the city window alike; setup
         // keeps the large title.
         let map_screen = self.loaded.is_some();
+        let setup_start = draws.len();
         if !map_screen {
             draws.push(text(
                 16.,
@@ -2491,7 +2563,9 @@ impl Client {
         let view = self.view();
         if let Some(v) = &view {
             if self.city_open {
+                let start = draws.len();
                 self.city_draw(&mut draws, v);
+                shift(&mut draws[start..], self.dx());
                 self.menu_bar_draw(&mut draws, &title);
             } else {
                 let (mx, my, mw, mh) = self.map_rect();
@@ -2540,6 +2614,10 @@ impl Client {
                 style::TEXT_DIM,
             ));
         }
+        if self.loaded.is_none() {
+            shift(&mut draws[setup_start..], self.dx());
+        }
+        let modal_start = draws.len();
         if let Some(modal) = &self.modal {
             style::modal(&mut draws, 180., 105., 664., 550.);
             let title = match modal {
@@ -2729,6 +2807,9 @@ impl Client {
                 ));
             }
         }
+        if self.modal.is_some() {
+            shift(&mut draws[modal_start..], self.dx());
+        }
         if self.notice_overlay() {
             let (lines, (x, y, w, h)) = self.notice_overlay_rect();
             style::modal(&mut draws, x, y, w, h);
@@ -2856,6 +2937,7 @@ impl Client {
         // Clear turn-transition feedback (#283): while the opponents run, a
         // framed strip over the map says so; the title bar carries the round.
         if self.advancing {
+            let start = draws.len();
             style::modal(&mut draws, 212., 360., 460., 52.);
             draws.push(text(
                 228.,
@@ -2871,8 +2953,9 @@ impl Client {
                 style::TYPE_SMALL,
                 style::TEXT_DIM,
             ));
+            shift(&mut draws[start..], self.dx());
         }
-        draws.push(rect(0., 744., 1024., 24., style::STATUS_BG));
+        draws.push(rect(0., 744., self.stage_w, 24., style::STATUS_BG));
         draws.push(text(
             10.,
             749.,
@@ -2892,6 +2975,8 @@ impl Client {
             entry: self.entry_meta(),
             status: self.status.clone(),
             assets: self.assets.clone(),
+            width: self.stage_w,
+            fullscreen: self.fullscreen,
             tips,
             route,
         }
@@ -3065,6 +3150,26 @@ impl Client {
                     .into(),
                     blink: self.focused && self.modal.is_none() && v.phase == Phase::Human,
                 });
+            }
+        }
+    }
+}
+/// Moves draws right by `dx` (#321: centring 1024-wide screens).
+fn shift(draws: &mut [Draw], dx: f64) {
+    if dx == 0. {
+        return;
+    }
+    for d in draws {
+        match d {
+            Draw::Tile { x, .. }
+            | Draw::Rect { x, .. }
+            | Draw::Text { x, .. }
+            | Draw::Sprite { x, .. }
+            | Draw::UnitSprite { x, .. }
+            | Draw::Cursor { x, .. } => *x += dx,
+            Draw::Line { x, x2, .. } => {
+                *x += dx;
+                *x2 += dx;
             }
         }
     }

@@ -227,7 +227,7 @@ pub fn run(mut client: Client) -> Result<(), String> {
         .map(|b| (b.width(), b.height()))
         .map_or((WIDTH, HEIGHT), default_window_size);
     let window = video
-        .window("ToTEngine — playable desktop", default_w, default_h)
+        .window("ToT Engine", default_w, default_h)
         .resizable()
         .allow_highdpi()
         .position_centered()

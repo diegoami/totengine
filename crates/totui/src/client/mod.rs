@@ -2446,7 +2446,7 @@ impl Client {
                 if self.home.trim().is_empty() {
                     "Start open demo"
                 } else {
-                    "Start Original surface game"
+                    "Start game (Original rules)"
                 }
                 .into(),
                 Action::Start,
@@ -2529,14 +2529,14 @@ impl Client {
         }
         let mut draws = vec![rect(0., 0., self.stage_w, 768., style::BG)];
         let title: String = self.loaded.as_ref().map_or_else(
-            || "ToTEngine — surface game".to_string(),
+            || "ToT Engine".to_string(),
             |l| {
                 let name = if l.resources.profile.starts_with("Open demo") {
-                    "ToTEngine — Open demo / Isotrident"
+                    "ToT Engine — Open demo / Isotrident"
                 } else if l.resources.isotrident.is_some() {
-                    "ToTEngine — ToT rules / Isotrident"
+                    "ToT Engine — ToT rules / Isotrident"
                 } else {
-                    "ToTEngine — Original surface game"
+                    "ToT Engine — Original rules"
                 };
                 // The current round in the title keeps the turn visible
                 // through opponent phases (#283).
@@ -2609,7 +2609,7 @@ impl Client {
             draws.push(text(
                 100.,
                 604.,
-                "Generated surface games: land play, cities, research, government, reports and checkpoints.",
+                "Generated games: land play, cities, research, government, reports and checkpoints.",
                 style::TYPE_SMALL,
                 style::TEXT_DIM,
             ));

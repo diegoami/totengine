@@ -23,7 +23,7 @@ def bind(lib, name, result, *args):
 
 def run():
     demo = os.environ.get("TOTENGINE_OPEN_DEMO") == "1"
-    start_label = "Start open demo" if demo else "Start Original surface game"
+    start_label = "Start open demo" if demo else "Start game (Original rules)"
     unit_choice = "Guards" if demo else "Warriors"
     with tempfile.TemporaryDirectory(prefix="tot-desktop-x11-") as folder:
         scratch = Path(folder)
@@ -84,7 +84,7 @@ def run():
                             name = c.c_char_p()
                             if fetch(display, children[i], c.byref(name)):
                                 try:
-                                    if name.value and b"ToTEngine" in name.value: window = children[i]
+                                    if name.value and b"ToT Engine" in name.value: window = children[i]
                                 finally: free(name)
                     finally:
                         if children: free(children)

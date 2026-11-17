@@ -337,7 +337,7 @@ impl Client {
         draws.push(rect(0., 0., self.stage_w, MENU_H, style::MENU_BAR));
         draws.push(rect(0., MENU_H, self.stage_w, 1., style::MENU_EDGE));
         // The menu bar already says which application this is.
-        let title = title.strip_prefix("ToTEngine — ").unwrap_or(title);
+        let title = title.strip_prefix("ToT Engine — ").unwrap_or(title);
         let w = title.chars().count() as f64 * 0.58 * f64::from(style::TYPE_SMALL);
         draws.push(text(
             // The browser's licence link sits at the top-right corner.

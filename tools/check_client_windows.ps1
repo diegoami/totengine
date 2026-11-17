@@ -463,7 +463,9 @@ try {
         if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES 'citydouble.cth')).Hash -ne (Get-FileHash $env:TOTENGINE_CITY_OPEN_FIXTURE).Hash){throw 'double click changed gameplay'}
         Send-Key 27
     }
-    Focus-Button 'Close client'
+    # Layout B (#310): Close client lives in the Game menu.
+    Click-Button 'Game'
+    Click-Button 'Close client'
     Send-Key 13
     if(-not $app.WaitForExit(15000)){throw 'client did not close'}
     [uint32]$code=0

@@ -128,6 +128,7 @@ fn key(k: Keycode, shift: bool, ctrl: bool) -> Option<String> {
         Keycode::F7 => "F7",
         Keycode::F8 => "F8",
         Keycode::F9 => "F9",
+        Keycode::F10 => "F10",
         Keycode::F11 => "F11",
         Keycode::Tab => {
             if shift {

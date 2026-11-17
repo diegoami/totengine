@@ -86,6 +86,26 @@ pub const MOVE_SOME: &str = "#edd35a";
 pub const MOVE_NONE: &str = "#e57660";
 pub const WHITE: &str = "#ffffff";
 
+// Menu bar (layout B, #310): the original's light bar with dark text.
+/// Menu bar fill.
+pub const MENU_BAR: &str = "#cfcbb3";
+/// Open dropdown fill.
+pub const MENU_DROP: &str = "#e6e2cb";
+/// Menu bar and dropdown edges.
+pub const MENU_EDGE: &str = "#6b6956";
+/// Menu text.
+pub const MENU_TEXT: &str = "#1b1b16";
+/// Unavailable menu entries (still readable: about 4:1 on the dropdown).
+pub const MENU_DISABLED: &str = "#66644f";
+/// The open title and the highlighted entry.
+pub const MENU_SELECT: &str = "#2e3a5c";
+/// Text on the highlight.
+pub const MENU_SELECT_TEXT: &str = "#f4f0d8";
+/// Drop shadow under an open menu.
+pub const SHADOW: &str = "#050704";
+/// Dividers between the right column's boxes (#311).
+pub const GOLD_DIM: &str = "#6f6440";
+
 fn rect(x: f64, y: f64, w: f64, h: f64, color: &str) -> Draw {
     Draw::Rect {
         x,

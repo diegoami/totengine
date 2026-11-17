@@ -23,7 +23,7 @@ the same validated human session, presentation, owned artwork and checkpoints.
 Run **totplay** (Windows: **totplay.exe**) for the local browser client, or
 **totdesktop** (**totdesktop.exe**) for a standalone game window. The browser
 launcher starts a local loopback host and opens your default browser. Use the
-in-game Close client button to stop that host; closing a browser tab keeps the
+in-game **Game > Close client** menu entry to stop that host; closing a browser tab keeps the
 session available for reconnection. In v0.15 a refreshed/reconnected tab can
 resume an already-running opponent phase; #179 tracks the contract follow-up.
 Desktop needs no browser/server.
@@ -79,6 +79,21 @@ the labels do not add new unlocks or change the demo into full ToT rules.
 The supported map commands follow the original Test of Time manual and installed
 menu; [reference and remaining differences](https://github.com/diegoami/totengine/blob/main/docs/ui/original-controls.md).
 
+The map screen follows the original's frame (layout B, [design record](ui/layout-b.md)):
+
+- A **menu bar** along the top holds every map command, each with its key:
+  **Game** (save, load, new game, Settings, Keys, Close client), **Kingdom**
+  (rates, revolution, Cities), **View** (Moving/Viewing, center, zoom),
+  **Orders** (found city, wait, skip, activate, end turn), **Advisors** (F1, F2,
+  F4, F5 reports, F6 science, research), **World** (F7, F8, F9, F11, Messages)
+  and **Civilopedia**. Click a title, or press **F10** and use the arrows and
+  Enter; Esc closes. An entry that cannot run right now is greyed and says why.
+  Keys work exactly as before; the menus only make the commands visible.
+- The **right column** shows a **minimap** of what your civilization has seen
+  (a click centres the map there), your turn, government, treasury, rates and
+  research, the selected unit, the selected city with **Manage city** and
+  **Choose production**, and the end-of-turn prompt with **End turn**.
+
 - Click an own ready unit to select it and enter Moving, in either mode.
   Selection takes priority over movement: clicking another own unit never moves
   the previous unit. **V** toggles Moving/Viewing; **A** and **Activate unit**
@@ -96,13 +111,13 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   Viewing shows End of turn. A new human turn selects a ready unit in Moving.
   Ending the turn remains explicit; no automatic human turn advancement.
 - **C** centers on the active unit. **Z / X** zoom in/out; **Shift+Z** restores
-  standard zoom. The **+ / -** buttons and keys remain available as conveniences.
+  standard zoom. The **+ / -** keys and the **View** menu remain available as conveniences.
 - **B** opens founding for an eligible settler. Type the name and accept;
   Escape cancels without consuming the settler. **Cities** opens the next own city's window (a notice explains how to found one when you have none).
-- Press **?** (or click **Keys [?]**) for the keyboard help: original keys plus ToTEngine additions.
-- **Messages** (side panel) keeps every turn's notices for the session, newest first and paged. Messages are presentation-only: checkpoints do not store them.
+- Press **?** (or **Game > Keys…**) for the keyboard help: original keys plus ToTEngine additions.
+- **Messages** (**World** menu) keeps every turn's notices for the session, newest first and paged. Messages are presentation-only: checkpoints do not store them.
 - **Mouse wheel** pages the list under the pointer: reports, Civilopedia, Messages, choice lists, the checkpoint list and the city panels. It does nothing over the map. In the city window, the **Sort** button reorders the Info, Support and Improvements lists (listed order, name, shields, food or upkeep, largest numbers first); it only changes the display.
-- **Settings** (bottom bar), or **Enhancements…** on the setup screen, holds optional improvements that differ from the original. All are off by default and saved in `enhancements.json` beside the saves folder, shared by both clients; delete the file to reset. *New-messages overlay on the map* lists a turn's notices over the map (with **Open messages** / **Dismiss**). *Confirm every move* asks before each unit move; attacks and captures always ask. *Map tooltips* describes a known tile when the pointer rests on it: terrain, river/road, city and units, from your civilization's view only. *Path preview with turn counts* works the same way while a unit is selected to move: the tip shows the cheapest route over tiles your civilization knows (gold dots, a number where each turn's moves run out) and how many turns it takes; it follows the engine's move costs and only the foreign units you can see, so it is an estimate, and it gives no goto order. None of them affect checkpoints, recordings or rules.
+- **Settings** (**Game** menu), or **Enhancements…** on the setup screen, holds optional improvements that differ from the original. All are off by default and saved in `enhancements.json` beside the saves folder, shared by both clients; delete the file to reset. *New-messages overlay on the map* lists a turn's notices over the map (with **Open messages** / **Dismiss**). *Confirm every move* asks before each unit move; attacks and captures always ask. *Map tooltips* describes a known tile when the pointer rests on it: terrain, river/road, city and units, from your civilization's view only. *Path preview with turn counts* works the same way while a unit is selected to move: the tip shows the cheapest route over tiles your civilization knows (gold dots, a number where each turn's moves run out) and how many turns it takes; it follows the engine's move costs and only the foreign units you can see, so it is an estimate, and it gives no goto order. None of them affect checkpoints, recordings or rules.
 - **Double-click an own city on the map** (including its garrison) or use
   **Manage city** to open its workspace. The first city click only selects or
   inspects; use movement keys to move into an own city. Click a radius tile
@@ -136,10 +151,10 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   an owned building, then shows its refund and lost effects before confirmation.
   One sale per city per turn is allowed; Palace/wonders are excluded. Cancel
   leaves gold, shields and accepted orders unchanged.
-- **Research** opens the required research choice. Select explicitly and accept. Escape permits
+- **Research** (**Advisors** menu) opens the required research choice. Select explicitly and accept. Escape permits
   inspection while the choice still blocks gameplay; it never auto-selects.
-- **Rates (Shift+T)**, **Revolt (Shift+R)** and **Science (F6)** are right-panel buttons
-  too. Rates shows the three shares with per-share limits for the government;
+- **Rates (Shift+T)** and **Revolution (Shift+R)** are in the **Kingdom** menu,
+  **Science (F6)** in **Advisors**. Rates shows the three shares with per-share limits for the government;
   Up/Down pick a row, Left/Right (or −/+) move it through the original slider
   rule, **L** locks a row, Enter applies one validated command and Esc discards
   the draft. The dialog shows an engine quote of treasury, taxes, upkeep, science and
@@ -149,12 +164,12 @@ menu; [reference and remaining differences](https://github.com/diegoami/totengin
   (Esc in the review resets the split), and Save pending / Load checkpoint stay available.
   Science is a small advisor (topic, progress, goal) with a goal list; the goal
   only suggests the next research choice. Locks last for the client session.
-- **Reports (F1, F2, F4, F5, F7)** and the bottom-row **Reports** button open own-civilization
+- **Reports (F1, F2, F4, F5, F7)**, also in the **Advisors** and **World** menus, open own-civilization
   reports: City status, Defense, Attitude (the *Mood* tab), Trade and Wonders. Up/Down select a row, PageUp/PageDown page, **S** (or a header
   button) sorts, Enter opens the selected city and Esc there returns to the report; Esc closes.
   Reports are read-only views of your own data and never change the game. See
   [reports milestone](ui/reports-milestone.md) for what is and is not covered.
-- **Civilopedia** (bottom-row button; also a button inside the research prompt) shows the
+- **Civilopedia** (its own menu; also a button inside the research prompt) shows the
   selected ruleset's own `Describe.txt` text by category. Left/Right change category,
   Up/Down select or scroll, Enter reads or goes back, Esc steps back and closes. In the research
   prompt it describes the highlighted advance and returns to the same choice. It needs a ToT

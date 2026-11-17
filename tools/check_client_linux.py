@@ -338,7 +338,9 @@ def run():
                     run_city_open(scene,key,lambda x,y:click_at(x,y,2),save_dialog,load,wait,work,city_open)
                 resize(display,window,1440,1000);sync(display,0);time.sleep(.3)
                 focus(display,root,2,0);sync(display,0);time.sleep(.2);focus(display,window,2,0);sync(display,0);time.sleep(.2)
-                button("Close client");key("Return")
+                # Layout B (#310): Close client lives in the Game menu; F10
+                # opens it and Up wraps to its last entry.
+                key("F10");key("Up");key("Return");key("Return")
                 if app.wait(timeout=15)!=0:raise RuntimeError("client did not close cleanly")
                 print(work)
             finally:

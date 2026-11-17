@@ -131,7 +131,7 @@ impl Client {
         {
             let px = self.pan.0 + f64::from(c.x) * 32. * self.zoom;
             let py = self.pan.1 + f64::from(c.y) * 16. * self.zoom;
-            if !(44.0..720.0).contains(&px) || !(150.0..640.0).contains(&py) {
+            if !in_view(px, py) {
                 continue;
             }
             let sx = (x - (px - 32. * self.zoom)) / (64. * self.zoom);
@@ -156,7 +156,7 @@ impl Client {
             let px = self.pan.0 + f64::from(u.x) * 32. * self.zoom;
             let py = self.pan.1 + f64::from(u.y) * 16. * self.zoom;
             // Match the exact culling and sprite rectangle used by map_draw.
-            if !(44.0..720.0).contains(&px) || !(150.0..640.0).contains(&py) {
+            if !in_view(px, py) {
                 continue;
             }
             let sx = (x - (px - 32. * self.zoom)) / (64. * self.zoom);

@@ -99,7 +99,14 @@ fn split_kv(line: &str) -> Option<(String, String)> {
 /// Randomize; CREATEUNIT's InCapital; JUSTONCE). They stay in the action
 /// list, but `key=value` lines after them still belong to the action they
 /// modify (Roman Civil Wars writes `FLAG / continuous / flag=1 / Who=…`).
-pub const MODIFIERS: [&str; 4] = ["JUSTONCE", "CONTINUOUS", "RANDOMIZE", "INCAPITAL"];
+pub const MODIFIERS: [&str; 6] = [
+    "JUSTONCE",
+    "CONTINUOUS",
+    "RANDOMIZE",
+    "INCAPITAL",
+    "COLLAPSE",
+    "NOCOLLAPSE",
+];
 
 fn parse_value(s: &str) -> Value {
     let t = s.trim();
@@ -274,6 +281,37 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                         }
                         continue;
                     }
+                    if kw == "MAPRECT" {
+                        // CHANGETERRAIN's rectangle: one line of four
+                        // `x,y` corners (Macro.txt "maprect").
+                        let mut pts = Vec::new();
+                        for (_, l2) in lines.by_ref() {
+                            let t2 = l2.trim();
+                            if t2.is_empty() || t2.starts_with(';') {
+                                continue;
+                            }
+                            let nums: Vec<i32> = t2
+                                .split(',')
+                                .filter_map(|v| v.trim().parse().ok())
+                                .collect();
+                            pts.extend(nums.as_chunks::<2>().0.iter().map(|&[x, y]| (x, y)));
+                            break;
+                        }
+                        match actions
+                            .iter_mut()
+                            .rev()
+                            .find(|c| !MODIFIERS.contains(&c.keyword.as_str()))
+                        {
+                            Some(prev) if prev.keyword == "CHANGETERRAIN" => {
+                                prev.args.push(Value::Points(pts));
+                            }
+                            _ => {
+                                cmd.args.push(Value::Points(pts));
+                                actions.push(cmd);
+                            }
+                        }
+                        continue;
+                    }
                     if kw == "TEXT" {
                         let mut buf = Vec::new();
                         for (_, l2) in lines.by_ref() {
@@ -384,6 +422,27 @@ mod tests {
             matches!(e.actions[2].args.first(), Some(Value::Points(p)) if p == &[(44, 68)]),
             "locations after InCapital stay on CREATEUNIT"
         );
+    }
+
+    #[test]
+    fn maprect_belongs_to_changeterrain() {
+        let f = parse_events(
+            "@IF\nTURN\nturn=3\n@THEN\nCHANGETERRAIN\nterraintype=2\nmaprect\n\
+             128,60,129,60,128,61,128,62\nPLAYWAVEFILE\nflood.wav\n@ENDIF\n",
+        )
+        .unwrap();
+        let a = &f.events[0].actions;
+        assert_eq!(a[0].keyword, "CHANGETERRAIN");
+        assert_eq!(
+            a[0].args,
+            [Value::Points(vec![
+                (128, 60),
+                (129, 60),
+                (128, 61),
+                (128, 62)
+            ])]
+        );
+        assert_eq!(a[1].keyword, "PLAYWAVEFILE");
     }
 
     #[test]

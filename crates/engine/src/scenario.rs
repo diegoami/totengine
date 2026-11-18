@@ -58,22 +58,32 @@ pub struct Preflight {
 }
 
 /// Triggers the engine fires today (turn loop, battles, captures).
-pub const FIRED_TRIGGERS: [&str; 6] = [
+pub const FIRED_TRIGGERS: [&str; 8] = [
     "TURN",
     "TURNINTERVAL",
     "RANDOMTURN",
     "UNITKILLED",
     "CITYTAKEN",
     "CHECKFLAG",
+    "RECEIVEDTECHNOLOGY",
+    "SCENARIOLOADED",
 ];
-/// Actions that change the game today (CONTINUOUS is FLAG's modifier).
-pub const APPLIED_ACTIONS: [&str; 6] = [
+/// Actions and modifiers that change the game today.
+pub const APPLIED_ACTIONS: [&str; 14] = [
     "CHANGEMONEY",
     "CREATEUNIT",
     "GIVETECHNOLOGY",
+    "TAKETECHNOLOGY",
+    "CHANGETERRAIN",
+    "MAKEAGGRESSION",
+    "DELAY",
     "JUSTONCE",
     "FLAG",
     "CONTINUOUS",
+    "RANDOMIZE",
+    "INCAPITAL",
+    "COLLAPSE",
+    "NOCOLLAPSE",
 ];
 
 fn summarize(list: &mut Vec<(String, usize)>, key: &str) {
@@ -102,6 +112,9 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
     let mut actions = Vec::new();
     let mut create_unit = 0;
     let mut flag_tech = 0;
+    let mut delay_random = 0;
+    let mut other_map = 0;
+    let mut aggression = 0;
     for e in &events.events {
         // Both halves of an @AND event must fire.
         for half in std::iter::once(&e.trigger).chain(&e.and) {
@@ -112,8 +125,18 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
                 flag_tech += 1;
             }
         }
-        for a in &e.actions {
+        for (n, a) in e.actions.iter().enumerate() {
             let k = a.keyword.to_ascii_uppercase();
+            let next = e.actions.get(n + 1).map(|c| c.keyword.as_str());
+            if k == "DELAY" && next == Some("RANDOMIZE") {
+                delay_random += 1;
+            }
+            if k == "CHANGETERRAIN" && a.param("map").and_then(|v| v.number()).unwrap_or(0) != 0 {
+                other_map += 1;
+            }
+            if k == "MAKEAGGRESSION" {
+                aggression += 1;
+            }
             match k.as_str() {
                 // Shown to the player since #326.
                 "TEXT" => {}
@@ -147,9 +170,28 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
             if flag_tech == 1 { "" } else { "s" }
         ));
     }
+    let plural = |n: usize| if n == 1 { "" } else { "s" };
+    if delay_random > 0 {
+        gaps.push(format!(
+            "DELAY with Randomize waits the full delay ({delay_random} event{})",
+            plural(delay_random)
+        ));
+    }
+    if other_map > 0 {
+        gaps.push(format!(
+            "CHANGETERRAIN on maps other than 0 does nothing ({other_map} action{})",
+            plural(other_map)
+        ));
+    }
+    if aggression > 0 {
+        gaps.push(format!(
+            "MAKEAGGRESSION declares war, but a human party's treaty-break consequences are not modelled ({aggression} action{})",
+            plural(aggression)
+        ));
+    }
     if create_unit > 0 {
         gaps.push(format!(
-            "CREATEUNIT placement is approximate ({create_unit} action{})",
+            "CREATEUNIT placement skips the original's impassable-terrain test ({create_unit} action{})",
             if create_unit == 1 { "" } else { "s" }
         ));
     }
@@ -272,13 +314,13 @@ mod tests {
         // Flags (#328): FLAG/CHECKFLAG are supported; an @AND half is
         // still reported when its trigger is not.
         let file = tot_kit::parse_events(
-            "@INITFLAG\n@IF\nCHECKFLAG\nwho=A\nflag=0\nstate=on\n@AND\nRECEIVEDTECHNOLOGY\n\
-             receiver=A\ntechnology=1\n@THEN\nFLAG\ncontinuous\nflag=1\nstate=on\n@ENDIF\n",
+            "@INITFLAG\n@IF\nCHECKFLAG\nwho=A\nflag=0\nstate=on\n@AND\nBRIBEUNIT\n\
+             who=A\nwhom=B\nunittype=1\n@THEN\nFLAG\ncontinuous\nflag=1\nstate=on\n@ENDIF\n",
         )
         .unwrap();
         let flag_gaps = event_gaps(&file);
         assert!(
-            flag_gaps.iter().any(|g| g.contains("RECEIVEDTECHNOLOGY")),
+            flag_gaps.iter().any(|g| g.contains("BRIBEUNIT")),
             "{flag_gaps:?}"
         );
         assert!(

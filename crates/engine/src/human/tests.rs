@@ -1846,3 +1846,29 @@ fn scenario_give_technology_grants_notices_and_replays() {
     next_round(&mut s);
     assert!(!s.view().notices.contains(&Notice::Discovery(0)));
 }
+
+/// #328: SCENARIOLOADED fires once when the scenario starts, before the
+/// first view, and a restored checkpoint shows the same box.
+#[test]
+fn scenario_loaded_fires_at_start_and_replays() {
+    let save = crate::tests_support::synthetic_save_bytes();
+    let events = || {
+        Some(crate::events::EventEngine::new(
+            tot_kit::parse_events(
+                "@IF\nSCENARIOLOADED\n@THEN\nTEXT\nWelcome.\nENDTEXT\n\
+                 CHANGEMONEY\nreceiver=Testers\namount=5\n@ENDIF\n",
+            )
+            .unwrap(),
+        ))
+    };
+    let policy = crate::campaign::AiPolicy::AiV1;
+    let plain = HumanSession::scenario("test.sav", &save, rules(), None, 1, policy, 9).unwrap();
+    let s = HumanSession::scenario("test.sav", &save, rules(), events(), 1, policy, 9).unwrap();
+    let v = s.view();
+    assert_eq!(v.event_texts, vec!["Welcome.".to_string()]);
+    assert_eq!(s.game.world.treasury[1], plain.game.world.treasury[1] + 5);
+    let text = s.checkpoint("loaded");
+    let restored =
+        HumanSession::restore_with(rules(), "loaded", &text, Some((&save, events()))).unwrap();
+    assert_eq!(restored.view(), v);
+}

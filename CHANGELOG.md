@@ -5,6 +5,20 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- More scenario event support, decoded from the original executable (#328):
+  - **Actions:**
+    - TAKETECHNOLOGY, including `Collapse`.
+    - DELAY timers.
+    - CHANGETERRAIN, which also destroys cities and units on the changed
+      tiles.
+    - MAKEAGGRESSION, using the original's treaty and attitude changes.
+    - CREATEUNIT now honours `Randomize`, `InCapital` and `homecity`, and
+      follows the original's placement rules.
+  - **Triggers:**
+    - RECEIVEDTECHNOLOGY, checked at every turn start.
+    - SCENARIOLOADED, fired once when a scenario starts.
+  - The preflight lists the remaining partial cases. AE 1200 BC's floods and
+    wars and Roman Civil Wars' delayed leaders now happen.
 - Scenario events now support **flags**: FLAG, CHECKFLAG, `Continuous`,
   `@INITFLAG` and one `@AND` per event (#328). They follow a static decode
   of the original:

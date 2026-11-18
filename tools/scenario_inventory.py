@@ -24,7 +24,7 @@ SCAN_REPORT_LIMITS = {'diagnostics': 8192, 'vocabulary': 1024, 'lines': 500000}
 # Bare modifier lines in @THEN: counted, but key=value lines after them still
 # belong to the action they modify (FLAG / continuous / flag=1 ...), as in the
 # engine parser (crates/tot-kit/src/events.rs MODIFIERS).
-MODIFIERS = frozenset({'JUSTONCE', 'CONTINUOUS', 'RANDOMIZE', 'INCAPITAL'})
+MODIFIERS = frozenset({'JUSTONCE', 'CONTINUOUS', 'RANDOMIZE', 'INCAPITAL', 'COLLAPSE', 'NOCOLLAPSE'})
 STRUCTURAL_DIAGNOSTICS = frozenset({
     'nested_event', 'misplaced_condition', 'malformed_then', 'malformed_endif',
     'unclosed_event', 'unclosed_payload', 'malformed_location',
@@ -175,6 +175,7 @@ def scan_events(text, baseline, budget=None):
     want_trigger = False
     block = False
     payload = None
+    rect = False
     events = 0
     ands = 0
     began = False
@@ -210,6 +211,12 @@ def scan_events(text, baseline, budget=None):
             if not t:
                 continue
             upper = t.upper()
+            if rect:
+                # CHANGETERRAIN's maprect line: four x,y corners.
+                rect = False
+                if not re.fullmatch(r'-?\d{1,10}(\s*,\s*-?\d{1,10}){7}', t):
+                    diagnostic('malformed_location', number, 'MAPRECT')
+                continue
             if upper in ('ENDTEXT', 'ENDLOCATIONS'):
                 diagnostic('stray_text_end' if upper == 'ENDTEXT' else 'stray_location_end', number, upper)
                 continue
@@ -292,6 +299,11 @@ def scan_events(text, baseline, budget=None):
                 count(phase, current)
                 want_trigger = False
             elif phase == 'actions':
+                if upper == 'MAPRECT':
+                    if current != 'CHANGETERRAIN':
+                        diagnostic('placement_context_unmodelled', number, 'MAPRECT')
+                    rect = True
+                    continue
                 if upper == 'LOCATIONS':
                     if current != 'CREATEUNIT':
                         diagnostic('placement_context_unmodelled', number, 'LOCATIONS')

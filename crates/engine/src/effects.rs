@@ -12,9 +12,10 @@
 //!   the engine requires a tile on the map, terrain matching the unit's
 //!   domain (land not on ocean, sea only on ocean), and no other civ's
 //!   units on it. Macro.txt only says "invalid for any reason".
-//! - GIVETECHNOLOGY needs per-civ techs, which the world state does not
-//!   model yet. Those effects are reported back as not applied.
-//! - TEXT, PLAYCDTRACK and DONTPLAYWONDERS do not touch game state.
+//! - GIVETECHNOLOGY grants the advance through the research-completion
+//!   routine (evidence §GIVETECHNOLOGY executor).
+//! - TEXT, PLAYCDTRACK and DONTPLAYWONDERS do not touch game state; FLAG
+//!   changes only the event engine's own flag words.
 
 use tot_kit::Rules;
 
@@ -55,6 +56,11 @@ impl WorldState {
             .map(|c| c.id)
     }
 
+    /// Plural names of civs 0..=7 for flag `who=` resolution.
+    pub fn event_civ_names(&self) -> [String; 8] {
+        std::array::from_fn(|c| self.civ_name(c as u8))
+    }
+
     /// Apply effects in order; one [`Applied`] per effect.
     pub fn apply_effects(&mut self, rules: &Rules, effects: &[Effect]) -> Vec<Applied> {
         effects
@@ -72,6 +78,7 @@ impl WorldState {
         trigger: &str,
         ctx: &Ctx,
     ) -> Vec<(Effect, Applied)> {
+        events.civ_names = self.event_civ_names();
         let effects = events.fire(trigger, ctx);
         let applied = self.apply_effects(rules, &effects);
         effects.into_iter().zip(applied).collect()

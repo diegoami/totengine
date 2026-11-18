@@ -58,15 +58,23 @@ pub struct Preflight {
 }
 
 /// Triggers the engine fires today (turn loop, battles, captures).
-pub const FIRED_TRIGGERS: [&str; 5] = [
+pub const FIRED_TRIGGERS: [&str; 6] = [
     "TURN",
     "TURNINTERVAL",
     "RANDOMTURN",
     "UNITKILLED",
     "CITYTAKEN",
+    "CHECKFLAG",
 ];
-/// Actions that change the game today.
-pub const APPLIED_ACTIONS: [&str; 4] = ["CHANGEMONEY", "CREATEUNIT", "GIVETECHNOLOGY", "JUSTONCE"];
+/// Actions that change the game today (CONTINUOUS is FLAG's modifier).
+pub const APPLIED_ACTIONS: [&str; 6] = [
+    "CHANGEMONEY",
+    "CREATEUNIT",
+    "GIVETECHNOLOGY",
+    "JUSTONCE",
+    "FLAG",
+    "CONTINUOUS",
+];
 
 fn summarize(list: &mut Vec<(String, usize)>, key: &str) {
     match list.iter_mut().find(|(k, _)| k == key) {
@@ -93,10 +101,16 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
     let mut triggers = Vec::new();
     let mut actions = Vec::new();
     let mut create_unit = 0;
+    let mut flag_tech = 0;
     for e in &events.events {
-        let t = e.trigger.keyword.to_ascii_uppercase();
-        if !FIRED_TRIGGERS.contains(&t.as_str()) {
-            summarize(&mut triggers, &t);
+        // Both halves of an @AND event must fire.
+        for half in std::iter::once(&e.trigger).chain(&e.and) {
+            let t = half.keyword.to_ascii_uppercase();
+            if !FIRED_TRIGGERS.contains(&t.as_str()) {
+                summarize(&mut triggers, &t);
+            } else if t == "CHECKFLAG" && half.param("technology").is_some() {
+                flag_tech += 1;
+            }
         }
         for a in &e.actions {
             let k = a.keyword.to_ascii_uppercase();
@@ -125,6 +139,12 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
         gaps.push(format!(
             "Event actions that do nothing yet: {}",
             counted(&actions)
+        ));
+    }
+    if flag_tech > 0 {
+        gaps.push(format!(
+            "CHECKFLAG with technology= never fires ({flag_tech} event{})",
+            if flag_tech == 1 { "" } else { "s" }
         ));
     }
     if create_unit > 0 {
@@ -248,6 +268,24 @@ mod tests {
         assert!(
             gaps.iter().any(|g| g.contains("MAKEAGGRESSION")),
             "{gaps:?}"
+        );
+        // Flags (#328): FLAG/CHECKFLAG are supported; an @AND half is
+        // still reported when its trigger is not.
+        let file = tot_kit::parse_events(
+            "@INITFLAG\n@IF\nCHECKFLAG\nwho=A\nflag=0\nstate=on\n@AND\nRECEIVEDTECHNOLOGY\n\
+             receiver=A\ntechnology=1\n@THEN\nFLAG\ncontinuous\nflag=1\nstate=on\n@ENDIF\n",
+        )
+        .unwrap();
+        let flag_gaps = event_gaps(&file);
+        assert!(
+            flag_gaps.iter().any(|g| g.contains("RECEIVEDTECHNOLOGY")),
+            "{flag_gaps:?}"
+        );
+        assert!(
+            !flag_gaps
+                .iter()
+                .any(|g| g.contains("FLAG") || g.contains("CONTINUOUS")),
+            "{flag_gaps:?}"
         );
         // TEXT boxes are shown (#326): no gap for them.
         assert!(!gaps.iter().any(|g| g.contains("TEXT")), "{gaps:?}");

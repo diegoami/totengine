@@ -194,7 +194,8 @@ addresses below.
   and `technology=` is parsed with `atoi` (`0x52c190`) into the signed byte
   `+0x106`. When both are present, flag `0x800` is set in the record's action
   mask (`+0x4`).
-- **Execute** (function `0x4d201e`): a receiver of -3 is replaced by the
+- **Execute** (handler `0x4d201e`, called at `0x4d3d34` by the action
+  dispatcher `0x4d3ae8`, which first checks JUSTONCE; corrected in #328): a receiver of -3 is replaced by the
   trigger context's `+0x1c`, and -4 by `+0x20` (trigger-party wildcards; a
   second -4 test is dead code, and -2 is not substituted). Which of those
   fields holds the attacker and which the defender is not decoded here; the
@@ -215,6 +216,86 @@ addresses below.
 - Check: `crates/engine/tests/events_install.rs` takes Tyras from the Huns
   in FallRome. `receiver=TRIGGERATTACKER` gives the Byzantines advance 99,
   `Applied::Advance`.
+
+#### Event flags, @AND and Continuous (2026-11-18, #328)
+
+Static decode of `civ2.bak`, the same method as above. Each event is a
+0x11c-byte record (allocator `0x4d170c`): `+0x0` trigger mask, `+0x4` action
+mask, `+0x8` modifier/state bits. Spot-checked addresses are marked ✓.
+
+- **Storage.** `@INITFLAG` (`0x4d42b2`) creates a list record whose
+  `+0x88 + civ*4` are the flag words of civs 0..=7. `+0xb4` is **one**
+  continuous mask shared by all civs. Without `@INITFLAG`, FLAG does nothing
+  (`0x5759af`) and CHECKFLAG never fires (`0x574cd7` ✓).
+- **FLAG** (action bit `0x200000`, parse `0x4daab7`; run by `0x5757b7`,
+  dispatched at `0x4d3e04` ✓):
+  - `who=`: no `who=` or Everybody means all eight civs, 7 down to 0, the
+    barbarians included. TriggerAttacker/TriggerDefender use the trigger's
+    civs. Anybody, Somebody and unknown names do nothing (`0x575899`).
+  - Bits are `flag=N` (1<<N) or `mask=` (`0b…`/`0x…`).
+  - Setting ORs the bits into each civ's word. With `Continuous` it also ORs
+    them into the continuous mask; without it, it clears them from that mask
+    (`0x57591e` ✓).
+  - Clearing removes the bits from the civ words and from the continuous
+    mask (`0x575959` ✓).
+- **Turn start.** At each game turn start the original runs, in order
+  (three identical call sites, e.g. `0x47451b`…`0x47456f` ✓):
+  1. Clear @AND activations (`0x575d9a`).
+  2. Run the turn-trigger evaluators.
+  3. Evaluate CHECKFLAG (`0x574c3e`).
+  4. Inside that pass, clear every flag bit not in the continuous mask
+     (`0x5750e5` ✓).
+
+  A non-continuous flag therefore lives until the next turn-start check,
+  which still sees it. This is the only place flags decay.
+- **CHECKFLAG** (trigger mask exactly `0x2000`, `0x574ce1` ✓):
+  - Bits come from `flag=N` (N < 32) or `mask=`. On/Set counts set bits,
+    Off/Clear counts clear ones.
+  - `Threshold`/`Count` defaults to 1. Values ≤ 1 become 1, and values are
+    capped at the mask's bit count (`0x4d68cb`).
+  - The test is `matches >= N`. `Count`'s equality test falls through to
+    the same `>=` test on a miss (`0x574dd9`…`0x574e47`), so Count behaves
+    like Threshold.
+  - `who=name` tests that civ, and its actions see it as TriggerAttacker.
+    `who=` naming the barbarians never fires (`0x574d52`).
+  - Somebody tests civs 1..=7 one by one and runs the event once per
+    matching civ, as that civ (`0x574e79`…).
+  - Everybody ORs the words of civs 1..=7 and tests once.
+  - Anybody and unknown names never fire.
+- **@AND** (`0x4d4056`, gate `0x575cbe`):
+  - Each half is its own record, and the first half gets a copy of the
+    actions at @ENDIF.
+  - A firing half marks itself and runs the actions only if the other half
+    is already marked. Two halves true in one pass therefore run once.
+  - Marks are cleared at turn start unless that half's trigger is
+    `Continuous`. The first half inherits the second's Continuous bit
+    (`0x575dc4` ✓).
+  - JUSTONCE marks both halves done (dispatcher `0x4d3ae8` ✓).
+- **Order matters for Roman Civil Wars.** 25 of its events are
+  `CHECKFLAG @AND RANDOMTURN`. They work because the RANDOMTURN roll comes
+  before the CHECKFLAG pass in the same turn start.
+- **Engine.** `engine::events` models all of the above:
+  - `EventEngine::turn_start` runs the turn-start sequence; flags live in
+    the event engine and rebuild by replay.
+  - The trigger-evaluator order is the engine's existing
+    TURN/TURNINTERVAL/RANDOMTURN. Mapping the original's evaluators
+    `0x4d2df7`…`0x4d306f` to keywords is inferred.
+  - CHECKFLAG `technology=` (`+0x30`) is not modelled; such a trigger never
+    fires and preflight lists it.
+- **Not modelled or not decoded:**
+  - Both parse loops stop once their required parameters are present, so a
+    later `Threshold` (CHECKFLAG) or `who`/`Continuous` line (FLAG) is
+    ignored by the original. The engine reads every line; Roman Civil Wars
+    is unaffected.
+  - Whether flags persist in a `.sav` (the record copy at `0x4abbba`
+    suggests so).
+  - What `0x575e21` and the hook `0x493cfc` do.
+- **Checks:**
+  - Unit tests in `crates/engine/src/events.rs` cover decay, `@INITFLAG`,
+    Somebody/Everybody/Count, and @AND lapse and Continuous.
+  - `crates/engine/tests/events_install.rs` fires Roman Civil Wars'
+    CITYTAKEN events. The sixth lost Gaulish city sets the sixth continuous
+    flag, and the next turn start gives the Gauls advance 33, once.
 
 #### T1-8 save writer (2026-11-03): surgical edits accepted by the original
 

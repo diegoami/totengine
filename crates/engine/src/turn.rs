@@ -88,11 +88,10 @@ impl WorldState {
                 turn: Some(self.turn as i32),
                 ..Default::default()
             };
+            ev.civ_names = self.event_civ_names();
             let rng = &mut self.rng;
             let mut roll = |n: i32| n > 0 && rng.next_below(n as u32) == 0;
-            let mut effects = ev.fire_with("TURN", &ctx, &mut roll);
-            effects.extend(ev.fire_with("TURNINTERVAL", &ctx, &mut roll));
-            effects.extend(ev.fire_with("RANDOMTURN", &ctx, &mut roll));
+            let effects = ev.turn_start(&ctx, &mut roll);
             let applied = self.apply_effects(rules, &effects);
             sum.events = effects.into_iter().zip(applied).collect();
         }

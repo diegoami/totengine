@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- The **built-in AI now plays Roman Civil Wars, AE 1200 BC and
+  Constantine** (#329). Advance references in Rules now resolve against the
+  original's fixed slot identifiers, exactly as the executable does, instead
+  of the row comments. Those scenarios rename advances and annotate the
+  comments, so the AI used to fall back to AI v1, and the research tree
+  marked some advances unresearchable. The scoring tables also read only
+  the first 80 unit rows, as the original does.
 - **Open scenario (experimental)** in both clients (owner decision,
   2026-11-18; decision 0008). The setup screen and **Game > Open scenario…**
   list the installation's `.scn`/`.sav` files; a preflight shows the playable

@@ -17,18 +17,12 @@ impl ValueRules {
             match raw.map(str::trim) {
                 Some(raw) if raw.eq_ignore_ascii_case("nil") => Ok(-1),
                 Some(raw) if raw.eq_ignore_ascii_case("no") => Ok(-2),
-                // FallRome annotates disabled slots with *Ind / *E2 in
-                // comments while prerequisites still use Ind / E2. The native
-                // resolver uses case-insensitive fixed slot identifiers.
-                Some(abbrev) => techs
-                    .comments
-                    .iter()
-                    .position(|comment| {
-                        comment
-                            .trim()
-                            .trim_start_matches('*')
-                            .eq_ignore_ascii_case(abbrev)
-                    })
+                // The native resolver 0x490440 matches the executable's
+                // fixed slot identifiers exactly, not the row comments
+                // (Roman Civil Wars writes `; Mat;50`, AE 1200 BC
+                // `; AFl Advanced Flight`): tot_kit::Rules::advance_slot.
+                Some(abbrev) => rules
+                    .advance_slot(abbrev)
                     .and_then(|id| i8::try_from(id).ok())
                     .ok_or_else(|| format!("unresolved research scoring reference: {abbrev}")),
                 None => Err("missing research scoring reference".into()),
@@ -61,16 +55,15 @@ impl ValueRules {
             };
         }
         let units = rules.section("UNITS").ok_or("missing UNITS")?;
-        for (id, row) in units.rows.iter().enumerate() {
+        // The original's unit loader reads exactly 80 rows (civ2.bak loop
+        // bound at 0x413559); Roman Civil Wars' 81st row is never read.
+        for (id, row) in units.rows.iter().enumerate().take(80) {
             if rules.unit_domain(id).is_none() || rules.unit_role(id).is_none() {
                 // A text-only footer is retained by the permissive Rules reader.
                 if row.len() != 1 || id + 1 != units.rows.len() {
                     return Err(format!("invalid research scoring unit {id}"));
                 }
                 continue;
-            }
-            if id >= 80 {
-                return Err("research scoring supports at most 80 unit types".into());
             }
             result.unit_prerequisites[id] = reference(rules.unit_prereq_raw(id))?;
         }

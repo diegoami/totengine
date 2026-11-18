@@ -156,7 +156,12 @@ mod tests {
                 .collect();
             let mut text = String::from("@CIVILIZE\n");
             for t in 0..100 {
-                writeln!(text, "Tech{t},1,0,nil,nil,0,0 ; T{t}").unwrap();
+                writeln!(
+                    text,
+                    "Tech{t},1,0,nil,nil,0,0 ; {}",
+                    tot_kit::ADVANCE_IDS[t]
+                )
+                .unwrap();
             }
             text.push_str("@UNITS\n");
             let tech = |t: i32| {
@@ -165,7 +170,7 @@ mod tests {
                 } else if t == -2 {
                     "no".to_string()
                 } else {
-                    format!("T{t}")
+                    tot_kit::ADVANCE_IDS[t as usize].to_string()
                 }
             };
             for (t, row) in rows.iter().enumerate() {

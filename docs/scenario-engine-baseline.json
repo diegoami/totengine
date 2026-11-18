@@ -13,7 +13,7 @@
     "crates/engine/src/human.rs": "796fff98076d1ac486fef4affad67b8d75839580003bec6b96a7c2affd03f085",
     "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
     "crates/engine/src/lib.rs": "a0fae41b84bca1d0b32223ce6ee47ea965e0e8bf626d8c37f24a10e5f694c469",
-    "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
+    "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
     "crates/totui/src/client/mod.rs": "028cde8457d2924c7cfb65ec032ec7e79ea233e439766ae376b9fa898d31d96a",
     "crates/totui/src/resources.rs": "80f2064bffb454656c341986d0f51d78636ee8687cc843b29eb87c63313f500f",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
@@ -335,6 +335,13 @@
         "crates/totui/src/resources.rs"
       ],
       "finding": "Adds a separate scenario origin: HumanSession::scenario boots a .scn/.sav into a fresh engine turn (movement reset only) with the file's events, and its checkpoints record the install-relative path, size, fingerprint and seed and restore only against the same bytes (restore_with). Generated sessions keep their exact checkpoint text and replay; event trigger/action semantics are unchanged (the new scenario module only lists gaps). The client adds the scenario list, preflight and scenario checkpoint reload. Not native-import admission under classic-surface-032-v1."
+    },
+    {
+      "change": "Advance references resolve by the original's fixed slot identifiers (#329)",
+      "files": [
+        "crates/tot-kit/src/rules.rs"
+      ],
+      "finding": "Rules::advance_slot adds the executable's fixed advance identifiers (ADVANCE_IDS, civ2.bak 0x5d0a18) and the resolver 0x490440's exact, case-sensitive first match for complete 100-row @CIVILIZE sections; shorter fixture sections keep case-insensitive comment matching. TechTree and the built-in AI's scoring adapter use it; the adapter reads the first 80 unit rows (loader bound 0x413559). Original and FallRome references resolve to the same slots as before; Roman Civil Wars, AE 1200 BC and Constantine now resolve fully and builtin-1 accepts their Rules (evidence README §Advance references). Event matching, checkpoints and order logs are unchanged."
     }
   ]
 }

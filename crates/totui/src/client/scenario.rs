@@ -62,8 +62,9 @@ impl Client {
             files.events_unreadable,
             files.lua,
         )?;
-        // The built-in opponent needs the Rules' research tables; scenarios
-        // that rename advances fall back to AI v1, and say so.
+        // The built-in opponent needs the Rules' research tables. Renamed
+        // advances resolve by the original's fixed slot identifiers (#329);
+        // Rules it still cannot read fall back to AI v1, and say so.
         let policy = match engine::ai::BuiltInAi::new(&resources.rules, 0, 1) {
             Ok(_) => AiPolicy::BuiltIn1,
             Err(e) => {

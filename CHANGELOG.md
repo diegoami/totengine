@@ -5,6 +5,17 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Open scenario (experimental)** in both clients (owner decision,
+  2026-11-18; decision 0008). The setup screen and **Game > Open scenario…**
+  list the installation's `.scn`/`.sav` files; a preflight shows the playable
+  civilizations, the opponents' policy and every known gap (fresh engine turn,
+  engine AI, unsupported event triggers and actions, Lua) before anything
+  starts. The scenario folder's Rules, Events and art are used, with missing
+  interface sheets from `Original`. Engine checkpoints of scenario games
+  record the file's path and fingerprint and reload only against the same
+  file. FallRome, Hannibal, Roman Civil Wars, AE 1200 BC and Constantine
+  start; extended multi-map files are rejected. This is not faithful scenario
+  import (#197/#198 stay the target). Sound effects (#322) are paused behind it (#325).
 - Player-facing names drop the internal word "surface" (owner decision,
   2026-11-17). The title and menu bar read **ToT Engine — Original rules ·
   Turn N**, the start button **Start game (Original rules)**, the setup note

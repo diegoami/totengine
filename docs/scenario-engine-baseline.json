@@ -9,13 +9,13 @@
     "crates/engine/src/events.rs": "5dc1820f0151d3b6371fc507eefab502488a13e72057d873b0ee777885100fe5",
     "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
-    "crates/engine/src/player.rs": "5b6233ce96993634f1804a72b67283583a0c7fabeee5a90c8c4370c48aecc794",
-    "crates/engine/src/human.rs": "e46046f75a033891f75c9bfc54c758847980f2dbccca411f5866573958b30147",
-    "crates/engine/src/human/checkpoint.rs": "bb39018c5f461908ac706e00978995292be0572e6c061af94f23c0b758e72059",
-    "crates/engine/src/lib.rs": "febd96429de7b7a93fbc20b8dca8415b2d5bc8215ece880f0d33c6f41084b132",
+    "crates/engine/src/player.rs": "620df59f89001928290eb33180ca918928e35e85451c7155dcd0d741c25eea14",
+    "crates/engine/src/human.rs": "796fff98076d1ac486fef4affad67b8d75839580003bec6b96a7c2affd03f085",
+    "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
+    "crates/engine/src/lib.rs": "a0fae41b84bca1d0b32223ce6ee47ea965e0e8bf626d8c37f24a10e5f694c469",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "d6b54ec50c89915ef510b280d4ed01a8f422ec8e4ebff8dec287d7b40f19b5d0",
-    "crates/totui/src/resources.rs": "2bb8ef62098b871ef7e6fb1b7464e93ba4ff36eb15b50674349b2e248bc07d4c",
+    "crates/totui/src/client/mod.rs": "028cde8457d2924c7cfb65ec032ec7e79ea233e439766ae376b9fa898d31d96a",
+    "crates/totui/src/resources.rs": "80f2064bffb454656c341986d0f51d78636ee8687cc843b29eb87c63313f500f",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
   "triggers": {
@@ -323,6 +323,18 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Only display strings change: the window/menu-bar title, the setup start button and the setup note. No behaviour, engine state, checkpoint, receipt or replay change."
+    },
+    {
+      "change": "Experimental scenario entry in both clients (owner decision 2026-11-18, decision 0008)",
+      "files": [
+        "crates/engine/src/player.rs",
+        "crates/engine/src/human.rs",
+        "crates/engine/src/human/checkpoint.rs",
+        "crates/engine/src/lib.rs",
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/resources.rs"
+      ],
+      "finding": "Adds a separate scenario origin: HumanSession::scenario boots a .scn/.sav into a fresh engine turn (movement reset only) with the file's events, and its checkpoints record the install-relative path, size, fingerprint and seed and restore only against the same bytes (restore_with). Generated sessions keep their exact checkpoint text and replay; event trigger/action semantics are unchanged (the new scenario module only lists gaps). The client adds the scenario list, preflight and scenario checkpoint reload. Not native-import admission under classic-surface-032-v1."
     }
   ]
 }

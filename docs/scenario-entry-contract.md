@@ -15,6 +15,11 @@ The observed 0x0032 save has framed surface data, 38 units, ten cities and no
 native transporter records. This selects a bounded stock Original surface
 profile before custom calendars, multiple maps or modern scripts.
 
+> **Owner relaxation, 2026-11-18** ([decision 0008](decisions/0008-scenario-platform.md#experimental-scenario-entry--owner-2026-11-18)):
+> the clients may open scenarios through one separately labelled
+> *experimental* path that lists every gap before the game starts. That path
+> is not admission under this contract, which remains the faithful target.
+
 **It is not admitted for human entry or faithful simulation today.** Standard
 Original events already require an unsupported compound/endgame branch, and
 native active-phase/movement/fog import requires further evidence. The other

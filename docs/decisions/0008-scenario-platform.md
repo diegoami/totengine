@@ -116,3 +116,27 @@ Answering the questions in [mcp-client-attach.md](../mcp-client-attach.md) and
    explicit opt-in switch. This is a player-chosen exception to the
    no-original-assets rule, limited to text. Images and sounds are never sent.
 5. Several advisors at once was not decided; the default is one connection.
+
+## Experimental scenario entry — owner, 2026-11-18
+
+The owner asked for scenario loading in the clients as a very important
+feature ("In the client I cannot load a scenario though, that must be possible")
+and chose the experimental route over waiting for full admission:
+
+1. **The no-partial-play rule of [scenario-entry-contract.md](../scenario-entry-contract.md)
+   is relaxed for one labelled path.** Both clients offer **Open scenario
+   (experimental)**, separate from engine-checkpoint load and from generated
+   games. It loads a scenario or classic save from the chosen installation with
+   its own Rules, Events and art folder, and starts a fresh engine turn from it.
+2. **Every gap is shown before the game starts.** A preflight lists what the
+   engine cannot run for that file (unsupported event triggers and actions,
+   Lua scripts, mid-game state that a fresh turn resets, opponent policy
+   fallbacks). The player starts only after seeing it. Nothing is presented as
+   faithful scenario play.
+3. **Files the engine cannot decode are still rejected** with an actionable
+   message (for example extended multi-map framing). Experimental entry never
+   coerces data.
+4. **classic-surface-032-v1 stays the faithful target.** #197/#198 keep their
+   admission predicates; experimental entry is not native-import acceptance and
+   closes neither. The gaps are then closed release by release, events first.
+5. Sound effects (#322) are paused behind this work.

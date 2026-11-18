@@ -158,6 +158,7 @@ impl Client {
                 item("Save game…", "Ctrl+S", Action::Save),
                 item("Load game…", "Ctrl+L", Action::Load),
                 item("New game…", "", Action::NewGame),
+                item("Open scenario…", "", Action::Scenarios),
                 item("Settings…", "", Action::Settings),
                 item("Keys…", "?", Action::Help),
                 item("Close client", "", Action::Quit),
@@ -338,12 +339,26 @@ impl Client {
         draws.push(rect(0., MENU_H, self.stage_w, 1., style::MENU_EDGE));
         // The menu bar already says which application this is.
         let title = title.strip_prefix("ToT Engine — ").unwrap_or(title);
-        let w = title.chars().count() as f64 * 0.58 * f64::from(style::TYPE_SMALL);
+        let width = |t: &str| t.chars().count() as f64 * 0.58 * f64::from(style::TYPE_SMALL);
+        // The browser's licence link sits at the top-right corner; a long
+        // title (a scenario name) first drops the turn, which the right
+        // column also shows, then ends in an ellipsis.
+        let room = self.stage_w - 198. - (title_x(MENUS.len()) + 8.);
+        let mut title = title.to_string();
+        if width(&title) > room {
+            if let Some((head, _)) = title.rsplit_once(" · Turn ") {
+                title = head.to_string();
+            }
+        }
+        if width(&title) > room {
+            let keep = (room / width("x")).floor().max(1.) as usize - 1;
+            title = title.chars().take(keep).collect::<String>() + "…";
+        }
+        let w = width(&title);
         draws.push(text(
-            // The browser's licence link sits at the top-right corner.
             (self.stage_w - 198. - w).max(title_x(MENUS.len()) + 8.),
             7.,
-            title,
+            &title,
             style::TYPE_SMALL,
             style::MENU_TEXT,
         ));

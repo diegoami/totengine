@@ -4776,3 +4776,83 @@ fn wide_stage_widens_the_map_centres_windows_and_toggles_full_screen() {
         "display changes are presentation"
     );
 }
+
+/// Experimental scenario entry (decision 0008, 2026-11-18): the setup screen
+/// lists the installation's scenarios, shows the preflight with its gaps,
+/// starts only on Accept, and engine checkpoints of the scenario reload from
+/// a fresh client. Self-skips without CIVTOT_HOME or FallRome.
+#[test]
+fn experimental_scenario_entry_lists_preflights_starts_and_reloads() {
+    let Ok(home) = std::env::var("CIVTOT_HOME") else {
+        eprintln!("skipping: CIVTOT_HOME unset");
+        return;
+    };
+    if !Path::new(&home).join("FallRome/ROMFALL.scn").is_file() {
+        eprintln!("skipping: no FallRome scenario");
+        return;
+    }
+    let scratch = tempfile::tempdir().unwrap();
+    let saves = scratch.path().join("saves");
+    let mut c = seeded_client(home.clone(), saves.clone());
+    button(&mut c, "Open scenario (experimental)");
+    assert!(matches!(c.modal, Some(Modal::Scenarios)), "{}", c.status);
+    assert!(c.scenarios.iter().any(|p| p == "FallRome/ROMFALL.scn"));
+    // Multi-map files are listed but rejected with a reason, never coerced.
+    if c.scenarios.iter().any(|p| p == "Midgard/Midgard.SCN") {
+        c.pick_scenario("Midgard/Midgard.SCN").unwrap_err();
+    }
+    while !c
+        .buttons()
+        .iter()
+        .any(|b| b.label == "FallRome/ROMFALL.scn")
+    {
+        key(&mut c, "PageDown");
+    }
+    button(&mut c, "FallRome/ROMFALL.scn");
+    let Some(Modal::ScenarioStart(choice)) = &c.modal else {
+        panic!("no preflight: {}", c.status);
+    };
+    assert!(c.loaded.is_none(), "the preflight starts nothing");
+    assert!(choice
+        .preflight
+        .gaps
+        .iter()
+        .any(|g| g.contains("fresh engine turn")));
+    let civs = choice.preflight.civs.len();
+    assert!(civs >= 2);
+    // Esc goes back to the list; picking again shows the same preflight.
+    key(&mut c, "Escape");
+    assert!(matches!(c.modal, Some(Modal::Scenarios)));
+    c.pick_scenario("FallRome/ROMFALL.scn").unwrap();
+    button(&mut c, "Start experimental game");
+    assert!(
+        c.modal
+            .as_ref()
+            .is_none_or(|m| !matches!(m, Modal::ScenarioStart(_))),
+        "{}",
+        c.status
+    );
+    let frame = c.frame();
+    assert!(
+        frame.draws.iter().any(
+            |d| matches!(d, Draw::Text { text, .. } if text.contains("ROMFALL · experimental"))
+        ),
+        "title names the experimental scenario"
+    );
+    let saved = c.checkpoint().unwrap();
+    assert!(saved.contains("\nsetup scenario "));
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "rome");
+    key(&mut c, "Enter");
+    // A fresh client (setup screen, nothing loaded) reloads it.
+    let mut d = seeded_client(home, saves);
+    key(&mut d, "Ctrl+l");
+    edit(&mut d, "rome");
+    key(&mut d, "Enter");
+    assert_eq!(d.checkpoint().unwrap(), saved, "{}", d.status);
+    assert!(
+        d.status.contains("Experimental scenario checkpoint"),
+        "{}",
+        d.status
+    );
+}

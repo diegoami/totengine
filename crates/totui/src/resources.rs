@@ -100,6 +100,66 @@ pub struct Resources {
     pub pedia: Option<tot_kit::Pedia>,
 }
 
+/// The scenario-specific inputs of an experimental scenario load.
+pub struct ScenarioFiles {
+    /// Install-relative path with `/` separators.
+    pub path: String,
+    pub bytes: Vec<u8>,
+    pub events: Option<tot_kit::EventFile>,
+    pub events_unreadable: bool,
+    /// Lua scripts sit beside the scenario.
+    pub lua: bool,
+}
+
+/// Scenario and classic save files of an installation, install-relative with
+/// `/` separators, sorted, at most three folders deep and 400 entries. Files in
+/// the root itself (a scenario needs its own folder), hidden entries and
+/// symlinks that escape the install are skipped.
+pub fn list_scenarios(home: &Path) -> Vec<String> {
+    let Ok(root) = home.canonicalize() else {
+        return Vec::new();
+    };
+    let mut found = Vec::new();
+    let mut queue = VecDeque::from([(root.clone(), 0usize)]);
+    while let Some((dir, depth)) = queue.pop_front() {
+        let Ok(entries) = fs::read_dir(&dir) else {
+            continue;
+        };
+        let mut entries: Vec<_> = entries.flatten().collect();
+        entries.sort_by_key(|e| e.file_name());
+        for e in entries {
+            let name = e.file_name().to_string_lossy().into_owned();
+            if name.starts_with('.') {
+                continue;
+            }
+            let Ok(path) = e.path().canonicalize() else {
+                continue;
+            };
+            if !path.starts_with(&root) {
+                continue;
+            }
+            if path.is_dir() {
+                if depth < 3 {
+                    queue.push_back((path, depth + 1));
+                }
+                continue;
+            }
+            let lower = name.to_ascii_lowercase();
+            if (lower.ends_with(".scn") || lower.ends_with(".sav")) && depth > 0 {
+                if let Ok(rel) = e.path().strip_prefix(&root) {
+                    found.push(rel.to_string_lossy().replace('\\', "/"));
+                }
+            }
+            if found.len() >= 400 {
+                found.sort_by_key(|p| p.to_ascii_lowercase());
+                return found;
+            }
+        }
+    }
+    found.sort_by_key(|p| p.to_ascii_lowercase());
+    found
+}
+
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FreecivSprite {
@@ -119,6 +179,18 @@ struct FreecivManifest {
 
 impl Resources {
     pub fn load(home: &Path, profile: &str) -> Result<Self, String> {
+        Self::load_with_art_fallback(home, profile, None)
+    }
+
+    /// [`Resources::load`] with one more art folder searched between the
+    /// profile and the root (a scenario's missing interface sheets come from
+    /// `Original`, as for generated games). Rules and Civilopedia keep the
+    /// profile-then-root order.
+    fn load_with_art_fallback(
+        home: &Path,
+        profile: &str,
+        art_fallback: Option<&str>,
+    ) -> Result<Self, String> {
         let root = home
             .canonicalize()
             .map_err(|e| format!("installation directory: {e}"))?;
@@ -142,6 +214,31 @@ impl Resources {
                 return Err("profile is not a directory".into());
             }
         }
+        let fallback = match art_fallback {
+            Some(name) => child(&root, name)?
+                .map(|p| contained(&root, p))
+                .transpose()?
+                .filter(|p| p.is_dir() && *p != folder),
+            None => None,
+        };
+        let select_in = |dirs: &[&PathBuf],
+                         stem: &str,
+                         extensions: &[&str]|
+         -> Result<Option<PathBuf>, String> {
+            for directory in dirs {
+                for ext in extensions {
+                    if let Some(path) = child(directory, &format!("{stem}{ext}"))? {
+                        return contained(&root, path).map(Some);
+                    }
+                }
+            }
+            Ok(None)
+        };
+        let art_dirs: Vec<&PathBuf> = [Some(&folder), fallback.as_ref(), Some(&root)]
+            .into_iter()
+            .flatten()
+            .collect();
+        let select_art = |stem: &str, extensions: &[&str]| select_in(&art_dirs, stem, extensions);
         let select = |stem: &str, extensions: &[&str]| -> Result<Option<PathBuf>, String> {
             for directory in [&folder, &root] {
                 for ext in extensions {
@@ -178,7 +275,7 @@ impl Resources {
         let mut sheets = BTreeMap::new();
         let mut missing = Vec::new();
         for key in ART_NAMES {
-            if let Some(path) = select(key, &[".bmp", ".gif"])? {
+            if let Some(path) = select_art(key, &[".bmp", ".gif"])? {
                 let data = load(key, &path)?;
                 let sheet = decode(&data).map_err(|e| format!("{key}: {e}"))?;
                 sheets.insert(key.to_owned(), sheet);
@@ -297,6 +394,69 @@ impl Resources {
             isotrident: Some(manifest.sprites),
             pedia: None,
         })
+    }
+
+    /// Experimental scenario entry (decision 0008, 2026-11-18): the scenario's
+    /// folder is the profile (its Rules and art first, then the install root),
+    /// plus the scenario bytes and the Events.txt beside it. Both join the
+    /// resource identity, so a changed file never restores a checkpoint.
+    pub fn load_scenario(home: &Path, relative: &str) -> Result<(Self, ScenarioFiles), String> {
+        let relative = relative.replace('\\', "/");
+        let (folder, file) = relative
+            .rsplit_once('/')
+            .ok_or("scenarios live in a folder of the installation")?;
+        let mut resources = Self::load_with_art_fallback(home, folder, Some("Original"))?;
+        let root = home
+            .canonicalize()
+            .map_err(|e| format!("installation directory: {e}"))?;
+        let dir = contained(&root, root.join(folder))?;
+        let path = contained(
+            &root,
+            child(&dir, file)?.ok_or_else(|| format!("scenario file missing: {relative}"))?,
+        )?;
+        let bytes = read(&path)?;
+        resources.sources.insert(
+            "scenario".into(),
+            Source {
+                relative: relative.clone(),
+                bytes: bytes.len(),
+                fingerprint: fingerprint(&bytes),
+            },
+        );
+        let mut events = None;
+        let mut events_unreadable = false;
+        if let Some(p) = child(&dir, "Events.txt")? {
+            let data = read(&contained(&root, p)?)?;
+            resources.sources.insert(
+                "events".into(),
+                Source {
+                    relative: format!("{folder}/Events.txt"),
+                    bytes: data.len(),
+                    fingerprint: fingerprint(&data),
+                },
+            );
+            match tot_kit::parse_events(&tot_kit::latin1(&data)) {
+                Ok(file) => events = Some(file),
+                Err(_) => events_unreadable = true,
+            }
+        }
+        let lua = fs::read_dir(&dir).into_iter().flatten().flatten().any(|e| {
+            e.file_name()
+                .to_string_lossy()
+                .to_ascii_lowercase()
+                .ends_with(".lua")
+        }) || child(&dir, "lua")?.is_some_and(|p| p.is_dir());
+        resources.profile = format!("Scenario (experimental): {relative}");
+        Ok((
+            resources,
+            ScenarioFiles {
+                path: relative,
+                bytes,
+                events,
+                events_unreadable,
+                lua,
+            },
+        ))
     }
 
     /// Stable versioned Rules/art identity for human checkpoints. This is an

@@ -208,7 +208,7 @@ pub struct HumanSession {
     view_cache: std::cell::RefCell<Option<(u64, HumanView)>>,
     known_tiles: Vec<Option<crate::player::TileView>>,
     known_cities: BTreeMap<usize, (u32, crate::player::CityView)>,
-    config: NewGameConfig,
+    origin: Origin,
     game: Game,
     human: u8,
     /// The opponents' policy (#261); recorded in checkpoints.
@@ -224,6 +224,56 @@ pub struct HumanSession {
     receipts: BTreeMap<u64, (Request, Response)>,
     notices: Vec<Notice>,
     journal: Vec<Operation>,
+}
+
+/// Where a session's initial state comes from; recorded in checkpoints.
+#[derive(Debug, Clone)]
+enum Origin {
+    Generated(NewGameConfig),
+    /// Experimental scenario entry (decision 0008, 2026-11-18).
+    Scenario(ScenarioOrigin),
+}
+
+impl Origin {
+    fn descriptor(&self) -> String {
+        match self {
+            Self::Generated(config) => config.descriptor(),
+            Self::Scenario(s) => format!(
+                "scenario {} {} {:016x} {}",
+                crate::scenario::hex(s.path.as_bytes()),
+                s.len,
+                s.fingerprint,
+                s.seed
+            ),
+        }
+    }
+}
+
+/// The scenario file an experimental scenario session started from: its
+/// install-relative path, size and content fingerprint, and the engine seed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScenarioOrigin {
+    pub path: String,
+    pub len: usize,
+    pub fingerprint: u64,
+    pub seed: u64,
+}
+
+impl ScenarioOrigin {
+    /// Parses a checkpoint `setup` value written for a scenario session.
+    pub fn parse(setup: &str) -> Option<Self> {
+        let mut f = setup.strip_prefix("scenario ")?.split(' ');
+        let path = String::from_utf8(crate::scenario::unhex(f.next()?)?).ok()?;
+        let len = f.next()?.parse().ok()?;
+        let fingerprint = u64::from_str_radix(f.next()?, 16).ok()?;
+        let seed = f.next()?.parse().ok()?;
+        f.next().is_none().then_some(Self {
+            path,
+            len,
+            fingerprint,
+            seed,
+        })
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -259,20 +309,62 @@ impl HumanSession {
         if !(1..=config.civilizations).contains(&human) {
             return Err("human civilization is outside the generated setup".into());
         }
-        let mut game = Game::generated_human(config, rules, human)?;
-        for civ in 1..=config.civilizations {
+        let game = Game::generated_human(config, rules, human)?;
+        let seed = u64::from(config.gameplay_seed);
+        Self::with_game(
+            game,
+            Origin::Generated(config),
+            human,
+            policy,
+            seed,
+            1..=config.civilizations,
+        )
+    }
+
+    /// Experimental scenario entry (decision 0008, 2026-11-18): `path` is the
+    /// file's install-relative path (recorded, never read here), `save` its
+    /// bytes, `rules`/`events` those beside it. Opponents are every other
+    /// civilization 1–7, played by `policy`. Not faithful scenario import:
+    /// see [`crate::scenario::preflight`] for the gaps shown to the player.
+    pub fn scenario(
+        path: &str,
+        save: &[u8],
+        rules: Rules,
+        events: Option<crate::events::EventEngine>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+    ) -> Result<Self, String> {
+        if path.is_empty() || path.len() > 1024 {
+            return Err("scenario path must be 1–1024 bytes".into());
+        }
+        let game = Game::scenario_human(path, save, seed, rules, events, human)?;
+        let origin = Origin::Scenario(ScenarioOrigin {
+            path: path.to_string(),
+            len: save.len(),
+            fingerprint: crate::player::fnv64(save),
+            seed,
+        });
+        Self::with_game(game, origin, human, policy, seed, 1..=7)
+    }
+
+    fn with_game(
+        mut game: Game,
+        origin: Origin,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        opponents: std::ops::RangeInclusive<u8>,
+    ) -> Result<Self, String> {
+        for civ in opponents {
             if civ != human {
                 game.players[civ as usize] = match policy {
-                    crate::campaign::AiPolicy::AiV1 => Some(Box::new(crate::ai::AiV1::new(
-                        &game.rules,
-                        u64::from(config.gameplay_seed),
-                        civ,
-                    ))),
-                    crate::campaign::AiPolicy::BuiltIn1 => Some(Box::new(BuiltInAi::new(
-                        &game.rules,
-                        u64::from(config.gameplay_seed),
-                        civ,
-                    )?)),
+                    crate::campaign::AiPolicy::AiV1 => {
+                        Some(Box::new(crate::ai::AiV1::new(&game.rules, seed, civ)))
+                    }
+                    crate::campaign::AiPolicy::BuiltIn1 => {
+                        Some(Box::new(BuiltInAi::new(&game.rules, seed, civ)?))
+                    }
                 };
             }
         }
@@ -280,7 +372,7 @@ impl HumanSession {
             known_tiles: vec![None; game.world.map.terrain.len()],
             known_cities: BTreeMap::new(),
             view_cache: std::cell::RefCell::new(None),
-            config,
+            origin,
             game,
             human,
             policy,
@@ -300,6 +392,14 @@ impl HumanSession {
         session.begin_human_turn();
         session.require_research();
         Ok(session)
+    }
+
+    /// The scenario this session started from, if it is a scenario session.
+    pub fn scenario_origin(&self) -> Option<&ScenarioOrigin> {
+        match &self.origin {
+            Origin::Scenario(s) => Some(s),
+            Origin::Generated(_) => None,
+        }
     }
 
     pub fn phase(&self) -> Phase {

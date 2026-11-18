@@ -15,7 +15,7 @@ impl HumanSession {
         let rules = tot_kit::emit_rules(&self.game.rules);
         let mut text = format!(
             "totengine-human 2\nengine {}\nsetup {}\nhuman {}\npolicy {}\nrules {} {:016x}\nresources {} {:016x}\nworld {:016x}\nknowledge {:016x}\nlog {} {:016x}\n",
-            env!("CARGO_PKG_VERSION"), self.config.descriptor(), self.human, self.policy.id(),
+            env!("CARGO_PKG_VERSION"), self.origin.descriptor(), self.human, self.policy.id(),
             rules.len(), fingerprint(rules.as_bytes()), resources.len(), fingerprint(resources.as_bytes()),
             self.game.world.checksum(), self.knowledge_fingerprint(), self.game.log().len(), fingerprint(self.game.log().as_bytes()),
         );
@@ -37,8 +37,29 @@ impl HumanSession {
         text
     }
 
+    /// The scenario a checkpoint was made from, read from its `setup` line
+    /// without replaying anything, so an adapter can locate the file first.
+    pub fn checkpoint_scenario(text: &str) -> Option<ScenarioOrigin> {
+        let mut lines = text.lines();
+        lines.next().filter(|l| *l == "totengine-human 2")?;
+        lines.next()?;
+        ScenarioOrigin::parse(lines.next()?.strip_prefix("setup ")?)
+    }
+
     /// Builds a temporary replacement. Failure cannot mutate the active session.
     pub fn restore(rules: Rules, resources: &str, text: &str) -> Result<Self, String> {
+        Self::restore_with(rules, resources, text, None)
+    }
+
+    /// [`HumanSession::restore`] for any origin: a scenario checkpoint needs
+    /// the scenario's bytes and events (`scenario`), checked against the
+    /// recorded size and fingerprint before replay.
+    pub fn restore_with(
+        rules: Rules,
+        resources: &str,
+        text: &str,
+        scenario: Option<(&[u8], Option<crate::events::EventEngine>)>,
+    ) -> Result<Self, String> {
         if text.len() > 16 * 1024 * 1024 {
             return Err("human checkpoint exceeds 16 MiB".into());
         }
@@ -48,12 +69,15 @@ impl HumanSession {
         {
             return Err("unsupported human checkpoint or engine version".into());
         }
-        let config = NewGameConfig::from_descriptor(
-            lines
-                .next()
-                .and_then(|l| l.strip_prefix("setup "))
-                .ok_or("missing setup")?,
-        )?;
+        let setup = lines
+            .next()
+            .and_then(|l| l.strip_prefix("setup "))
+            .ok_or("missing setup")?;
+        let origin = if setup.starts_with("scenario ") {
+            Origin::Scenario(ScenarioOrigin::parse(setup).ok_or("invalid scenario setup")?)
+        } else {
+            Origin::Generated(NewGameConfig::from_descriptor(setup)?)
+        };
         let human = lines
             .next()
             .and_then(|l| l.strip_prefix("human "))
@@ -91,7 +115,19 @@ impl HumanSession {
         lines.next().ok_or("missing world fingerprint")?;
         lines.next().ok_or("missing knowledge fingerprint")?;
         lines.next().ok_or("missing order-log identity")?;
-        let mut session = Self::generated_with_policy(config, rules, human, policy)?;
+        let mut session = match origin {
+            Origin::Generated(config) => Self::generated_with_policy(config, rules, human, policy)?,
+            Origin::Scenario(o) => {
+                let (save, events) = scenario.ok_or("this checkpoint needs its scenario file")?;
+                if save.len() != o.len || crate::player::fnv64(save) != o.fingerprint {
+                    return Err(
+                        "the scenario file differs from the one this checkpoint started from"
+                            .into(),
+                    );
+                }
+                Self::scenario(&o.path, save, rules, events, human, policy, o.seed)?
+            }
+        };
         let mut ended = false;
         for (count, line) in lines.by_ref().enumerate() {
             if count > 200_000 {

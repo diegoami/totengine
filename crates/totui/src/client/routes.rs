@@ -282,6 +282,11 @@ impl Client {
                 self.report_open_city()?;
                 Ok(Some(false))
             }
+            Modal::Scenarios => Err("Choose a scenario file from the list".into()),
+            Modal::ScenarioStart(choice) => {
+                self.start_scenario(choice)?;
+                Ok(Some(true))
+            }
             Modal::Goal => {
                 let goal = self.choice.ok_or("Select a goal explicitly")? as usize;
                 self.set_goal(Some(goal))?;
@@ -337,6 +342,16 @@ impl Client {
             }
             Some(Modal::Notice { .. } | Modal::Help | Modal::Messages | Modal::Settings) => {
                 self.modal = None;
+                true
+            }
+            Some(Modal::Scenarios) => {
+                self.modal = None;
+                true
+            }
+            Some(Modal::ScenarioStart(_)) => {
+                if self.open_scenarios().is_err() {
+                    self.modal = None;
+                }
                 true
             }
             _ => false,
@@ -568,6 +583,10 @@ impl Client {
         // Settings also opens from the setup screen, before any game exists.
         if matches!(modal, Modal::Settings) {
             self.settings_draws(draws);
+            return;
+        }
+        if matches!(modal, Modal::Scenarios | Modal::ScenarioStart(_)) {
+            self.scenario_draws(modal, draws);
             return;
         }
         let Some(v) = self.view() else { return };

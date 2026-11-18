@@ -1,0 +1,354 @@
+//! Experimental scenario entry in both clients (decision 0008, 2026-11-18).
+//!
+//! **Open scenario (experimental)** lists the installation's scenario and
+//! classic save files, shows a preflight with every gap the engine knows
+//! about, and only then starts. The preflight is the point: nothing here is
+//! presented as faithful scenario play (`docs/scenario-entry-contract.md`
+//! remains the faithful target).
+use super::*;
+use engine::campaign::AiPolicy;
+use engine::scenario::Preflight;
+
+/// Scenario list rows per page.
+pub(super) const SCENARIO_ROWS: usize = 11;
+const ROW_Y: f64 = 172.;
+const ROW_STEP: f64 = 34.;
+/// Gap lines shown in the preflight.
+const GAP_ROWS: usize = 10;
+
+/// What the preflight needs to start the game it describes.
+#[derive(Clone)]
+pub(super) struct ScenarioChoice {
+    pub path: String,
+    pub preflight: Preflight,
+    /// Index into `preflight.civs`.
+    pub civ: usize,
+    pub policy: AiPolicy,
+}
+
+impl Client {
+    fn scenario_home(&self) -> Result<&Path, String> {
+        if self.home.trim().is_empty() {
+            return Err(
+                "Enter the installation directory first; scenarios come from your ToT install"
+                    .into(),
+            );
+        }
+        Ok(Path::new(&self.home))
+    }
+
+    /// Opens the scenario list.
+    pub(super) fn open_scenarios(&mut self) -> Result<(), String> {
+        let home = self.scenario_home()?.to_path_buf();
+        self.scenarios = crate::resources::list_scenarios(&home);
+        if self.scenarios.is_empty() {
+            return Err(
+                "No scenario (.scn) or saved game (.sav) found in the installation's folders"
+                    .into(),
+            );
+        }
+        self.open(Modal::Scenarios);
+        Ok(())
+    }
+
+    /// Reads the chosen file and opens its preflight; nothing starts yet.
+    pub(super) fn pick_scenario(&mut self, path: &str) -> Result<(), String> {
+        let home = self.scenario_home()?.to_path_buf();
+        let (resources, files) = crate::resources::Resources::load_scenario(&home, path)?;
+        let mut preflight = engine::scenario::preflight(
+            &files.bytes,
+            &resources.rules,
+            files.events.as_ref(),
+            files.events_unreadable,
+            files.lua,
+        )?;
+        // The built-in opponent needs the Rules' research tables; scenarios
+        // that rename advances fall back to AI v1, and say so.
+        let policy = match engine::ai::BuiltInAi::new(&resources.rules, 0, 1) {
+            Ok(_) => AiPolicy::BuiltIn1,
+            Err(e) => {
+                preflight.gaps.insert(
+                    1,
+                    format!("Opponents use AI v1: the built-in AI cannot read these Rules ({e})"),
+                );
+                AiPolicy::AiV1
+            }
+        };
+        let civ = preflight
+            .civs
+            .iter()
+            .position(|c| c.human_in_file)
+            .unwrap_or(0);
+        self.open(Modal::ScenarioStart(Box::new(ScenarioChoice {
+            path: files.path,
+            preflight,
+            civ,
+            policy,
+        })));
+        Ok(())
+    }
+
+    /// Starts the game the preflight showed.
+    pub(super) fn start_scenario(&mut self, choice: &ScenarioChoice) -> Result<(), String> {
+        let home = self.scenario_home()?.to_path_buf();
+        let (resources, files) = crate::resources::Resources::load_scenario(&home, &choice.path)?;
+        let atlas = Atlas::load(&resources)?;
+        let identity = resources.identity();
+        let civ = choice
+            .preflight
+            .civs
+            .get(choice.civ)
+            .ok_or("Choose a civilization")?;
+        let seed: u64 = random_seed()?.parse().map_err(|_| "seed")?;
+        let session = HumanSession::scenario(
+            &files.path,
+            &files.bytes,
+            resources.rules.clone(),
+            files.events.map(engine::events::EventEngine::new),
+            civ.civ,
+            choice.policy,
+            seed,
+        )?;
+        self.report_return = None;
+        self.reset_notices();
+        self.loaded = Some(Loaded {
+            resources,
+            atlas,
+            session,
+            identity,
+        });
+        self.assets = storage::nonce()?;
+        self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
+        self.city_panel = CityPanel::Info;
+        self.city_panel_page = 0;
+        self.editing.clear();
+        self.active = None;
+        self.city = None;
+        self.refresh();
+        self.schedule_unit(None, true);
+        self.center();
+        self.status = format!(
+            "Experimental scenario: {} as the {}. Not faithful scenario play; see the gaps shown before starting.",
+            choice.path, civ.name
+        );
+        Ok(())
+    }
+
+    /// Loads resources and the scenario file a scenario checkpoint names, and
+    /// restores it; the running game is untouched on failure.
+    pub(super) fn restore_scenario(
+        &mut self,
+        origin: &engine::human::ScenarioOrigin,
+        text: &str,
+    ) -> Result<(), String> {
+        let home = self.scenario_home()?.to_path_buf();
+        let (resources, files) = crate::resources::Resources::load_scenario(&home, &origin.path)
+            .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))?;
+        let atlas = Atlas::load(&resources)?;
+        let identity = resources.identity();
+        let session = HumanSession::restore_with(
+            resources.rules.clone(),
+            &identity,
+            text,
+            Some((
+                &files.bytes,
+                files.events.map(engine::events::EventEngine::new),
+            )),
+        )?;
+        let assets = storage::nonce()?;
+        self.reset_notices();
+        self.loaded = Some(Loaded {
+            resources,
+            atlas,
+            identity,
+            session,
+        });
+        self.assets = assets;
+        Ok(())
+    }
+
+    pub(super) fn scenario_buttons(&self, modal: &Modal) -> Vec<Button> {
+        let mut b = Vec::new();
+        let mut add = |x: f64, y: f64, w: f64, h: f64, label: String, action: Action| {
+            b.push(Button {
+                x,
+                y,
+                w,
+                h,
+                label,
+                action,
+            });
+        };
+        match modal {
+            Modal::Scenarios => {
+                let pages = self.scenarios.len().div_ceil(SCENARIO_ROWS);
+                for (row, path) in self
+                    .scenarios
+                    .iter()
+                    .skip(self.page * SCENARIO_ROWS)
+                    .take(SCENARIO_ROWS)
+                    .enumerate()
+                {
+                    add(
+                        212.,
+                        ROW_Y + row as f64 * ROW_STEP,
+                        600.,
+                        30.,
+                        path.clone(),
+                        Action::ScenarioPick(path.clone()),
+                    );
+                }
+                if pages > 1 {
+                    add(212., 552., 120., 28., "Previous".into(), Action::Page(-1));
+                    add(352., 552., 120., 28., "Next page".into(), Action::Page(1));
+                }
+            }
+            Modal::ScenarioStart(choice) => {
+                for (i, c) in choice.preflight.civs.iter().enumerate() {
+                    let (col, row) = (i % 4, i / 4);
+                    add(
+                        212. + col as f64 * 152.,
+                        236. + row as f64 * 36.,
+                        146.,
+                        30.,
+                        format!("{} {}", if i == choice.civ { "●" } else { "○" }, c.name),
+                        Action::ScenarioCiv(i),
+                    );
+                }
+            }
+            _ => {}
+        }
+        b
+    }
+
+    pub(super) fn scenario_draws(&self, modal: &Modal, draws: &mut Vec<Draw>) {
+        match modal {
+            Modal::Scenarios => {
+                let pages = self.scenarios.len().div_ceil(SCENARIO_ROWS).max(1);
+                draws.push(text(
+                    212.,
+                    150.,
+                    &format!(
+                        "{} files in the installation · page {} of {pages} · experimental: gaps are listed before starting",
+                        self.scenarios.len(),
+                        self.page + 1
+                    ),
+                    style::TYPE_SMALL,
+                    style::TEXT_DIM,
+                ));
+            }
+            Modal::ScenarioStart(choice) => {
+                let p = &choice.preflight;
+                draws.push(text(
+                    212.,
+                    150.,
+                    &choice.path,
+                    style::TYPE_BODY,
+                    style::TEXT_BRIGHT,
+                ));
+                draws.push(text(
+                    212.,
+                    176.,
+                    &format!(
+                        "Turn {} · map {} × {} · {} civilizations · opponents: {}",
+                        p.turn,
+                        p.width * 2,
+                        p.height,
+                        p.civs.len(),
+                        choice.policy.id()
+                    ),
+                    style::TYPE_SMALL,
+                    style::TEXT,
+                ));
+                draws.push(text(
+                    212.,
+                    214.,
+                    "Play as:",
+                    style::TYPE_BODY,
+                    style::TEXT_BRIGHT,
+                ));
+                let rows = p.civs.len().div_ceil(4) as f64;
+                let civ = &p.civs[choice.civ.min(p.civs.len() - 1)];
+                let y = 236. + rows * 36. + 6.;
+                draws.push(text(
+                    212.,
+                    y,
+                    &format!(
+                        "{}: {} units, {} cities{}",
+                        civ.name,
+                        civ.units,
+                        civ.cities,
+                        if civ.human_in_file {
+                            " · human in the file"
+                        } else {
+                            ""
+                        }
+                    ),
+                    style::TYPE_SMALL,
+                    style::TEXT,
+                ));
+                let y = if self.loaded.is_some() {
+                    draws.push(text(
+                        212.,
+                        y + 20.,
+                        "Starting replaces the running game; save it first to keep it.",
+                        style::TYPE_SMALL,
+                        style::WARN,
+                    ));
+                    y + 16.
+                } else {
+                    y
+                };
+                draws.push(text(
+                    212.,
+                    y + 28.,
+                    "Not supported yet (experimental entry):",
+                    style::TYPE_BODY,
+                    style::WARN,
+                ));
+                let mut lines: Vec<String> = Vec::new();
+                for gap in &p.gaps {
+                    lines.extend(wrap(&format!("• {gap}"), 80));
+                }
+                let shown = lines.len().min(GAP_ROWS);
+                for (i, line) in lines.iter().take(shown).enumerate() {
+                    draws.push(text(
+                        214.,
+                        y + 52. + i as f64 * 19.,
+                        line,
+                        style::TYPE_SMALL,
+                        style::TEXT,
+                    ));
+                }
+                if lines.len() > shown {
+                    draws.push(text(
+                        214.,
+                        y + 52. + shown as f64 * 19.,
+                        &format!("+{} more lines", lines.len() - shown),
+                        style::TYPE_SMALL,
+                        style::TEXT_DIM,
+                    ));
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Word-wraps `line` at `width` characters; continuation lines are indented.
+fn wrap(line: &str, width: usize) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut current = String::new();
+    for word in line.split(' ') {
+        if !current.is_empty() && current.chars().count() + 1 + word.chars().count() > width {
+            out.push(std::mem::take(&mut current));
+            current.push_str("   ");
+        }
+        if !current.is_empty() && !current.ends_with("   ") {
+            current.push(' ');
+        }
+        current.push_str(word);
+    }
+    out.push(current);
+    out
+}

@@ -861,7 +861,7 @@ const NEIGHBOURS: [(i32, i32); 8] = [
 ];
 
 /// FNV-1a 64-bit, for the save fingerprint in the log header.
-fn fnv64(bytes: &[u8]) -> u64 {
+pub(crate) fn fnv64(bytes: &[u8]) -> u64 {
     bytes.iter().fold(0xcbf2_9ce4_8422_2325, |h, &b| {
         (h ^ b as u64).wrapping_mul(0x0000_0100_0000_01b3)
     })
@@ -981,6 +981,48 @@ impl Game {
             save_name.replace(' ', "_"),
             save.len(),
             fnv64(save)
+        );
+        Ok(Game {
+            world,
+            rules,
+            events,
+            players: (0..8).map(|_| None).collect(),
+            log,
+        })
+    }
+
+    /// Boot a human game from scenario/save bytes for the experimental
+    /// scenario entry (decision 0008, 2026-11-18). Like [`Game::new`] it starts
+    /// a fresh engine turn (movement reset only); the human mask names the
+    /// player's civilization. The log header binds the install-relative path,
+    /// the file identity, the seed, the human, the Rules and the initial state.
+    pub(crate) fn scenario_human(
+        path: &str,
+        save: &[u8],
+        seed: u64,
+        rules: Rules,
+        events: Option<EventEngine>,
+        human: u8,
+    ) -> Result<Game, String> {
+        let sav = tot_kit::parse_sav(save).map_err(|e| e.to_string())?;
+        let mut world = crate::boot(&sav, seed);
+        if !(1..=7).contains(&human) || !world.civ_alive(human) {
+            return Err("the chosen civilization has no units or cities in this scenario".into());
+        }
+        world.human_mask = 1 << human;
+        world.start_turn(&rules);
+        for c in 1..8 {
+            world.reveal(c);
+        }
+        let canonical_rules = tot_kit::emit_rules(&rules);
+        let log = format!(
+            "totengine-human-scenario-orderlog 1\nscenario {} {} {:016x} seed {seed} human {human}\nrules {} {:016x} initial {:016x}\n",
+            crate::scenario::hex(path.as_bytes()),
+            save.len(),
+            fnv64(save),
+            canonical_rules.len(),
+            fnv64(canonical_rules.as_bytes()),
+            world.checksum()
         );
         Ok(Game {
             world,

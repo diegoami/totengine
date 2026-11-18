@@ -10,6 +10,7 @@ pub mod desktop;
 mod editor;
 mod isotrident;
 mod paths;
+mod scenario;
 mod science;
 mod selection;
 pub mod storage;
@@ -346,11 +347,19 @@ enum Modal {
     Load,
     NewGame,
     Quit,
+    /// Experimental scenario entry (decision 0008, 2026-11-18): the file list
+    /// and the preflight shown before starting.
+    Scenarios,
+    ScenarioStart(Box<scenario::ScenarioChoice>),
 }
 #[derive(Clone)]
 enum Action {
     QuickStart,
     Start,
+    /// Opens the experimental scenario list.
+    Scenarios,
+    ScenarioPick(String),
+    ScenarioCiv(usize),
     Civs,
     Human,
     Difficulty,
@@ -513,6 +522,8 @@ pub struct Client {
     fullscreen: bool,
     /// The science advisor lists available advances by name (#315).
     science_by_name: bool,
+    /// Files listed by the experimental scenario entry.
+    scenarios: Vec<String>,
     assets: String,
     fallback_pack: Option<PathBuf>,
 }
@@ -589,6 +600,7 @@ impl Client {
             stage_w: f64::from(WIDTH),
             fullscreen: false,
             science_by_name: false,
+            scenarios: Vec::new(),
             assets: "none".into(),
             fallback_pack,
         }
@@ -1036,7 +1048,9 @@ impl Client {
         let _ = match &self.modal {
             Some(Modal::Report { .. }) => self.report_key(key).unwrap_or(Ok(())),
             Some(Modal::Pedia { .. }) => self.pedia_key(key).unwrap_or(Ok(())),
-            Some(Modal::Messages | Modal::Load) => self.action(Action::Page(delta)),
+            Some(Modal::Messages | Modal::Load | Modal::Scenarios) => {
+                self.action(Action::Page(delta))
+            }
             Some(_) if !self.current_choices().is_empty() => self.action(Action::Page(delta)),
             Some(_) => Ok(()),
             None if self.city_open && x - self.dx() >= 736. => {
@@ -1297,6 +1311,15 @@ impl Client {
             }
             Action::Toggle(e) => self.toggle_enhancement(e),
             Action::Settings => self.open(Modal::Settings),
+            Action::Scenarios => self.open_scenarios()?,
+            Action::ScenarioPick(path) => self.pick_scenario(&path)?,
+            Action::ScenarioCiv(i) => {
+                if let Some(Modal::ScenarioStart(choice)) = &mut self.modal {
+                    if i < choice.preflight.civs.len() {
+                        choice.civ = i;
+                    }
+                }
+            }
             Action::Found => {
                 let unit = self.active.ok_or("Select an own settler first")?;
                 self.order(Command::BeginFound { unit })?;
@@ -1456,6 +1479,8 @@ impl Client {
                     self.notice_log.len().saturating_sub(1) / MESSAGE_ROWS
                 } else if matches!(self.modal, Some(Modal::Load)) {
                     storage::list(&self.saves).len().saturating_sub(1) / LOAD_ROWS
+                } else if matches!(self.modal, Some(Modal::Scenarios)) {
+                    self.scenarios.len().saturating_sub(1) / scenario::SCENARIO_ROWS
                 } else {
                     self.current_choices().len().saturating_sub(1) / 12
                 };
@@ -1517,6 +1542,8 @@ impl Client {
                     | Modal::Help
                     | Modal::Messages
                     | Modal::Settings
+                    | Modal::Scenarios
+                    | Modal::ScenarioStart(_)
                     | Modal::Report { .. }
                     | Modal::Pedia { .. }
                     | Modal::Goal => unreachable!("handled by route_accept"),
@@ -1617,7 +1644,14 @@ impl Client {
                     Modal::Load => {
                         self.report_return = None;
                         let text = storage::load(&self.saves, &self.entry)?;
-                        if let Some(l) = self.loaded.as_mut() {
+                        let scenario = HumanSession::checkpoint_scenario(&text);
+                        if let Some(origin) = &scenario {
+                            self.restore_scenario(origin, &text)?;
+                        } else if let Some(l) = self
+                            .loaded
+                            .as_mut()
+                            .filter(|l| l.session.scenario_origin().is_none())
+                        {
                             let restored = HumanSession::restore(
                                 l.resources.rules.clone(),
                                 &l.identity,
@@ -1653,7 +1687,10 @@ impl Client {
                         }
                         self.schedule_unit(None, true);
                         self.center();
-                        self.status="Checkpoint restored, including pending decisions. Original SAV import is not supported.".into();
+                        self.status = match scenario {
+                            Some(o) => format!("Experimental scenario checkpoint restored ({}).", o.path),
+                            None => "Checkpoint restored, including pending decisions. Original SAV import is not supported.".into(),
+                        };
                     }
                 }
                 self.modal = None;
@@ -2286,6 +2323,7 @@ impl Client {
                 .into_iter()
                 .chain(self.report_buttons())
                 .chain(self.pedia_buttons())
+                .chain(self.scenario_buttons(modal))
             {
                 add(rb.x, rb.y, rb.w, rb.h, rb.label, rb.action);
             }
@@ -2330,7 +2368,9 @@ impl Client {
                     );
                 }
             }
-            if !matches!(modal,Modal::Purchase {quote,..} if quote.price > quote.treasury) {
+            if !matches!(modal,Modal::Purchase {quote,..} if quote.price > quote.treasury)
+                && !matches!(modal, Modal::Scenarios)
+            {
                 add(
                     212.,
                     595.,
@@ -2348,6 +2388,7 @@ impl Client {
                         Modal::Report { .. } => "Open city [Enter]",
                         Modal::Pedia { reading: false, .. } => "Read [Enter]",
                         Modal::Pedia { .. } => "Back to list [Enter]",
+                        Modal::ScenarioStart(_) => "Start experimental game [Enter]",
                         _ => "Accept [Enter]",
                     }
                     .into(),
@@ -2365,7 +2406,8 @@ impl Client {
                         Modal::Rates { review: None, .. } => "Discard [Esc]",
                         Modal::Rates { .. } => "Reset split [Esc]",
                         Modal::Revolution => "Cancel [Esc]",
-                        Modal::Goal => "Back [Esc]",
+                        Modal::Goal | Modal::ScenarioStart(_) => "Back [Esc]",
+                        Modal::Scenarios => "Close [Esc]",
                         Modal::Science
                         | Modal::Notice { .. }
                         | Modal::Help
@@ -2454,10 +2496,18 @@ impl Client {
             add(
                 100.,
                 545.,
-                824.,
+                404.,
                 42.,
                 "Load engine checkpoint".into(),
                 Action::Load,
+            );
+            add(
+                520.,
+                545.,
+                404.,
+                42.,
+                "Open scenario (experimental)".into(),
+                Action::Scenarios,
             );
             add(
                 100.,
@@ -2531,7 +2581,18 @@ impl Client {
         let title: String = self.loaded.as_ref().map_or_else(
             || "ToT Engine".to_string(),
             |l| {
-                let name = if l.resources.profile.starts_with("Open demo") {
+                let scenario = l
+                    .resources
+                    .profile
+                    .strip_prefix("Scenario (experimental): ")
+                    .map(|p| {
+                        let file = p.rsplit('/').next().unwrap_or(p);
+                        let stem = file.rsplit_once('.').map_or(file, |(s, _)| s);
+                        format!("ToT Engine — {stem} · experimental scenario")
+                    });
+                let name = if let Some(name) = &scenario {
+                    name.as_str()
+                } else if l.resources.profile.starts_with("Open demo") {
                     "ToT Engine — Open demo / Isotrident"
                 } else if l.resources.isotrident.is_some() {
                     "ToT Engine — ToT rules / Isotrident"
@@ -2643,6 +2704,8 @@ impl Client {
                 Modal::Confirm { label, .. } => label,
                 Modal::Save => "Save engine checkpoint (new name)",
                 Modal::Load => "Load engine checkpoint (same resources)",
+                Modal::Scenarios => "Open scenario (experimental)",
+                Modal::ScenarioStart(_) => "Scenario preflight (experimental)",
                 Modal::NewGame => "Start a new game? Unsaved progress will be lost.",
                 Modal::Quit => "Close client? Save first if you want to resume.",
             };

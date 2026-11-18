@@ -199,6 +199,37 @@ The map screen follows the original's frame (layout B, [design record](ui/layout
   reassigned to unrelated actions. Research and city controls remain explicit
   buttons until their fuller original workflows are implemented.
 
+## Experimental scenario entry
+
+Owner decision 2026-11-18 ([decision 0008](decisions/0008-scenario-platform.md#experimental-scenario-entry--owner-2026-11-18)).
+**Open scenario (experimental)** on the setup screen, or **Game > Open
+scenario…** during a game, lists the `.scn` and `.sav` files in your
+installation's folders (up to three levels deep; files in the install root
+itself are not listed). Choosing one opens a **preflight**; nothing starts until
+you accept it. The preflight shows the turn, map size, the civilizations you
+can play (any with units or cities; the one the file marks as human is
+preselected), the opponents' engine policy, and every gap the engine knows
+about:
+
+- the game starts a fresh engine turn, so every unit gets its full movement;
+- opponents are played by the engine AI (`builtin-1`, or `ai-v1` when the
+  built-in AI cannot read the scenario's Rules), not the original AI's plans;
+- event triggers that never fire, event actions that do nothing yet,
+  GIVETECHNOLOGY (skipped), CREATEUNIT (approximate placement) and event
+  messages (applied silently for now);
+- Lua scripts beside the scenario, which are not run.
+
+The scenario's folder supplies its Rules, Events and art; interface sheets the
+folder lacks come from `Original`, then the install root. Files the decoders
+cannot frame (for example Midgard and Warring States, extended multi-map
+scenarios) are rejected with a reason. Starting replaces a running game.
+
+Engine checkpoints of a scenario game record the scenario's install-relative
+path, size and fingerprint, and the seed. Loading one re-reads that file from
+the chosen installation and refuses if it changed. This is **not** native
+scenario import: the faithful target stays `classic-surface-032-v1`
+([scenario-entry-contract.md](scenario-entry-contract.md), #197/#198).
+
 ## Saving and scope
 
 Checkpoint names contain 1–64 letters, digits, underscores or hyphens. Saving
@@ -218,7 +249,8 @@ there is no autosave or cross-version migration in this slice.
 Supported action contexts are adjacent surface land movement/combat and the
 existing limited city-occupation model. Capital relocation, civil war,
 technology plunder and civilization respawn are incomplete. Sea/air/cargo,
-map-edge wrapping moves, original SAV/scenario import, multiple maps, native
+map-edge wrapping moves, faithful SAV/scenario import (an experimental entry
+exists, see above), multiple maps, native
 SAV export, government, diplomacy, full city management and native victory
 handling remain later work. A required unsupported government phase stops with
 a diagnostic and can be saved; it is never silently answered. This release

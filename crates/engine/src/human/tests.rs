@@ -1670,3 +1670,96 @@ fn human_research_list_applies_native_thinning_and_goal_steers_only_the_default(
     send(&mut s, Command::Goal { advance: None });
     assert_eq!(s.view().goal, None);
 }
+
+/// Experimental scenario entry (decision 0008, 2026-11-18): an installed
+/// scenario starts a human session whose checkpoint records the file, and
+/// replays only against the same bytes. Self-skips without CIVTOT_HOME.
+#[test]
+fn experimental_scenario_session_checkpoints_against_its_file() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME") else {
+        eprintln!("skipping: CIVTOT_HOME unset");
+        return;
+    };
+    let dir = std::path::Path::new(&home).join("FallRome");
+    let Ok(save) = std::fs::read(dir.join("ROMFALL.scn")) else {
+        eprintln!("skipping: no FallRome scenario");
+        return;
+    };
+    let rules = tot_kit::parse_rules(&tot_kit::latin1(
+        &std::fs::read(dir.join("Rules.txt")).unwrap(),
+    ));
+    let events = || {
+        std::fs::read(dir.join("Events.txt"))
+            .ok()
+            .and_then(|b| tot_kit::parse_events(&tot_kit::latin1(&b)).ok())
+            .map(crate::events::EventEngine::new)
+    };
+    let pre = crate::scenario::preflight(
+        &save,
+        &rules,
+        events().as_ref().map(|e| &e.file),
+        false,
+        false,
+    )
+    .unwrap();
+    assert!(pre.civs.len() >= 2, "{pre:?}");
+    assert!(pre.gaps.iter().any(|g| g.contains("fresh engine turn")));
+    let human = pre.civs[0].civ;
+    let policy = crate::campaign::AiPolicy::AiV1;
+    let mut s = HumanSession::scenario(
+        "FallRome/ROMFALL.scn",
+        &save,
+        rules.clone(),
+        events(),
+        human,
+        policy,
+        9,
+    )
+    .unwrap();
+    // The first civilization moves first, so no opponent round runs here
+    // (a FallRome round is slow in debug builds); research and a skip
+    // exercise the journal.
+    assert_eq!(s.phase(), Phase::Human);
+    choose(&mut s);
+    if let Some(&unit) = s.view().units.first() {
+        send(&mut s, Command::Skip { unit });
+    }
+    let text = s.checkpoint("scenario-resources");
+    let origin = HumanSession::checkpoint_scenario(&text).unwrap();
+    assert_eq!(origin.path, "FallRome/ROMFALL.scn");
+    assert_eq!(origin.len, save.len());
+    let restored = HumanSession::restore_with(
+        rules.clone(),
+        "scenario-resources",
+        &text,
+        Some((&save, events())),
+    )
+    .unwrap();
+    assert_eq!(restored.view(), s.view());
+    assert_eq!(restored.checkpoint("scenario-resources"), text);
+    // The wrong file, or none, never restores.
+    let mut other = save.clone();
+    other[save.len() - 1] ^= 1;
+    assert!(HumanSession::restore_with(
+        rules.clone(),
+        "scenario-resources",
+        &text,
+        Some((&other, events()))
+    )
+    .is_err());
+    assert!(HumanSession::restore(rules.clone(), "scenario-resources", &text).is_err());
+    // A civilization without units or cities cannot be chosen.
+    let dead = (1..8).find(|c| !pre.civs.iter().any(|v| v.civ == *c));
+    if let Some(dead) = dead {
+        assert!(HumanSession::scenario(
+            "FallRome/ROMFALL.scn",
+            &save,
+            rules,
+            events(),
+            dead,
+            policy,
+            9
+        )
+        .is_err());
+    }
+}

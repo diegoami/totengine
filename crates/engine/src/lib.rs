@@ -40,6 +40,7 @@ pub mod rates;
 pub mod removal;
 pub mod research;
 pub mod rng;
+pub mod scenario;
 pub mod statistics;
 pub mod support;
 pub mod trade_routes;

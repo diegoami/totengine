@@ -341,13 +341,19 @@ impl Client {
         let title = title.strip_prefix("ToT Engine — ").unwrap_or(title);
         let width = |t: &str| t.chars().count() as f64 * 0.58 * f64::from(style::TYPE_SMALL);
         // The browser's licence link sits at the top-right corner; a long
-        // title (a scenario name) first drops the turn, which the right
-        // column also shows, then ends in an ellipsis.
+        // title (a scenario name) first drops the turn, then the date (#330),
+        // both of which the right column also shows, then ends in an
+        // ellipsis.
         let room = self.stage_w - 198. - (title_x(MENUS.len()) + 8.);
         let mut title = title.to_string();
         if width(&title) > room {
             if let Some((head, _)) = title.rsplit_once(" · Turn ") {
                 title = head.to_string();
+                if width(&title) > room && self.date_label_shown() {
+                    if let Some((head, _)) = title.rsplit_once(" · ") {
+                        title = head.to_string();
+                    }
+                }
             }
         }
         if width(&title) > room {
@@ -614,6 +620,23 @@ impl Client {
         b
     }
 
+    /// The date as the original writes it, with the game's `Labels.txt`
+    /// (#330); `None` while the scenario calendar is not located.
+    pub(super) fn date_label(&self, o: &engine::player::Observation) -> Option<String> {
+        let (n, style) = o.date?;
+        let labels = self
+            .loaded
+            .as_ref()
+            .and_then(|l| l.resources.labels.as_ref());
+        Some(engine::calendar::date_text(n, style, labels))
+    }
+
+    /// A date is part of the title (the game's calendar is located).
+    fn date_label_shown(&self) -> bool {
+        self.view()
+            .is_some_and(|v| self.date_label(&v.observation).is_some())
+    }
+
     /// The column's frames, minimap and text (its buttons draw with the rest).
     pub(super) fn column_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
         let cx = self.cx();
@@ -640,21 +663,27 @@ impl Client {
         let mut line = |y: f64, s: &str, size: u32, color: &str| {
             draws.push(text(cx, y, s, size, color));
         };
-        // Status: turn, government, treasury, rates and research.
+        // Status: date and turn (#330), government and treasury, rates and
+        // research.
+        let head = match self.date_label(o) {
+            Some(date) => format!("{date} · Turn {}", o.turn),
+            None => format!("Turn {}", o.turn),
+        };
         line(
             l.status + 6.,
-            &format!(
-                "Turn {} · {}",
-                o.turn,
-                routes::government_name(o.government)
-            ),
-            style::TYPE_BODY,
+            &head,
+            style::button_label_size(&head, CW),
             style::TEXT_BRIGHT,
+        );
+        let purse = format!(
+            "{} · {} gold",
+            routes::government_name(o.government),
+            o.treasury
         );
         line(
             l.status + 28.,
-            &format!("Treasury: {} gold", o.treasury),
-            style::TYPE_BODY,
+            &purse,
+            style::button_label_size(&purse, CW),
             style::TEXT,
         );
         if let Some(r) = &v.rates {

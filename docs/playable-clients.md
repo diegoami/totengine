@@ -217,7 +217,13 @@ about:
 - event triggers that never fire, event actions that do nothing yet,
   GIVETECHNOLOGY (skipped), CREATEUNIT (approximate placement) and event
   messages (applied silently for now);
-- Lua scripts beside the scenario, which are not run.
+- Lua scripts beside the scenario, which are not run;
+- for a file whose scenario calendar is not decoded, dates shown as turn
+  numbers.
+
+Dates read as the original writes them, with the scenario folder's
+`Labels.txt` for era and month names (#330): the status panel shows
+`date · Turn N`, and the title, reports and Science advisor show the date.
 
 The scenario's folder supplies its Rules, Events and art; interface sheets the
 folder lacks come from `Original`, then the install root. Files the decoders

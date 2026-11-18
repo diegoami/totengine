@@ -2601,8 +2601,13 @@ impl Client {
                 };
                 // The current round in the title keeps the turn visible
                 // through opponent phases (#283).
-                match self.view().map(|v| v.observation.turn) {
-                    Some(turn) if turn > 0 => format!("{name} · Turn {turn}"),
+                // Scenario dates read as the original writes them (#330).
+                match self
+                    .view()
+                    .map(|v| (v.observation.turn, self.date_label(&v.observation)))
+                {
+                    Some((turn, Some(date))) => format!("{name} · {date} · Turn {turn}"),
+                    Some((turn, None)) if turn > 0 => format!("{name} · Turn {turn}"),
                     _ => name.to_string(),
                 }
             },
@@ -2681,38 +2686,48 @@ impl Client {
         let modal_start = draws.len();
         if let Some(modal) = &self.modal {
             style::modal(&mut draws, 180., 105., 664., 550.);
-            let title = match modal {
-                Modal::Name => "Name your city",
-                Modal::Research => "Choose research",
-                Modal::Rates { review: None, .. } => "Tax, luxury and science rates",
-                Modal::Rates { .. } => "Review your rates",
-                Modal::Revolution => "Revolution",
-                Modal::Government { .. } => "Choose a government",
-                Modal::Science => "Science advisor",
-                Modal::Notice { title, .. } => title,
-                Modal::Help => "Keys",
-                Modal::Messages => "Messages",
-                Modal::Settings => "Enhancements (optional, off by default)",
-                Modal::Report { .. } => "Reports",
-                Modal::Pedia { .. } => "Civilopedia",
-                Modal::Goal => "Choose a research goal",
-                Modal::Production { .. } => "Choose production",
-                Modal::Improvements { .. } => "Improvements — select a building to sell",
-                Modal::Purchase { .. } => "Confirm purchase",
-                Modal::Sale { .. } => "Confirm improvement sale",
-                Modal::Units { .. } => "Activate a unit",
-                Modal::Confirm { label, .. } => label,
-                Modal::Save => "Save engine checkpoint (new name)",
-                Modal::Load => "Load engine checkpoint (same resources)",
-                Modal::Scenarios => "Open scenario (experimental)",
-                Modal::ScenarioStart(_) => "Scenario preflight (experimental)",
-                Modal::NewGame => "Start a new game? Unsaved progress will be lost.",
-                Modal::Quit => "Close client? Save first if you want to resume.",
+            // Advisors and reports carry the date, as the original's do.
+            let dated = |t: &str| match self.view().and_then(|v| self.date_label(&v.observation)) {
+                Some(date) => format!("{t} · {date}"),
+                None => t.to_string(),
+            };
+            let title: String = match modal {
+                Modal::Science => dated("Science advisor"),
+                Modal::Report { .. } => dated("Reports"),
+                _ => match modal {
+                    Modal::Name => "Name your city",
+                    Modal::Research => "Choose research",
+                    Modal::Rates { review: None, .. } => "Tax, luxury and science rates",
+                    Modal::Rates { .. } => "Review your rates",
+                    Modal::Revolution => "Revolution",
+                    Modal::Government { .. } => "Choose a government",
+                    Modal::Science => "Science advisor",
+                    Modal::Notice { title, .. } => title,
+                    Modal::Help => "Keys",
+                    Modal::Messages => "Messages",
+                    Modal::Settings => "Enhancements (optional, off by default)",
+                    Modal::Report { .. } => "Reports",
+                    Modal::Pedia { .. } => "Civilopedia",
+                    Modal::Goal => "Choose a research goal",
+                    Modal::Production { .. } => "Choose production",
+                    Modal::Improvements { .. } => "Improvements — select a building to sell",
+                    Modal::Purchase { .. } => "Confirm purchase",
+                    Modal::Sale { .. } => "Confirm improvement sale",
+                    Modal::Units { .. } => "Activate a unit",
+                    Modal::Confirm { label, .. } => label,
+                    Modal::Save => "Save engine checkpoint (new name)",
+                    Modal::Load => "Load engine checkpoint (same resources)",
+                    Modal::Scenarios => "Open scenario (experimental)",
+                    Modal::ScenarioStart(_) => "Scenario preflight (experimental)",
+                    Modal::NewGame => "Start a new game? Unsaved progress will be lost.",
+                    Modal::Quit => "Close client? Save first if you want to resume.",
+                }
+                .to_string(),
             };
             draws.push(text(
                 212.,
                 125.,
-                title,
+                &title,
                 style::TYPE_TITLE,
                 style::TEXT_BRIGHT,
             ));

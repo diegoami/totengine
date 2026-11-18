@@ -5,17 +5,17 @@
   "meaning": "Manually audited implementation coverage, not native conformance or runtime admission. Source changes require a new audit.",
   "source_sha256": {
     "crates/tot-kit/src/events.rs": "ad279d9b6f857879bc7e39e9c95195c32bf33806db54b51287e947bf1d08994f",
-    "crates/tot-kit/src/sav.rs": "7a45d279f4dde45860650869d3f6dd4827fa4f07b807cd75ab6c459fd1d6a7f3",
+    "crates/tot-kit/src/sav.rs": "64713ed48cdeb87d05ecb441fd4f982dacbc5b5ea3ebe8f8041d34b725713265",
     "crates/engine/src/events.rs": "5dc1820f0151d3b6371fc507eefab502488a13e72057d873b0ee777885100fe5",
     "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
-    "crates/engine/src/player.rs": "620df59f89001928290eb33180ca918928e35e85451c7155dcd0d741c25eea14",
+    "crates/engine/src/player.rs": "8e07c3c4bb0567e892da7cc44c2f3f78b1a5cc3ab37267e1f4bce2889344f048",
     "crates/engine/src/human.rs": "796fff98076d1ac486fef4affad67b8d75839580003bec6b96a7c2affd03f085",
     "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
-    "crates/engine/src/lib.rs": "a0fae41b84bca1d0b32223ce6ee47ea965e0e8bf626d8c37f24a10e5f694c469",
+    "crates/engine/src/lib.rs": "08b5b491652728dc8ba69c52d636303fc7332c854d4a6e4ea9397dd071c6cdb5",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "028cde8457d2924c7cfb65ec032ec7e79ea233e439766ae376b9fa898d31d96a",
-    "crates/totui/src/resources.rs": "80f2064bffb454656c341986d0f51d78636ee8687cc843b29eb87c63313f500f",
+    "crates/totui/src/client/mod.rs": "18240f6e0fb63e588161759f2b11adcf01c390e8c83facb8bea5c12138b17bff",
+    "crates/totui/src/resources.rs": "1b35d65da36fdf8ca5727d12e492c8093d80e3eba53b9b70c043fcbb9be087a9",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
   "triggers": {
@@ -335,6 +335,17 @@
         "crates/totui/src/resources.rs"
       ],
       "finding": "Adds a separate scenario origin: HumanSession::scenario boots a .scn/.sav into a fresh engine turn (movement reset only) with the file's events, and its checkpoints record the install-relative path, size, fingerprint and seed and restore only against the same bytes (restore_with). Generated sessions keep their exact checkpoint text and replay; event trigger/action semantics are unchanged (the new scenario module only lists gaps). The client adds the scenario list, preflight and scenario checkpoint reload. Not native-import admission under classic-surface-032-v1."
+    },
+    {
+      "change": "Scenario dates and labels (#330)",
+      "files": [
+        "crates/tot-kit/src/sav.rs",
+        "crates/engine/src/player.rs",
+        "crates/engine/src/lib.rs",
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/resources.rs"
+      ],
+      "finding": "Adds the original's date formatter (0x46dca5) as engine::calendar::date_text and Observation.date, a Labels.txt parser and client display of dates. The parser now reads the scenario parameter block for files flagged 0x40 as well as 0x80, and boot applies the original loader's flag conversion (0x4615b4..0x46164a: 0x40|0x80 -> 0x80, 0x40 clears 0x10, 0x40 cleared). For the installed corpus this changes only AE 1200 BC (0x50 -> 0x80), whose scenario calendar and research-cost inputs now apply, matching the original's own autosave Ag_Auto.SAV; other scenario files keep 0x80 and only lose the inert 0x40/0x10 bits. Event trigger/action semantics are unchanged. Not native-import admission under classic-surface-032-v1."
     }
   ]
 }

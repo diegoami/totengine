@@ -210,8 +210,17 @@ pub fn preflight(
         "Opponents are played by the engine AI, not the original AI's saved plans".to_string(),
     ];
     if sav.maps.len() > 1 {
-        let units = sav.units.iter().filter(|u| u.map_id() != 0).count();
-        let cities = sav.cities.iter().filter(|c| c.map_id() != 0).count();
+        // Live records only: dead slots carry fill in their map byte.
+        let units = sav
+            .units
+            .iter()
+            .filter(|u| u.map_id() != 0 && u.id() != 0)
+            .count();
+        let cities = sav
+            .cities
+            .iter()
+            .filter(|c| c.map_id() != 0 && c.city_id() != 0)
+            .count();
         gaps.insert(
             0,
             format!(

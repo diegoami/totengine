@@ -321,7 +321,7 @@
         "note": "tile record mp0+6t: +0 terrain=&0x0F, 0x40=special flag, 0x80=river; +1 road=0x10, rail=0x20 (unverified); the 7 B/tile block before the records is unidentified"
       }
     ],
-    "resource_seed_offset": 30082
+    "resource_seed_offset": 159343
   },
   "cities": {
     "offset": 562910,

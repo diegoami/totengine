@@ -1,5 +1,5 @@
 {
-  "baseline_sha256": "657d5d825a59c52410ae88651206aa900be2aa048c2c3b4781358f97eda80108",
+  "baseline_sha256": "97ed5e120fd6fc21c328d2ade5a50ceac6d711655c19fdf10da31d65803c275a",
   "engine_audit": {
     "changed_or_missing": [],
     "matches_current_source": true,
@@ -1564,7 +1564,7 @@
       "first_entry_candidate": false,
       "first_profile_structure": {
         "classic_032": false,
-        "classic_counts_probed": false,
+        "classic_counts_probed": true,
         "no_lua_declared": false,
         "no_transport_records": true,
         "surface_declared": true,
@@ -1613,7 +1613,7 @@
         "semantics_validated": false
       },
       "save_probe": {
-        "city_count": null,
+        "city_count": 120,
         "game": {
           "turn": 1,
           "year": -4000
@@ -1629,10 +1629,10 @@
           1
         ],
         "note": "Existing format probe, not full validation. Zero-based header index 3 and probe_surface_blocks are NOT an established active-map count.",
-        "probe_surface_blocks": 1,
-        "status": "partial_layout",
+        "probe_surface_blocks": 2,
+        "status": "structurally_probed",
         "transporter_records": 0,
-        "unit_count": null,
+        "unit_count": 1441,
         "version_raw": "0x0033"
       },
       "support": {
@@ -1646,11 +1646,11 @@
       }
     }
   ],
-  "full_report_bytes": 433163,
-  "full_report_sha256": "5236fa69371cb1d39985895d9902f59817299cfd94243bb04d4a2c089d0069af",
+  "full_report_bytes": 433166,
+  "full_report_sha256": "e46697e6856a6f16772235011eb96012de9b415d3d75e516d602ade04631b221",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
-    "format_probe_sha256": "673e622ab3fd95b73ba545d96c995dc607d42e195a2026e83b900b2d2398ee67",
+    "format_probe_sha256": "70a4f8fe1b5fb88a0e121c9040dea4e835111a82aa0f3671b46247fb80272a0f",
     "sha256": "a0b62e48c2368ac7893d2fcd56fe3935cc8a0b25ba9f03c379d0c0148f9a66df",
     "tool": "tools/scenario_inventory.py"
   },

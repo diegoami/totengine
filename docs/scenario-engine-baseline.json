@@ -5,14 +5,14 @@
   "meaning": "Manually audited implementation coverage, not native conformance or runtime admission. Source changes require a new audit.",
   "source_sha256": {
     "crates/tot-kit/src/events.rs": "ad279d9b6f857879bc7e39e9c95195c32bf33806db54b51287e947bf1d08994f",
-    "crates/tot-kit/src/sav.rs": "dec75ff26454c1a31ff1b2b574dfcf3faeab9bc5d9583fa57e21481f2cff653d",
+    "crates/tot-kit/src/sav.rs": "d751c133543f5d8c21ac0b07cdc1d0d6a10229720c32150a725d9291e0b7316d",
     "crates/engine/src/events.rs": "5dc1820f0151d3b6371fc507eefab502488a13e72057d873b0ee777885100fe5",
     "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
     "crates/engine/src/player.rs": "620df59f89001928290eb33180ca918928e35e85451c7155dcd0d741c25eea14",
     "crates/engine/src/human.rs": "796fff98076d1ac486fef4affad67b8d75839580003bec6b96a7c2affd03f085",
     "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
-    "crates/engine/src/lib.rs": "e6c0c3a43a17c5bb6774a291e32055031721c7273fe425195e7a3becaee0aeba",
+    "crates/engine/src/lib.rs": "56e3dc7f2c493164a24f2e63236551beca4279819446f18515b9af6a3b0e18a7",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
     "crates/totui/src/client/mod.rs": "028cde8457d2924c7cfb65ec032ec7e79ea233e439766ae376b9fa898d31d96a",
     "crates/totui/src/resources.rs": "80f2064bffb454656c341986d0f51d78636ee8687cc843b29eb87c63313f500f",
@@ -343,6 +343,14 @@
         "crates/engine/src/lib.rs"
       ],
       "finding": "parse_sav reads header raw[7] + 1 map blocks for 0x32 files (the original's writer 0x56fa9d and loader 0x56fcb1 loop maps 0..=raw[7]); every classic file has raw[7] = 0, so their framing, records and run50 checksums are unchanged, and 0x33 keeps its one classic block. UnitRecord gains map_id (byte +4). boot turns units and cities on maps other than 0 into dead slots (id / city_id 0), which only affects multi-map files. Event trigger/action semantics are unchanged; the scenario module adds a preflight gap counting what was left out."
+    },
+    {
+      "change": "ToTPP 0x33 framing (#331)",
+      "files": [
+        "crates/tot-kit/src/sav.rs",
+        "crates/engine/src/lib.rs"
+      ],
+      "finding": "0x33 maps are 14 B/tile + 2 (one extra byte per tile after the classic tile records) and follow the raw[7] + 1 map count; units, cities and the 100-B scenario parameter block are at the classic offsets, so 0x33 files now read their calendar and scenario research settings (Warring States: increment -3, start -1404, reproducing the saved years). 0x32 framing and records are unchanged. lib.rs changes one doc comment only. Event trigger/action semantics are unchanged."
     }
   ]
 }

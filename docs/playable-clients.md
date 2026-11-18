@@ -218,13 +218,13 @@ about:
   GIVETECHNOLOGY (skipped), CREATEUNIT (approximate placement) and event
   messages (applied silently for now);
 - Lua scripts beside the scenario, which are not run;
-- in multi-map scenarios (Midgard), everything beyond the first map: only map
-  0 is played, and the preflight counts the units and cities left out.
+- in multi-map scenarios (Midgard, Warring States), everything beyond the
+  first map: only map 0 is played, and the preflight counts the units and
+  cities left out.
 
 The scenario's folder supplies its Rules, Events and art; interface sheets the
 folder lacks come from `Original`, then the install root. Files the decoders
-cannot frame (for example Warring States, a ToTPP-extended `0x33` file) are
-rejected with a reason. Starting replaces a running game.
+cannot frame are rejected with a reason. Starting replaces a running game.
 
 Engine checkpoints of a scenario game record the scenario's install-relative
 path, size and fingerprint, and the seed. Loading one re-reads that file from

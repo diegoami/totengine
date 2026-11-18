@@ -11,7 +11,7 @@
 //! | offset | size | contents |
 //! |---|---|---|
 //! | 0 | 8 | magic `CIVILIZE` |
-//! | 10 | 2 | version u16 (`0x32`, or `0x33` = ToTPP-extended; front sections identical) |
+//! | 10 | 2 | version u16 (`0x32`, or `0x33` = ToTPP-extended: front sections identical, maps 14 B/tile) |
 //! | 12 | 640 | unit transport relationships (Rules.txt-derived settings) |
 //! | 652 | 16 | menu |
 //! | 668 | 38 | game block: turn i16, year i16, **difficulty u8@684**, seed word ×2 @685–688, **rivals u8@689** (§RG-1) |
@@ -94,7 +94,8 @@ fn u32le(d: &[u8], off: usize) -> Result<u32, SavError> {
 /// (u16 `0x6705a8`; huts and resources derive from it), `raw[7]` = the
 /// highest map index (u16 `0x6705ae`): the original's writer `0x56fa9d` and
 /// loader `0x56fcb1` both loop maps `0..=raw[7]`, one `13 × raw[2] + 2` block
-/// each (#331; Midgard `3` = four maps, every classic file `0`). `raw[3]` is
+/// each (#331; Midgard `3` = four maps, every classic file `0`; ToTPP `0x33`
+/// blocks are `14 × raw[2] + 2`). `raw[3]` is
 /// not the map count (a `0` file can still carry its surface map — issue
 /// #58). `raw[5]*raw[6]` sizes a following blob.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -613,7 +614,7 @@ pub struct SavedAiState {
     pub civ_flags: [u16; 8],
     pub reputation: [u8; 8],
     pub attitudes: [[u8; 8]; 8],
-    /// Scenario parameters word +0; None for unlocated 0x33 tails.
+    /// Scenario parameters word +0; None when the block lies past the end.
     pub scenario_flags: Option<u16>,
     pub power_ranks: [u8; 8],
     pub power_reference: u8,
@@ -661,7 +662,7 @@ pub struct SaveFile {
     /// Game family (save @982, RAM 0x607782): 0 original/extended, 1 sci-fi, 2 fantasy.
     pub game_mode: u8,
     pub ai_state: SavedAiState,
-    /// None when scenario calendar parameters cannot yet be located (0x33).
+    /// None when the scenario parameter block lies past the end of the file.
     pub calendar: Option<CalendarSettings>,
     /// Saved civ city counts (i16@112, RAM 0x5f6910). Founding increments
     /// this field at 0x4329ee; city removal decrements it at 0x434750.
@@ -738,8 +739,8 @@ pub const CIV_PROPS_STRIDE: usize = 3348;
 pub const OFF_TRANSPORTERS: usize = 29728;
 
 /// Parse a `0x32`/`0x33` SAV or SCN. For `0x33` (ToTPP-extended) this
-/// decodes the base front sections and the classic unit/city layout; the
-/// ToTPP tail (Lua state etc.) is out of scope here.
+/// decodes the same sections with 14-B/tile maps; the extra tile byte and the
+/// ToTPP tail after the cities (Lua state etc.) are out of scope here.
 pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     if data.len() < 12 || &data[..8] != MAGIC {
         return Err(SavError::BadMagic);
@@ -856,14 +857,12 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     // then the 2*hdr5*hdr6 blob and the 10240-byte blob
     // all sizes are checked: header fields are untrusted (#64)
     let surface = hdr.surface();
-    // ToTPP's 0x33 stores further maps in its own extended tail (evidence
-    // §T0-7: Warring States' classic front ends after one map block).
-    let n_blocks = if version == 0x0032 {
-        hdr.map_count()
-    } else {
-        1
-    };
-    let per_map = surface.checked_mul(13).and_then(|n| n.checked_add(2));
+    // ToTPP's 0x33 adds one byte per tile after the tile records (meaning
+    // open), so its maps are 14 B/tile + 2; the map count, blobs, units and
+    // cities are as in 0x32 (evidence §ToTPP 0x33 framing, #331).
+    let n_blocks = hdr.map_count();
+    let per_tile = if version == 0x0033 { 14 } else { 13 };
+    let per_map = surface.checked_mul(per_tile).and_then(|n| n.checked_add(2));
     let blob = (hdr.raw[5] as usize)
         .checked_mul(hdr.raw[6] as usize)
         .and_then(|n| n.checked_mul(2));
@@ -936,13 +935,14 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     let flags = u16le(data, 660)?;
     // Original writer 0x4600ba..0x46053a: 21*3 terrain bytes,
     // cursor 4 B, 60 B per human leader (one in single-player), 1200 B,
-    // 106 B, 8*10 B, then the scenario's 100-B parameters block.
-    // Do not guess a 0x33 scenario tail from the classic layout.
+    // 106 B, 8*10 B, then the scenario's 100-B parameters block. ToTPP 0x33
+    // files keep this offset (Warring States' four files carry the same
+    // block there; evidence §ToTPP 0x33 framing, #331).
     let mut calendar = Some(CalendarSettings {
         turn_limit: i16le(data, 672)?,
         ..CalendarSettings::default()
     });
-    let scenario = if flags & 0x80 != 0 && version == 0x32 {
+    let scenario = if flags & 0x80 != 0 {
         let leaders = if data[678] == 0 {
             1
         } else {
@@ -963,10 +963,6 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
             )
         })
     } else {
-        if flags & 0x80 != 0 {
-            calendar = None;
-            ai_state.scenario_flags = None;
-        }
         None
     };
     let research_settings = ResearchSettings {

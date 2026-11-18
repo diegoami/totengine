@@ -4777,6 +4777,32 @@ fn wide_stage_widens_the_map_centres_windows_and_toggles_full_screen() {
     );
 }
 
+/// Midgard (four maps, #331) starts on its first map and draws it.
+#[test]
+fn multi_map_scenario_starts_on_its_first_map() {
+    let Ok(home) = std::env::var("CIVTOT_HOME") else {
+        eprintln!("skipping: CIVTOT_HOME unset");
+        return;
+    };
+    if !Path::new(&home).join("Midgard/Midgard.SCN").is_file() {
+        eprintln!("skipping: no Midgard");
+        return;
+    }
+    let scratch = tempfile::tempdir().unwrap();
+    let mut c = seeded_client(home, scratch.path().join("saves"));
+    button(&mut c, "Open scenario (experimental)");
+    c.pick_scenario("Midgard/Midgard.SCN").unwrap();
+    button(&mut c, "Start experimental game");
+    assert!(c.loaded.is_some(), "{}", c.status);
+    let frame = c.frame();
+    assert!(
+        frame.draws.iter().any(
+            |d| matches!(d, Draw::Text { text, .. } if text.contains("Midgard · experimental"))
+        ),
+        "title names the scenario"
+    );
+}
+
 /// Experimental scenario entry (decision 0008, 2026-11-18): the setup screen
 /// lists the installation's scenarios, shows the preflight with its gaps,
 /// starts only on Accept, and engine checkpoints of the scenario reload from
@@ -4797,9 +4823,28 @@ fn experimental_scenario_entry_lists_preflights_starts_and_reloads() {
     button(&mut c, "Open scenario (experimental)");
     assert!(matches!(c.modal, Some(Modal::Scenarios)), "{}", c.status);
     assert!(c.scenarios.iter().any(|p| p == "FallRome/ROMFALL.scn"));
-    // Multi-map files are listed but rejected with a reason, never coerced.
+    // Multi-map files open on their first map and say so (#331); ToTPP's
+    // 0x33 layout is still rejected with a reason, never coerced.
     if c.scenarios.iter().any(|p| p == "Midgard/Midgard.SCN") {
-        c.pick_scenario("Midgard/Midgard.SCN").unwrap_err();
+        c.pick_scenario("Midgard/Midgard.SCN").unwrap();
+        let Some(Modal::ScenarioStart(choice)) = &c.modal else {
+            panic!("no Midgard preflight: {}", c.status);
+        };
+        assert!(
+            choice.preflight.gaps[0].starts_with("Only the first of 4 maps"),
+            "{:?}",
+            choice.preflight.gaps
+        );
+        key(&mut c, "Escape");
+    }
+    if c.scenarios
+        .iter()
+        .any(|p| p == "Scenario/china/Warring States.scn")
+    {
+        let e = c
+            .pick_scenario("Scenario/china/Warring States.scn")
+            .unwrap_err();
+        assert!(e.contains("0x33"), "{e}");
     }
     while !c
         .buttons()

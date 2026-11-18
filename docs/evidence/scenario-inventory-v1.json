@@ -1,5 +1,5 @@
 {
-  "baseline_sha256": "ae2652e21e78a7ec6a1267a098c829dc84d39c9ad66c9482ab38ac600381d983",
+  "baseline_sha256": "657d5d825a59c52410ae88651206aa900be2aa048c2c3b4781358f97eda80108",
   "engine_audit": {
     "changed_or_missing": [],
     "matches_current_source": true,
@@ -1083,7 +1083,7 @@
       "first_entry_candidate": false,
       "first_profile_structure": {
         "classic_032": true,
-        "classic_counts_probed": false,
+        "classic_counts_probed": true,
         "no_lua_declared": true,
         "no_transport_records": false,
         "surface_declared": false,
@@ -1428,7 +1428,7 @@
         "semantics_validated": false
       },
       "save_probe": {
-        "city_count": null,
+        "city_count": 8,
         "game": {
           "turn": 1,
           "year": -4000
@@ -1444,10 +1444,10 @@
           3
         ],
         "note": "Existing format probe, not full validation. Zero-based header index 3 and probe_surface_blocks are NOT an established active-map count.",
-        "probe_surface_blocks": 1,
-        "status": "partial_layout",
+        "probe_surface_blocks": 4,
+        "status": "structurally_probed",
         "transporter_records": 12,
-        "unit_count": null,
+        "unit_count": 75,
         "version_raw": "0x0032"
       },
       "support": {
@@ -1646,11 +1646,11 @@
       }
     }
   ],
-  "full_report_bytes": 433164,
-  "full_report_sha256": "3d5f3a25138207ceed7ae44a3c70199a948c2b78f34d022aee4e730561854da7",
+  "full_report_bytes": 433163,
+  "full_report_sha256": "5236fa69371cb1d39985895d9902f59817299cfd94243bb04d4a2c089d0069af",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
-    "format_probe_sha256": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",
+    "format_probe_sha256": "673e622ab3fd95b73ba545d96c995dc607d42e195a2026e83b900b2d2398ee67",
     "sha256": "a0b62e48c2368ac7893d2fcd56fe3935cc8a0b25ba9f03c379d0c0148f9a66df",
     "tool": "tools/scenario_inventory.py"
   },

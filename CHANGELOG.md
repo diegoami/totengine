@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Multi-map scenarios open on their first map** (#331). Save files carry
+  header `raw[7] + 1` maps, as the original's own writer and loader loop them;
+  Midgard (four maps) now decodes and starts in both clients and headless.
+  The engine still plays one map: units and cities on the other maps are left
+  out, and the preflight says how many. ToTPP-extended `0x33` files (Warring
+  States) stay rejected, now with that reason. The walk goldens for Midgard
+  were regenerated.
 - **Open scenario (experimental)** in both clients (owner decision,
   2026-11-18; decision 0008). The setup screen and **Game > Open scenario…**
   list the installation's `.scn`/`.sav` files; a preflight shows the playable

@@ -166,7 +166,11 @@ pub fn preflight(
     lua: bool,
 ) -> Result<Preflight, String> {
     let sav = tot_kit::parse_sav(save).map_err(|e| {
-        format!("This file cannot be decoded yet ({e}); multi-map and extended scenarios are not supported")
+        if save.get(10..12) == Some(&[0x33, 0][..]) {
+            format!("This file cannot be decoded yet ({e}); its ToTPP-extended (0x33) layout is not supported")
+        } else {
+            format!("This file cannot be decoded yet ({e})")
+        }
     })?;
     let world = crate::boot(&sav, 0);
     let civs: Vec<ScenarioCiv> = (1..8u8)
@@ -205,6 +209,19 @@ pub fn preflight(
         "Starts a fresh engine turn: every unit gets its full movement again".to_string(),
         "Opponents are played by the engine AI, not the original AI's saved plans".to_string(),
     ];
+    if sav.maps.len() > 1 {
+        let units = sav.units.iter().filter(|u| u.map_id() != 0).count();
+        let cities = sav.cities.iter().filter(|c| c.map_id() != 0).count();
+        gaps.insert(
+            0,
+            format!(
+                "Only the first of {} maps is played: {units} unit{} and {cities} cit{} on the other maps are left out",
+                sav.maps.len(),
+                if units == 1 { "" } else { "s" },
+                if cities == 1 { "y" } else { "ies" },
+            ),
+        );
+    }
     if lua {
         gaps.push("Lua scripts beside the scenario are not run".into());
     }

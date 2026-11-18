@@ -640,14 +640,17 @@ def walk_save_bytes(data: bytes, source: str = "<memory>") -> dict:
                        "Mercator; maps repeat the data block in ToT")
     if ver in (0x0032, 0x0033):  # front layout identical (proven on deiQin)
         maps, surface = hdr[3], hdr[2]
-        # hdr[3] semantics unknown: 1 on classic scenarios, but 0 on saves
+        # hdr[3] is NOT the map count: 1 on classic scenarios, but 0 on saves
         # that DO carry a surface map (Original/Ca_Auto.SAV, Midgard — issue
-        # #58). The real test for a decodable map is the surface invariant;
-        # map blocks = max(hdr[3], 1) — every observed file has at least the
-        # surface block (multi-map extra blocks remain known-open).
+        # #58). The real test for a decodable map is the surface invariant.
+        # The map count is hdr[7] + 1: the original's writer 0x56fa9d and
+        # loader 0x56fcb1 loop maps 0..=hdr[7] (#331; Midgard 3 = four maps).
+        # ToTPP 0x33 keeps one classic block here; its further maps live in
+        # the extended tail (Warring States, evidence §T0-7).
         has_map = (surface > 0 and hdr[0] and hdr[1]
-                   and surface == (hdr[0] // 2) * hdr[1])
-        n_map_blocks = max(maps, 1) if has_map else 0
+                   and surface == (hdr[0] // 2) * hdr[1] and hdr[7] >= 0)
+        n_maps = hdr[7] + 1 if ver == 0x0032 else 1
+        n_map_blocks = n_maps if has_map else 0
         map_data = 13 * surface + 2 if has_map else 0
         blob = 2 * hdr[5] * hdr[6] if has_map else 0
         map_end = pos + n_map_blocks * map_data + blob
@@ -656,9 +659,9 @@ def walk_save_bytes(data: bytes, source: str = "<memory>") -> dict:
             "map_data": {"offset": pos, "size": n_map_blocks * map_data,
                          "per_map": map_data, "map_blocks": n_map_blocks,
                          "hdr3_raw": maps,
-                         "note": ("hdr[3] is NOT the map count: 0-file "
-                                  "Original/Ca_Auto.SAV decodes its surface "
-                                  "map (#58)")},
+                         "note": ("map count = hdr[7] + 1 (0x56fa9d/"
+                                  "0x56fcb1, #331); hdr[3] is NOT the map "
+                                  "count (#58)")},
             "blob_2ab": {"offset": pos + n_map_blocks * map_data,
                          "size": blob},
             "blob_10240": {"offset": map_end, "size": 10240,

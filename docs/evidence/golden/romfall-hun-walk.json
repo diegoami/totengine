@@ -109,7 +109,7 @@
       "per_map": 117002,
       "map_blocks": 1,
       "hdr3_raw": 1,
-      "note": "hdr[3] is NOT the map count: 0-file Original/Ca_Auto.SAV decodes its surface map (#58)"
+      "note": "map count = hdr[7] + 1 (0x56fa9d/0x56fcb1, #331); hdr[3] is NOT the map count (#58)"
     },
     "blob_2ab": {
       "offset": 146918,

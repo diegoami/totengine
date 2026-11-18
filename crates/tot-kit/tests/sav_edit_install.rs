@@ -9,13 +9,13 @@ fn read(rel: &str) -> Option<Vec<u8>> {
 
 #[test]
 fn real_saves_roundtrip_byte_identically() {
-    // Midgard is deliberately absent: it is a multi-map file the walker
-    // cannot locate either (hdr[7] = 3 map blocks — known-open); the
-    // parser must refuse it, not guess.
+    // Midgard carries hdr[7] + 1 = 4 map blocks (#331) and round-trips too.
     for rel in [
         "FallRome/ROMFALL.scn",
         "FallRome/SCN/ROMFALL_WRE.scn",
         "Scenario/FallRome/Va_Auto.SAV",
+        "Midgard/Midgard.SCN",
+        "Midgard/Oc_Auto2.SAV",
     ] {
         let Some(raw) = read(rel) else {
             eprintln!("skipping {rel}: not present");
@@ -23,13 +23,6 @@ fn real_saves_roundtrip_byte_identically() {
         };
         let out = tot_kit::emit_sav(&raw).unwrap_or_else(|e| panic!("{rel}: {e}"));
         assert_eq!(out, raw, "{rel}: no-edit round trip must be identical");
-    }
-    // multi-map scenarios are correctly refused (no fabricated tables)
-    if let Some(raw) = read("Midgard/Midgard.SCN") {
-        assert!(
-            tot_kit::parse_sav(&raw).is_err(),
-            "multi-map file must not decode (known-open layout)"
-        );
     }
 }
 

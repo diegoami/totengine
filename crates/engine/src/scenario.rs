@@ -66,7 +66,7 @@ pub const FIRED_TRIGGERS: [&str; 5] = [
     "CITYTAKEN",
 ];
 /// Actions that change the game today.
-pub const APPLIED_ACTIONS: [&str; 3] = ["CHANGEMONEY", "CREATEUNIT", "JUSTONCE"];
+pub const APPLIED_ACTIONS: [&str; 4] = ["CHANGEMONEY", "CREATEUNIT", "GIVETECHNOLOGY", "JUSTONCE"];
 
 fn summarize(list: &mut Vec<(String, usize)>, key: &str) {
     match list.iter_mut().find(|(k, _)| k == key) {
@@ -92,7 +92,6 @@ fn counted(list: &[(String, usize)]) -> String {
 pub fn event_gaps(events: &EventFile) -> Vec<String> {
     let mut triggers = Vec::new();
     let mut actions = Vec::new();
-    let mut give_tech = 0;
     let mut create_unit = 0;
     for e in &events.events {
         let t = e.trigger.keyword.to_ascii_uppercase();
@@ -104,7 +103,6 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
             match k.as_str() {
                 // Shown to the player since #326.
                 "TEXT" => {}
-                "GIVETECHNOLOGY" => give_tech += 1,
                 "CREATEUNIT" => create_unit += 1,
                 k if APPLIED_ACTIONS.contains(&k) => {}
                 // A file argument (PLAYWAVEFILE's sound) read as a keyword.
@@ -127,12 +125,6 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
         gaps.push(format!(
             "Event actions that do nothing yet: {}",
             counted(&actions)
-        ));
-    }
-    if give_tech > 0 {
-        gaps.push(format!(
-            "GIVETECHNOLOGY is skipped ({give_tech} action{})",
-            if give_tech == 1 { "" } else { "s" }
         ));
     }
     if create_unit > 0 {

@@ -214,8 +214,8 @@ about:
 - the game starts a fresh engine turn, so every unit gets its full movement;
 - opponents are played by the engine AI (`builtin-1`, or `ai-v1` when the
   built-in AI cannot read the scenario's Rules), not the original AI's plans;
-- event triggers that never fire, event actions that do nothing yet,
-  GIVETECHNOLOGY (skipped) and CREATEUNIT (approximate placement);
+- event triggers that never fire, event actions that do nothing yet and
+  CREATEUNIT (approximate placement);
 - Lua scripts beside the scenario, which are not run.
 
 Event TEXT boxes (#326) open as pop-up dialogs, one at a time, when the human's

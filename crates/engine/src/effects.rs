@@ -33,6 +33,8 @@ pub enum Applied {
         count: u32,
         at: (u16, u16),
     },
+    /// Civ `civ` received advance `advance` (GIVETECHNOLOGY).
+    Advance { civ: u8, advance: usize },
     /// The effect changes nothing in the modelled state (text, music).
     NoState,
     /// The effect could not be applied; the reason says why.
@@ -164,8 +166,32 @@ impl WorldState {
                     Applied::Skipped("unit capacity exhausted".into())
                 }
             }
-            Effect::GiveTechnology { .. } => {
-                Applied::Skipped("per-civ techs are not modelled yet".into())
+            // Original executor 0x4d201e: the receiver (trigger
+            // parties resolved first) must be a living civ 1..=7, then the
+            // advance goes through the same grant as research completion,
+            // 0x49dedf(civ, tech, 0, 0, 0) — modelled by
+            // `grant_advance_with_rules` (bit/count/target, Leonardo, Library).
+            Effect::GiveTechnology {
+                receiver,
+                technology,
+            } => {
+                let Some(civ) = self.civ_by_name(receiver) else {
+                    return Applied::Skipped(format!("unknown civ {receiver:?}"));
+                };
+                if !(1..8).contains(&civ) || !self.civ_alive(civ) {
+                    return Applied::Skipped(format!("{receiver:?} is not a living civilization"));
+                }
+                let Ok(advance) = usize::try_from(*technology) else {
+                    return Applied::Skipped(format!("invalid advance {technology}"));
+                };
+                if advance >= rules.tech_defs().len().min(100) {
+                    return Applied::Skipped(format!("invalid advance {technology}"));
+                }
+                if self.grant_advance_with_rules(rules, civ, advance) {
+                    Applied::Advance { civ, advance }
+                } else {
+                    Applied::Skipped("advance already known".into())
+                }
             }
             Effect::Text { .. } | Effect::PlayTrack(_) | Effect::DontPlayWonders => {
                 Applied::NoState

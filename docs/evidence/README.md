@@ -154,8 +154,8 @@ pair:
   UNITKILLED). CHANGEMONEY clamps at 0 (Macro.txt). CREATEUNIT places
   `count` units at the first valid location. **"Valid" is the engine's
   rule, not oracle-checked**: on the map, terrain fits the domain, no
-  other civ's units. GIVETECHNOLOGY is reported as skipped (no per-civ
-  techs in the state). `crates/engine/tests/events_install.rs` fires the
+  other civ's units. GIVETECHNOLOGY grants the advance (#327, see
+  §GIVETECHNOLOGY executor below). `crates/engine/tests/events_install.rs` fires the
   real Events.txt against the booted ROMFALL: Merchant kill → WRE
   10000 → 10050; Theodoric I's death → a veteran Theodoric II for the
   Visigoths at (24,60), once.
@@ -182,6 +182,39 @@ under `FallRome/` and `Scenario/FallRome/`, has `owner=Visigoths` and 6.
 - UNITKILLED: "Attacker is the civilization that killed the unit, defender
   is the one who owned the unit", and it fires whichever side initiated
   unless `Defender Only` is given (used by `combat::Battle::unitkilled_ctx`).
+
+#### GIVETECHNOLOGY executor (2026-11-18, #327)
+
+Static decode of `civ2.bak` (the unpatched executable; disassembly per
+`docs/environment.md`). Re-derive with `objdump -d -M intel` around the
+addresses below.
+
+- **Parse** (`0x4d89c7`, keyword string `0x5d9c00`): `receiver=` is resolved
+  by civilization name (`0x4d1240`) into byte `+0x107` of the action record,
+  and `technology=` is parsed with `atoi` (`0x52c190`) into the signed byte
+  `+0x106`. When both are present, flag `0x800` is set in the record's action
+  mask (`+0x4`).
+- **Execute** (function `0x4d201e`): a receiver of -3 is replaced by the
+  trigger context's `+0x1c`, and -4 by `+0x20` (trigger-party wildcards; a
+  second -4 test is dead code, and -2 is not substituted). Which of those
+  fields holds the attacker and which the defender is not decoded here; the
+  engine resolves `TRIGGERATTACKER`/`TRIGGERDEFENDER` by name (Macro.txt). A
+  receiver outside 1..=7, or one not set in the alive mask `0x60765a`, does
+  nothing. Otherwise the action calls
+  **`0x49dedf(civ, tech, 0, 0, 0)`**, the same advance grant that research
+  completion uses (`0x4a159e`) and that the engine models as
+  `grant_advance_with_rules` (bit/count/target bookkeeping, Leonardo, the
+  Library follow-on).
+- Index base: Rules @CIVILIZE row order from 0, as in Macro.txt ("index
+  numbers begin at zero (AFl)"). Future Technology is row 89 in `Original`
+  (Macro.txt's "(90)" is a count), and the grant routine handles it.
+- **Not decoded:** what the zero arguments 3–5 turn off (the source civ and
+  the UI/silent path), the `tech_group_flag` 2 ("can't own") interaction, and
+  first-discovery or diplomacy side effects. The engine keeps those out of
+  scope, as on its other grant paths.
+- Check: `crates/engine/tests/events_install.rs` takes Tyras from the Huns
+  in FallRome. `receiver=TRIGGERATTACKER` gives the Byzantines advance 99,
+  `Applied::Advance`.
 
 #### T1-8 save writer (2026-11-03): surgical edits accepted by the original
 

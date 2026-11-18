@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Scenario events now apply **GIVETECHNOLOGY** (#327): the receiver gets the
+  advance through the same grant as research completion. A static decode of
+  the original executor shows that it calls the same routine for a living
+  civilization 1–7. A gift to the human during the round shows a discovery
+  notice, and the preflight no longer lists it as skipped.
 - Scenario event **TEXT messages** now open as pop-up dialogs in both clients
   (#326). Boxes fired during opponents' moves or the round wait for the human's
   turn (after any required choice); boxes the human's own moves fire open at

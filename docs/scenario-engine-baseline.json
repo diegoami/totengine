@@ -7,10 +7,10 @@
     "crates/tot-kit/src/events.rs": "ad279d9b6f857879bc7e39e9c95195c32bf33806db54b51287e947bf1d08994f",
     "crates/tot-kit/src/sav.rs": "7a45d279f4dde45860650869d3f6dd4827fa4f07b807cd75ab6c459fd1d6a7f3",
     "crates/engine/src/events.rs": "3d53b46205dd830b0bc7a7a49fe2d794609ecb2d4d8474d5d2fb14361af366e6",
-    "crates/engine/src/effects.rs": "d476eb296aaccf0a621ddda74f042cac053f8780555b5574b527ebde4da2e547",
+    "crates/engine/src/effects.rs": "e83839edbee2fc3a1d696a6e468ca331c9ab267fc93175c3707e36f308daba0b",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
     "crates/engine/src/player.rs": "620df59f89001928290eb33180ca918928e35e85451c7155dcd0d741c25eea14",
-    "crates/engine/src/human.rs": "c0675fc701bcf1dd760287051be5dd0c97b63a5056a8be5d5012f84f11c3093a",
+    "crates/engine/src/human.rs": "9c52a51e8a8d215b5430ffe2ee7d622a9bb47a284bb5279b86fd858a24852972",
     "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
     "crates/engine/src/lib.rs": "a0fae41b84bca1d0b32223ce6ee47ea965e0e8bf626d8c37f24a10e5f694c469",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
@@ -92,12 +92,12 @@
       "note": "First-valid placement; native validity, randomize and map contexts remain partial."
     },
     "GIVETECHNOLOGY": {
-      "status": "emitted_but_skipped",
+      "status": "modelled_subset",
       "params": [
         "receiver",
         "technology"
       ],
-      "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action."
+      "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original executor 0x4d201e calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README §GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing."
     },
     "JUSTONCE": {
       "status": "modelled_subset",
@@ -345,6 +345,14 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Effect::Text carries its audience (Macro.txt 'No Broadcast'); the event engine keeps every fired box in its log. HumanSession reads new log entries after each AI step, round and human input, exposes the human's boxes since its last turn ended (event_texts/event_serial in HumanView) and rebuilds them by checkpoint replay. The client opens them one at a time as notice dialogs on the human's turn after required choices. No game-state, checkpoint text, receipt or order-log change; trigger matching and other actions are unchanged."
+    },
+    {
+      "change": "Scenario events apply GIVETECHNOLOGY (#327)",
+      "files": [
+        "crates/engine/src/effects.rs",
+        "crates/engine/src/human.rs"
+      ],
+      "finding": "GIVETECHNOLOGY now grants the advance through the same grant as research completion, after the original executor's receiver checks (decoded statically: evidence README §GIVETECHNOLOGY executor). Applied::Advance reports it, and a round's gift to the human adds a discovery notice. Human sessions re-run research requirements as before. Other actions, trigger matching, checkpoint text and order logs are unchanged; replay re-applies the grant deterministically."
     }
   ]
 }

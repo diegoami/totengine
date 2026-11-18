@@ -280,12 +280,13 @@ class InventoryTests(unittest.TestCase):
         self.assertIn('non_surface_location', {x['code'] for x in d['diagnostics']})
         self.assertIn('RANDOMIZE', d['actions'])
 
-    def test_compounds_skipped_technology_and_unknown_actions_remain_visible(self):
+    def test_compounds_technology_and_unknown_actions_remain_visible(self):
         src = '@IF\nTURN\nturn=1\n@AND\nRANDOMTURN\ndenominator=3\n@THEN\nGIVETECHNOLOGY\ntechnology=1\nreceiver=Anyone\nTAKETECHNOLOGY\ntechnology=2\n@ENDIF\n'
         d = inv.scan_events(src, self.baseline)
         codes = {x['code'] for x in d['diagnostics']}
         self.assertIn('unsupported_compound_condition', codes)
-        self.assertIn('emitted_but_skipped', codes)
+        # GIVETECHNOLOGY is applied since #327; TAKETECHNOLOGY stays unknown.
+        self.assertNotIn('emitted_but_skipped', codes)
         self.assertIn('unimplemented_keyword', codes)
         self.assertEqual(d['actions']['GIVETECHNOLOGY'], 1)
         self.assertEqual(d['actions']['TAKETECHNOLOGY'], 1)

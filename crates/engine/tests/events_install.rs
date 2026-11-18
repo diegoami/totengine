@@ -102,16 +102,28 @@ fn fallrome_events_change_the_world() {
     assert!(again.is_empty());
     assert_eq!(w.units.len(), before + 1);
 
-    // Tyras taken from the Huns: the tech gift is reported, not applied
+    // Tyras taken from the Huns: GIVETECHNOLOGY receiver=TRIGGERATTACKER
+    // gives the attacker advance 99 ("Mixing") through the shared grant (#327).
     let tyras = Ctx {
         attacker: Some("Byzantines".into()),
         defender: Some("Huns".into()),
         city: Some("Tyras".into()),
         ..Default::default()
     };
+    let byz = w.civ_by_name("Byzantines").unwrap();
+    let knows = |w: &engine::WorldState| w.techs[byz as usize][99 / 8] & (1 << (99 % 8)) != 0;
+    assert!(!knows(&w));
     let out = w.fire_event(&rules, &mut events, "CITYTAKEN", &tyras);
-    assert!(out.iter().any(
-        |(e, a)| matches!(e, Effect::GiveTechnology { technology: 99, .. })
-            && matches!(a, Applied::Skipped(_))
-    ));
+    assert!(
+        out.iter().any(
+            |(e, a)| matches!(e, Effect::GiveTechnology { technology: 99, .. })
+                && *a
+                    == Applied::Advance {
+                        civ: byz,
+                        advance: 99
+                    }
+        ),
+        "{out:?}"
+    );
+    assert!(knows(&w));
 }

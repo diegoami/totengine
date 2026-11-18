@@ -1160,6 +1160,14 @@ impl HumanSession {
                 .filter(|(c, _)| *c == self.human)
                 .map(|(_, a)| Notice::Discovery(a)),
         );
+        // GIVETECHNOLOGY gifts from the round's events (#327).
+        self.notices
+            .extend(summary.events.iter().filter_map(|(_, a)| match a {
+                crate::effects::Applied::Advance { civ, advance } if *civ == self.human => {
+                    Some(Notice::Discovery(*advance))
+                }
+                _ => None,
+            }));
         if summary.revolutions.contains(&self.human) {
             self.notices.push(Notice::Revolution);
         }

@@ -1,5 +1,5 @@
 {
-  "baseline_sha256": "43f2e042547c27dc8a7604797227b711c4e8dce397676f95e0a1cd913b3b3577",
+  "baseline_sha256": "240ebb66fd36ddb0d122d1bcae54e874ace618ccd2c17cbb421813f78bc7e22a",
   "engine_audit": {
     "changed_or_missing": [],
     "matches_current_source": true,
@@ -388,12 +388,12 @@
               "status": "no_game_state_effect"
             },
             "GIVETECHNOLOGY": {
-              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original executor 0x4d201e calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README \u00a7GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing.",
               "params": [
                 "receiver",
                 "technology"
               ],
-              "status": "emitted_but_skipped"
+              "status": "modelled_subset"
             },
             "JUSTONCE": {
               "note": "In-memory event latch; native imported event state is not restored.",
@@ -465,7 +465,6 @@
           }
         },
         "diagnostic_counts": {
-          "emitted_but_skipped": 2,
           "no_game_state_effect": 58,
           "partial": 45,
           "unimplemented_keyword": 1,
@@ -513,7 +512,7 @@
             "token": "TEXT"
           }
         ],
-        "diagnostics_total": 173,
+        "diagnostics_total": 171,
         "diagnostics_truncated": true,
         "event_blocks": 64,
         "logical": {},
@@ -739,12 +738,12 @@
               "status": "unimplemented"
             },
             "GIVETECHNOLOGY": {
-              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original executor 0x4d201e calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README \u00a7GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing.",
               "params": [
                 "receiver",
                 "technology"
               ],
-              "status": "emitted_but_skipped"
+              "status": "modelled_subset"
             },
             "INCAPITAL": {
               "note": "No audited handler.",
@@ -859,7 +858,6 @@
         },
         "diagnostic_counts": {
           "content_after_endevents": 1,
-          "emitted_but_skipped": 7,
           "no_game_state_effect": 84,
           "partial": 126,
           "placement_context_unmodelled": 99,
@@ -912,7 +910,7 @@
             "token": "listenermask"
           }
         ],
-        "diagnostics_total": 1399,
+        "diagnostics_total": 1392,
         "diagnostics_truncated": true,
         "event_blocks": 258,
         "logical": {
@@ -1181,12 +1179,12 @@
               "status": "unimplemented"
             },
             "GIVETECHNOLOGY": {
-              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original executor 0x4d201e calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README \u00a7GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing.",
               "params": [
                 "receiver",
                 "technology"
               ],
-              "status": "emitted_but_skipped"
+              "status": "modelled_subset"
             },
             "INCAPITAL": {
               "note": "No audited handler.",
@@ -1320,7 +1318,6 @@
           }
         },
         "diagnostic_counts": {
-          "emitted_but_skipped": 11,
           "malformed_location": 1,
           "no_game_state_effect": 93,
           "non_surface_location": 86,
@@ -1374,7 +1371,7 @@
             "token": "CONTINUOUS"
           }
         ],
-        "diagnostics_total": 1488,
+        "diagnostics_total": 1477,
         "diagnostics_truncated": true,
         "event_blocks": 151,
         "logical": {
@@ -1646,8 +1643,8 @@
       }
     }
   ],
-  "full_report_bytes": 434376,
-  "full_report_sha256": "9f4247115dfe93fd3b1972184df2c6d2bb307d4cc17dbc6438b03923c22c9dd8",
+  "full_report_bytes": 432497,
+  "full_report_sha256": "3c2ff054cea613d280f349f9c6aee4bce79c1fbb9b4a908f3ae01d0e99b94c6e",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
     "format_probe_sha256": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",

@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Scenario event **TEXT messages** now open as pop-up dialogs in both clients
+  (#326). Boxes fired during opponents' moves or the round wait for the human's
+  turn (after any required choice); boxes the human's own moves fire open at
+  once. Enter or Esc closes each, and every box is also kept in the message
+  log. Macro.txt's `No Broadcast` limits a box to the triggering civilization.
+  The preflight no longer lists event messages as a gap.
 - **Open scenario (experimental)** in both clients (owner decision,
   2026-11-18; decision 0008). The setup screen and **Game > Open scenario…**
   list the installation's `.scn`/`.sav` files; a preflight shows the playable

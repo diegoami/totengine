@@ -35,9 +35,57 @@ pub enum Effect {
         receiver: String,
         technology: i32,
     },
-    Text(String),
+    /// Macro.txt TEXT: a pop-up box for the player. `audience` keeps the
+    /// optional `No Broadcast` restriction (first line of the block).
+    Text {
+        text: String,
+        audience: Audience,
+    },
     PlayTrack(i32),
     DontPlayWonders,
+}
+
+/// Who sees a TEXT box (Macro.txt: "The optional No Broadcast parameter …
+/// specifies that this message should be shown only to the triggering
+/// civilization (\"who\")").
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Audience {
+    Everyone,
+    /// `No Broadcast`: only the triggering civilization — the trigger's
+    /// aggressor (Macro.txt TriggerAttacker, "who") or its talker. `None`
+    /// when the trigger names no such civilization (TURN, RANDOMTURN …):
+    /// then nobody is shown the box (unverified against the original).
+    Triggering(Option<String>),
+}
+
+/// One TEXT box an event fired, in firing order.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EventText {
+    pub text: String,
+    pub audience: Audience,
+}
+
+impl EventText {
+    /// Whether the civilization named `civ` (Rules/save plural name) sees it.
+    pub fn shown_to(&self, civ: &str) -> bool {
+        match &self.audience {
+            Audience::Everyone => true,
+            Audience::Triggering(Some(who)) => who.trim().eq_ignore_ascii_case(civ.trim()),
+            Audience::Triggering(None) => false,
+        }
+    }
+}
+
+/// Splits a TEXT block's optional leading `No Broadcast` line (the space is
+/// required, Macro.txt) from its body.
+pub fn text_block(raw: &str) -> (&str, bool) {
+    let mut lines = raw.splitn(2, '\n');
+    let first = lines.next().unwrap_or("");
+    if first.trim().eq_ignore_ascii_case("no broadcast") {
+        (lines.next().unwrap_or(""), true)
+    } else {
+        (raw, false)
+    }
 }
 
 /// Context for one trigger evaluation.
@@ -59,8 +107,10 @@ pub struct Ctx {
 pub struct EventEngine {
     pub file: EventFile,
     fired: HashSet<usize>,
-    /// Texts emitted by the last fire() — also returned as effects.
-    pub log: Vec<String>,
+    /// Every TEXT box fired so far, in order — also returned as effects.
+    /// Sessions read new entries by index; a cloned engine (transactional
+    /// rollback) carries its log with it.
+    pub log: Vec<EventText>,
 }
 
 fn word_of(v: Option<&Value>) -> Option<&str> {
@@ -169,8 +219,22 @@ impl EventEngine {
                 match a.keyword.as_str() {
                     "TEXT" => {
                         if let Some(Value::Text(s)) = a.args.first() {
-                            effects.push(Effect::Text(s.clone()));
-                            self.log.push(s.clone());
+                            let (body, restricted) = text_block(s);
+                            let audience = if restricted {
+                                Audience::Triggering(
+                                    ctx.attacker.clone().or_else(|| ctx.talker.clone()),
+                                )
+                            } else {
+                                Audience::Everyone
+                            };
+                            effects.push(Effect::Text {
+                                text: body.to_string(),
+                                audience: audience.clone(),
+                            });
+                            self.log.push(EventText {
+                                text: body.to_string(),
+                                audience,
+                            });
                         }
                     }
                     "CREATEUNIT" => {
@@ -307,10 +371,47 @@ mod tests {
         }
         assert!(eff
             .iter()
-            .any(|e| matches!(e, Effect::Text(t) if t.contains("Theodoric II"))));
+            .any(|e| matches!(e, Effect::Text { text, audience: Audience::Everyone } if text.contains("Theodoric II"))));
         // JUSTONCE: a second kill of the same king does not re-fire
         let again = eng.fire("UNITKILLED", &ctx);
         assert!(again.is_empty(), "JUSTONCE latch held");
+    }
+
+    /// Macro.txt: `No Broadcast` (first line of the block, space required)
+    /// limits the box to the triggering civilization ("who").
+    #[test]
+    fn no_broadcast_text_goes_to_the_triggering_civ_only() {
+        let f = parse_events(
+            "@IF\nCITYTAKEN\ncity=Roma\nattacker=ANYBODY\ndefender=ANYBODY\n@THEN\nTEXT\nNo Broadcast\nRoma falls!\nENDTEXT\n@ENDIF\n\
+             @IF\nTURN\nturn=3\n@THEN\nTEXT\nno broadcast\nquiet\nENDTEXT\nTEXT\nloud\nENDTEXT\n@ENDIF",
+        )
+        .unwrap();
+        let mut eng = EventEngine::new(f);
+        let ctx = Ctx {
+            city: Some("Roma".into()),
+            attacker: Some("Huns".into()),
+            defender: Some("Romans".into()),
+            ..Default::default()
+        };
+        let eff = eng.fire("CITYTAKEN", &ctx);
+        assert_eq!(
+            eff,
+            vec![Effect::Text {
+                text: "Roma falls!".into(),
+                audience: Audience::Triggering(Some("Huns".into())),
+            }]
+        );
+        let turn = Ctx {
+            turn: Some(3),
+            ..Default::default()
+        };
+        eng.fire("TURN", &turn);
+        assert_eq!(eng.log.len(), 3);
+        assert!(eng.log[0].shown_to("huns") && !eng.log[0].shown_to("Romans"));
+        // No triggering civilization: a restricted box reaches nobody.
+        assert_eq!(eng.log[1].text, "quiet");
+        assert!(!eng.log[1].shown_to("Huns"));
+        assert!(eng.log[2].shown_to("Romans"));
     }
 
     #[test]

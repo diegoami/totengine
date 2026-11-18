@@ -167,7 +167,9 @@ impl WorldState {
             Effect::GiveTechnology { .. } => {
                 Applied::Skipped("per-civ techs are not modelled yet".into())
             }
-            Effect::Text(_) | Effect::PlayTrack(_) | Effect::DontPlayWonders => Applied::NoState,
+            Effect::Text { .. } | Effect::PlayTrack(_) | Effect::DontPlayWonders => {
+                Applied::NoState
+            }
         }
     }
 

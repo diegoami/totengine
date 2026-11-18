@@ -215,9 +215,16 @@ about:
 - opponents are played by the engine AI (`builtin-1`, or `ai-v1` when the
   built-in AI cannot read the scenario's Rules), not the original AI's plans;
 - event triggers that never fire, event actions that do nothing yet,
-  GIVETECHNOLOGY (skipped), CREATEUNIT (approximate placement) and event
-  messages (applied silently for now);
+  GIVETECHNOLOGY (skipped) and CREATEUNIT (approximate placement);
 - Lua scripts beside the scenario, which are not run.
+
+Event TEXT boxes (#326) open as pop-up dialogs, one at a time, when the human's
+turn is in progress: boxes fired by opponents' moves or the round wait for the
+human's turn, boxes fired by the human's own moves open at once. Enter or Esc
+closes each; every box is also kept in the message log. A box marked
+`No Broadcast` (Macro.txt) appears only when the human civilization triggered
+it (the attacker of UNITKILLED/CITYTAKEN); one whose trigger names no
+civilization reaches nobody (the original's choice there is not verified).
 
 The scenario's folder supplies its Rules, Events and art; interface sheets the
 folder lacks come from `Original`, then the install root. Files the decoders

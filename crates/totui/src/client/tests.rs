@@ -4856,3 +4856,63 @@ fn experimental_scenario_entry_lists_preflights_starts_and_reloads() {
         d.status
     );
 }
+
+/// #326: scenario event TEXT boxes open one at a time as pop-up dialogs on
+/// the human's turn, after required choices, and each is logged once.
+#[test]
+fn scenario_event_texts_open_as_pop_ups_one_at_a_time() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    let rules = tot_kit::parse_rules(&format!(
+        "{}\n{}",
+        include_str!("../../../engine/tests/fixtures/campaign-rules.txt"),
+        include_str!("../../../engine/tests/fixtures/builtin-settings.txt")
+    ));
+    let events = engine::events::EventEngine::new(
+        tot_kit::parse_events(&format!(
+            "@IF\nTURN\nturn=Every\n@THEN\nTEXT\nFirst box.\n{}\nENDTEXT\n\
+             TEXT\nSecond box.\nENDTEXT\nTEXT\nNo Broadcast\nhidden\nENDTEXT\n@ENDIF\n",
+            "word ".repeat(40)
+        ))
+        .unwrap(),
+    );
+    c.loaded.as_mut().unwrap().session = HumanSession::scenario(
+        "test.sav",
+        &engine::tests_support::synthetic_save_bytes(),
+        rules,
+        Some(events),
+        1,
+        engine::campaign::AiPolicy::AiV1,
+        9,
+    )
+    .unwrap();
+    c.reset_notices();
+    c.modal = None;
+    research(&mut c);
+    key(&mut c, "Ctrl+n");
+    if matches!(c.modal, Some(Modal::Confirm { .. })) {
+        key(&mut c, "Enter");
+    }
+    ready(&mut c);
+    research(&mut c);
+    let Some(Modal::Notice { title, lines }) = &c.modal else {
+        panic!("no event box: {:?} {}", c.modal.is_some(), c.status);
+    };
+    assert_eq!(*title, "Scenario event");
+    assert_eq!(lines[0], "First box.");
+    // The long line is word-wrapped to the dialog.
+    assert!(lines.len() > 2 && lines.iter().all(|l| l.chars().count() <= 68));
+    key(&mut c, "Enter");
+    let Some(Modal::Notice { lines, .. }) = &c.modal else {
+        panic!("second box did not follow");
+    };
+    assert_eq!(lines, &vec!["Second box.".to_string()]);
+    key(&mut c, "Escape");
+    // The restricted box had no triggering civilization: nothing more opens.
+    assert!(c.modal.is_none());
+    let logged: Vec<&str> = c.notice_log.iter().map(|(_, s)| s.as_str()).collect();
+    assert!(logged.contains(&"Event: First box."), "{logged:?}");
+    assert!(logged.contains(&"Event: Second box."), "{logged:?}");
+    assert!(!logged.iter().any(|s| s.contains("hidden")));
+}

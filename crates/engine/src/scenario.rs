@@ -92,7 +92,6 @@ fn counted(list: &[(String, usize)]) -> String {
 pub fn event_gaps(events: &EventFile) -> Vec<String> {
     let mut triggers = Vec::new();
     let mut actions = Vec::new();
-    let mut texts = 0;
     let mut give_tech = 0;
     let mut create_unit = 0;
     for e in &events.events {
@@ -103,7 +102,8 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
         for a in &e.actions {
             let k = a.keyword.to_ascii_uppercase();
             match k.as_str() {
-                "TEXT" => texts += 1,
+                // Shown to the player since #326.
+                "TEXT" => {}
                 "GIVETECHNOLOGY" => give_tech += 1,
                 "CREATEUNIT" => create_unit += 1,
                 k if APPLIED_ACTIONS.contains(&k) => {}
@@ -139,11 +139,6 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
         gaps.push(format!(
             "CREATEUNIT placement is approximate ({create_unit} action{})",
             if create_unit == 1 { "" } else { "s" }
-        ));
-    }
-    if texts > 0 {
-        gaps.push(format!(
-            "Event messages are applied silently; their text is not shown yet ({texts})"
         ));
     }
     if !events.unknown_keywords.is_empty() {
@@ -262,10 +257,8 @@ mod tests {
             gaps.iter().any(|g| g.contains("MAKEAGGRESSION")),
             "{gaps:?}"
         );
-        assert!(
-            gaps.iter().any(|g| g.contains("text is not shown")),
-            "{gaps:?}"
-        );
+        // TEXT boxes are shown (#326): no gap for them.
+        assert!(!gaps.iter().any(|g| g.contains("TEXT")), "{gaps:?}");
         assert!(!gaps.iter().any(|g| g.contains("TURN,")), "{gaps:?}");
     }
 }

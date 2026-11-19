@@ -347,6 +347,10 @@ pub struct TileView {
 pub struct Observation {
     pub civ: u8,
     pub turn: i16,
+    /// The public date: the number and how it reads
+    /// ([`crate::calendar::date_text`]); `None` for an unlocated scenario
+    /// calendar.
+    pub date: Option<(i32, crate::calendar::DateStyle)>,
     pub treasury: i32,
     pub government: u8,
     pub techs: [u8; 13],
@@ -583,6 +587,7 @@ impl WorldState {
         Observation {
             civ,
             turn: self.turn,
+            date: self.date(),
             treasury: self.treasury.get(c).copied().unwrap_or(0),
             government: self.governments.get(c).copied().unwrap_or(0),
             techs: self.techs.get(c).copied().unwrap_or([0; 13]),
@@ -1013,6 +1018,13 @@ impl Game {
         world.start_turn(&rules);
         for c in 1..8 {
             world.reveal(c);
+        }
+        // SCENARIOLOADED (#328): the original evaluates it once in its
+        // game-start routine (civ2.bak 0x4639bf → 0x4d3285, no @AND gate).
+        // Replay rebuilds the session from here, so it fires once per game.
+        let mut events = events;
+        if let Some(ev) = events.as_mut() {
+            world.fire_event(&rules, ev, "SCENARIOLOADED", &crate::events::Ctx::default());
         }
         let canonical_rules = tot_kit::emit_rules(&rules);
         let log = format!(

@@ -3293,7 +3293,16 @@ fn turn_feedback_banner_and_title_round() {
             _ => None,
         })
     };
-    assert!(title(&c).unwrap().contains("· Turn 1"), "{:?}", title(&c));
+    // The date reads as the original writes it (#330); the turn follows
+    // where the bar has room, and the right column always shows both.
+    assert_eq!(title(&c).as_deref(), Some("Original rules · 4000 B.C."));
+    let stage = c.stage_w;
+    c.stage_w = 1600.;
+    assert_eq!(
+        title(&c).as_deref(),
+        Some("Original rules · 4000 B.C. · Turn 1")
+    );
+    c.stage_w = stage;
     // While the opponents run, a framed strip explains the wait (#283).
     c.advancing = true;
     let has = |c: &Client, s: &str| {
@@ -3379,7 +3388,7 @@ fn reports_open_switch_sort_drill_down_and_return_without_mutation() {
             _ => None,
         })
     };
-    assert_eq!(title(&c).as_deref(), Some("Reports"));
+    assert_eq!(title(&c).as_deref(), Some("Reports · 4000 B.C."));
     let has = |c: &Client, s: &str| {
         c.frame()
             .draws
@@ -4454,8 +4463,9 @@ fn layout_b_menus_and_column_reach_every_command_and_never_touch_the_game() {
             .iter()
             .any(|d| matches!(d, Draw::Text { text, x, .. } if *x >= chrome::COLUMN.0 && text.starts_with(s)))
     };
-    assert!(shows(&c, "Turn "));
-    assert!(shows(&c, "Treasury: "));
+    // The status opens with the date and turn (#330).
+    assert!(shows(&c, "4000 B.C. · Turn "));
+    assert!(shows(&c, "Despotism · "));
     assert!(shows(&c, "Research: "));
     assert!(shows(&c, "Athena · size 1"));
     assert!(c
@@ -4711,14 +4721,21 @@ fn wide_stage_widens_the_map_centres_windows_and_toggles_full_screen() {
     display(&mut c, 500, false);
     assert_eq!(c.frame().width, f64::from(WIDTH));
     display(&mut c, 1365, false);
-    // The map takes the extra width; the column stays at the right edge.
+    // The map takes the extra width less the side column (#337); the column
+    // stays at the right edge.
     let (mx, _, mw, _) = c.map_rect();
-    assert_eq!((mx, mw), (8., 768. + 341.));
-    assert!(c.on_map(1000., 300.));
+    assert_eq!((mx, mw), (8., 768. + 341. - 240.));
+    assert!(c.on_map(860., 300.));
+    assert!(!c.on_map(900., 300.), "the side column is not map");
+    assert_eq!(c.side_x(), Some(1365. - 480.));
     assert_eq!(c.column_x(), 1365. - 240.);
     for b in c.buttons() {
         if !matches!(b.action, Action::Menu(_)) {
-            assert!(b.x >= c.column_x(), "{} left of the column", b.label);
+            assert!(
+                b.x >= c.side_x().unwrap(),
+                "{} left of the columns",
+                b.label
+            );
         }
     }
     assert!(c.frame().draws.iter().any(
@@ -4729,7 +4746,7 @@ fn wide_stage_widens_the_map_centres_windows_and_toggles_full_screen() {
     if c.active.is_none() {
         let city = c.view().unwrap().observation.cities[0].clone();
         let px = c.pan.0 + f64::from(city.x) * 32. * c.zoom;
-        assert_eq!(px, 380. + 170.5);
+        assert_eq!(px, 380. + 50.5);
     }
     // Dialogs keep their layout, centred: Help's Close sits 170 px right.
     key(&mut c, "?");
@@ -4899,5 +4916,175 @@ fn experimental_scenario_entry_lists_preflights_starts_and_reloads() {
         d.status.contains("Experimental scenario checkpoint"),
         "{}",
         d.status
+    );
+}
+
+/// #326: scenario event TEXT boxes open one at a time as pop-up dialogs on
+/// the human's turn, after required choices, and each is logged once.
+#[test]
+fn scenario_event_texts_open_as_pop_ups_one_at_a_time() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    let rules = tot_kit::parse_rules(&format!(
+        "{}\n{}",
+        include_str!("../../../engine/tests/fixtures/campaign-rules.txt"),
+        include_str!("../../../engine/tests/fixtures/builtin-settings.txt")
+    ));
+    let events = engine::events::EventEngine::new(
+        tot_kit::parse_events(&format!(
+            "@IF\nTURN\nturn=Every\n@THEN\nTEXT\nFirst box.\n{}\nENDTEXT\n\
+             TEXT\nSecond box.\nENDTEXT\nTEXT\nNo Broadcast\nhidden\nENDTEXT\n@ENDIF\n",
+            "word ".repeat(40)
+        ))
+        .unwrap(),
+    );
+    c.loaded.as_mut().unwrap().session = HumanSession::scenario(
+        "test.sav",
+        &engine::tests_support::synthetic_save_bytes(),
+        rules,
+        Some(events),
+        1,
+        engine::campaign::AiPolicy::AiV1,
+        9,
+    )
+    .unwrap();
+    c.reset_notices();
+    c.modal = None;
+    research(&mut c);
+    key(&mut c, "Ctrl+n");
+    if matches!(c.modal, Some(Modal::Confirm { .. })) {
+        key(&mut c, "Enter");
+    }
+    ready(&mut c);
+    research(&mut c);
+    let Some(Modal::Notice { title, lines }) = &c.modal else {
+        panic!("no event box: {:?} {}", c.modal.is_some(), c.status);
+    };
+    assert_eq!(*title, "Scenario event");
+    assert_eq!(lines[0], "First box.");
+    // The long line is word-wrapped to the dialog.
+    assert!(lines.len() > 2 && lines.iter().all(|l| l.chars().count() <= 68));
+    key(&mut c, "Enter");
+    let Some(Modal::Notice { lines, .. }) = &c.modal else {
+        panic!("second box did not follow");
+    };
+    assert_eq!(lines, &vec!["Second box.".to_string()]);
+    key(&mut c, "Escape");
+    // The restricted box had no triggering civilization: nothing more opens.
+    assert!(c.modal.is_none());
+    let logged: Vec<&str> = c.notice_log.iter().map(|(_, s)| s.as_str()).collect();
+    assert!(logged.contains(&"Event: First box."), "{logged:?}");
+    assert!(logged.contains(&"Event: Second box."), "{logged:?}");
+    assert!(!logged.iter().any(|s| s.contains("hidden")));
+}
+
+/// #337 (owner 2026-11-19): from 16:9 a side column left of the right column
+/// holds the messages, replacing the dock and the new-messages overlay; 4:3
+/// and 16:10 keep layout B unchanged. Presentation only.
+#[test]
+fn wide_stage_moves_messages_into_a_side_column() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    let display = |c: &mut Client, width: u32| {
+        let id = c.receipts.len() as u64 + 1;
+        c.input(
+            c.revision.saturating_sub(3),
+            id,
+            Input::Display {
+                width,
+                fullscreen: true,
+            },
+        )
+        .unwrap();
+    };
+    start(&mut c);
+    founding(&mut c);
+    // Dock and overlay on, so the wide layout visibly takes them over.
+    c.enhancements.message_dock = true;
+    c.enhancements.notice_overlay = true;
+    let before = c.checkpoint().unwrap();
+    c.notice_log = vec![
+        (1, "Rome grew".into()),
+        (
+            2,
+            "A long message that does not fit on one side-column line".into(),
+        ),
+        (2, "Veii built Warriors".into()),
+    ];
+    let now = c.view().unwrap().observation.turn;
+    c.notice_log = c
+        .notice_log
+        .iter()
+        .map(|(t, l)| (now - 2 + t, l.clone()))
+        .collect();
+    c.notice_turn = Some(now);
+    c.notice_unread = true;
+    let texts = |c: &mut Client| -> Vec<(f64, String)> {
+        c.frame()
+            .draws
+            .iter()
+            .filter_map(|d| match d {
+                Draw::Text { x, text, .. } => Some((*x, text.clone())),
+                _ => None,
+            })
+            .collect()
+    };
+    let all = |c: &mut Client| {
+        c.buttons()
+            .into_iter()
+            .filter(|b| matches!(b.action, Action::Messages) && b.label.starts_with("All messages"))
+            .map(|b| b.x)
+            .collect::<Vec<_>>()
+    };
+    // 4:3 and 16:10: no side column; the dock and overlay as before.
+    for width in [1024, 1228] {
+        display(&mut c, width);
+        assert_eq!(c.side_x(), None, "{width}");
+        assert_eq!(c.map_rect().2, 768. + f64::from(width) - 1024.);
+        assert!(c.notice_overlay(), "{width}");
+        assert_eq!(
+            all(&mut c),
+            vec![c.column_x() + 6.],
+            "{width}: the dock's button"
+        );
+    }
+    // 16:9 full screen: the side column.
+    display(&mut c, 1365);
+    let sx = c.side_x().unwrap();
+    assert!(!c.notice_overlay(), "the side column replaces the overlay");
+    assert_eq!(
+        all(&mut c),
+        vec![sx + 6.],
+        "one All messages, in the side column"
+    );
+    let side: Vec<String> = texts(&mut c)
+        .into_iter()
+        .filter(|(x, _)| *x == sx + 6.)
+        .map(|(_, t)| t)
+        .collect();
+    assert_eq!(side[0], format!("Turn {now} — new messages"));
+    // This turn's lines wrap in full, in order; earlier ones follow.
+    let at = |s: &str| side.iter().position(|t| t == s).unwrap_or(usize::MAX);
+    assert!(
+        at("A long message that does not") < at("Veii built Warriors"),
+        "{side:?}"
+    );
+    assert!(
+        side.iter().any(|t| t == "fit on one side-column line"),
+        "{side:?}"
+    );
+    assert!(
+        at("Earlier") < at(&format!("T{} Rome grew", now - 1)),
+        "{side:?}"
+    );
+    // The All messages button opens the log.
+    button(&mut c, "All messages (3)");
+    assert!(matches!(c.modal, Some(Modal::Messages)));
+    key(&mut c, "Escape");
+    assert_eq!(
+        c.checkpoint().unwrap(),
+        before,
+        "the side column is presentation"
     );
 }

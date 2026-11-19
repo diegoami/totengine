@@ -333,11 +333,20 @@ mod tests {
     fn original_arrival_requests_and_final_crt() {
         let mut text = String::from("@CIVILIZE\n");
         for t in 0..100 {
-            writeln!(text, "Tech{t},5,1,nil,nil,0,0 ; T{t}").unwrap();
+            writeln!(
+                text,
+                "Tech{t},5,1,nil,nil,0,0 ; {}",
+                tot_kit::ADVANCE_IDS[t]
+            )
+            .unwrap();
         }
         text.push_str("@UNITS\n");
         for t in 0..80 {
-            let prereq = if t == 22 { "T50" } else { "nil" };
+            let prereq = if t == 22 {
+                tot_kit::ADVANCE_IDS[50]
+            } else {
+                "nil"
+            };
             writeln!(
                 text,
                 "Unit{t},nil,0,1.,0,1a,1d,1h,1f,1,0,1,{prereq},000000000000000"

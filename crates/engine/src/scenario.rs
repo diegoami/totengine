@@ -58,15 +58,33 @@ pub struct Preflight {
 }
 
 /// Triggers the engine fires today (turn loop, battles, captures).
-pub const FIRED_TRIGGERS: [&str; 5] = [
+pub const FIRED_TRIGGERS: [&str; 8] = [
     "TURN",
     "TURNINTERVAL",
     "RANDOMTURN",
     "UNITKILLED",
     "CITYTAKEN",
+    "CHECKFLAG",
+    "RECEIVEDTECHNOLOGY",
+    "SCENARIOLOADED",
 ];
-/// Actions that change the game today.
-pub const APPLIED_ACTIONS: [&str; 3] = ["CHANGEMONEY", "CREATEUNIT", "JUSTONCE"];
+/// Actions and modifiers that change the game today.
+pub const APPLIED_ACTIONS: [&str; 14] = [
+    "CHANGEMONEY",
+    "CREATEUNIT",
+    "GIVETECHNOLOGY",
+    "TAKETECHNOLOGY",
+    "CHANGETERRAIN",
+    "MAKEAGGRESSION",
+    "DELAY",
+    "JUSTONCE",
+    "FLAG",
+    "CONTINUOUS",
+    "RANDOMIZE",
+    "INCAPITAL",
+    "COLLAPSE",
+    "NOCOLLAPSE",
+];
 
 fn summarize(list: &mut Vec<(String, usize)>, key: &str) {
     match list.iter_mut().find(|(k, _)| k == key) {
@@ -91,20 +109,45 @@ fn counted(list: &[(String, usize)]) -> String {
 /// Event gaps: triggers that never fire and actions that do nothing.
 pub fn event_gaps(events: &EventFile) -> Vec<String> {
     let mut triggers = Vec::new();
+    // Triggers whose game event the engine cannot produce yet.
+    let mut missing_feature = Vec::new();
     let mut actions = Vec::new();
-    let mut texts = 0;
-    let mut give_tech = 0;
     let mut create_unit = 0;
+    let mut flag_tech = 0;
+    let mut delay_random = 0;
+    let mut other_map = 0;
+    let mut aggression = 0;
+    let mut media = 0;
+    let mut no_schism = 0;
     for e in &events.events {
-        let t = e.trigger.keyword.to_ascii_uppercase();
-        if !FIRED_TRIGGERS.contains(&t.as_str()) {
-            summarize(&mut triggers, &t);
+        // Both halves of an @AND event must fire.
+        for half in std::iter::once(&e.trigger).chain(&e.and) {
+            let t = half.keyword.to_ascii_uppercase();
+            if !FIRED_TRIGGERS.contains(&t.as_str()) {
+                let list = match t.as_str() {
+                    "BRIBEUNIT" | "NEGOTIATION" => &mut missing_feature,
+                    _ => &mut triggers,
+                };
+                summarize(list, &t);
+            } else if t == "CHECKFLAG" && half.param("technology").is_some() {
+                flag_tech += 1;
+            }
         }
-        for a in &e.actions {
+        for (n, a) in e.actions.iter().enumerate() {
             let k = a.keyword.to_ascii_uppercase();
+            let next = e.actions.get(n + 1).map(|c| c.keyword.as_str());
+            if k == "DELAY" && next == Some("RANDOMIZE") {
+                delay_random += 1;
+            }
+            if k == "CHANGETERRAIN" && a.param("map").and_then(|v| v.number()).unwrap_or(0) != 0 {
+                other_map += 1;
+            }
+            if k == "MAKEAGGRESSION" {
+                aggression += 1;
+            }
             match k.as_str() {
-                "TEXT" => texts += 1,
-                "GIVETECHNOLOGY" => give_tech += 1,
+                // Shown to the player since #326.
+                "TEXT" => {}
                 "CREATEUNIT" => create_unit += 1,
                 k if APPLIED_ACTIONS.contains(&k) => {}
                 // A file argument (PLAYWAVEFILE's sound) read as a keyword.
@@ -112,6 +155,8 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
                 // CREATEUNIT's coordinate block.
                 "LOCATIONS" | "ENDLOCATIONS" => {}
                 "PLAYCDTRACK" | "DONTPLAYWONDERS" => {}
+                "PLAYWAVEFILE" | "PLAYAVIFILE" => media += 1,
+                "NOSCHISM" => no_schism += 1,
                 _ => summarize(&mut actions, &k),
             }
         }
@@ -123,27 +168,59 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
             counted(&triggers)
         ));
     }
+    if !missing_feature.is_empty() {
+        gaps.push(format!(
+            "Events that never fire because units cannot be bribed and there is no diplomacy yet: {}",
+            counted(&missing_feature)
+        ));
+    }
     if !actions.is_empty() {
         gaps.push(format!(
             "Event actions that do nothing yet: {}",
             counted(&actions)
         ));
     }
-    if give_tech > 0 {
+    if flag_tech > 0 {
         gaps.push(format!(
-            "GIVETECHNOLOGY is skipped ({give_tech} action{})",
-            if give_tech == 1 { "" } else { "s" }
+            "CHECKFLAG with technology= never fires ({flag_tech} event{})",
+            if flag_tech == 1 { "" } else { "s" }
+        ));
+    }
+    let plural = |n: usize| if n == 1 { "" } else { "s" };
+    if delay_random > 0 {
+        gaps.push(format!(
+            "DELAY with Randomize waits the full delay ({delay_random} event{})",
+            plural(delay_random)
+        ));
+    }
+    if other_map > 0 {
+        gaps.push(format!(
+            "CHANGETERRAIN on maps other than 0 does nothing ({other_map} action{})",
+            plural(other_map)
+        ));
+    }
+    if aggression > 0 {
+        gaps.push(format!(
+            "MAKEAGGRESSION declares war, but a human party's treaty-break consequences are not modelled ({aggression} action{})",
+            plural(aggression)
+        ));
+    }
+    if media > 0 {
+        gaps.push(format!(
+            "Event sounds and videos are not played ({media} action{})",
+            plural(media)
+        ));
+    }
+    if no_schism > 0 {
+        gaps.push(format!(
+            "NOSCHISM has nothing to prevent: the engine never splits a civilization in civil war ({no_schism} action{})",
+            plural(no_schism)
         ));
     }
     if create_unit > 0 {
         gaps.push(format!(
-            "CREATEUNIT placement is approximate ({create_unit} action{})",
+            "CREATEUNIT placement skips the original's impassable-terrain test ({create_unit} action{})",
             if create_unit == 1 { "" } else { "s" }
-        ));
-    }
-    if texts > 0 {
-        gaps.push(format!(
-            "Event messages are applied silently; their text is not shown yet ({texts})"
         ));
     }
     if !events.unknown_keywords.is_empty() {
@@ -257,15 +334,54 @@ mod tests {
         )
         .unwrap();
         let gaps = event_gaps(&file);
-        assert!(gaps.iter().any(|g| g.contains("NEGOTIATION")), "{gaps:?}");
+        assert!(
+            gaps.iter()
+                .any(|g| g.contains("no diplomacy") && g.contains("NEGOTIATION")),
+            "{gaps:?}"
+        );
+        // Sounds and NOSCHISM say why they change nothing (#328).
+        let media = event_gaps(
+            &tot_kit::parse_events(
+                "@IF\nTURN\nturn=1\n@THEN\nPLAYWAVEFILE\nx.wav\nNOSCHISM\nwhom=A\n@ENDIF\n",
+            )
+            .unwrap(),
+        );
+        assert!(
+            media.iter().any(|g| g.starts_with("Event sounds")),
+            "{media:?}"
+        );
+        assert!(
+            media.iter().any(|g| g.starts_with("NOSCHISM has nothing")),
+            "{media:?}"
+        );
+        assert!(
+            !media.iter().any(|g| g.contains("do nothing yet")),
+            "{media:?}"
+        );
         assert!(
             gaps.iter().any(|g| g.contains("MAKEAGGRESSION")),
             "{gaps:?}"
         );
+        // Flags (#328): FLAG/CHECKFLAG are supported; an @AND half is
+        // still reported when its trigger is not.
+        let file = tot_kit::parse_events(
+            "@INITFLAG\n@IF\nCHECKFLAG\nwho=A\nflag=0\nstate=on\n@AND\nBRIBEUNIT\n\
+             who=A\nwhom=B\nunittype=1\n@THEN\nFLAG\ncontinuous\nflag=1\nstate=on\n@ENDIF\n",
+        )
+        .unwrap();
+        let flag_gaps = event_gaps(&file);
         assert!(
-            gaps.iter().any(|g| g.contains("text is not shown")),
-            "{gaps:?}"
+            flag_gaps.iter().any(|g| g.contains("BRIBEUNIT")),
+            "{flag_gaps:?}"
         );
+        assert!(
+            !flag_gaps
+                .iter()
+                .any(|g| g.contains("FLAG") || g.contains("CONTINUOUS")),
+            "{flag_gaps:?}"
+        );
+        // TEXT boxes are shown (#326): no gap for them.
+        assert!(!gaps.iter().any(|g| g.contains("TEXT")), "{gaps:?}");
         assert!(!gaps.iter().any(|g| g.contains("TURN,")), "{gaps:?}");
     }
 }

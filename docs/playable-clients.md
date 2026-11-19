@@ -95,6 +95,12 @@ The map screen follows the original's frame (layout B, [design record](ui/layout
   right edge. Dialogs, the city window and setup keep their layout, centred. **Alt+Enter** or
   **View > Full screen** toggles full screen (the browser asks for its own full
   screen; Esc there returns to a window). A 4:3 window looks as before.
+- **Side column on wide screens** (#337): from 16:9, a second column sits
+  left of the right column. It shows the latest turn's messages in full, then
+  earlier ones newest first, with **All messages** at the bottom. It replaces
+  the message dock and the new-messages overlay there; the map gives up that
+  width. It is on by default when the window is that wide. At 4:3 and 16:10
+  nothing changes. It is presentation only and never changes the game.
 - The **right column** shows a **minimap** of what your civilization has seen
   (a click centres the map there), your turn, government, treasury, rates and
   research, the selected unit, the selected city with **Manage city** and
@@ -214,10 +220,37 @@ about:
 - the game starts a fresh engine turn, so every unit gets its full movement;
 - opponents are played by the engine AI (`builtin-1`, or `ai-v1` when the
   built-in AI cannot read the scenario's Rules), not the original AI's plans;
-- event triggers that never fire, event actions that do nothing yet,
-  GIVETECHNOLOGY (skipped), CREATEUNIT (approximate placement) and event
-  messages (applied silently for now);
+- event triggers that never fire, event actions that do nothing yet and
+  CREATEUNIT (approximate placement);
 - Lua scripts beside the scenario, which are not run.
+
+Event TEXT boxes (#326) open as pop-up dialogs, one at a time, when the human's
+turn is in progress: boxes fired by opponents' moves or the round wait for the
+human's turn, boxes fired by the human's own moves open at once. Enter or Esc
+closes each; every box is also kept in the message log. A box marked
+`No Broadcast` (Macro.txt) appears only when the human civilization triggered
+it (the attacker of UNITKILLED/CITYTAKEN); one whose trigger names no
+civilization reaches nobody (the original's choice there is not verified).
+
+Event flags (#328) work as in the original. FLAG sets or clears per-civilization
+flags, and CHECKFLAG tests them once at the start of every turn. Flags set
+without `Continuous` are cleared right after that test. An `@AND` event needs
+both of its triggers since the last turn start. A file without `@INITFLAG`
+ignores flags, as the original does.
+
+Other event support (#328) also follows the original:
+- **SCENARIOLOADED** fires once when the scenario starts.
+- **RECEIVEDTECHNOLOGY** is checked at every turn start.
+- **DELAY** postpones an event's actions by that many turns.
+- **TAKETECHNOLOGY** removes an advance (with `Collapse`, also the advances
+  that depend on it).
+- **CHANGETERRAIN** changes a rectangle of tiles and destroys cities and
+  units there.
+- **MAKEAGGRESSION** declares war.
+- **CREATEUNIT** honours `Randomize`, `InCapital` and `homecity`.
+
+The preflight still lists what is missing: bribery, negotiation rules, sounds,
+and the few partial cases.
 
 The scenario's folder supplies its Rules, Events and art; interface sheets the
 folder lacks come from `Original`, then the install root. Files the decoders

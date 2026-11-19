@@ -1,5 +1,5 @@
 {
-  "baseline_sha256": "d0169548ea75f7690be31074996209a45b0455411b68a4e566c1362096625825",
+  "baseline_sha256": "006ae8e7b9cb122e1a2c098b37f33a290c352ff1b82caef6e4f97eb5d9a6cb48",
   "engine_audit": {
     "changed_or_missing": [],
     "matches_current_source": true,
@@ -119,54 +119,37 @@
               "status": "unimplemented"
             },
             "TEXT": {
-              "note": "Effect/log recording is not full scenario client delivery.",
+              "note": "Human sessions show fired TEXT boxes to the human as client pop-ups and in the message log (#326); a leading 'No Broadcast' line limits a box to the triggering civilization (UNITKILLED/CITYTAKEN attacker, NEGOTIATION talker), and a restricted box whose trigger names none reaches nobody (unverified against the original). No native pop-up timing or order claim.",
               "params": [],
               "status": "no_game_state_effect"
             }
           },
           "triggers": {
             "RANDOMTURN": {
-              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "note": "civ2.bak 0x4d2fa6: CRT rand() % n + 1 == n on the world's combat CRT stream, drawn only when n > 1 (n == 1 always fires); spent events still draw. Draw parity with the original holds only while every earlier CRT draw matches. A missing denominator defaults to 2 (not decoded).",
               "params": [
                 "denominator"
               ],
               "status": "modelled_subset"
             },
             "RECEIVEDTECHNOLOGY": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Polled at every turn start after RANDOMTURN (civ2.bak 0x4d306f), not fired by the grant: true while the receiver knows the advance (futuretech: while its Future Technology count equals technology=). Anybody tests each civ; the receiver is TriggerReceiver/TriggerDefender. @AND gate applies (evidence README \u00a7Event actions, #328).",
+              "params": [
+                "receiver",
+                "technology",
+                "futuretech"
+              ],
+              "status": "modelled_subset"
             }
           }
         },
         "diagnostic_counts": {
           "no_game_state_effect": 1,
-          "unimplemented_keyword": 3,
+          "unimplemented_keyword": 2,
           "unmodelled_argument": 1,
-          "unmodelled_parameter": 3,
-          "unsupported_compound_condition": 1
+          "unmodelled_parameter": 1
         },
         "diagnostics": [
-          {
-            "code": "unimplemented_keyword",
-            "line": 9,
-            "token": "RECEIVEDTECHNOLOGY"
-          },
-          {
-            "code": "unmodelled_parameter",
-            "line": 10,
-            "token": "receiver"
-          },
-          {
-            "code": "unmodelled_parameter",
-            "line": 11,
-            "token": "futuretech"
-          },
-          {
-            "code": "unsupported_compound_condition",
-            "line": 12,
-            "token": "@AND"
-          },
           {
             "code": "no_game_state_effect",
             "line": 16,
@@ -186,10 +169,15 @@
             "code": "unimplemented_keyword",
             "line": 26,
             "token": "PLAYAVIFILE"
+          },
+          {
+            "code": "unmodelled_argument",
+            "line": 27,
+            "token": "PLAYAVIFILE"
           }
         ],
-        "diagnostics_total": 9,
-        "diagnostics_truncated": true,
+        "diagnostics_total": 5,
+        "diagnostics_truncated": false,
         "event_blocks": 1,
         "logical": {
           "@AND": 1
@@ -373,12 +361,13 @@
               "status": "modelled_subset"
             },
             "CREATEUNIT": {
-              "note": "First-valid placement; native validity, randomize and map contexts remain partial.",
+              "note": "Handler 0x4d2102: per-unit scan of up to 10 locations (Randomize: CRT rand()%n start, no wraparound), sea units on ocean or the owner's coastal city, others not on ocean (air excepted) nor in another civ's city, no other civ's units; InCapital moves to the owner's first Palace city; homecity only if the owner's; count 128..255 creates none. The impassable-terrain test and z/map locations are not modelled.",
               "params": [
                 "unit",
                 "owner",
                 "veteran",
-                "count"
+                "count",
+                "homecity"
               ],
               "status": "partial"
             },
@@ -388,12 +377,12 @@
               "status": "no_game_state_effect"
             },
             "GIVETECHNOLOGY": {
-              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original handler 0x4d201e (dispatcher 0x4d3ae8) calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README \u00a7GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing.",
               "params": [
                 "receiver",
                 "technology"
               ],
-              "status": "emitted_but_skipped"
+              "status": "modelled_subset"
             },
             "JUSTONCE": {
               "note": "In-memory event latch; native imported event state is not restored.",
@@ -406,7 +395,7 @@
               "status": "no_game_state_effect"
             },
             "TEXT": {
-              "note": "Effect/log recording is not full scenario client delivery.",
+              "note": "Human sessions show fired TEXT boxes to the human as client pop-ups and in the message log (#326); a leading 'No Broadcast' line limits a box to the triggering civilization (UNITKILLED/CITYTAKEN attacker, NEGOTIATION talker), and a restricted box whose trigger names none reaches nobody (unverified against the original). No native pop-up timing or order claim.",
               "params": [],
               "status": "no_game_state_effect"
             }
@@ -435,19 +424,19 @@
               "status": "unimplemented"
             },
             "RANDOMTURN": {
-              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "note": "civ2.bak 0x4d2fa6: CRT rand() % n + 1 == n on the world's combat CRT stream, drawn only when n > 1 (n == 1 always fires); spent events still draw. Draw parity with the original holds only while every earlier CRT draw matches. A missing denominator defaults to 2 (not decoded).",
               "params": [
                 "denominator"
               ],
               "status": "modelled_subset"
             },
             "SCENARIOLOADED": {
-              "note": "Interpreter recognition is not complete native startup/session delivery.",
+              "note": "Fired once when an experimental scenario session starts, before its first view (civ2.bak game start 0x4639bf \u2192 0x4d3285, no @AND gate); replay rebuilds it. The original also re-fires it on loading a saved game; engine checkpoints replay from the scenario start instead.",
               "params": [],
-              "status": "partial"
+              "status": "modelled_subset"
             },
             "TURN": {
-              "note": "Interpreter turn/every selector; full native scheduling not established.",
+              "note": "civ2.bak 0x4d2df7: fires when turn=N equals the turn or is Every (-1); Continuous fires every later turn; on turns 22 and 42 an unspent earlier-turn JUSTONCE event fires (evidence README \u00a7TURN, TURNINTERVAL and RANDOMTURN evaluators, #328).",
               "params": [
                 "turn"
               ],
@@ -465,18 +454,12 @@
           }
         },
         "diagnostic_counts": {
-          "emitted_but_skipped": 2,
           "no_game_state_effect": 58,
-          "partial": 45,
+          "partial": 44,
           "unimplemented_keyword": 1,
-          "unmodelled_parameter": 67
+          "unmodelled_parameter": 45
         },
         "diagnostics": [
-          {
-            "code": "partial",
-            "line": 5,
-            "token": "SCENARIOLOADED"
-          },
           {
             "code": "no_game_state_effect",
             "line": 7,
@@ -498,11 +481,6 @@
             "token": "CREATEUNIT"
           },
           {
-            "code": "unmodelled_parameter",
-            "line": 25,
-            "token": "homecity"
-          },
-          {
             "code": "no_game_state_effect",
             "line": 35,
             "token": "PLAYCDTRACK"
@@ -511,9 +489,19 @@
             "code": "no_game_state_effect",
             "line": 45,
             "token": "TEXT"
+          },
+          {
+            "code": "partial",
+            "line": 48,
+            "token": "CREATEUNIT"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 62,
+            "token": "PLAYCDTRACK"
           }
         ],
-        "diagnostics_total": 173,
+        "diagnostics_total": 148,
         "diagnostics_truncated": true,
         "event_blocks": 64,
         "logical": {},
@@ -714,42 +702,50 @@
               "status": "modelled_subset"
             },
             "CONTINUOUS": {
-              "note": "No audited handler.",
+              "note": "FLAG's modifier (bit 0x1000) and an @AND trigger half's (0x80; a continuous second half also keeps the first). Not modelled for single triggers, where it only matters to @AND.",
               "params": [],
-              "status": "unimplemented"
+              "status": "modelled_subset"
             },
             "CREATEUNIT": {
-              "note": "First-valid placement; native validity, randomize and map contexts remain partial.",
+              "note": "Handler 0x4d2102: per-unit scan of up to 10 locations (Randomize: CRT rand()%n start, no wraparound), sea units on ocean or the owner's coastal city, others not on ocean (air excepted) nor in another civ's city, no other civ's units; InCapital moves to the owner's first Palace city; homecity only if the owner's; count 128..255 creates none. The impassable-terrain test and z/map locations are not modelled.",
               "params": [
                 "unit",
                 "owner",
                 "veteran",
-                "count"
+                "count",
+                "homecity"
               ],
               "status": "partial"
             },
             "DELAY": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Dispatcher 0x4d3ae8 queues the event's actions (0x575fbb) with the trigger context; the turn-start countdown 0x575e21 runs them after that many turn starts. JUSTONCE latches when it first fires. Randomize on DELAY (rolled once at load with CRT rand) is not modelled: the full delay is used.",
+              "params": [
+                "delay"
+              ],
+              "status": "modelled_subset"
             },
             "FLAG": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Per-civ flag words and one global continuous word (civ2.bak 0x5757b7). No who= or Everybody sets all eight civs; Anybody/Somebody/unknown do nothing. Requires @INITFLAG. Flags live in the event engine and rebuild by replay; native save import of flag state is not implemented.",
+              "params": [
+                "who",
+                "flag",
+                "mask",
+                "state"
+              ],
+              "status": "modelled_subset"
             },
             "GIVETECHNOLOGY": {
-              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original handler 0x4d201e (dispatcher 0x4d3ae8) calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README \u00a7GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing.",
               "params": [
                 "receiver",
                 "technology"
               ],
-              "status": "emitted_but_skipped"
+              "status": "modelled_subset"
             },
             "INCAPITAL": {
-              "note": "No audited handler.",
+              "note": "CREATEUNIT: the owner's first Palace city replaces the scanned location (a sea unit only if that city is coastal).",
               "params": [],
-              "status": "unimplemented"
+              "status": "modelled_subset"
             },
             "JUSTONCE": {
               "note": "In-memory event latch; native imported event state is not restored.",
@@ -757,9 +753,12 @@
               "status": "modelled_subset"
             },
             "MAKEAGGRESSION": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Handler 0x53ac50 with treaty helpers 0x454500/0x4545d2 (both directions, with cascades): clears 0x60 and 0xc; with contact sets war 0x2000 (+0x200000, clearing 0xe), attitudes 100 both ways and 0x1000 on who's word if neither has it. The treaty-break consequences 0x44af04 for a human party are not modelled (reported).",
+              "params": [
+                "who",
+                "whom"
+              ],
+              "status": "modelled_subset"
             },
             "NEGOTIATOR": {
               "note": "No audited handler.",
@@ -772,17 +771,20 @@
               "status": "unimplemented"
             },
             "RANDOMIZE": {
-              "note": "No audited handler.",
+              "note": "CREATEUNIT's random starting location (CRT rand per unit). On DELAY it is not modelled (see DELAY).",
               "params": [],
-              "status": "unimplemented"
+              "status": "modelled_subset"
             },
             "TAKETECHNOLOGY": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Handler 0x567ab4 \u2192 0x4a2363: a living civ 1..=7 loses the advance bit only (advance count, research target and who-knows mask are untouched); Collapse first takes known dependants (0x49c8d4, depth first in index order). Future Technology cannot be taken.",
+              "params": [
+                "whom",
+                "technology"
+              ],
+              "status": "modelled_subset"
             },
             "TEXT": {
-              "note": "Effect/log recording is not full scenario client delivery.",
+              "note": "Human sessions show fired TEXT boxes to the human as client pop-ups and in the message log (#326); a leading 'No Broadcast' line limits a box to the triggering civilization (UNITKILLED/CITYTAKEN attacker, NEGOTIATION talker), and a restricted box whose trigger names none reaches nobody (unverified against the original). No native pop-up timing or order claim.",
               "params": [],
               "status": "no_game_state_effect"
             }
@@ -794,9 +796,16 @@
               "status": "unimplemented"
             },
             "CHECKFLAG": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Evaluated once per turn start after TURN/TURNINTERVAL/RANDOMTURN, then non-continuous flags are cleared (civ2.bak 0x574c3e; evidence README \u00a7Event flags). who=name/Somebody/Everybody, Threshold and Count (which the original also treats as a minimum) are modelled; technology= is not and such a trigger never fires. Requires @INITFLAG. One @AND per event is gated as in 0x575cbe.",
+              "params": [
+                "who",
+                "flag",
+                "mask",
+                "state",
+                "threshold",
+                "count"
+              ],
+              "status": "modelled_subset"
             },
             "CITYTAKEN": {
               "note": "Current supported occupation contexts only.",
@@ -816,35 +825,39 @@
               "status": "partial"
             },
             "RANDOMTURN": {
-              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "note": "civ2.bak 0x4d2fa6: CRT rand() % n + 1 == n on the world's combat CRT stream, drawn only when n > 1 (n == 1 always fires); spent events still draw. Draw parity with the original holds only while every earlier CRT draw matches. A missing denominator defaults to 2 (not decoded).",
               "params": [
                 "denominator"
               ],
               "status": "modelled_subset"
             },
             "RECEIVEDTECHNOLOGY": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Polled at every turn start after RANDOMTURN (civ2.bak 0x4d306f), not fired by the grant: true while the receiver knows the advance (futuretech: while its Future Technology count equals technology=). Anybody tests each civ; the receiver is TriggerReceiver/TriggerDefender. @AND gate applies (evidence README \u00a7Event actions, #328).",
+              "params": [
+                "receiver",
+                "technology",
+                "futuretech"
+              ],
+              "status": "modelled_subset"
             },
             "SCENARIOLOADED": {
-              "note": "Interpreter recognition is not complete native startup/session delivery.",
+              "note": "Fired once when an experimental scenario session starts, before its first view (civ2.bak game start 0x4639bf \u2192 0x4d3285, no @AND gate); replay rebuilds it. The original also re-fires it on loading a saved game; engine checkpoints replay from the scenario start instead.",
               "params": [],
-              "status": "partial"
+              "status": "modelled_subset"
             },
             "TURN": {
-              "note": "Interpreter turn/every selector; full native scheduling not established.",
+              "note": "civ2.bak 0x4d2df7: fires when turn=N equals the turn or is Every (-1); Continuous fires every later turn; on turns 22 and 42 an unspent earlier-turn JUSTONCE event fires (evidence README \u00a7TURN, TURNINTERVAL and RANDOMTURN evaluators, #328).",
               "params": [
                 "turn"
               ],
               "status": "modelled_subset"
             },
             "TURNINTERVAL": {
-              "note": "Current absolute modulo timing is not full last-activation semantics.",
+              "note": "civ2.bak 0x4d2efa: fires when interval is 0 or turn % interval == 0 (absolute, not from the last activation). A missing interval line never fires; the original's default is not decoded.",
               "params": [
                 "interval"
               ],
-              "status": "partial"
+              "status": "modelled_subset"
             },
             "UNITKILLED": {
               "note": "Current supported battle contexts only.",
@@ -859,28 +872,14 @@
         },
         "diagnostic_counts": {
           "content_after_endevents": 1,
-          "emitted_but_skipped": 7,
           "no_game_state_effect": 84,
-          "partial": 126,
-          "placement_context_unmodelled": 99,
-          "unimplemented_keyword": 381,
+          "partial": 123,
+          "unimplemented_keyword": 45,
           "unmodelled_argument": 35,
-          "unmodelled_parameter": 610,
-          "unmodelled_trigger_argument": 28,
-          "unsupported_compound_condition": 27,
-          "unsupported_directive": 1
+          "unmodelled_parameter": 48,
+          "unmodelled_trigger_argument": 28
         },
         "diagnostics": [
-          {
-            "code": "unsupported_directive",
-            "line": 15,
-            "token": "@INITFLAG"
-          },
-          {
-            "code": "partial",
-            "line": 56,
-            "token": "SCENARIOLOADED"
-          },
           {
             "code": "unimplemented_keyword",
             "line": 58,
@@ -910,9 +909,19 @@
             "code": "unmodelled_parameter",
             "line": 80,
             "token": "listenermask"
+          },
+          {
+            "code": "partial",
+            "line": 85,
+            "token": "NEGOTIATION"
+          },
+          {
+            "code": "unmodelled_parameter",
+            "line": 86,
+            "token": "talkermask"
           }
         ],
-        "diagnostics_total": 1399,
+        "diagnostics_total": 364,
         "diagnostics_truncated": true,
         "event_blocks": 258,
         "logical": {
@@ -1111,7 +1120,6 @@
           "GIVETECHNOLOGY": 11,
           "INCAPITAL": 7,
           "JUSTONCE": 97,
-          "MAPRECT": 18,
           "MODIFYREPUTATION": 2,
           "PLAYAVIFILE": 8,
           "PLAYCDTRACK": 3,
@@ -1131,29 +1139,36 @@
               "status": "modelled_subset"
             },
             "CHANGETERRAIN": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Handler 0x4d2a3a: x from corner 1 to corner 2, y from corner 1 to corner 4, inclusive; exception-mask terrains skipped. Cities on the tiles are destroyed and units removed, then terrain set and river, resource, improvements, site bits and landmass cleared. Only map 0; the civ-elimination check and the city refresh after it are not run (cities refresh at round close).",
+              "params": [
+                "terraintype",
+                "map",
+                "exceptionmask"
+              ],
+              "status": "modelled_subset"
             },
             "CONTINUOUS": {
-              "note": "No audited handler.",
+              "note": "FLAG's modifier (bit 0x1000) and an @AND trigger half's (0x80; a continuous second half also keeps the first). Not modelled for single triggers, where it only matters to @AND.",
               "params": [],
-              "status": "unimplemented"
+              "status": "modelled_subset"
             },
             "CREATEUNIT": {
-              "note": "First-valid placement; native validity, randomize and map contexts remain partial.",
+              "note": "Handler 0x4d2102: per-unit scan of up to 10 locations (Randomize: CRT rand()%n start, no wraparound), sea units on ocean or the owner's coastal city, others not on ocean (air excepted) nor in another civ's city, no other civ's units; InCapital moves to the owner's first Palace city; homecity only if the owner's; count 128..255 creates none. The impassable-terrain test and z/map locations are not modelled.",
               "params": [
                 "unit",
                 "owner",
                 "veteran",
-                "count"
+                "count",
+                "homecity"
               ],
               "status": "partial"
             },
             "DELAY": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Dispatcher 0x4d3ae8 queues the event's actions (0x575fbb) with the trigger context; the turn-start countdown 0x575e21 runs them after that many turn starts. JUSTONCE latches when it first fires. Randomize on DELAY (rolled once at load with CRT rand) is not modelled: the full delay is used.",
+              "params": [
+                "delay"
+              ],
+              "status": "modelled_subset"
             },
             "DELAYPERFLAG": {
               "note": "No audited handler.",
@@ -1176,32 +1191,32 @@
               "status": "unimplemented"
             },
             "FLAG": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Per-civ flag words and one global continuous word (civ2.bak 0x5757b7). No who= or Everybody sets all eight civs; Anybody/Somebody/unknown do nothing. Requires @INITFLAG. Flags live in the event engine and rebuild by replay; native save import of flag state is not implemented.",
+              "params": [
+                "who",
+                "flag",
+                "mask",
+                "state"
+              ],
+              "status": "modelled_subset"
             },
             "GIVETECHNOLOGY": {
-              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original handler 0x4d201e (dispatcher 0x4d3ae8) calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README \u00a7GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing.",
               "params": [
                 "receiver",
                 "technology"
               ],
-              "status": "emitted_but_skipped"
+              "status": "modelled_subset"
             },
             "INCAPITAL": {
-              "note": "No audited handler.",
+              "note": "CREATEUNIT: the owner's first Palace city replaces the scanned location (a sea unit only if that city is coastal).",
               "params": [],
-              "status": "unimplemented"
+              "status": "modelled_subset"
             },
             "JUSTONCE": {
               "note": "In-memory event latch; native imported event state is not restored.",
               "params": [],
               "status": "modelled_subset"
-            },
-            "MAPRECT": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
             },
             "MODIFYREPUTATION": {
               "note": "No audited handler.",
@@ -1224,17 +1239,20 @@
               "status": "unimplemented"
             },
             "RANDOMIZE": {
-              "note": "No audited handler.",
+              "note": "CREATEUNIT's random starting location (CRT rand per unit). On DELAY it is not modelled (see DELAY).",
               "params": [],
-              "status": "unimplemented"
+              "status": "modelled_subset"
             },
             "TAKETECHNOLOGY": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Handler 0x567ab4 \u2192 0x4a2363: a living civ 1..=7 loses the advance bit only (advance count, research target and who-knows mask are untouched); Collapse first takes known dependants (0x49c8d4, depth first in index order). Future Technology cannot be taken.",
+              "params": [
+                "whom",
+                "technology"
+              ],
+              "status": "modelled_subset"
             },
             "TEXT": {
-              "note": "Effect/log recording is not full scenario client delivery.",
+              "note": "Human sessions show fired TEXT boxes to the human as client pop-ups and in the message log (#326); a leading 'No Broadcast' line limits a box to the triggering civilization (UNITKILLED/CITYTAKEN attacker, NEGOTIATION talker), and a restricted box whose trigger names none reaches nobody (unverified against the original). No native pop-up timing or order claim.",
               "params": [],
               "status": "no_game_state_effect"
             }
@@ -1251,9 +1269,16 @@
               "status": "unimplemented"
             },
             "CHECKFLAG": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Evaluated once per turn start after TURN/TURNINTERVAL/RANDOMTURN, then non-continuous flags are cleared (civ2.bak 0x574c3e; evidence README \u00a7Event flags). who=name/Somebody/Everybody, Threshold and Count (which the original also treats as a minimum) are modelled; technology= is not and such a trigger never fires. Requires @INITFLAG. One @AND per event is gated as in 0x575cbe.",
+              "params": [
+                "who",
+                "flag",
+                "mask",
+                "state",
+                "threshold",
+                "count"
+              ],
+              "status": "modelled_subset"
             },
             "CITYDESTROYED": {
               "note": "No audited handler.",
@@ -1285,24 +1310,28 @@
               "status": "unimplemented"
             },
             "RANDOMTURN": {
-              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "note": "civ2.bak 0x4d2fa6: CRT rand() % n + 1 == n on the world's combat CRT stream, drawn only when n > 1 (n == 1 always fires); spent events still draw. Draw parity with the original holds only while every earlier CRT draw matches. A missing denominator defaults to 2 (not decoded).",
               "params": [
                 "denominator"
               ],
               "status": "modelled_subset"
             },
             "RECEIVEDTECHNOLOGY": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Polled at every turn start after RANDOMTURN (civ2.bak 0x4d306f), not fired by the grant: true while the receiver knows the advance (futuretech: while its Future Technology count equals technology=). Anybody tests each civ; the receiver is TriggerReceiver/TriggerDefender. @AND gate applies (evidence README \u00a7Event actions, #328).",
+              "params": [
+                "receiver",
+                "technology",
+                "futuretech"
+              ],
+              "status": "modelled_subset"
             },
             "SCENARIOLOADED": {
-              "note": "Interpreter recognition is not complete native startup/session delivery.",
+              "note": "Fired once when an experimental scenario session starts, before its first view (civ2.bak game start 0x4639bf \u2192 0x4d3285, no @AND gate); replay rebuilds it. The original also re-fires it on loading a saved game; engine checkpoints replay from the scenario start instead.",
               "params": [],
-              "status": "partial"
+              "status": "modelled_subset"
             },
             "TURN": {
-              "note": "Interpreter turn/every selector; full native scheduling not established.",
+              "note": "civ2.bak 0x4d2df7: fires when turn=N equals the turn or is Every (-1); Continuous fires every later turn; on turns 22 and 42 an unspent earlier-turn JUSTONCE event fires (evidence README \u00a7TURN, TURNINTERVAL and RANDOMTURN evaluators, #328).",
               "params": [
                 "turn"
               ],
@@ -1320,29 +1349,15 @@
           }
         },
         "diagnostic_counts": {
-          "emitted_but_skipped": 11,
           "malformed_location": 1,
           "no_game_state_effect": 93,
           "non_surface_location": 86,
-          "partial": 69,
-          "placement_context_unmodelled": 16,
-          "unimplemented_keyword": 359,
-          "unmodelled_argument": 75,
-          "unmodelled_parameter": 715,
-          "unsupported_compound_condition": 62,
-          "unsupported_directive": 1
+          "partial": 68,
+          "unimplemented_keyword": 97,
+          "unmodelled_argument": 57,
+          "unmodelled_parameter": 124
         },
         "diagnostics": [
-          {
-            "code": "unsupported_directive",
-            "line": 9,
-            "token": "@INITFLAG"
-          },
-          {
-            "code": "partial",
-            "line": 12,
-            "token": "SCENARIOLOADED"
-          },
           {
             "code": "no_game_state_effect",
             "line": 14,
@@ -1365,16 +1380,26 @@
           },
           {
             "code": "unimplemented_keyword",
-            "line": 32,
-            "token": "FLAG"
+            "line": 44,
+            "token": "PLAYWAVEFILE"
           },
           {
-            "code": "unimplemented_keyword",
-            "line": 33,
-            "token": "CONTINUOUS"
+            "code": "unmodelled_argument",
+            "line": 45,
+            "token": "PLAYWAVEFILE"
+          },
+          {
+            "code": "no_game_state_effect",
+            "line": 46,
+            "token": "TEXT"
+          },
+          {
+            "code": "partial",
+            "line": 61,
+            "token": "CREATEUNIT"
           }
         ],
-        "diagnostics_total": 1488,
+        "diagnostics_total": 526,
         "diagnostics_truncated": true,
         "event_blocks": 151,
         "logical": {
@@ -1646,12 +1671,12 @@
       }
     }
   ],
-  "full_report_bytes": 433164,
-  "full_report_sha256": "66c898cd3f88d8dec4e6296eecb217cd44871d65449221dca67fd7d29d5ccf54",
+  "full_report_bytes": 187587,
+  "full_report_sha256": "0c54a8ddd6129a798f3fcff280fe1ca8b49d7989539acaf6b66cecfd67794f17",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
     "format_probe_sha256": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",
-    "sha256": "a0b62e48c2368ac7893d2fcd56fe3935cc8a0b25ba9f03c379d0c0148f9a66df",
+    "sha256": "3e7cdcb0d97b2b18be070e05fb172fed5d05d05922e931367163ad6a99f8459b",
     "tool": "tools/scenario_inventory.py"
   },
   "profile_candidate": "classic-surface-032-v1",

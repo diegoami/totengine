@@ -11,7 +11,6 @@ use tot_kit::Rules;
 
 use crate::effects::Applied;
 use crate::events::{Ctx, Effect, EventEngine};
-use crate::rng::GameRng;
 use crate::WorldState;
 
 /// What one [`WorldState::run_turn`] did.
@@ -88,11 +87,19 @@ impl WorldState {
                 turn: Some(self.turn as i32),
                 ..Default::default()
             };
-            let rng = &mut self.rng;
-            let mut roll = |n: i32| n > 0 && rng.next_below(n as u32) == 0;
-            let mut effects = ev.fire_with("TURN", &ctx, &mut roll);
-            effects.extend(ev.fire_with("TURNINTERVAL", &ctx, &mut roll));
-            effects.extend(ev.fire_with("RANDOMTURN", &ctx, &mut roll));
+            ev.civ_names = self.event_civ_names();
+            let (known, alive, future) = self.event_advances();
+            let rng = &mut self.combat_rng;
+            let mut roll = |n: i32| crate::events::random_turn_roll(n, &mut || rng.rand());
+            let effects = ev.turn_start(
+                &ctx,
+                &mut roll,
+                &|c: usize, a: usize| match a {
+                    usize::MAX => alive[c],
+                    _ => known[c].get(a).copied().unwrap_or(false),
+                },
+                &|c: usize| future[c],
+            );
             let applied = self.apply_effects(rules, &effects);
             sum.events = effects.into_iter().zip(applied).collect();
         }

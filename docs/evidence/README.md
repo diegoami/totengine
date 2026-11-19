@@ -1637,8 +1637,8 @@ Both decoders now frame units (`40·N` after the 10240 blob) and cities
 (`92·M` after the units) from these counts. Every city slot must hold a
 NUL-padded name at +34 (the #49/#58 anti-fabrication gate).
 
-Multi-map files (Midgard) still do not frame: their blob end is not
-located yet.
+Multi-map files (Midgard) did not frame until #331: the map count is
+header `raw[7] + 1`, not `max(raw[3], 1)` (see §Multi-map framing (#331)).
 
 ### RG-2 start placement DECODED, oracle-exact (2026-11-04)
 
@@ -4798,6 +4798,44 @@ count. The file's own header documents the format; shipped files deviate in two 
 ways (index numbers without the trailing comma, and indentation), recorded in
 [the milestone note](../ui/reports-milestone.md). Whether the native loader tolerates the
 same deviations was not verified.
+
+## Multi-map framing (#331)
+
+Static decode of `civ2.bak`. The map header's RAM mirror is `0x6705a0`; its
+`raw[7]` (u16 `0x6705ae`) is the highest map index:
+
+| VA | what it does |
+|---|---|
+| `0x56fa9d` | writer: header (16 B), then for `m = 0..=raw[7]`: select map `m` (`0x56e2c3`), the seven per-civ `raw[2]`-byte arrays, the `6 × raw[2]` tile records, the 2-B resource seed |
+| `0x56fcb1` | loader: the same loop (`0x56fea6..0x56ffa0`, bound `cmp eax=raw[7], [0x6762f8]; jl`) |
+
+So a `0x32` file carries `raw[7] + 1` map blocks of `13 × raw[2] + 2` bytes,
+then the `2 × raw[5] × raw[6]` blob, the 10240-B landmass table, units and
+cities. `raw[3]` is not the map count (#58). Every classic file in the corpus
+has `raw[7] = 0`; Midgard has `3`.
+
+Checks on the installed Midgard files (re-derived by
+`crates/engine/tests/scenario_multimap_install.rs`):
+
+- With four maps, `Midgard.SCN`, `Oc_Auto.SAV` and `Oc_Auto2.SAV` frame: every
+  city slot holds a valid name (8, 8, 10). With one map, nothing frames.
+- The landmass table lands right: 38 of the 40 landmass ids on map 0 have their
+  exact tile count at table entry `+0` (0 of 40 with the one-map framing).
+- Unit byte `+4` is the unit's map: all 70 on-board Midgard.SCN units stand on
+  a unit-flagged tile (`+1 & 0x01`) of that map, and only the 51 map-0 units
+  do so on map 0 (Oc_Auto2: 79 of 79). City word `+4` is the city's map:
+  8 of 8 Midgard.SCN cities stand on a city-flagged tile of their map.
+  Oc_Auto2's Edgetown (map 0) is the one city whose tile lacks the flag; why
+  is not decoded.
+
+ToTPP's `0x33` files are not covered. Warring States has `raw[7] = 1`, but
+its classic front ends after one map block (§T0-7), so the second map lives
+in ToTPP's extended tail with a different unit layout; the original
+executable cannot tell us that layout, and those files stay rejected.
+
+The engine plays map 0 only: at boot, units and cities on other maps become
+dead slots (`id` / `city_id` 0), so record indices stay valid, and the
+experimental preflight says how many were left out.
 
 ## Scenario dates and labels (#330)
 

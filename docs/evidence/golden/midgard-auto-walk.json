@@ -172,18 +172,18 @@
   "sections_derived": {
     "map_data": {
       "offset": 30084,
-      "size": 129261,
+      "size": 517044,
       "per_map": 129261,
-      "map_blocks": 1,
+      "map_blocks": 4,
       "hdr3_raw": 0,
-      "note": "hdr[3] is NOT the map count: 0-file Original/Ca_Auto.SAV decodes its surface map (#58)"
+      "note": "map count = hdr[7] + 1 (0x56fa9d/0x56fcb1, #331); hdr[3] is NOT the map count (#58)"
     },
     "blob_2ab": {
-      "offset": 159345,
+      "offset": 547128,
       "size": 2542
     },
     "blob_10240": {
-      "offset": 161887,
+      "offset": 549670,
       "size": 10240,
       "note": "mostly zeros in ROMFALL"
     }
@@ -232,11 +232,346 @@
           6
         ],
         "note": "tile record mp0+6t: +0 terrain=&0x0F, 0x40=special flag, 0x80=river; +1 road=0x10, rail=0x20 (unverified); the 7 B/tile block before the records is unidentified"
+      },
+      {
+        "map_index": 1,
+        "improvements_offset": 228946,
+        "terrain_histogram": {
+          "6": 3394,
+          "10": 2566,
+          "1": 2012,
+          "0": 768,
+          "4": 402,
+          "3": 312,
+          "5": 259,
+          "7": 122,
+          "9": 64,
+          "8": 44
+        },
+        "river_tiles": 2,
+        "road_tiles": 1,
+        "railroad_tiles": 0,
+        "special_tiles": 13,
+        "road_and_rail_tiles": 0,
+        "visibility_nonzero_per_civ": [
+          10,
+          8,
+          12,
+          4,
+          9,
+          8,
+          11
+        ],
+        "note": "tile record mp0+6t: +0 terrain=&0x0F, 0x40=special flag, 0x80=river; +1 road=0x10, rail=0x20 (unverified); the 7 B/tile block before the records is unidentified"
+      },
+      {
+        "map_index": 2,
+        "improvements_offset": 358207,
+        "terrain_histogram": {
+          "0": 6043,
+          "10": 2197,
+          "4": 1080,
+          "3": 249,
+          "5": 144,
+          "1": 91,
+          "6": 60,
+          "8": 41,
+          "9": 24,
+          "2": 14
+        },
+        "river_tiles": 60,
+        "road_tiles": 71,
+        "railroad_tiles": 0,
+        "special_tiles": 47,
+        "road_and_rail_tiles": 0,
+        "visibility_nonzero_per_civ": [
+          12,
+          8,
+          11,
+          13,
+          10,
+          11,
+          4
+        ],
+        "note": "tile record mp0+6t: +0 terrain=&0x0F, 0x40=special flag, 0x80=river; +1 road=0x10, rail=0x20 (unverified); the 7 B/tile block before the records is unidentified"
+      },
+      {
+        "map_index": 3,
+        "improvements_offset": 487468,
+        "terrain_histogram": {
+          "10": 8861,
+          "5": 531,
+          "3": 390,
+          "4": 161
+        },
+        "river_tiles": 1,
+        "road_tiles": 1,
+        "railroad_tiles": 0,
+        "special_tiles": 447,
+        "road_and_rail_tiles": 0,
+        "visibility_nonzero_per_civ": [
+          2,
+          3,
+          3,
+          1,
+          1,
+          2,
+          3
+        ],
+        "note": "tile record mp0+6t: +0 terrain=&0x0F, 0x40=special flag, 0x80=river; +1 road=0x10, rail=0x20 (unverified); the 7 B/tile block before the records is unidentified"
       }
     ],
     "resource_seed_offset": 30082
   },
+  "cities": {
+    "offset": 562910,
+    "first_name_offset": 562944,
+    "count": 8,
+    "record_size": 92,
+    "size": 736,
+    "chain_found": 8,
+    "names": [
+      "Rot",
+      "Krakatorum",
+      "Oldgrange",
+      "Grympen Mire",
+      "Goldleaf",
+      "Eagle's Aerie",
+      "Atlantis",
+      "Doomsday"
+    ],
+    "names_total_named": 8,
+    "coords_first_8": [
+      {
+        "i": 0,
+        "name": "Rot",
+        "x": 68,
+        "y": 124,
+        "owner": 0,
+        "size": 3,
+        "boxes": [
+          0,
+          0,
+          1
+        ]
+      },
+      {
+        "i": 1,
+        "name": "Krakatorum",
+        "x": 48,
+        "y": 126,
+        "owner": 1,
+        "size": 1,
+        "boxes": [
+          4,
+          2,
+          1
+        ]
+      },
+      {
+        "i": 2,
+        "name": "Oldgrange",
+        "x": 39,
+        "y": 73,
+        "owner": 2,
+        "size": 1,
+        "boxes": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "i": 3,
+        "name": "Grympen Mire",
+        "x": 60,
+        "y": 64,
+        "owner": 3,
+        "size": 1,
+        "boxes": [
+          0,
+          0,
+          2
+        ]
+      },
+      {
+        "i": 4,
+        "name": "Goldleaf",
+        "x": 92,
+        "y": 56,
+        "owner": 6,
+        "size": 1,
+        "boxes": [
+          0,
+          0,
+          2
+        ]
+      },
+      {
+        "i": 5,
+        "name": "Eagle's Aerie",
+        "x": 60,
+        "y": 36,
+        "owner": 7,
+        "size": 1,
+        "boxes": [
+          0,
+          0,
+          3
+        ]
+      },
+      {
+        "i": 6,
+        "name": "Atlantis",
+        "x": 28,
+        "y": 58,
+        "owner": 5,
+        "size": 1,
+        "boxes": [
+          0,
+          0,
+          2
+        ]
+      },
+      {
+        "i": 7,
+        "name": "Doomsday",
+        "x": 87,
+        "y": 137,
+        "owner": 4,
+        "size": 1,
+        "boxes": [
+          0,
+          0,
+          4
+        ]
+      }
+    ],
+    "note": "game framing: x u16@0 / y u16@2 (logical grid, same space as unit coords), owner u8@10, size u8@11, food/shield box u16@28/@30, name 16 B @34; per-file garrison/home/terrain support in garrisons_measured / homes_measured / city_terrain_measured",
+    "garrisons_measured": "7/8 cities have a unit on their exact tile (measured on this file)",
+    "homes_measured": "0/0 homed units on a city tile are homed there (measured on this file; the framing proof)",
+    "city_terrain_measured": "7/8 cities on non-ocean terrain, 1 on ocean, 0 outside the stored grid (measured on this file)"
+  },
   "units": {
-    "note": "the unit/city counts (@698/@700) do not frame valid city records \u2014 classic unit/city layout not located"
+    "region": [
+      559910,
+      562910
+    ],
+    "size": 3000,
+    "record_size": 40,
+    "count": 75,
+    "count_arithmetic": "3034 = 40 x 75 + 34 (city 0 head)",
+    "fields_proven": {
+      "x_u16@0": "display-grid x (0..width-1)",
+      "y_u16@2": "display-grid y (0..height-1)",
+      "attr_u16@6": "bit 0x2000 veteran",
+      "type_u8@8": "index into Rules.txt @UNITS",
+      "owner_u8@9": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
+      "damage_u8@12": "hit points lost",
+      "orders_u8@17": "0xff none, 2 fortified",
+      "home_u8@18": "home city index, 0xff none",
+      "stack_links_i16@26/@28": "prev/next unit on the tile",
+      "id_u16@30": "per-save unit id (re-assigned on every save)"
+    },
+    "owner_histogram": {
+      "0": 49,
+      "1": 1,
+      "2": 1,
+      "3": 1,
+      "4": 2,
+      "5": 1,
+      "6": 19,
+      "7": 1
+    },
+    "type_histogram_top": {
+      "75": 20,
+      "43": 18,
+      "44": 6,
+      "56": 4,
+      "58": 3,
+      "74": 3,
+      "51": 2,
+      "73": 2,
+      "0": 2,
+      "77": 2,
+      "23": 2,
+      "78": 2
+    },
+    "sample_first_8": [
+      {
+        "i": 0,
+        "x": 60,
+        "y": 36,
+        "type": 70,
+        "owner": 7,
+        "home": 255,
+        "id": 281
+      },
+      {
+        "i": 1,
+        "x": 84,
+        "y": 52,
+        "type": 72,
+        "owner": 6,
+        "home": 255,
+        "id": 282
+      },
+      {
+        "i": 2,
+        "x": 68,
+        "y": 128,
+        "type": 51,
+        "owner": 0,
+        "home": 255,
+        "id": 283
+      },
+      {
+        "i": 3,
+        "x": 69,
+        "y": 121,
+        "type": 51,
+        "owner": 0,
+        "home": 255,
+        "id": 284
+      },
+      {
+        "i": 4,
+        "x": 68,
+        "y": 124,
+        "type": 14,
+        "owner": 0,
+        "home": 255,
+        "id": 285
+      },
+      {
+        "i": 5,
+        "x": 28,
+        "y": 58,
+        "type": 69,
+        "owner": 5,
+        "home": 255,
+        "id": 286
+      },
+      {
+        "i": 6,
+        "x": 87,
+        "y": 137,
+        "type": 73,
+        "owner": 4,
+        "home": 255,
+        "id": 287
+      },
+      {
+        "i": 7,
+        "x": 64,
+        "y": 22,
+        "type": 73,
+        "owner": 4,
+        "home": 255,
+        "id": 288
+      }
+    ],
+    "verification": "layout facts: docs/evidence/README.md \u00a7T0-6; the garrison support number is measured per file in cities.garrisons_measured / cities.city_terrain_measured",
+    "note": "game framing (evidence \u00a7T1-6 combat); remaining bytes open: 4-5 z, 10 moves spent, 11 visibility, 13 last dir, 14-16, 19-25, 32-39"
   }
 }

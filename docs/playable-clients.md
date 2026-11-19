@@ -224,7 +224,9 @@ about:
   CREATEUNIT (approximate placement);
 - Lua scripts beside the scenario, which are not run;
 - for a file whose scenario calendar is not decoded, dates shown as turn
-  numbers.
+  numbers;
+- in multi-map scenarios (Midgard), everything beyond the first map: only map
+  0 is played, and the preflight counts the units and cities left out.
 
 Dates read as the original writes them, with the scenario folder's
 `Labels.txt` for era and month names (#330): the status panel shows
@@ -260,8 +262,8 @@ and the few partial cases.
 
 The scenario's folder supplies its Rules, Events and art; interface sheets the
 folder lacks come from `Original`, then the install root. Files the decoders
-cannot frame (for example Midgard and Warring States, extended multi-map
-scenarios) are rejected with a reason. Starting replaces a running game.
+cannot frame (for example Warring States, a ToTPP-extended `0x33` file) are
+rejected with a reason. Starting replaces a running game.
 
 Engine checkpoints of a scenario game record the scenario's install-relative
 path, size and fingerprint, and the seed. Loading one re-reads that file from

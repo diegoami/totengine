@@ -283,6 +283,10 @@ pub struct WorldState {
 /// generator — deliberately independent of the file's replay-seed word
 /// (that word is the original game's combat/event seed, whose generator is
 /// unidentified; T1-6).
+///
+/// The engine plays map 0 only. In multi-map files (Midgard, #331) the units
+/// and cities on the other maps boot as dead slots (`id`/`city_id` 0), so
+/// every record index stays valid and nothing lands on map 0 by mistake.
 pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
     let surface = sav.map_header.surface();
     let m = sav
@@ -318,7 +322,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             unit_count: sav
                 .units
                 .iter()
-                .filter(|u| u.owner() & 0x0F == i as u8 + 1)
+                .filter(|u| u.owner() & 0x0F == i as u8 + 1 && u.map_id() == 0)
                 .count(),
         })
         .collect();
@@ -358,7 +362,20 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
             .max()
             .unwrap_or(0)
             .wrapping_add(1),
-        cities: sav.cities.iter().map(city_from).collect(),
+        cities: sav
+            .cities
+            .iter()
+            .map(|r| {
+                let mut c = city_from(r);
+                // The engine plays map 0 only (#331): cities on the other
+                // maps become dead slots, keeping record indices (homes,
+                // routes, wonders) stable.
+                if c.map_id != 0 {
+                    c.city_id = 0;
+                }
+                c
+            })
+            .collect(),
         next_city_id: sav
             .cities
             .iter()
@@ -423,6 +440,8 @@ fn units_from(recs: &[UnitRecord]) -> Vec<Unit> {
 }
 
 fn unit_from(r: &UnitRecord) -> Unit {
+    // Units on maps other than 0 are dead slots in this map-0 engine (#331).
+    let id = if r.map_id() == 0 { r.id() } else { 0 };
     Unit {
         type_id: r.type_id(),
         owner: r.owner() & 0x0F,
@@ -435,7 +454,7 @@ fn unit_from(r: &UnitRecord) -> Unit {
         orders: r.orders(),
         stack_pos: 0,
         home: r.home(),
-        id: r.id(),
+        id,
     }
 }
 

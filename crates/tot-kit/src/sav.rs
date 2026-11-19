@@ -91,9 +91,12 @@ fn u32le(d: &[u8], off: usize) -> Result<u32, SavError> {
 /// `raw[0]` = the logical x range (2 × stored width: diamond x is doubled),
 /// `raw[1]` = height, `raw[2] = area` = the *stored* tile count
 /// (`raw[0]/2 × raw[1]` dense tiles), `raw[4]` = the resource seed
-/// (u16 `0x6705a8`; huts and resources derive from it), `raw[3]` is NOT the
-/// map count (a `0` file can still carry its surface map — issue #58):
-/// block count = `max(raw[3], 1)`. `raw[5]*raw[6]` sizes a following blob.
+/// (u16 `0x6705a8`; huts and resources derive from it), `raw[7]` = the
+/// highest map index (u16 `0x6705ae`): the original's writer `0x56fa9d` and
+/// loader `0x56fcb1` both loop maps `0..=raw[7]`, one `13 × raw[2] + 2` block
+/// each (#331; Midgard `3` = four maps, every classic file `0`). `raw[3]` is
+/// not the map count (a `0` file can still carry its surface map — issue
+/// #58). `raw[5]*raw[6]` sizes a following blob.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MapHeader {
     pub raw: [i16; 8],
@@ -112,9 +115,9 @@ impl MapHeader {
     pub fn surface(&self) -> usize {
         self.raw[2] as usize
     }
-    /// Number of map blocks carried (at least the surface block).
-    pub fn blocks(&self) -> usize {
-        (self.raw[3].max(1)) as usize
+    /// Number of maps the original reads (`raw[7] + 1`, #331).
+    pub fn map_count(&self) -> usize {
+        self.raw[7].max(0) as usize + 1
     }
     /// The surface invariant — the test for a decodable embedded map —
     /// plus sign checks on every field the parser sizes sections with
@@ -126,6 +129,7 @@ impl MapHeader {
             && self.raw[3] >= 0
             && self.raw[5] >= 0
             && self.raw[6] >= 0
+            && self.raw[7] >= 0
             && self.surface() == self.stored_w() * self.stored_h()
     }
     /// Logical (display) grid dims: `raw[0] × raw[1]` — the coordinate
@@ -282,6 +286,11 @@ impl UnitRecord {
     }
     pub fn type_id(&self) -> u8 {
         self.raw[8]
+    }
+    /// Map index u8@4 (#331): all 70 Midgard units stand on a unit-flagged
+    /// tile of the map this names, and only the map-0 ones on map 0.
+    pub fn map_id(&self) -> u8 {
+        self.raw[4]
     }
     pub fn owner(&self) -> u8 {
         self.raw[9]
@@ -847,7 +856,13 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     // then the 2*hdr5*hdr6 blob and the 10240-byte blob
     // all sizes are checked: header fields are untrusted (#64)
     let surface = hdr.surface();
-    let n_blocks = hdr.blocks();
+    // ToTPP's 0x33 stores further maps in its own extended tail (evidence
+    // §T0-7: Warring States' classic front ends after one map block).
+    let n_blocks = if version == 0x0032 {
+        hdr.map_count()
+    } else {
+        1
+    };
     let per_map = surface.checked_mul(13).and_then(|n| n.checked_add(2));
     let blob = (hdr.raw[5] as usize)
         .checked_mul(hdr.raw[6] as usize)

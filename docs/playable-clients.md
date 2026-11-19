@@ -232,6 +232,20 @@ without `Continuous` are cleared right after that test. An `@AND` event needs
 both of its triggers since the last turn start. A file without `@INITFLAG`
 ignores flags, as the original does.
 
+Other event support (#328) also follows the original:
+- **SCENARIOLOADED** fires once when the scenario starts.
+- **RECEIVEDTECHNOLOGY** is checked at every turn start.
+- **DELAY** postpones an event's actions by that many turns.
+- **TAKETECHNOLOGY** removes an advance (with `Collapse`, also the advances
+  that depend on it).
+- **CHANGETERRAIN** changes a rectangle of tiles and destroys cities and
+  units there.
+- **MAKEAGGRESSION** declares war.
+- **CREATEUNIT** honours `Randomize`, `InCapital` and `homecity`.
+
+The preflight still lists what is missing: bribery, negotiation rules, sounds,
+and the few partial cases.
+
 The scenario's folder supplies its Rules, Events and art; interface sheets the
 folder lacks come from `Original`, then the install root. Files the decoders
 cannot frame (for example Midgard and Warring States, extended multi-map

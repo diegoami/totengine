@@ -1014,6 +1014,13 @@ impl Game {
         for c in 1..8 {
             world.reveal(c);
         }
+        // SCENARIOLOADED (#328): the original evaluates it once in its
+        // game-start routine (civ2.bak 0x4639bf → 0x4d3285, no @AND gate).
+        // Replay rebuilds the session from here, so it fires once per game.
+        let mut events = events;
+        if let Some(ev) = events.as_mut() {
+            world.fire_event(&rules, ev, "SCENARIOLOADED", &crate::events::Ctx::default());
+        }
         let canonical_rules = tot_kit::emit_rules(&rules);
         let log = format!(
             "totengine-human-scenario-orderlog 1\nscenario {} {} {:016x} seed {seed} human {human}\nrules {} {:016x} initial {:016x}\n",

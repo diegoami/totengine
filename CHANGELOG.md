@@ -5,6 +5,33 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Turn triggers now follow the original executable (#328):
+  - RANDOMTURN rolls the original's C runtime `rand()`, the same generator
+    combat uses, and already-spent events still use up their roll. The
+    FallRome 50-turn reference run changed as a result.
+  - TURN with `Continuous` fires on every turn after its turn. On turns 22
+    and 42, a JUSTONCE TURN event whose turn has passed without it firing
+    fires then.
+  - TURNINTERVAL with `interval=0` fires every turn.
+  - The preflight now explains the remaining event gaps:
+    - BRIBEUNIT and NEGOTIATION need bribery and diplomacy, which the engine
+      doesn't have yet.
+    - Event sounds and videos are not played.
+    - NOSCHISM has nothing to prevent, because the engine has no civil war.
+- More scenario event support, decoded from the original executable (#328):
+  - **Actions:**
+    - TAKETECHNOLOGY, including `Collapse`.
+    - DELAY timers.
+    - CHANGETERRAIN, which also destroys cities and units on the changed
+      tiles.
+    - MAKEAGGRESSION, using the original's treaty and attitude changes.
+    - CREATEUNIT now honours `Randomize`, `InCapital` and `homecity`, and
+      follows the original's placement rules.
+  - **Triggers:**
+    - RECEIVEDTECHNOLOGY, checked at every turn start.
+    - SCENARIOLOADED, fired once when a scenario starts.
+  - The preflight lists the remaining partial cases. AE 1200 BC's floods and
+    wars and Roman Civil Wars' delayed leaders now happen.
 - Scenario events now support **flags**: FLAG, CHECKFLAG, `Continuous`,
   `@INITFLAG` and one `@AND` per event (#328). They follow a static decode
   of the original:

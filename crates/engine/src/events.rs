@@ -12,6 +12,12 @@
 //! per-civ flag words, CHECKFLAG tests them once at each turn start, and
 //! flags not set `Continuous` are cleared right after that pass. `@AND`
 //! events need both halves active since the last turn start.
+//!
+//! Further actions (#328, evidence §Event actions): DELAY queues an
+//! event's actions for later turn starts, TAKETECHNOLOGY, CHANGETERRAIN
+//! and MAKEAGGRESSION are emitted for [`crate::WorldState::apply_effects`],
+//! RECEIVEDTECHNOLOGY is polled at turn start and SCENARIOLOADED fires when
+//! a scenario session starts.
 
 use std::collections::HashSet;
 
@@ -28,6 +34,33 @@ pub enum Effect {
         veteran: bool,
         count: u32,
         locations: Vec<(i32, i32)>,
+        /// `Randomize`: each unit scans from a random start (civ2.bak
+        /// CREATEUNIT handler 0x4d2102).
+        randomize: bool,
+        /// `InCapital`: the owner's Palace city replaces the location.
+        in_capital: bool,
+        /// `homecity=` city name (`None` / `NONE` = no home).
+        home: Option<String>,
+    },
+    /// TAKETECHNOLOGY (handler 0x567ab4): `whom` loses `technology`;
+    /// `collapse` also takes every known advance that depends on it.
+    TakeTechnology {
+        whom: String,
+        technology: i32,
+        collapse: bool,
+    },
+    /// CHANGETERRAIN (handler 0x4d2a3a): corners of `maprect`, the new
+    /// terrain, the map, and terrain types left alone (`exceptionmask`).
+    ChangeTerrain {
+        terrain: i32,
+        rect: Vec<(i32, i32)>,
+        map: i32,
+        exceptions: u16,
+    },
+    /// MAKEAGGRESSION (handler 0x53ac50): `who` and `whom` go to war.
+    MakeAggression {
+        who: String,
+        whom: String,
     },
     /// Macro.txt: add `amount` to `receiver`'s treasury; a result below
     /// zero becomes zero.
@@ -132,6 +165,10 @@ pub struct EventEngine {
     /// The file has `@INITFLAG` (kept apart: `file` is moved out while
     /// events run).
     init_flags: bool,
+    /// DELAY countdowns (civ2.bak queue 0x575fbb, countdown 0x575e21):
+    /// event index, turn starts left, and the trigger context captured
+    /// when it fired.
+    pub pending: Vec<(usize, i32, Ctx)>,
 }
 
 fn word_of(v: Option<&Value>) -> Option<&str> {
@@ -150,7 +187,8 @@ fn resolve_civ(name: &str, ctx: &Ctx) -> String {
     let n = name.trim();
     let r = if n.eq_ignore_ascii_case("TRIGGERATTACKER") {
         ctx.attacker.as_deref()
-    } else if n.eq_ignore_ascii_case("TRIGGERDEFENDER") {
+    } else if n.eq_ignore_ascii_case("TRIGGERDEFENDER") || n.eq_ignore_ascii_case("TRIGGERRECEIVER")
+    {
         ctx.defender.as_deref()
     } else {
         None
@@ -180,6 +218,7 @@ impl EventEngine {
             active: vec![[false; 2]; n],
             civ_names: Default::default(),
             init_flags,
+            pending: Vec::new(),
         }
     }
 
@@ -203,10 +242,11 @@ impl EventEngine {
         let file = std::mem::take(&mut self.file);
         let mut effects = Vec::new();
         for (i, e) in file.events.iter().enumerate() {
+            let justonce = e
+                .actions
+                .iter()
+                .any(|a| a.keyword.eq_ignore_ascii_case("JUSTONCE"));
             for half in 0..2 {
-                if self.fired.contains(&i) {
-                    break;
-                }
                 let t = match half {
                     0 => &e.trigger,
                     _ => match &e.and {
@@ -214,7 +254,14 @@ impl EventEngine {
                         None => break,
                     },
                 };
-                if t.keyword.eq_ignore_ascii_case(trigger) && trigger_matches(t, ctx, roll) {
+                if !t.keyword.eq_ignore_ascii_case(trigger) {
+                    continue;
+                }
+                // The original's evaluators walk every record, spent ones
+                // included: a spent RANDOMTURN half still draws its roll
+                // (0x4d2fa6) and the dispatcher then refuses it (0x4d3b04).
+                let matched = trigger_matches(t, ctx, roll, justonce);
+                if matched && !self.fired.contains(&i) {
                     self.activate(i, e, half, ctx, &mut effects);
                 }
             }
@@ -227,12 +274,103 @@ impl EventEngine {
     /// sites 0x47451b…0x47456f): @AND activations lapse, then TURN,
     /// TURNINTERVAL and RANDOMTURN fire, then CHECKFLAG is evaluated and
     /// every non-continuous flag cleared.
-    pub fn turn_start(&mut self, ctx: &Ctx, roll: &mut dyn FnMut(i32) -> bool) -> Vec<Effect> {
+    ///
+    /// `knows(civ, advance)` answers RECEIVEDTECHNOLOGY's poll for a living
+    /// civ (false for the barbarians and the dead; `advance == usize::MAX`
+    /// asks only whether the civ lives); `future(civ)` is its Future
+    /// Technology count. Queued DELAYs count down first (civ2.bak
+    /// 0x575e21) and RECEIVEDTECHNOLOGY is polled after RANDOMTURN
+    /// (0x4d306f).
+    pub fn turn_start(
+        &mut self,
+        ctx: &Ctx,
+        roll: &mut dyn FnMut(i32) -> bool,
+        knows: &dyn Fn(usize, usize) -> bool,
+        future: &dyn Fn(usize) -> i32,
+    ) -> Vec<Effect> {
         self.lapse_activations();
-        let mut effects = self.fire_with("TURN", ctx, roll);
+        let mut effects = self.count_down();
+        effects.extend(self.fire_with("TURN", ctx, roll));
         effects.extend(self.fire_with("TURNINTERVAL", ctx, roll));
         effects.extend(self.fire_with("RANDOMTURN", ctx, roll));
+        effects.extend(self.received_technology(ctx, knows, future));
         effects.extend(self.check_flags(ctx));
+        effects
+    }
+
+    /// civ2.bak 0x575e21: every queued DELAY counts one turn start down;
+    /// at zero its actions run with the context captured when it fired.
+    fn count_down(&mut self) -> Vec<Effect> {
+        let mut effects = Vec::new();
+        let file = std::mem::take(&mut self.file);
+        let mut k = 0;
+        while k < self.pending.len() {
+            self.pending[k].1 -= 1;
+            if self.pending[k].1 > 0 {
+                k += 1;
+                continue;
+            }
+            let (i, _, ctx) = self.pending.remove(k);
+            if let Some(e) = file.events.get(i) {
+                self.run_actions(i, e, &ctx, &mut effects, true);
+            }
+        }
+        self.file = file;
+        effects
+    }
+
+    /// RECEIVEDTECHNOLOGY is polled at every turn start (civ2.bak
+    /// 0x4d306f), not fired by the grant: it is true while the receiver
+    /// knows the advance (`futuretech=`: while its Future Technology count
+    /// equals `technology=`). `Anybody` tests every civ in turn.
+    fn received_technology(
+        &mut self,
+        ctx: &Ctx,
+        knows: &dyn Fn(usize, usize) -> bool,
+        future: &dyn Fn(usize) -> i32,
+    ) -> Vec<Effect> {
+        let mut effects = Vec::new();
+        let file = std::mem::take(&mut self.file);
+        for (i, e) in file.events.iter().enumerate() {
+            for half in 0..2 {
+                let t = match half {
+                    0 => &e.trigger,
+                    _ => match &e.and {
+                        Some(t) => t,
+                        None => break,
+                    },
+                };
+                if !t.keyword.eq_ignore_ascii_case("RECEIVEDTECHNOLOGY") {
+                    continue;
+                }
+                let Some(tech) = t.param("technology").and_then(|v| v.number()) else {
+                    continue;
+                };
+                let futuretech = t.has_word("FUTURETECH") || t.param("futuretech").is_some();
+                let receiver = word_of(t.param("receiver")).unwrap_or("").trim();
+                let civs: Vec<usize> = if receiver.eq_ignore_ascii_case("ANYBODY") {
+                    (0..8).collect()
+                } else {
+                    self.civ_id(receiver).into_iter().collect()
+                };
+                for c in civs {
+                    if self.fired.contains(&i) {
+                        break;
+                    }
+                    let has = if futuretech {
+                        c > 0 && knows(c, usize::MAX) && future(c) == tech
+                    } else {
+                        usize::try_from(tech).is_ok_and(|a| knows(c, a))
+                    };
+                    if has {
+                        let mut cx = ctx.clone();
+                        cx.defender = Some(self.civ_names[c].clone());
+                        self.activate(i, e, half, &cx, &mut effects);
+                    }
+                }
+            }
+        }
+        self.file = file;
         effects
     }
 
@@ -270,7 +408,7 @@ impl EventEngine {
         effects: &mut Vec<Effect>,
     ) {
         if self.gate(i, e, half) {
-            self.run_actions(i, e, ctx, effects);
+            self.run_actions(i, e, ctx, effects, false);
         }
     }
 
@@ -389,10 +527,42 @@ impl EventEngine {
         effects
     }
 
-    fn run_actions(&mut self, i: usize, e: &tot_kit::Event, ctx: &Ctx, effects: &mut Vec<Effect>) {
-        let justonce = e.actions.iter().any(|a| a.keyword == "JUSTONCE");
-        let continuous = e.actions.iter().any(|a| a.keyword == "CONTINUOUS");
-        for a in &e.actions {
+    /// The dispatcher (civ2.bak 0x4d3ae8): JUSTONCE latches first, then a
+    /// DELAY defers the actions (`delayed` is set when the countdown runs
+    /// them), then the actions run in file order.
+    fn run_actions(
+        &mut self,
+        i: usize,
+        e: &tot_kit::Event,
+        ctx: &Ctx,
+        effects: &mut Vec<Effect>,
+        delayed: bool,
+    ) {
+        let has = |k: &str| e.actions.iter().any(|a| a.keyword == k);
+        if has("JUSTONCE") {
+            self.fired.insert(i);
+        }
+        let delay = e
+            .actions
+            .iter()
+            .find(|a| a.keyword == "DELAY")
+            .and_then(|a| a.param("delay"))
+            .and_then(|v| v.number())
+            .unwrap_or(0);
+        if !delayed && delay > 0 {
+            self.pending.push((i, delay, ctx.clone()));
+            return;
+        }
+        let continuous = has("CONTINUOUS");
+        let collapse = has("COLLAPSE");
+        for (k, a) in e.actions.iter().enumerate() {
+            // Modifier lines right after this action (`InCapital`, …).
+            let modified = |m: &str| {
+                e.actions[k + 1..]
+                    .iter()
+                    .take_while(|c| tot_kit::MODIFIERS.contains(&c.keyword.as_str()))
+                    .any(|c| c.keyword == m)
+            };
             match a.keyword.as_str() {
                 "TEXT" => {
                     if let Some(Value::Text(s)) = a.args.first() {
@@ -420,11 +590,16 @@ impl EventEngine {
                     let veteran = word_of(a.param("veteran"))
                         .map(|v| v.eq_ignore_ascii_case("yes"))
                         .unwrap_or(false);
+                    // A signed byte in the original: 128..=255 create none.
                     let count = a
                         .param("count")
                         .and_then(|v| v.number())
-                        .map(|n| n.clamp(1, 255) as u32)
+                        .map(|n| if n >= 128 { 0 } else { n.max(1) as u32 })
                         .unwrap_or(1);
+                    let home = word_of(a.param("homecity"))
+                        .map(str::trim)
+                        .filter(|h| !h.is_empty() && !h.eq_ignore_ascii_case("NONE"))
+                        .map(String::from);
                     if let Some(Value::Points(pts)) =
                         a.args.iter().find(|v| matches!(v, Value::Points(_)))
                     {
@@ -434,6 +609,9 @@ impl EventEngine {
                             veteran,
                             count,
                             locations: pts.clone(),
+                            randomize: modified("RANDOMIZE"),
+                            in_capital: modified("INCAPITAL"),
+                            home,
                         });
                     }
                 }
@@ -468,11 +646,46 @@ impl EventEngine {
                     }
                 }
                 "FLAG" => self.apply_flag(a, continuous, ctx),
-                _ => {} // JUSTONCE and unknown actions carry no effect
+                "TAKETECHNOLOGY" => {
+                    if let (Some(t), Some(w)) = (
+                        a.param("technology").and_then(|v| v.number()),
+                        word_of(a.param("whom")),
+                    ) {
+                        effects.push(Effect::TakeTechnology {
+                            whom: resolve_civ(w, ctx),
+                            technology: t,
+                            collapse,
+                        });
+                    }
+                }
+                "CHANGETERRAIN" => {
+                    let rect = match a.args.iter().find(|v| matches!(v, Value::Points(_))) {
+                        Some(Value::Points(p)) => p.clone(),
+                        _ => Vec::new(),
+                    };
+                    if let (Some(t), 4) =
+                        (a.param("terraintype").and_then(|v| v.number()), rect.len())
+                    {
+                        effects.push(Effect::ChangeTerrain {
+                            terrain: t,
+                            rect,
+                            map: a.param("map").and_then(|v| v.number()).unwrap_or(0),
+                            exceptions: a.param("exceptionmask").and_then(mask_value).unwrap_or(0)
+                                as u16,
+                        });
+                    }
+                }
+                "MAKEAGGRESSION" => {
+                    if let (Some(w), Some(m)) = (word_of(a.param("who")), word_of(a.param("whom")))
+                    {
+                        effects.push(Effect::MakeAggression {
+                            who: resolve_civ(w, ctx),
+                            whom: resolve_civ(m, ctx),
+                        });
+                    }
+                }
+                _ => {} // JUSTONCE, DELAY and unknown actions carry no effect
             }
-        }
-        if justonce {
-            self.fired.insert(i);
         }
     }
 
@@ -562,8 +775,14 @@ impl FlagTest {
     }
 }
 
-/// Party and turn conditions of one trigger (half).
-fn trigger_matches(t: &tot_kit::Command, ctx: &Ctx, roll: &mut dyn FnMut(i32) -> bool) -> bool {
+/// Party and turn conditions of one trigger (half). `justonce`: the event
+/// carries JUSTONCE (TURN's turn-22/42 catch-up needs it).
+fn trigger_matches(
+    t: &tot_kit::Command,
+    ctx: &Ctx,
+    roll: &mut dyn FnMut(i32) -> bool,
+    justonce: bool,
+) -> bool {
     if !matches(word_of(t.param("unit")), ctx.unit.as_deref())
         || !matches(word_of(t.param("attacker")), ctx.attacker.as_deref())
         || !matches(word_of(t.param("defender")), ctx.defender.as_deref())
@@ -579,30 +798,61 @@ fn trigger_matches(t: &tot_kit::Command, ctx: &Ctx, roll: &mut dyn FnMut(i32) ->
             return false;
         }
     }
-    // TURN: turn=N or turn=Every (Macro.txt)
     if t.keyword.eq_ignore_ascii_case("TURN") {
+        // civ2.bak 0x4d2df7: `turn=Every` is stored as -1.
         let every = word_of(t.param("turn")).is_some_and(|w| w.eq_ignore_ascii_case("every"));
-        let n = t.param("turn").and_then(|v| v.number());
-        if !(every || (n.is_some() && n == ctx.turn)) {
+        let n = if every {
+            Some(-1)
+        } else {
+            t.param("turn").and_then(|v| v.number())
+        };
+        let (Some(n), Some(turn)) = (n, ctx.turn) else {
             return false;
-        }
+        };
+        return turn_fires(n, turn, t.has_word("CONTINUOUS"), justonce);
     }
-    // TURNINTERVAL: modelled as `turn % interval == 0`. Macro.txt
-    // counts from the last activation; the two agree when that
-    // was a multiple of the interval (unverified otherwise).
+    // TURNINTERVAL (civ2.bak 0x4d2efa): `turn % interval == 0`, and every
+    // turn when the interval is 0. Macro.txt counts from the last
+    // activation; the original does not.
     if t.keyword.eq_ignore_ascii_case("TURNINTERVAL") {
-        let i = t.param("interval").and_then(|v| v.number()).unwrap_or(0);
-        if i <= 0 || ctx.turn.is_none_or(|turn| turn % i != 0) {
+        let Some(i) = t.param("interval").and_then(|v| v.number()) else {
+            return false;
+        };
+        if i != 0 && ctx.turn.is_none_or(|turn| turn % i != 0) {
             return false;
         }
     }
     true
 }
 
+/// TURN's test (civ2.bak 0x4d2df7), for an unspent event at turn start:
+/// - `n == -1` (Every) or `n == turn` fires;
+/// - on turns 22 and 42 an earlier-turn JUSTONCE event fires too (a
+///   catch-up for one-shot events that never ran);
+/// - `Continuous` fires on every turn after `n`.
+pub fn turn_fires(n: i32, turn: i32, continuous: bool, justonce: bool) -> bool {
+    n == -1 || n == turn || (n < turn && ((justonce && (turn == 22 || turn == 42)) || continuous))
+}
+
+/// RANDOMTURN's roll (civ2.bak 0x4d2fa6): `rand() % n + 1 == n` with the
+/// CRT `rand()` (0x5b11d0), drawn only when `n > 1`; `n == 1` always fires
+/// and `n < 1` never does.
+pub fn random_turn_roll(n: i32, rand: &mut dyn FnMut() -> u32) -> bool {
+    if n > 1 {
+        (rand() as i32) % n + 1 == n
+    } else {
+        n == 1
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use tot_kit::parse_events;
+
+    fn start(eng: &mut EventEngine, ctx: &Ctx, roll: &mut dyn FnMut(i32) -> bool) -> Vec<Effect> {
+        eng.turn_start(ctx, roll, &|_, _| false, &|_| 0)
+    }
 
     fn fallrome_events() -> Option<EventFile> {
         let p = std::env::var_os("CIVTOT_HOME")?;
@@ -650,7 +900,11 @@ mod tests {
                 veteran,
                 count,
                 locations,
+                randomize,
+                in_capital,
+                ..
             } => {
+                assert!(!randomize && !in_capital);
                 assert_eq!(
                     (unit_name.as_str(), owner.as_str()),
                     ("Theodoric II", "Visigoths")
@@ -851,19 +1105,19 @@ mod tests {
         assert_eq!(eng.continuous, 0b010);
         // Checked only at turn start, as the trigger civ (who=Gauls).
         assert_eq!(
-            money(&eng.turn_start(&turn, &mut no)),
+            money(&start(&mut eng, &turn, &mut no)),
             [("Gauls".to_string(), 5), ("Gauls".to_string(), 1)]
         );
         // flag 2 was not continuous: it lapsed after that pass.
         assert_eq!(eng.flags[1], 0b010);
         assert_eq!(
-            money(&eng.turn_start(&turn, &mut no)),
+            money(&start(&mut eng, &turn, &mut no)),
             [("Gauls".to_string(), 1)]
         );
         // Clearing a continuous flag drops it from the continuous word.
         eng.fire("CITYTAKEN", &taken("Gauls", "C"));
         assert_eq!((eng.flags[1], eng.continuous), (0, 0));
-        assert!(money(&eng.turn_start(&turn, &mut no)).is_empty());
+        assert!(money(&start(&mut eng, &turn, &mut no)).is_empty());
     }
 
     #[test]
@@ -872,7 +1126,7 @@ mod tests {
         eng.fire("CITYTAKEN", &taken("Gauls", "A"));
         assert_eq!(eng.flags, [0; 8]);
         let mut no = |_| false;
-        assert!(eng.turn_start(&Ctx::default(), &mut no).is_empty());
+        assert!(start(&mut eng, &Ctx::default(), &mut no).is_empty());
     }
 
     #[test]
@@ -886,7 +1140,7 @@ mod tests {
         );
         eng.flags = [0b11, 0b11, 0b01, 0b10, 0, 0, 0, 0];
         let mut no = |_| false;
-        let got = money(&eng.turn_start(&Ctx::default(), &mut no));
+        let got = money(&start(&mut eng, &Ctx::default(), &mut no));
         // SOMEBODY: once per matching civ (Gauls only — Count acts as a
         // minimum and the barbarians never count); EVERYBODY: Romans'
         // and Egyptians' words OR to 0b11. who=Barbarians never fires.
@@ -904,13 +1158,13 @@ mod tests {
         );
         let ctx = Ctx::default();
         // Roll succeeds, flag off: nothing.
-        assert!(eng.turn_start(&ctx, &mut |_| true).is_empty());
+        assert!(start(&mut eng, &ctx, &mut |_| true).is_empty());
         // Flag on, roll fails: nothing.
         eng.flags[1] = 1;
-        assert!(eng.turn_start(&ctx, &mut |_| false).is_empty());
+        assert!(start(&mut eng, &ctx, &mut |_| false).is_empty());
         // Both in the same turn start: RANDOMTURN runs first, CHECKFLAG passes.
         eng.flags[1] = 1;
-        assert_eq!(money(&eng.turn_start(&ctx, &mut |_| true)).len(), 1);
+        assert_eq!(money(&start(&mut eng, &ctx, &mut |_| true)).len(), 1);
         // Capture then kill in one turn: once (JUSTONCE).
         assert!(money(&eng.fire("CITYTAKEN", &taken("Gauls", "A"))).is_empty());
         let kill = Ctx {
@@ -930,8 +1184,188 @@ mod tests {
                  CHANGEMONEY\nreceiver=Gauls\namount=2\n@ENDIF\n"
             ));
             eng.fire("CITYTAKEN", &taken("Gauls", "A"));
-            eng.turn_start(&ctx, &mut |_| false);
+            start(&mut eng, &ctx, &mut |_| false);
             assert_eq!(money(&eng.fire("UNITKILLED", &kill)).len(), expect);
         }
+    }
+
+    #[test]
+    fn delay_counts_turn_starts_with_the_captured_context() {
+        let mut eng = flag_engine(
+            "@IF\nCITYTAKEN\ncity=A\n@THEN\nJUSTONCE\nDELAY\ndelay=2\n\
+             CHANGEMONEY\nreceiver=TriggerAttacker\namount=9\n@ENDIF\n\
+             @IF\nUNITKILLED\nunit=Hero\n@THEN\nDELAY\ndelay=1\nCHANGEMONEY\nreceiver=Romans\namount=1\n@ENDIF\n",
+        );
+        let mut no = |_| false;
+        assert!(eng.fire("CITYTAKEN", &taken("Gauls", "A")).is_empty());
+        assert!(eng.fire("CITYTAKEN", &taken("Egyptians", "A")).is_empty());
+        assert_eq!(eng.pending.len(), 1, "JUSTONCE latches before the delay");
+        let kill = Ctx {
+            unit: Some("Hero".into()),
+            ..Default::default()
+        };
+        eng.fire("UNITKILLED", &kill);
+        eng.fire("UNITKILLED", &kill);
+        let ctx = Ctx::default();
+        // One turn start: the two delay=1 timers run.
+        assert_eq!(money(&start(&mut eng, &ctx, &mut no)).len(), 2);
+        // The second: the delay=2 one, as the capturing Gauls.
+        assert_eq!(
+            money(&start(&mut eng, &ctx, &mut no)),
+            [("Gauls".to_string(), 9)]
+        );
+        assert!(eng.pending.is_empty());
+        assert!(start(&mut eng, &ctx, &mut no).is_empty());
+    }
+
+    #[test]
+    fn received_technology_is_polled_at_turn_start() {
+        let mut eng = flag_engine(
+            "@IF\nRECEIVEDTECHNOLOGY\nreceiver=Gauls\ntechnology=33\n@THEN\nJUSTONCE\n\
+             TAKETECHNOLOGY\nwhom=TriggerReceiver\ntechnology=33\n@ENDIF\n\
+             @IF\nRECEIVEDTECHNOLOGY\nreceiver=Anybody\ntechnology=5\n@THEN\n\
+             CHANGEMONEY\nreceiver=TriggerReceiver\namount=1\n@ENDIF\n",
+        );
+        let ctx = Ctx::default();
+        let mut no = |_| false;
+        let knows = |c: usize, a: usize| (c == 1 && a == 33) || (a == 5 && (c == 2 || c == 3));
+        let fx = eng.turn_start(&ctx, &mut no, &knows, &|_| 0);
+        assert!(fx.contains(&Effect::TakeTechnology {
+            whom: "Gauls".into(),
+            technology: 33,
+            collapse: false
+        }));
+        assert_eq!(
+            money(&fx),
+            [("Romans".to_string(), 1), ("Egyptians".to_string(), 1)]
+        );
+        // Still known next turn: the non-JUSTONCE event fires again.
+        let fx = eng.turn_start(&ctx, &mut no, &knows, &|_| 0);
+        assert_eq!(money(&fx).len(), 2);
+        assert!(!fx
+            .iter()
+            .any(|e| matches!(e, Effect::TakeTechnology { .. })));
+    }
+
+    #[test]
+    fn new_actions_are_emitted() {
+        let mut eng = flag_engine(
+            "@IF\nTURN\nturn=1\n@THEN\nMAKEAGGRESSION\nwho=Gauls\nwhom=Romans\n\
+             CHANGETERRAIN\nterraintype=2\nexceptionmask=0b10\nmaprect\n1,2,3,2,1,4,1,4\n\
+             TAKETECHNOLOGY\nwhom=Gauls\ntechnology=4\nCollapse\n@ENDIF\n",
+        );
+        let ctx = Ctx {
+            turn: Some(1),
+            ..Default::default()
+        };
+        assert_eq!(
+            start(&mut eng, &ctx, &mut |_| false),
+            [
+                Effect::MakeAggression {
+                    who: "Gauls".into(),
+                    whom: "Romans".into()
+                },
+                Effect::ChangeTerrain {
+                    terrain: 2,
+                    rect: vec![(1, 2), (3, 2), (1, 4), (1, 4)],
+                    map: 0,
+                    exceptions: 2
+                },
+                Effect::TakeTechnology {
+                    whom: "Gauls".into(),
+                    technology: 4,
+                    collapse: true
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn turn_fires_on_its_turn_every_turn_continuous_and_the_22_42_catch_up() {
+        // (n, turn, continuous, justonce) -> fires (civ2.bak 0x4d2df7)
+        for (n, turn, c, j, want) in [
+            (5, 5, false, false, true),
+            (5, 6, false, false, false),
+            (-1, 9, false, false, true),
+            (5, 6, true, false, true),
+            (5, 4, true, false, false),
+            (5, 22, false, true, true),
+            (5, 42, false, true, true),
+            (5, 22, false, false, false),
+            (30, 22, false, true, false),
+            (5, 23, false, true, false),
+        ] {
+            assert_eq!(turn_fires(n, turn, c, j), want, "{n} {turn} {c} {j}");
+        }
+        let f = parse_events(
+            "@IF\nTURN\nturn=3\ncontinuous\n@THEN\nCHANGEMONEY\nreceiver=Gauls\namount=1\n@ENDIF\n\
+             @IF\nTURN\nturn=1\n@THEN\nJUSTONCE\nCHANGEMONEY\nreceiver=Gauls\namount=10\n@ENDIF\n",
+        )
+        .unwrap();
+        let mut eng = EventEngine::new(f);
+        let fired = |eng: &mut EventEngine, t: i32| {
+            let ctx = Ctx {
+                turn: Some(t),
+                ..Default::default()
+            };
+            start(eng, &ctx, &mut |_| false).len()
+        };
+        assert_eq!(fired(&mut eng, 2), 0);
+        assert_eq!(fired(&mut eng, 3), 1);
+        assert_eq!(fired(&mut eng, 4), 1, "continuous after its turn");
+        // The JUSTONCE turn-1 event never ran: turn 22 catches it up, once.
+        assert_eq!(fired(&mut eng, 22), 2);
+        assert_eq!(fired(&mut eng, 42), 1);
+    }
+
+    #[test]
+    fn turninterval_zero_fires_every_turn() {
+        let f = parse_events(
+            "@IF\nTURNINTERVAL\ninterval=0\n@THEN\nCHANGEMONEY\nreceiver=Gauls\namount=1\n@ENDIF\n",
+        )
+        .unwrap();
+        let mut eng = EventEngine::new(f);
+        for t in [1, 7] {
+            let ctx = Ctx {
+                turn: Some(t),
+                ..Default::default()
+            };
+            assert_eq!(start(&mut eng, &ctx, &mut |_| false).len(), 1);
+        }
+    }
+
+    #[test]
+    fn random_turn_rolls_the_crt_and_spent_events_still_draw() {
+        // rand() % n + 1 == n, drawn only when n > 1 (civ2.bak 0x4d2fa6).
+        let mut draws = 0;
+        let mut seq = [3u32, 4].into_iter();
+        let mut rand = || {
+            draws += 1;
+            seq.next().unwrap()
+        };
+        assert!(random_turn_roll(1, &mut rand));
+        assert!(!random_turn_roll(0, &mut rand));
+        assert!(!random_turn_roll(-3, &mut rand));
+        assert!(!random_turn_roll(5, &mut rand), "3 % 5 + 1 = 4");
+        assert!(random_turn_roll(5, &mut rand), "4 % 5 + 1 = 5");
+        assert_eq!(draws, 2);
+        let f = parse_events(
+            "@IF\nRANDOMTURN\ndenominator=3\n@THEN\nJUSTONCE\nCHANGEMONEY\nreceiver=Gauls\namount=1\n@ENDIF\n",
+        )
+        .unwrap();
+        let mut eng = EventEngine::new(f);
+        let ctx = Ctx {
+            turn: Some(1),
+            ..Default::default()
+        };
+        let mut asked = 0;
+        for _ in 0..3 {
+            start(&mut eng, &ctx, &mut |_| {
+                asked += 1;
+                true
+            });
+        }
+        assert_eq!(eng.fired_count(), 1);
+        assert_eq!(asked, 3, "the spent event keeps drawing");
     }
 }

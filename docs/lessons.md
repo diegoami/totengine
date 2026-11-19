@@ -38,6 +38,31 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   on a settings toggle). A scripted Xvfb run without `TOTENGINE_SAVES` writes
   into the owner's real `~/.local/share/totengine/`. Export
   `TOTENGINE_SAVES=<scratch>/saves` in every rig script.
+- **Start scratch browser hosts with `--no-open`, on ports 8831+.** Without
+  the flag `totplay` opens a tab in the owner's Windows browser. Since #321
+  such a tab also reports its window size and changed the scratch session's
+  stage width, which broke a real-input run (2026-11-17). Port 8830 is the
+  owner's own client; never touch it.
+- **Stacked PRs: retarget before deleting a merged base.** On 2026-11-19,
+  `gh pr merge N --merge --delete-branch` on the bottom of a stack deleted
+  the base branch of the next PR, and GitHub *closed* that PR instead of
+  retargeting it. A merge loop then kept going and merged two more PRs into
+  their non-default bases. Merge the bottom PR without `--delete-branch`,
+  then `gh pr edit <child> --base main`, merge, and repeat up the stack;
+  delete branches at the end; stop a loop on its first failure. A "Closes #X"
+  in a PR merged into a non-default branch closes nothing.
+- **Merging into `docs/scenario-engine-baseline.json`.** When two branches
+  both touch it, merge it three ways:
+  - `triggers`/`actions` per key, taking the side that changed from the
+    merge base;
+  - the union of `incremental_audits`;
+  - `source_sha256` recomputed from the merged tree, after `cargo fmt`.
+
+  Then regenerate `docs/evidence/scenario-inventory-v1.json` with
+  `python3 tools/scenario_inventory.py --compact --out <new file>` (exit 1
+  is expected; the corpus has known inspection errors). A naive union of
+  conflict blocks also broke a Rust test file once: two new functions
+  interleaved. Join code conflicts by hand.
 - **Force the rig display.** A caller's inherited `DISPLAY=:0` leaked through
   `${DISPLAY:-:99}` and the game silently opened windows on the wrong screen
   (zero windows on :99, looked like a hung game). Rig scripts

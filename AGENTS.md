@@ -68,6 +68,42 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+**Current work (2026-11-19): milestone 17, faithful classic save import
+(#197/#198).**
+- **Plan:** six slices, in a comment on #197
+  (https://github.com/diegoami/totengine/issues/197#issuecomment-7010227263).
+  The gates come from `docs/scenario-entry-contract.md`.
+- **Slice 1 (saved round position, spent-move resume, saved knowledge) is PR
+  #352, branch `import-resume`.**
+  - It is open and not merged. The owner has not approved merging it, so ask
+    before merging.
+  - Evidence: §Saved round position at the end of `docs/evidence/README.md`.
+  - Code: `engine::scenario::resume_blocker`, `Game::scenario_human` and
+    `HumanSession::with_game(.., resumed)`.
+  - Test: `crates/engine/tests/import_resume_install.rs`.
+- **Next slices:**
+  - Original Events: RECEIVEDTECHNOLOGY `futuretech=5` @AND RANDOMTURN →
+    TEXT, ENDGAME `endscreens=yes`, PLAYAVIFILE. This needs `futuretech`, a
+    game-over state and a disclosed video policy.
+  - A versioned import initializer/checkpoint extension.
+  - **Open ToT save / scenario** in both clients (#198), separate from the
+    experimental path.
+- **Still undecoded:**
+  - the original's reveal rules: one engine-sight tile differs on Ph_Auto2;
+  - SCN start through the scenario routine `0x4639bf`;
+  - multiplayer resume.
+- **Waiting on the owner:**
+  - acceptance of milestone 16 (#194–#196), shipped in v0.18;
+  - #283/#284;
+  - follow-ups #347–#350 (cleanup, docs, specialist buttons, event TEXT in
+    the side column).
+- **Paused:** sound #322, by the owner.
+- **Experimental scenario entry:** stays as the separately labelled path
+  (decision 0008).
+
+Windows builds, Unicorn and Playwright paths are in `docs/environment.md`.
+Stacked-PR and baseline-merge traps are in `docs/lessons.md`.
+
 **v0.21.0 is RELEASED** at exactly reviewed/tagged SHA
 `954e63554d73d07e98e5d3e605979d59ac5ba4d8` (GLM-5.3 AGREE on #346, round
 one, no MUST-FIX). Theme: Layout B and experimental scenario play on both

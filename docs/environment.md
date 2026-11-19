@@ -72,6 +72,14 @@ Pre-created and approved for external access; **not part of the repo**. Ours:
   same directory holds the milestone drafts (`milestone-v0X0.md`) and
   release notes (`v0X0.md`).
 
+- `opencode/unicorn-deps` — Unicorn 2.1.4 for the native-execution checks
+  (`tools/*_check.py`); there is no pip on the box. Run them as
+  `CIVTOT_HOME=/mnt/d/games/CIVTOT PYTHONPATH=/home/diego/review-tmp/opencode/unicorn-deps:tools python3 tools/<x>_check.py`.
+- `opencode/node/node_modules` — Playwright for `tools/check_client_browser.cjs`
+  (`NODE_PATH=` that directory).
+- `tot-client-foundation-sdl-import/libSDL2.dll.a` — the SDL2 import library
+  for cross-building the Windows clients (below).
+
 The directory is **shared with unrelated projects** (hundreds of `harness-*` /
 `guard-*` entries) — never wipe it blindly.
 
@@ -98,6 +106,33 @@ gcc -O2 -o xtool xtool.c -lX11 /usr/lib/x86_64-linux-gnu/libXtst.so.6
 /home/diego/review-tmp/llvm-mingw/bin/clang --target=x86_64-pc-windows-gnu \
     -O2 -o winject.exe winject.c -luser32
 ```
+
+## Building and launching the Windows clients from WSL
+
+The Windows build uses the `x86_64-pc-windows-gnullvm` target with llvm-mingw
+as linker. The plain GNU target needs GCC libraries the box lacks
+(`docs/ui/desktop-feasibility.md`).
+
+```sh
+CARGO_TARGET_X86_64_PC_WINDOWS_GNULLVM_LINKER=/home/diego/review-tmp/llvm-mingw/bin/x86_64-w64-mingw32-clang \
+RUSTFLAGS="-L /home/diego/review-tmp/tot-client-foundation-sdl-import" \
+cargo build --release --target x86_64-pc-windows-gnullvm -p totui --features desktop --bins
+```
+
+- **Runtime files:** the `.exe`s need `SDL2.dll` and `libunwind.dll` beside
+  them. Copy both from any earlier preview folder, e.g.
+  `review-tmp/totengine-v015-preview-windows/`.
+- **Owner's current preview:** the Layout B / v0.21 build is
+  `review-tmp/totengine-layoutb-preview-windows/`. It is started by
+  `review-tmp/totengine-owner-layoutb/launch-desktop.cmd`, which sets
+  `CIVTOT_HOME=D:\games\CIVTOT` and saves to that folder's `saves`.
+- **Keep old previews:** don't overwrite older previews or their saves; they
+  are version-bound.
+- **Launching from WSL:**
+  `cd /mnt/c && cmd.exe /c start "" "\\wsl.localhost\Ubuntu\...\launch-desktop.cmd"`.
+  The call stays attached, so run it in the background.
+- **`tools/check_client_windows.ps1`:** it drives the owner's real desktop
+  through SendInput, so run it only when the owner says the desktop is free.
 
 ## Verified box quirks
 

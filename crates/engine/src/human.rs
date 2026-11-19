@@ -329,6 +329,7 @@ impl HumanSession {
             policy,
             seed,
             1..=config.civilizations,
+            false,
         )
     }
 
@@ -349,14 +350,14 @@ impl HumanSession {
         if path.is_empty() || path.len() > 1024 {
             return Err("scenario path must be 1–1024 bytes".into());
         }
-        let game = Game::scenario_human(path, save, seed, rules, events, human)?;
+        let (game, resumed) = Game::scenario_human(path, save, seed, rules, events, human)?;
         let origin = Origin::Scenario(ScenarioOrigin {
             path: path.to_string(),
             len: save.len(),
             fingerprint: crate::player::fnv64(save),
             seed,
         });
-        Self::with_game(game, origin, human, policy, seed, 1..=7)
+        Self::with_game(game, origin, human, policy, seed, 1..=7, resumed)
     }
 
     fn with_game(
@@ -366,6 +367,7 @@ impl HumanSession {
         policy: crate::campaign::AiPolicy,
         seed: u64,
         opponents: std::ops::RangeInclusive<u8>,
+        resumed: bool,
     ) -> Result<Self, String> {
         for civ in opponents {
             if civ != human {
@@ -379,8 +381,32 @@ impl HumanSession {
                 };
             }
         }
+        // A resumed save starts from the player's saved knowledge (#197):
+        // every tile its visibility bit marks, with the roads and railroads
+        // its remembered-improvement array holds (0x10 road, 0x20 railroad),
+        // not today's. Tiles in sight are refreshed by `remember` below.
+        let known_tiles = {
+            let m = &game.world.map;
+            let bit = 1u8 << human;
+            let remembered = m.known_improvements.get(usize::from(human).wrapping_sub(1));
+            (0..m.terrain.len())
+                .map(|i| match remembered {
+                    Some(r) if resumed && m.visible[i] & bit != 0 => {
+                        let b = r.get(i).copied().unwrap_or(0);
+                        Some(crate::player::TileView {
+                            terrain: m.terrain[i],
+                            river: m.river[i],
+                            special: m.special[i],
+                            road: b & 0x10 != 0,
+                            rail: b & 0x20 != 0,
+                        })
+                    }
+                    _ => None,
+                })
+                .collect()
+        };
         let mut session = Self {
-            known_tiles: vec![None; game.world.map.terrain.len()],
+            known_tiles,
             known_cities: BTreeMap::new(),
             view_cache: std::cell::RefCell::new(None),
             origin,
@@ -388,7 +414,9 @@ impl HumanSession {
             human,
             policy,
             revision: 0,
-            cursor: 1,
+            // The original's loader restarts the civ loop at the player
+            // (civ2.bak 0x461d5d..0x461d6c): earlier civs have moved.
+            cursor: if resumed { human } else { 1 },
             actions: 0,
             last_ai: None,
             last_human: None,
@@ -403,7 +431,10 @@ impl HumanSession {
             journal: Vec::new(),
         };
         session.remember();
-        session.begin_human_turn();
+        if !resumed {
+            // A resumed turn skips the turn-start step (0x474b62..0x474b78).
+            session.begin_human_turn();
+        }
         session.require_research();
         Ok(session)
     }

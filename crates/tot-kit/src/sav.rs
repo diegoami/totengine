@@ -656,6 +656,14 @@ pub struct SaveFile {
     /// aligns with @687). ROMFALL `0x02` = WRE only. Note @685..688 are also
     /// read as `seed_word` below — that label is unproven for @687.
     pub human_mask: u8,
+    /// Saved round position (#197; evidence §Saved round position): u8@678
+    /// is the multiplayer type (RAM 0x607652, 0 = single player), u8@680 the
+    /// player's civilization (0x607654, which the loader copies to the viewer
+    /// civ 0x67a6e0) and u8@681 the civilization whose step was running
+    /// (0x607655, written by the main loop at 0x4745e4).
+    pub multiplayer: u8,
+    pub player_civ: u8,
+    pub active_civ: u8,
     /// Saved power ranking, weakest to strongest (bytes @974..982;
     /// RAM 0x60777a). The shield-row adjustment reads the final slot.
     pub power_order: [u8; 8],
@@ -759,6 +767,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
     // copies must agree on every file observed; keep the first.
     let game_flags = u16le(data, 652)?;
     let human_mask = data[687];
+    let (multiplayer, player_civ, active_civ) = (data[678], data[680], data[681]);
     let power_order = data[974..982].try_into().unwrap();
     let game_mode = data[982];
     let difficulty = data[684];
@@ -977,6 +986,9 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         year,
         game_flags,
         human_mask,
+        multiplayer,
+        player_civ,
+        active_civ,
         power_order,
         game_mode,
         ai_state,

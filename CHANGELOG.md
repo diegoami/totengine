@@ -5,6 +5,23 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Saves resume their saved turn** (#197, first slice of milestone 17), as
+  the original's loader does (static decode of `civ2.bak`, evidence §Saved
+  round position).
+  - **Which files:** plain single-player saves played by their own player,
+    such as `Original/Ph_Auto2.SAV`.
+  - **What changes:**
+    - the human moves first, because earlier civilizations already moved
+      that round;
+    - each unit keeps its saved spent movement;
+    - no turn-start step or turn events run again;
+    - the map knowledge starts from the player's saved visibility and
+      remembered roads.
+  - **Still a fresh engine turn:** scenario files, multiplayer saves, another
+    civilization, and Rules with a road multiplier other than 3. The
+    preflight says which applies.
+  - Experimental-path checkpoints of such saves made before this change no
+    longer replay.
 ## [0.21.0] — Layout B and experimental scenario play on both clients
 
 Everything since v0.20.0; the owner directed the release on 2026-11-19.

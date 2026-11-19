@@ -129,7 +129,7 @@ round-trip gate, not implied by importing or saving an engine checkpoint.
 
 | Case | Current evidence | Required before entry/continuation |
 | --- | --- | --- |
-| Original standard candidate | Pinned bytes, classic probe counts, stock resources, one macro block | Native human/phase/spent-move/fog mapping; compound/endgame event support; import initializer |
+| Original standard candidate | Pinned bytes, classic probe counts, stock resources, one macro block; saved round position, spent-move resume and saved knowledge decoded and implemented (#197 slice 1, evidence §Saved round position) | Native reveal rules (one engine-sight tile differs); compound/endgame event support; import initializer |
 | FallRome | 64 macro blocks, 710 units/146 cities in existing framing | Technology effects and other required macro/context/presentation semantics; custom date/text policy |
 | Roman Civil Wars | Installed hashes, 258 macro blocks, 618 units/159 cities | Delay/flag/randomize/removal/aggression/audio/objective and author-restriction semantics |
 | Midgard | Partial surface framing, declared multiple maps, 12 transporter records | Correct complete layout, map state/transfer simulation and event semantics |

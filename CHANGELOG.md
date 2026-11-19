@@ -5,6 +5,15 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Layout B accepted on both clients (#316, owner, 2026-11-19). The browser
+  (`tools/check_client_browser.cjs`) and Linux desktop
+  (`tools/check_client_linux.py`, private Xvfb with XTest) real-input scripts
+  play ten rounds through the menu bar and right column and write seven
+  checkpoints that are byte-identical across the two clients. The owner
+  reviewed the map, city window and science advisor at 1024×768 and
+  1920×1080, and played the Windows desktop build. The Windows real-input
+  script (`tools/check_client_windows.ps1`) was not run, and the optional
+  fixture routes (unit selection, government, city panels) had no fixtures.
 - Turn triggers now follow the original executable (#328):
   - RANDOMTURN rolls the original's C runtime `rand()`, the same generator
     combat uses, and already-spent events still use up their roll. The

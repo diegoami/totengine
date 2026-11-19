@@ -4984,6 +4984,125 @@ fn scenario_event_texts_open_as_pop_ups_one_at_a_time() {
     assert!(!logged.iter().any(|s| s.contains("hidden")));
 }
 
+#[test]
+fn scenario_game_over_shows_every_box_and_blocks_further_play() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    let rules = tot_kit::parse_rules(&format!(
+        "{}\n{}",
+        include_str!("../../../engine/tests/fixtures/campaign-rules.txt"),
+        include_str!("../../../engine/tests/fixtures/builtin-settings.txt")
+    ));
+    let events = engine::events::EventEngine::new(
+        tot_kit::parse_events(
+            "@IF\nTURN\nturn=Every\n@THEN\nTEXT\nTest victory.\nENDTEXT\n\
+         ENDGAME\nendscreens=yes\nPLAYAVIFILE\nTest.avi\n@ENDIF\n",
+        )
+        .unwrap(),
+    );
+    c.loaded.as_mut().unwrap().session = HumanSession::scenario(
+        "test.sav",
+        &engine::tests_support::synthetic_save_bytes(),
+        rules,
+        Some(events),
+        1,
+        engine::campaign::AiPolicy::AiV1,
+        9,
+    )
+    .unwrap();
+    c.reset_notices();
+    c.modal = None;
+    research(&mut c);
+    key(&mut c, "Ctrl+n");
+    if matches!(c.modal, Some(Modal::Confirm { .. })) {
+        key(&mut c, "Enter");
+    }
+    ready(&mut c);
+    assert_eq!(c.view().unwrap().phase, Phase::GameOver);
+    assert!(!c.advancing);
+    let checkpoint = c.checkpoint();
+    for expected in [
+        "Video not played: Test.avi",
+        "Test victory.",
+        "Game over: scenario ENDGAME.",
+    ] {
+        let Some(Modal::Notice { lines, .. }) = &c.modal else {
+            panic!("missing {expected}: {}", c.status);
+        };
+        assert!(lines.join(" ").contains(expected), "{lines:?}");
+        key(&mut c, "Enter");
+    }
+    assert!(c.modal.is_none());
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::Text { text, .. } if text.contains("Game over"))));
+    key(&mut c, "Ctrl+n");
+    for _ in 0..10 {
+        input(&mut c, Input::Tick);
+    }
+    assert!(
+        c.modal.is_none(),
+        "terminal input must not open an end-turn confirmation"
+    );
+    assert_eq!(
+        c.checkpoint(),
+        checkpoint,
+        "terminal client input cannot run another turn"
+    );
+    // The ordinary save flow stays accessible after the ending dialogs.
+    c.action(Action::Save).unwrap();
+    assert!(matches!(c.modal, Some(Modal::Save)));
+    key(&mut c, "Escape");
+    assert_eq!(c.checkpoint(), checkpoint);
+}
+
+/// Private fixture author for real browser/SDL input. The input directory
+/// contains a controlled Original save/events copy; no assets are emitted.
+#[test]
+#[ignore]
+fn installed_victory_input_fixture() {
+    let home = std::env::var("CIVTOT_HOME").expect("private copied install");
+    let out = PathBuf::from(std::env::var("TOTENGINE_VICTORY_OUT").expect("private output"));
+    fs::create_dir_all(&out).unwrap();
+    let mut c = Client::new(home, out.join("saves"));
+    c.pick_scenario("Original/Victory.sav").unwrap();
+    let Some(Modal::ScenarioStart(choice)) = c.modal.clone() else {
+        panic!("preflight");
+    };
+    c.start_scenario(&choice).unwrap();
+    c.modal = None;
+    ready(&mut c);
+    research(&mut c);
+    assert_eq!(c.view().unwrap().phase, Phase::Human);
+    fs::write(out.join("victorystart.cth"), c.checkpoint().unwrap()).unwrap();
+    key(&mut c, "Ctrl+n");
+    if matches!(c.modal, Some(Modal::Confirm { .. })) {
+        key(&mut c, "Enter");
+    }
+    ready(&mut c);
+    assert_eq!(c.view().unwrap().phase, Phase::GameOver);
+    fs::write(out.join("victoryend.cth"), c.checkpoint().unwrap()).unwrap();
+    for _ in 0..3 {
+        key(&mut c, "Enter");
+    }
+    assert!(c.modal.is_none());
+    assert!(c
+        .view()
+        .unwrap()
+        .observation
+        .units
+        .iter()
+        .any(|u| u.owner == c.view().unwrap().observation.civ && u.moves_left > 0));
+    key(&mut c, "Ctrl+n");
+    assert!(
+        c.modal.is_none(),
+        "terminal movable units must not open an end-turn confirmation"
+    );
+}
+
 /// #337 (owner 2026-11-19): from 16:9 a side column left of the right column
 /// holds the messages, replacing the dock and the new-messages overlay; 4:3
 /// and 16:10 keep layout B unchanged. Presentation only.

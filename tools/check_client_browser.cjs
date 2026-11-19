@@ -16,6 +16,7 @@ fs.mkdirSync(out,{recursive:true});
  async function click(label){const f=await state();const t=f.draws.find(d=>d.kind==='text'&&d.text===label);if(!t)throw Error('Missing '+label+' '+f.status);await page.mouse.click(t.x+18,t.y+9);await idle()}
  async function fill(value){await idle();await page.locator('#entry').fill(value);await page.waitForFunction(v=>frame.entry?.value===v&&!busy,value);await idle()}
  function has(f,t){return f.draws.some(d=>d.kind==='text'&&d.text===t)}
+ function turnOf(f){return +f.draws.map(d=>d.text?.match(/(?:^| · )Turn (\d+)(?:$| · )/)).find(Boolean)[1]}
  async function research(){if(has(await state(),'Choose research')){await key('ArrowDown');await key('Enter');await page.waitForFunction(()=>frame.status==='research-set')}}
  async function save(name){await fill(name);await key('Enter')}
  async function restoreFocus(){
@@ -72,13 +73,13 @@ fs.mkdirSync(out,{recursive:true});
  await key('Enter');await key('Control+s');await save('normal');
  await page.screenshot({path:out+'/browser-map.png'});
  for(let n=0;n<10;n++){
-  await research();const f=await state();const turn=+f.draws.find(d=>d.text?.match(/^Turn (\d+) /)).text.match(/^Turn (\d+)/)[1];
+  await research();const turn=turnOf(await state());
   await key('Control+n');if(has(await state(),'End your turn with movable units?'))await key('Enter');
-  await page.waitForFunction(turn=>frame.phase==='Human'&&frame.draws.some(d=>d.text?.startsWith('Turn '+(turn+1)+' ')),turn,{timeout:30000});await idle();
+  await page.waitForFunction(turn=>frame.phase==='Human'&&frame.draws.some(d=>+(d.text?.match(/(?:^| · )Turn (\d+)(?:$| · )/)?.[1])===turn+1),turn,{timeout:30000});await idle();
  }
  await research();await key('Control+s');await save('tenrounds');
  await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:out+'/browser-round11-1440.png'});
- const final=await state();console.log(JSON.stringify({phase:final.phase,status:final.status,turn:final.draws.find(d=>d.text?.startsWith('Turn ')).text}));
+ const final=await state();console.log(JSON.stringify({phase:final.phase,status:final.status,turn:turnOf(final)}));
  // Resume through real dialog input; checkpoints must preserve pending choices.
  await page.setViewportSize({width:1024,height:768});
  async function load(name){await key('Control+l');await fill(name);await key('Enter')}
@@ -88,9 +89,32 @@ fs.mkdirSync(out,{recursive:true});
  for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes(unitChoice)))break}
  await key('Enter');await key('Control+s');await save('foundingnext');
  await load('normal');await key('Control+n');if(has(await state(),'End your turn with movable units?'))await key('Enter');
- await page.waitForFunction(()=>frame.phase==='Human'&&frame.draws.some(d=>d.text?.startsWith('Turn 2 ')));await idle();
+ await page.waitForFunction(()=>frame.phase==='Human'&&frame.draws.some(d=>/(?:^| · )Turn 2(?:$| · )/.test(d.text)));await idle();
  await research();await key('Control+s');await save('normalnext');
  async function loadPending(name){if(has(await state(),'Name your city'))await key('Escape');await load(name)}
+ const victory=process.env.TOTENGINE_VICTORY_FIXTURES;
+ if(victory){
+  const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;
+  if(!saves)throw Error('set TOTENGINE_CLIENT_SAVES');
+  fs.copyFileSync(path.join(victory,'victorystart.cth'),path.join(saves,'victorystart.cth'));
+  await load('victorystart');await key('Control+n');
+  if(has(await state(),'End your turn with movable units?'))await key('Enter');
+  await page.waitForFunction(()=>frame.phase==='GameOver');await idle();
+  for(const expected of ['Video not played:','Controlled victory.','Game over: scenario ENDGAME.']){
+   if(!(await state()).draws.some(d=>d.text?.includes(expected)))throw Error('missing ending box '+expected);
+   await key('Enter');
+  }
+  await page.screenshot({path:out+'/victory.png'});
+  await key('Control+n');await key('Control+s');await save('victoryafter');
+  const expected=fs.readFileSync(path.join(victory,'victoryend.cth'));
+  if(!fs.readFileSync(path.join(saves,'victoryafter.cth')).equals(expected))throw Error('terminal checkpoint differs');
+  await load('victoryafter');
+  if((await state()).phase!=='GameOver')throw Error('terminal state lost on load');
+  for(let i=0;i<3;i++)await key('Enter');
+  await key('Control+s');await save('victoryrestored');
+  if(!fs.readFileSync(path.join(saves,'victoryrestored.cth')).equals(expected))throw Error('restored ending checkpoint differs');
+  await load('normal');
+ }
  const production=process.env.TOTENGINE_PRODUCTION_FIXTURES;
  if(production){
   const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;

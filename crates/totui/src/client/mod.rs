@@ -814,7 +814,7 @@ impl Client {
         if self.event_boxes.is_empty()
             || self.modal.is_some()
             || self.city_open
-            || v.phase != Phase::Human
+            || !matches!(v.phase, Phase::Human | Phase::GameOver)
         {
             return;
         }
@@ -999,7 +999,7 @@ impl Client {
                         if self.view().is_some_and(|v| v.phase != Phase::Opponents) {
                             self.advancing = false;
                             self.schedule_unit(None, true);
-                            self.status=match self.view().unwrap().phase {Phase::Human=>"Your turn. Choose actions or resolve the required choice.",Phase::Eliminated=>"Your civilization has no units or cities. Load a checkpoint or start a new game.",Phase::TurnLimit=>"Turn limit reached. Save a checkpoint to preserve this game.",Phase::Opponents=>"Opponents playing"}.into();
+                            self.status=match self.view().unwrap().phase {Phase::Human=>"Your turn. Choose actions or resolve the required choice.",Phase::Eliminated=>"Your civilization has no units or cities. Load a checkpoint or start a new game.",Phase::TurnLimit=>"Turn limit reached. Save a checkpoint to preserve this game.",Phase::GameOver=>"Game over: scenario event. You can save a checkpoint, load a game or start a new game.",Phase::Opponents=>"Opponents playing"}.into();
                             self.required();
                         }
                     }
@@ -1799,6 +1799,9 @@ impl Client {
             }
             Action::End => {
                 let v = self.view().ok_or("Start a game first")?;
+                if v.phase != Phase::Human {
+                    return Err("The game is not waiting for human orders".into());
+                }
                 if v.observation
                     .units
                     .iter()

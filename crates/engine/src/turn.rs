@@ -38,6 +38,12 @@ pub struct TurnSummary {
 impl WorldState {
     /// Run one full turn; see the module docs for what it covers.
     pub fn run_turn(&mut self, rules: &Rules, events: Option<&mut EventEngine>) -> TurnSummary {
+        if self.game_over.is_some() {
+            return TurnSummary {
+                turn: self.turn,
+                ..Default::default()
+            };
+        }
         self.production_context = None;
         let mut sum = TurnSummary::default();
         let mut food_routes = crate::city_phase::FoodRouteState::default();
@@ -103,7 +109,9 @@ impl WorldState {
             let applied = self.apply_effects(rules, &effects);
             sum.events = effects.into_iter().zip(applied).collect();
         }
-        self.start_turn(rules);
+        if self.game_over.is_none() {
+            self.start_turn(rules);
+        }
         sum.turn = self.turn;
         sum
     }

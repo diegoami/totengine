@@ -1,5 +1,5 @@
 {
-  "baseline_sha256": "8413ab2aa5c13d090f7583ace1253150b512ed3a3c10d193e2ac33a8689d8669",
+  "baseline_sha256": "4df497cfffb514ca497f8f38c46595696178dc1fb772f1ec8e10bc62cc873a2d",
   "engine_audit": {
     "changed_or_missing": [],
     "matches_current_source": true,
@@ -109,14 +109,16 @@
         "audited_baseline_coverage": {
           "actions": {
             "ENDGAME": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Native 0x575570 records a terminal event outcome. The engine checksums its turn and endscreens request, blocks further orders/rounds and reconstructs it by replay. Both clients display the event TEXT and ending notice. Original ending/scoring screens are not implemented and this is disclosed in preflight and on termination. Not general victory/scoring or native imported-outcome support.",
+              "params": [
+                "endscreens"
+              ],
+              "status": "modelled_subset"
             },
             "PLAYAVIFILE": {
-              "note": "No audited handler.",
+              "note": "Filename is preserved as a positional argument (native parser 0x5684a4); native dispatcher order for AVI/TEXT/ENDGAME is preserved. Explicit presentation policy: no decoding, file opening or playback; show the requested filename and an omission notice. Does not prevent ENDGAME. Native presentation and media dependency closure remain unproved.",
               "params": [],
-              "status": "unimplemented"
+              "status": "no_game_state_effect"
             },
             "TEXT": {
               "note": "Human sessions show fired TEXT boxes to the human as client pop-ups and in the message log (#326); a leading 'No Broadcast' line limits a box to the triggering civilization (UNITKILLED/CITYTAKEN attacker, NEGOTIATION talker), and a restricted box whose trigger names none reaches nobody (unverified against the original). No native pop-up timing or order claim.",
@@ -133,7 +135,7 @@
               "status": "modelled_subset"
             },
             "RECEIVEDTECHNOLOGY": {
-              "note": "Polled at every turn start after RANDOMTURN (civ2.bak 0x4d306f), not fired by the grant: true while the receiver knows the advance (futuretech: while its Future Technology count equals technology=). Anybody tests each civ; the receiver is TriggerReceiver/TriggerDefender. @AND gate applies (evidence README \u00a7Event actions, #328).",
+              "note": "Polled at turn start after RANDOMTURN (civ2.bak 0x4d306f). technology=N tests known advances; futuretech=N independently tests the living receiver's Future Technology count for equality to N (not a minimum; no technology= required). Anybody polls each civ; TriggerReceiver/TriggerDefender resolves to the matching receiver. The @AND gate applies. Native evidence: original-victory.json and evidence README \u00a7Original victory event.",
               "params": [
                 "receiver",
                 "technology",
@@ -144,10 +146,7 @@
           }
         },
         "diagnostic_counts": {
-          "no_game_state_effect": 1,
-          "unimplemented_keyword": 2,
-          "unmodelled_argument": 1,
-          "unmodelled_parameter": 1
+          "no_game_state_effect": 2
         },
         "diagnostics": [
           {
@@ -156,27 +155,12 @@
             "token": "TEXT"
           },
           {
-            "code": "unimplemented_keyword",
-            "line": 24,
-            "token": "ENDGAME"
-          },
-          {
-            "code": "unmodelled_parameter",
-            "line": 25,
-            "token": "endscreens"
-          },
-          {
-            "code": "unimplemented_keyword",
+            "code": "no_game_state_effect",
             "line": 26,
-            "token": "PLAYAVIFILE"
-          },
-          {
-            "code": "unmodelled_argument",
-            "line": 27,
             "token": "PLAYAVIFILE"
           }
         ],
-        "diagnostics_total": 5,
+        "diagnostics_total": 2,
         "diagnostics_truncated": false,
         "event_blocks": 1,
         "logical": {
@@ -832,7 +816,7 @@
               "status": "modelled_subset"
             },
             "RECEIVEDTECHNOLOGY": {
-              "note": "Polled at every turn start after RANDOMTURN (civ2.bak 0x4d306f), not fired by the grant: true while the receiver knows the advance (futuretech: while its Future Technology count equals technology=). Anybody tests each civ; the receiver is TriggerReceiver/TriggerDefender. @AND gate applies (evidence README \u00a7Event actions, #328).",
+              "note": "Polled at turn start after RANDOMTURN (civ2.bak 0x4d306f). technology=N tests known advances; futuretech=N independently tests the living receiver's Future Technology count for equality to N (not a minimum; no technology= required). Anybody polls each civ; TriggerReceiver/TriggerDefender resolves to the matching receiver. The @AND gate applies. Native evidence: original-victory.json and evidence README \u00a7Original victory event.",
               "params": [
                 "receiver",
                 "technology",
@@ -1186,9 +1170,11 @@
               "status": "unimplemented"
             },
             "ENDGAME": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Native 0x575570 records a terminal event outcome. The engine checksums its turn and endscreens request, blocks further orders/rounds and reconstructs it by replay. Both clients display the event TEXT and ending notice. Original ending/scoring screens are not implemented and this is disclosed in preflight and on termination. Not general victory/scoring or native imported-outcome support.",
+              "params": [
+                "endscreens"
+              ],
+              "status": "modelled_subset"
             },
             "FLAG": {
               "note": "Per-civ flag words and one global continuous word (civ2.bak 0x5757b7). No who= or Everybody sets all eight civs; Anybody/Somebody/unknown do nothing. Requires @INITFLAG. Flags live in the event engine and rebuild by replay; native save import of flag state is not implemented.",
@@ -1224,9 +1210,9 @@
               "status": "unimplemented"
             },
             "PLAYAVIFILE": {
-              "note": "No audited handler.",
+              "note": "Filename is preserved as a positional argument (native parser 0x5684a4); native dispatcher order for AVI/TEXT/ENDGAME is preserved. Explicit presentation policy: no decoding, file opening or playback; show the requested filename and an omission notice. Does not prevent ENDGAME. Native presentation and media dependency closure remain unproved.",
               "params": [],
-              "status": "unimplemented"
+              "status": "no_game_state_effect"
             },
             "PLAYCDTRACK": {
               "note": "Recorded effect; no native track playback claim.",
@@ -1317,7 +1303,7 @@
               "status": "modelled_subset"
             },
             "RECEIVEDTECHNOLOGY": {
-              "note": "Polled at every turn start after RANDOMTURN (civ2.bak 0x4d306f), not fired by the grant: true while the receiver knows the advance (futuretech: while its Future Technology count equals technology=). Anybody tests each civ; the receiver is TriggerReceiver/TriggerDefender. @AND gate applies (evidence README \u00a7Event actions, #328).",
+              "note": "Polled at turn start after RANDOMTURN (civ2.bak 0x4d306f). technology=N tests known advances; futuretech=N independently tests the living receiver's Future Technology count for equality to N (not a minimum; no technology= required). Anybody polls each civ; TriggerReceiver/TriggerDefender resolves to the matching receiver. The @AND gate applies. Native evidence: original-victory.json and evidence README \u00a7Original victory event.",
               "params": [
                 "receiver",
                 "technology",
@@ -1350,12 +1336,12 @@
         },
         "diagnostic_counts": {
           "malformed_location": 1,
-          "no_game_state_effect": 93,
+          "no_game_state_effect": 101,
           "non_surface_location": 86,
           "partial": 68,
-          "unimplemented_keyword": 97,
-          "unmodelled_argument": 57,
-          "unmodelled_parameter": 124
+          "unimplemented_keyword": 83,
+          "unmodelled_argument": 49,
+          "unmodelled_parameter": 118
         },
         "diagnostics": [
           {
@@ -1399,7 +1385,7 @@
             "token": "CREATEUNIT"
           }
         ],
-        "diagnostics_total": 526,
+        "diagnostics_total": 506,
         "diagnostics_truncated": true,
         "event_blocks": 151,
         "logical": {
@@ -1671,12 +1657,12 @@
       }
     }
   ],
-  "full_report_bytes": 187589,
-  "full_report_sha256": "cb7c57119bd480816758f3594a10029de0a95b12afc00e521ecb8c5014058d2b",
+  "full_report_bytes": 186438,
+  "full_report_sha256": "d798312c184c4558bfb689e8f84ac56c59b81ce0b6a6ca9fd91127f30c186bcb",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
     "format_probe_sha256": "70a4f8fe1b5fb88a0e121c9040dea4e835111a82aa0f3671b46247fb80272a0f",
-    "sha256": "3e7cdcb0d97b2b18be070e05fb172fed5d05d05922e931367163ad6a99f8459b",
+    "sha256": "d307e3b3536124f5a1c799f0c448a67f8702f22bc08bef65fe63a3ac3de9486e",
     "tool": "tools/scenario_inventory.py"
   },
   "profile_candidate": "classic-surface-032-v1",

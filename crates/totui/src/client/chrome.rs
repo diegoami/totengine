@@ -1006,6 +1006,7 @@ impl Client {
             Phase::Opponents => "Opponents playing",
             Phase::Eliminated => "Your civilization is eliminated",
             Phase::TurnLimit => "Turn limit reached",
+            Phase::GameOver => "Game over: scenario event",
         };
         draws.push(text(
             cx,

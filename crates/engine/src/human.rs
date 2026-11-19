@@ -28,6 +28,7 @@ pub enum Phase {
     Opponents,
     Eliminated,
     TurnLimit,
+    GameOver,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -171,6 +172,7 @@ pub enum Notice {
 pub struct HumanView {
     pub revision: u64,
     pub phase: Phase,
+    pub game_over: Option<crate::events::EventGameOver>,
     pub observation: Observation,
     pub decision: Option<Decision>,
     pub notices: Vec<Notice>,
@@ -417,7 +419,9 @@ impl HumanSession {
     }
 
     pub fn phase(&self) -> Phase {
-        if !self.game.world.living_civs().contains(&self.human) {
+        if self.game.world.game_over.is_some() {
+            Phase::GameOver
+        } else if !self.game.world.living_civs().contains(&self.human) {
             Phase::Eliminated
         } else if self.game.world.turn >= 30_001 {
             Phase::TurnLimit
@@ -565,6 +569,7 @@ impl HumanSession {
                 .collect(),
             revision: self.revision,
             phase: self.phase(),
+            game_over: self.game.world.game_over,
             decision: self.decision.clone(),
             notices: self.notices.clone(),
             event_texts: self.event_texts.clone(),
@@ -649,6 +654,9 @@ impl HumanSession {
     }
 
     fn remember(&mut self) {
+        if self.game.world.game_over.is_some() {
+            self.decision = None;
+        }
         self.collect_event_texts();
         let w = &self.game.world;
         let bit = 1u8 << self.human;

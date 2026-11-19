@@ -27,7 +27,10 @@ use crate::{Unit, WorldState};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Applied {
     /// Treasury of civ `civ` is now `treasury`.
-    Money { civ: u8, treasury: i32 },
+    Money {
+        civ: u8,
+        treasury: i32,
+    },
     /// `count` units created at `at`; their indices start at `first`.
     Created {
         first: usize,
@@ -35,9 +38,15 @@ pub enum Applied {
         at: (u16, u16),
     },
     /// Civ `civ` received advance `advance` (GIVETECHNOLOGY).
-    Advance { civ: u8, advance: usize },
+    Advance {
+        civ: u8,
+        advance: usize,
+    },
     /// Civ `civ` lost these advances, dependants first (TAKETECHNOLOGY).
-    Taken { civ: u8, advances: Vec<usize> },
+    Taken {
+        civ: u8,
+        advances: Vec<usize>,
+    },
     /// `who` and `whom` are at war (MAKEAGGRESSION). `consequences` marks
     /// the original's treaty-break call for a human party (0x44af04),
     /// which is not modelled.
@@ -53,6 +62,7 @@ pub enum Applied {
         cities: usize,
         units: usize,
     },
+    GameOver(crate::events::EventGameOver),
     /// The effect changes nothing in the modelled state (text, music).
     NoState,
     /// The effect could not be applied; the reason says why.
@@ -114,6 +124,9 @@ impl WorldState {
         trigger: &str,
         ctx: &Ctx,
     ) -> Vec<(Effect, Applied)> {
+        if self.game_over.is_some() {
+            return Vec::new();
+        }
         events.civ_names = self.event_civ_names();
         let effects = events.fire(trigger, ctx);
         let applied = self.apply_effects(rules, &effects);
@@ -145,6 +158,14 @@ impl WorldState {
 
     fn apply_effect(&mut self, rules: &Rules, e: &Effect) -> Applied {
         match e {
+            Effect::EndGame { endscreens } => {
+                let outcome = *self.game_over.get_or_insert(crate::events::EventGameOver {
+                    turn: self.turn,
+                    endscreens: *endscreens,
+                });
+                Applied::GameOver(outcome)
+            }
+            Effect::PlayVideo(_) => Applied::NoState,
             Effect::ChangeMoney { receiver, amount } => {
                 let Some(civ) = self.civ_by_name(receiver) else {
                     return Applied::Skipped(format!("unknown civ {receiver:?}"));

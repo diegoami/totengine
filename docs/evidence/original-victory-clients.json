@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "base_sha": "dcf024540068f3bc68334bb481505f22f8754ac3",
+  "scope": "Original victory-event slice of #197; source candidate, no release or owner acceptance",
+  "fixture": {
+    "source": "private copy of Original/Ph_Auto2.SAV and local Original resources; no original assets committed",
+    "human": 4,
+    "future_technology_count": 5,
+    "science_rates": "zero for all civs",
+    "events": "authored Controlled victory TEXT; Original trigger/action structure; RANDOMTURN denominator=1 for immediate route",
+    "input_sha256": "e1174410740bb5f174d29f1eed485b1e823f3f0d3400f30baf025dcccedc22ef",
+    "events_sha256": "a43f113a1755e1e506d48b92849b9341506fb247908281c9afaf62256b29be50",
+    "initial_checkpoint_sha256": "339a4a7723eb5db9eb7c014bc137912013e254462ed072e86cf3727b41384951",
+    "final_checkpoint_sha256": "5b964758e983c19721a13a014851a66bb04f95d1093e2bdd5993ddfe529dbcda"
+  },
+  "real_input": {
+    "browser": "headless Chromium via Playwright, mouse and keyboard",
+    "desktop": "Linux SDL on private Xvfb, XTest keyboard and mouse",
+    "checks": [
+      "existing generated ten-round/save/reload route",
+      "video omission notice, victory TEXT and ENDGAME notice in order",
+      "terminal Ctrl+N cannot open a confirmation or execute a turn",
+      "save terminal checkpoint and compare with shared-client fixture",
+      "load terminal checkpoint; ending notices remain accessible; save identical checkpoint"
+    ],
+    "comparisons": [
+      {
+        "surface": "browser",
+        "checkpoint": "victoryafter",
+        "sha256": "5b964758e983c19721a13a014851a66bb04f95d1093e2bdd5993ddfe529dbcda",
+        "matches_fixture": true
+      },
+      {
+        "surface": "browser",
+        "checkpoint": "victoryrestored",
+        "sha256": "5b964758e983c19721a13a014851a66bb04f95d1093e2bdd5993ddfe529dbcda",
+        "matches_fixture": true
+      },
+      {
+        "surface": "linux-sdl",
+        "checkpoint": "victoryafter",
+        "sha256": "5b964758e983c19721a13a014851a66bb04f95d1093e2bdd5993ddfe529dbcda",
+        "matches_fixture": true
+      },
+      {
+        "surface": "linux-sdl",
+        "checkpoint": "victoryrestored",
+        "sha256": "5b964758e983c19721a13a014851a66bb04f95d1093e2bdd5993ddfe529dbcda",
+        "matches_fixture": true
+      }
+    ]
+  },
+  "source_sha256": {
+    "crates/engine/src/events.rs": "bed7a25102c67c45d058cb9ed170b9216e233d4c1e5b792e84785418336bef37",
+    "crates/engine/src/effects.rs": "a2b75e4c9ed7a7fd06bae65b7394d1637fee7d03954009e3afeafc238803ef85",
+    "crates/engine/src/human.rs": "ecae6c182c7561dbfc03dcba052e321c6c217f30861cb28b0e76dae780d7a607",
+    "crates/engine/src/lib.rs": "26c50f4601e51e9c8cd2ff26c8a9e981abf8aa37ca988c0114f2cc13f3a0e891",
+    "crates/engine/src/player.rs": "eccbc3ab92381974c8cae165f49cf1b0bcc3330c5c1999aae8cc1008cc7cda95",
+    "crates/engine/src/turn.rs": "12008e3af7eea7610fb1b9cbbd3c0b817fedb7be74b1e403c440d3d39e3fb032",
+    "crates/tot-kit/src/events.rs": "1681efdbeffea4104ea049a77c127831a1d8b5ff49d970dfc878d3d1d9125b91",
+    "crates/totui/src/client/mod.rs": "c3c29d3f90eeed285fb6c2a0efc11d6701a504549d67e3d01e59c24facc467e2",
+    "crates/totui/src/client/chrome.rs": "09f4509b8163a6913bc228225486e2290304a6cba5ab6b4cf416a12cf9f3ff6b",
+    "tools/check_client_browser.cjs": "714dd693960b14cd6a99642bfda2993b64346c21230ed107229b63c962a14cf6",
+    "tools/check_client_linux.py": "6e577138a83199930e46381837f351e5cfa9747868787ed000362e4cc0b9b131",
+    "tools/check_victory_route.py": "85650648152d5e4fa02f042b117e1362c2fc3dd7f6b17c565779b1c0266c5dac",
+    "tools/prepare_victory_input.py": "fcc09647dbb4516ceec1c8c8a296be4932c84ae826d227256aece0f28c58910c"
+  },
+  "limits": [
+    "No original video or ending/scoring screen implementation.",
+    "Controlled client fixture uses guaranteed roll and authored prose; unchanged Original Events denominator=3 is separately covered across 16 seeds by events_install.rs.",
+    "No Windows real-input run or owner human acceptance.",
+    "Faithful SAV/SCN import remains unadmitted; no merge or release approval is implied."
+  ],
+  "validation": {
+    "install_backed_make_test": {
+      "rust_passed": 399,
+      "rust_ignored": 11,
+      "python_passed": 48,
+      "goldens_passed": 24
+    },
+    "desktop_feature_lib_tests": {
+      "passed": 68,
+      "ignored": 10
+    },
+    "fmt": "passed",
+    "strict_clippy_workspace": "passed",
+    "strict_clippy_desktop": "passed",
+    "native_evidence_reproduction": "byte-identical",
+    "scenario_inventory": "source audit current; compact report regenerated; known corpus inspection failures retained; no runtime admissions",
+    "windows_input": "not run"
+  },
+  "binaries_sha256": {
+    "totplay": "bcc36f71e3ef1102d96ccf4577706ce50e8ae3495d5c00b8cd62344b64990b13",
+    "totdesktop": "7971f49c3b0e8b8cbe2d95b4da6b1df4f84998a9ec43d255afb4c7fc616d84ad"
+  }
+}

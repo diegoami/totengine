@@ -565,6 +565,7 @@ fn phase_name(phase: Phase) -> &'static str {
         Phase::Opponents => "opponents",
         Phase::Eliminated => "eliminated",
         Phase::TurnLimit => "turn-limit",
+        Phase::GameOver => "game-over",
     }
 }
 

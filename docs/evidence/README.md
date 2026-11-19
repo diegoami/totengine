@@ -338,6 +338,38 @@ mask, `+0x8` modifier/state bits. Spot-checked addresses are marked ✓.
     CITYTAKEN events. The sixth lost Gaulish city sets the sixth continuous
     flag, and the next turn start gives the Gauls advance 33, once.
 
+#### Versioned experimental initializer (2026-11-19, #197)
+
+This is engine persistence policy, not a claim about additional native bytes.
+[The schema/design](../import-initializer.md) defines human checkpoint format 3,
+initializer schema 1, and the explicitly unadmitted `experimental-scenario-v1`
+profile. New experimental scenario sessions in both clients bind the source
+snapshot, captured dependency identities (including labels/description text),
+normalization mode, saved round position, human/phase/cursor, policy/seed,
+initial world/knowledge/choice/event state, and both RNG states/draw counts.
+Initializer assertions are verified before any operation journal entry;
+final RNG assertions join the existing canonical replay checks. Generated and
+legacy scenario checkpoints keep format 2 without automatic upgrade.
+
+[`import-initializer-v1.json`](import-initializer-v1.json) records the controlled
+Original fixture, source hashes and completed real browser/SDL input. All four
+terminal save/reload checkpoints match the shared fixture byte for byte.
+Reproduce with the private fixture recipe in §Original victory event below:
+the current `installed_victory_input_fixture` author now emits format 3 plus
+an `initializer.json` summary. No original snapshot or resource bytes are
+committed. The browser runner waits for acknowledged logical stage width
+after resize before sending its next key.
+
+Engine initializer tests cover changed/missing inputs, metadata mutation before
+replay, changed event text with identical initial world, startup DELAY/one-shot
+state, partial opponents, terminal replay and legacy format preservation.
+Shared-client/resource tests cover captured optional text and atomic rejection
+of changed snapshots, rules, events, labels and artwork. This closes persistence
+assertions for the experimental reconstruction path; native knowledge,
+complete dependency/admission checks and #198's faithful entry/owner routes
+remain separate gates. No native AI/RNG continuation, SAV export, milestone
+acceptance or release is claimed.
+
 #### Original victory event (2026-11-19, #197)
 
 Design/evidence before implementation: `Original/Events.txt` has one

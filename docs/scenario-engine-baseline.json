@@ -6,17 +6,19 @@
   "source_sha256": {
     "crates/tot-kit/src/events.rs": "1681efdbeffea4104ea049a77c127831a1d8b5ff49d970dfc878d3d1d9125b91",
     "crates/tot-kit/src/sav.rs": "f0eabfc96dd8ca830c4361dc622fe92e578cd49eef9751fa6e242c65152192ef",
-    "crates/engine/src/events.rs": "bed7a25102c67c45d058cb9ed170b9216e233d4c1e5b792e84785418336bef37",
+    "crates/engine/src/events.rs": "07a4e57b0fbb1dd010f62369fcc8bc664b637166e765621bd6e2d66f66fe24e1",
     "crates/engine/src/effects.rs": "a2b75e4c9ed7a7fd06bae65b7394d1637fee7d03954009e3afeafc238803ef85",
     "crates/engine/src/turn.rs": "12008e3af7eea7610fb1b9cbbd3c0b817fedb7be74b1e403c440d3d39e3fb032",
     "crates/engine/src/player.rs": "1167e5b31165e5259dba55211816263fbf8c7844f2fde40587eb01de09f04537",
-    "crates/engine/src/human.rs": "dffb77eaacacf3768cf1cc0fb1529ce53755da53d210980f6706bea97b98557e",
-    "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
+    "crates/engine/src/human.rs": "b1a58df4f90c1761dda4d8e24bbc6c8161bdc61b02e1fc8ef6b0f8b1a1a82141",
+    "crates/engine/src/human/checkpoint.rs": "418113d3b96fa682127c12debc962e8b4dcd8cafe899157fc252cba7fc57fdea",
     "crates/engine/src/lib.rs": "26c50f4601e51e9c8cd2ff26c8a9e981abf8aa37ca988c0114f2cc13f3a0e891",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
     "crates/totui/src/client/mod.rs": "c3c29d3f90eeed285fb6c2a0efc11d6701a504549d67e3d01e59c24facc467e2",
-    "crates/totui/src/resources.rs": "1b35d65da36fdf8ca5727d12e492c8093d80e3eba53b9b70c043fcbb9be087a9",
-    "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
+    "crates/totui/src/resources.rs": "bbb42c30b6bffab4d1be72f0ed10ebe56d887b3a42984d42a782d5340710ac90",
+    "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
+    "crates/engine/src/human/initializer.rs": "b6b9fc0d0d8fbc8f3ceb1bd603c6c6038f521dbe3af4939957a4edf07a8e2c00",
+    "crates/totui/src/client/scenario.rs": "30aa68fcb7f24bd519186b75a8b872dbd84eb97e5570438a51fdf4449360a887"
   },
   "triggers": {
     "TURN": {
@@ -553,6 +555,18 @@
         "crates/totctl/src/mcp_agent.rs"
       ],
       "finding": "civ2.bak native execution: 160 controlled futuretech/@AND contexts and two dispatcher/ENDGAME contexts (original-victory.json). futuretech=5 now reads its own value and matches equality; the original parser mapping is statically decoded. AVI emits an omission notice before TEXT; ENDGAME records a terminal outcome with turn/endscreens and a final presentation notice. World run_turn and player orders stop; HumanSession exposes GameOver and no pending decision; both clients can show terminal event boxes and save/load checkpoints. New terminal-only checksum domain preserves non-terminal fingerprints. Resource/phase/knowledge/import initializer blockers are not waived; no runtime profile admitted. No native ending-screen/scoring or video parity claim."
+    },
+    {
+      "change": "Versioned experimental scenario initializer and format-3 human checkpoints (#197 persistence slice)",
+      "files": [
+        "crates/engine/src/events.rs",
+        "crates/engine/src/human.rs",
+        "crates/engine/src/human/initializer.rs",
+        "crates/engine/src/human/checkpoint.rs",
+        "crates/totui/src/resources.rs",
+        "crates/totui/src/client/scenario.rs"
+      ],
+      "finding": "New scenario_initialized constructor captures schema-1 metadata before input/opponent work: source identity, saved position, normalized phase/cursor/owner, movement and knowledge recipes, policy/seed, world/memory/choice assertions and canonical event input/initial-state assertions. Pristine event input is required. Format 3 seals the captured dependency manifest and verifies the reconstructed initializer before replay; format 2 remains for generated/legacy sessions without silent upgrade. Both clients use the new initializer for newly opened experimental scenarios and select the correct dependency identity on restore. Rules/art/events/snapshot identity retains its previous resolution; Labels.txt and Describe.txt identities are captured from the same reads that supply their parsed presentation, separately from legacy identity. No trigger/action coverage change or native format claim; experimental-scenario-v1 is explicitly unadmitted, and classic-surface-032-v1 remains gated by native knowledge, complete dependencies and the separate #198 entry/acceptance routes. Format 3 also asserts both engine RNG states and draw counts initially and finally; native RNG continuation remains unclaimed."
     }
   ]
 }

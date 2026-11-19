@@ -14,6 +14,8 @@ use crate::production::Built;
 
 mod reports;
 pub use reports::*;
+mod initializer;
+pub use initializer::{ScenarioInitializer, ScenarioInput, ScenarioStartMode};
 
 /// Slot and identity together prevent acting on a reused entity slot.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -217,6 +219,7 @@ pub struct HumanSession {
     known_tiles: Vec<Option<crate::player::TileView>>,
     known_cities: BTreeMap<usize, (u32, crate::player::CityView)>,
     origin: Origin,
+    initializer: Option<ScenarioInitializer>,
     game: Game,
     human: u8,
     /// The opponents' policy (#261); recorded in checkpoints.
@@ -362,6 +365,62 @@ impl HumanSession {
         Self::with_game(game, origin, human, policy, seed, 1..=7, resumed)
     }
 
+    /// New experimental scenario session with a schema-1 initializer and
+    /// format-3 checkpoints. This records a reconstruction policy; it grants
+    /// no faithful native-import admission. Dependencies must describe the
+    /// same captured bytes used to construct the input, never later rereads.
+    pub fn scenario_initialized(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        if !dependencies.starts_with("totengine-scenario-dependencies 1\n")
+            || dependencies.len() > 128 * 1024
+        {
+            return Err("unsupported or oversized scenario dependency manifest".into());
+        }
+        if input.snapshot.len() > 16 * 1024 * 1024 {
+            return Err("scenario snapshot exceeds 16 MiB".into());
+        }
+        if input
+            .events
+            .as_ref()
+            .is_some_and(|e| !e.pristine_initializer_input())
+        {
+            return Err(
+                "scenario initializer needs pristine event input, not a running event engine"
+                    .into(),
+            );
+        }
+        let input_events = input
+            .events
+            .as_ref()
+            .map_or(0, crate::events::EventEngine::initializer_fingerprint);
+        let saved = tot_kit::parse_sav(input.snapshot).map_err(|e| e.to_string())?;
+        let mut session = Self::scenario(
+            input.path,
+            input.snapshot,
+            input.rules,
+            input.events,
+            human,
+            policy,
+            seed,
+        )?;
+        session.initializer = Some(ScenarioInitializer::capture(
+            &session,
+            &saved,
+            dependencies,
+            input_events,
+        ));
+        Ok(session)
+    }
+
+    pub fn initializer(&self) -> Option<&ScenarioInitializer> {
+        self.initializer.as_ref()
+    }
+
     fn with_game(
         mut game: Game,
         origin: Origin,
@@ -412,6 +471,7 @@ impl HumanSession {
             known_cities: BTreeMap::new(),
             view_cache: std::cell::RefCell::new(None),
             origin,
+            initializer: None,
             game,
             human,
             policy,

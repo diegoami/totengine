@@ -49,6 +49,41 @@ fn bmp_and_gif_decode_and_invalid_data_is_bounded() {
 }
 
 #[test]
+fn scenario_text_identity_uses_captured_bytes_without_changing_legacy_identity() {
+    let f = Fixture::new();
+    let labels = f.0.join("Labels.txt");
+    let describe = f.0.join("Describe.txt");
+    fs::write(&labels, "@LABELS\n2\nB.C.\nA.D.\n").unwrap();
+    fs::write(&describe, "private authored description\n").unwrap();
+    let a = Resources::load(&f.0, "Original").unwrap();
+    let captured = a.scenario_identity();
+    assert!(captured.starts_with("totengine-scenario-dependencies 1\n"));
+    assert!(captured.contains("text-labels labels.txt"));
+    assert!(captured.contains("text-describe describe.txt"));
+    fs::write(&labels, "@LABELS\n2\nB.C.\nA.D.\n; new ignored comment\n").unwrap();
+    let b = Resources::load(&f.0, "Original").unwrap();
+    assert_eq!(
+        a.labels, b.labels,
+        "same parsed labels, different input bytes"
+    );
+    assert_eq!(
+        a.identity(),
+        b.identity(),
+        "legacy checkpoint identity is unchanged"
+    );
+    assert_ne!(captured, b.scenario_identity());
+    assert_eq!(
+        a.scenario_identity(),
+        captured,
+        "captured identities never reread files"
+    );
+    fs::remove_file(describe).unwrap();
+    let c = Resources::load(&f.0, "Original").unwrap();
+    assert!(c.scenario_identity().contains("text-describe absent"));
+    assert_ne!(c.scenario_identity(), b.scenario_identity());
+}
+
+#[test]
 fn profile_precedence_case_rules_and_content_identity() {
     let f = Fixture::new();
     fs::write(f.0.join("Original/rUlEs.TxT"), b"@COSMIC\n7\n").unwrap();

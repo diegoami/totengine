@@ -95,6 +95,12 @@ The map screen follows the original's frame (layout B, [design record](ui/layout
   right edge. Dialogs, the city window and setup keep their layout, centred. **Alt+Enter** or
   **View > Full screen** toggles full screen (the browser asks for its own full
   screen; Esc there returns to a window). A 4:3 window looks as before.
+- **Side column on wide screens** (#337): from 16:9, a second column sits
+  left of the right column. It shows the latest turn's messages in full, then
+  earlier ones newest first, with **All messages** at the bottom. It replaces
+  the message dock and the new-messages overlay there; the map gives up that
+  width. It is on by default when the window is that wide. At 4:3 and 16:10
+  nothing changes. It is presentation only and never changes the game.
 - The **right column** shows a **minimap** of what your civilization has seen
   (a click centres the map there), your turn, government, treasury, rates and
   research, the selected unit, the selected city with **Manage city** and

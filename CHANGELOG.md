@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Side column on wide screens** in both clients (#337). From 16:9, a second
+  column left of the right column holds this turn's messages in full and the
+  earlier ones, with All messages. It replaces the message dock and the
+  new-messages overlay at that width, and is on by default there. 4:3 and
+  16:10 are unchanged, and so are the city window and dialogs.
 - Layout B accepted on both clients (#316, owner, 2026-11-19). The browser
   (`tools/check_client_browser.cjs`) and Linux desktop
   (`tools/check_client_linux.py`, private Xvfb with XTest) real-input scripts

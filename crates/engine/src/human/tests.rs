@@ -1763,3 +1763,112 @@ fn experimental_scenario_session_checkpoints_against_its_file() {
         .is_err());
     }
 }
+
+/// #326: scenario event TEXT boxes reach the human's view in firing order,
+/// `No Broadcast` ones only for the triggering civilization; the boxes of a
+/// turn clear when the human ends it, and checkpoints rebuild them by replay.
+#[test]
+fn scenario_event_texts_reach_the_human_view_and_replay() {
+    let save = crate::tests_support::synthetic_save_bytes();
+    let events = || {
+        Some(crate::events::EventEngine::new(
+            tot_kit::parse_events(
+                "@IF\nTURN\nturn=Every\n@THEN\nTEXT\nA round passes.\nSecond line.\nENDTEXT\n\
+                 TEXT\nNo Broadcast\nnobody triggered this\nENDTEXT\n@ENDIF\n",
+            )
+            .unwrap(),
+        ))
+    };
+    let policy = crate::campaign::AiPolicy::AiV1;
+    let mut s = HumanSession::scenario("test.sav", &save, rules(), events(), 1, policy, 9).unwrap();
+    assert!(s.view().event_texts.is_empty());
+    assert_eq!(s.view().event_serial, 0);
+    next_round(&mut s);
+    let v = s.view();
+    assert_eq!(
+        v.event_texts,
+        vec!["A round passes.\nSecond line.".to_string()]
+    );
+    assert_eq!(v.event_serial, 1);
+    let text = s.checkpoint("scenario-resources");
+    let restored = HumanSession::restore_with(
+        rules(),
+        "scenario-resources",
+        &text,
+        Some((&save, events())),
+    )
+    .unwrap();
+    assert_eq!(restored.view(), v);
+    // Ending the turn clears the shown boxes; the next round adds one more.
+    send(&mut s, Command::EndTurn);
+    assert!(s.view().event_texts.is_empty());
+    ready(&mut s, 256);
+    assert_eq!(s.view().event_texts.len(), 1);
+    assert_eq!(s.view().event_serial, 2);
+}
+
+/// #327: GIVETECHNOLOGY grants through the shared advance grant, gives the
+/// human a discovery notice and replays; an unknown receiver changes nothing.
+#[test]
+fn scenario_give_technology_grants_notices_and_replays() {
+    let save = crate::tests_support::synthetic_save_bytes();
+    let events = || {
+        Some(crate::events::EventEngine::new(
+            tot_kit::parse_events(
+                "@IF\nTURN\nturn=Every\n@THEN\nGIVETECHNOLOGY\nreceiver=Testers\ntechnology=0\n\
+                 @ENDIF\n@IF\nTURN\nturn=Every\n@THEN\nGIVETECHNOLOGY\nreceiver=Nobody\ntechnology=1\n@ENDIF\n",
+            )
+            .unwrap(),
+        ))
+    };
+    let knows = |s: &HumanSession, t: usize| s.game.world.techs[1][t / 8] & (1 << (t % 8)) != 0;
+    let policy = crate::campaign::AiPolicy::AiV1;
+    let mut s = HumanSession::scenario("test.sav", &save, rules(), events(), 1, policy, 9).unwrap();
+    assert!(!knows(&s, 0) && !knows(&s, 1));
+    next_round(&mut s);
+    assert!(knows(&s, 0));
+    assert!(!knows(&s, 1));
+    assert!(
+        s.view().notices.contains(&Notice::Discovery(0)),
+        "{:?}",
+        s.view().notices
+    );
+    let text = s.checkpoint("scenario-resources");
+    let restored = HumanSession::restore_with(
+        rules(),
+        "scenario-resources",
+        &text,
+        Some((&save, events())),
+    )
+    .unwrap();
+    assert_eq!(restored.view(), s.view());
+    // Already known: the next round's gift changes nothing and adds no notice.
+    next_round(&mut s);
+    assert!(!s.view().notices.contains(&Notice::Discovery(0)));
+}
+
+/// #328: SCENARIOLOADED fires once when the scenario starts, before the
+/// first view, and a restored checkpoint shows the same box.
+#[test]
+fn scenario_loaded_fires_at_start_and_replays() {
+    let save = crate::tests_support::synthetic_save_bytes();
+    let events = || {
+        Some(crate::events::EventEngine::new(
+            tot_kit::parse_events(
+                "@IF\nSCENARIOLOADED\n@THEN\nTEXT\nWelcome.\nENDTEXT\n\
+                 CHANGEMONEY\nreceiver=Testers\namount=5\n@ENDIF\n",
+            )
+            .unwrap(),
+        ))
+    };
+    let policy = crate::campaign::AiPolicy::AiV1;
+    let plain = HumanSession::scenario("test.sav", &save, rules(), None, 1, policy, 9).unwrap();
+    let s = HumanSession::scenario("test.sav", &save, rules(), events(), 1, policy, 9).unwrap();
+    let v = s.view();
+    assert_eq!(v.event_texts, vec!["Welcome.".to_string()]);
+    assert_eq!(s.game.world.treasury[1], plain.game.world.treasury[1] + 5);
+    let text = s.checkpoint("loaded");
+    let restored =
+        HumanSession::restore_with(rules(), "loaded", &text, Some((&save, events()))).unwrap();
+    assert_eq!(restored.view(), v);
+}

@@ -464,6 +464,32 @@ struct CityClick {
     y: f64,
     session_revision: u64,
 }
+/// Lines of one event TEXT box in the notice dialog: each source line
+/// word-wrapped to the dialog, at most [`EVENT_BOX_LINES`] (Macro.txt allows
+/// ten lines of 255 characters; longer boxes end with an ellipsis).
+fn event_box_lines(text: &str) -> Vec<String> {
+    let mut lines: Vec<String> = text
+        .lines()
+        .flat_map(|l| {
+            let w = pedia::wrap(l, 68);
+            if w.is_empty() {
+                vec![String::new()]
+            } else {
+                w
+            }
+        })
+        .collect();
+    while lines.last().is_some_and(String::is_empty) {
+        lines.pop();
+    }
+    if lines.len() > EVENT_BOX_LINES {
+        lines.truncate(EVENT_BOX_LINES - 1);
+        lines.push("…".into());
+    }
+    lines
+}
+const EVENT_BOX_LINES: usize = 16;
+
 pub struct Client {
     loaded: Option<Loaded>,
     /// Presentation-only message log (#284): each turn's notices, oldest
@@ -473,6 +499,10 @@ pub struct Client {
     notice_turn: Option<i16>,
     /// New notices arrived since the log or overlay was last dismissed.
     notice_unread: bool,
+    /// Scenario event TEXT boxes (#326) waiting to open, oldest first, and
+    /// the session's `event_serial` already taken into the queue.
+    event_boxes: Vec<String>,
+    event_seen: u64,
     pub closed: bool,
     advancing: bool,
     saves: PathBuf,
@@ -556,6 +586,8 @@ impl Client {
             notice_log: Vec::new(),
             notice_turn: None,
             notice_unread: false,
+            event_boxes: Vec::new(),
+            event_seen: 0,
             saves,
             // An explicit home (e.g. CIVTOT_HOME) wins; otherwise the last
             // successfully started ToT directory is remembered (#266).
@@ -755,6 +787,42 @@ impl Client {
         self.notice_log.clear();
         self.notice_turn = None;
         self.notice_unread = false;
+        self.event_boxes.clear();
+        self.event_seen = 0;
+    }
+    /// Queues new scenario event TEXT boxes (#326) and opens the oldest as a
+    /// pop-up once the human's turn has no other dialog or city window open
+    /// (required choices come first). Each box is also kept in the log.
+    fn sync_event_boxes(&mut self, v: &HumanView) {
+        if v.event_serial > self.event_seen {
+            let new = usize::try_from(v.event_serial - self.event_seen)
+                .unwrap_or(usize::MAX)
+                .min(v.event_texts.len());
+            let turn = v.observation.turn;
+            for t in &v.event_texts[v.event_texts.len() - new..] {
+                let first = t.lines().map(str::trim).find(|l| !l.is_empty());
+                self.notice_log.push((
+                    turn,
+                    format!("Event: {}", first.unwrap_or("(empty message)")),
+                ));
+                self.event_boxes.push(t.clone());
+            }
+            let excess = self.notice_log.len().saturating_sub(MESSAGE_LOG_CAP);
+            self.notice_log.drain(..excess);
+            self.event_seen = v.event_serial;
+        }
+        if self.event_boxes.is_empty()
+            || self.modal.is_some()
+            || self.city_open
+            || v.phase != Phase::Human
+        {
+            return;
+        }
+        let text = self.event_boxes.remove(0);
+        self.open(Modal::Notice {
+            title: "Scenario event",
+            lines: event_box_lines(&text),
+        });
     }
     /// Appends the current turn's notices to the log once (#284).
     fn sync_notices(&mut self) {
@@ -762,6 +830,7 @@ impl Client {
             self.reset_notices();
             return;
         };
+        self.sync_event_boxes(&v);
         let turn = v.observation.turn;
         if v.notices.is_empty() || self.notice_turn == Some(turn) {
             return;

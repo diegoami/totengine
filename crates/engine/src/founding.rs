@@ -41,7 +41,7 @@ use crate::{City, WorldState};
 /// Rules role of settler-type units.
 pub const ROLE_SETTLE: u8 = 5;
 const ROLE_DEFEND: u8 = 1;
-const PALACE: usize = 1;
+pub(crate) const PALACE: usize = 1;
 /// City flag bit 17: set by `create_city` (and two unidentified writers,
 /// `0x433503`/`0x433570`), cleared by the city-totals refresh `0x430232`
 /// (which otherwise runs every 16th turn per city). Never present in a

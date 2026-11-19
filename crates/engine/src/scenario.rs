@@ -109,18 +109,26 @@ fn counted(list: &[(String, usize)]) -> String {
 /// Event gaps: triggers that never fire and actions that do nothing.
 pub fn event_gaps(events: &EventFile) -> Vec<String> {
     let mut triggers = Vec::new();
+    // Triggers whose game event the engine cannot produce yet.
+    let mut missing_feature = Vec::new();
     let mut actions = Vec::new();
     let mut create_unit = 0;
     let mut flag_tech = 0;
     let mut delay_random = 0;
     let mut other_map = 0;
     let mut aggression = 0;
+    let mut media = 0;
+    let mut no_schism = 0;
     for e in &events.events {
         // Both halves of an @AND event must fire.
         for half in std::iter::once(&e.trigger).chain(&e.and) {
             let t = half.keyword.to_ascii_uppercase();
             if !FIRED_TRIGGERS.contains(&t.as_str()) {
-                summarize(&mut triggers, &t);
+                let list = match t.as_str() {
+                    "BRIBEUNIT" | "NEGOTIATION" => &mut missing_feature,
+                    _ => &mut triggers,
+                };
+                summarize(list, &t);
             } else if t == "CHECKFLAG" && half.param("technology").is_some() {
                 flag_tech += 1;
             }
@@ -147,6 +155,8 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
                 // CREATEUNIT's coordinate block.
                 "LOCATIONS" | "ENDLOCATIONS" => {}
                 "PLAYCDTRACK" | "DONTPLAYWONDERS" => {}
+                "PLAYWAVEFILE" | "PLAYAVIFILE" => media += 1,
+                "NOSCHISM" => no_schism += 1,
                 _ => summarize(&mut actions, &k),
             }
         }
@@ -156,6 +166,12 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
         gaps.push(format!(
             "Events that never fire (trigger not supported): {}",
             counted(&triggers)
+        ));
+    }
+    if !missing_feature.is_empty() {
+        gaps.push(format!(
+            "Events that never fire because units cannot be bribed and there is no diplomacy yet: {}",
+            counted(&missing_feature)
         ));
     }
     if !actions.is_empty() {
@@ -187,6 +203,18 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
         gaps.push(format!(
             "MAKEAGGRESSION declares war, but a human party's treaty-break consequences are not modelled ({aggression} action{})",
             plural(aggression)
+        ));
+    }
+    if media > 0 {
+        gaps.push(format!(
+            "Event sounds and videos are not played ({media} action{})",
+            plural(media)
+        ));
+    }
+    if no_schism > 0 {
+        gaps.push(format!(
+            "NOSCHISM has nothing to prevent: the engine never splits a civilization in civil war ({no_schism} action{})",
+            plural(no_schism)
         ));
     }
     if create_unit > 0 {
@@ -306,7 +334,30 @@ mod tests {
         )
         .unwrap();
         let gaps = event_gaps(&file);
-        assert!(gaps.iter().any(|g| g.contains("NEGOTIATION")), "{gaps:?}");
+        assert!(
+            gaps.iter()
+                .any(|g| g.contains("no diplomacy") && g.contains("NEGOTIATION")),
+            "{gaps:?}"
+        );
+        // Sounds and NOSCHISM say why they change nothing (#328).
+        let media = event_gaps(
+            &tot_kit::parse_events(
+                "@IF\nTURN\nturn=1\n@THEN\nPLAYWAVEFILE\nx.wav\nNOSCHISM\nwhom=A\n@ENDIF\n",
+            )
+            .unwrap(),
+        );
+        assert!(
+            media.iter().any(|g| g.starts_with("Event sounds")),
+            "{media:?}"
+        );
+        assert!(
+            media.iter().any(|g| g.starts_with("NOSCHISM has nothing")),
+            "{media:?}"
+        );
+        assert!(
+            !media.iter().any(|g| g.contains("do nothing yet")),
+            "{media:?}"
+        );
         assert!(
             gaps.iter().any(|g| g.contains("MAKEAGGRESSION")),
             "{gaps:?}"

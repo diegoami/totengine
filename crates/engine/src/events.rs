@@ -242,10 +242,11 @@ impl EventEngine {
         let file = std::mem::take(&mut self.file);
         let mut effects = Vec::new();
         for (i, e) in file.events.iter().enumerate() {
+            let justonce = e
+                .actions
+                .iter()
+                .any(|a| a.keyword.eq_ignore_ascii_case("JUSTONCE"));
             for half in 0..2 {
-                if self.fired.contains(&i) {
-                    break;
-                }
                 let t = match half {
                     0 => &e.trigger,
                     _ => match &e.and {
@@ -253,7 +254,14 @@ impl EventEngine {
                         None => break,
                     },
                 };
-                if t.keyword.eq_ignore_ascii_case(trigger) && trigger_matches(t, ctx, roll) {
+                if !t.keyword.eq_ignore_ascii_case(trigger) {
+                    continue;
+                }
+                // The original's evaluators walk every record, spent ones
+                // included: a spent RANDOMTURN half still draws its roll
+                // (0x4d2fa6) and the dispatcher then refuses it (0x4d3b04).
+                let matched = trigger_matches(t, ctx, roll, justonce);
+                if matched && !self.fired.contains(&i) {
                     self.activate(i, e, half, ctx, &mut effects);
                 }
             }
@@ -767,8 +775,14 @@ impl FlagTest {
     }
 }
 
-/// Party and turn conditions of one trigger (half).
-fn trigger_matches(t: &tot_kit::Command, ctx: &Ctx, roll: &mut dyn FnMut(i32) -> bool) -> bool {
+/// Party and turn conditions of one trigger (half). `justonce`: the event
+/// carries JUSTONCE (TURN's turn-22/42 catch-up needs it).
+fn trigger_matches(
+    t: &tot_kit::Command,
+    ctx: &Ctx,
+    roll: &mut dyn FnMut(i32) -> bool,
+    justonce: bool,
+) -> bool {
     if !matches(word_of(t.param("unit")), ctx.unit.as_deref())
         || !matches(word_of(t.param("attacker")), ctx.attacker.as_deref())
         || !matches(word_of(t.param("defender")), ctx.defender.as_deref())
@@ -784,24 +798,51 @@ fn trigger_matches(t: &tot_kit::Command, ctx: &Ctx, roll: &mut dyn FnMut(i32) ->
             return false;
         }
     }
-    // TURN: turn=N or turn=Every (Macro.txt)
     if t.keyword.eq_ignore_ascii_case("TURN") {
+        // civ2.bak 0x4d2df7: `turn=Every` is stored as -1.
         let every = word_of(t.param("turn")).is_some_and(|w| w.eq_ignore_ascii_case("every"));
-        let n = t.param("turn").and_then(|v| v.number());
-        if !(every || (n.is_some() && n == ctx.turn)) {
+        let n = if every {
+            Some(-1)
+        } else {
+            t.param("turn").and_then(|v| v.number())
+        };
+        let (Some(n), Some(turn)) = (n, ctx.turn) else {
             return false;
-        }
+        };
+        return turn_fires(n, turn, t.has_word("CONTINUOUS"), justonce);
     }
-    // TURNINTERVAL: modelled as `turn % interval == 0`. Macro.txt
-    // counts from the last activation; the two agree when that
-    // was a multiple of the interval (unverified otherwise).
+    // TURNINTERVAL (civ2.bak 0x4d2efa): `turn % interval == 0`, and every
+    // turn when the interval is 0. Macro.txt counts from the last
+    // activation; the original does not.
     if t.keyword.eq_ignore_ascii_case("TURNINTERVAL") {
-        let i = t.param("interval").and_then(|v| v.number()).unwrap_or(0);
-        if i <= 0 || ctx.turn.is_none_or(|turn| turn % i != 0) {
+        let Some(i) = t.param("interval").and_then(|v| v.number()) else {
+            return false;
+        };
+        if i != 0 && ctx.turn.is_none_or(|turn| turn % i != 0) {
             return false;
         }
     }
     true
+}
+
+/// TURN's test (civ2.bak 0x4d2df7), for an unspent event at turn start:
+/// - `n == -1` (Every) or `n == turn` fires;
+/// - on turns 22 and 42 an earlier-turn JUSTONCE event fires too (a
+///   catch-up for one-shot events that never ran);
+/// - `Continuous` fires on every turn after `n`.
+pub fn turn_fires(n: i32, turn: i32, continuous: bool, justonce: bool) -> bool {
+    n == -1 || n == turn || (n < turn && ((justonce && (turn == 22 || turn == 42)) || continuous))
+}
+
+/// RANDOMTURN's roll (civ2.bak 0x4d2fa6): `rand() % n + 1 == n` with the
+/// CRT `rand()` (0x5b11d0), drawn only when `n > 1`; `n == 1` always fires
+/// and `n < 1` never does.
+pub fn random_turn_roll(n: i32, rand: &mut dyn FnMut() -> u32) -> bool {
+    if n > 1 {
+        (rand() as i32) % n + 1 == n
+    } else {
+        n == 1
+    }
 }
 
 #[cfg(test)]
@@ -1237,5 +1278,94 @@ mod tests {
                 },
             ]
         );
+    }
+
+    #[test]
+    fn turn_fires_on_its_turn_every_turn_continuous_and_the_22_42_catch_up() {
+        // (n, turn, continuous, justonce) -> fires (civ2.bak 0x4d2df7)
+        for (n, turn, c, j, want) in [
+            (5, 5, false, false, true),
+            (5, 6, false, false, false),
+            (-1, 9, false, false, true),
+            (5, 6, true, false, true),
+            (5, 4, true, false, false),
+            (5, 22, false, true, true),
+            (5, 42, false, true, true),
+            (5, 22, false, false, false),
+            (30, 22, false, true, false),
+            (5, 23, false, true, false),
+        ] {
+            assert_eq!(turn_fires(n, turn, c, j), want, "{n} {turn} {c} {j}");
+        }
+        let f = parse_events(
+            "@IF\nTURN\nturn=3\ncontinuous\n@THEN\nCHANGEMONEY\nreceiver=Gauls\namount=1\n@ENDIF\n\
+             @IF\nTURN\nturn=1\n@THEN\nJUSTONCE\nCHANGEMONEY\nreceiver=Gauls\namount=10\n@ENDIF\n",
+        )
+        .unwrap();
+        let mut eng = EventEngine::new(f);
+        let fired = |eng: &mut EventEngine, t: i32| {
+            let ctx = Ctx {
+                turn: Some(t),
+                ..Default::default()
+            };
+            start(eng, &ctx, &mut |_| false).len()
+        };
+        assert_eq!(fired(&mut eng, 2), 0);
+        assert_eq!(fired(&mut eng, 3), 1);
+        assert_eq!(fired(&mut eng, 4), 1, "continuous after its turn");
+        // The JUSTONCE turn-1 event never ran: turn 22 catches it up, once.
+        assert_eq!(fired(&mut eng, 22), 2);
+        assert_eq!(fired(&mut eng, 42), 1);
+    }
+
+    #[test]
+    fn turninterval_zero_fires_every_turn() {
+        let f = parse_events(
+            "@IF\nTURNINTERVAL\ninterval=0\n@THEN\nCHANGEMONEY\nreceiver=Gauls\namount=1\n@ENDIF\n",
+        )
+        .unwrap();
+        let mut eng = EventEngine::new(f);
+        for t in [1, 7] {
+            let ctx = Ctx {
+                turn: Some(t),
+                ..Default::default()
+            };
+            assert_eq!(start(&mut eng, &ctx, &mut |_| false).len(), 1);
+        }
+    }
+
+    #[test]
+    fn random_turn_rolls_the_crt_and_spent_events_still_draw() {
+        // rand() % n + 1 == n, drawn only when n > 1 (civ2.bak 0x4d2fa6).
+        let mut draws = 0;
+        let mut seq = [3u32, 4].into_iter();
+        let mut rand = || {
+            draws += 1;
+            seq.next().unwrap()
+        };
+        assert!(random_turn_roll(1, &mut rand));
+        assert!(!random_turn_roll(0, &mut rand));
+        assert!(!random_turn_roll(-3, &mut rand));
+        assert!(!random_turn_roll(5, &mut rand), "3 % 5 + 1 = 4");
+        assert!(random_turn_roll(5, &mut rand), "4 % 5 + 1 = 5");
+        assert_eq!(draws, 2);
+        let f = parse_events(
+            "@IF\nRANDOMTURN\ndenominator=3\n@THEN\nJUSTONCE\nCHANGEMONEY\nreceiver=Gauls\namount=1\n@ENDIF\n",
+        )
+        .unwrap();
+        let mut eng = EventEngine::new(f);
+        let ctx = Ctx {
+            turn: Some(1),
+            ..Default::default()
+        };
+        let mut asked = 0;
+        for _ in 0..3 {
+            start(&mut eng, &ctx, &mut |_| {
+                asked += 1;
+                true
+            });
+        }
+        assert_eq!(eng.fired_count(), 1);
+        assert_eq!(asked, 3, "the spent event keeps drawing");
     }
 }

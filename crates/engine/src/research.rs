@@ -11,8 +11,6 @@
 //! unreachable advance (or an unresolvable prerequisite abbreviation) is
 //! a parse/table defect, reported — never silently ignored.
 
-use std::collections::HashMap;
-
 use tot_kit::{Rules, WonderDef};
 
 /// One advance with prerequisites resolved to indices.
@@ -78,31 +76,56 @@ pub fn human_research_list(
     list
 }
 
+/// The slot an advance reference names (see [`tot_kit::Rules::advance_slot`]).
+fn slot_of(ids: &[String], fixed: bool, raw: &str) -> Option<usize> {
+    let raw = raw.trim();
+    if fixed {
+        ids.iter().position(|id| id == raw)
+    } else {
+        ids.iter().position(|id| id.eq_ignore_ascii_case(raw))
+    }
+}
+
 /// The research tree of one Rules.txt.
 #[derive(Debug, Clone, Default)]
 pub struct TechTree {
     pub techs: Vec<Tech>,
     /// Prerequisite abbreviations that resolved to nothing (data defect).
     pub unresolved_prereqs: Vec<String>,
-    abbrev_to_id: HashMap<String, usize>,
+    /// Slot identifiers references are matched against: the original's
+    /// fixed [`tot_kit::ADVANCE_IDS`] for a complete 100-row section
+    /// (exact), else the row comments (engine fixtures; case-insensitive).
+    slot_ids: Vec<String>,
+    fixed: bool,
 }
 
 impl TechTree {
     pub fn from_rules(rules: &Rules) -> Self {
         let defs = rules.tech_defs();
-        let mut abbrev_to_id = HashMap::new();
-        for (i, d) in defs.iter().enumerate() {
-            if let Some(a) = &d.abbrev {
-                abbrev_to_id.entry(a.clone()).or_insert(i);
-            }
-        }
+        let fixed = rules
+            .section("CIVILIZE")
+            .is_some_and(|s| s.rows.len() >= 100);
+        let slot_ids: Vec<String> = if fixed {
+            tot_kit::ADVANCE_IDS.iter().map(|s| s.to_string()).collect()
+        } else {
+            defs.iter()
+                .map(|d| {
+                    d.abbrev
+                        .as_deref()
+                        .unwrap_or("")
+                        .trim()
+                        .trim_start_matches('*')
+                        .to_string()
+                })
+                .collect()
+        };
         let mut unresolved = Vec::new();
         let techs = defs
             .into_iter()
             .map(|d| {
                 let mut defective = false;
                 let prereqs = d.prereqs.map(|p| {
-                    let id = p.as_ref().and_then(|a| abbrev_to_id.get(a).copied());
+                    let id = p.as_ref().and_then(|a| slot_of(&slot_ids, fixed, a));
                     if p.is_some() && id.is_none() {
                         defective = true;
                         if let Some(a) = &p {
@@ -125,12 +148,13 @@ impl TechTree {
         TechTree {
             techs,
             unresolved_prereqs: unresolved,
-            abbrev_to_id,
+            slot_ids,
+            fixed,
         }
     }
 
     pub fn by_abbrev(&self, abbrev: &str) -> Option<usize> {
-        self.abbrev_to_id.get(abbrev).copied()
+        slot_of(&self.slot_ids, self.fixed, abbrev).filter(|&k| k < self.techs.len())
     }
 
     /// Can `id` be researched given the known set? (All prereqs known.)

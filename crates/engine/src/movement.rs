@@ -232,7 +232,7 @@ mod tests {
     #[test]
     fn original_maximum_movement_and_world_adapter() {
         let advances: String = (0..100)
-            .map(|n| format!("Advance{n},0,0,nil,nil,0,0 ; T{n}\n"))
+            .map(|n| format!("Advance{n},0,0,nil,nil,0,0 ; {}\n", tot_kit::ADVANCE_IDS[n]))
             .collect();
         let mut cases = 0;
         for line in include_str!("../../../docs/evidence/movement-allowance-vectors.txt")
@@ -256,7 +256,7 @@ mod tests {
             };
             assert_eq!(movement_allowance(&input), v[10] as u32, "pure {line}");
             let rules = tot_kit::parse_rules(&format!(
-                "@UNITS\nTest,nil,{},{}.,0,1a,1d,{}h,1f,1,0,0,nil,{:015b}\n@CIVILIZE\n{}@ENDWONDER\nnil\nnil\nnil\nT0\nnil\nnil\nnil\nnil\nnil\nnil\nnil\nnil\nnil\n",
+                "@UNITS\nTest,nil,{},{}.,0,1a,1d,{}h,1f,1,0,0,nil,{:015b}\n@CIVILIZE\n{}@ENDWONDER\nnil\nnil\nnil\nAFl\nnil\nnil\nnil\nnil\nnil\nnil\nnil\nnil\nnil\n",
                 v[1], v[0], v[3]/10, v[2], advances));
             let mut w = crate::boot(&crate::tests_support::synthetic_save(), 1);
             w.techs = [[0; 13]; 8];

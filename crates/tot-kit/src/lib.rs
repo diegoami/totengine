@@ -14,11 +14,11 @@ mod pedia;
 mod rules;
 mod sav;
 
-pub use events::{parse_events, Command, Event, EventError, EventFile, Value};
+pub use events::{parse_events, Command, Event, EventError, EventFile, Value, MODIFIERS};
 pub use labels::{Labels, MONTH_LABEL};
 pub use mp::{parse_mp, parse_mp_file, MpFormat, MpMap};
 pub use pedia::{Pedia, PediaEntry, PediaSection};
-pub use rules::{emit_rules, parse_rules, Rules, Section, TechDef, WonderDef};
+pub use rules::{emit_rules, parse_rules, Rules, Section, TechDef, WonderDef, ADVANCE_IDS};
 pub use sav::{
     civ_names_from, emit_sav, latin1, parse_sav, parse_sav_file, CalendarSettings, CityRecord,
     CivNames, MapBlock, MapHeader, ResearchSettings, ResearchState, SavEditor, SavError, SaveFile,

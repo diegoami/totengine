@@ -174,6 +174,12 @@ pub struct HumanView {
     pub observation: Observation,
     pub decision: Option<Decision>,
     pub notices: Vec<Notice>,
+    /// Scenario event TEXT boxes shown to the human since its last turn ended
+    /// (#326), oldest first; `No Broadcast` boxes only when it triggered them.
+    pub event_texts: Vec<String>,
+    /// How many event boxes the human has been shown in this session; a
+    /// client shows the last `event_serial - seen` of `event_texts`.
+    pub event_serial: u64,
     pub units: Vec<Entity>,
     pub cities: Vec<Entity>,
     /// Identities only for cities present in the filtered observation.
@@ -223,6 +229,11 @@ pub struct HumanSession {
     next_decision: u64,
     receipts: BTreeMap<u64, (Request, Response)>,
     notices: Vec<Notice>,
+    /// Event TEXT boxes for the human since its last turn ended (#326).
+    event_texts: Vec<String>,
+    event_serial: u64,
+    /// Entries of the event engine's text log already examined.
+    event_cursor: usize,
     journal: Vec<Operation>,
 }
 
@@ -386,6 +397,9 @@ impl HumanSession {
             next_decision: 1,
             receipts: BTreeMap::new(),
             notices: Vec::new(),
+            event_texts: Vec::new(),
+            event_serial: 0,
+            event_cursor: 0,
             journal: Vec::new(),
         };
         session.remember();
@@ -553,6 +567,8 @@ impl HumanSession {
             phase: self.phase(),
             decision: self.decision.clone(),
             notices: self.notices.clone(),
+            event_texts: self.event_texts.clone(),
+            event_serial: self.event_serial,
             units: self
                 .game
                 .world
@@ -614,7 +630,26 @@ impl HumanSession {
         }
     }
 
+    /// Takes the event TEXT boxes fired since the last call that the human
+    /// may see. Runs after every AI step, round and human input, so boxes
+    /// fired by opponents wait for the human's turn in order.
+    fn collect_event_texts(&mut self) {
+        let Some(events) = &self.game.events else {
+            return;
+        };
+        let civ = self.game.world.civ_name(self.human);
+        let start = self.event_cursor.min(events.log.len());
+        for t in &events.log[start..] {
+            if t.shown_to(&civ) {
+                self.event_texts.push(t.text.clone());
+                self.event_serial += 1;
+            }
+        }
+        self.event_cursor = events.log.len();
+    }
+
     fn remember(&mut self) {
+        self.collect_event_texts();
         let w = &self.game.world;
         let bit = 1u8 << self.human;
         let mut visible = vec![false; w.map.terrain.len()];
@@ -1009,6 +1044,8 @@ impl HumanSession {
             self.last_human = Some(result.clone());
         }
         if order == Some(Order::EndTurn) {
+            // Boxes already shown during this turn are not repeated next turn.
+            self.event_texts.clear();
             self.next_civ();
         }
         self.remember();
@@ -1123,6 +1160,14 @@ impl HumanSession {
                 .filter(|(c, _)| *c == self.human)
                 .map(|(_, a)| Notice::Discovery(a)),
         );
+        // GIVETECHNOLOGY gifts from the round's events (#327).
+        self.notices
+            .extend(summary.events.iter().filter_map(|(_, a)| match a {
+                crate::effects::Applied::Advance { civ, advance } if *civ == self.human => {
+                    Some(Notice::Discovery(*advance))
+                }
+                _ => None,
+            }));
         if summary.revolutions.contains(&self.human) {
             self.notices.push(Notice::Revolution);
         }

@@ -27,6 +27,7 @@ minimap. Layout B replaces this with one frame:
 | Right column, top | Minimap of the known world with the view rectangle; a click recentres. | — |
 | Right column, middle | Civilization status: name, year and turn, treasury, tax/lux/sci rates, research topic and progress. Active unit box: name, veteran, moves, home city, terrain, others on the tile. | — |
 | Right column, bottom | "End of Turn (Press ENTER)" prompt when no unit can move; an End turn button. | Message log dock: the last turns' notices, and a link to the full log. |
+| Side column (16:9 and wider, #337) | — | On by default when the stage is at least 1264 logical pixels wide (owner, 2026-11-19): the latest turn's messages wrapped in full, earlier ones newest first, and All messages. Replaces the dock and the new-messages overlay; the map is narrower by the column. City window and dialogs unchanged. |
 | City | One window over the dimmed map: title with Previous/Next, citizens strip, resources, radius map, food and production boxes with Buy/Change, improvements, supported and present units. | Tile tooltips, sorting in the side panel. |
 | Science advisor | One window: portrait slot (from the install), research progress, goal, known advances. | Turn estimates for the goal path, sortable "available next" list. |
 

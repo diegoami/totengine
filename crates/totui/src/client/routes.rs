@@ -722,10 +722,12 @@ impl Client {
             Modal::Messages => self.message_draws(draws),
             Modal::Settings => {}
             Modal::Notice { lines, .. } => {
+                // Long scenario event boxes (#326) use a tighter step.
+                let step = if lines.len() > 8 { 26. } else { 40. };
                 for (i, s) in lines.iter().enumerate() {
                     line(
                         draws,
-                        190. + i as f64 * 40.,
+                        190. + i as f64 * step,
                         s,
                         style::TYPE_BODY,
                         style::TEXT,

@@ -1,9 +1,12 @@
-//! Read-only projection of classic saved map knowledge (#197).
+//! Classic saved-map knowledge projection and bounded update kernels (#197).
 //!
 //! Native reader gates/size selection and unit exploration are re-derived by
 //! tools/import_knowledge_check.py. This does not implement the native loader,
-//! continuing contact/invisibility updates, or faithful scenario admission.
+//! complete contact/invisibility updates, or faithful scenario admission.
 use tot_kit::{MapBlock, SaveFile};
+
+mod update;
+pub use update::unit_knowledge_after;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SavedTile {
@@ -205,6 +208,24 @@ pub fn explored_by_unit(save: &SaveFile, scout: Scout) -> Result<Vec<usize>, Str
     if (u32::from(scout.x) + u32::from(scout.y)) % 2 != 0 {
         return Err("unsupported saved-map scout coordinate parity".into());
     }
+    let mut indices: Vec<_> = nearby(save, scout.x, scout.y)?
+        .into_iter()
+        .filter(|&(k, i)| {
+            k < 8
+                || k == 20
+                || (scout.extended
+                    && (scout.domain == 1 || (map.terrain(i) == 10) == (scout.domain == 2)))
+        })
+        .map(|(_, i)| i)
+        .collect();
+    indices.sort_unstable();
+    indices.dedup();
+    Ok(indices)
+}
+
+fn nearby(save: &SaveFile, x: u16, y: u16) -> Result<Vec<(usize, usize)>, String> {
+    surface(save)?;
+    let (w, _) = save.map_header.logical_dims();
     const OFFSETS: [(i32, i32); 25] = [
         (1, -1),
         (2, 0),
@@ -235,8 +256,8 @@ pub fn explored_by_unit(save: &SaveFile, scout: Scout) -> Result<Vec<usize>, Str
     let flat = save.game_flags & 0x8000 != 0;
     let mut indices = Vec::new();
     for (k, (dx, dy)) in OFFSETS.into_iter().enumerate() {
-        let mut x = i32::from(scout.x) + dx;
-        let y = i32::from(scout.y) + dy;
+        let mut x = i32::from(x) + dx;
+        let y = i32::from(y) + dy;
         if !flat {
             // Native 0x566ae2 performs one correction, not repeated modulo.
             if x < 0 {
@@ -251,17 +272,7 @@ pub fn explored_by_unit(save: &SaveFile, scout: Scout) -> Result<Vec<usize>, Str
         let Some(i) = save.map_header.stored_index(x as usize, y as usize) else {
             continue;
         };
-        if k >= 8 && k != 20 {
-            if !scout.extended {
-                continue;
-            }
-            if scout.domain != 1 && (map.terrain(i) == 10) != (scout.domain == 2) {
-                continue;
-            }
-        }
-        indices.push(i);
+        indices.push((k, i));
     }
-    indices.sort_unstable();
-    indices.dedup();
     Ok(indices)
 }

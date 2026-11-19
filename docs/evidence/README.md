@@ -412,6 +412,68 @@ python3 tools/import_knowledge_check.py --out /tmp/import-knowledge.json \
   --vectors /tmp/import-knowledge-vectors.txt
 ```
 
+#### Native unit knowledge writes (2026-11-20, #197)
+
+[`import-visibility.json`](import-visibility.json) and
+[`import-visibility-vectors.txt`](import-visibility-vectors.txt) retain 768
+numeric transitions from unpatched `civ2.bak`. The probe executes
+`0x41f8a7..0x4205a7`, the exploration loop and both adjacent/outer entity
+observation loops, with **original callees and no replacements**. Locals select
+normal single-player/non-cheat observation; every live unit is awake and lacks
+invisibility flag 8, and all foreign relationships have bits 1/4/8. It stops
+before presentation. A hook fails on first-contact/presentation entry, rather
+than suppressing it. Native AI sighting bookkeeping may execute; it is outside
+the knowledge comparison and is not implemented by the new kernel.
+
+The vectors vary observer civ 1/4/7, all four domain bytes, both extended-sight
+flags, all 24 neighboring offsets, cities at either/both endpoints, foreign
+exploration of the scout's tile, zero/nonzero scout attack, flat/wrapped edge
+contexts, and initial entity masks 0/1/128/255. Friendly and foreign endpoints
+are covered, with complete two-unit stacks or no neighboring units (city-only
+and empty-tile contexts). Out-of-bounds neighboring endpoints are absent. The native output
+check asserts that only the observer's explored bits/improvement cache, city
+knowledge/size, and unit visibility fields change within the compared
+map/city/unit records. Other civs' improvement caches and all other record
+bytes remain identical.
+
+Findings within that context:
+
+- Exploration refreshes actual improvement byte +1 in the observer's cache;
+  its footprint matches the earlier 240 exploration vectors.
+- Adjacent foreign cities update `known_to` and the observer's remembered size
+  through `0x42fa90`; they also see the scout's whole stack through `0x56aebe`.
+- Adjacent ordinary stacks see one another, except that a stack inside a city
+  is not revealed by this path. City observation and unit visibility are
+  separate writes.
+- In the outer ring, extended sight admits city memory and ordinary foreign
+  stacks according to domain/terrain. An extended foreign stack can see the
+  scout in return, independently of the scout's own range. A foreign city can
+  see an armed scout if its owner has already explored the scout's tile.
+- These loops OR entity masks; they do not clear old visibility. A separate
+  reset/lifecycle is still required before these masks can drive runtime fog.
+
+`engine::saved_knowledge::unit_knowledge_after` implements **only those knowledge
+writes**, returning a new decoded snapshot. It accepts coherent ordinary
+surface stacks with matching sight properties, owner/occupancy agreement,
+awake non-invisible units, bounded city sizes and established treaty bits
+1/4/8; other contexts reject without mutating the input. The Rust suite compares
+all 768 native outputs, checks writes are restricted to knowledge fields,
+checks idempotence, rejects unsupported contexts, and retains remembered city
+size after a scout leaves. This is an internal continuation building block,
+not an exporter or playable import path. Human/world runtime, format-2/3
+checkpoint semantics and profile admission are unchanged.
+
+Still required: visibility resets, first contact, invisibility/detectors,
+order wakes, AI sighting bookkeeping, city-phase/alliance/Apollo refreshes,
+loader/startup timing, and versioned runtime/checkpoint integration. No native
+movement, live UI, full continuing-knowledge parity or faithful entry is claimed.
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+python3 tools/import_visibility_check.py --out /tmp/import-visibility.json \
+  --vectors /tmp/import-visibility-vectors.txt
+```
+
 #### Versioned experimental initializer (2026-11-19, #197)
 
 This is engine persistence policy, not a claim about additional native bytes.

@@ -14,6 +14,15 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_unit_knowledge_update_vectors_match_native_report(self):
+        report = json.loads((ROOT / 'docs/evidence/import-visibility.json').read_text())
+        vectors = (ROOT / 'docs/evidence/import-visibility-vectors.txt').read_bytes()
+        self.assertEqual(hashlib.sha256(vectors).hexdigest(), report['vectors_sha256'])
+        cases = [line for line in vectors.decode().splitlines()
+                 if line and not line.startswith('#')]
+        self.assertEqual(len(cases), report['cases'])
+        self.assertEqual(len(set(cases)), len(cases))
+
     def test_saved_knowledge_vectors_match_native_report(self):
         report = json.loads((ROOT / 'docs/evidence/import-knowledge.json').read_text())
         vectors = (ROOT / 'docs/evidence/import-knowledge-vectors.txt').read_bytes()

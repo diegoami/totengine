@@ -73,7 +73,8 @@ checkpoint restoration. Both browser and SDL input must save and reload format
 3 scenarios through the existing experimental route.
 
 Faithful admission still needs the complete original knowledge/remembered-city
-mapping (including the known extra engine-sight tile), an independently admitted
+lifecycle (the saved readers and bounded unit-update kernel are documented in
+the evidence README; runtime still adds the known extra engine-sight tile), an independently admitted
 SCN startup context where applicable, full dependency checks and the separate
 #198 atomic entry/confirmation routes with owner acceptance. This persistence
 slice does not waive these predicates, adopt original AI/RNG continuation,

@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "method": "Execute the normal unit knowledge-update loops in unpatched civ2.bak.\n\n0x41f8a7..0x4205a7 executes exploration, adjacent city/stack observation,\nand outer-ring reciprocal sight with original callees, without replacements.\nPrepared locals represent the normal single-player, non-cheat context. All\nunits are awake, non-invisible; foreign relationships have treaty bits 1/4/8.\nThe fragment stops before presentation. First-contact calls are forbidden.\nAI sighting bookkeeping may execute but is not part of the compared output.",
+  "cases": 768,
+  "vectors_sha256": "68dc8662eac6e099a0b94b99fae76d2a103079cc0621be9888a394b4cfba1768",
+  "limits": "Controlled single surface map, normal awake non-invisible units, established treaty bits 1/4/8. Knowledge fields only; no live loader/movement, contact, AI sighting bookkeeping, visibility reset, city phase or faithful runtime admission."
+}

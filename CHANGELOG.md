@@ -5,6 +5,28 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+## [0.21.0] — Layout B and experimental scenario play on both clients
+
+Everything since v0.20.0; the owner directed the release on 2026-11-19.
+- **Layout B milestone** (#310–#316): a menu bar, a right column with
+  minimap, status and unit box, the classic city window and science advisor,
+  an optional order strip and message dock, the whole screen with full-screen
+  mode (#321), and a side column for messages on wide screens (#337). The
+  owner accepted it on both clients (#316).
+- **Experimental scenario entry** (#325, owner decision 2026-11-18): open
+  installed `.scn`/`.sav` files in both clients behind a preflight that lists
+  every known gap.
+- **Scenario support behind that entry:**
+  - events (#326–#328): TEXT pop-ups, GIVETECHNOLOGY, flags and @AND,
+    actions and triggers decoded from `civ2.bak`;
+  - advances resolved by fixed slot ids, so the built-in AI plays more
+    scenario Rules (#329);
+  - scenario dates and labels (#330);
+  - multi-map and ToTPP `0x33` scenarios opening on their first map (#331).
+
+This is not faithful scenario import: #197/#198 remain the target. Source
+release without new client archives.
+
 - **Multi-map scenarios open on their first map** (#331). Save files carry
   header `raw[7] + 1` maps, as the original's own writer and loader loop them;
   Midgard (four maps) now decodes and starts in both clients and headless.

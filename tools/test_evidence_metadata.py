@@ -20,9 +20,13 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(
             meta['golden']['sha256'], actual,
             'generated-campaign-v1.json golden.sha256 does not match the .ctc file')
+        major, minor, _ = meta['golden']['engine_version'].split('.')
         self.assertIn(
-            'v0.19', meta['golden']['refresh'],
+            f'v{major}.{minor} candidate', meta['golden']['refresh'],
             'the refresh note should name the current candidate version')
+        self.assertIn(
+            f"engine {meta['golden']['engine_version']}\n", golden.read_text(),
+            'the golden header should carry the recorded engine version')
 
 
 if __name__ == '__main__':

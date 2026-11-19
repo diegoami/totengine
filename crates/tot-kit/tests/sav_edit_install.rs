@@ -9,13 +9,15 @@ fn read(rel: &str) -> Option<Vec<u8>> {
 
 #[test]
 fn real_saves_roundtrip_byte_identically() {
-    // Midgard carries hdr[7] + 1 = 4 map blocks (#331) and round-trips too.
+    // Multi-map files (Midgard: 4 maps; ToTPP 0x33 Warring States: 2) round-trip too (#331).
     for rel in [
         "FallRome/ROMFALL.scn",
         "FallRome/SCN/ROMFALL_WRE.scn",
         "Scenario/FallRome/Va_Auto.SAV",
         "Midgard/Midgard.SCN",
         "Midgard/Oc_Auto2.SAV",
+        "Scenario/china/Warring States.scn",
+        "Scenario/china/deiQin.sav",
     ] {
         let Some(raw) = read(rel) else {
             eprintln!("skipping {rel}: not present");

@@ -533,7 +533,7 @@ impl WorldState {
     }
 
     /// Advance the turn and apply the original calendar when its settings
-    /// are decoded. Unsupported 0x33 scenario calendars retain their year.
+    /// are decoded. Files without a located calendar retain their year.
     pub fn advance_turn(&mut self) -> TurnReport {
         self.turn = self.turn.wrapping_add(1);
         if let Some(settings) = self.calendar {

@@ -377,192 +377,6 @@ SAVE_VERSIONS = {0x0027: "Classic/CiC", 0x0028: "Fantastic Worlds",
                  0x0033: "ToT 1.1 + ToTPP (extended)"}
 
 
-def walk_ext033(data, hdr, blob10240_end, out):
-    """Deep-walk the ToTPP 0x33 extension (proven on the Warring States
-    family: Warring States.scn / Hu_Auto.SAV / deiYan.sav / deiQin.sav,
-    2026-11-02). Layout relative to blob10240_end:
-
-      [+0, +32+15*surface)   extended per-tile arrays (mostly sparse; a
-                             dense 6 B/tile band and a 10,240-B blob sit
-                             inside; sub-layout open)
-      [+u0, +u0+40*N)        unit records, 40 B, count-based
-      [+4 interlude)         4 bytes (00 00 2a 00 seen)
-      [+c0, +c0+92*M)        city records, 92 B, count-based
-      [+c_end, LUAE|EOF)     fixed-size post-city block (~12.9 KB)
-
-    0x33 unit record layout (differs from the 0x32 base layout!):
-      @0  u16 id — sequential, re-assigned on every save
-      @2  u16 tail short (values 0..7 observed, bulk = 2; role open)
-      @4  u16 = 2 on the bulk (the 16 id-0 records excepted)
-      @6  u16 varies 0..7 (sub-kind? role open)
-      @10/@12 s16 x/y — LOGICAL grid coords; off-board units carry
-      negative coords (-100/-500 observed)
-      @18 u8 type — Rules.txt @UNITS index (190 rows in Warring
-      States; values 0..188 observed)
-      @19 u8 owner — 0=barbarians, 1..7 = civs
-      @28 u16 optional link, 0xffff = none (home city?)
-      remaining bytes flags/counters (open)
-
-    Verified arithmetic: deiQin − deiYan = +198 units (+7,920) and +11
-    city slots (+1,012), post-city block −92 = +8,840 bytes exactly;
-    scn vs Hu_Auto (load+autosave, same sizes) keep 1442 units, of
-    which 1352 sit at an (x,y) occurring somewhere in the .scn, ids
-    re-assigned 6527..7967 -> 10..1450.
-    """
-    import struct as _s
-    surface = hdr[2]
-    xmax, ymax = 2 * hdr[0], hdr[1]
-    lua = data.find(b"LUAE", blob10240_end)
-    end = lua if lua > 0 else len(data)
-    ustart = blob10240_end + 32 + 15 * surface
-
-    def urec_valid(rec):
-        if rec.count(0) == 40:
-            return False
-        uid, f2 = _s.unpack_from("<HH", rec, 0)
-        x, y = _s.unpack_from("<hh", rec, 10)
-        return (uid < 8192 and f2 < 16
-                and -1000 <= x <= xmax and -1000 <= y <= ymax)
-
-    ext = {"unit_start_offset": ustart,
-           "unit_start_formula": "blob10240_end + 32 + 15*surface"}
-    if ustart + 40 > len(data) or not urec_valid(data[ustart:ustart + 40]):
-        ext["error"] = ("unit-start formula did not land on a valid record "
-                        "(map variant?); tail framing only")
-        out["ext033"] = ext
-        return
-    # The formula is a LANDMARK inside the array, not necessarily its first
-    # record: on all four Warring States files exactly one more record
-    # (id=0, f2=0 — the bulk carries f2=2) precedes it. Extend backwards to
-    # the maximal contiguous block (bounded) so the block boundaries are
-    # measured, not assumed.
-    ustart2 = ustart
-    for _ in range(128):
-        if ustart2 - 40 >= blob10240_end and urec_valid(data[ustart2 - 40:ustart2]):
-            ustart2 -= 40
-        else:
-            break
-    if ustart2 != ustart:
-        ext["unit_start_measured"] = ustart2
-        ext["unit_start_formula_note"] = (
-            "formula lands %d record(s) into the block; id-0/f2-0 slot-0 "
-            "record(s) precede the f2=2 bulk; whether slot 0 belongs to the "
-            "unit array or terminates the preceding per-tile section is "
-            "open" % ((ustart - ustart2) // 40))
-    units, off = [], ustart2
-    while off + 40 <= end and urec_valid(data[off:off + 40]):
-        units.append(off)
-        off += 40
-    owner_hist, type_hist = {}, {}
-    ids = []
-    sample = []
-    for k, uo in enumerate(units):
-        r = data[uo:uo + 40]
-        uid = _s.unpack_from("<H", r, 0)[0]
-        x, y = _s.unpack_from("<hh", r, 10)
-        t, o = r[18], r[19]
-        ids.append(uid)
-        owner_hist[o] = owner_hist.get(o, 0) + 1
-        type_hist[t] = type_hist.get(t, 0) + 1
-        if k < 8 or k >= len(units) - 2:
-            sample.append({"i": k, "id": uid, "x": x, "y": y,
-                           "type": t, "owner": o})
-    ext["units"] = {
-        "offset": ustart2, "end": off, "count": len(units),
-        "record_size": 40, "id_range": [min(ids), max(ids)],
-        "owner_histogram": dict(sorted(owner_hist.items())),
-        "type_histogram_top": dict(sorted(type_hist.items(),
-                                          key=lambda kv: -kv[1])[:12]),
-        "sample": sample,
-        "fields_proven": {
-            "id_u16@0": "sequential, re-assigned on every save",
-            "x_s16@10": "logical-grid x (negative = off-board)",
-            "y_s16@12": "logical-grid y (negative = off-board)",
-            "type_u8@18": "index into Rules.txt @UNITS",
-            "owner_u8@19": "0=barbarians, 1..7 = civs",
-        },
-    }
-    interlude = 4
-    cstart = off + interlude
-    ncities = 0
-    names = []
-    while cstart + 92 * ncities + 92 <= end:
-        s = data[cstart + 92 * ncities: cstart + 92 * (ncities + 1)]
-        x, y = _s.unpack_from("<HH", s, 58)
-        if x > xmax or y > ymax:
-            break
-        nm = s[:16].split(b"\x00")[0].decode("latin-1", "replace")
-        names.append(nm)
-        ncities += 1
-    cend = cstart + 92 * ncities
-    ext["cities"] = {
-        "offset": cstart, "count": ncities, "record_size": 92,
-        "named": sum(1 for n in names if n),
-        "names_first_12": names[:12],
-        "note": ("same 92-B record as the 0x32 base format (name @0, "
-                 "x u16@58, y u16@60 logical)"),
-    }
-    ext["post_city"] = {"offset": cend, "size": end - cend,
-                        "note": ("fixed-size block (~12.9 KB here; does not "
-                                 "scale with city count); internal layout "
-                                 "open — trade-route-like records and id "
-                                 "lists observed")}
-    total = end - blob10240_end
-    # Falsifiable structural checks (issue #25): the arithmetic below is a
-    # *description* — the post-city term is the leftover by construction and
-    # would absorb any mis-walk, so validity rests on these checks instead.
-    def printable_name_slot(o):
-        nm = data[o:o + 16].split(b"\x00")[0]
-        return bool(nm) and all(32 <= c < 127 for c in nm)
-
-    cands2 = set()
-    i = blob10240_end
-    while i < end - 16:
-        j = data.find(b"\x00", i, i + 16)
-        if 2 <= j - i <= 15 and data[i + 15] == 0 \
-                and all(32 <= c < 127 for c in data[i:j]):
-            cands2.add(i)
-            i = j
-        i += 1
-    competing_grids = []
-    seen = set()
-    for s in sorted(cands2):
-        if s in seen or (cstart <= s < cend):
-            continue
-        ch = [s]
-        while ch[-1] + 92 in cands2:
-            ch.append(ch[-1] + 92)
-        seen.update(ch[1:])
-        if len(ch) >= 8 and all(
-                _s.unpack_from("<H", data, c + 58)[0] <= xmax
-                and _s.unpack_from("<H", data, c + 60)[0] <= ymax
-                for c in ch):
-            competing_grids.append(s)
-    ext["checks"] = {
-        # (#57) honest falsifiable checks only. The two real ones catch a
-        # mis-walk (the #25 corruption repro flips both); the landmark check
-        # fires if the 32+15*surface formula ever drifts outside the
-        # measured block on another map. Deliberately NOT reported:
-        # 'start valid' (a precondition — an invalid start returns early)
-        # and 'block maximality' (true by construction of the greedy walk).
-        "formula_landmark_inside_block": ustart2 <= ustart < off,
-        "city0_name_printable": printable_name_slot(cstart),
-        "city_grid_is_only_name_grid": not competing_grids,
-        "competing_name_grids": competing_grids,
-    }
-    ext["accounting"] = {
-        "total": total,
-        "formula": (f"{total} = {ustart2 - blob10240_end} (per-tile arrays) "
-                    f"+ 40*{len(units)} + 4 + 92*{ncities} + "
-                    f"{end - cend} (post-city)"),
-        "note": ("descriptive decomposition: the post-city term is the "
-                 "leftover by construction — the falsifiable checks are in "
-                 "ext.checks (formula landmark inside the block, city-0 "
-                 "name, no competing 92-B name grid outside the walked one)"),
-    }
-    out["ext033"] = ext
-
-
 def walk_save(path: str) -> dict:
     with open(path, "rb") as stream:
         return walk_save_bytes(stream.read(), path)
@@ -645,13 +459,13 @@ def walk_save_bytes(data: bytes, source: str = "<memory>") -> dict:
         # #58). The real test for a decodable map is the surface invariant.
         # The map count is hdr[7] + 1: the original's writer 0x56fa9d and
         # loader 0x56fcb1 loop maps 0..=hdr[7] (#331; Midgard 3 = four maps).
-        # ToTPP 0x33 keeps one classic block here; its further maps live in
-        # the extended tail (Warring States, evidence §T0-7).
+        # ToTPP 0x33 maps carry one extra byte per tile after the tile
+        # records (14 B/tile + 2; evidence §ToTPP 0x33 framing, #331).
         has_map = (surface > 0 and hdr[0] and hdr[1]
                    and surface == (hdr[0] // 2) * hdr[1] and hdr[7] >= 0)
-        n_maps = hdr[7] + 1 if ver == 0x0032 else 1
+        n_maps = hdr[7] + 1
         n_map_blocks = n_maps if has_map else 0
-        map_data = 13 * surface + 2 if has_map else 0
+        map_data = (14 if ver == 0x0033 else 13) * surface + 2 if has_map else 0
         blob = 2 * hdr[5] * hdr[6] if has_map else 0
         map_end = pos + n_map_blocks * map_data + blob
         blob10240_end = map_end + 10240
@@ -731,7 +545,7 @@ def walk_save_bytes(data: bytes, source: str = "<memory>") -> dict:
                              "rail=0x20 (unverified); the 7 B/tile block "
                              "before the records is unidentified"),
                 })
-            out["map_decode"]["resource_seed_offset"] = pos + maps * map_data - 2
+            out["map_decode"]["resource_seed_offset"] = pos + map_data - 2
         if ver == 0x0033 and has_map:
             # 0x33 tail framing (proven on deiQin/deiYan saves, Warring
             # States, 2026-11-02): LUAE magic + serialized Lua state text
@@ -755,24 +569,19 @@ def walk_save_bytes(data: bytes, source: str = "<memory>") -> dict:
                     "lua_top_level_tables": keys,
                     "lua_tile_entries": tiles,
                     "evnt_trailer_offset": evnt,
-                    "note": ("mid region walked below (ext033); Lua state "
-                             "is plain readable text"),
+                    "note": ("units/cities walked below as in 0x32; Lua "
+                             "state is plain readable text"),
                 }
-                out["note"] = ("ToTPP-extended save: base 0x32 front sections "
-                               "apply; after the 10240-blob comes the ToTPP "
-                               "extended state, then a 'LUAE' magic followed "
-                               "by the serialized Lua state as plain text, "
-                               "ending with an 'EVNT' trailer + 4 bytes")
+                out["note"] = ("ToTPP-extended save: 0x32 layout with 14 B/tile "
+                               "maps; after the cities comes a ToTPP block, "
+                               "then a 'LUAE' magic followed by the "
+                               "serialized Lua state as plain text, ending "
+                               "with an 'EVNT' trailer + 4 bytes")
             else:
-                out["note"] = ("ToTPP-extended save: base 0x32 front sections "
-                               "apply; the extension state ends at EOF — no "
-                               "'LUAE'/'EVNT' in this file (pristine scenario "
-                               "or load-time autosave; the Lua tail appears "
-                               "once the Lua state is populated)")
-            # 0x33 deep walk; the 0x32 units/cities scan below does not
-            # apply (that layout lives in the extension instead)
-            walk_ext033(data, hdr, blob10240_end, out)
-            return out
+                out["note"] = ("ToTPP-extended save: 0x32 layout with 14 B/tile "
+                               "maps; no 'LUAE'/'EVNT' in this file (pristine "
+                               "scenario or load-time autosave; the Lua tail "
+                               "appears once the Lua state is populated)")
         # cities: find the 92-byte name grid — candidate printable name
         # fields (16-byte slot: printable prefix + NUL padding), then the
         # longest chain of candidates at exactly 92-byte stride.

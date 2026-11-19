@@ -77,6 +77,8 @@ growth rules still fit true-framing data (Carthage turn 13→14: size 1→2,
 box 18→2 within one record), but the per-sample citations need
 re-reading. The 0x33 (ToTPP) records were not re-checked: their unit
 layout differs (id@0, x@10) and the home test is inconclusive there (2/3).
+**Corrected (#331):** that "different layout" was a misframing; 0x33 units
+and cities use this same classic layout (§ToTPP 0x33 framing (#331)).
 
 #### Headless turn loop (v0.2.0, 2026-11-03)
 
@@ -1387,7 +1389,8 @@ scenario block after the cities and: 21*3 terrain bytes, 4 cursor bytes,
 `city_end + 1453 + 60*leaders`. Research uses its i16@82 paradigm and
 i16@84 skip-adjustment setting (RAM `0x5f5ea2/a4`). ROMFALL reads
 **(100, -5)**. The parser requires the whole block to fit, and does not
-apply the classic tail formula to 0x33 scenarios. Unknown scenario cost
+apply the classic tail formula to 0x33 scenarios (**since #331 it does**:
+0x33 files keep the block at this offset). Unknown scenario cost
 settings yield `None` and disable research accounting/orders for that
 scenario, rather than using fabricated defaults. Non-scenario games use
 @COSMIC row 11 and need no scenario tail.
@@ -1901,7 +1904,7 @@ snapshot/diff/scan commands). Both documented in `tools/oracle/README.md`.
 | `romfall-scnmap.png` | `totctl scnmap FallRome/ROMFALL.scn` | Embedded scenario map with river/road/railroad overlays |
 | `anticchina-map.png` | `totctl map Scenario/china/AnticChina.MP` | ToTPP-era paired-slot `.MP` flavor: China with river networks + improvement flags |
 | `romfall-walk.json` | `totctl save ROMFALL.scn` | Structural walk of a classic scenario (ToT 1.1, `0x0032`) |
-| `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked: `ext033` units/cities/structural checks (this pristine scenario has no `LUAE` — the Lua tail framing appears in the deiYan/deiQin ladder rows) |
+| `warring-states-walk.json` | `totctl save "Warring States.scn"` | ToTPP-extended save (`0x0033`) walked: two 14-B/tile maps, classic units/cities (#331; this pristine scenario has no `LUAE` — the Lua tail framing appears in the deiYan/deiQin ladder rows) |
 | `golden/warring-auto-walk.json`, `golden/warring-yan-walk.json`, `golden/warring-qin-walk.json` | `totctl save` on the 0x33 ladder | regression-protected turns 1/2/11 walks (T0-7) |
 | `research.json` / `research-cost-vectors.txt` | `tools/research_check.py --emulate` | Per-civ research: original-x86 costs, existing saved increments/discoveries, asset-free cost vectors |
 | `t1-4-finance.json` | `tools/finance_check.py` | Science/tax record replay: 146/146 FallRome, 10/10 standard cities; static original-binary operand checks |
@@ -2399,6 +2402,10 @@ Controlled experiments over ROMFALL + its playable-civ variants (ERE/HUN/VIS)
 
 ## T0-7 findings (2026-11-02, sixth session — 0x33 tail framing)
 
+> **Superseded in part (#331).** The front does *not* end after one 13-B/tile
+> map: 0x33 files carry `raw[7] + 1` maps of 14 B/tile + 2 (§ToTPP 0x33
+> framing (#331)). The `LUAE`/`EVNT` tail findings below stand.
+
 Materials: `deiQin.sav` (turn 11) / `deiYan.sav` (turn 2), Warring States.
 
 1. **The `0x33` tail is framed by magics.** After the base-`0x32` front
@@ -2416,6 +2423,13 @@ Materials: `deiQin.sav` (turn 11) / `deiYan.sav` (turn 2), Warring States.
    present, which also scopes T1/T3 save writing.
 
 ## T0-7 findings (2026-11-02, seventh session — mid-region decoded)
+
+> **Superseded (#331).** This decomposition started from the wrong front end
+> (one 13-B/tile map, 411,214). With two 14-B/tile maps the blobs end at
+> 831,216 and units/cities follow in the **classic** layout; the "different
+> unit layout" below is that layout read one record plus 30 bytes off
+> (its id@0 is the classic id@30, its x@10 the next record's x@0). Kept as
+> history; the `ext033` walker was removed.
 
 Materials: the four-file Warring States ladder — `Warring States.scn`
 (pristine, turn 1), `Hu_Auto.SAV` (oracle rig autosave, turn 1),
@@ -2612,7 +2626,8 @@ cost routine uses calendar increment !=0 to skip catch-up adjustments.
 World turn advancement now updates the date using these inputs, including
 signed-word turn wrapping. Unlocated 0x33 scenario parameters are retained
 as an unknown calendar and keep their date; no custom-calendar bytes are
-guessed. This is a documented remaining decoder limit.
+guessed. This is a documented remaining decoder limit. (**Resolved by #331:**
+the 0x33 block sits at the classic offset; §ToTPP 0x33 framing.)
 
 `tools/tech_groups_check.py` executes both original group gates, 1,000
 contexts, with 128 retained [vectors](tech-group-vectors.txt) and provenance
@@ -2763,7 +2778,7 @@ The original computes a unit-strength sum but does not add it to the score.
 Scenario flag bit 2 instead scores twice the objective-city count, adding
 wonders if bit 4 is also set. Objective is city flag `0x04000000`; the scenario
 flags are word +0 of the already-proven scenario parameter block (same base
-as calendar/research fields). For unlocated 0x33 tails, score refresh waits
+as calendar/research fields). For unlocated 0x33 tails (none since #331), score refresh waits
 rather than guessing scenario behavior. The alive mask is saved byte @686,
 the byte read at `0x46dea8` (RAM `0x60765a`). It remains the original saved
 mask; complete civ elimination/revival behavior is not yet implemented.
@@ -4828,10 +4843,35 @@ Checks on the installed Midgard files (re-derived by
   Oc_Auto2's Edgetown (map 0) is the one city whose tile lacks the flag; why
   is not decoded.
 
-ToTPP's `0x33` files are not covered. Warring States has `raw[7] = 1`, but
-its classic front ends after one map block (§T0-7), so the second map lives
-in ToTPP's extended tail with a different unit layout; the original
-executable cannot tell us that layout, and those files stay rejected.
+### ToTPP 0x33 framing (#331)
+
+ToTPP's `0x33` files use the same structure with one difference: each map
+block is `14 × raw[2] + 2` bytes — the classic seven per-civ arrays, the 6-B
+tile records at `+7 × raw[2]`, then one extra byte per tile (values 0/1/2
+almost everywhere; meaning not decoded), then the 2-B seed. Checked on the
+four Warring States files (`raw[7] = 1`, two maps), re-derived by
+`crates/engine/tests/scenario_multimap_install.rs`:
+
+- The blobs end at 831,216 in all four files; units (40 B) and cities (92 B)
+  framed by the @698/@700 counts follow, and every city slot holds a valid
+  name (120, 120, 122, 132).
+- Landmass table: 15/21 (map 0) and 14/20 (map 1) landmass ids have their
+  exact tile count at entry `+0`; 0/21 with the old one-map framing.
+- Unit/city fields are classic. Live units on a unit-flagged tile of their own
+  map: 1441/1441, 1425/1425, 1403/1440 (deiYan; why 37 tiles lack the flag is
+  not decoded) and 1633/1635. Cities on a city-flagged tile: 116/120 in the
+  pristine `.scn`, 132/132 in deiQin. Every city is on map 1; map 0 holds the
+  armies (and towns modelled as unit types).
+- The scenario parameter block sits at the classic `city_end + 1453 +
+  60 × leaders`: all four files carry the same block there (word +0 `0x71`,
+  increment −3, start −1404). The engine's calendar on it reproduces the
+  saved years: Hu_Auto (turn 1, −1402) advanced gives −1399 at turn 2
+  (deiYan's saved year) and −1372 at turn 11 (deiQin's).
+- The pristine `.scn` and deiQin round-trip byte-identically.
+
+After the cities, populated saves carry ToTPP's own block, then `LUAE` and the
+Lua state (§T0-7); that tail is not decoded. Only one 0x33 scenario family is
+installed, so the 14-B rule rests on it alone.
 
 The engine plays map 0 only: at boot, units and cities on other maps become
 dead slots (`id` / `city_id` 0), so record indices stay valid, and the

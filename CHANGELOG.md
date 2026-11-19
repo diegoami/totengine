@@ -9,9 +9,15 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   header `raw[7] + 1` maps, as the original's own writer and loader loop them;
   Midgard (four maps) now decodes and starts in both clients and headless.
   The engine still plays one map: units and cities on the other maps are left
-  out, and the preflight says how many. ToTPP-extended `0x33` files (Warring
-  States) stay rejected, now with that reason. The walk goldens for Midgard
+  out, and the preflight says how many. The walk goldens for Midgard
   were regenerated.
+- **ToTPP-extended `0x33` scenarios open too** (#331). Their maps are 14 bytes
+  per tile instead of 13; units, cities and the scenario parameter block are
+  where classic files have them. The earlier "different 0x33 unit layout" was
+  a misframing and its walker is removed. Warring States starts on its first
+  map (the armies; its cities are all on map 1) with its own calendar, which
+  reproduces the years the game saved; its Lua is not run. The Warring States
+  walk goldens were regenerated.
 - **Scenario dates** (#330), on both clients: the status panel, title bar,
   reports and Science advisor show the date the way the original writes it
   (`4000 B.C.`, `A.D. 1500`, and month calendars such as FallRome's

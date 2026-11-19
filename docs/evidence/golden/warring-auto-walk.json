@@ -4,7 +4,7 @@
   "magic": "CIVILIZE",
   "version_raw": "0x0033",
   "version": "ToT 1.1 + ToTPP (extended)",
-  "note": "ToTPP-extended save: base 0x32 front sections apply; the extension state ends at EOF \u2014 no 'LUAE'/'EVNT' in this file (pristine scenario or load-time autosave; the Lua tail appears once the Lua state is populated)",
+  "note": "ToTPP-extended save: 0x32 layout with 14 B/tile maps; no 'LUAE'/'EVNT' in this file (pristine scenario or load-time autosave; the Lua tail appears once the Lua state is populated)",
   "unit_transport_relationships": {
     "offset": 12,
     "size": 640
@@ -101,18 +101,18 @@
   "sections_derived": {
     "map_data": {
       "offset": 29916,
-      "size": 364002,
-      "per_map": 364002,
-      "map_blocks": 1,
+      "size": 784004,
+      "per_map": 392002,
+      "map_blocks": 2,
       "hdr3_raw": 1,
       "note": "map count = hdr[7] + 1 (0x56fa9d/0x56fcb1, #331); hdr[3] is NOT the map count (#58)"
     },
     "blob_2ab": {
-      "offset": 393918,
+      "offset": 813920,
       "size": 7056
     },
     "blob_10240": {
-      "offset": 400974,
+      "offset": 820976,
       "size": 10240,
       "note": "mostly zeros in ROMFALL"
     }
@@ -162,174 +162,304 @@
           542
         ],
         "note": "tile record mp0+6t: +0 terrain=&0x0F, 0x40=special flag, 0x80=river; +1 road=0x10, rail=0x20 (unverified); the 7 B/tile block before the records is unidentified"
+      },
+      {
+        "map_index": 1,
+        "improvements_offset": 617918,
+        "terrain_histogram": {
+          "0": 8301,
+          "10": 3966,
+          "5": 3821,
+          "2": 2881,
+          "3": 1372,
+          "7": 1189,
+          "12": 1175,
+          "4": 1044,
+          "15": 937,
+          "13": 924,
+          "6": 681,
+          "9": 634
+        },
+        "river_tiles": 3456,
+        "road_tiles": 1716,
+        "railroad_tiles": 297,
+        "special_tiles": 2006,
+        "road_and_rail_tiles": 297,
+        "visibility_nonzero_per_civ": [
+          780,
+          717,
+          629,
+          717,
+          780,
+          695,
+          784
+        ],
+        "note": "tile record mp0+6t: +0 terrain=&0x0F, 0x40=special flag, 0x80=river; +1 road=0x10, rail=0x20 (unverified); the 7 B/tile block before the records is unidentified"
       }
     ],
-    "resource_seed_offset": 393916
+    "resource_seed_offset": 421916
   },
-  "ext033": {
-    "unit_start_offset": 831246,
-    "unit_start_formula": "blob10240_end + 32 + 15*surface",
-    "unit_start_measured": 831206,
-    "unit_start_formula_note": "formula lands 1 record(s) into the block; id-0/f2-0 slot-0 record(s) precede the f2=2 bulk; whether slot 0 belongs to the unit array or terminates the preceding per-tile section is open",
-    "units": {
-      "offset": 831206,
-      "end": 888886,
-      "count": 1442,
-      "record_size": 40,
-      "id_range": [
-        0,
-        1450
-      ],
-      "owner_histogram": {
-        "0": 408,
-        "1": 142,
-        "2": 148,
-        "3": 217,
-        "4": 190,
-        "5": 110,
-        "6": 112,
-        "7": 115
+  "cities": {
+    "offset": 888856,
+    "first_name_offset": 888890,
+    "count": 120,
+    "record_size": 92,
+    "size": 11040,
+    "chain_found": 120,
+    "names": [
+      "Xianyang",
+      "Chang'An",
+      "Iantien",
+      "Jingyang",
+      "Gaoling",
+      "Yueyang",
+      "Dali",
+      "Yong",
+      "Mianzhu",
+      "Yuan",
+      "Longxi",
+      "Hangzong",
+      "Shang",
+      "Handan",
+      "Wu'An",
+      "Tunliu",
+      "Binh Duong",
+      "Jinyang",
+      "Qiu You",
+      "Shangjun"
+    ],
+    "names_total_named": 120,
+    "coords_first_8": [
+      {
+        "i": 0,
+        "name": "Xianyang",
+        "x": 73,
+        "y": 117,
+        "owner": 1,
+        "size": 8,
+        "boxes": [
+          5,
+          22,
+          27
+        ]
       },
-      "type_histogram_top": {
-        "8": 207,
-        "2": 138,
-        "187": 104,
-        "6": 62,
-        "5": 58,
-        "35": 53,
-        "4": 52,
-        "31": 44,
-        "34": 39,
-        "30": 37,
-        "60": 36,
-        "17": 32
+      {
+        "i": 1,
+        "name": "Chang'An",
+        "x": 75,
+        "y": 119,
+        "owner": 1,
+        "size": 6,
+        "boxes": [
+          1,
+          6,
+          10
+        ]
       },
-      "sample": [
-        {
-          "i": 0,
-          "id": 0,
-          "x": 92,
-          "y": 118,
-          "type": 8,
-          "owner": 1
-        },
-        {
-          "i": 1,
-          "id": 10,
-          "x": 128,
-          "y": 86,
-          "type": 27,
-          "owner": 2
-        },
-        {
-          "i": 2,
-          "id": 11,
-          "x": 98,
-          "y": 164,
-          "type": 17,
-          "owner": 3
-        },
-        {
-          "i": 3,
-          "id": 12,
-          "x": 167,
-          "y": 105,
-          "type": 28,
-          "owner": 3
-        },
-        {
-          "i": 4,
-          "id": 13,
-          "x": 113,
-          "y": 125,
-          "type": 17,
-          "owner": 3
-        },
-        {
-          "i": 5,
-          "id": 14,
-          "x": 123,
-          "y": 113,
-          "type": 37,
-          "owner": 6
-        },
-        {
-          "i": 6,
-          "id": 15,
-          "x": 165,
-          "y": 79,
-          "type": 44,
-          "owner": 7
-        },
-        {
-          "i": 7,
-          "id": 16,
-          "x": 134,
-          "y": 120,
-          "type": 28,
-          "owner": 3
-        },
-        {
-          "i": 1440,
-          "id": 1449,
-          "x": 53,
-          "y": 175,
-          "type": 4,
-          "owner": 0
-        },
-        {
-          "i": 1441,
-          "id": 1450,
-          "x": 73,
-          "y": 117,
-          "type": 8,
-          "owner": 0
-        }
-      ],
-      "fields_proven": {
-        "id_u16@0": "sequential, re-assigned on every save",
-        "x_s16@10": "logical-grid x (negative = off-board)",
-        "y_s16@12": "logical-grid y (negative = off-board)",
-        "type_u8@18": "index into Rules.txt @UNITS",
-        "owner_u8@19": "0=barbarians, 1..7 = civs"
+      {
+        "i": 2,
+        "name": "Iantien",
+        "x": 78,
+        "y": 120,
+        "owner": 1,
+        "size": 5,
+        "boxes": [
+          0,
+          3,
+          11
+        ]
+      },
+      {
+        "i": 3,
+        "name": "Jingyang",
+        "x": 74,
+        "y": 114,
+        "owner": 1,
+        "size": 5,
+        "boxes": [
+          2,
+          4,
+          11
+        ]
+      },
+      {
+        "i": 4,
+        "name": "Gaoling",
+        "x": 77,
+        "y": 115,
+        "owner": 1,
+        "size": 7,
+        "boxes": [
+          0,
+          5,
+          17
+        ]
+      },
+      {
+        "i": 5,
+        "name": "Yueyang",
+        "x": 79,
+        "y": 113,
+        "owner": 1,
+        "size": 6,
+        "boxes": [
+          5,
+          5,
+          14
+        ]
+      },
+      {
+        "i": 6,
+        "name": "Dali",
+        "x": 87,
+        "y": 111,
+        "owner": 1,
+        "size": 7,
+        "boxes": [
+          3,
+          6,
+          12
+        ]
+      },
+      {
+        "i": 7,
+        "name": "Yong",
+        "x": 60,
+        "y": 116,
+        "owner": 1,
+        "size": 5,
+        "boxes": [
+          3,
+          4,
+          9
+        ]
       }
+    ],
+    "note": "game framing: x u16@0 / y u16@2 (logical grid, same space as unit coords), owner u8@10, size u8@11, food/shield box u16@28/@30, name 16 B @34; per-file garrison/home/terrain support in garrisons_measured / homes_measured / city_terrain_measured",
+    "garrisons_measured": "120/120 cities have a unit on their exact tile (measured on this file)",
+    "homes_measured": "3/3 homed units on a city tile are homed there (measured on this file; the framing proof)",
+    "city_terrain_measured": "120/120 cities on non-ocean terrain, 0 on ocean, 0 outside the stored grid (measured on this file)"
+  },
+  "units": {
+    "region": [
+      831216,
+      888856
+    ],
+    "size": 57640,
+    "record_size": 40,
+    "count": 1441,
+    "count_arithmetic": "57674 = 40 x 1441 + 34 (city 0 head)",
+    "fields_proven": {
+      "x_u16@0": "display-grid x (0..width-1)",
+      "y_u16@2": "display-grid y (0..height-1)",
+      "attr_u16@6": "bit 0x2000 veteran",
+      "type_u8@8": "index into Rules.txt @UNITS",
+      "owner_u8@9": "civ: 0=barbarians, 1..7=players (civ_names[n-1]); bit 0x10 = leader unit (Pope Leo I)",
+      "damage_u8@12": "hit points lost",
+      "orders_u8@17": "0xff none, 2 fortified",
+      "home_u8@18": "home city index, 0xff none",
+      "stack_links_i16@26/@28": "prev/next unit on the tile",
+      "id_u16@30": "per-save unit id (re-assigned on every save)"
     },
-    "cities": {
-      "offset": 888890,
-      "count": 119,
-      "record_size": 92,
-      "named": 119,
-      "names_first_12": [
-        "Xianyang",
-        "Chang'An",
-        "Iantien",
-        "Jingyang",
-        "Gaoling",
-        "Yueyang",
-        "Dali",
-        "Yong",
-        "Mianzhu",
-        "Yuan",
-        "Longxi",
-        "Hangzong"
-      ],
-      "note": "same 92-B record as the 0x32 base format (name @0, x u16@58, y u16@60 logical)"
+    "owner_histogram": {
+      "0": 407,
+      "1": 142,
+      "2": 148,
+      "3": 217,
+      "4": 190,
+      "5": 110,
+      "6": 112,
+      "7": 115
     },
-    "post_city": {
-      "offset": 899838,
-      "size": 12889,
-      "note": "fixed-size block (~12.9 KB here; does not scale with city count); internal layout open \u2014 trade-route-like records and id lists observed"
+    "type_histogram_top": {
+      "8": 206,
+      "2": 138,
+      "187": 104,
+      "6": 62,
+      "5": 58,
+      "35": 53,
+      "4": 52,
+      "31": 44,
+      "34": 39,
+      "30": 37,
+      "60": 36,
+      "17": 32
     },
-    "checks": {
-      "formula_landmark_inside_block": true,
-      "city0_name_printable": true,
-      "city_grid_is_only_name_grid": true,
-      "competing_name_grids": []
-    },
-    "accounting": {
-      "total": 501513,
-      "formula": "501513 = 419992 (per-tile arrays) + 40*1442 + 4 + 92*119 + 12889 (post-city)",
-      "note": "descriptive decomposition: the post-city term is the leftover by construction \u2014 the falsifiable checks are in ext.checks (formula landmark inside the block, city-0 name, no competing 92-B name grid outside the walked one)"
-    }
+    "sample_first_8": [
+      {
+        "i": 0,
+        "x": 92,
+        "y": 118,
+        "type": 8,
+        "owner": 1,
+        "home": 255,
+        "id": 10
+      },
+      {
+        "i": 1,
+        "x": 128,
+        "y": 86,
+        "type": 27,
+        "owner": 2,
+        "home": 255,
+        "id": 11
+      },
+      {
+        "i": 2,
+        "x": 98,
+        "y": 164,
+        "type": 17,
+        "owner": 3,
+        "home": 255,
+        "id": 12
+      },
+      {
+        "i": 3,
+        "x": 167,
+        "y": 105,
+        "type": 28,
+        "owner": 3,
+        "home": 255,
+        "id": 13
+      },
+      {
+        "i": 4,
+        "x": 113,
+        "y": 125,
+        "type": 17,
+        "owner": 3,
+        "home": 255,
+        "id": 14
+      },
+      {
+        "i": 5,
+        "x": 123,
+        "y": 113,
+        "type": 37,
+        "owner": 6,
+        "home": 255,
+        "id": 15
+      },
+      {
+        "i": 6,
+        "x": 165,
+        "y": 79,
+        "type": 44,
+        "owner": 7,
+        "home": 255,
+        "id": 16
+      },
+      {
+        "i": 7,
+        "x": 134,
+        "y": 120,
+        "type": 28,
+        "owner": 3,
+        "home": 255,
+        "id": 17
+      }
+    ],
+    "verification": "layout facts: docs/evidence/README.md \u00a7T0-6; the garrison support number is measured per file in cities.garrisons_measured / cities.city_terrain_measured",
+    "note": "game framing (evidence \u00a7T1-6 combat); remaining bytes open: 4-5 z, 10 moves spent, 11 visibility, 13 last dir, 14-16, 19-25, 32-39"
   }
 }

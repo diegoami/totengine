@@ -5,6 +5,16 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Scenario dates** (#330), on both clients: the status panel, title bar,
+  reports and Science advisor show the date the way the original writes it
+  (`4000 B.C.`, `A.D. 1500`, and month calendars such as FallRome's
+  `Dec 429`), using the game folder's own `Labels.txt` (Constantine's
+  "Anno Domini", Fantasy's ages). The status panel's first line is now
+  `date · Turn N` and the second `government · N gold`; a narrow title drops
+  the turn, then the date. The scenario preflight shows the starting date.
+  AE 1200 BC's scenario file is flagged 0x40 rather than 0x80; the engine now
+  promotes it as the original's loader does, so its scenario calendar (and
+  scenario research costs) apply: it starts in 1200 B.C., not 4000 B.C.
 - The **built-in AI now plays Roman Civil Wars, AE 1200 BC and
   Constantine** (#329). Advance references in Rules now resolve against the
   original's fixed slot identifiers, exactly as the executable does, instead

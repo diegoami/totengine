@@ -222,7 +222,13 @@ about:
   built-in AI cannot read the scenario's Rules), not the original AI's plans;
 - event triggers that never fire, event actions that do nothing yet and
   CREATEUNIT (approximate placement);
-- Lua scripts beside the scenario, which are not run.
+- Lua scripts beside the scenario, which are not run;
+- for a file whose scenario calendar is not decoded, dates shown as turn
+  numbers.
+
+Dates read as the original writes them, with the scenario folder's
+`Labels.txt` for era and month names (#330): the status panel shows
+`date · Turn N`, and the title, reports and Science advisor show the date.
 
 Event TEXT boxes (#326) open as pop-up dialogs, one at a time, when the human's
 turn is in progress: boxes fired by opponents' moves or the round wait for the

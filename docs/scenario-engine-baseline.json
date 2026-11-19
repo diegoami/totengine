@@ -5,17 +5,17 @@
   "meaning": "Manually audited implementation coverage, not native conformance or runtime admission. Source changes require a new audit.",
   "source_sha256": {
     "crates/tot-kit/src/events.rs": "6ae1c3b3cdf083c484cea268574a56b10a00b29214551373456ef03bb54bc54a",
-    "crates/tot-kit/src/sav.rs": "7a45d279f4dde45860650869d3f6dd4827fa4f07b807cd75ab6c459fd1d6a7f3",
+    "crates/tot-kit/src/sav.rs": "64713ed48cdeb87d05ecb441fd4f982dacbc5b5ea3ebe8f8041d34b725713265",
     "crates/engine/src/events.rs": "5f04abdfa2d1424c141958375847f6daea8f3cfbb96085507da12b419152a14f",
     "crates/engine/src/effects.rs": "4fb52719fcb9184c04288f809534b42725d21c8f83f5473fa936019e970f97fd",
     "crates/engine/src/turn.rs": "22d66dabc5f00c7d981bd834e2c093fbf2c0155ccc81a612e32795d990600ad0",
-    "crates/engine/src/player.rs": "66b031b9744f61bbee3f0e52de8c6f11458831c99801fd2be419316410792e33",
+    "crates/engine/src/player.rs": "380b13431df2d93c634bfa51284b30884ce6c22fa6c34aa225cf3e40a00019ab",
     "crates/engine/src/human.rs": "9c52a51e8a8d215b5430ffe2ee7d622a9bb47a284bb5279b86fd858a24852972",
     "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
-    "crates/engine/src/lib.rs": "a0fae41b84bca1d0b32223ce6ee47ea965e0e8bf626d8c37f24a10e5f694c469",
+    "crates/engine/src/lib.rs": "08b5b491652728dc8ba69c52d636303fc7332c854d4a6e4ea9397dd071c6cdb5",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
-    "crates/totui/src/client/mod.rs": "29cd5e002827525686748e182755b4ee40c62bcc69cc642ea6c0c25baa59e7db",
-    "crates/totui/src/resources.rs": "80f2064bffb454656c341986d0f51d78636ee8687cc843b29eb87c63313f500f",
+    "crates/totui/src/client/mod.rs": "b941f1eec7354af3a899056767855ad4567c95e625d0b55922eaf71e13e27e58",
+    "crates/totui/src/resources.rs": "1b35d65da36fdf8ca5727d12e492c8093d80e3eba53b9b70c043fcbb9be087a9",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
   "triggers": {
@@ -487,6 +487,17 @@
         "crates/tot-kit/src/rules.rs"
       ],
       "finding": "Rules::advance_slot adds the executable's fixed advance identifiers (ADVANCE_IDS, civ2.bak 0x5d0a18) and the resolver 0x490440's exact, case-sensitive first match for complete 100-row @CIVILIZE sections; shorter fixture sections keep case-insensitive comment matching. TechTree and the built-in AI's scoring adapter use it; the adapter reads the first 80 unit rows (loader bound 0x413559). Original and FallRome references resolve to the same slots as before; Roman Civil Wars, AE 1200 BC and Constantine now resolve fully and builtin-1 accepts their Rules (evidence README §Advance references). Event matching, checkpoints and order logs are unchanged."
+    },
+    {
+      "change": "Scenario dates and labels (#330)",
+      "files": [
+        "crates/tot-kit/src/sav.rs",
+        "crates/engine/src/player.rs",
+        "crates/engine/src/lib.rs",
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/resources.rs"
+      ],
+      "finding": "Adds the original's date formatter (0x46dca5) as engine::calendar::date_text and Observation.date, a Labels.txt parser and client display of dates. The parser now reads the scenario parameter block for files flagged 0x40 as well as 0x80, and boot applies the original loader's flag conversion (0x4615b4..0x46164a: 0x40|0x80 -> 0x80, 0x40 clears 0x10, 0x40 cleared). For the installed corpus this changes only AE 1200 BC (0x50 -> 0x80), whose scenario calendar and research-cost inputs now apply, matching the original's own autosave Ag_Auto.SAV; other scenario files keep 0x80 and only lose the inert 0x40/0x10 bits. Event trigger/action semantics are unchanged. Not native-import admission under classic-surface-032-v1."
     }
   ]
 }

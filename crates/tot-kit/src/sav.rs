@@ -927,7 +927,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         turn_limit: i16le(data, 672)?,
         ..CalendarSettings::default()
     });
-    let scenario = if flags & 0x80 != 0 && version == 0x32 {
+    let scenario = if flags & 0xc0 != 0 && version == 0x32 {
         let leaders = if data[678] == 0 {
             1
         } else {
@@ -948,7 +948,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
             )
         })
     } else {
-        if flags & 0x80 != 0 {
+        if flags & 0xc0 != 0 {
             calendar = None;
             ai_state.scenario_flags = None;
         }

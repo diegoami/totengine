@@ -347,6 +347,10 @@ pub struct TileView {
 pub struct Observation {
     pub civ: u8,
     pub turn: i16,
+    /// The public date: the number and how it reads
+    /// ([`crate::calendar::date_text`]); `None` for an unlocated scenario
+    /// calendar.
+    pub date: Option<(i32, crate::calendar::DateStyle)>,
     pub treasury: i32,
     pub government: u8,
     pub techs: [u8; 13],
@@ -583,6 +587,7 @@ impl WorldState {
         Observation {
             civ,
             turn: self.turn,
+            date: self.date(),
             treasury: self.treasury.get(c).copied().unwrap_or(0),
             government: self.governments.get(c).copied().unwrap_or(0),
             techs: self.techs.get(c).copied().unwrap_or([0; 13]),

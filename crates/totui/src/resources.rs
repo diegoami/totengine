@@ -98,6 +98,9 @@ pub struct Resources {
     /// reference text for the client only: it is not part of `sources` and so not
     /// of the checkpoint identity. `None` when absent or structurally invalid.
     pub pedia: Option<tot_kit::Pedia>,
+    /// The selected profile's `Labels.txt` (else the root's): era and month
+    /// names for dates (#330). Client presentation only, like `pedia`.
+    pub labels: Option<tot_kit::Labels>,
 }
 
 /// The scenario-specific inputs of an experimental scenario load.
@@ -291,6 +294,9 @@ impl Resources {
         let pedia = select("describe", &[".txt"])?
             .and_then(|path| read(&path).ok())
             .and_then(|bytes| tot_kit::Pedia::parse(&tot_kit::latin1(&bytes)).ok());
+        let labels = select("labels", &[".txt"])?
+            .and_then(|path| read(&path).ok())
+            .and_then(|bytes| tot_kit::Labels::parse(&tot_kit::latin1(&bytes)));
         Ok(Self {
             rules,
             sources,
@@ -299,6 +305,7 @@ impl Resources {
             profile,
             isotrident: None,
             pedia,
+            labels,
         })
     }
 
@@ -393,6 +400,7 @@ impl Resources {
             .into(),
             isotrident: Some(manifest.sprites),
             pedia: None,
+            labels: None,
         })
     }
 

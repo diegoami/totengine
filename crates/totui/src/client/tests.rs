@@ -3293,7 +3293,16 @@ fn turn_feedback_banner_and_title_round() {
             _ => None,
         })
     };
-    assert!(title(&c).unwrap().contains("· Turn 1"), "{:?}", title(&c));
+    // The date reads as the original writes it (#330); the turn follows
+    // where the bar has room, and the right column always shows both.
+    assert_eq!(title(&c).as_deref(), Some("Original rules · 4000 B.C."));
+    let stage = c.stage_w;
+    c.stage_w = 1600.;
+    assert_eq!(
+        title(&c).as_deref(),
+        Some("Original rules · 4000 B.C. · Turn 1")
+    );
+    c.stage_w = stage;
     // While the opponents run, a framed strip explains the wait (#283).
     c.advancing = true;
     let has = |c: &Client, s: &str| {
@@ -3379,7 +3388,7 @@ fn reports_open_switch_sort_drill_down_and_return_without_mutation() {
             _ => None,
         })
     };
-    assert_eq!(title(&c).as_deref(), Some("Reports"));
+    assert_eq!(title(&c).as_deref(), Some("Reports · 4000 B.C."));
     let has = |c: &Client, s: &str| {
         c.frame()
             .draws
@@ -4454,8 +4463,9 @@ fn layout_b_menus_and_column_reach_every_command_and_never_touch_the_game() {
             .iter()
             .any(|d| matches!(d, Draw::Text { text, x, .. } if *x >= chrome::COLUMN.0 && text.starts_with(s)))
     };
-    assert!(shows(&c, "Turn "));
-    assert!(shows(&c, "Treasury: "));
+    // The status opens with the date and turn (#330).
+    assert!(shows(&c, "4000 B.C. · Turn "));
+    assert!(shows(&c, "Despotism · "));
     assert!(shows(&c, "Research: "));
     assert!(shows(&c, "Athena · size 1"));
     assert!(c

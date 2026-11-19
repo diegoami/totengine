@@ -4798,3 +4798,54 @@ count. The file's own header documents the format; shipped files deviate in two 
 ways (index numbers without the trailing comma, and indentation), recorded in
 [the milestone note](../ui/reports-milestone.md). Whether the native loader tolerates the
 same deviations was not verified.
+
+## Scenario dates and labels (#330)
+
+Static decode of `civ2.bak`; every claim below is re-checked by
+`crates/engine/tests/scenario_dates_install.rs` against the installed files.
+
+- **Formatter `0x46dca5(buf, date)`**. With game flag 0x80 (RAM `0x607640`,
+  file @660) and a negative scenario increment (`0x5f5ea4`), a date counts
+  months: the month is `date % 12` for a positive date and `11 + date % 12`
+  otherwise (C truncating remainder), written as label `0x1a4 + month`
+  (`Labels.txt` index 420..431, Jan..Dec), a space, then `|date / 12|` with
+  no era. Otherwise the date is a year: `>= 0` writes label 1 ("A.D."), a
+  space and the number; below zero writes `|date|`, a space and label 0
+  ("B.C."). The era goes after the number for `date >= 0` only when
+  `0x5d158c` (the CIV.INI "Language Preference", 0 for English) is nonzero;
+  the engine uses the English order.
+- The month branch appends the month and space to the global text buffer
+  `0x62d3f0` and only the number to `buf`. Callers that pass `0x62d3f0`
+  (wrapper `0x41b220`: city window title, status sidebar, Game.txt
+  templates) get `"Dec 429"`; callers with another buffer (`0x41e0a0`,
+  `0x41ee50`, `0x4b4aa0`, `0x4b52c1`, `0x4f384f`) receive only the number.
+  The engine always shows month and year.
+- The status sidebar (`0x53302b`) writes the population line, then the date
+  via `0x41b220`; it shows no turn number. The load dialog preview
+  (`0x41e037..0x41e0a0`) recomputes the date from the saved turn with
+  `0x46da89` instead of reading the year field, which matches the oracle's
+  observation that an edited year left the display unchanged (§T1-8 save
+  writer). The engine likewise computes the shown date from the turn.
+- **Labels.txt**: `@LABELS`, a count line, then one label per line from
+  index 0. Scenario folders ship their own copy: Constantine renames label 1
+  to "Anno Domini"; Fantasy and Midgard use "First Age"/"Second Age" and
+  their own months; Sci-fi uses "A.P."/"P.E.". The client reads the profile
+  folder's `Labels.txt`, else the root's; trailing blanks are trimmed for
+  display (whether the original keeps them is not checked).
+- **Load-time scenario flag** (`0x4615b4..0x46164a`): a file with flag 0x40
+  or 0x80 runs with 0x80 set; 0x40 additionally clears flag 0x10, RAM
+  `0x60763a` bit 15 and byte `0x607657` (the last two are not modelled);
+  0x40 is always cleared. AE 1200 BC's `ae-1200b.scn` carries 0x50, not
+  0x80; the parser previously skipped its scenario parameters and the engine
+  used the standard calendar (4000 B.C.). Reading the parameter block for
+  0x40 files at the same offset gives increment 5 / start −1204, exactly the
+  values in `Ag_Auto.SAV`, which the original wrote after loading that
+  scenario (flags 0x80, turn 1, year −1200). The engine now boots 0x40 files
+  this way (`engine::loaded_flags`).
+
+Installed starting dates: FallRome Dec 429 (five months a turn), Hannibal
+Oct 219, Roman Civil Wars Dec 55, Constantine Aug 306 (turn 4), AE 1200 BC
+1200 B.C. Month calendars print no era even for years before year zero, as
+the original's formatter does. A scenario whose parameters are not located
+(0x33 files) has no date; the preflight says dates show as turn numbers.
+None of the installed scenarios that open is such a file.

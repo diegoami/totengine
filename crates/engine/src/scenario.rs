@@ -50,6 +50,9 @@ pub struct ScenarioCiv {
 pub struct Preflight {
     pub turn: i16,
     pub year: i16,
+    /// The starting date as the original computes it (#330); `None` when
+    /// the calendar is not located.
+    pub date: Option<(i32, crate::calendar::DateStyle)>,
     pub width: usize,
     pub height: usize,
     pub civs: Vec<ScenarioCiv>,
@@ -282,6 +285,11 @@ pub fn preflight(
         "Starts a fresh engine turn: every unit gets its full movement again".to_string(),
         "Opponents are played by the engine AI, not the original AI's saved plans".to_string(),
     ];
+    if world.date().is_none() {
+        gaps.push(
+            "The scenario calendar is not decoded for this file; dates show as turn numbers".into(),
+        );
+    }
     if lua {
         gaps.push("Lua scripts beside the scenario are not run".into());
     }
@@ -307,6 +315,7 @@ pub fn preflight(
     Ok(Preflight {
         turn: world.turn,
         year: world.year,
+        date: world.date(),
         width: world.map.stored_w,
         height: world.map.stored_h,
         civs,

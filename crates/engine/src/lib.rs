@@ -348,7 +348,10 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         diplomacy: sav.diplomacy,
         research: sav.research,
         free_research: [0; 8],
-        research_settings: sav.research_settings,
+        research_settings: tot_kit::ResearchSettings {
+            flags: loaded_flags(sav.research_settings.flags),
+            ..sav.research_settings
+        },
         techs: sav.techs,
         civs,
         units: units_from(&sav.units),
@@ -486,6 +489,23 @@ fn city_from(r: &CityRecord) -> City {
         flags: r.flags(),
         building: r.build_item(),
     }
+}
+
+/// The game flags word (file @660) as the original's loader leaves it
+/// (`0x4615b4..0x46164a`): a file marked 0x40 (a scenario not yet started,
+/// e.g. AE 1200 BC's `.scn`) or 0x80 runs as a scenario (0x80); 0x40 also
+/// clears 0x10; 0x40 never survives the load. The same 0x40 branch clears
+/// RAM `0x60763a` bit 15 and byte `0x607657`, which the engine does not
+/// model.
+pub fn loaded_flags(flags: u16) -> u16 {
+    let mut f = flags;
+    if f & 0xc0 != 0 {
+        f |= 0x80;
+    }
+    if f & 0x40 != 0 {
+        f &= !0x10;
+    }
+    f & !0x40
 }
 
 /// What one kernel tick did (skeleton: turn sequencing only — per-phase

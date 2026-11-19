@@ -43,8 +43,22 @@ pub struct Command {
 }
 
 impl Command {
+    /// Parameter by key, case-insensitively (Roman Civil Wars writes
+    /// `Who=`/`Defender=`; Macro.txt keywords are not case-sensitive).
     pub fn param(&self, key: &str) -> Option<&Value> {
-        self.params.get(key)
+        self.params.get(key).or_else(|| {
+            self.params
+                .iter()
+                .find(|(k, _)| k.eq_ignore_ascii_case(key))
+                .map(|(_, v)| v)
+        })
+    }
+
+    /// A bare word line (modifier such as `Continuous`) is present.
+    pub fn has_word(&self, word: &str) -> bool {
+        self.args
+            .iter()
+            .any(|a| a.word().is_some_and(|w| w.eq_ignore_ascii_case(word)))
     }
 }
 
@@ -52,6 +66,9 @@ impl Command {
 pub struct Event {
     /// The `@IF` trigger keyword (e.g. `UNITKILLED`).
     pub trigger: Command,
+    /// The second trigger after `@AND` (Macro.txt: "one and only one @AND
+    /// in any single @IF statement"); both must activate.
+    pub and: Option<Command>,
     /// The `@THEN` actions.
     pub actions: Vec<Command>,
 }
@@ -59,6 +76,10 @@ pub struct Event {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct EventFile {
     pub events: Vec<Event>,
+    /// `@INITFLAG` is present: without it the original ignores FLAG and
+    /// CHECKFLAG (Macro.txt "You cannot use flags unless they have been
+    /// initialized"; civ2.bak 0x5759af / 0x574cd7).
+    pub init_flags: bool,
     /// Keywords seen outside our action coverage (kept for honesty).
     pub unknown_keywords: Vec<String>,
 }
@@ -73,6 +94,19 @@ fn split_kv(line: &str) -> Option<(String, String)> {
     let (k, v) = line.split_once('=')?;
     Some((k.trim().to_string(), v.trim().to_string()))
 }
+
+/// Bare modifier lines inside `@THEN` (Macro.txt "Modifiers": Continuous,
+/// Randomize; CREATEUNIT's InCapital; JUSTONCE). They stay in the action
+/// list, but `key=value` lines after them still belong to the action they
+/// modify (Roman Civil Wars writes `FLAG / continuous / flag=1 / Who=…`).
+pub const MODIFIERS: [&str; 6] = [
+    "JUSTONCE",
+    "CONTINUOUS",
+    "RANDOMIZE",
+    "INCAPITAL",
+    "COLLAPSE",
+    "NOCOLLAPSE",
+];
 
 fn parse_value(s: &str) -> Value {
     let t = s.trim();
@@ -109,6 +143,10 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
         if t.eq_ignore_ascii_case("@ENDEVENTS") {
             break;
         }
+        if t.eq_ignore_ascii_case("@INITFLAG") {
+            out.init_flags = true;
+            continue;
+        }
         if !t.eq_ignore_ascii_case("@IF") {
             continue; // stray line between events
         }
@@ -135,6 +173,7 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
             args: Vec::new(),
             params: BTreeMap::new(),
         };
+        let mut and: Option<Command> = None;
         // consume trigger params until @THEN
         loop {
             match lines.peek() {
@@ -149,10 +188,24 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                         continue;
                     }
                     lines.next();
-                    if let Some((k, v)) = split_kv(lt) {
-                        trigger.params.insert(k, parse_value(&v));
+                    if lt.eq_ignore_ascii_case("@AND") && and.is_none() {
+                        and = Some(Command {
+                            keyword: String::new(),
+                            args: Vec::new(),
+                            params: BTreeMap::new(),
+                        });
+                        continue;
+                    }
+                    let cur = match and.as_mut() {
+                        Some(c) => c,
+                        None => &mut trigger,
+                    };
+                    if cur.keyword.is_empty() {
+                        cur.keyword = lt.to_uppercase();
+                    } else if let Some((k, v)) = split_kv(lt) {
+                        cur.params.insert(k, parse_value(&v));
                     } else {
-                        trigger.args.push(parse_value(lt));
+                        cur.args.push(parse_value(lt));
                     }
                 }
                 None => {
@@ -176,6 +229,14 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                         continue;
                     }
                     if let Some((k, v)) = split_kv(lt) {
+                        let owner = actions
+                            .iter_mut()
+                            .rev()
+                            .find(|c| !MODIFIERS.contains(&c.keyword.as_str()));
+                        if let Some(cmd) = owner {
+                            cmd.params.insert(k, parse_value(&v));
+                            continue;
+                        }
                         if let Some(cmd) = actions.last_mut() {
                             cmd.params.insert(k, parse_value(&v));
                             continue;
@@ -205,8 +266,43 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                         }
                         // `locations … endlocations` is a parameter of the
                         // preceding CREATEUNIT (Macro.txt), not an action.
-                        match actions.last_mut() {
+                        match actions
+                            .iter_mut()
+                            .rev()
+                            .find(|c| !MODIFIERS.contains(&c.keyword.as_str()))
+                        {
                             Some(prev) if prev.keyword == "CREATEUNIT" => {
+                                prev.args.push(Value::Points(pts));
+                            }
+                            _ => {
+                                cmd.args.push(Value::Points(pts));
+                                actions.push(cmd);
+                            }
+                        }
+                        continue;
+                    }
+                    if kw == "MAPRECT" {
+                        // CHANGETERRAIN's rectangle: one line of four
+                        // `x,y` corners (Macro.txt "maprect").
+                        let mut pts = Vec::new();
+                        for (_, l2) in lines.by_ref() {
+                            let t2 = l2.trim();
+                            if t2.is_empty() || t2.starts_with(';') {
+                                continue;
+                            }
+                            let nums: Vec<i32> = t2
+                                .split(',')
+                                .filter_map(|v| v.trim().parse().ok())
+                                .collect();
+                            pts.extend(nums.as_chunks::<2>().0.iter().map(|&[x, y]| (x, y)));
+                            break;
+                        }
+                        match actions
+                            .iter_mut()
+                            .rev()
+                            .find(|c| !MODIFIERS.contains(&c.keyword.as_str()))
+                        {
+                            Some(prev) if prev.keyword == "CHANGETERRAIN" => {
                                 prev.args.push(Value::Points(pts));
                             }
                             _ => {
@@ -252,7 +348,11 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                 }
             }
         }
-        events.push(Event { trigger, actions });
+        events.push(Event {
+            trigger,
+            and: and.filter(|c| !c.keyword.is_empty()),
+            actions,
+        });
     }
     out.events = events;
     Ok(out)
@@ -281,6 +381,68 @@ mod tests {
             Value::Text(t) => assert_eq!(t, "hello"),
             _ => panic!("expected text"),
         }
+    }
+
+    #[test]
+    fn and_triggers_and_modifier_lines_keep_their_parameters() {
+        // Shapes from Roman Civil Wars' Events.txt.
+        let src = "@IF\nCityTaken\ncity=AnyCity\nDefender=Gauls\n@AND\nReceivedTechnology\n\
+                   receiver=Gauls\ntechnology=33\n@THEN\nFLAG\ncontinuous\nflag=1\nWho=Gauls\n\
+                   state=on\nCreateUnit\nowner=Gauls\nunit=Octavian\nInCapital\nlocations\n\
+                   44,68\nendlocations\n@ENDIF\n";
+        let f = parse_events(src).unwrap();
+        assert!(!f.init_flags);
+        assert!(
+            parse_events("@BEGINEVENTS\n@INITFLAG\n@DEBUG\n@ENDEVENTS\n")
+                .unwrap()
+                .init_flags
+        );
+        let e = &f.events[0];
+        assert_eq!(e.trigger.keyword, "CITYTAKEN");
+        assert_eq!(
+            e.trigger.param("defender").and_then(|v| v.word()),
+            Some("Gauls")
+        );
+        assert!(
+            e.trigger.param("receiver").is_none(),
+            "@AND half stays apart"
+        );
+        let and = e.and.as_ref().expect("@AND trigger");
+        assert_eq!(and.keyword, "RECEIVEDTECHNOLOGY");
+        assert_eq!(and.param("technology").and_then(|v| v.number()), Some(33));
+        let kws: Vec<&str> = e.actions.iter().map(|a| a.keyword.as_str()).collect();
+        assert_eq!(kws, ["FLAG", "CONTINUOUS", "CREATEUNIT", "INCAPITAL"]);
+        assert_eq!(e.actions[0].param("flag").and_then(|v| v.number()), Some(1));
+        assert_eq!(
+            e.actions[0].param("Who").and_then(|v| v.word()),
+            Some("Gauls")
+        );
+        assert!(e.actions[1].params.is_empty());
+        assert!(
+            matches!(e.actions[2].args.first(), Some(Value::Points(p)) if p == &[(44, 68)]),
+            "locations after InCapital stay on CREATEUNIT"
+        );
+    }
+
+    #[test]
+    fn maprect_belongs_to_changeterrain() {
+        let f = parse_events(
+            "@IF\nTURN\nturn=3\n@THEN\nCHANGETERRAIN\nterraintype=2\nmaprect\n\
+             128,60,129,60,128,61,128,62\nPLAYWAVEFILE\nflood.wav\n@ENDIF\n",
+        )
+        .unwrap();
+        let a = &f.events[0].actions;
+        assert_eq!(a[0].keyword, "CHANGETERRAIN");
+        assert_eq!(
+            a[0].args,
+            [Value::Points(vec![
+                (128, 60),
+                (129, 60),
+                (128, 61),
+                (128, 62)
+            ])]
+        );
+        assert_eq!(a[1].keyword, "PLAYWAVEFILE");
     }
 
     #[test]

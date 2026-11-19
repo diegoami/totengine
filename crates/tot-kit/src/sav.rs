@@ -942,7 +942,7 @@ pub fn parse_sav(data: &[u8]) -> Result<SaveFile, SavError> {
         turn_limit: i16le(data, 672)?,
         ..CalendarSettings::default()
     });
-    let scenario = if flags & 0x80 != 0 {
+    let scenario = if flags & 0xc0 != 0 {
         let leaders = if data[678] == 0 {
             1
         } else {

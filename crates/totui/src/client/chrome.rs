@@ -16,6 +16,13 @@ pub(super) const MAP: (f64, f64, f64, f64) = (8., 34., 768., 682.);
 pub(super) const STRIP_H: f64 = 46.;
 /// The right column `(x, y, w, h)`.
 pub(super) const COLUMN: (f64, f64, f64, f64) = (784., 34., 232., 682.);
+/// Width of the side column a wide stage adds left of the right column
+/// (#337), and the gap between the two.
+pub(super) const SIDE_W: f64 = 232.;
+const SIDE_GAP: f64 = 8.;
+/// The narrowest stage that has the side column: 4:3 plus the column.
+/// 16:9 (1365) has it; 16:10 (1228) and 4:3 keep layout B as it was.
+pub(super) const WIDE_MIN: f64 = 1024. + SIDE_W + SIDE_GAP;
 /// The minimap inside the column's top box.
 const MINIMAP: (f64, f64, f64, f64) = (790., 40., 220., 126.);
 /// Width of text and buttons inside the column.
@@ -101,7 +108,15 @@ impl Client {
     /// Where centring puts a tile on the map: the same point as at 4:3, moved
     /// to the middle of a wider map.
     pub(super) fn anchor(&self) -> (f64, f64) {
-        (380. + (self.stage_w - f64::from(WIDTH)) / 2., 390.)
+        (380. + (self.map_rect().2 - MAP.2) / 2., 390.)
+    }
+
+    /// Left edge of the side column (#337) when the stage is wide enough
+    /// for it: messages and notices move there from the right column's dock
+    /// and the new-messages overlay. Owner decision 2026-11-19: on by default
+    /// from `WIDE_MIN`, 4:3 unchanged.
+    pub(super) fn side_x(&self) -> Option<f64> {
+        (self.stage_w >= WIDE_MIN).then(|| self.column_x() - SIDE_GAP - SIDE_W)
     }
 
     /// Left edge of the right column: anchored to the stage's right edge, so
@@ -118,7 +133,12 @@ impl Client {
     /// The map viewport `(x, y, w, h)`: shorter while the order strip shows.
     pub(super) fn map_rect(&self) -> (f64, f64, f64, f64) {
         let (x, y, w, h) = MAP;
-        let w = w + self.stage_w - 1024.;
+        let side = if self.side_x().is_some() {
+            SIDE_W + SIDE_GAP
+        } else {
+            0.
+        };
+        let w = w + self.stage_w - 1024. - side;
         if self.enhancements.order_strip {
             (x, y, w, h - STRIP_H)
         } else {
@@ -341,13 +361,19 @@ impl Client {
         let title = title.strip_prefix("ToT Engine — ").unwrap_or(title);
         let width = |t: &str| t.chars().count() as f64 * 0.58 * f64::from(style::TYPE_SMALL);
         // The browser's licence link sits at the top-right corner; a long
-        // title (a scenario name) first drops the turn, which the right
-        // column also shows, then ends in an ellipsis.
+        // title (a scenario name) first drops the turn, then the date (#330),
+        // both of which the right column also shows, then ends in an
+        // ellipsis.
         let room = self.stage_w - 198. - (title_x(MENUS.len()) + 8.);
         let mut title = title.to_string();
         if width(&title) > room {
             if let Some((head, _)) = title.rsplit_once(" · Turn ") {
                 title = head.to_string();
+                if width(&title) > room && self.date_label_shown() {
+                    if let Some((head, _)) = title.rsplit_once(" · ") {
+                        title = head.to_string();
+                    }
+                }
             }
         }
         if width(&title) > room {
@@ -447,7 +473,8 @@ impl Client {
     /// minimap and empty rows leave.
     fn column_layout(&self, v: &HumanView) -> ColumnLayout {
         let stack = self.stack_at_cursor(v).len().min(3) as f64;
-        if !self.enhancements.message_dock {
+        // The side column carries the messages on a wide stage (#337).
+        if !self.enhancements.message_dock || self.side_x().is_some() {
             return ColumnLayout {
                 minimap: (self.cx(), MINIMAP.1, MINIMAP.2, MINIMAP.3),
                 status: 176.,
@@ -611,7 +638,114 @@ impl Client {
                 Action::Messages,
             );
         }
+        if let Some(sx) = self.side_x() {
+            let (_, y, _, h) = COLUMN;
+            add(
+                sx + 6.,
+                y + h - 38.,
+                CW,
+                30.,
+                format!("All messages ({})", self.notice_log.len()),
+                Action::Messages,
+            );
+        }
         b
+    }
+
+    /// The date as the original writes it, with the game's `Labels.txt`
+    /// (#330); `None` while the scenario calendar is not located.
+    pub(super) fn date_label(&self, o: &engine::player::Observation) -> Option<String> {
+        let (n, style) = o.date?;
+        let labels = self
+            .loaded
+            .as_ref()
+            .and_then(|l| l.resources.labels.as_ref());
+        Some(engine::calendar::date_text(n, style, labels))
+    }
+
+    /// A date is part of the title (the game's calendar is located).
+    fn date_label_shown(&self) -> bool {
+        self.view()
+            .is_some_and(|v| self.date_label(&v.observation).is_some())
+    }
+
+    /// The side column (#337): this turn's messages in full (wrapped), then
+    /// earlier ones newest first, as many as fit. Presentation only, like
+    /// the dock it replaces on a wide stage.
+    pub(super) fn side_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
+        let Some(x) = self.side_x() else {
+            return;
+        };
+        let (_, top, w, h) = COLUMN;
+        draws.push(Draw::Tile {
+            x,
+            y: top,
+            w,
+            h,
+            sprite: "panel".into(),
+        });
+        let cx = x + 6.;
+        let bottom = top + h - 44.;
+        let mut y = top + 8.;
+        let turn = self.notice_turn;
+        let header = match turn {
+            // "New" only on the turn they arrived and until read.
+            Some(t) if self.notice_unread && t == v.observation.turn => {
+                format!("Turn {t} — new messages")
+            }
+            Some(t) => format!("Turn {t} messages"),
+            None => "Messages".into(),
+        };
+        draws.push(text(cx, y, &header, style::TYPE_SMALL, style::TEXT_BRIGHT));
+        y += 22.;
+        if self.notice_log.is_empty() {
+            draws.push(text(
+                cx,
+                y,
+                "No messages yet.",
+                style::TYPE_SMALL,
+                style::TEXT_DIM,
+            ));
+        }
+        let (now, earlier): (Vec<_>, Vec<_>) = self
+            .notice_log
+            .iter()
+            .rev()
+            .partition(|(t, _)| Some(*t) == turn);
+        'now: for (_, line) in now.iter().rev() {
+            for part in wrap(line, SIDE_CHARS) {
+                if y + 16. > bottom {
+                    break 'now;
+                }
+                draws.push(text(cx, y, &part, style::TYPE_SMALL, style::TEXT));
+                y += 16.;
+            }
+            y += 4.;
+        }
+        if !earlier.is_empty() && y + 42. <= bottom {
+            y += 6.;
+            draws.push(rect(x, y - 4., w, 1., style::INSET));
+            draws.push(rect(x, y - 1., w, 1., style::GOLD_DIM));
+            draws.push(text(
+                cx,
+                y + 4.,
+                "Earlier",
+                style::TYPE_SMALL,
+                style::TEXT_BRIGHT,
+            ));
+            y += 26.;
+            for (t, line) in earlier {
+                if y + 16. > bottom {
+                    break;
+                }
+                let mut s = format!("T{t} {line}");
+                if s.chars().count() > SIDE_CHARS {
+                    s = s.chars().take(SIDE_CHARS - 1).collect::<String>() + "…";
+                }
+                draws.push(text(cx, y, &s, style::TYPE_SMALL, style::TEXT_DIM));
+                y += 16.;
+            }
+        }
     }
 
     /// The column's frames, minimap and text (its buttons draw with the rest).
@@ -640,21 +774,27 @@ impl Client {
         let mut line = |y: f64, s: &str, size: u32, color: &str| {
             draws.push(text(cx, y, s, size, color));
         };
-        // Status: turn, government, treasury, rates and research.
+        // Status: date and turn (#330), government and treasury, rates and
+        // research.
+        let head = match self.date_label(o) {
+            Some(date) => format!("{date} · Turn {}", o.turn),
+            None => format!("Turn {}", o.turn),
+        };
         line(
             l.status + 6.,
-            &format!(
-                "Turn {} · {}",
-                o.turn,
-                routes::government_name(o.government)
-            ),
-            style::TYPE_BODY,
+            &head,
+            style::button_label_size(&head, CW),
             style::TEXT_BRIGHT,
+        );
+        let purse = format!(
+            "{} · {} gold",
+            routes::government_name(o.government),
+            o.treasury
         );
         line(
             l.status + 28.,
-            &format!("Treasury: {} gold", o.treasury),
-            style::TYPE_BODY,
+            &purse,
+            style::button_label_size(&purse, CW),
             style::TEXT,
         );
         if let Some(r) = &v.rates {
@@ -972,6 +1112,37 @@ impl Client {
         self.status = "Map centred from the minimap.".into();
         true
     }
+}
+
+/// Characters per side-column line (the dock's 220 px measure).
+const SIDE_CHARS: usize = 31;
+
+/// Greedy word wrap to `width` characters; longer words are cut.
+fn wrap(line: &str, width: usize) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut cur = String::new();
+    for word in line.split_whitespace() {
+        let mut word: String = word.into();
+        while word.chars().count() > width {
+            if !cur.is_empty() {
+                out.push(std::mem::take(&mut cur));
+            }
+            out.push(word.chars().take(width).collect());
+            word = word.chars().skip(width).collect();
+        }
+        let n = cur.chars().count();
+        if n > 0 && n + 1 + word.chars().count() > width {
+            out.push(std::mem::take(&mut cur));
+        }
+        if !cur.is_empty() {
+            cur.push(' ');
+        }
+        cur.push_str(&word);
+    }
+    if !cur.is_empty() {
+        out.push(cur);
+    }
+    out
 }
 
 /// Top edges of the right column's boxes (#311/#313).

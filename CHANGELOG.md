@@ -18,6 +18,92 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   map (the armies; its cities are all on map 1) with its own calendar, which
   reproduces the years the game saved; its Lua is not run. The Warring States
   walk goldens were regenerated.
+- **Scenario dates** (#330), on both clients: the status panel, title bar,
+  reports and Science advisor show the date the way the original writes it
+  (`4000 B.C.`, `A.D. 1500`, and month calendars such as FallRome's
+  `Dec 429`), using the game folder's own `Labels.txt` (Constantine's
+  "Anno Domini", Fantasy's ages). The status panel's first line is now
+  `date · Turn N` and the second `government · N gold`; a narrow title drops
+  the turn, then the date. The scenario preflight shows the starting date.
+  AE 1200 BC's scenario file is flagged 0x40 rather than 0x80; the engine now
+  promotes it as the original's loader does, so its scenario calendar (and
+  scenario research costs) apply: it starts in 1200 B.C., not 4000 B.C.
+- The **built-in AI now plays Roman Civil Wars, AE 1200 BC and
+  Constantine** (#329). Advance references in Rules now resolve against the
+  original's fixed slot identifiers, exactly as the executable does, instead
+  of the row comments. Those scenarios rename advances and annotate the
+  comments, so the AI used to fall back to AI v1, and the research tree
+  marked some advances unresearchable. The scoring tables also read only
+  the first 80 unit rows, as the original does.
+- **Side column on wide screens** in both clients (#337). From 16:9, a second
+  column left of the right column holds this turn's messages in full and the
+  earlier ones, with All messages. It replaces the message dock and the
+  new-messages overlay at that width, and is on by default there. 4:3 and
+  16:10 are unchanged, and so are the city window and dialogs.
+- Layout B accepted on both clients (#316, owner, 2026-11-19). The browser
+  (`tools/check_client_browser.cjs`) and Linux desktop
+  (`tools/check_client_linux.py`, private Xvfb with XTest) real-input scripts
+  play ten rounds through the menu bar and right column and write seven
+  checkpoints that are byte-identical across the two clients. The owner
+  reviewed the map, city window and science advisor at 1024×768 and
+  1920×1080, and played the Windows desktop build. The Windows real-input
+  script (`tools/check_client_windows.ps1`) was not run, and the optional
+  fixture routes (unit selection, government, city panels) had no fixtures.
+- Turn triggers now follow the original executable (#328):
+  - RANDOMTURN rolls the original's C runtime `rand()`, the same generator
+    combat uses, and already-spent events still use up their roll. The
+    FallRome 50-turn reference run changed as a result.
+  - TURN with `Continuous` fires on every turn after its turn. On turns 22
+    and 42, a JUSTONCE TURN event whose turn has passed without it firing
+    fires then.
+  - TURNINTERVAL with `interval=0` fires every turn.
+  - The preflight now explains the remaining event gaps:
+    - BRIBEUNIT and NEGOTIATION need bribery and diplomacy, which the engine
+      doesn't have yet.
+    - Event sounds and videos are not played.
+    - NOSCHISM has nothing to prevent, because the engine has no civil war.
+- More scenario event support, decoded from the original executable (#328):
+  - **Actions:**
+    - TAKETECHNOLOGY, including `Collapse`.
+    - DELAY timers.
+    - CHANGETERRAIN, which also destroys cities and units on the changed
+      tiles.
+    - MAKEAGGRESSION, using the original's treaty and attitude changes.
+    - CREATEUNIT now honours `Randomize`, `InCapital` and `homecity`, and
+      follows the original's placement rules.
+  - **Triggers:**
+    - RECEIVEDTECHNOLOGY, checked at every turn start.
+    - SCENARIOLOADED, fired once when a scenario starts.
+  - The preflight lists the remaining partial cases. AE 1200 BC's floods and
+    wars and Roman Civil Wars' delayed leaders now happen.
+- Scenario events now support **flags**: FLAG, CHECKFLAG, `Continuous`,
+  `@INITFLAG` and one `@AND` per event (#328). They follow a static decode
+  of the original:
+  - CHECKFLAG is tested once at each turn start, after TURN, TURNINTERVAL
+    and RANDOMTURN.
+  - Flags set without `Continuous` are cleared after that test.
+  - Somebody runs the event once per matching civilization; Everybody
+    combines all the civilizations' flags into one test.
+  - `Count` acts as a minimum, as in the original.
+
+  Two event-file parsing fixes come with this:
+  - `@AND` second triggers no longer merge into the first trigger.
+  - Parameters after a `continuous`, `InCapital` or `Randomize` line stay
+    with their action.
+
+  Parameter names now match case-insensitively. Roman Civil Wars' Gaulish
+  revolt, for example, now builds up from the cities the Gauls lose.
+- Scenario events now apply **GIVETECHNOLOGY** (#327): the receiver gets the
+  advance through the same grant as research completion. A static decode of
+  the original executor shows that it calls the same routine for a living
+  civilization 1–7. A gift to the human during the round shows a discovery
+  notice, and the preflight no longer lists it as skipped.
+- Scenario event **TEXT messages** now open as pop-up dialogs in both clients
+  (#326). Boxes fired during opponents' moves or the round wait for the human's
+  turn (after any required choice); boxes the human's own moves fire open at
+  once. Enter or Esc closes each, and every box is also kept in the message
+  log. Macro.txt's `No Broadcast` limits a box to the triggering civilization.
+  The preflight no longer lists event messages as a gap.
 - **Open scenario (experimental)** in both clients (owner decision,
   2026-11-18; decision 0008). The setup screen and **Game > Open scenario…**
   list the installation's `.scn`/`.sav` files; a preflight shows the playable

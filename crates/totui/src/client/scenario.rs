@@ -24,6 +24,8 @@ pub(super) struct ScenarioChoice {
     /// Index into `preflight.civs`.
     pub civ: usize,
     pub policy: AiPolicy,
+    /// The starting date in the scenario's own labels (#330).
+    pub date: Option<String>,
 }
 
 impl Client {
@@ -62,8 +64,9 @@ impl Client {
             files.events_unreadable,
             files.lua,
         )?;
-        // The built-in opponent needs the Rules' research tables; scenarios
-        // that rename advances fall back to AI v1, and say so.
+        // The built-in opponent needs the Rules' research tables. Renamed
+        // advances resolve by the original's fixed slot identifiers (#329);
+        // Rules it still cannot read fall back to AI v1, and say so.
         let policy = match engine::ai::BuiltInAi::new(&resources.rules, 0, 1) {
             Ok(_) => AiPolicy::BuiltIn1,
             Err(e) => {
@@ -79,7 +82,11 @@ impl Client {
             .iter()
             .position(|c| c.human_in_file)
             .unwrap_or(0);
+        let date = preflight
+            .date
+            .map(|(n, style)| engine::calendar::date_text(n, style, resources.labels.as_ref()));
         self.open(Modal::ScenarioStart(Box::new(ScenarioChoice {
+            date,
             path: files.path,
             preflight,
             civ,
@@ -250,7 +257,11 @@ impl Client {
                     212.,
                     176.,
                     &format!(
-                        "Turn {} · map {} × {} · {} civilizations · opponents: {}",
+                        "{}Turn {} · map {} × {} · {} civilizations · opponents: {}",
+                        choice
+                            .date
+                            .as_ref()
+                            .map_or_else(String::new, |d| format!("{d} · ")),
                         p.turn,
                         p.width * 2,
                         p.height,

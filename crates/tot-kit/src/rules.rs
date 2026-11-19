@@ -46,6 +46,23 @@ pub struct Rules {
     pub sections: BTreeMap<String, Section>,
 }
 
+/// The original's fixed advance slot identifiers, slot 0..=99. They live in
+/// the executable's advance table (civ2.bak VA `0x5d0a18`, 20-byte records)
+/// and no Rules loader code writes them: a renamed advance keeps its slot
+/// identifier whatever its row comment says. Re-derived from the install by
+/// `crates/tot-kit/tests/advance_ids_install.rs` (evidence README §Advance
+/// references).
+pub const ADVANCE_IDS: [&str; 100] = [
+    "AFl", "Alp", "Amp", "Ast", "Ato", "Aut", "Ban", "Bri", "Bro", "Cer", "Che", "Chi", "CoL",
+    "CA", "Cmb", "Cmn", "Cmp", "Csc", "Cst", "Cor", "Cur", "Dem", "Eco", "E1", "E2", "Eng", "Env",
+    "Esp", "Exp", "Feu", "Fli", "Fun", "FP", "Gen", "Gue", "Gun", "Hor", "Ind", "Inv", "Iro",
+    "Lab", "Las", "Ldr", "Lit", "Too", "Mag", "Map", "Mas", "MP", "Mat", "Med", "Met", "Min",
+    "Mob", "Mon", "MT", "Mys", "Nav", "NF", "NP", "Phi", "Phy", "Pla", "Plu", "PT", "Pot", "Rad",
+    "RR", "Rec", "Ref", "Rfg", "Rep", "Rob", "Roc", "San", "Sea", "SFl", "Sth", "SE", "Stl", "Sup",
+    "Tac", "The", "ToG", "Tra", "Uni", "War", "Whe", "Wri", "FT", "U1", "U2", "U3", "X1", "X2",
+    "X3", "X4", "X5", "X6", "X7",
+];
+
 /// One scientific advance (`@CIVILIZE` row, T1-5). Prerequisites are the
 /// three-letter abbreviations exactly as written in the file; resolve
 /// them via [`Rules::tech_defs`] (abbrev → index).
@@ -407,6 +424,27 @@ impl Rules {
     /// prerequisite references (`Adp` rows, `@ENDWONDER`, unit `preq`).
     /// Epoch: 0 Ancient, 1 Renaissance, 2 Industrial, 3 Modern.
     /// Category: 0 Military, 1 Economic, 2 Social, 3 Academic, 4 Applied.
+    /// The advance slot an advance reference names, like the original's
+    /// resolver `0x490440`: an exact, case-sensitive match against
+    /// [`ADVANCE_IDS`] (the CRT `strcmp` at `0x5b4050`), first match. `nil` and
+    /// `no` are not slots (the resolver returns -1 / -2 for them) and an
+    /// unknown name is `None` (the original keeps -3 and reports it).
+    ///
+    /// The original always reads exactly 100 `@CIVILIZE` rows (`0x412f9c`).
+    /// A shorter section is not a game file (engine fixtures); its row
+    /// comments are matched instead, ignoring case and a leading `*`.
+    pub fn advance_slot(&self, raw: &str) -> Option<usize> {
+        let raw = raw.trim();
+        let s = self.section("CIVILIZE")?;
+        if s.rows.len() >= 100 {
+            return ADVANCE_IDS.iter().position(|id| *id == raw);
+        }
+        s.comments
+            .iter()
+            .take(s.rows.len())
+            .position(|c| c.trim().trim_start_matches('*').eq_ignore_ascii_case(raw))
+    }
+
     pub fn tech_defs(&self) -> Vec<TechDef> {
         let Some(s) = self.section("CIVILIZE") else {
             return Vec::new();

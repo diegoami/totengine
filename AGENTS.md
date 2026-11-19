@@ -68,6 +68,22 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+**v0.21.0 is RELEASED** at exactly reviewed/tagged SHA
+`954e63554d73d07e98e5d3e605979d59ac5ba4d8` (GLM-5.3 AGREE on #346, round
+one, no MUST-FIX). Theme: Layout B and experimental scenario play on both
+clients. Layout B milestone #310–#316 (menu bar, right column, classic city
+window and science advisor, optional order strip and message dock), whole
+screen and full-screen mode (#321), side column on wide screens (#337); the
+owner accepted it on both clients (#316). Experimental scenario entry (#325,
+owner 2026-11-18): installed `.scn`/`.sav` behind a preflight listing every
+gap, with decoded events (#326–#328), slot-id advances (#329), dates/labels
+(#330) and multi-map/`0x33` files on map 0 (#331). This is not faithful import:
+milestone 17 (#197/#198) stays the target. Reviewer reproduced 394 Rust
+tests, 67 desktop-feature tests, goldens 24/24, strict Clippy and a
+byte-identical inventory; the Windows input script was not run. Source release
+without client archives. Follow-ups #347–#350 are open. Milestones 30/31
+are closed. Keep the tag at the exact reviewed SHA.
+
 **v0.20.0 is RELEASED** at exactly reviewed/tagged SHA
 `4d72676c996be1550ab96cff67537e9b36bfc8ca` (GLM-5.3 AGREE on #306, round
 two, after round one's BLOCK on #307 — the desktop real-input focus detector

@@ -319,6 +319,10 @@ impl UnitRecord {
     pub fn moves_spent(&self) -> u8 {
         self.raw[10]
     }
+    /// Saved map visibility mask, +11; normal unit-map gate 0x466ae8.
+    pub fn visibility(&self) -> u8 {
+        self.raw[11]
+    }
     /// Damage taken (hit points lost; HP = Rules `h` × 10), u8@12 —
     /// oracle battles: 0→5, 1→4, and 10 on the killed unit.
     pub fn damage(&self) -> u8 {
@@ -417,6 +421,15 @@ impl CityRecord {
     /// Transient city identity, u32@86 (`0x45f0d7` reassigns it at load).
     pub fn city_id(&self) -> u32 {
         u32::from_le_bytes(self.raw[86..90].try_into().unwrap())
+    }
+    /// Saved city knowledge mask, +14 (0x4664f5; evidence §Native saved-map knowledge).
+    pub fn known_to(&self) -> u8 {
+        self.raw[14]
+    }
+    /// Raw remembered size, +15+civ, including slot 0; native drawing reads
+    /// a signed byte. `None` outside the eight slots (0x53837d).
+    pub fn known_size(&self, civ: u8) -> Option<u8> {
+        (civ < 8).then(|| self.raw[15 + usize::from(civ)])
     }
     /// Food storage box (u16@28): ticks by food surplus each turn,
     /// consumed by growth (evidence §T1-4; the per-city sample citations

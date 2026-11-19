@@ -72,6 +72,18 @@ fs.mkdirSync(out,{recursive:true});
  if((await state()).phase!==setupPhase||(await state()).status!=='Window is unfocused; input ignored')throw Error('delayed focus defeated newer blur');
  await page.unroute('**/*',holdFocusRequests);
  await restoreFocus();
+ const knowledge=process.env.TOTENGINE_KNOWLEDGE_PREFLIGHT;
+ if(knowledge){
+  await click('Open scenario (experimental)');
+  for(let n=0;n<40&&!has(await state(),knowledge);n++)await key('PageDown');
+  await click(knowledge);
+  const f=await state(),t=f.draws.filter(d=>d.kind==='text').map(d=>d.text).join(' ').replace(/\s+/g,' ');
+  if(!t.includes('engine sight adds 1 unexplored tile')||!t.includes('native visibility/contact updates are not matched'))throw Error('saved-knowledge gap missing from preflight');
+  if(!t.includes('original ending and scoring screens'))throw Error('preflight lost ending disclosure');
+  await page.screenshot({path:out+'/knowledge-preflight.png'});
+  await key('Escape');await key('Escape');
+  if((await state()).phase!==setupPhase)throw Error('cancelled preflight changed setup');
+ }
  await idle();await click('Generated seed');await fill('7');await click(startLabel);
  await click('Save pending choice');await save('research');await research();
  await key('b');await click('Save pending choice');await save('founding');await fill('athenx');await page.keyboard.press('Backspace');await page.keyboard.type('a');await page.waitForFunction(()=>frame.entry?.value==='athena'&&!busy);await key('Enter');

@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "base_sha": "1d8b4005f89d68a053f582f359b5a3a071d1d532",
+  "scope": "Read-only native saved-map reader projection and experimental preflight disclosure; no continuation/admission activation.",
+  "native_evidence": "import-knowledge.json and import-knowledge-vectors.txt",
+  "real_input": {
+    "browser": "Chromium/Playwright mouse/keyboard on scratch loopback host",
+    "desktop": "Linux SDL/XTest on private Xvfb",
+    "preflight_input": "Original/Ph_Auto2.SAV",
+    "checks": [
+      "select the installed save from the experimental list",
+      "show that engine sight adds one unexplored tile and native visibility/contact updates are unmatched",
+      "keep the existing original ending/scoring-screen omission policy visible",
+      "cancel back to setup without starting a session",
+      "complete the existing generated ten-round/save/reload route"
+    ],
+    "checkpoint_comparisons": [
+      {
+        "checkpoint": "founding.cth",
+        "sha256": "080141cdd924494c366887dbaac78d23636c049d9e97d16f8fa86119beabd2e8",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "foundingnext.cth",
+        "sha256": "8f4bed2da65967202bed870e346d67f1d341d7fc8215767c06ac88d97c37970d",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "normal.cth",
+        "sha256": "8f4bed2da65967202bed870e346d67f1d341d7fc8215767c06ac88d97c37970d",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "normalnext.cth",
+        "sha256": "d9ac1ad11b06c1c82b9d516640f93f4876102820a87e72381a4392fb53fe2a5d",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "research.cth",
+        "sha256": "ee6f19304e120f7b35e3960fa0102cd7affa585425ba964f835f3c994cd53f7c",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "researchnext.cth",
+        "sha256": "080141cdd924494c366887dbaac78d23636c049d9e97d16f8fa86119beabd2e8",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "tenrounds.cth",
+        "sha256": "6e01626c364b124e9c8e3663abfc3b3e49c2c9782df1280deb172b7d889445de",
+        "browser_equals_sdl": true
+      }
+    ]
+  },
+  "source_sha256": {
+    "crates/engine/src/saved_knowledge.rs": "ad70f9c17b3de509dbeb895e1ee069327bc92de3ce844b36c4a43fa5264b3791",
+    "crates/engine/tests/saved_knowledge.rs": "341955217d8a778adfa57d855a5c891cc21d0d0cb37f3e045a82334d642bceea",
+    "crates/engine/src/scenario.rs": "293cf02c6b89304e866f257c6d8f6f49d8569180b3993c68611feb52fc3ccf39",
+    "crates/engine/src/lib.rs": "1cd9fc382c301aa03ebbaad632cf9df3f16bde72b4489c687769286bdeed7d59",
+    "crates/tot-kit/src/sav.rs": "8fe3d7f2010506ee636bc01a6cf4b8bb59942b8f0c861afff186a4bab2389f60",
+    "crates/totui/src/client/tests.rs": "b0f591ea2689e49d94252df75e0e3cfa42bc3cfffcf0cc84c0cfdd335170f25f",
+    "tools/import_knowledge_check.py": "c9f334b305c315c2f54645c6fc9a5ca600cda1b42ffbba1ad28e73a9486a6dbb",
+    "tools/check_client_browser.cjs": "0a77e28ee20358259efe22bd93c8372e4d96f070e82fc8991ed044efa0a04c5a",
+    "tools/check_client_linux.py": "b9c56ad4c0896d0cd982021521cace824d9b3d04cfe9a4781731f079c78a37fa"
+  },
+  "binaries_sha256": {
+    "totplay": "a2418309bbd7fb7101b2cf69a2db93fa37124c2b02801c8517c6ee1f31e8f94c",
+    "totdesktop": "e3f2cda4b2e439bbbcd4c6d641b421d42906d56c45f8580d2fdbd7ec0a105032"
+  },
+  "limits": [
+    "No live original loader/UI observation.",
+    "No complete stack selection, invisible-unit/contact/diplomacy or ongoing runtime knowledge implementation.",
+    "Existing runtime observation policy is unchanged and faithful import remains unadmitted.",
+    "No Windows real-input run, owner human acceptance, milestone review or tag."
+  ],
+  "validation": {
+    "install_backed_make_test": {
+      "rust_passed": 416,
+      "python_passed": 49,
+      "goldens_passed": 24
+    },
+    "desktop_feature_tests": {
+      "passed": 71,
+      "ignored": 10
+    },
+    "native_controlled_cases": 947,
+    "native_evidence_reproduction": "byte-identical",
+    "format": "passed",
+    "strict_workspace_clippy": "passed",
+    "strict_desktop_clippy": "passed",
+    "inventory": "source audit current; corpus inputs/admissions unchanged"
+  }
+}

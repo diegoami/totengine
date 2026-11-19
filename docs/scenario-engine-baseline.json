@@ -5,20 +5,21 @@
   "meaning": "Manually audited implementation coverage, not native conformance or runtime admission. Source changes require a new audit.",
   "source_sha256": {
     "crates/tot-kit/src/events.rs": "1681efdbeffea4104ea049a77c127831a1d8b5ff49d970dfc878d3d1d9125b91",
-    "crates/tot-kit/src/sav.rs": "f0eabfc96dd8ca830c4361dc622fe92e578cd49eef9751fa6e242c65152192ef",
+    "crates/tot-kit/src/sav.rs": "8fe3d7f2010506ee636bc01a6cf4b8bb59942b8f0c861afff186a4bab2389f60",
     "crates/engine/src/events.rs": "07a4e57b0fbb1dd010f62369fcc8bc664b637166e765621bd6e2d66f66fe24e1",
     "crates/engine/src/effects.rs": "a2b75e4c9ed7a7fd06bae65b7394d1637fee7d03954009e3afeafc238803ef85",
     "crates/engine/src/turn.rs": "12008e3af7eea7610fb1b9cbbd3c0b817fedb7be74b1e403c440d3d39e3fb032",
     "crates/engine/src/player.rs": "1167e5b31165e5259dba55211816263fbf8c7844f2fde40587eb01de09f04537",
     "crates/engine/src/human.rs": "b1a58df4f90c1761dda4d8e24bbc6c8161bdc61b02e1fc8ef6b0f8b1a1a82141",
     "crates/engine/src/human/checkpoint.rs": "418113d3b96fa682127c12debc962e8b4dcd8cafe899157fc252cba7fc57fdea",
-    "crates/engine/src/lib.rs": "26c50f4601e51e9c8cd2ff26c8a9e981abf8aa37ca988c0114f2cc13f3a0e891",
+    "crates/engine/src/lib.rs": "1cd9fc382c301aa03ebbaad632cf9df3f16bde72b4489c687769286bdeed7d59",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
     "crates/totui/src/client/mod.rs": "c3c29d3f90eeed285fb6c2a0efc11d6701a504549d67e3d01e59c24facc467e2",
     "crates/totui/src/resources.rs": "bbb42c30b6bffab4d1be72f0ed10ebe56d887b3a42984d42a782d5340710ac90",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "b6b9fc0d0d8fbc8f3ceb1bd603c6c6038f521dbe3af4939957a4edf07a8e2c00",
-    "crates/totui/src/client/scenario.rs": "30aa68fcb7f24bd519186b75a8b872dbd84eb97e5570438a51fdf4449360a887"
+    "crates/totui/src/client/scenario.rs": "30aa68fcb7f24bd519186b75a8b872dbd84eb97e5570438a51fdf4449360a887",
+    "crates/engine/src/saved_knowledge.rs": "ad70f9c17b3de509dbeb895e1ee069327bc92de3ce844b36c4a43fa5264b3791"
   },
   "triggers": {
     "TURN": {
@@ -567,6 +568,16 @@
         "crates/totui/src/client/scenario.rs"
       ],
       "finding": "New scenario_initialized constructor captures schema-1 metadata before input/opponent work: source identity, saved position, normalized phase/cursor/owner, movement and knowledge recipes, policy/seed, world/memory/choice assertions and canonical event input/initial-state assertions. Pristine event input is required. Format 3 seals the captured dependency manifest and verifies the reconstructed initializer before replay; format 2 remains for generated/legacy sessions without silent upgrade. Both clients use the new initializer for newly opened experimental scenarios and select the correct dependency identity on restore. Rules/art/events/snapshot identity retains its previous resolution; Labels.txt and Describe.txt identities are captured from the same reads that supply their parsed presentation, separately from legacy identity. No trigger/action coverage change or native format claim; experimental-scenario-v1 is explicitly unadmitted, and classic-surface-032-v1 remains gated by native knowledge, complete dependencies and the separate #198 entry/acceptance routes. Format 3 also asserts both engine RNG states and draw counts initially and finally; native RNG continuation remains unclaimed."
+    },
+    {
+      "change": "Native saved-map projection and exploration readers; disclose knowledge mismatch in experimental preflight (#197)",
+      "files": [
+        "crates/tot-kit/src/sav.rs",
+        "crates/engine/src/lib.rs",
+        "crates/engine/src/saved_knowledge.rs",
+        "crates/engine/src/scenario.rs"
+      ],
+      "finding": "Native unpatched civ2.bak reader fragments and map helpers execute without replacements: 378 city/unit gates, 189 remembered-size selections, 140 remembered-improvement reads and 240 exploration contexts (including tiny-map wrapping). New read-only SavedMapKnowledge uses explored bits, saved remembered improvements, unit +11 visibility, city +14 knowledge and +15+civ size; it rejects unsupported versions/maps/owners/coordinates/signed-size contexts. The separate pure exploration kernel matches the native controlled vectors. Original/Ph_Auto2.SAV projects 59 explored tiles, four unit slots and city 5 size 2; current engine sight adds one unexplored tile in Madrid's working radius. Preflight now discloses this addition and the unmatched native visibility/contact lifecycle before entry. Generated/experimental runtime observation and all checkpoint semantics remain unchanged; no native loader, complete stack/invisibility/contact/diplomacy continuation or faithful profile admission is activated. Trigger/action coverage unchanged."
     }
   ]
 }

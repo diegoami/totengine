@@ -1,0 +1,141 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "method": "Execute classic saved-knowledge readers and unit exploration in civ2.bak.\n\nRenderer fragments stop before drawing: normal map-city admission, map-unit\nadmission and city-size selection execute original instructions without callee\nreplacements. Unit exploration executes 0x41f8a7..0x41fa2a and original map\nhelpers on controlled surface maps, with the single-player presentation context\ndisabled. No live loader/UI or complete movement/contact update is asserted.\nOnly numeric derived outputs and input hashes are emitted.",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef",
+    "player": 4,
+    "units": 38,
+    "cities": 10,
+    "explored_tiles": 59,
+    "shown_units": [
+      6,
+      9,
+      18,
+      26
+    ],
+    "shown_cities_and_sizes": [
+      [
+        5,
+        2
+      ]
+    ],
+    "madrid_extra_engine_tile": {
+      "x": 54,
+      "y": 12,
+      "explored_in_save": false
+    }
+  },
+  "cases": {
+    "city_unit_gates": 378,
+    "city_size": 189,
+    "remembered_improvements": 140,
+    "exploration": 144,
+    "tiny_exploration": 96
+  },
+  "vectors_sha256": "e1f50f539b3ee8194f4a5952853005f55ee33e063b6f2a06915ef689ad006e10",
+  "unit_exploration_offsets": [
+    [
+      1,
+      -1
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      -1,
+      1
+    ],
+    [
+      -2,
+      0
+    ],
+    [
+      -1,
+      -1
+    ],
+    [
+      0,
+      -2
+    ],
+    [
+      2,
+      -2
+    ],
+    [
+      2,
+      2
+    ],
+    [
+      -2,
+      2
+    ],
+    [
+      -2,
+      -2
+    ],
+    [
+      1,
+      -3
+    ],
+    [
+      3,
+      -1
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      -1,
+      3
+    ],
+    [
+      -3,
+      1
+    ],
+    [
+      -3,
+      -1
+    ],
+    [
+      -1,
+      -3
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      -4,
+      0
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      0,
+      -4
+    ]
+  ],
+  "limits": "Normal saved-map reader gates and controlled unit-exploration fragment only. No live SAV loader, city/stack drawing, invisible-unit/contact/diplomacy lifecycle, or full continuing knowledge parity."
+}

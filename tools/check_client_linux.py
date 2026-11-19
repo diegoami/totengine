@@ -162,6 +162,18 @@ def run():
                 def save_dialog(name):
                     write(name);wait(lambda s:s.get("entry") and s["entry"]["value"]==name);key("Return")
                 wait(lambda s:s["phase"]=="Setup")
+                knowledge=os.environ.get("TOTENGINE_KNOWLEDGE_PREFLIGHT")
+                if knowledge:
+                    click_button("Open scenario (experimental)")
+                    for _ in range(40):
+                        if has(scene(),knowledge):break
+                        key("Next")
+                    click_button(knowledge)
+                    text=" ".join(" ".join(d.get("text","") for d in scene()["draws"]).split())
+                    assert "engine sight adds 1 unexplored tile" in text and "native visibility/contact updates are not matched" in text,text
+                    assert "original ending and scoring screens" in text,text
+                    key("Escape");key("Escape")
+                    wait(lambda s:s["phase"]=="Setup")
                 click_button("Generated seed")
                 for _ in range(len(scene()["entry"]["value"])): key("BackSpace")
                 write("7")

@@ -338,6 +338,80 @@ mask, `+0x8` modifier/state bits. Spot-checked addresses are marked ✓.
     CITYTAKEN events. The sixth lost Gaulish city sets the sixth continuous
     flag, and the next turn start gives the Gauls advance 33, once.
 
+#### Native saved-map knowledge readers (2026-11-19, #197)
+
+Evidence/design before implementation: [`import-knowledge.json`](import-knowledge.json)
+and [`import-knowledge-vectors.txt`](import-knowledge-vectors.txt) are derived
+from unpatched `civ2.bak`. `tools/import_knowledge_check.py` executes 378
+controlled city/unit map-admission cases, 189 displayed-city-size cases,
+140 remembered-improvement reads and 240 unit-exploration contexts
+(including 96 on tiny maps).
+Renderer fragments stop before drawing; no
+callee replacement or live Wine session is used.
+
+- City admission `0x4664b9..0x46656c`: the tile must be explored by the
+  viewer. Own cities then pass; foreign cities also require the viewer's
+  bit in city +14 and a nonzero remembered-size byte +15+viewer.
+- Unit admission `0x466ab8..0x466b35`: the tile must be explored. Own
+  units then pass; foreign units also require the viewer's bit in unit +11.
+  These are per-record admission gates after the native stack/city lookup,
+  not a proof of complete pixel composition or stack selection.
+- City size `0x538304..0x538395`: normal foreign-city drawing uses the
+  remembered byte +15+viewer, not current city size. Own cities use current
+  size. Debug/reveal overrides are outside the selected context; native
+  drawing reads signed bytes, so a bounded projection rejects sizes >127.
+- Terrain/improvement reader `0x46513e..0x465182` takes the supplied human
+  civ's remembered improvement byte, independently of today's byte +1;
+  terrain/river byte +0 comes from the current explored tile record.
+- `0x41f8a7..0x41fa2a`, the unit exploration loop: ordinary units explore
+  the eight neighbors and center. With unit-type u32 +4 mask `0x1` set, outer
+  offsets in the 25-entry table are also eligible: domain 1 accepts either
+  terrain, domain 2 only ocean, and domains 0/3 only land. The original map
+  helpers execute wrapping/bounds checks and copy the current improvement
+  byte into the exploring civ's remembered array. This fragment proves
+  exploration writes, not the later contact/invisibility/diplomacy lifecycle.
+  Wrapping helper `0x566ae2` makes one horizontal correction, not repeated
+  modulo; tiny-map vectors retain this boundary explicitly.
+- Remembered-byte accessor `0x57008f` and writer `0x571819` index the seven
+  arrays by civ 1..7. Refresh `0x57027a` copies the actual improvement byte
+  for its supplied civ; callers select the observing civilizations.
+
+On the pinned `Original/Ph_Auto2.SAV`, the normal stored-state gates project
+59 explored tiles, unit slots 6/9/18/26, and city slot 5 at size 2. Tile
+(54,12), which the current engine additionally reveals inside Madrid's
+21-tile working radius, is unexplored in the save. A working radius cannot
+be substituted for the saved exploration mask during initial projection.
+
+The implementation boundary is a read-only, bounded classic single-map
+projection and preflight disclosure of engine-sight differences. It must keep
+remembered improvements, unit visibility and remembered city sizes separate
+from current full-save data, reject unsupported record contexts, and never
+activate faithful continuation merely because a projection can be derived.
+Ongoing native contact/visibility updates and loader timing remain open;
+existing generated/experimental runtime policy is unchanged by this slice.
+
+`engine::saved_knowledge::SavedMapKnowledge` projects stored fields without a
+turn or sight refresh. Unsupported map/owner/coordinate/display-size contexts
+reject; complete stack lookup and native runtime admission remain separate.
+The installed regression compares the native counts/slots/sizes and identifies
+the same extra engine tile. The experimental preflight shows this discrepancy
+for the file's player and retains the existing ending-screen disclosure.
+[`import-knowledge-clients.json`](import-knowledge-clients.json) records completed
+real Chromium and Linux SDL preflight/cancel routes and seven identical
+generated-game checkpoints afterwards. Set `TOTENGINE_KNOWLEDGE_PREFLIGHT` to
+`Original/Ph_Auto2.SAV` in the existing browser/SDL input runners, with scratch
+saves and the original installation; browser hosts use `--no-open`, port 8831+.
+No original snapshot/artwork is committed and no Windows/owner acceptance is
+claimed.
+
+Reproduce (original resources remain outside Git):
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+python3 tools/import_knowledge_check.py --out /tmp/import-knowledge.json \
+  --vectors /tmp/import-knowledge-vectors.txt
+```
+
 #### Versioned experimental initializer (2026-11-19, #197)
 
 This is engine persistence policy, not a claim about additional native bytes.
@@ -508,8 +582,10 @@ above. Addresses marked ✓ were spot-checked by hand.
   - the civ-elimination check `0x48bb52`;
   - the transporter-site removal;
   - the immediate city refresh. Cities refresh at round close.
-- The remembered-improvements refresh `0x57027a` is modelled as clearing the
-  remembered byte for civs that see the tile (inferred).
+- The engine clears the remembered byte for selected seeing civs here
+  (observer selection inferred). The native refresh `0x57027a` copies the
+  current improvement byte, which is zero after this terrain clear; see
+  §Native saved-map knowledge readers for the later execution check.
 
 **MAKEAGGRESSION** (`0x53ac50` ✓)
 - The treaty word is `civA + 0x28 + 4·B` (the engine's `diplomacy[A][B]`).

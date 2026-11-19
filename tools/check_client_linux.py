@@ -6,6 +6,7 @@ Needs libX11, libXtst, Xvfb and the already built totdesktop executable.
 """
 import ctypes as c
 import os
+import re
 from pathlib import Path
 import secrets
 import select
@@ -125,6 +126,9 @@ def run():
                     else:rawkey(name,down,up)
                     if down and up and not closing: wait(lambda s:s["revision"]>old)
                 def has(s,label):return any(d.get("text")==label for d in s["draws"])
+                def turn_of(s):
+                    return next(int(m[1]) for d in s['draws']
+                                if (m := re.search(r'(?:^| · )Turn (\d+)(?:$| · )', d.get('text', ''))))
                 def button(label):
                     for _ in range(30):
                         s=scene(); t=next(d for d in s["draws"] if d.get("text")==label)
@@ -171,10 +175,10 @@ def run():
                     if any(d.get("text","").startswith("●") and unit_choice in d["text"] for d in scene()["draws"]):break
                 key("Return");wait(lambda s:s["status"]=="prod-set");key("Ctrl+s");save_dialog("normal")
                 for _ in range(10):
-                    research();s=scene();turn=int(next(d["text"] for d in s["draws"] if d.get("text","").startswith("Turn ")).split()[1])
+                    research();turn=turn_of(scene())
                     key("Ctrl+n")
                     if has(scene(),"End your turn with movable units?"):key("Return")
-                    wait(lambda s:s["phase"]=="Human" and any(d.get("text","").startswith("Turn "+str(turn+1)+" ") for d in s["draws"]))
+                    wait(lambda s:s["phase"]=="Human" and turn_of(s)==turn+1)
                 research();key("Ctrl+s");save_dialog("tenrounds");wait(lambda s:s["status"]=="Engine checkpoint saved: tenrounds")
                 def load(name):
                     key("Ctrl+l");save_dialog(name)
@@ -187,7 +191,7 @@ def run():
                 key("Return");key("Ctrl+s");save_dialog("foundingnext")
                 load("normal");key("Ctrl+n")
                 if has(scene(),"End your turn with movable units?"):key("Return")
-                wait(lambda s:s["phase"]=="Human" and any(d.get("text","").startswith("Turn 2 ") for d in s["draws"]))
+                wait(lambda s:s["phase"]=="Human" and turn_of(s)==2)
                 research();key("Ctrl+s");save_dialog("normalnext")
                 production=os.environ.get("TOTENGINE_PRODUCTION_FIXTURES")
                 if production:
@@ -316,6 +320,10 @@ def run():
                         key("Escape");key("8");key("Return")
                         key("Ctrl+s");save_dialog(name+"after")
                         assert (work/"saves"/(name+"after.cth")).read_bytes()==(Path(fixtures)/("after-"+name+".cth")).read_bytes(),name
+                victory=os.environ.get("TOTENGINE_VICTORY_FIXTURES")
+                if victory:
+                    from check_victory_route import run_victory
+                    run_victory(scene,key,save_dialog,load,wait,work,victory)
                 government=os.environ.get("TOTENGINE_GOVERNMENT_FIXTURES")
                 if government:
                     from check_government_route import run_government

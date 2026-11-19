@@ -5,6 +5,72 @@
 use engine::effects::Applied;
 use engine::events::{Ctx, Effect, EventEngine};
 
+#[test]
+fn original_events_victory_terminates_a_full_round_and_stays_terminal() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME").map(std::path::PathBuf::from) else {
+        eprintln!("skipping: CIVTOT_HOME not set");
+        return;
+    };
+    let dir = home.join("Original");
+    let sav = tot_kit::parse_sav_file(&dir.join("Ph_Auto2.SAV")).unwrap();
+    let read = |name| tot_kit::latin1(&std::fs::read(dir.join(name)).unwrap());
+    let rules = tot_kit::parse_rules(&read("Rules.txt"));
+    let file = tot_kit::parse_events(&read("Events.txt")).unwrap();
+    assert_eq!(file.events.len(), 1);
+    assert_eq!(
+        file.events[0]
+            .trigger
+            .param("futuretech")
+            .and_then(|v| v.number()),
+        Some(5)
+    );
+    assert!(file.events[0].trigger.param("technology").is_none());
+    for seed in 1..=16 {
+        let mut w = engine::boot(&sav, seed);
+        let human = sav.human_mask.trailing_zeros() as u8;
+        assert!(w.civ_alive(human));
+        w.research[human as usize].future = 5;
+        // Controlled saved world: keep all future counters stable while
+        // the actual city/turn loop and CRT RANDOMTURN rolls execute.
+        w.science_rates = [0; 8];
+        let mut events = EventEngine::new(file.clone());
+        let mut won = false;
+        for _ in 0..64 {
+            let sum = w.run_turn(&rules, Some(&mut events));
+            if w.game_over.is_some() {
+                assert!(matches!(&sum.events[..], [
+                    (Effect::PlayVideo(name), Applied::NoState),
+                    (Effect::Text { .. }, Applied::NoState),
+                    (Effect::EndGame { endscreens: true }, Applied::GameOver(_)),
+                ] if name == "Scene6.avi"));
+                let before = w.checksum();
+                let rng = w.combat_rng.clone();
+                assert!(w.run_turn(&rules, Some(&mut events)).events.is_empty());
+                assert_eq!(w.checksum(), before);
+                assert_eq!(w.combat_rng, rng);
+                won = true;
+                break;
+            }
+            assert!(sum.events.is_empty());
+        }
+        assert!(won, "seed {seed} did not reach the Original event");
+    }
+    let gaps = engine::scenario::event_gaps(&file);
+    assert!(
+        !gaps.iter().any(|g| g.contains("do nothing yet")),
+        "{gaps:?}"
+    );
+    assert!(
+        gaps.iter().any(|g| g.contains("videos are not played")),
+        "{gaps:?}"
+    );
+    assert!(
+        gaps.iter()
+            .any(|g| g.contains("ending and scoring screens")),
+        "{gaps:?}"
+    );
+}
+
 struct Fixture {
     w: engine::WorldState,
     rules: tot_kit::Rules,

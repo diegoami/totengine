@@ -243,6 +243,20 @@ pub fn parse_events(data: &str) -> Result<EventFile, EventError> {
                         }
                     }
                     let kw = lt.to_uppercase();
+                    // PLAYAVIFILE consumes the next content line as a
+                    // filename (native parser 0x5684a4). Preserve its case
+                    // and spaces instead of treating it as another action.
+                    if actions
+                        .last()
+                        .is_some_and(|c| c.keyword == "PLAYAVIFILE" && c.args.is_empty())
+                    {
+                        actions
+                            .last_mut()
+                            .unwrap()
+                            .args
+                            .push(Value::Word(lt.into()));
+                        continue;
+                    }
                     let mut cmd = Command {
                         keyword: kw.clone(),
                         args: Vec::new(),
@@ -366,6 +380,17 @@ mod tests {
         let p = std::env::var_os("CIVTOT_HOME")?;
         let p = std::path::Path::new(&p).join("Scenario/FallRome/Events.txt");
         std::fs::read_to_string(p).ok()
+    }
+
+    #[test]
+    fn video_filename_is_one_argument_with_its_original_case() {
+        let file = parse_events("@IF\nTURN\nturn=1\n@THEN\nPLAYAVIFILE\n; comment\n\nTest victory.avi\nENDGAME\nendscreens=yes\n@ENDIF\n").unwrap();
+        assert_eq!(file.events[0].actions.len(), 2);
+        assert_eq!(
+            file.events[0].actions[0].args,
+            [Value::Word("Test victory.avi".into())]
+        );
+        assert_eq!(file.events[0].actions[1].keyword, "ENDGAME");
     }
 
     #[test]

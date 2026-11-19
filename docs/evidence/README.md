@@ -88,7 +88,9 @@ layout differs (id@0, x@10) and the home test is inconclusive there (2/3).
 3. The turn advances and movement resets.
 
 **Step order and the RANDOMTURN generator are engine choices, not
-decoded**; TURNINTERVAL is modelled as `turn % interval == 0`. The loop is
+decoded**; TURNINTERVAL is modelled as `turn % interval == 0`.
+*(Superseded: the turn-start order, TURN, TURNINTERVAL and RANDOMTURN were
+decoded later; see §TURN, TURNINTERVAL and RANDOMTURN evaluators (#328).)* The loop is
 deterministic. Checks:
 - `turn::tests` (asset-free, CI): 50 turns, same seed ⇒ same
   fingerprints.
@@ -416,14 +418,79 @@ above. Addresses marked ✓ were spot-checked by hand.
   `0x4a7eb3`, but the engine has no bribery.
 - NEGOTIATION and Negotiator (no diplomacy UI).
 - NOSCHISM, PLAYWAVEFILE and the other actions the preflight lists.
-- The TURN `Continuous` past-turn and turn-22/42 quirks.
-- RANDOMTURN's original CRT roll. The engine keeps its own generator.
+- *(Done in §TURN, TURNINTERVAL and RANDOMTURN evaluators: the TURN
+  `Continuous` and turn-22/42 cases and RANDOMTURN's CRT roll.)*
 
 **Checks:**
 - Unit tests in `engine::effects` and `engine::events`.
 - `human::tests::scenario_loaded_fires_at_start_and_replays`.
 - Install tests: AE 1200 BC turn 45 floods (128,60) to terrain 2, and the
   every-turn MAKEAGGRESSION applies.
+
+
+#### TURN, TURNINTERVAL and RANDOMTURN evaluators (2026-11-19, #328)
+
+Static decode of `civ2.bak`, same method as above. Each evaluator walks
+the whole event list (`this+0x698`, next `+0x114`) and passes a match to
+the @AND gate `0x575cbe`, then the dispatcher `0x4d3ae8`. None skips spent
+JUSTONCE events; the dispatcher refuses them (`0x4d3b04`, done bit
+`0x20000000` in the action word `+4`; JUSTONCE is `0x4000` there).
+
+**TURN** (`0x4d2df7`, code 4; parse `0x4d6e09`…`0x4d6f73`):
+- `turn=` is a word at `+0x2a`; `Every` is stored as -1 (`0x4d6e91`).
+- `continuous` sets `+8` bit `0x80` (`0x4d6e42`).
+- With `n` the event's turn and `t` the current turn, it fires when:
+  1. `n == -1` or `n == t`;
+  2. `t` is 22 or 42, `n < t`, and the event has JUSTONCE and is not spent
+     (`0x4d2e53`…`0x4d2e8b`). This is a catch-up for one-shot events that
+     never ran;
+  3. `continuous` and `n < t` (`0x4d2e91`…`0x4d2ea8`).
+
+**TURNINTERVAL** (`0x4d2efa`, code 8): fires when `interval == 0` or
+`t % interval == 0` (signed `idiv`). It does not count from the last
+activation as Macro.txt says.
+
+**RANDOMTURN** (`0x4d2fa6`, code 0x40):
+- `denominator` is a word at `+0x2c`.
+- When `n > 1`, `r = rand() % n + 1`, where `0x5b11d0` is the MSVC CRT
+  `rand()` (state `0x5e2590`, `·214013 + 2531011`, bits 16–30). The
+  engine's `combat::CrtRand` is the same generator. Otherwise `r = 1`, with
+  no draw.
+- It fires when `r == n`. So `n == 1` always fires and `n < 1` never does.
+- Spent events still draw, so they still advance the generator.
+
+**NOSCHISM** sets its action bit and `whom` (parse `0x4d5129`). The engine
+never splits a civilization in civil war (`engine::capture` omits it), so
+NOSCHISM has nothing to prevent. The preflight says so instead of listing
+it as unimplemented.
+
+**Engine** (`engine::events`):
+- `turn_fires` and `random_turn_roll`.
+- `fire_with` evaluates spent events so they still draw, and passes the
+  event's JUSTONCE to the TURN test.
+- `run_turn` rolls on the world's `combat_rng` instead of the kernel
+  generator.
+- FallRome's 50-turn golden changed: 88 event firings, previously 98. Its
+  seven RANDOMTURN events now draw from the CRT generator.
+
+**Limits:**
+- The CRT stream is shared with combat, huts and CREATEUNIT Randomize, so
+  roll outcomes match the original only when every earlier draw does.
+  Full AI-turn parity is not claimed.
+- A missing `denominator` still defaults to 2, and a missing `interval`
+  still never fires. The original's values for an absent line come from
+  the record's initial state, which is not decoded.
+- A `.sav` loaded mid-game starts with every event unspent, so turn 22 or
+  42 can replay a JUSTONCE TURN event that already ran in the original
+  game. Whether spent bits persist in saves is still open (see above).
+- Sounds and videos (PLAYWAVEFILE, PLAYAVIFILE) are not played. Sound is
+  paused (#322).
+
+**Checks:**
+- `events::tests::turn_fires_on_its_turn_every_turn_continuous_and_the_22_42_catch_up`.
+- `events::tests::turninterval_zero_fires_every_turn`.
+- `events::tests::random_turn_rolls_the_crt_and_spent_events_still_draw`.
+- The preflight wording test in `engine::scenario`.
 
 #### T1-8 save writer (2026-11-03): surgical edits accepted by the original
 

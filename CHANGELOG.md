@@ -5,6 +5,19 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Turn triggers now follow the original executable (#328):
+  - RANDOMTURN rolls the original's C runtime `rand()`, the same generator
+    combat uses, and already-spent events still use up their roll. The
+    FallRome 50-turn reference run changed as a result.
+  - TURN with `Continuous` fires on every turn after its turn. On turns 22
+    and 42, a JUSTONCE TURN event whose turn has passed without it firing
+    fires then.
+  - TURNINTERVAL with `interval=0` fires every turn.
+  - The preflight now explains the remaining event gaps:
+    - BRIBEUNIT and NEGOTIATION need bribery and diplomacy, which the engine
+      doesn't have yet.
+    - Event sounds and videos are not played.
+    - NOSCHISM has nothing to prevent, because the engine has no civil war.
 - More scenario event support, decoded from the original executable (#328):
   - **Actions:**
     - TAKETECHNOLOGY, including `Collapse`.

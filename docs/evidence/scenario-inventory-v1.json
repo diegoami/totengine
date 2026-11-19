@@ -1,5 +1,5 @@
 {
-  "baseline_sha256": "aa71c778b2a806c4d5d33b8285fb0c00295d42dcbc107257d972479ebfb9dd6a",
+  "baseline_sha256": "6d3cafe8657dfd7679d363b7a7949b8540a83602e2fd49c79623063de30d8792",
   "engine_audit": {
     "changed_or_missing": [],
     "matches_current_source": true,
@@ -126,7 +126,7 @@
           },
           "triggers": {
             "RANDOMTURN": {
-              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "note": "civ2.bak 0x4d2fa6: CRT rand() % n + 1 == n on the world's combat CRT stream, drawn only when n > 1 (n == 1 always fires); spent events still draw. Draw parity with the original holds only while every earlier CRT draw matches. A missing denominator defaults to 2 (not decoded).",
               "params": [
                 "denominator"
               ],
@@ -424,7 +424,7 @@
               "status": "unimplemented"
             },
             "RANDOMTURN": {
-              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "note": "civ2.bak 0x4d2fa6: CRT rand() % n + 1 == n on the world's combat CRT stream, drawn only when n > 1 (n == 1 always fires); spent events still draw. Draw parity with the original holds only while every earlier CRT draw matches. A missing denominator defaults to 2 (not decoded).",
               "params": [
                 "denominator"
               ],
@@ -436,7 +436,7 @@
               "status": "modelled_subset"
             },
             "TURN": {
-              "note": "Interpreter turn/every selector; full native scheduling not established.",
+              "note": "civ2.bak 0x4d2df7: fires when turn=N equals the turn or is Every (-1); Continuous fires every later turn; on turns 22 and 42 an unspent earlier-turn JUSTONCE event fires (evidence README \u00a7TURN, TURNINTERVAL and RANDOMTURN evaluators, #328).",
               "params": [
                 "turn"
               ],
@@ -825,7 +825,7 @@
               "status": "partial"
             },
             "RANDOMTURN": {
-              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "note": "civ2.bak 0x4d2fa6: CRT rand() % n + 1 == n on the world's combat CRT stream, drawn only when n > 1 (n == 1 always fires); spent events still draw. Draw parity with the original holds only while every earlier CRT draw matches. A missing denominator defaults to 2 (not decoded).",
               "params": [
                 "denominator"
               ],
@@ -846,18 +846,18 @@
               "status": "modelled_subset"
             },
             "TURN": {
-              "note": "Interpreter turn/every selector; full native scheduling not established.",
+              "note": "civ2.bak 0x4d2df7: fires when turn=N equals the turn or is Every (-1); Continuous fires every later turn; on turns 22 and 42 an unspent earlier-turn JUSTONCE event fires (evidence README \u00a7TURN, TURNINTERVAL and RANDOMTURN evaluators, #328).",
               "params": [
                 "turn"
               ],
               "status": "modelled_subset"
             },
             "TURNINTERVAL": {
-              "note": "Current absolute modulo timing is not full last-activation semantics.",
+              "note": "civ2.bak 0x4d2efa: fires when interval is 0 or turn % interval == 0 (absolute, not from the last activation). A missing interval line never fires; the original's default is not decoded.",
               "params": [
                 "interval"
               ],
-              "status": "partial"
+              "status": "modelled_subset"
             },
             "UNITKILLED": {
               "note": "Current supported battle contexts only.",
@@ -873,7 +873,7 @@
         "diagnostic_counts": {
           "content_after_endevents": 1,
           "no_game_state_effect": 84,
-          "partial": 125,
+          "partial": 123,
           "unimplemented_keyword": 45,
           "unmodelled_argument": 35,
           "unmodelled_parameter": 48,
@@ -921,7 +921,7 @@
             "token": "talkermask"
           }
         ],
-        "diagnostics_total": 366,
+        "diagnostics_total": 364,
         "diagnostics_truncated": true,
         "event_blocks": 258,
         "logical": {
@@ -1310,7 +1310,7 @@
               "status": "unimplemented"
             },
             "RANDOMTURN": {
-              "note": "Current supplied roll/turn hook; full native scheduling not claimed.",
+              "note": "civ2.bak 0x4d2fa6: CRT rand() % n + 1 == n on the world's combat CRT stream, drawn only when n > 1 (n == 1 always fires); spent events still draw. Draw parity with the original holds only while every earlier CRT draw matches. A missing denominator defaults to 2 (not decoded).",
               "params": [
                 "denominator"
               ],
@@ -1331,7 +1331,7 @@
               "status": "modelled_subset"
             },
             "TURN": {
-              "note": "Interpreter turn/every selector; full native scheduling not established.",
+              "note": "civ2.bak 0x4d2df7: fires when turn=N equals the turn or is Every (-1); Continuous fires every later turn; on turns 22 and 42 an unspent earlier-turn JUSTONCE event fires (evidence README \u00a7TURN, TURNINTERVAL and RANDOMTURN evaluators, #328).",
               "params": [
                 "turn"
               ],
@@ -1671,8 +1671,8 @@
       }
     }
   ],
-  "full_report_bytes": 186348,
-  "full_report_sha256": "ad20d9b599edd58baf891f4bab3277a31d37ac22e716c2c188dea2e02a6812ad",
+  "full_report_bytes": 187587,
+  "full_report_sha256": "b35c7d3cdc9f76db84b01c767443e22787f534c5b37b19ca9329708ef045ac0e",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
     "format_probe_sha256": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",

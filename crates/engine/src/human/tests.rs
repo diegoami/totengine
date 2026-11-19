@@ -1941,3 +1941,81 @@ fn resume_blockers_name_the_reason() {
         .unwrap()
         .contains("human mask"));
 }
+
+#[test]
+fn scenario_endgame_is_terminal_and_checkpoint_replay_preserves_outcome_and_text() {
+    let mut save = crate::tests_support::synthetic_save_bytes();
+    // The classic civ record's already-decoded Future Technology counter.
+    save[2944 + 3348 + 25] = 5;
+    let events = || {
+        Some(crate::events::EventEngine::new(
+            tot_kit::parse_events(
+                "@IF\nRECEIVEDTECHNOLOGY\nreceiver=Anybody\nfuturetech=5\n@AND\n\
+         RANDOMTURN\ndenominator=1\n@THEN\nTEXT\nThe test victory.\nENDTEXT\n\
+         ENDGAME\nendscreens=yes\nPLAYAVIFILE\nTest victory.avi\n@ENDIF\n",
+            )
+            .unwrap(),
+        ))
+    };
+    let mut s = HumanSession::scenario(
+        "test.sav",
+        &save,
+        rules(),
+        events(),
+        1,
+        crate::campaign::AiPolicy::AiV1,
+        9,
+    )
+    .unwrap();
+    choose(&mut s);
+    send(&mut s, Command::EndTurn);
+    ready(&mut s, 256);
+    assert_eq!(s.phase(), Phase::GameOver);
+    assert!(s.view().decision.is_none());
+    assert_eq!(s.view().event_serial, 3);
+    assert!(s.view().event_texts[0].contains("Video not played: Test victory.avi"));
+    assert_eq!(s.view().event_texts[1], "The test victory.");
+    assert!(s.view().event_texts[2].contains("ending and scoring screens are not available"));
+    let over = s.game.world.game_over.unwrap();
+    assert!(over.endscreens);
+    assert_eq!(over.turn, s.game.world.turn);
+    let checkpoint = s.checkpoint("victory");
+    let mut restored =
+        HumanSession::restore_with(rules(), "victory", &checkpoint, Some((&save, events())))
+            .unwrap();
+    assert_eq!(restored.view(), s.view());
+    assert_eq!(restored.checkpoint("victory"), checkpoint);
+    for command in [
+        Command::EndTurn,
+        Command::Goal { advance: None },
+        Command::Rates { science: 5, tax: 5 },
+    ] {
+        let request = Request {
+            civ: 1,
+            revision: restored.revision,
+            id: 9999,
+            command,
+        };
+        assert!(restored.submit(request).is_err());
+        assert_eq!(restored.advance(256), 0);
+        assert_eq!(restored.checkpoint("victory"), checkpoint);
+    }
+    let world = &mut restored.game.world;
+    let checksum = world.checksum();
+    let rng = world.combat_rng.clone();
+    assert_eq!(
+        world.apply_order(&rules(), None, 1, Order::EndTurn),
+        OrderResult::Rejected("game over")
+    );
+    world.run_turn(&rules(), restored.game.events.as_mut());
+    assert_eq!(world.checksum(), checksum);
+    assert_eq!(world.combat_rng, rng);
+    let mut changed = world.clone();
+    changed.game_over.as_mut().unwrap().endscreens = false;
+    assert_ne!(changed.checksum(), checksum);
+    changed = world.clone();
+    changed.game_over.as_mut().unwrap().turn += 1;
+    assert_ne!(changed.checksum(), checksum);
+    changed.game_over = None;
+    assert_ne!(changed.checksum(), checksum);
+}

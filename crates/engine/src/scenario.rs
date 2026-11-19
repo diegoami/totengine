@@ -72,7 +72,8 @@ pub const FIRED_TRIGGERS: [&str; 8] = [
     "SCENARIOLOADED",
 ];
 /// Actions and modifiers that change the game today.
-pub const APPLIED_ACTIONS: [&str; 14] = [
+pub const APPLIED_ACTIONS: [&str; 15] = [
+    "ENDGAME",
     "CHANGEMONEY",
     "CREATEUNIT",
     "GIVETECHNOLOGY",
@@ -121,6 +122,7 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
     let mut other_map = 0;
     let mut aggression = 0;
     let mut media = 0;
+    let mut endings = 0;
     let mut no_schism = 0;
     for e in &events.events {
         // Both halves of an @AND event must fire.
@@ -147,6 +149,17 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
             }
             if k == "MAKEAGGRESSION" {
                 aggression += 1;
+            }
+            if k == "ENDGAME"
+                && a.param("endscreens")
+                    .and_then(|v| v.word())
+                    .is_some_and(|v| {
+                        ["yes", "on", "true"]
+                            .iter()
+                            .any(|w| v.eq_ignore_ascii_case(w))
+                    })
+            {
+                endings += 1;
             }
             match k.as_str() {
                 // Shown to the player since #326.
@@ -212,6 +225,12 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
         gaps.push(format!(
             "Event sounds and videos are not played ({media} action{})",
             plural(media)
+        ));
+    }
+    if endings > 0 {
+        gaps.push(format!(
+            "ENDGAME ends the game, but the original ending and scoring screens are not available ({endings} action{})",
+            plural(endings)
         ));
     }
     if no_schism > 0 {

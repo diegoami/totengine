@@ -647,6 +647,9 @@ impl WorldState {
         civ: u8,
         order: Order,
     ) -> OrderResult {
+        if self.game_over.is_some() {
+            return OrderResult::Rejected("game over");
+        }
         match order {
             Order::ToggleWorker { city, tile } => {
                 match self.edit_citizen(rules, civ, city, tile, false) {
@@ -1118,7 +1121,13 @@ impl Game {
     /// One full turn: every living civ with a player acts until it ends its
     /// turn (or [`ACTION_CAP`]), in civ order; then the world turn runs.
     pub fn play_turn(&mut self) {
+        if self.world.game_over.is_some() {
+            return;
+        }
         for civ in self.world.living_civs() {
+            if self.world.game_over.is_some() {
+                break;
+            }
             let Some(mut player) = self.players.get_mut(civ as usize).and_then(Option::take) else {
                 continue;
             };
@@ -1127,7 +1136,7 @@ impl Game {
                 let obs = self.world.observe(&self.rules, civ, last.take());
                 let order = player.act(&obs);
                 let result = self.submit(civ, order);
-                if order == Order::EndTurn {
+                if order == Order::EndTurn || self.world.game_over.is_some() {
                     break;
                 }
                 last = Some(result);

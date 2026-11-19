@@ -80,7 +80,21 @@ pub enum Effect {
         audience: Audience,
     },
     PlayTrack(i32),
+    /// Presentation request only; playback is explicitly omitted.
+    PlayVideo(String),
+    /// Native ENDGAME (0x575570); ending screens are a presentation request.
+    EndGame {
+        endscreens: bool,
+    },
     DontPlayWonders,
+}
+
+/// Terminal scenario outcome. This is engine state, rebuilt by replay, not
+/// a decoded native-save outcome or a general scoring/victory model.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EventGameOver {
+    pub turn: i16,
+    pub endscreens: bool,
 }
 
 /// Who sees a TEXT box (Macro.txt: "The optional No Broadcast parameter …
@@ -322,7 +336,7 @@ impl EventEngine {
     /// RECEIVEDTECHNOLOGY is polled at every turn start (civ2.bak
     /// 0x4d306f), not fired by the grant: it is true while the receiver
     /// knows the advance (`futuretech=`: while its Future Technology count
-    /// equals `technology=`). `Anybody` tests every civ in turn.
+    /// equals `futuretech=`). `Anybody` tests every civ in turn.
     fn received_technology(
         &mut self,
         ctx: &Ctx,
@@ -343,10 +357,12 @@ impl EventEngine {
                 if !t.keyword.eq_ignore_ascii_case("RECEIVEDTECHNOLOGY") {
                     continue;
                 }
-                let Some(tech) = t.param("technology").and_then(|v| v.number()) else {
+                let futuretech = t.param("futuretech").and_then(|v| v.number());
+                let Some(tech) =
+                    futuretech.or_else(|| t.param("technology").and_then(|v| v.number()))
+                else {
                     continue;
                 };
-                let futuretech = t.has_word("FUTURETECH") || t.param("futuretech").is_some();
                 let receiver = word_of(t.param("receiver")).unwrap_or("").trim();
                 let civs: Vec<usize> = if receiver.eq_ignore_ascii_case("ANYBODY") {
                     (0..8).collect()
@@ -357,7 +373,7 @@ impl EventEngine {
                     if self.fired.contains(&i) {
                         break;
                     }
-                    let has = if futuretech {
+                    let has = if futuretech.is_some() {
                         c > 0 && knows(c, usize::MAX) && future(c) == tech
                     } else {
                         usize::try_from(tech).is_ok_and(|a| knows(c, a))
@@ -555,7 +571,16 @@ impl EventEngine {
         }
         let continuous = has("CONTINUOUS");
         let collapse = has("COLLAPSE");
-        for (k, a) in e.actions.iter().enumerate() {
+        // The native dispatcher runs AVI before TEXT and ENDGAME after
+        // both, regardless of file order (0x4d3c53/0x4d3d7f/0x4d3dfc).
+        // Other actions retain their existing interpreter ordering.
+        let mut actions: Vec<_> = e.actions.iter().enumerate().collect();
+        actions.sort_by_key(|(_, a)| match a.keyword.as_str() {
+            "PLAYAVIFILE" => 0,
+            "ENDGAME" => 2,
+            _ => 1,
+        });
+        for (k, a) in actions {
             // Modifier lines right after this action (`InCapital`, …).
             let modified = |m: &str| {
                 e.actions[k + 1..]
@@ -632,6 +657,33 @@ impl EventEngine {
                     }
                 }
                 "DONTPLAYWONDERS" => effects.push(Effect::DontPlayWonders),
+                "PLAYAVIFILE" => {
+                    if let Some(filename) = a.args.first().and_then(Value::word) {
+                        effects.push(Effect::PlayVideo(filename.into()));
+                        self.log.push(EventText {
+                            text: format!(
+                                "Video not played: {filename}. Video playback is not available."
+                            ),
+                            audience: Audience::Everyone,
+                        });
+                    }
+                }
+                "ENDGAME" => {
+                    let endscreens = word_of(a.param("endscreens")).is_some_and(|v| {
+                        ["yes", "on", "true"]
+                            .iter()
+                            .any(|w| v.eq_ignore_ascii_case(w))
+                    });
+                    effects.push(Effect::EndGame { endscreens });
+                    self.log.push(EventText {
+                        text: if endscreens {
+                            "Game over: scenario ENDGAME. The original ending and scoring screens are not available."
+                        } else {
+                            "Game over: scenario ENDGAME."
+                        }.into(),
+                        audience: Audience::Everyone,
+                    });
+                }
                 "GIVETECHNOLOGY" => {
                     // Macro.txt: `technology=` (an index) and
                     // `receiver=`; the old `tech=` key never occurs.
@@ -848,6 +900,72 @@ pub fn random_turn_roll(n: i32, rand: &mut dyn FnMut() -> u32) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn original_futuretech_value_and_random_half_must_both_match() {
+        // Same 160 contexts as original-victory.json: native 0x4d306f
+        // and 0x575cbe, with futuretech=5 and no technology= parameter.
+        for receiver in std::iter::once(None).chain((1..8).map(Some)) {
+            for count in [0, 4, 5, 6, 255] {
+                for alive in [false, true] {
+                    for random in [false, true] {
+                        let name = receiver.map_or("Anybody".into(), |c| format!("Civ{c}"));
+                        let mut ev = EventEngine::new(
+                            tot_kit::parse_events(&format!(
+                                "@IF\nRECEIVEDTECHNOLOGY\nreceiver={name}\nfuturetech=5\n\
+                             @AND\nRANDOMTURN\ndenominator=3\n@THEN\nTEXT\nWon.\nENDTEXT\n\
+                             ENDGAME\nendscreens=yes\nPLAYAVIFILE\nScene6.avi\n@ENDIF\n"
+                            ))
+                            .unwrap(),
+                        );
+                        ev.civ_names = std::array::from_fn(|c| format!("Civ{c}"));
+                        let civ = receiver.unwrap_or(3);
+                        let mut rolls = Vec::new();
+                        let effects = ev.turn_start(
+                            &Ctx::default(),
+                            &mut |n| {
+                                rolls.push(n);
+                                random
+                            },
+                            &|c, a| alive && c == civ && a == usize::MAX,
+                            &|c| if c == civ { count } else { 0 },
+                        );
+                        assert_eq!(rolls, [3]);
+                        if alive && count == 5 && random {
+                            assert!(
+                                matches!(&effects[..], [Effect::PlayVideo(f), Effect::Text { text, .. }, Effect::EndGame { endscreens: true }] if f == "Scene6.avi" && text == "Won.")
+                            );
+                            assert_eq!(ev.log.len(), 3);
+                        } else {
+                            assert!(effects.is_empty(), "{receiver:?}/{count}/{alive}/{random}");
+                            assert!(ev.log.is_empty());
+                        }
+                    }
+                }
+            }
+        }
+        let mut ev = EventEngine::new(
+            tot_kit::parse_events(
+                "@IF\nRECEIVEDTECHNOLOGY\nreceiver=Anybody\nfuturetech=5\n@AND\n\
+             RANDOMTURN\ndenominator=3\n@THEN\nENDGAME\nendscreens=no\n@ENDIF\n",
+            )
+            .unwrap(),
+        );
+        ev.civ_names[1] = "Civ1".into();
+        let knows = |c, a| c == 1 && a == usize::MAX;
+        assert!(ev
+            .turn_start(&Ctx::default(), &mut |_| true, &knows, &|_| 4)
+            .is_empty());
+        assert!(
+            ev.turn_start(&Ctx::default(), &mut |_| false, &knows, &|_| 5)
+                .is_empty(),
+            "previous turn's random activation must lapse"
+        );
+        assert_eq!(
+            ev.turn_start(&Ctx::default(), &mut |_| true, &knows, &|_| 5),
+            [Effect::EndGame { endscreens: false }]
+        );
+    }
     use tot_kit::parse_events;
 
     fn start(eng: &mut EventEngine, ctx: &Ctx, roll: &mut dyn FnMut(i32) -> bool) -> Vec<Effect> {

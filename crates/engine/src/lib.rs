@@ -232,6 +232,7 @@ impl MapState {
 /// every later transition is a pure function of (state, orders, rng).
 #[derive(Debug, Clone)]
 pub struct WorldState {
+    pub game_over: Option<events::EventGameOver>,
     pub(crate) production_context: Option<city_production::ProductionContext>,
     pub turn: i16,
     pub year: i16,
@@ -327,6 +328,7 @@ pub fn boot(sav: &SaveFile, rng_seed: u64) -> WorldState {
         })
         .collect();
     WorldState {
+        game_over: None,
         production_context: None,
         turn: sav.turn,
         year: sav.year,
@@ -564,6 +566,13 @@ impl WorldState {
             }
         };
         let mut buf = String::new();
+        // Preserve existing non-terminal replay fingerprints. A terminal
+        // outcome adds an explicit domain and both outcome fields.
+        if let Some(over) = self.game_over {
+            mix(&mut h, b"event-game-over|");
+            mix(&mut h, &over.turn.to_le_bytes());
+            mix(&mut h, &[u8::from(over.endscreens)]);
+        }
         let _ = write!(
             buf,
             "v2|turn|{}|year|{}|diff|{}|riv|{}|seed|{}|rngseed|{}|flags|{}|human|{}",

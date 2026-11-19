@@ -438,6 +438,14 @@ fn run_report(
     );
     for t in 0..=turns {
         let line = format!("{t:04} {:016x}", world.checksum());
+        if let Some(over) = world.game_over {
+            let _ = writeln!(
+                out,
+                "{line} game-over turn {} endscreens {}",
+                over.turn, over.endscreens
+            );
+            break;
+        }
         if t < turns {
             match &rules {
                 Some(r) => {
@@ -1286,6 +1294,13 @@ fn cmd_play(args: &[String]) -> ExitCode {
                 g.world.cities.iter().filter(|c| c.city_id != 0).count(),
                 g.world.checksum()
             );
+            if let Some(over) = g.world.game_over {
+                println!(
+                    "game-over: scenario ENDGAME (endscreens={})",
+                    over.endscreens
+                );
+                break;
+            }
         }
         Ok(g)
     };

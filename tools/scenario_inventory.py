@@ -175,6 +175,7 @@ def scan_events(text, baseline, budget=None):
     want_trigger = False
     block = False
     payload = None
+    video_filename = False
     rect = False
     events = 0
     ands = 0
@@ -211,6 +212,12 @@ def scan_events(text, baseline, budget=None):
             if not t:
                 continue
             upper = t.upper()
+            if video_filename and not upper.startswith('@'):
+                # The engine now preserves PLAYAVIFILE's next content line
+                # as one filename, including spaces. Never publish it.
+                video_filename = False
+                continue
+            video_filename = False
             if rect:
                 # CHANGETERRAIN's maprect line: four x,y corners.
                 rect = False
@@ -326,6 +333,8 @@ def scan_events(text, baseline, budget=None):
                 count(phase, current)
                 if current == 'TEXT':
                     payload = 'ENDTEXT'
+                elif current == 'PLAYAVIFILE':
+                    video_filename = True
             else:
                 diagnostic('unmodelled_trigger_argument', number, current or '<none>')
                 continue

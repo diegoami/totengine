@@ -4,17 +4,17 @@
   "audit_sha": "2f37ab49a56dbcb2091977162518604ae3b6ea0b",
   "meaning": "Manually audited implementation coverage, not native conformance or runtime admission. Source changes require a new audit.",
   "source_sha256": {
-    "crates/tot-kit/src/events.rs": "6ae1c3b3cdf083c484cea268574a56b10a00b29214551373456ef03bb54bc54a",
+    "crates/tot-kit/src/events.rs": "1681efdbeffea4104ea049a77c127831a1d8b5ff49d970dfc878d3d1d9125b91",
     "crates/tot-kit/src/sav.rs": "f0eabfc96dd8ca830c4361dc622fe92e578cd49eef9751fa6e242c65152192ef",
-    "crates/engine/src/events.rs": "5f04abdfa2d1424c141958375847f6daea8f3cfbb96085507da12b419152a14f",
-    "crates/engine/src/effects.rs": "4fb52719fcb9184c04288f809534b42725d21c8f83f5473fa936019e970f97fd",
-    "crates/engine/src/turn.rs": "22d66dabc5f00c7d981bd834e2c093fbf2c0155ccc81a612e32795d990600ad0",
-    "crates/engine/src/player.rs": "010eca2e61ce81761619be3ca4bb23778fe79da644dcb0ca36cb46ee71ba4a8a",
-    "crates/engine/src/human.rs": "2b6fae10d3ab9056b05481a7a55554922917ce80d4808575315847b2d26157da",
+    "crates/engine/src/events.rs": "bed7a25102c67c45d058cb9ed170b9216e233d4c1e5b792e84785418336bef37",
+    "crates/engine/src/effects.rs": "a2b75e4c9ed7a7fd06bae65b7394d1637fee7d03954009e3afeafc238803ef85",
+    "crates/engine/src/turn.rs": "12008e3af7eea7610fb1b9cbbd3c0b817fedb7be74b1e403c440d3d39e3fb032",
+    "crates/engine/src/player.rs": "1167e5b31165e5259dba55211816263fbf8c7844f2fde40587eb01de09f04537",
+    "crates/engine/src/human.rs": "dffb77eaacacf3768cf1cc0fb1529ce53755da53d210980f6706bea97b98557e",
     "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
-    "crates/engine/src/lib.rs": "23fb86af74f9817c3224abafc55287484bd3409490bd937cb0dd906c4e4487b5",
+    "crates/engine/src/lib.rs": "26c50f4601e51e9c8cd2ff26c8a9e981abf8aa37ca988c0114f2cc13f3a0e891",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
-    "crates/totui/src/client/mod.rs": "b941f1eec7354af3a899056767855ad4567c95e625d0b55922eaf71e13e27e58",
+    "crates/totui/src/client/mod.rs": "c3c29d3f90eeed285fb6c2a0efc11d6701a504549d67e3d01e59c24facc467e2",
     "crates/totui/src/resources.rs": "1b35d65da36fdf8ca5727d12e492c8093d80e3eba53b9b70c043fcbb9be087a9",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -90,7 +90,7 @@
         "technology",
         "futuretech"
       ],
-      "note": "Polled at every turn start after RANDOMTURN (civ2.bak 0x4d306f), not fired by the grant: true while the receiver knows the advance (futuretech: while its Future Technology count equals technology=). Anybody tests each civ; the receiver is TriggerReceiver/TriggerDefender. @AND gate applies (evidence README §Event actions, #328)."
+      "note": "Polled at turn start after RANDOMTURN (civ2.bak 0x4d306f). technology=N tests known advances; futuretech=N independently tests the living receiver's Future Technology count for equality to N (not a minimum; no technology= required). Anybody polls each civ; TriggerReceiver/TriggerDefender resolves to the matching receiver. The @AND gate applies. Native evidence: original-victory.json and evidence README §Original victory event."
     }
   },
   "actions": {
@@ -207,6 +207,18 @@
       "status": "modelled_subset",
       "params": [],
       "note": "TAKETECHNOLOGY default: only the named advance."
+    },
+    "ENDGAME": {
+      "status": "modelled_subset",
+      "params": [
+        "endscreens"
+      ],
+      "note": "Native 0x575570 records a terminal event outcome. The engine checksums its turn and endscreens request, blocks further orders/rounds and reconstructs it by replay. Both clients display the event TEXT and ending notice. Original ending/scoring screens are not implemented and this is disclosed in preflight and on termination. Not general victory/scoring or native imported-outcome support."
+    },
+    "PLAYAVIFILE": {
+      "status": "no_game_state_effect",
+      "params": [],
+      "note": "Filename is preserved as a positional argument (native parser 0x5684a4); native dispatcher order for AVI/TEXT/ENDGAME is preserved. Explicit presentation policy: no decoding, file opening or playback; show the requested filename and an omission notice. Does not prevent ENDGAME. Native presentation and media dependency closure remain unproved."
     }
   },
   "global_limits": [
@@ -523,6 +535,24 @@
         "crates/engine/src/human.rs"
       ],
       "finding": "SaveFile gains multiplayer (u8@678), player_civ (u8@680) and active_civ (u8@681). Game::scenario_human keeps saved spent movement and HumanSession starts at the human with saved knowledge only when engine::scenario::resume_blocker passes: no scenario flags 0xc0, single player, the chosen civ is the file's player and its only human, road multiplier 3. Everything else keeps the fresh engine turn. Event trigger/action semantics are unchanged; the turn-start events still are not re-run on load because none run at session start."
+    },
+    {
+      "change": "Original victory-event slice of #197: futuretech value, terminal ENDGAME and disclosed AVI policy",
+      "files": [
+        "crates/tot-kit/src/events.rs",
+        "crates/engine/src/events.rs",
+        "crates/engine/src/effects.rs",
+        "crates/engine/src/turn.rs",
+        "crates/engine/src/lib.rs",
+        "crates/engine/src/newgame.rs",
+        "crates/engine/src/player.rs",
+        "crates/engine/src/human.rs",
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/client/chrome.rs",
+        "crates/totctl/src/main.rs",
+        "crates/totctl/src/mcp_agent.rs"
+      ],
+      "finding": "civ2.bak native execution: 160 controlled futuretech/@AND contexts and two dispatcher/ENDGAME contexts (original-victory.json). futuretech=5 now reads its own value and matches equality; the original parser mapping is statically decoded. AVI emits an omission notice before TEXT; ENDGAME records a terminal outcome with turn/endscreens and a final presentation notice. World run_turn and player orders stop; HumanSession exposes GameOver and no pending decision; both clients can show terminal event boxes and save/load checkpoints. New terminal-only checksum domain preserves non-terminal fingerprints. Resource/phase/knowledge/import initializer blockers are not waived; no runtime profile admitted. No native ending-screen/scoring or video parity claim."
     }
   ]
 }

@@ -338,6 +338,85 @@ mask, `+0x8` modifier/state bits. Spot-checked addresses are marked ✓.
     CITYTAKEN events. The sixth lost Gaulish city sets the sixth continuous
     flag, and the next turn start gives the Gauls advance 33, once.
 
+#### Original victory event (2026-11-19, #197)
+
+Design/evidence before implementation: `Original/Events.txt` has one
+RECEIVEDTECHNOLOGY `receiver=anybody`, **`futuretech=5`**, @AND RANDOMTURN
+`denominator=3` block, with TEXT, ENDGAME `endscreens=yes` and PLAYAVIFILE.
+The file identity and controlled native executions are retained in
+[`original-victory.json`](original-victory.json). Reproduce:
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+python3 tools/original_victory_check.py --out /tmp/original-victory.json
+```
+
+Static decode of unpatched `civ2.bak` (not ToTPP):
+
+- `0x4d5510..0x4d5571` parses the **value of futuretech=** into event
+  byte +0x30 and sets bit 0x100 at +8. No technology= line is required.
+  `0x4d306f` compares the civ's unsigned Future Technology count
+  (`0x5f68b9 + civ*3348`) for **equality**, not a minimum. The previous
+  description as a modifier of technology= was incorrect. The native
+  @AND gate executes; 160 controlled contexts cover below/equal/above,
+  living/dead, Anybody/named receiver and the other half active/inactive.
+- `0x4da070` sets ENDGAME's action bit 0x4000 at +4;
+  `0x4da0ae..0x4da187` sets/clears +8 bit 8 for endscreens yes/no.
+  Handler `0x575570` ORs 2 into word `0x607640`, sets reason
+  `0x5f46f4` to 6, and, when endscreens is false, ORs 8 into
+  `0x60763e`. Single-player executions preserve unrelated flag bits.
+- The dispatcher `0x4d3ae8` calls PLAYAVIFILE (`0x5676a0`), TEXT
+  (`0x4d1bf6`), then ENDGAME (`0x575570`), regardless of their source
+  order. The probe replaces only video/TEXT presentation in this check;
+  ENDGAME executes original instructions. The video filename is parsed
+  by `0x5684a4` into +0x84. No live video, ending-screen or scoring
+  equivalence is claimed.
+
+Implementation boundary: preserve the compound poll and native order for
+these three actions; add a terminal, checksummed event-game-over state,
+reconstructed by checkpoint replay. Both clients must still show the event
+TEXT after termination, block gameplay and permit checkpoint save/load.
+**Presentation policy:** videos are not opened or decoded; show the requested
+filename with a notice that playback is omitted. Preserve endscreens in the
+outcome and disclose that the original ending/scoring screens are unavailable.
+Neither omission changes whether the event terminates the game. This closes
+only the bounded event dependency; faithful import remains unadmitted.
+
+Regression coverage: `events::tests::original_futuretech_value_and_random_half_must_both_match`
+checks the 160 native contexts and activation lapse between turns.
+`events_install::original_events_victory_terminates_a_full_round_and_stays_terminal`
+uses the installed, unchanged Original event across 16 engine seeds, with a
+controlled living human Future Technology count of five and no science income.
+The human-session test verifies terminal rejection, both outcome checksum fields
+and checkpoint replay. Existing non-terminal goldens retain their fingerprints.
+
+Both-client real-input recipe (private paths below are examples, never the
+owner's previews):
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT python3 tools/prepare_victory_input.py --out /tmp/victory-install
+CIVTOT_HOME=/tmp/victory-install TOTENGINE_VICTORY_OUT=/tmp/victory-fixtures \
+  cargo test -p totui --lib installed_victory_input_fixture -- --ignored
+```
+
+Build the clients with the desktop feature. Set
+`CIVTOT_HOME=/tmp/victory-install` and
+`TOTENGINE_VICTORY_FIXTURES=/tmp/victory-fixtures` for
+`tools/check_client_linux.py`. For the browser, start `totplay --no-open
+--port=8831` with the same copied install and an empty private `TOTENGINE_SAVES`;
+run `tools/check_client_browser.cjs` with the same fixture directory,
+`TOTENGINE_CLIENT_SAVES` set to that host's saves directory and
+`TOTENGINE_CLIENT_ORIGIN=http://127.0.0.1:8831` (Playwright via NODE_PATH).
+Both runners compare the post-victory and restored checkpoints byte for byte.
+The private input changes RANDOMTURN to denominator=1 and uses authored prose;
+it proves terminal client routing, not the original video's playback or native
+human acceptance. No original save or resource copy is committed.
+The completed Chromium and Linux SDL runs are recorded in
+[`original-victory-clients.json`](original-victory-clients.json), including
+all four checkpoint comparisons and source hashes. Real input exposed and
+verified the fix for terminal Ctrl+N opening a movable-unit confirmation;
+the input runners also now recognize the `date · Turn N` sidebar label.
+
 #### Event actions: TAKETECHNOLOGY, DELAY, CHANGETERRAIN, MAKEAGGRESSION, CREATEUNIT, RECEIVEDTECHNOLOGY, SCENARIOLOADED (2026-11-18, #328)
 
 This is a static decode of `civ2.bak`, using the same method as the section

@@ -73,6 +73,18 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(report['entries'][0]['support']['simulation'], 'not_admitted')
 
+    def test_victory_video_filename_is_consumed_without_exposing_it(self):
+        (self.home/'Events.txt').write_text(
+            '@IF\nTURN\nturn=1\n@THEN\nPLAYAVIFILE\n; comment\nprivate movie.avi\n'
+            'TEXT\nPrivate prose.\nENDTEXT\nENDGAME\nendscreens=yes\n@ENDIF\n')
+        code, report = self.cli_report()
+        self.assertEqual(code, 0)
+        macro = report['entries'][0]['macro']
+        self.assertEqual(macro['actions'], {'PLAYAVIFILE': 1, 'TEXT': 1, 'ENDGAME': 1})
+        self.assertNotIn('unmodelled_argument', [d['code'] for d in macro['diagnostics']])
+        self.assertNotIn('private movie', json.dumps(report))
+        self.assertEqual(report['entries'][0]['support']['simulation'], 'not_admitted')
+
     def test_stray_payload_terminators_fail_in_every_nonpayload_phase(self):
         valid = (self.home/'Events.txt').read_text()
         contexts = [

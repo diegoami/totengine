@@ -1806,3 +1806,43 @@ fn scenario_event_texts_reach_the_human_view_and_replay() {
     assert_eq!(s.view().event_texts.len(), 1);
     assert_eq!(s.view().event_serial, 2);
 }
+
+/// #327: GIVETECHNOLOGY grants through the shared advance grant, gives the
+/// human a discovery notice and replays; an unknown receiver changes nothing.
+#[test]
+fn scenario_give_technology_grants_notices_and_replays() {
+    let save = crate::tests_support::synthetic_save_bytes();
+    let events = || {
+        Some(crate::events::EventEngine::new(
+            tot_kit::parse_events(
+                "@IF\nTURN\nturn=Every\n@THEN\nGIVETECHNOLOGY\nreceiver=Testers\ntechnology=0\n\
+                 @ENDIF\n@IF\nTURN\nturn=Every\n@THEN\nGIVETECHNOLOGY\nreceiver=Nobody\ntechnology=1\n@ENDIF\n",
+            )
+            .unwrap(),
+        ))
+    };
+    let knows = |s: &HumanSession, t: usize| s.game.world.techs[1][t / 8] & (1 << (t % 8)) != 0;
+    let policy = crate::campaign::AiPolicy::AiV1;
+    let mut s = HumanSession::scenario("test.sav", &save, rules(), events(), 1, policy, 9).unwrap();
+    assert!(!knows(&s, 0) && !knows(&s, 1));
+    next_round(&mut s);
+    assert!(knows(&s, 0));
+    assert!(!knows(&s, 1));
+    assert!(
+        s.view().notices.contains(&Notice::Discovery(0)),
+        "{:?}",
+        s.view().notices
+    );
+    let text = s.checkpoint("scenario-resources");
+    let restored = HumanSession::restore_with(
+        rules(),
+        "scenario-resources",
+        &text,
+        Some((&save, events())),
+    )
+    .unwrap();
+    assert_eq!(restored.view(), s.view());
+    // Already known: the next round's gift changes nothing and adds no notice.
+    next_round(&mut s);
+    assert!(!s.view().notices.contains(&Notice::Discovery(0)));
+}

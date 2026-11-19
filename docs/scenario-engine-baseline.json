@@ -4,13 +4,13 @@
   "audit_sha": "2f37ab49a56dbcb2091977162518604ae3b6ea0b",
   "meaning": "Manually audited implementation coverage, not native conformance or runtime admission. Source changes require a new audit.",
   "source_sha256": {
-    "crates/tot-kit/src/events.rs": "ad279d9b6f857879bc7e39e9c95195c32bf33806db54b51287e947bf1d08994f",
+    "crates/tot-kit/src/events.rs": "276d45acd029e3a32a2dcf673a76314fabf2cd2660e27a33f74f3c2bc928e4e5",
     "crates/tot-kit/src/sav.rs": "7a45d279f4dde45860650869d3f6dd4827fa4f07b807cd75ab6c459fd1d6a7f3",
-    "crates/engine/src/events.rs": "3d53b46205dd830b0bc7a7a49fe2d794609ecb2d4d8474d5d2fb14361af366e6",
-    "crates/engine/src/effects.rs": "d476eb296aaccf0a621ddda74f042cac053f8780555b5574b527ebde4da2e547",
-    "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
+    "crates/engine/src/events.rs": "0037076f886acc32e9df27e3f4ee2b3bc9edcbc0af8a07757c22eb055025a0f3",
+    "crates/engine/src/effects.rs": "27cc9011e08c9ac372275368c6efc7a81a1b92bae2766c583d9616642dfaaf30",
+    "crates/engine/src/turn.rs": "c7f0e49861df7bd6f273aa10c3a522f8572afc53ddaff0fe1b191ea928464161",
     "crates/engine/src/player.rs": "620df59f89001928290eb33180ca918928e35e85451c7155dcd0d741c25eea14",
-    "crates/engine/src/human.rs": "c0675fc701bcf1dd760287051be5dd0c97b63a5056a8be5d5012f84f11c3093a",
+    "crates/engine/src/human.rs": "9c52a51e8a8d215b5430ffe2ee7d622a9bb47a284bb5279b86fd858a24852972",
     "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
     "crates/engine/src/lib.rs": "a0fae41b84bca1d0b32223ce6ee47ea965e0e8bf626d8c37f24a10e5f694c469",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
@@ -70,6 +70,18 @@
         "listener"
       ],
       "note": "Interpreter matching is not an implemented diplomatic conversation/hook."
+    },
+    "CHECKFLAG": {
+      "status": "modelled_subset",
+      "params": [
+        "who",
+        "flag",
+        "mask",
+        "state",
+        "threshold",
+        "count"
+      ],
+      "note": "Evaluated once per turn start after TURN/TURNINTERVAL/RANDOMTURN, then non-continuous flags are cleared (civ2.bak 0x574c3e; evidence README §Event flags). who=name/Somebody/Everybody, Threshold and Count (which the original also treats as a minimum) are modelled; technology= is not and such a trigger never fires. Requires @INITFLAG. One @AND per event is gated as in 0x575cbe."
     }
   },
   "actions": {
@@ -92,12 +104,12 @@
       "note": "First-valid placement; native validity, randomize and map contexts remain partial."
     },
     "GIVETECHNOLOGY": {
-      "status": "emitted_but_skipped",
+      "status": "modelled_subset",
       "params": [
         "receiver",
         "technology"
       ],
-      "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action."
+      "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original handler 0x4d201e (dispatcher 0x4d3ae8) calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README §GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing."
     },
     "JUSTONCE": {
       "status": "modelled_subset",
@@ -118,6 +130,21 @@
       "status": "no_game_state_effect",
       "params": [],
       "note": "Applied::NoState; native presentation semantics are not implemented."
+    },
+    "FLAG": {
+      "status": "modelled_subset",
+      "params": [
+        "who",
+        "flag",
+        "mask",
+        "state"
+      ],
+      "note": "Per-civ flag words and one global continuous word (civ2.bak 0x5757b7). No who= or Everybody sets all eight civs; Anybody/Somebody/unknown do nothing. Requires @INITFLAG. Flags live in the event engine and rebuild by replay; native save import of flag state is not implemented."
+    },
+    "CONTINUOUS": {
+      "status": "modelled_subset",
+      "params": [],
+      "note": "FLAG's modifier (bit 0x1000) and an @AND trigger half's (0x80; a continuous second half also keeps the first). Not modelled for single triggers, where it only matters to @AND."
     }
   },
   "global_limits": [
@@ -345,6 +372,24 @@
         "crates/totui/src/client/mod.rs"
       ],
       "finding": "Effect::Text carries its audience (Macro.txt 'No Broadcast'); the event engine keeps every fired box in its log. HumanSession reads new log entries after each AI step, round and human input, exposes the human's boxes since its last turn ended (event_texts/event_serial in HumanView) and rebuilds them by checkpoint replay. The client opens them one at a time as notice dialogs on the human's turn after required choices. No game-state, checkpoint text, receipt or order-log change; trigger matching and other actions are unchanged."
+    },
+    {
+      "change": "Scenario events apply GIVETECHNOLOGY (#327)",
+      "files": [
+        "crates/engine/src/effects.rs",
+        "crates/engine/src/human.rs"
+      ],
+      "finding": "GIVETECHNOLOGY now grants the advance through the same grant as research completion, after the original executor's receiver checks (decoded statically: evidence README §GIVETECHNOLOGY executor). Applied::Advance reports it, and a round's gift to the human adds a discovery notice. Human sessions re-run research requirements as before. Other actions, trigger matching, checkpoint text and order logs are unchanged; replay re-applies the grant deterministically."
+    },
+    {
+      "change": "Scenario event flags, @AND and Continuous (#328)",
+      "files": [
+        "crates/tot-kit/src/events.rs",
+        "crates/engine/src/events.rs",
+        "crates/engine/src/effects.rs",
+        "crates/engine/src/turn.rs"
+      ],
+      "finding": "FLAG, CHECKFLAG, Continuous, @INITFLAG and one @AND per event follow a static decode of civ2.bak (evidence README §Event flags, @AND and Continuous). Flags and @AND activations live in EventEngine and rebuild by replay. The turn loop's TURN/TURNINTERVAL/RANDOMTURN order is unchanged; CHECKFLAG and the flag decay follow them. Parser: @AND second triggers are kept apart instead of merging into the first, key=value lines after modifier lines (JUSTONCE, CONTINUOUS, RANDOMIZE, INCAPITAL) stay with the modified action, parameter names match case-insensitively, and @INITFLAG is recorded. Events summary counts are unchanged. Behaviour change for existing files: an @AND event now needs both halves, and capitalised parameters (Defender=, Who=) are now enforced. Human sessions and checkpoints are otherwise unchanged."
     }
   ]
 }

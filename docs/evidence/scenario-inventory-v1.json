@@ -1,5 +1,5 @@
 {
-  "baseline_sha256": "43f2e042547c27dc8a7604797227b711c4e8dce397676f95e0a1cd913b3b3577",
+  "baseline_sha256": "7ef5ddd87e128fa4c1463e65b0396e7b82a5cdb58f3f0458ce6a3153be80c883",
   "engine_audit": {
     "changed_or_missing": [],
     "matches_current_source": true,
@@ -143,8 +143,7 @@
           "no_game_state_effect": 1,
           "unimplemented_keyword": 3,
           "unmodelled_argument": 1,
-          "unmodelled_parameter": 3,
-          "unsupported_compound_condition": 1
+          "unmodelled_parameter": 3
         },
         "diagnostics": [
           {
@@ -161,11 +160,6 @@
             "code": "unmodelled_parameter",
             "line": 11,
             "token": "futuretech"
-          },
-          {
-            "code": "unsupported_compound_condition",
-            "line": 12,
-            "token": "@AND"
           },
           {
             "code": "no_game_state_effect",
@@ -186,10 +180,15 @@
             "code": "unimplemented_keyword",
             "line": 26,
             "token": "PLAYAVIFILE"
+          },
+          {
+            "code": "unmodelled_argument",
+            "line": 27,
+            "token": "PLAYAVIFILE"
           }
         ],
-        "diagnostics_total": 9,
-        "diagnostics_truncated": true,
+        "diagnostics_total": 8,
+        "diagnostics_truncated": false,
         "event_blocks": 1,
         "logical": {
           "@AND": 1
@@ -388,12 +387,12 @@
               "status": "no_game_state_effect"
             },
             "GIVETECHNOLOGY": {
-              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original handler 0x4d201e (dispatcher 0x4d3ae8) calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README \u00a7GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing.",
               "params": [
                 "receiver",
                 "technology"
               ],
-              "status": "emitted_but_skipped"
+              "status": "modelled_subset"
             },
             "JUSTONCE": {
               "note": "In-memory event latch; native imported event state is not restored.",
@@ -465,7 +464,6 @@
           }
         },
         "diagnostic_counts": {
-          "emitted_but_skipped": 2,
           "no_game_state_effect": 58,
           "partial": 45,
           "unimplemented_keyword": 1,
@@ -513,7 +511,7 @@
             "token": "TEXT"
           }
         ],
-        "diagnostics_total": 173,
+        "diagnostics_total": 171,
         "diagnostics_truncated": true,
         "event_blocks": 64,
         "logical": {},
@@ -714,9 +712,9 @@
               "status": "modelled_subset"
             },
             "CONTINUOUS": {
-              "note": "No audited handler.",
+              "note": "FLAG's modifier (bit 0x1000) and an @AND trigger half's (0x80; a continuous second half also keeps the first). Not modelled for single triggers, where it only matters to @AND.",
               "params": [],
-              "status": "unimplemented"
+              "status": "modelled_subset"
             },
             "CREATEUNIT": {
               "note": "First-valid placement; native validity, randomize and map contexts remain partial.",
@@ -734,17 +732,22 @@
               "status": "unimplemented"
             },
             "FLAG": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Per-civ flag words and one global continuous word (civ2.bak 0x5757b7). No who= or Everybody sets all eight civs; Anybody/Somebody/unknown do nothing. Requires @INITFLAG. Flags live in the event engine and rebuild by replay; native save import of flag state is not implemented.",
+              "params": [
+                "who",
+                "flag",
+                "mask",
+                "state"
+              ],
+              "status": "modelled_subset"
             },
             "GIVETECHNOLOGY": {
-              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original handler 0x4d201e (dispatcher 0x4d3ae8) calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README \u00a7GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing.",
               "params": [
                 "receiver",
                 "technology"
               ],
-              "status": "emitted_but_skipped"
+              "status": "modelled_subset"
             },
             "INCAPITAL": {
               "note": "No audited handler.",
@@ -794,9 +797,16 @@
               "status": "unimplemented"
             },
             "CHECKFLAG": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Evaluated once per turn start after TURN/TURNINTERVAL/RANDOMTURN, then non-continuous flags are cleared (civ2.bak 0x574c3e; evidence README \u00a7Event flags). who=name/Somebody/Everybody, Threshold and Count (which the original also treats as a minimum) are modelled; technology= is not and such a trigger never fires. Requires @INITFLAG. One @AND per event is gated as in 0x575cbe.",
+              "params": [
+                "who",
+                "flag",
+                "mask",
+                "state",
+                "threshold",
+                "count"
+              ],
+              "status": "modelled_subset"
             },
             "CITYTAKEN": {
               "note": "Current supported occupation contexts only.",
@@ -859,23 +869,14 @@
         },
         "diagnostic_counts": {
           "content_after_endevents": 1,
-          "emitted_but_skipped": 7,
           "no_game_state_effect": 84,
           "partial": 126,
-          "placement_context_unmodelled": 99,
-          "unimplemented_keyword": 381,
+          "unimplemented_keyword": 171,
           "unmodelled_argument": 35,
-          "unmodelled_parameter": 610,
-          "unmodelled_trigger_argument": 28,
-          "unsupported_compound_condition": 27,
-          "unsupported_directive": 1
+          "unmodelled_parameter": 210,
+          "unmodelled_trigger_argument": 28
         },
         "diagnostics": [
-          {
-            "code": "unsupported_directive",
-            "line": 15,
-            "token": "@INITFLAG"
-          },
           {
             "code": "partial",
             "line": 56,
@@ -910,9 +911,14 @@
             "code": "unmodelled_parameter",
             "line": 80,
             "token": "listenermask"
+          },
+          {
+            "code": "partial",
+            "line": 85,
+            "token": "NEGOTIATION"
           }
         ],
-        "diagnostics_total": 1399,
+        "diagnostics_total": 655,
         "diagnostics_truncated": true,
         "event_blocks": 258,
         "logical": {
@@ -1136,9 +1142,9 @@
               "status": "unimplemented"
             },
             "CONTINUOUS": {
-              "note": "No audited handler.",
+              "note": "FLAG's modifier (bit 0x1000) and an @AND trigger half's (0x80; a continuous second half also keeps the first). Not modelled for single triggers, where it only matters to @AND.",
               "params": [],
-              "status": "unimplemented"
+              "status": "modelled_subset"
             },
             "CREATEUNIT": {
               "note": "First-valid placement; native validity, randomize and map contexts remain partial.",
@@ -1176,17 +1182,22 @@
               "status": "unimplemented"
             },
             "FLAG": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Per-civ flag words and one global continuous word (civ2.bak 0x5757b7). No who= or Everybody sets all eight civs; Anybody/Somebody/unknown do nothing. Requires @INITFLAG. Flags live in the event engine and rebuild by replay; native save import of flag state is not implemented.",
+              "params": [
+                "who",
+                "flag",
+                "mask",
+                "state"
+              ],
+              "status": "modelled_subset"
             },
             "GIVETECHNOLOGY": {
-              "note": "events.rs emits it; effects.rs returns Applied::Skipped. Research elsewhere does not implement this action.",
+              "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original handler 0x4d201e (dispatcher 0x4d3ae8) calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README \u00a7GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing.",
               "params": [
                 "receiver",
                 "technology"
               ],
-              "status": "emitted_but_skipped"
+              "status": "modelled_subset"
             },
             "INCAPITAL": {
               "note": "No audited handler.",
@@ -1251,9 +1262,16 @@
               "status": "unimplemented"
             },
             "CHECKFLAG": {
-              "note": "No audited handler.",
-              "params": [],
-              "status": "unimplemented"
+              "note": "Evaluated once per turn start after TURN/TURNINTERVAL/RANDOMTURN, then non-continuous flags are cleared (civ2.bak 0x574c3e; evidence README \u00a7Event flags). who=name/Somebody/Everybody, Threshold and Count (which the original also treats as a minimum) are modelled; technology= is not and such a trigger never fires. Requires @INITFLAG. One @AND per event is gated as in 0x575cbe.",
+              "params": [
+                "who",
+                "flag",
+                "mask",
+                "state",
+                "threshold",
+                "count"
+              ],
+              "status": "modelled_subset"
             },
             "CITYDESTROYED": {
               "note": "No audited handler.",
@@ -1320,24 +1338,15 @@
           }
         },
         "diagnostic_counts": {
-          "emitted_but_skipped": 11,
           "malformed_location": 1,
           "no_game_state_effect": 93,
           "non_surface_location": 86,
           "partial": 69,
-          "placement_context_unmodelled": 16,
-          "unimplemented_keyword": 359,
+          "unimplemented_keyword": 209,
           "unmodelled_argument": 75,
-          "unmodelled_parameter": 715,
-          "unsupported_compound_condition": 62,
-          "unsupported_directive": 1
+          "unmodelled_parameter": 323
         },
         "diagnostics": [
-          {
-            "code": "unsupported_directive",
-            "line": 9,
-            "token": "@INITFLAG"
-          },
           {
             "code": "partial",
             "line": 12,
@@ -1365,16 +1374,21 @@
           },
           {
             "code": "unimplemented_keyword",
-            "line": 32,
-            "token": "FLAG"
+            "line": 39,
+            "token": "RECEIVEDTECHNOLOGY"
           },
           {
-            "code": "unimplemented_keyword",
-            "line": 33,
-            "token": "CONTINUOUS"
+            "code": "unmodelled_parameter",
+            "line": 40,
+            "token": "receiver"
+          },
+          {
+            "code": "unmodelled_parameter",
+            "line": 41,
+            "token": "technology"
           }
         ],
-        "diagnostics_total": 1488,
+        "diagnostics_total": 856,
         "diagnostics_truncated": true,
         "event_blocks": 151,
         "logical": {
@@ -1646,12 +1660,12 @@
       }
     }
   ],
-  "full_report_bytes": 434376,
-  "full_report_sha256": "9f4247115dfe93fd3b1972184df2c6d2bb307d4cc17dbc6438b03923c22c9dd8",
+  "full_report_bytes": 263610,
+  "full_report_sha256": "c2397d0fbd147eb6a598d56f22efd4d391e9103f454d7c18a73b4b6e43ac5d69",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
     "format_probe_sha256": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",
-    "sha256": "a0b62e48c2368ac7893d2fcd56fe3935cc8a0b25ba9f03c379d0c0148f9a66df",
+    "sha256": "bfcc86df6fd376b1b9b615f695ac30eb77b8d51a29321ab5caf439e728dd28ef",
     "tool": "tools/scenario_inventory.py"
   },
   "profile_candidate": "classic-surface-032-v1",

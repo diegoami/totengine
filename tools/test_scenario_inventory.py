@@ -280,15 +280,33 @@ class InventoryTests(unittest.TestCase):
         self.assertIn('non_surface_location', {x['code'] for x in d['diagnostics']})
         self.assertIn('RANDOMIZE', d['actions'])
 
-    def test_compounds_skipped_technology_and_unknown_actions_remain_visible(self):
+    def test_compounds_technology_and_unknown_actions_remain_visible(self):
         src = '@IF\nTURN\nturn=1\n@AND\nRANDOMTURN\ndenominator=3\n@THEN\nGIVETECHNOLOGY\ntechnology=1\nreceiver=Anyone\nTAKETECHNOLOGY\ntechnology=2\n@ENDIF\n'
         d = inv.scan_events(src, self.baseline)
         codes = {x['code'] for x in d['diagnostics']}
-        self.assertIn('unsupported_compound_condition', codes)
-        self.assertIn('emitted_but_skipped', codes)
+        # One @AND is interpreted since #328; @OR and a second @AND are not.
+        self.assertNotIn('unsupported_compound_condition', codes)
+        for extra in ('@OR', '@AND'):
+            with self.subTest(extra=extra):
+                more = inv.scan_events(src.replace('@THEN', extra + '\nTURN\nturn=2\n@THEN'), self.baseline)
+                self.assertIn('unsupported_compound_condition', {x['code'] for x in more['diagnostics']})
+        # GIVETECHNOLOGY is applied since #327; TAKETECHNOLOGY stays unknown.
+        self.assertNotIn('emitted_but_skipped', codes)
         self.assertIn('unimplemented_keyword', codes)
         self.assertEqual(d['actions']['GIVETECHNOLOGY'], 1)
         self.assertEqual(d['actions']['TAKETECHNOLOGY'], 1)
+
+    def test_flags_and_modifier_lines(self):
+        src = ('@BEGINEVENTS\n@INITFLAG\n@IF\nCHECKFLAG\nwho=Gauls\nmask=0b110\nthreshold=2\nstate=on\n'
+               '@THEN\nFLAG\ncontinuous\nflag=1\nWho=Gauls\nstate=on\nCREATEUNIT\nunit=U\nInCapital\n'
+               'LOCATIONS\n1,2\nENDLOCATIONS\n@ENDIF\n@ENDEVENTS\n')
+        d = inv.scan_events(src, self.baseline)
+        bad = [(x['code'], x['token']) for x in d['diagnostics']]
+        # Parameters after `continuous` belong to FLAG; LOCATIONS after
+        # InCapital to CREATEUNIT. Only the InCapital modifier itself and
+        # CREATEUNIT's partial placement stay visible.
+        self.assertEqual(sorted(bad), [('partial', 'CREATEUNIT'), ('unimplemented_keyword', 'INCAPITAL')])
+        self.assertEqual(d['actions']['CONTINUOUS'], 1)
 
     def test_malformed_payloads_and_parameters_do_not_disappear(self):
         for src, code in [('@IF\nTURN\n@THEN\nTEXT\nnever closed', 'unclosed_payload'),

@@ -12,9 +12,10 @@
 //!   the engine requires a tile on the map, terrain matching the unit's
 //!   domain (land not on ocean, sea only on ocean), and no other civ's
 //!   units on it. Macro.txt only says "invalid for any reason".
-//! - GIVETECHNOLOGY needs per-civ techs, which the world state does not
-//!   model yet. Those effects are reported back as not applied.
-//! - TEXT, PLAYCDTRACK and DONTPLAYWONDERS do not touch game state.
+//! - GIVETECHNOLOGY grants the advance through the research-completion
+//!   routine (evidence §GIVETECHNOLOGY executor).
+//! - TEXT, PLAYCDTRACK and DONTPLAYWONDERS do not touch game state; FLAG
+//!   changes only the event engine's own flag words.
 
 use tot_kit::Rules;
 
@@ -33,6 +34,8 @@ pub enum Applied {
         count: u32,
         at: (u16, u16),
     },
+    /// Civ `civ` received advance `advance` (GIVETECHNOLOGY).
+    Advance { civ: u8, advance: usize },
     /// The effect changes nothing in the modelled state (text, music).
     NoState,
     /// The effect could not be applied; the reason says why.
@@ -53,6 +56,11 @@ impl WorldState {
             .map(|c| c.id)
     }
 
+    /// Plural names of civs 0..=7 for flag `who=` resolution.
+    pub fn event_civ_names(&self) -> [String; 8] {
+        std::array::from_fn(|c| self.civ_name(c as u8))
+    }
+
     /// Apply effects in order; one [`Applied`] per effect.
     pub fn apply_effects(&mut self, rules: &Rules, effects: &[Effect]) -> Vec<Applied> {
         effects
@@ -70,6 +78,7 @@ impl WorldState {
         trigger: &str,
         ctx: &Ctx,
     ) -> Vec<(Effect, Applied)> {
+        events.civ_names = self.event_civ_names();
         let effects = events.fire(trigger, ctx);
         let applied = self.apply_effects(rules, &effects);
         effects.into_iter().zip(applied).collect()
@@ -164,8 +173,32 @@ impl WorldState {
                     Applied::Skipped("unit capacity exhausted".into())
                 }
             }
-            Effect::GiveTechnology { .. } => {
-                Applied::Skipped("per-civ techs are not modelled yet".into())
+            // Original executor 0x4d201e: the receiver (trigger
+            // parties resolved first) must be a living civ 1..=7, then the
+            // advance goes through the same grant as research completion,
+            // 0x49dedf(civ, tech, 0, 0, 0) — modelled by
+            // `grant_advance_with_rules` (bit/count/target, Leonardo, Library).
+            Effect::GiveTechnology {
+                receiver,
+                technology,
+            } => {
+                let Some(civ) = self.civ_by_name(receiver) else {
+                    return Applied::Skipped(format!("unknown civ {receiver:?}"));
+                };
+                if !(1..8).contains(&civ) || !self.civ_alive(civ) {
+                    return Applied::Skipped(format!("{receiver:?} is not a living civilization"));
+                }
+                let Ok(advance) = usize::try_from(*technology) else {
+                    return Applied::Skipped(format!("invalid advance {technology}"));
+                };
+                if advance >= rules.tech_defs().len().min(100) {
+                    return Applied::Skipped(format!("invalid advance {technology}"));
+                }
+                if self.grant_advance_with_rules(rules, civ, advance) {
+                    Applied::Advance { civ, advance }
+                } else {
+                    Applied::Skipped("advance already known".into())
+                }
             }
             Effect::Text { .. } | Effect::PlayTrack(_) | Effect::DontPlayWonders => {
                 Applied::NoState

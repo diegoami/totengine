@@ -214,8 +214,8 @@ about:
 - the game starts a fresh engine turn, so every unit gets its full movement;
 - opponents are played by the engine AI (`builtin-1`, or `ai-v1` when the
   built-in AI cannot read the scenario's Rules), not the original AI's plans;
-- event triggers that never fire, event actions that do nothing yet,
-  GIVETECHNOLOGY (skipped) and CREATEUNIT (approximate placement);
+- event triggers that never fire, event actions that do nothing yet and
+  CREATEUNIT (approximate placement);
 - Lua scripts beside the scenario, which are not run.
 
 Event TEXT boxes (#326) open as pop-up dialogs, one at a time, when the human's
@@ -225,6 +225,12 @@ closes each; every box is also kept in the message log. A box marked
 `No Broadcast` (Macro.txt) appears only when the human civilization triggered
 it (the attacker of UNITKILLED/CITYTAKEN); one whose trigger names no
 civilization reaches nobody (the original's choice there is not verified).
+
+Event flags (#328) work as in the original. FLAG sets or clears per-civilization
+flags, and CHECKFLAG tests them once at the start of every turn. Flags set
+without `Continuous` are cleared right after that test. An `@AND` event needs
+both of its triggers since the last turn start. A file without `@INITFLAG`
+ignores flags, as the original does.
 
 The scenario's folder supplies its Rules, Events and art; interface sheets the
 folder lacks come from `Original`, then the install root. Files the decoders

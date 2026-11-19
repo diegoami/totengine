@@ -21,6 +21,10 @@ MAX_FILE = 16 * 1024 * 1024
 ART_NAMES = ('terrain1', 'terrain2', 'units', 'cities', 'city', 'icons', 'people', 'dialog')
 SCAN_ENTRY_LIMITS = {'diagnostics': 4096, 'vocabulary': 128, 'lines': 100000}
 SCAN_REPORT_LIMITS = {'diagnostics': 8192, 'vocabulary': 1024, 'lines': 500000}
+# Bare modifier lines in @THEN: counted, but key=value lines after them still
+# belong to the action they modify (FLAG / continuous / flag=1 ...), as in the
+# engine parser (crates/tot-kit/src/events.rs MODIFIERS).
+MODIFIERS = frozenset({'JUSTONCE', 'CONTINUOUS', 'RANDOMIZE', 'INCAPITAL'})
 STRUCTURAL_DIAGNOSTICS = frozenset({
     'nested_event', 'misplaced_condition', 'malformed_then', 'malformed_endif',
     'unclosed_event', 'unclosed_payload', 'malformed_location',
@@ -172,6 +176,7 @@ def scan_events(text, baseline, budget=None):
     block = False
     payload = None
     events = 0
+    ands = 0
     began = False
     ended = False
     budget = budget if budget is not None else ScanBudget()
@@ -217,7 +222,7 @@ def scan_events(text, baseline, budget=None):
                     diagnostic('misplaced_directive', number, upper)
                 began = True
                 continue
-            if upper == '@DEBUG':
+            if upper in ('@DEBUG', '@INITFLAG'):
                 if block:
                     diagnostic('misplaced_directive', number, upper)
                 continue
@@ -228,11 +233,15 @@ def scan_events(text, baseline, budget=None):
                 phase = 'triggers'
                 want_trigger = True
                 current = None
+                ands = 0
                 events += 1
                 continue
             if upper in ('@AND', '@OR'):
                 count('logical', upper)
-                diagnostic('unsupported_compound_condition', number, upper)
+                # One @AND per event is interpreted (#328); @OR is not.
+                if upper == '@OR' or ands:
+                    diagnostic('unsupported_compound_condition', number, upper)
+                ands += upper == '@AND'
                 if not block or phase != 'triggers':
                     diagnostic('misplaced_condition', number, upper)
                 want_trigger = True
@@ -289,6 +298,14 @@ def scan_events(text, baseline, budget=None):
                     payload = 'ENDLOCATIONS'
                     continue
                 if re.fullmatch(r'-?\d+', t) and current == 'PLAYCDTRACK':
+                    continue
+                if upper in MODIFIERS:
+                    count(phase, upper)
+                    coverage = baseline.get(phase, {}).get(upper)
+                    if coverage is None:
+                        diagnostic('unimplemented_keyword', number, upper)
+                    elif coverage['status'] != 'modelled_subset':
+                        diagnostic(coverage['status'], number, upper)
                     continue
                 if not re.fullmatch('[A-Z][A-Z0-9_]{0,63}', upper):
                     diagnostic('unmodelled_argument', number, current or '<none>')

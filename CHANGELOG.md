@@ -5,6 +5,28 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- Scenario events now support **flags**: FLAG, CHECKFLAG, `Continuous`,
+  `@INITFLAG` and one `@AND` per event (#328). They follow a static decode
+  of the original:
+  - CHECKFLAG is tested once at each turn start, after TURN, TURNINTERVAL
+    and RANDOMTURN.
+  - Flags set without `Continuous` are cleared after that test.
+  - Somebody runs the event once per matching civilization; Everybody
+    combines all the civilizations' flags into one test.
+  - `Count` acts as a minimum, as in the original.
+
+  Two event-file parsing fixes come with this:
+  - `@AND` second triggers no longer merge into the first trigger.
+  - Parameters after a `continuous`, `InCapital` or `Randomize` line stay
+    with their action.
+
+  Parameter names now match case-insensitively. Roman Civil Wars' Gaulish
+  revolt, for example, now builds up from the cities the Gauls lose.
+- Scenario events now apply **GIVETECHNOLOGY** (#327): the receiver gets the
+  advance through the same grant as research completion. A static decode of
+  the original executor shows that it calls the same routine for a living
+  civilization 1–7. A gift to the human during the round shows a discovery
+  notice, and the preflight no longer lists it as skipped.
 - Scenario event **TEXT messages** now open as pop-up dialogs in both clients
   (#326). Boxes fired during opponents' moves or the round wait for the human's
   turn (after any required choice); boxes the human's own moves fire open at

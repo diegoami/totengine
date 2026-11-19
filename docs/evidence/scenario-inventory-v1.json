@@ -1,5 +1,5 @@
 {
-  "baseline_sha256": "ae2652e21e78a7ec6a1267a098c829dc84d39c9ad66c9482ab38ac600381d983",
+  "baseline_sha256": "43f2e042547c27dc8a7604797227b711c4e8dce397676f95e0a1cd913b3b3577",
   "engine_audit": {
     "changed_or_missing": [],
     "matches_current_source": true,
@@ -119,7 +119,7 @@
               "status": "unimplemented"
             },
             "TEXT": {
-              "note": "Effect/log recording is not full scenario client delivery.",
+              "note": "Human sessions show fired TEXT boxes to the human as client pop-ups and in the message log (#326); a leading 'No Broadcast' line limits a box to the triggering civilization (UNITKILLED/CITYTAKEN attacker, NEGOTIATION talker), and a restricted box whose trigger names none reaches nobody (unverified against the original). No native pop-up timing or order claim.",
               "params": [],
               "status": "no_game_state_effect"
             }
@@ -406,7 +406,7 @@
               "status": "no_game_state_effect"
             },
             "TEXT": {
-              "note": "Effect/log recording is not full scenario client delivery.",
+              "note": "Human sessions show fired TEXT boxes to the human as client pop-ups and in the message log (#326); a leading 'No Broadcast' line limits a box to the triggering civilization (UNITKILLED/CITYTAKEN attacker, NEGOTIATION talker), and a restricted box whose trigger names none reaches nobody (unverified against the original). No native pop-up timing or order claim.",
               "params": [],
               "status": "no_game_state_effect"
             }
@@ -782,7 +782,7 @@
               "status": "unimplemented"
             },
             "TEXT": {
-              "note": "Effect/log recording is not full scenario client delivery.",
+              "note": "Human sessions show fired TEXT boxes to the human as client pop-ups and in the message log (#326); a leading 'No Broadcast' line limits a box to the triggering civilization (UNITKILLED/CITYTAKEN attacker, NEGOTIATION talker), and a restricted box whose trigger names none reaches nobody (unverified against the original). No native pop-up timing or order claim.",
               "params": [],
               "status": "no_game_state_effect"
             }
@@ -1234,7 +1234,7 @@
               "status": "unimplemented"
             },
             "TEXT": {
-              "note": "Effect/log recording is not full scenario client delivery.",
+              "note": "Human sessions show fired TEXT boxes to the human as client pop-ups and in the message log (#326); a leading 'No Broadcast' line limits a box to the triggering civilization (UNITKILLED/CITYTAKEN attacker, NEGOTIATION talker), and a restricted box whose trigger names none reaches nobody (unverified against the original). No native pop-up timing or order claim.",
               "params": [],
               "status": "no_game_state_effect"
             }
@@ -1646,8 +1646,8 @@
       }
     }
   ],
-  "full_report_bytes": 433164,
-  "full_report_sha256": "3d5f3a25138207ceed7ae44a3c70199a948c2b78f34d022aee4e730561854da7",
+  "full_report_bytes": 434376,
+  "full_report_sha256": "9f4247115dfe93fd3b1972184df2c6d2bb307d4cc17dbc6438b03923c22c9dd8",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
     "format_probe_sha256": "41656a837e1234dd9b87ccdbee2b40b9b1449eb459bf47180d01b4b9e9eaf58c",

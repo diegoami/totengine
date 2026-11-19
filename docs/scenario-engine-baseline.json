@@ -6,15 +6,15 @@
   "source_sha256": {
     "crates/tot-kit/src/events.rs": "ad279d9b6f857879bc7e39e9c95195c32bf33806db54b51287e947bf1d08994f",
     "crates/tot-kit/src/sav.rs": "7a45d279f4dde45860650869d3f6dd4827fa4f07b807cd75ab6c459fd1d6a7f3",
-    "crates/engine/src/events.rs": "5dc1820f0151d3b6371fc507eefab502488a13e72057d873b0ee777885100fe5",
-    "crates/engine/src/effects.rs": "ce0da4eaad34b8029a7a5424e3404191e3bc64a203f5339eb56a9096e3f74417",
+    "crates/engine/src/events.rs": "3d53b46205dd830b0bc7a7a49fe2d794609ecb2d4d8474d5d2fb14361af366e6",
+    "crates/engine/src/effects.rs": "d476eb296aaccf0a621ddda74f042cac053f8780555b5574b527ebde4da2e547",
     "crates/engine/src/turn.rs": "8b7953b37a04be0eaab401c320635e4676a1f8cdddb19186bff7a915e0c8c662",
     "crates/engine/src/player.rs": "620df59f89001928290eb33180ca918928e35e85451c7155dcd0d741c25eea14",
-    "crates/engine/src/human.rs": "796fff98076d1ac486fef4affad67b8d75839580003bec6b96a7c2affd03f085",
+    "crates/engine/src/human.rs": "c0675fc701bcf1dd760287051be5dd0c97b63a5056a8be5d5012f84f11c3093a",
     "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
     "crates/engine/src/lib.rs": "a0fae41b84bca1d0b32223ce6ee47ea965e0e8bf626d8c37f24a10e5f694c469",
     "crates/tot-kit/src/rules.rs": "f81eef72cb4c35bf7e3584aaf552b49b9022d0c992d6714718b5e8cac3136254",
-    "crates/totui/src/client/mod.rs": "028cde8457d2924c7cfb65ec032ec7e79ea233e439766ae376b9fa898d31d96a",
+    "crates/totui/src/client/mod.rs": "2362d2e571725e6afa22100cf0e0c954602e99a0a312debd550f9303c7b18288",
     "crates/totui/src/resources.rs": "80f2064bffb454656c341986d0f51d78636ee8687cc843b29eb87c63313f500f",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8"
   },
@@ -107,7 +107,7 @@
     "TEXT": {
       "status": "no_game_state_effect",
       "params": [],
-      "note": "Effect/log recording is not full scenario client delivery."
+      "note": "Human sessions show fired TEXT boxes to the human as client pop-ups and in the message log (#326); a leading 'No Broadcast' line limits a box to the triggering civilization (UNITKILLED/CITYTAKEN attacker, NEGOTIATION talker), and a restricted box whose trigger names none reaches nobody (unverified against the original). No native pop-up timing or order claim."
     },
     "PLAYCDTRACK": {
       "status": "no_game_state_effect",
@@ -335,6 +335,16 @@
         "crates/totui/src/resources.rs"
       ],
       "finding": "Adds a separate scenario origin: HumanSession::scenario boots a .scn/.sav into a fresh engine turn (movement reset only) with the file's events, and its checkpoints record the install-relative path, size, fingerprint and seed and restore only against the same bytes (restore_with). Generated sessions keep their exact checkpoint text and replay; event trigger/action semantics are unchanged (the new scenario module only lists gaps). The client adds the scenario list, preflight and scenario checkpoint reload. Not native-import admission under classic-surface-032-v1."
+    },
+    {
+      "change": "Scenario event TEXT boxes shown to the human (#326)",
+      "files": [
+        "crates/engine/src/events.rs",
+        "crates/engine/src/effects.rs",
+        "crates/engine/src/human.rs",
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "Effect::Text carries its audience (Macro.txt 'No Broadcast'); the event engine keeps every fired box in its log. HumanSession reads new log entries after each AI step, round and human input, exposes the human's boxes since its last turn ended (event_texts/event_serial in HumanView) and rebuilds them by checkpoint replay. The client opens them one at a time as notice dialogs on the human's turn after required choices. No game-state, checkpoint text, receipt or order-log change; trigger matching and other actions are unchanged."
     }
   ]
 }

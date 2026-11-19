@@ -226,6 +226,12 @@ closes each; every box is also kept in the message log. A box marked
 it (the attacker of UNITKILLED/CITYTAKEN); one whose trigger names no
 civilization reaches nobody (the original's choice there is not verified).
 
+Event flags (#328) work as in the original. FLAG sets or clears per-civilization
+flags, and CHECKFLAG tests them once at the start of every turn. Flags set
+without `Continuous` are cleared right after that test. An `@AND` event needs
+both of its triggers since the last turn start. A file without `@INITFLAG`
+ignores flags, as the original does.
+
 The scenario's folder supplies its Rules, Events and art; interface sheets the
 folder lacks come from `Original`, then the install root. Files the decoders
 cannot frame (for example Midgard and Warring States, extended multi-map

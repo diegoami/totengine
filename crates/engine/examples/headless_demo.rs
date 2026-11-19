@@ -77,7 +77,7 @@ fn main() {
         }
         for (e, a) in &s.events {
             match (e, a) {
-                (Effect::Text(t), _) => lines.push(format!(
+                (Effect::Text { text: t, .. }, _) => lines.push(format!(
                     "event: \"{}\"",
                     t.lines().next().unwrap_or("").trim()
                 )),

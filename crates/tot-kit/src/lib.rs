@@ -13,7 +13,7 @@ mod pedia;
 mod rules;
 mod sav;
 
-pub use events::{parse_events, Command, Event, EventError, EventFile, Value};
+pub use events::{parse_events, Command, Event, EventError, EventFile, Value, MODIFIERS};
 pub use mp::{parse_mp, parse_mp_file, MpFormat, MpMap};
 pub use pedia::{Pedia, PediaEntry, PediaSection};
 pub use rules::{emit_rules, parse_rules, Rules, Section, TechDef, WonderDef};

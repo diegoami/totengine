@@ -88,7 +88,9 @@ layout differs (id@0, x@10) and the home test is inconclusive there (2/3).
 3. The turn advances and movement resets.
 
 **Step order and the RANDOMTURN generator are engine choices, not
-decoded**; TURNINTERVAL is modelled as `turn % interval == 0`. The loop is
+decoded**; TURNINTERVAL is modelled as `turn % interval == 0`.
+*(Superseded: the turn-start order, TURN, TURNINTERVAL and RANDOMTURN were
+decoded later; see §TURN, TURNINTERVAL and RANDOMTURN evaluators (#328).)* The loop is
 deterministic. Checks:
 - `turn::tests` (asset-free, CI): 50 turns, same seed ⇒ same
   fingerprints.
@@ -154,8 +156,8 @@ pair:
   UNITKILLED). CHANGEMONEY clamps at 0 (Macro.txt). CREATEUNIT places
   `count` units at the first valid location. **"Valid" is the engine's
   rule, not oracle-checked**: on the map, terrain fits the domain, no
-  other civ's units. GIVETECHNOLOGY is reported as skipped (no per-civ
-  techs in the state). `crates/engine/tests/events_install.rs` fires the
+  other civ's units. GIVETECHNOLOGY grants the advance (#327, see
+  §GIVETECHNOLOGY executor below). `crates/engine/tests/events_install.rs` fires the
   real Events.txt against the booted ROMFALL: Merchant kill → WRE
   10000 → 10050; Theodoric I's death → a veteran Theodoric II for the
   Visigoths at (24,60), once.
@@ -182,6 +184,313 @@ under `FallRome/` and `Scenario/FallRome/`, has `owner=Visigoths` and 6.
 - UNITKILLED: "Attacker is the civilization that killed the unit, defender
   is the one who owned the unit", and it fires whichever side initiated
   unless `Defender Only` is given (used by `combat::Battle::unitkilled_ctx`).
+
+#### GIVETECHNOLOGY executor (2026-11-18, #327)
+
+Static decode of `civ2.bak` (the unpatched executable; disassembly per
+`docs/environment.md`). Re-derive with `objdump -d -M intel` around the
+addresses below.
+
+- **Parse** (`0x4d89c7`, keyword string `0x5d9c00`): `receiver=` is resolved
+  by civilization name (`0x4d1240`) into byte `+0x107` of the action record,
+  and `technology=` is parsed with `atoi` (`0x52c190`) into the signed byte
+  `+0x106`. When both are present, flag `0x800` is set in the record's action
+  mask (`+0x4`).
+- **Execute** (handler `0x4d201e`, called at `0x4d3d34` by the action
+  dispatcher `0x4d3ae8`, which first checks JUSTONCE; corrected in #328): a receiver of -3 is replaced by the
+  trigger context's `+0x1c`, and -4 by `+0x20` (trigger-party wildcards; a
+  second -4 test is dead code, and -2 is not substituted). Which of those
+  fields holds the attacker and which the defender is not decoded here; the
+  engine resolves `TRIGGERATTACKER`/`TRIGGERDEFENDER` by name (Macro.txt). A
+  receiver outside 1..=7, or one not set in the alive mask `0x60765a`, does
+  nothing. Otherwise the action calls
+  **`0x49dedf(civ, tech, 0, 0, 0)`**, the same advance grant that research
+  completion uses (`0x4a159e`) and that the engine models as
+  `grant_advance_with_rules` (bit/count/target bookkeeping, Leonardo, the
+  Library follow-on).
+- Index base: Rules @CIVILIZE row order from 0, as in Macro.txt ("index
+  numbers begin at zero (AFl)"). Future Technology is row 89 in `Original`
+  (Macro.txt's "(90)" is a count), and the grant routine handles it.
+- **Not decoded:** what the zero arguments 3–5 turn off (the source civ and
+  the UI/silent path), the `tech_group_flag` 2 ("can't own") interaction, and
+  first-discovery or diplomacy side effects. The engine keeps those out of
+  scope, as on its other grant paths.
+- Check: `crates/engine/tests/events_install.rs` takes Tyras from the Huns
+  in FallRome. `receiver=TRIGGERATTACKER` gives the Byzantines advance 99,
+  `Applied::Advance`.
+
+#### Event flags, @AND and Continuous (2026-11-18, #328)
+
+Static decode of `civ2.bak`, the same method as above. Each event is a
+0x11c-byte record (allocator `0x4d170c`): `+0x0` trigger mask, `+0x4` action
+mask, `+0x8` modifier/state bits. Spot-checked addresses are marked ✓.
+
+- **Storage.** `@INITFLAG` (`0x4d42b2`) creates a list record whose
+  `+0x88 + civ*4` are the flag words of civs 0..=7. `+0xb4` is **one**
+  continuous mask shared by all civs. Without `@INITFLAG`, FLAG does nothing
+  (`0x5759af`) and CHECKFLAG never fires (`0x574cd7` ✓).
+- **FLAG** (action bit `0x200000`, parse `0x4daab7`; run by `0x5757b7`,
+  dispatched at `0x4d3e04` ✓):
+  - `who=`: no `who=` or Everybody means all eight civs, 7 down to 0, the
+    barbarians included. TriggerAttacker/TriggerDefender use the trigger's
+    civs. Anybody, Somebody and unknown names do nothing (`0x575899`).
+  - Bits are `flag=N` (1<<N) or `mask=` (`0b…`/`0x…`).
+  - Setting ORs the bits into each civ's word. With `Continuous` it also ORs
+    them into the continuous mask; without it, it clears them from that mask
+    (`0x57591e` ✓).
+  - Clearing removes the bits from the civ words and from the continuous
+    mask (`0x575959` ✓).
+- **Turn start.** At each game turn start the original runs, in order
+  (three identical call sites, e.g. `0x47451b`…`0x47456f` ✓):
+  1. Clear @AND activations (`0x575d9a`).
+  2. Run the turn-trigger evaluators.
+  3. Evaluate CHECKFLAG (`0x574c3e`).
+  4. Inside that pass, clear every flag bit not in the continuous mask
+     (`0x5750e5` ✓).
+
+  A non-continuous flag therefore lives until the next turn-start check,
+  which still sees it. This is the only place flags decay.
+- **CHECKFLAG** (trigger mask exactly `0x2000`, `0x574ce1` ✓):
+  - Bits come from `flag=N` (N < 32) or `mask=`. On/Set counts set bits,
+    Off/Clear counts clear ones.
+  - `Threshold`/`Count` defaults to 1. Values ≤ 1 become 1, and values are
+    capped at the mask's bit count (`0x4d68cb`).
+  - The test is `matches >= N`. `Count`'s equality test falls through to
+    the same `>=` test on a miss (`0x574dd9`…`0x574e47`), so Count behaves
+    like Threshold.
+  - `who=name` tests that civ, and its actions see it as TriggerAttacker.
+    `who=` naming the barbarians never fires (`0x574d52`).
+  - Somebody tests civs 1..=7 one by one and runs the event once per
+    matching civ, as that civ (`0x574e79`…).
+  - Everybody ORs the words of civs 1..=7 and tests once.
+  - Anybody and unknown names never fire.
+- **@AND** (`0x4d4056`, gate `0x575cbe`):
+  - Each half is its own record, and the first half gets a copy of the
+    actions at @ENDIF.
+  - A firing half marks itself and runs the actions only if the other half
+    is already marked. Two halves true in one pass therefore run once.
+  - Marks are cleared at turn start unless that half's trigger is
+    `Continuous`. The first half inherits the second's Continuous bit
+    (`0x575dc4` ✓).
+  - JUSTONCE marks both halves done (dispatcher `0x4d3ae8` ✓).
+- **Order matters for Roman Civil Wars.** 25 of its events are
+  `CHECKFLAG @AND RANDOMTURN`. They work because the RANDOMTURN roll comes
+  before the CHECKFLAG pass in the same turn start.
+- **Engine.** `engine::events` models all of the above:
+  - `EventEngine::turn_start` runs the turn-start sequence; flags live in
+    the event engine and rebuild by replay.
+  - The trigger-evaluator order is the engine's existing
+    TURN/TURNINTERVAL/RANDOMTURN. Mapping the original's evaluators
+    `0x4d2df7`…`0x4d306f` to keywords is inferred.
+  - CHECKFLAG `technology=` (`+0x30`) is not modelled; such a trigger never
+    fires and preflight lists it.
+- **Not modelled or not decoded:**
+  - Both parse loops stop once their required parameters are present, so a
+    later `Threshold` (CHECKFLAG) or `who`/`Continuous` line (FLAG) is
+    ignored by the original. The engine reads every line; Roman Civil Wars
+    is unaffected.
+  - Whether flags persist in a `.sav` (the record copy at `0x4abbba`
+    suggests so).
+  - What `0x575e21` and the hook `0x493cfc` do.
+- **Checks:**
+  - Unit tests in `crates/engine/src/events.rs` cover decay, `@INITFLAG`,
+    Somebody/Everybody/Count, and @AND lapse and Continuous.
+  - `crates/engine/tests/events_install.rs` fires Roman Civil Wars'
+    CITYTAKEN events. The sixth lost Gaulish city sets the sixth continuous
+    flag, and the next turn start gives the Gauls advance 33, once.
+
+#### Event actions: TAKETECHNOLOGY, DELAY, CHANGETERRAIN, MAKEAGGRESSION, CREATEUNIT, RECEIVEDTECHNOLOGY, SCENARIOLOADED (2026-11-18, #328)
+
+This is a static decode of `civ2.bak`, using the same method as the section
+above. Addresses marked ✓ were spot-checked by hand.
+
+**Dispatcher** (`0x4d3ae8` ✓):
+1. JUSTONCE latches the event (done bit `0x20000000`, set on both @AND
+   halves).
+2. A DELAY with `delay > 0` queues the event and returns.
+3. The action handlers run in order of their bits. For example, CREATEUNIT
+   `0x4d2102`, CHANGETERRAIN `0x4d2a3a`, MAKEAGGRESSION `0x4d1dab` →
+   `0x53ac50`, GIVETECHNOLOGY `0x4d201e`, TAKETECHNOLOGY `0x567ab4`, TEXT
+   `0x4d1bf6`, FLAG `0x5757b7`.
+
+**Turn start** (`0x47451b`…`0x47456f` ✓):
+1. @AND lapse `0x575d9a`.
+2. **DELAY countdown `0x575e21`** ✓.
+3. TURN `0x4d2df7`.
+4. TURNINTERVAL `0x4d2efa`.
+5. RANDOMTURN `0x4d2fa6`.
+6. **RECEIVEDTECHNOLOGY `0x4d306f`**.
+7. CHECKFLAG `0x574c3e`.
+
+**TAKETECHNOLOGY**
+- Parse `0x5681df`: `whom` goes to `+0x107`, `technology` to `+0x106`, and
+  Collapse to `+0x10d`.
+- The handler (`0x567ab4`) requires a living civ 1..=7, then calls
+  `0x4a2363(civ, tech, collapse)` (✓ call at `0x567b89`).
+- With Collapse it first takes every known advance that transitively
+  depends on the taken one (`0x49c8d4`), in index order, depth first.
+- It then clears only the advance bit (`0x4a2427` ✓). The advance count,
+  research target and global who-knows mask are untouched. Future
+  Technology is never a bit, so it cannot be taken.
+
+**DELAY**
+- Stored in `+0xf6`. `0x575fbb` queues a node with the countdown, the event
+  index and the trigger context (`+0x1c`/`+0x20`/`+0x28`/`+0x32`).
+- At each turn start `0x575e21` decrements the countdown (`0x575e76` ✓). At
+  zero it re-dispatches the event in that context, so the actions run that
+  many turn starts after the trigger.
+- JUSTONCE has already latched, so a JUSTONCE event queues once. Without
+  JUSTONCE, each firing queues its own timer.
+- `Randomize` on DELAY is rolled once at load with CRT `rand()`
+  (`0x4d9bfa`). The engine does not model this and uses the full delay; the
+  preflight lists it. No installed scenario uses it.
+
+**CHANGETERRAIN** (`0x4d2a3a`)
+- Area: x runs from corner 1 to corner 2, y from corner 1 to corner 4,
+  inclusive. Tiles whose terrain is set in `exceptionmask` are skipped.
+- First pass: cities on the tiles are destroyed (`0x43456d`, the engine's
+  `destroy_surface_city`) and all units there are deleted.
+- Second pass: tile byte 0 becomes the terrain (clearing river and
+  resource); bytes 1–3 (improvements, site bits, landmass) are zeroed; bytes
+  4–5 are kept.
+- Not modelled:
+  - maps other than 0;
+  - the civ-elimination check `0x48bb52`;
+  - the transporter-site removal;
+  - the immediate city refresh. Cities refresh at round close.
+- The remembered-improvements refresh `0x57027a` is modelled as clearing the
+  remembered byte for civs that see the tile (inferred).
+
+**MAKEAGGRESSION** (`0x53ac50` ✓)
+- The treaty word is `civA + 0x28 + 4·B` (the engine's `diplomacy[A][B]`).
+- Clear helper `0x454500` ✓ acts in both directions. It first cascades
+  alliance 4 → 8, war 0x2000 → 0x1800 and contact 1 → 0x2000.
+- Set helper `0x4545d2` ✓ acts in both directions:
+  - 8 also sets 4;
+  - any of 0xe clears 0x2a60;
+  - war 0x2000 clears 0xe and adds 0x200000.
+- Sequence:
+  1. Clear 0x60.
+  2. Note the treaty-break call `0x44af04`. It runs when whom's word for
+     who has 0x6 and a party is human. **It is not modelled**; the engine
+     reports it.
+  3. Clear 0xc.
+  4. If who's word has contact (1): set 0x2000; set the attitude bytes
+     `civ+0x48+other` to 100 both ways (`0x4546dc` ✓); and if neither word
+     has 0x1000, set 0x1000 on who's word.
+
+**CREATEUNIT** (`0x4d2102`)
+- Each unit scans up to 10 locations, from 0, or under Randomize from CRT
+  `rand() % n` (one draw per unit, none when n ≤ 1), with no wraparound.
+- A location is valid when:
+  - a sea unit is on ocean, or in the owner's city with flag 0x80 (inferred
+    coastal);
+  - any other unit is not on ocean (air excepted) and not in another civ's
+    city;
+  - no other civ's units are there.
+- No valid location ends the action.
+- InCapital then moves the unit to the owner's first city with a Palace (a
+  sea unit only if that city is coastal).
+- `homecity=` is the first city of that name, used only if it is the
+  owner's.
+- `count` is a signed byte, so 128–255 creates none.
+- The engine draws from the CRT generator it already uses for combat. The
+  impassable-terrain test is not modelled.
+
+**RECEIVEDTECHNOLOGY** (`0x4d306f`)
+- It is polled at turn start, not fired by the grant. Neither `0x49dedf`
+  nor research completion calls into the event code.
+- It is true while the receiver (a living civ, not the barbarians) knows
+  the advance. `futuretech` compares the Future Technology count instead.
+- Anybody tests each civ in turn. The receiver is the trigger's
+  TriggerReceiver/TriggerDefender.
+- A non-JUSTONCE event therefore fires every turn.
+
+**SCENARIOLOADED**
+- Evaluated by `0x4d3285` (no @AND gate). It is called only from the
+  game-start routine `0x4639bf` (`0x463fb9` ✓), so the original also fires
+  it when loading saved games.
+- The engine fires it once when an experimental scenario session starts,
+  before the first view. Checkpoint replay rebuilds it from there.
+
+**Still unsupported:**
+- BRIBEUNIT. Its trigger hook is `0x574aeb` in the unit transfer
+  `0x4a7eb3`, but the engine has no bribery.
+- NEGOTIATION and Negotiator (no diplomacy UI).
+- NOSCHISM, PLAYWAVEFILE and the other actions the preflight lists.
+- *(Done in §TURN, TURNINTERVAL and RANDOMTURN evaluators: the TURN
+  `Continuous` and turn-22/42 cases and RANDOMTURN's CRT roll.)*
+
+**Checks:**
+- Unit tests in `engine::effects` and `engine::events`.
+- `human::tests::scenario_loaded_fires_at_start_and_replays`.
+- Install tests: AE 1200 BC turn 45 floods (128,60) to terrain 2, and the
+  every-turn MAKEAGGRESSION applies.
+
+
+#### TURN, TURNINTERVAL and RANDOMTURN evaluators (2026-11-19, #328)
+
+Static decode of `civ2.bak`, same method as above. Each evaluator walks
+the whole event list (`this+0x698`, next `+0x114`) and passes a match to
+the @AND gate `0x575cbe`, then the dispatcher `0x4d3ae8`. None skips spent
+JUSTONCE events; the dispatcher refuses them (`0x4d3b04`, done bit
+`0x20000000` in the action word `+4`; JUSTONCE is `0x4000` there).
+
+**TURN** (`0x4d2df7`, code 4; parse `0x4d6e09`…`0x4d6f73`):
+- `turn=` is a word at `+0x2a`; `Every` is stored as -1 (`0x4d6e91`).
+- `continuous` sets `+8` bit `0x80` (`0x4d6e42`).
+- With `n` the event's turn and `t` the current turn, it fires when:
+  1. `n == -1` or `n == t`;
+  2. `t` is 22 or 42, `n < t`, and the event has JUSTONCE and is not spent
+     (`0x4d2e53`…`0x4d2e8b`). This is a catch-up for one-shot events that
+     never ran;
+  3. `continuous` and `n < t` (`0x4d2e91`…`0x4d2ea8`).
+
+**TURNINTERVAL** (`0x4d2efa`, code 8): fires when `interval == 0` or
+`t % interval == 0` (signed `idiv`). It does not count from the last
+activation as Macro.txt says.
+
+**RANDOMTURN** (`0x4d2fa6`, code 0x40):
+- `denominator` is a word at `+0x2c`.
+- When `n > 1`, `r = rand() % n + 1`, where `0x5b11d0` is the MSVC CRT
+  `rand()` (state `0x5e2590`, `·214013 + 2531011`, bits 16–30). The
+  engine's `combat::CrtRand` is the same generator. Otherwise `r = 1`, with
+  no draw.
+- It fires when `r == n`. So `n == 1` always fires and `n < 1` never does.
+- Spent events still draw, so they still advance the generator.
+
+**NOSCHISM** sets its action bit and `whom` (parse `0x4d5129`). The engine
+never splits a civilization in civil war (`engine::capture` omits it), so
+NOSCHISM has nothing to prevent. The preflight says so instead of listing
+it as unimplemented.
+
+**Engine** (`engine::events`):
+- `turn_fires` and `random_turn_roll`.
+- `fire_with` evaluates spent events so they still draw, and passes the
+  event's JUSTONCE to the TURN test.
+- `run_turn` rolls on the world's `combat_rng` instead of the kernel
+  generator.
+- FallRome's 50-turn golden changed: 88 event firings, previously 98. Its
+  seven RANDOMTURN events now draw from the CRT generator.
+
+**Limits:**
+- The CRT stream is shared with combat, huts and CREATEUNIT Randomize, so
+  roll outcomes match the original only when every earlier draw does.
+  Full AI-turn parity is not claimed.
+- A missing `denominator` still defaults to 2, and a missing `interval`
+  still never fires. The original's values for an absent line come from
+  the record's initial state, which is not decoded.
+- A `.sav` loaded mid-game starts with every event unspent, so turn 22 or
+  42 can replay a JUSTONCE TURN event that already ran in the original
+  game. Whether spent bits persist in saves is still open (see above).
+- Sounds and videos (PLAYWAVEFILE, PLAYAVIFILE) are not played. Sound is
+  paused (#322).
+
+**Checks:**
+- `events::tests::turn_fires_on_its_turn_every_turn_continuous_and_the_22_42_catch_up`.
+- `events::tests::turninterval_zero_fires_every_turn`.
+- `events::tests::random_turn_rolls_the_crt_and_spent_events_still_draw`.
+- The preflight wording test in `engine::scenario`.
 
 #### T1-8 save writer (2026-11-03): surgical edits accepted by the original
 

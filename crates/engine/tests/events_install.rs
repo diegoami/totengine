@@ -102,16 +102,168 @@ fn fallrome_events_change_the_world() {
     assert!(again.is_empty());
     assert_eq!(w.units.len(), before + 1);
 
-    // Tyras taken from the Huns: the tech gift is reported, not applied
+    // Tyras taken from the Huns: GIVETECHNOLOGY receiver=TRIGGERATTACKER
+    // gives the attacker advance 99 ("Mixing") through the shared grant (#327).
     let tyras = Ctx {
         attacker: Some("Byzantines".into()),
         defender: Some("Huns".into()),
         city: Some("Tyras".into()),
         ..Default::default()
     };
+    let byz = w.civ_by_name("Byzantines").unwrap();
+    let knows = |w: &engine::WorldState| w.techs[byz as usize][99 / 8] & (1 << (99 % 8)) != 0;
+    assert!(!knows(&w));
     let out = w.fire_event(&rules, &mut events, "CITYTAKEN", &tyras);
-    assert!(out.iter().any(
-        |(e, a)| matches!(e, Effect::GiveTechnology { technology: 99, .. })
-            && matches!(a, Applied::Skipped(_))
-    ));
+    assert!(
+        out.iter().any(
+            |(e, a)| matches!(e, Effect::GiveTechnology { technology: 99, .. })
+                && *a
+                    == Applied::Advance {
+                        civ: byz,
+                        advance: 99
+                    }
+        ),
+        "{out:?}"
+    );
+    assert!(knows(&w));
+}
+
+/// #328: Roman Civil Wars' flags. Each Gaulish city lost sets one
+/// continuous Gaul flag; the turn-start CHECKFLAG pass gives the Gauls
+/// advance 33 once six of the thirteen are set (Threshold=6).
+#[test]
+fn roman_civil_wars_gaul_flags_reach_the_threshold() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME").map(std::path::PathBuf::from) else {
+        eprintln!("skipping: CIVTOT_HOME not set");
+        return;
+    };
+    let dir = home.join("Scenario/Roman Civil Wars");
+    let Ok(sav) = tot_kit::parse_sav_file(&dir.join("RomCivWars.SCN")) else {
+        eprintln!("skipping: Roman Civil Wars not installed");
+        return;
+    };
+    let read = |f: &str| tot_kit::latin1(&std::fs::read(dir.join(f)).unwrap());
+    let rules = tot_kit::parse_rules(&read("Rules.txt"));
+    let file = tot_kit::parse_events(&read("Events.txt")).unwrap();
+    assert!(file.init_flags);
+    // Cities whose loss by the Gauls sets a flag, in file order.
+    let cities: Vec<String> = file
+        .events
+        .iter()
+        .filter(|e| {
+            e.trigger.keyword == "CITYTAKEN"
+                && e.trigger.param("defender").and_then(|v| v.word()) == Some("Gauls")
+                && e.actions.iter().any(|a| {
+                    a.keyword == "FLAG" && a.param("state").and_then(|v| v.word()) == Some("on")
+                })
+        })
+        .filter_map(|e| {
+            e.trigger
+                .param("city")
+                .and_then(|v| v.word())
+                .map(String::from)
+        })
+        .collect();
+    assert!(cities.len() >= 6, "{cities:?}");
+    let mut w = engine::boot(&sav, 1);
+    let gauls = w.civ_by_name("Gauls").expect("Gauls civ");
+    let mut events = EventEngine::new(file);
+    let turn = Ctx {
+        turn: Some(i32::from(w.turn) + 1),
+        ..Default::default()
+    };
+    let gives_33 = |effects: &[Effect]| {
+        effects.iter().any(|e| {
+            matches!(e, Effect::GiveTechnology { receiver, technology: 33 } if receiver == "Gauls")
+        })
+    };
+    let mut never = |_| false;
+    for (n, city) in cities.iter().take(6).enumerate() {
+        let ctx = Ctx {
+            attacker: Some("Roman Senate".into()),
+            defender: Some("Gauls".into()),
+            city: Some(city.clone()),
+            ..Default::default()
+        };
+        w.fire_event(&rules, &mut events, "CITYTAKEN", &ctx);
+        assert_eq!(
+            events.flags[usize::from(gauls)].count_ones() as usize,
+            n + 1
+        );
+        events.civ_names = w.event_civ_names();
+        let fx = start(&mut events, &turn, &mut never);
+        assert_eq!(gives_33(&fx), n == 5, "after {} captures: {fx:?}", n + 1);
+        if n == 5 {
+            let applied = w.apply_effects(&rules, &fx);
+            assert!(
+                applied.contains(&Applied::Advance {
+                    civ: gauls,
+                    advance: 33
+                }),
+                "{applied:?}"
+            );
+        }
+    }
+    // Continuous flags survive the pass; JUSTONCE keeps the gift single.
+    assert_eq!(events.flags[usize::from(gauls)].count_ones(), 6);
+    assert!(!gives_33(&start(&mut events, &turn, &mut never)));
+}
+
+fn start(eng: &mut EventEngine, ctx: &Ctx, roll: &mut dyn FnMut(i32) -> bool) -> Vec<Effect> {
+    eng.turn_start(ctx, roll, &|_, _| false, &|_| 0)
+}
+
+/// #328: AE 1200 BC's turn events. Turn 45 floods (128,60) to terrain 2
+/// (CHANGETERRAIN over a one-tile maprect), and the every-turn
+/// MAKEAGGRESSION keeps the Hittites at war with the Egyptians.
+#[test]
+fn ae_1200bc_floods_and_declares_war() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME").map(std::path::PathBuf::from) else {
+        eprintln!("skipping: CIVTOT_HOME not set");
+        return;
+    };
+    let dir = home.join("Scenario/ToT_AE-1200BC");
+    let Ok(sav) = tot_kit::parse_sav_file(&dir.join("ae-1200b.scn")) else {
+        eprintln!("skipping: AE 1200 BC not installed");
+        return;
+    };
+    let read = |f: &str| tot_kit::latin1(&std::fs::read(dir.join(f)).unwrap());
+    let rules = tot_kit::parse_rules(&read("Rules.txt"));
+    let mut events = EventEngine::new(tot_kit::parse_events(&read("Events.txt")).unwrap());
+    let mut w = engine::boot(&sav, 1);
+    let tile = w.map.stored_index(128, 60).unwrap();
+    assert_ne!(w.map.terrain[tile], 2);
+    events.civ_names = w.event_civ_names();
+    let (known, alive, future) = w.event_advances();
+    let turn = Ctx {
+        turn: Some(45),
+        ..Default::default()
+    };
+    let fx = events.turn_start(
+        &turn,
+        &mut |_| false,
+        &|c, a| match a {
+            usize::MAX => alive[c],
+            _ => known[c].get(a).copied().unwrap_or(false),
+        },
+        &|c| future[c],
+    );
+    let applied = w.apply_effects(&rules, &fx);
+    assert!(
+        applied
+            .iter()
+            .any(|a| matches!(a, Applied::Terrain { tiles: 1, .. })),
+        "{applied:?}"
+    );
+    assert_eq!(w.map.terrain[tile], 2);
+    let (hit, egy) = (
+        w.civ_by_name("Hittites").unwrap() as usize,
+        w.civ_by_name("Egyptians").unwrap() as usize,
+    );
+    assert!(applied
+        .iter()
+        .any(|a| matches!(a, Applied::War { who, whom, .. } if (*who as usize, *whom as usize) == (hit, egy))));
+    if w.diplomacy[hit][egy] & 1 != 0 {
+        assert_ne!(w.diplomacy[hit][egy] & 0x2000, 0, "at war after contact");
+    }
 }

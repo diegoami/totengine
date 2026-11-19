@@ -709,6 +709,7 @@ impl Client {
     /// The new-messages overlay (#284) shows on the map until dismissed.
     fn notice_overlay(&self) -> bool {
         self.enhancements.notice_overlay
+            && self.side_x().is_none()
             && self.notice_unread
             && self.modal.is_none()
             && !self.city_open
@@ -2633,6 +2634,7 @@ impl Client {
                 draws.push(rect(mx, my, mw, mh, style::INSET));
                 self.map_draw(&mut draws, v);
                 self.column_draw(&mut draws, v);
+                self.side_draw(&mut draws, v);
                 self.strip_draw(&mut draws, v);
                 self.menu_bar_draw(&mut draws, &title);
                 let notices = v

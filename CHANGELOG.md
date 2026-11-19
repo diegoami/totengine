@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- The **built-in AI now plays Roman Civil Wars, AE 1200 BC and
+  Constantine** (#329). Advance references in Rules now resolve against the
+  original's fixed slot identifiers, exactly as the executable does, instead
+  of the row comments. Those scenarios rename advances and annotate the
+  comments, so the AI used to fall back to AI v1, and the research tree
+  marked some advances unresearchable. The scoring tables also read only
+  the first 80 unit rows, as the original does.
 - **Side column on wide screens** in both clients (#337). From 16:9, a second
   column left of the right column holds this turn's messages in full and the
   earlier ones, with All messages. It replaces the message dock and the

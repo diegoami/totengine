@@ -185,6 +185,43 @@ under `FallRome/` and `Scenario/FallRome/`, has `owner=Visigoths` and 6.
   is the one who owned the unit", and it fires whichever side initiated
   unless `Defender Only` is given (used by `combat::Battle::unitkilled_ctx`).
 
+#### Advance references resolve by fixed slot identifiers (2026-11-18, #329)
+
+This is a static decode of `civ2.bak` (method as above).
+
+- **Fixed table.** Each of the 100 advance records (20 bytes, VA
+  `0x5d0a18`, file offset `0x1cf018`) starts with a slot identifier
+  ("AFl", "Alp", "Amp", … "X7").
+  - Apart from one whole-table copy (`0x46af03`), no code writes those bytes.
+    In particular, the Rules loader doesn't, so a renamed advance keeps its
+    slot identifier, whatever its row comment says.
+  - `tot_kit::ADVANCE_IDS` holds the 100 identifiers.
+    `crates/tot-kit/tests/advance_ids_install.rs` re-derives them from the
+    install.
+- **Resolver `0x490440`:**
+  - "no" gives -2 and "nil" gives -1.
+  - Otherwise the first slot whose identifier equals the text under
+    `0x5b4050`, the CRT `strcmp` (exact, **case-sensitive**).
+  - An unknown name gives -3. The @CIVILIZE loader (`0x4130c6`) keeps -3
+    and calls a report routine (`0x546fe8`); it doesn't stop.
+- **Row counts.** The loader always reads 100 @CIVILIZE rows (`0x412f9c`)
+  and exactly 80 @UNITS rows (`0x413559`).
+- **The engine used row comments.** Roman Civil Wars writes `; Mat;50` and
+  AE 1200 BC and Constantine write `; AFl Advanced Flight`, so references
+  failed to resolve. The built-in AI rejected those Rules, and the research
+  tree marked advances defective.
+- **The engine now uses the slot table:**
+  - `Rules::advance_slot` and `TechTree` use `ADVANCE_IDS` for a complete
+    100-row section.
+  - Shorter sections are not game files (engine fixtures). They keep
+    case-insensitive comment matching.
+  - The scoring adapter reads only the first 80 unit rows, so Roman Civil
+    Wars' 81st row "not used z" is ignored as in the original.
+- **Check.** All references in five installed Rules resolve (FallRome,
+  Hannibal, Roman Civil Wars, AE 1200 BC, Constantine), and `BuiltInAi::new`
+  accepts every one (`crates/engine/tests/scenario_rules_install.rs`).
+  Before this change, Roman Civil Wars, AE 1200 BC and Constantine fell back
+  to AI v1.
 #### GIVETECHNOLOGY executor (2026-11-18, #327)
 
 Static decode of `civ2.bak` (the unpatched executable; disassembly per

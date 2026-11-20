@@ -19,8 +19,8 @@
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "b6b9fc0d0d8fbc8f3ceb1bd603c6c6038f521dbe3af4939957a4edf07a8e2c00",
     "crates/totui/src/client/scenario.rs": "30aa68fcb7f24bd519186b75a8b872dbd84eb97e5570438a51fdf4449360a887",
-    "crates/engine/src/saved_knowledge.rs": "2f61bb2448e31bb7bba182d450d2fa249d01bfe396132ab1ee179ee7fb7adf39",
-    "crates/engine/src/saved_knowledge/update.rs": "b5b2420be1bf3878d1464d7165bdaac87dd863b26242515fa723d78fcb2b799a"
+    "crates/engine/src/saved_knowledge.rs": "6161c144c6e60ab2c0724849114658ce897dd52bc48040e4dfa6d7cb9f8e3f66",
+    "crates/engine/src/saved_knowledge/update.rs": "2c5806124a7de87bf968a917248ea8ce1a96768bc73045117dc421a61f4a4855"
   },
   "triggers": {
     "TURN": {
@@ -587,6 +587,14 @@
         "crates/engine/src/saved_knowledge/update.rs"
       ],
       "finding": "768 unpatched civ2.bak normal-context transitions execute exploration and adjacent/outer city/stack observation loops with original callees, no replacements. The new unit_knowledge_after adapter returns a decoded snapshot with only explored bits, improvement memory, city known masks/sizes and unit visibility OR writes applied. It rejects sleeping/invisible units, unsupported owners, incoherent stacks/occupancy and unestablished treaty contexts before output; shared exploration geometry still matches the earlier 947 reader/exploration vectors. This adapter is not called by WorldState/HumanSession/clients and does not implement visibility reset, first contact, order wakes, AI sightings, city-phase memory or loader/startup timing. No checkpoint/profile/trigger/action coverage change or faithful admission."
+    },
+    {
+      "change": "Native stack reset, order wakes and atomic contact-call boundary (#197)",
+      "files": [
+        "crates/engine/src/saved_knowledge.rs",
+        "crates/engine/src/saved_knowledge/update.rs"
+      ],
+      "finding": "Unpatched civ2.bak executes 24 full stack resets, 1261 completed observation updates and 19 contact-boundary cases. Some updates compose reset and observation. Original callees execute with native redraw disabled; conversation cases stop at 0x526aca entry and compare arguments without replacing or executing it. The new observation adapter handles normal non-invisible coherent surface stacks, native sentry/goto wakes and human/alliance/terrain conditions; an attempted conversation returns ContactRequired without a partial output. Separate reset clears the full selected stack; composed reset/observation is atomic. The older knowledge-only wrapper retains its awake/treaty guards, and the 768 prior update plus 947 reader/exploration vectors remain unchanged. No actual movement/conversation, AI sighting bookkeeping, invisible-unit or city-phase lifecycle, runtime/client activation, checkpoint change, trigger/action coverage change or faithful profile admission."
     }
   ]
 }

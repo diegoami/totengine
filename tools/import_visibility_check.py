@@ -24,7 +24,7 @@ OFFSETS = [(1,-1),(2,0),(1,1),(0,2),(-1,1),(-2,0),(-1,-1),(0,-2),
            (-1,3),(-3,1),(-3,-1),(-1,-3),(0,0),(4,0),(-4,0),(0,4),(0,-4)]
 
 
-def context(o, civ, domain, extended, other_domain, other_extended, k,
+def prepare(o, civ, domain, extended, other_domain, other_extended, k,
             city_bits, seen, attack, flat, x, y, mask, neighbor_mode):
     w, h, n = 16, 12, 96
     other = civ if neighbor_mode & 1 else civ % 7 + 1
@@ -87,7 +87,11 @@ def context(o, civ, domain, extended, other_domain, other_extended, k,
                     (-0x64,domain),(-0x24,int(tiles[6*(y*8+x//2)]==10)),
                     (-0x28,0),(-8,0),(-0x20,0),(-0x10,0)]:
         o.write(FRAME+off,val,'<I')
-    fragment(o,0x41F8A7,0x4205A7)
+    return tiles, units, cities
+
+
+def capture(o, civ, tiles, units, cities, orders=False):
+    n = 96
     after = bytes(o.cpu.mem_read(0x700000,6*n))
     explored = [i for i in range(n) if after[6*i+4] & (1<<civ)]
     assert all(after[6*i+4] == (tiles[6*i+4] | ((1<<civ) if i in explored else 0)) for i in range(n))
@@ -95,10 +99,12 @@ def context(o, civ, domain, extended, other_domain, other_extended, k,
     for c in range(1,8):
         cache = bytes(o.cpu.mem_read(0x720000+0x1000*c,n))
         assert all(cache[i] == (tiles[6*i+1] if c==civ and i in explored else 128) for i in range(n))
-    masks = []
+    masks, final_orders = [], []
     for slot,before in enumerate(units):
         u = bytearray(o.cpu.mem_read(UNIT+40*slot,40))
         masks.append(u[11]); u[11] = before[11]
+        if orders:
+            final_orders.append(u[17]); u[17] = before[17]
         assert u == before
     known, sizes = [], []
     for slot,before in enumerate(cities):
@@ -106,7 +112,13 @@ def context(o, civ, domain, extended, other_domain, other_extended, k,
         known.append(c[14]); sizes.append(c[15+civ])
         c[14],c[15+civ] = before[14],before[15+civ]
         assert c == before
-    return masks+known+sizes+[len(explored)]+explored
+    return masks+final_orders+known+sizes+[len(explored)]+explored
+
+
+def context(o, *values):
+    initial = prepare(o, *values)
+    fragment(o,0x41F8A7,0x4205A7)
+    return capture(o,values[0],*initial)
 
 
 def main():

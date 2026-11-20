@@ -8,6 +8,7 @@ struct Sight {
     domain: u8,
     extended: bool,
     armed: bool,
+    role: u8,
 }
 
 impl Sight {
@@ -30,6 +31,89 @@ pub fn unit_knowledge_after(
     rules: &Rules,
     scout_slot: usize,
 ) -> Result<SaveFile, String> {
+    observe(save, rules, scout_slot, true, false).map_err(|e| e.to_string())
+}
+
+/// A native contact-call boundary, before any conversation is executed.
+/// Existing contacts can reach it too; this does not mean a newly met civ.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum UnitObservationError {
+    Unsupported(String),
+    ContactRequired {
+        observer: u8,
+        other: u8,
+        x: u16,
+        y: u16,
+        map: u8,
+    },
+}
+
+impl From<String> for UnitObservationError {
+    fn from(s: String) -> Self {
+        Self::Unsupported(s)
+    }
+}
+
+impl From<&str> for UnitObservationError {
+    fn from(s: &str) -> Self {
+        Self::Unsupported(s.into())
+    }
+}
+
+impl std::fmt::Display for UnitObservationError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Unsupported(s) => f.write_str(s),
+            Self::ContactRequired {
+                observer,
+                other,
+                x,
+                y,
+                map,
+            } => write!(
+                f,
+                "native contact required: civ {observer} with {other} at ({x},{y}) on map {map}"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for UnitObservationError {}
+
+/// Normal non-invisible single-surface unit observation, with coherent stacks,
+/// ordinary owners and bounded city sizes, including native sentry/goto wakes.
+/// `active_contacts` is the original updater's second argument (0/1).
+/// An attempted conversation returns ContactRequired without a partial result.
+/// No contact outcome, movement or AI sighting bookkeeping is implemented.
+pub fn unit_observation_after(
+    save: &SaveFile,
+    rules: &Rules,
+    scout_slot: usize,
+    active_contacts: bool,
+) -> Result<SaveFile, UnitObservationError> {
+    observe(save, rules, scout_slot, false, active_contacts)
+}
+
+/// Compose the native stack reset and observation kernels atomically. The
+/// input must already contain coherent unit positions/occupancy; this does
+/// not implement a movement operation or its other intermediate side effects.
+pub fn unit_observation_after_reset(
+    save: &SaveFile,
+    rules: &Rules,
+    scout_slot: usize,
+    active_contacts: bool,
+) -> Result<SaveFile, UnitObservationError> {
+    let reset = clear_unit_stack_visibility(save, scout_slot)?;
+    unit_observation_after(&reset, rules, scout_slot, active_contacts)
+}
+
+fn observe(
+    save: &SaveFile,
+    rules: &Rules,
+    scout_slot: usize,
+    strict: bool,
+    active_contacts: bool,
+) -> Result<SaveFile, UnitObservationError> {
     let map = surface(save)?;
     if save.multiplayer != 0 {
         return Err("unit knowledge update requires single player".into());
@@ -44,22 +128,31 @@ pub fn unit_knowledge_after(
     let mut stacks: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
     let mut sights = vec![None; save.units.len()];
     for (slot, u) in save.units.iter().enumerate().filter(|(_, u)| u.id() != 0) {
-        if u.raw[4..6] != [0, 0] || !(1..8).contains(&u.owner()) || u.orders() != 255 {
-            return Err(
-                "unit knowledge requires unflagged awake surface units from civs 1..7".into(),
-            );
+        if u.raw[4..6] != [0, 0] || !(1..8).contains(&u.owner()) {
+            return Err("unit knowledge requires unflagged surface units from civs 1..7".into());
+        }
+        if strict && u.orders() != 255 {
+            return Err("knowledge-only update requires awake units".into());
         }
         let id = usize::from(u.type_id());
         let domain = rules.unit_domain(id).filter(|&d| d <= 3);
         let flags = rules.unit_flags(id).filter(|&f| f & 8 == 0);
         let attack = rules.unit_attack(id).filter(|&a| a <= 127);
-        let (Some(domain), Some(flags), Some(attack)) = (domain, flags, attack) else {
+        // The earlier knowledge-only API never needed an order-wake role.
+        let role = if strict {
+            Some(0)
+        } else {
+            rules.unit_role(id).filter(|&r| r <= 127)
+        };
+        let (Some(domain), Some(flags), Some(attack), Some(role)) = (domain, flags, attack, role)
+        else {
             return Err("unit knowledge requires decoded non-invisible unit definitions".into());
         };
         sights[slot] = Some(Sight {
             domain,
             extended: flags & 1 != 0,
             armed: attack != 0,
+            role,
         });
         stacks.entry(index(u.x(), u.y())?).or_default().push(slot);
     }
@@ -85,38 +178,15 @@ pub fn unit_knowledge_after(
     }
     // Require a complete native stack chain, not just matching coordinates.
     // Otherwise native traversal might reveal fewer units than our grouping.
-    for (&i, stack) in &stacks {
+    for (&i, stack) in &mut stacks {
         let first = &save.units[stack[0]];
-        let heads: Vec<_> = stack
+        if stack
             .iter()
-            .copied()
-            .filter(|&s| save.units[s].stack_prev() == -1)
-            .collect();
-        if heads.len() != 1
-            || stack
-                .iter()
-                .any(|&s| save.units[s].owner() != first.owner() || sights[s] != sights[stack[0]])
+            .any(|&s| save.units[s].owner() != first.owner() || sights[s] != sights[stack[0]])
         {
             return Err("unit knowledge requires coherent same-owner stacks".into());
         }
-        let mut visited = Vec::new();
-        let mut next = heads[0] as i16;
-        let mut prev = -1;
-        while next != -1 {
-            let slot = next as usize;
-            if !stack.contains(&slot)
-                || visited.contains(&slot)
-                || save.units[slot].stack_prev() != prev
-            {
-                return Err("unit knowledge has a broken stack chain".into());
-            }
-            visited.push(slot);
-            prev = next;
-            next = save.units[slot].stack_next();
-        }
-        if visited.len() != stack.len() {
-            return Err("unit knowledge has a disconnected stack".into());
-        }
+        *stack = ordered_stack(save, stack)?;
         if let Some(&c) = cities.get(&i) {
             if save.cities[c].owner() as u8 != first.owner() {
                 return Err("unit knowledge has mixed city/unit owners".into());
@@ -139,7 +209,8 @@ pub fn unit_knowledge_after(
             if map.tile_fields[6 * i + 5] >> 4 != civ {
                 return Err("unit knowledge tile owner and live records disagree".into());
             }
-            if civ != owner
+            if strict
+                && civ != owner
                 && (save.diplomacy[civ as usize][owner as usize] & 13 != 13
                     || save.diplomacy[owner as usize][civ as usize] & 13 != 13)
             {
@@ -173,6 +244,35 @@ pub fn unit_knowledge_after(
         if other == Some(owner) {
             continue;
         }
+        if !strict && k < 8 {
+            if let Some(stack) = stack {
+                let head = stack[0];
+                let ocean = map.terrain(i) == 10;
+                let origin_ocean = map.terrain(origin) == 10;
+                let other_owner = save.units[head].owner();
+                if save.diplomacy[other_owner as usize][owner as usize] & 8 == 0 {
+                    wake_sentries(&mut out, stack, &sights, ocean);
+                }
+                let other_human = save.human_mask & (1 << other_owner) != 0;
+                let wake_other = if other_human {
+                    ocean == origin_ocean
+                } else {
+                    ocean || !origin_ocean
+                };
+                if wake_other {
+                    wake_goto(&mut out, head, sights[head].unwrap());
+                }
+                let own_human = save.human_mask & (1 << owner) != 0;
+                let wake_scout = if own_human {
+                    ocean == origin_ocean || sight.domain == 1
+                } else {
+                    origin_ocean || !ocean || sight.domain == 1
+                };
+                if wake_scout {
+                    wake_goto(&mut out, scout_slot, sight);
+                }
+            }
+        }
         let observing = k < 8 || sight.reaches(map.terrain(i) == 10);
         if observing {
             if let Some(c) = city {
@@ -187,6 +287,14 @@ pub fn unit_knowledge_after(
         let Some(other) = other else {
             continue;
         };
+        if !strict
+            && k >= 8
+            && stack.is_some_and(|s| sights[s[0]].unwrap().reaches(map.terrain(origin) == 10))
+        {
+            let stack = stack.unwrap();
+            wake_goto(&mut out, stack[0], sights[stack[0]].unwrap());
+            wake_sentries(&mut out, stack, &sights, map.terrain(i) == 10);
+        }
         let reciprocal_unit =
             stack.is_some_and(|s| sights[s[0]].unwrap().reaches(map.terrain(origin) == 10));
         let reciprocal_city =
@@ -198,6 +306,100 @@ pub fn unit_knowledge_after(
                 out.units[s].raw[11] |= 1 << other;
             }
         }
+        if !strict && active_contacts && k < 8 && map.terrain(origin) != 10 {
+            let contact = if let Some(stack) = stack {
+                sight.domain == 0
+                    && map.terrain(i) != 10
+                    && (sights[stack[0]].unwrap().domain != 1 || city.is_some())
+                    && scout.type_id() != 9
+            } else {
+                city.is_some() && save.diplomacy[owner as usize][other as usize] & 1 == 0
+            };
+            if contact {
+                return Err(UnitObservationError::ContactRequired {
+                    observer: owner,
+                    other,
+                    x: (i % save.map_header.stored_w() * 2 + (i / save.map_header.stored_w()) % 2)
+                        as u16,
+                    y: (i / save.map_header.stored_w()) as u16,
+                    map: 0,
+                });
+            }
+        }
+    }
+    Ok(out)
+}
+
+fn wake_goto(save: &mut SaveFile, slot: usize, sight: Sight) {
+    if save.units[slot].orders() & 15 == 12 && sight.role != 7 {
+        save.units[slot].raw[17] = 255;
+    }
+}
+
+fn wake_sentries(save: &mut SaveFile, stack: &[usize], sights: &[Option<Sight>], ocean: bool) {
+    for &slot in stack {
+        if save.units[slot].orders() == 3 && (sights[slot].unwrap().domain != 0 || !ocean) {
+            save.units[slot].raw[17] = 255;
+        }
+    }
+}
+
+fn ordered_stack(save: &SaveFile, members: &[usize]) -> Result<Vec<usize>, String> {
+    let heads: Vec<_> = members
+        .iter()
+        .copied()
+        .filter(|&s| save.units[s].stack_prev() == -1)
+        .collect();
+    if heads.len() != 1 || heads[0] > i16::MAX as usize {
+        return Err("unit knowledge requires one stack head".into());
+    }
+    let mut visited = Vec::new();
+    let mut next = heads[0] as i16;
+    let mut prev = -1;
+    while next != -1 {
+        let slot = next as usize;
+        if !members.contains(&slot)
+            || visited.contains(&slot)
+            || save.units[slot].stack_prev() != prev
+        {
+            return Err("unit knowledge has a broken stack chain".into());
+        }
+        visited.push(slot);
+        prev = next;
+        next = save.units[slot].stack_next();
+    }
+    if visited.len() != members.len() {
+        return Err("unit knowledge has a disconnected stack".into());
+    }
+    Ok(visited)
+}
+
+/// Native 0x56adfe: clear +11 for the complete selected stack, from any member.
+/// Only this reset is performed; movement and subsequent observation are separate.
+pub fn clear_unit_stack_visibility(save: &SaveFile, slot: usize) -> Result<SaveFile, String> {
+    surface(save)?;
+    let u = save
+        .units
+        .get(slot)
+        .filter(|u| u.id() != 0)
+        .ok_or("visibility reset needs a live unit")?;
+    if save.multiplayer != 0 || u.raw[4..6] != [0, 0] || !(1..8).contains(&u.owner()) {
+        return Err("visibility reset requires ordinary single-player surface units".into());
+    }
+    let members: Vec<_> = save
+        .units
+        .iter()
+        .enumerate()
+        .filter(|(_, v)| v.id() != 0 && v.raw[4..6] == [0, 0] && v.x() == u.x() && v.y() == u.y())
+        .map(|(s, _)| s)
+        .collect();
+    if members.iter().any(|&s| save.units[s].owner() != u.owner()) {
+        return Err("visibility reset has mixed stack owners".into());
+    }
+    let stack = ordered_stack(save, &members)?;
+    let mut out = save.clone();
+    for s in stack {
+        out.units[s].raw[11] = 0;
     }
     Ok(out)
 }

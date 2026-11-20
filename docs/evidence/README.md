@@ -463,7 +463,7 @@ size after a scout leaves. This is an internal continuation building block,
 not an exporter or playable import path. Human/world runtime, format-2/3
 checkpoint semantics and profile admission are unchanged.
 
-Still required: visibility resets, first contact, invisibility/detectors,
+Still required: the complete visibility-reset lifecycle, first contact, invisibility/detectors,
 order wakes, AI sighting bookkeeping, city-phase/alliance/Apollo refreshes,
 loader/startup timing, and versioned runtime/checkpoint integration. No native
 movement, live UI, full continuing-knowledge parity or faithful entry is claimed.
@@ -472,6 +472,71 @@ movement, live UI, full continuing-knowledge parity or faithful entry is claimed
 CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
 python3 tools/import_visibility_check.py --out /tmp/import-visibility.json \
   --vectors /tmp/import-visibility-vectors.txt
+```
+
+#### Native stack reset, order wakes and contact boundary (2026-11-20, #197)
+
+[`import-contact.json`](import-contact.json) and
+[`import-contact-vectors.txt`](import-contact-vectors.txt) retain 1,304 numeric
+cases from unpatched `civ2.bak`: 24 complete stack resets, 1,261 completed
+observation updates and 19 contact-call boundaries. `tools/import_contact_check.py`
+executes reset `0x56adfe` in full, or the same observation fragment
+`0x41f8a7..0x4205a7` as the preceding evidence. Some cases compose the reset
+and observation. All callees remain original. The native redraw-enable byte
+`0x5d156c` is zero; redraw callees execute their own disabled branch.
+At a call to `0x526aca` the emulator stops at entry and captures its five
+arguments; it does **not** replace or execute the conversation.
+
+The probe varies all four scout/neighbor domains, land/ocean at both
+endpoints, human masks 0/16/32/48, treaty words 4/5/13, native role 0/7,
+orders 0/3/4/12/28/255, extended sight, city/stack contexts, native contact
+argument 0/1, literal unit-type slot 9 and optional reset before observation.
+Completed cases compare explored bits, all seven improvement caches, city
+knowledge/sizes, unit visibility and unit orders; other map/city/unit bytes
+must remain identical. Conversation-boundary cases compare the exact caller,
+other civ, logical coordinates and map argument, without asserting outcomes.
+
+- Reset walks from the stack head even when called with the tail. It clears
+  visibility byte +11 for the complete stack, leaving neighboring stacks and
+  orders unchanged (`0x56adfe` → `0x56add6`). The full movement caller also
+  invokes this reset at `0x54fd72` before its later `0x41f704` call at
+  `0x5500e2`; this is not evidence for the full movement operation or its
+  intervening city/cargo/visibility side effects.
+- Sentry wake (`0x41f63d`) changes order 3 to 255 for the observed stack,
+  except land units on ocean. Goto wake (`0x41f5e4`) changes orders whose low
+  nibble is 12, except native role 7. Adjacent/outer, alliance, human-mask and
+  land/ocean conditions determine which calls occur; the numeric vectors
+  cover those conditions separately from visibility.
+- Active contact is not simply a test for an unknown civ. Ordinary adjacent
+  land-unit encounters can call `0x526aca` with contact bit 1 already set.
+  Air-unit-without-city, land/ocean and literal type-slot-9 checks can suppress
+  that path. A city without a unit uses a separate missing-contact-bit gate,
+  which does not have the same type/domain checks. Updater argument 0 skips
+  contact calls; argument 1 enables them. No meaning is inferred for a
+  conversation that the original callee subsequently declines.
+
+`unit_observation_after` implements the bounded non-invisible normal-context
+knowledge and order writes. It no longer requires every unit to be awake or
+treaty bits 1/4/8 to be set, but retains the coherent single-surface, unflagged
+owner, matching stack sight properties and bounded-size guards. A native
+conversation attempt returns `UnitObservationError::ContactRequired` with the
+native arguments and no partially changed result. `clear_unit_stack_visibility`
+implements the separate reset; `unit_observation_after_reset` composes both
+kernels atomically. These APIs accept a coherent snapshot and do not move units.
+The earlier knowledge-only API retains its awake/treaty guards.
+
+Rust compares every new native result, verifies the permitted write footprint
+and unchanged inputs on contact/errors, and rejects broken stacks. The earlier
+768 observation vectors and 947 reader/exploration vectors remain covered.
+Invisible units/detectors, actual conversations, city-phase/alliance/Apollo
+memory, AI sighting bookkeeping, complete movement/startup timing and
+versioned runtime integration remain open. Human/world/client runtime and
+format-2/3 checkpoints are unchanged; no faithful profile is admitted.
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+python3 tools/import_contact_check.py --out /tmp/import-contact.json \
+  --vectors /tmp/import-contact-vectors.txt
 ```
 
 #### Versioned experimental initializer (2026-11-19, #197)

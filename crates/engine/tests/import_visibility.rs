@@ -1,5 +1,8 @@
 //! Native normal-context update vectors and transactional rejection checks.
-use engine::saved_knowledge::{unit_knowledge_after, SavedMapKnowledge};
+use engine::saved_knowledge::{
+    clear_unit_stack_visibility, unit_knowledge_after, unit_observation_after,
+    unit_observation_after_reset, SavedMapKnowledge, UnitObservationError,
+};
 use tot_kit::{parse_rules, Rules, SaveFile};
 
 const OFFSETS: [(i32, i32); 25] = [
@@ -247,4 +250,203 @@ fn observed_city_size_persists_outside_later_scout_sight() {
     assert_eq!(later.cities[1].size(), 9);
     assert_eq!(later.units[2].visibility(), save.units[2].visibility());
     assert_eq!(later.units[0].visibility(), save.units[0].visibility());
+}
+
+fn contact_context(v: &[usize]) -> (SaveFile, Rules) {
+    let base = [
+        4,
+        v[0],
+        1,
+        v[1],
+        1,
+        v[2],
+        v[3],
+        1,
+        1,
+        0,
+        6,
+        6,
+        255,
+        if v[11] != 0 { 2 } else { 0 },
+    ];
+    let (mut save, _) = context(&base);
+    let (dx, dy) = OFFSETS[v[2]];
+    let positions = [(6, 6), ((6 + dx) as usize, (6 + dy) as usize)];
+    for (group, (x, y)) in positions.into_iter().enumerate() {
+        let i = y * 8 + x / 2;
+        save.maps[0].tile_fields[6 * i] = if v[4] & (1 << group) != 0 { 10 } else { 1 };
+    }
+    for (slot, u) in save
+        .units
+        .iter_mut()
+        .enumerate()
+        .filter(|(_, u)| u.id() != 0)
+    {
+        u.raw[17] = if slot % 2 == 0 { v[5] as u8 } else { 3 };
+        if v[10] != 0 && slot < 2 {
+            u.raw[8] = 9;
+        }
+    }
+    save.human_mask = v[7] as u8;
+    save.diplomacy[4][5] = v[8] as u32;
+    save.diplomacy[5][4] = v[8] as u32;
+    let mut text = String::from("@UNITS\n");
+    for id in 0..10 {
+        let d = if id == 1 { v[1] } else { v[0] };
+        text.push_str(&format!(
+            "Unit,nil,{d},1,0,1,1,1,1,1,0,{},nil,000000000000001\n",
+            v[6]
+        ));
+    }
+    (save, parse_rules(&text))
+}
+
+#[test]
+fn native_stack_reset_order_wakes_and_contact_boundaries_match() {
+    let numbers = |s: &str| {
+        s.split_whitespace()
+            .map(|n| n.parse::<usize>().unwrap())
+            .collect::<Vec<_>>()
+    };
+    let mut counts = [0; 3];
+    for line in include_str!("../../../docs/evidence/import-contact-vectors.txt")
+        .lines()
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+    {
+        let (input, expected) = line.split_once('|').unwrap();
+        let (kind, input) = input.trim().split_once(' ').unwrap();
+        let v = numbers(input);
+        if kind == "R" {
+            let (save, _) = context(&[4, 0, 0, 0, 0, 1, 0, 0, 1, 0, 6, 6, v[1], 0]);
+            let out = clear_unit_stack_visibility(&save, v[0]).unwrap();
+            assert_eq!(
+                out.units
+                    .iter()
+                    .map(|u| usize::from(u.visibility()))
+                    .collect::<Vec<_>>(),
+                numbers(expected)
+            );
+            let mut restored = out;
+            for (u, old) in restored.units.iter_mut().zip(&save.units) {
+                u.raw[11] = old.raw[11];
+            }
+            assert_eq!(restored, save);
+            counts[0] += 1;
+            continue;
+        }
+        let (save, rules) = contact_context(&v);
+        let before = save.clone();
+        let result = if v[12] != 0 {
+            unit_observation_after_reset(&save, &rules, 0, v[9] != 0)
+        } else {
+            unit_observation_after(&save, &rules, 0, v[9] != 0)
+        };
+        let (expected_kind, expected) = expected.trim().split_once(' ').unwrap();
+        let expected = numbers(expected);
+        if expected_kind == "C" {
+            assert_eq!(
+                result,
+                Err(UnitObservationError::ContactRequired {
+                    observer: expected[0] as u8,
+                    other: expected[1] as u8,
+                    x: expected[2] as u16,
+                    y: expected[3] as u16,
+                    map: expected[4] as u8
+                }),
+                "{line}"
+            );
+            counts[2] += 1;
+        } else {
+            let out = result.unwrap_or_else(|e| panic!("{line}: {e}"));
+            let mut got: Vec<_> = out
+                .units
+                .iter()
+                .map(|u| usize::from(u.visibility()))
+                .collect();
+            got.extend(out.units.iter().map(|u| usize::from(u.orders())));
+            got.extend(out.cities.iter().map(|c| usize::from(c.known_to())));
+            got.extend(
+                out.cities
+                    .iter()
+                    .map(|c| usize::from(c.known_size(4).unwrap())),
+            );
+            let explored: Vec<_> = (0..96)
+                .filter(|&i| out.maps[0].visible_to(i) & 16 != 0)
+                .collect();
+            got.push(explored.len());
+            got.extend(&explored);
+            assert_eq!(got, expected, "{line}");
+            let mut restored = out.clone();
+            for i in 0..96 {
+                assert_eq!(
+                    out.maps[0].tile_fields[6 * i + 4],
+                    save.maps[0].tile_fields[6 * i + 4]
+                        | if explored.contains(&i) { 16 } else { 0 }
+                );
+                restored.maps[0].tile_fields[6 * i + 4] = save.maps[0].tile_fields[6 * i + 4];
+                for civ in 1..8 {
+                    assert_eq!(
+                        out.maps[0].visibility[(civ - 1) * 96 + i],
+                        if civ == 4 && explored.contains(&i) {
+                            save.maps[0].improvements(i)
+                        } else {
+                            128
+                        }
+                    );
+                }
+            }
+            restored.maps[0]
+                .visibility
+                .clone_from(&save.maps[0].visibility);
+            for (u, old) in restored.units.iter_mut().zip(&save.units) {
+                u.raw[11] = old.raw[11];
+                u.raw[17] = old.raw[17];
+            }
+            for (c, old) in restored.cities.iter_mut().zip(&save.cities) {
+                c.raw[14] = old.raw[14];
+                c.raw[19] = old.raw[19];
+            }
+            assert_eq!(
+                restored, save,
+                "only knowledge and order fields may change: {line}"
+            );
+            counts[1] += 1;
+        }
+        assert_eq!(
+            save, before,
+            "contact must not leak a partially changed snapshot"
+        );
+    }
+    assert_eq!(counts, [24, 1261, 19]);
+}
+
+#[test]
+fn reset_rejects_broken_chains_and_observation_reports_unsupported_inputs() {
+    let (save, rules) = contact_context(&[0, 0, 1, 0, 0, 3, 0, 16, 5, 0, 0, 0]);
+    let mut bad = save.clone();
+    bad.units[1].raw[26..28].copy_from_slice(&(-1i16).to_le_bytes());
+    assert!(clear_unit_stack_visibility(&bad, 0).is_err());
+    assert!(unit_observation_after(&bad, &rules, 0, false).is_err());
+    assert!(clear_unit_stack_visibility(&save, 999).is_err());
+    bad = save.clone();
+    bad.version = 0x33;
+    assert!(matches!(
+        unit_observation_after(&bad, &rules, 0, false),
+        Err(UnitObservationError::Unsupported(_))
+    ));
+    // Native reset works from a tail, including units with sentry orders.
+    let reset = clear_unit_stack_visibility(&save, 1).unwrap();
+    assert_eq!(reset.units[0].visibility(), 0);
+    assert_eq!(reset.units[1].visibility(), 0);
+    assert_eq!(reset.units[2].visibility(), 255);
+    assert_eq!(reset.units[1].orders(), 3);
+    let (legacy, mut legacy_rules) = context(&[4, 0, 1, 0, 1, 1, 0, 0, 1, 0, 6, 6, 255, 0]);
+    for row in &mut legacy_rules.sections.get_mut("UNITS").unwrap().rows {
+        row[11] = "unknown".into();
+    }
+    assert!(unit_knowledge_after(&legacy, &legacy_rules, 0).is_ok());
+    assert!(matches!(
+        unit_observation_after(&legacy, &legacy_rules, 0, false),
+        Err(UnitObservationError::Unsupported(_))
+    ));
 }

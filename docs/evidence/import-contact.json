@@ -1,0 +1,26 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "method": "Execute native stack reset, order wakes and the contact-call boundary.\n\nNormal non-invisible surface contexts execute 0x41f8a7..0x4205a7 with\noriginal callees. A contact case stops at 0x526aca entry and records its five\narguments; no conversation callee is replaced or executed. Completed cases\ncompare knowledge fields and orders. Stack resets execute 0x56adfe in full.\nThe native redraw-enable byte is zero, so original redraw callees return.\nNeither movement as a whole nor diplomacy outcomes are asserted.",
+  "cases": {
+    "reset": 24,
+    "completed": 1261,
+    "contact_boundary": 19
+  },
+  "checked_call_sites": [
+    {
+      "site": "0x54fd72",
+      "target": "0x56adfe"
+    },
+    {
+      "site": "0x5500e2",
+      "target": "0x41f704"
+    },
+    {
+      "site": "0x56ae2b",
+      "target": "0x56add6"
+    }
+  ],
+  "vectors_sha256": "24e842ad47b965c8dbc80f77e932cd3842ed229d556644adf2290e4924f61c29",
+  "limits": "Normal single-player non-invisible surface contexts. No full movement, conversation outcomes, AI sighting bookkeeping, loader or faithful runtime activation."
+}

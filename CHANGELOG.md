@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Native observation continuation kernels** (#197): stack visibility resets,
+  sentry/goto wakes and an atomic stop at native contact-call boundaries. A
+  pending conversation returns no partially changed snapshot. These kernels
+  remain separate from runtime import and do not implement diplomatic outcomes.
+
 - **Classic unit knowledge-update kernel** (#197): native-tested exploration,
   remembered city sizes and reciprocal stack visibility in a bounded normal
   context. Unsupported contacts, invisible/sleeping units and incoherent

@@ -6,7 +6,10 @@
 use tot_kit::{MapBlock, SaveFile};
 
 mod update;
-pub use update::unit_knowledge_after;
+pub use update::{
+    clear_unit_stack_visibility, unit_knowledge_after, unit_observation_after,
+    unit_observation_after_reset, UnitObservationError,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SavedTile {

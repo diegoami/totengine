@@ -78,16 +78,17 @@ This lands saved-round resume, format-3 experimental initializers, saved-map
 readers and bounded unit observation/reset/wake/contact-boundary kernels.
 It does not admit a faithful profile or activate those kernels in runtime fog.
 
-#359 (`import-submarine`) is retargeted to main, CI green, still awaiting its
-own review: 1,452 native submarine/detector/mixed-stack contexts and the #358
-review coverage notes. Its reviewed ancestors are merged; do not repeat the
-old request for #352 merge approval. New city-memory work is on
-`import-city-memory`: `tools/import_city_memory_check.py`,
-`docs/evidence/import-city-memory*` and `saved_knowledge/city_memory.rs`.
-The snapshot/WorldState adapters remain explicit, outside legacy scheduling.
+#359 (submarine/mixed-stack observation) and #360 (post-city size memory) have
+independent GLM-5.3 AGREE verdicts and are merged on main, ending at
+`9856d3fb4882afa4d0b4aaf69f0753eae91ae725`. Integration preserves every
+reviewed `crates/` file byte for byte, unions complete metadata test methods
+and merges the audit per key before regenerating inventory. Its combined
+validation passed 426 Rust/53 Python tests, 24 goldens, desktop/fmt/strict
+Clippy and CI. Do not repeat the old #352 approval wait. The observation and
+city-memory kernels still remain outside legacy runtime scheduling.
 
-Saved initial human-view integration is on `import-saved-view`, stacked on
-the city-memory PR #360. Eligible experimental saved rounds use format-3
+The independently reviewed #361 saved initial human-view implementation is
+present here; its integration targets main after #360. Eligible experimental saved rounds use format-3
 initializer schema 2 (`experimental-saved-view-v1`): the pinned Original input
 starts with 59 tiles, four units and city 5 size 2, with no initial sight
 refresh. Schema 1/format 2 remain reconstructible; a reviewed-main synthetic

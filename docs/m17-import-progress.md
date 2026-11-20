@@ -8,8 +8,9 @@ independently admitted SCN context is separate. No profile is admitted yet.
 
 The owner-approved #352 and #355–#358 merges are on main at `47b1f5b`.
 That tree matches independently reviewed #358 head `4860090`. #354's Original
-victory event was already merged. #359 is a separate submarine/mixed-stack
-draft; city-memory adapters are separate continuation building blocks.
+victory event was already merged. Independently reviewed #359 and #360 are
+now merged at main `9856d3f`; #361's reviewed saved-view integration targets
+that main. Observation/city-memory kernels remain separate building blocks.
 
 | Planned slice | Implemented foundation | Remaining before faithful entry |
 | --- | --- | --- |

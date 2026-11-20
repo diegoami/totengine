@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "method": "Execute native submarine/detector and mixed-stack observation contexts.\n\nThe original 0x41f8a7..0x4205a7 loops and callees execute unchanged, with\nnative redraw disabled. Conversations stop at 0x526aca entry; none are\nexecuted or replaced. This checks knowledge/order writes and call boundaries,\nnot combat, transport, full movement, diplomatic outcomes or runtime entry.",
+  "cases": {
+    "completed": 1435,
+    "contact_boundary": 17
+  },
+  "numeric_witnesses": {
+    "paired_submarine_seen_without_detector": 32,
+    "single_submarine_hidden_without_detector": 12,
+    "single_submarine_seen_by_detector": 8
+  },
+  "vectors_sha256": "cbee67f462eb3639e268842eaaeea678bd29f6f386f1ada1ef7ceb6362b06f20",
+  "limits": "Controlled classic single-player surface snapshots and coherent mixed stacks. Submarine/detector observation only; no combat/transport, full movement, conversation outcomes, AI sighting bookkeeping, startup or faithful admission."
+}

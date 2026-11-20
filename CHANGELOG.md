@@ -12,6 +12,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   gameplay begins. Existing schema-1/format-2 recipes remain unchanged; no
   faithful profile is admitted by this change.
 
+- **Submarine and mixed-stack observation kernels** (#197): native-tested
+  adjacent detector/stack-size gates and distinct outer-range visibility,
+  including reversed stack heads and per-member order wakes. Runtime import
+  and faithful-profile admission remain gated.
+
 - **Post-processing city-memory kernel** (#197): native-tested remembered-size
   refreshes for alliance/Apollo contexts, without discovering cities or
   changing tile knowledge. Explicit snapshot and WorldState adapters prepare

@@ -24,6 +24,11 @@ visibility/contact behavior. The explicit `scenario_initialized` constructor
 keeps schema 1; restore dispatches by the recorded schema/profile, never by
 the current factory's defaults.
 
+The startup guard scans parsed trigger/AND halves; it does not establish
+support for unimplemented `@OR` startup branches. Schema-2 eligibility is an
+experimental reconstruction choice, not evidence of complete event admission.
+Unknown required logic still rejects under the frozen first-profile contract.
+
 The extension binds:
 
 - The install-relative source path, captured byte length and fingerprint;

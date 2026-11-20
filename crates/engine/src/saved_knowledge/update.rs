@@ -9,6 +9,8 @@ struct Sight {
     extended: bool,
     armed: bool,
     role: u8,
+    submarine: bool,
+    detects_submarines: bool,
 }
 
 impl Sight {
@@ -21,7 +23,7 @@ impl Sight {
 /// input unchanged. Re-derived from civ2.bak 0x41f8a7..0x4205a7.
 ///
 /// This intentionally narrow kernel accepts one classic surface, ordinary
-/// non-invisible awake units, coherent stacks/occupancy, and existing foreign
+/// non-submarine awake units, coherent stacks/occupancy, and existing foreign
 /// treaty bits 1/4/8. It rejects unsupported contexts before producing output.
 /// It does not run movement, first contact, AI sighting bookkeeping, reset
 /// visibility, or update city-phase memory. Clients do not call this kernel;
@@ -80,7 +82,7 @@ impl std::fmt::Display for UnitObservationError {
 
 impl std::error::Error for UnitObservationError {}
 
-/// Normal non-invisible single-surface unit observation, with coherent stacks,
+/// Normal classic single-surface unit observation, with coherent stacks,
 /// ordinary owners and bounded city sizes, including native sentry/goto wakes.
 /// `active_contacts` is the original updater's second argument (0/1).
 /// An attempted conversation returns ContactRequired without a partial result.
@@ -136,7 +138,7 @@ fn observe(
         }
         let id = usize::from(u.type_id());
         let domain = rules.unit_domain(id).filter(|&d| d <= 3);
-        let flags = rules.unit_flags(id).filter(|&f| f & 8 == 0);
+        let flags = rules.unit_flags(id).filter(|&f| !strict || f & 8 == 0);
         let attack = rules.unit_attack(id).filter(|&a| a <= 127);
         // The earlier knowledge-only API never needed an order-wake role.
         let role = if strict {
@@ -146,13 +148,15 @@ fn observe(
         };
         let (Some(domain), Some(flags), Some(attack), Some(role)) = (domain, flags, attack, role)
         else {
-            return Err("unit knowledge requires decoded non-invisible unit definitions".into());
+            return Err("unit knowledge requires supported decoded unit definitions".into());
         };
         sights[slot] = Some(Sight {
             domain,
             extended: flags & 1 != 0,
             armed: attack != 0,
             role,
+            submarine: flags & 8 != 0,
+            detects_submarines: !strict && flags & 0x4000 != 0,
         });
         stacks.entry(index(u.x(), u.y())?).or_default().push(slot);
     }
@@ -180,10 +184,9 @@ fn observe(
     // Otherwise native traversal might reveal fewer units than our grouping.
     for (&i, stack) in &mut stacks {
         let first = &save.units[stack[0]];
-        if stack
-            .iter()
-            .any(|&s| save.units[s].owner() != first.owner() || sights[s] != sights[stack[0]])
-        {
+        if stack.iter().any(|&s| {
+            save.units[s].owner() != first.owner() || (strict && sights[s] != sights[stack[0]])
+        }) {
             return Err("unit knowledge requires coherent same-owner stacks".into());
         }
         *stack = ordered_stack(save, stack)?;
@@ -232,6 +235,7 @@ fn observe(
         out.maps[0].visibility[(owner as usize - 1) * n + i] = map.improvements(i);
     }
     let origin_city = cities.contains_key(&origin);
+    let origin_ocean = map.terrain(origin) == 10;
     for (k, i) in nearby(save, scout.x(), scout.y())? {
         if k == 20 {
             continue;
@@ -241,69 +245,89 @@ fn observe(
         let other = city
             .map(|c| save.cities[c].owner() as u8)
             .or_else(|| stack.map(|s| save.units[s[0]].owner()));
-        if other == Some(owner) {
+        let Some(other) = other.filter(|&civ| civ != owner) else {
             continue;
-        }
-        if !strict && k < 8 {
-            if let Some(stack) = stack {
-                let head = stack[0];
-                let ocean = map.terrain(i) == 10;
-                let origin_ocean = map.terrain(origin) == 10;
-                let other_owner = save.units[head].owner();
-                if save.diplomacy[other_owner as usize][owner as usize] & 8 == 0 {
-                    wake_sentries(&mut out, stack, &sights, ocean);
-                }
-                let other_human = save.human_mask & (1 << other_owner) != 0;
-                let wake_other = if other_human {
-                    ocean == origin_ocean
-                } else {
-                    ocean || !origin_ocean
-                };
-                if wake_other {
-                    wake_goto(&mut out, head, sights[head].unwrap());
-                }
-                let own_human = save.human_mask & (1 << owner) != 0;
-                let wake_scout = if own_human {
-                    ocean == origin_ocean || sight.domain == 1
-                } else {
-                    origin_ocean || !ocean || sight.domain == 1
-                };
-                if wake_scout {
-                    wake_goto(&mut out, scout_slot, sight);
-                }
-            }
-        }
-        let observing = k < 8 || sight.reaches(map.terrain(i) == 10);
+        };
+        let ocean = map.terrain(i) == 10;
+        let observing = k < 8 || sight.reaches(ocean);
         if observing {
             if let Some(c) = city {
                 out.cities[c].raw[14] |= 1 << owner;
                 out.cities[c].raw[15 + owner as usize] = save.cities[c].size() as u8;
-            } else if let Some(stack) = stack {
-                for &s in stack {
-                    out.units[s].raw[11] |= 1 << owner;
-                }
             }
         }
-        let Some(other) = other else {
-            continue;
-        };
-        if !strict
-            && k >= 8
-            && stack.is_some_and(|s| sights[s[0]].unwrap().reaches(map.terrain(origin) == 10))
-        {
-            let stack = stack.unwrap();
-            wake_goto(&mut out, stack[0], sights[stack[0]].unwrap());
-            wake_sentries(&mut out, stack, &sights, map.terrain(i) == 10);
-        }
-        let reciprocal_unit =
-            stack.is_some_and(|s| sights[s[0]].unwrap().reaches(map.terrain(origin) == 10));
-        let reciprocal_city =
-            city.is_some() && map.visible_to(origin) & (1 << other) != 0 && sight.armed;
-        if (k < 8 && (city.is_some() || !origin_city))
-            || (k >= 8 && ((!origin_city && reciprocal_unit) || reciprocal_city))
-        {
-            for &s in &stacks[&origin] {
-                out.units[s].raw[11] |= 1 << other;
+        if k < 8 {
+            // Native city observation precedes the submarine land-neighbor
+            // early exit. A submarine does not reveal itself to a city here.
+            if city.is_some() && !sight.submarine {
+                reveal_stack(&mut out, &stacks[&origin], other);
+            }
+            if sight.submarine && !ocean {
+                continue;
+            }
+            if let Some(stack) = stack {
+                let head = stack[0];
+                let neighbor = sights[head].unwrap();
+                if !sight.submarine || neighbor.detects_submarines {
+                    if !origin_city {
+                        reveal_stack(&mut out, &stacks[&origin], other);
+                    }
+                    if !strict {
+                        if save.diplomacy[other as usize][owner as usize] & 8 == 0 {
+                            wake_sentries(&mut out, stack, &sights, ocean);
+                        }
+                        let other_human = save.human_mask & (1 << other) != 0;
+                        let wake_other = if other_human {
+                            ocean == origin_ocean
+                        } else {
+                            ocean || !origin_ocean
+                        };
+                        if wake_other {
+                            wake_goto(&mut out, head, neighbor);
+                        }
+                    }
+                }
+                // Native 0x56b64b(head, 2) counts the entire stack. Its >1
+                // exception is distinct from the detector flag check.
+                if !neighbor.submarine || stack.len() > 1 || sight.detects_submarines {
+                    if city.is_none() {
+                        reveal_stack(&mut out, stack, owner);
+                    }
+                    if !strict {
+                        let own_human = save.human_mask & (1 << owner) != 0;
+                        let wake_scout = if own_human {
+                            ocean == origin_ocean || sight.domain == 1
+                        } else {
+                            origin_ocean || !ocean || sight.domain == 1
+                        };
+                        if wake_scout {
+                            wake_goto(&mut out, scout_slot, sight);
+                        }
+                    }
+                }
+            }
+        } else {
+            if let Some(stack) = stack {
+                let neighbor = sights[stack[0]].unwrap();
+                if observing && !neighbor.submarine && city.is_none() {
+                    reveal_stack(&mut out, stack, owner);
+                }
+                if !sight.submarine && neighbor.reaches(origin_ocean) {
+                    if !strict {
+                        wake_goto(&mut out, stack[0], neighbor);
+                        wake_sentries(&mut out, stack, &sights, ocean);
+                    }
+                    if !origin_city {
+                        reveal_stack(&mut out, &stacks[&origin], other);
+                    }
+                }
+            }
+            if !sight.submarine
+                && city.is_some()
+                && map.visible_to(origin) & (1 << other) != 0
+                && sight.armed
+            {
+                reveal_stack(&mut out, &stacks[&origin], other);
             }
         }
         if !strict && active_contacts && k < 8 && map.terrain(origin) != 10 {
@@ -328,6 +352,12 @@ fn observe(
         }
     }
     Ok(out)
+}
+
+fn reveal_stack(save: &mut SaveFile, stack: &[usize], civ: u8) {
+    for &slot in stack {
+        save.units[slot].raw[11] |= 1 << civ;
+    }
 }
 
 fn wake_goto(save: &mut SaveFile, slot: usize, sight: Sight) {

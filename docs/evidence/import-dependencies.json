@@ -1,0 +1,153 @@
+{
+  "art_roles": 8,
+  "dependency_set": "original-reference-dependencies-v1",
+  "event_blocks": 1,
+  "identity": "totengine-scenario-dependencies 1\ntotengine-resources 1\nprofile original\ncities original/cities.bmp 614454 56382f8f81c42664\ncity original/city.bmp 960054 bf070eb4fa26ab6c\ndialog original/dialog.bmp 666382 e4126cd4ae8563bc\nevents original/events.txt 604 cac0d443d968b0b4\nicons original/icons.bmp 614454 6b986bdac4ac1b38\npeople original/people.bmp 614454 d8d82992adecf0cf\nrules original/rules.txt 46102 a9ef2d861874b2fa\nscenario original/ph_auto2.sav 72247 0d8e264d74369c1f\nterrain1 original/terrain1.bmp 614454 a76ddcddb2df395b\nterrain2 original/terrain2.bmp 614454 a1c6e863af2b9bf2\nunits original/units.bmp 750134 679cf7982ee5f90c\ntext-describe original/describe.txt 213306 1d101ee8a39ab364\ntext-labels original/labels.txt 13873 ae6668a7a107795a\ndependency-set original-reference-dependencies-v1\npresentation terminal-text-no-avi-or-ending-screens-v1\nsha256 cities 85956af43a4db2b8621b703f4e92f2998eb0e017e7a91bb4fb13d53993ef2ac4\nsha256 city c35d356f9db7a622debd5675c993e7e57ab1f14ba69eb3144a1f12c6b44a922f\nsha256 describe c933888c405a476cbb303494857fac657563112dd7f2f319f90064c7c6f22450\nsha256 dialog 46697809ce8cc308161eef463a02ec906994be7d8fe7aed6ac0117afa6c15b81\nsha256 events 742d7475e6fe3431a4e4d08494455f4696b82cd3f53b2805c05eeb6ecc92f312\nsha256 icons 6ef962ea8e66a74fda9165bbced8a6badf89849fc377ef32f622cb5ed4c8f2d5\nsha256 labels 793a7148ad0f6f983646a86baf52b557c20914ea0ab306a8ed41f6e39fc801cf\nsha256 people c956f81a4f10433764eaf4edf6647a9e71e872ff4d67df22e871fb91106bce77\nsha256 rules 640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef\nsha256 scenario 5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef\nsha256 terrain1 5b591d8811069228e0f74b073ef42fd3f1db1d15357545016a9bda3a7b521734\nsha256 terrain2 3f65949a078451711512b380ac0a80b07cfc65acf2d8e9da30e707e61e540730\nsha256 units 7bf8a38fddd4c2023e2bd57f96d5d8c9a4af6da7ba9da859bdde473ac8248a75\n",
+  "identity_sha256": "5a27195887d2ff97e889f3e8516a7a372cfdd687bcbe476ab3813183b4df5b00",
+  "inputs": [
+    {
+      "dimensions": [
+        640,
+        480
+      ],
+      "fnv64": "56382f8f81c42664",
+      "length": 614454,
+      "path": "Original/Cities.bmp",
+      "role": "cities",
+      "sha256": "85956af43a4db2b8621b703f4e92f2998eb0e017e7a91bb4fb13d53993ef2ac4"
+    },
+    {
+      "dimensions": [
+        800,
+        600
+      ],
+      "fnv64": "bf070eb4fa26ab6c",
+      "length": 960054,
+      "path": "Original/city.bmp",
+      "role": "city",
+      "sha256": "c35d356f9db7a622debd5675c993e7e57ab1f14ba69eb3144a1f12c6b44a922f"
+    },
+    {
+      "dimensions": null,
+      "fnv64": "1d101ee8a39ab364",
+      "length": 213306,
+      "path": "Original/Describe.txt",
+      "role": "describe",
+      "sha256": "c933888c405a476cbb303494857fac657563112dd7f2f319f90064c7c6f22450"
+    },
+    {
+      "dimensions": [
+        1117,
+        298
+      ],
+      "fnv64": "e4126cd4ae8563bc",
+      "length": 666382,
+      "path": "Original/dialog.bmp",
+      "role": "dialog",
+      "sha256": "46697809ce8cc308161eef463a02ec906994be7d8fe7aed6ac0117afa6c15b81"
+    },
+    {
+      "dimensions": null,
+      "fnv64": "cac0d443d968b0b4",
+      "length": 604,
+      "path": "Original/Events.txt",
+      "role": "events",
+      "sha256": "742d7475e6fe3431a4e4d08494455f4696b82cd3f53b2805c05eeb6ecc92f312"
+    },
+    {
+      "dimensions": [
+        640,
+        480
+      ],
+      "fnv64": "6b986bdac4ac1b38",
+      "length": 614454,
+      "path": "Original/Icons.bmp",
+      "role": "icons",
+      "sha256": "6ef962ea8e66a74fda9165bbced8a6badf89849fc377ef32f622cb5ed4c8f2d5"
+    },
+    {
+      "dimensions": null,
+      "fnv64": "ae6668a7a107795a",
+      "length": 13873,
+      "path": "Original/Labels.txt",
+      "role": "labels",
+      "sha256": "793a7148ad0f6f983646a86baf52b557c20914ea0ab306a8ed41f6e39fc801cf"
+    },
+    {
+      "dimensions": [
+        640,
+        480
+      ],
+      "fnv64": "d8d82992adecf0cf",
+      "length": 614454,
+      "path": "Original/People.bmp",
+      "role": "people",
+      "sha256": "c956f81a4f10433764eaf4edf6647a9e71e872ff4d67df22e871fb91106bce77"
+    },
+    {
+      "dimensions": null,
+      "fnv64": "a9ef2d861874b2fa",
+      "length": 46102,
+      "path": "Original/Rules.txt",
+      "role": "rules",
+      "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+    },
+    {
+      "dimensions": null,
+      "fnv64": "0d8e264d74369c1f",
+      "length": 72247,
+      "path": "Original/Ph_Auto2.SAV",
+      "role": "scenario",
+      "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+    },
+    {
+      "dimensions": [
+        640,
+        480
+      ],
+      "fnv64": "a76ddcddb2df395b",
+      "length": 614454,
+      "path": "Original/Terrain1.BMP",
+      "role": "terrain1",
+      "sha256": "5b591d8811069228e0f74b073ef42fd3f1db1d15357545016a9bda3a7b521734"
+    },
+    {
+      "dimensions": [
+        640,
+        480
+      ],
+      "fnv64": "a1c6e863af2b9bf2",
+      "length": 614454,
+      "path": "Original/Terrain2.bmp",
+      "role": "terrain2",
+      "sha256": "3f65949a078451711512b380ac0a80b07cfc65acf2d8e9da30e707e61e540730"
+    },
+    {
+      "dimensions": [
+        640,
+        586
+      ],
+      "fnv64": "679cf7982ee5f90c",
+      "length": 750134,
+      "path": "Original/units.bmp",
+      "role": "units",
+      "sha256": "7bf8a38fddd4c2023e2bd57f96d5d8c9a4af6da7ba9da859bdde473ac8248a75"
+    }
+  ],
+  "presentation": "terminal-text-no-avi-or-ending-screens-v1",
+  "runtime_admitted": false,
+  "schema": 1,
+  "source_fnv64": "0d8e264d74369c1f",
+  "source_length": 72247,
+  "atlas": {
+    "same_as_existing_original_atlas": true,
+    "sprite_count": 145
+  },
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "method": "Reproduce the first Original dependency capture and shared-atlas check.\n\nRuns Rust adapter/atlas tests and independently hashes the selected private\nfiles with Python. No native game code/UI executes and no session is admitted.",
+  "independent_python_hashes_match": true,
+  "limits": "Only the known twelve-file Original dependency set and an owned SAV capture. No root/GIF/translation/alternate-art/custom/Lua dependency admission. Current constructors, checkpoints and client routes are unchanged. Record/phase/pending-state and knowledge-continuation admission, an admitted initializer and private snapshot lifecycle/#198 entry still remain."
+}

@@ -8,8 +8,19 @@ No game implementation was copied from prior-art projects. Release v0.15 and ear
 Isotrident candidate can optionally package separately licensed Freeciv artwork;
 its PNG/spec source, credits and GPL notice stay in the artwork pack. Retain these notices in binary packages.
 
+SHA-256 dependency additions checked against the locked crate manifests and
+MIT license files on 2026-11-20; existing notices remain unchanged.
+
 | Dependency | Selected license | Retained notice |
 | --- | --- | --- |
+| sha2-0.10.9 | MIT | [sha2-0.10.9.txt](sha2-0.10.9.txt) |
+| block-buffer-0.10.4 | MIT | [block-buffer-0.10.4.txt](block-buffer-0.10.4.txt) |
+| cpufeatures-0.2.17 | MIT | [cpufeatures-0.2.17.txt](cpufeatures-0.2.17.txt) |
+| crypto-common-0.1.7 | MIT | [crypto-common-0.1.7.txt](crypto-common-0.1.7.txt) |
+| digest-0.10.7 | MIT | [digest-0.10.7.txt](digest-0.10.7.txt) |
+| generic-array-0.14.7 | MIT | [generic-array-0.14.7.txt](generic-array-0.14.7.txt) |
+| typenum-1.20.1 | MIT | [typenum-1.20.1.txt](typenum-1.20.1.txt) |
+| version_check-0.9.5 | MIT | [version_check-0.9.5.txt](version_check-0.9.5.txt) |
 | adler2-2.0.1 | MIT | [adler2-2.0.1.txt](adler2-2.0.1.txt) |
 | crc32fast-1.5.4 | MIT | [crc32fast-1.5.4.txt](crc32fast-1.5.4.txt) |
 | fdeflate-0.3.7 | MIT | [fdeflate-0.3.7.txt](fdeflate-0.3.7.txt) |

@@ -14,6 +14,29 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_original_dependency_capture_metadata(self):
+        report = json.loads((ROOT / 'docs/evidence/import-dependencies.json').read_text())
+        saved = json.loads((ROOT / 'docs/evidence/import-saved-view.json').read_text())
+        self.assertEqual(report['source'], saved['source'])
+        self.assertEqual(report['source_fnv64'], saved['source_fnv64'])
+        self.assertFalse(report['runtime_admitted'])
+        self.assertTrue(report['independent_python_hashes_match'])
+        self.assertTrue(report['atlas']['same_as_existing_original_atlas'])
+        self.assertEqual(report['dependency_set'], 'original-reference-dependencies-v1')
+        roles = {'rules', 'events', 'labels', 'describe', 'scenario',
+                 'terrain1', 'terrain2', 'units', 'cities', 'city', 'icons', 'people', 'dialog'}
+        self.assertEqual({item['role'] for item in report['inputs']}, roles)
+        self.assertEqual(len(report['inputs']), len(roles))
+        self.assertEqual(sum(item['dimensions'] is not None for item in report['inputs']), 8)
+        self.assertEqual(hashlib.sha256(report['identity'].encode()).hexdigest(), report['identity_sha256'])
+        self.assertIn(f"dependency-set {report['dependency_set']}\n", report['identity'])
+        self.assertIn(f"presentation {report['presentation']}\n", report['identity'])
+        for item in report['inputs']:
+            self.assertEqual(len(bytes.fromhex(item['sha256'])), 32)
+            self.assertIn(f"sha256 {item['role']} {item['sha256']}\n", report['identity'])
+            self.assertTrue(item['path'].lower().startswith('original/'))
+            self.assertGreater(item['length'], 0)
+
     def test_saved_view_integration_and_legacy_baseline_metadata(self):
         report=json.loads((ROOT/'docs/evidence/import-saved-view.json').read_text())
         native=json.loads((ROOT/'docs/evidence/import-knowledge.json').read_text())

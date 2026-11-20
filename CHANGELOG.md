@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **First Original dependency capture** (#197): a separate immutable capture
+  checks the known twelve-file rules/events/text/BMP set by SHA-256, retaining
+  the exact raw and parsed/decoded inputs. Missing, changed, ambiguous, escaped
+  or Lua inputs reject; revalidation detects source changes. Current loaders,
+  checkpoints and client routes keep their behavior; no profile is admitted.
+
 - **Saved initial human view in the experimental clients** (#197): eligible
   saved rounds start from stored tile/improvement, unit-visibility and city-size
   knowledge without an initial sight refresh. A separate schema-2 initializer

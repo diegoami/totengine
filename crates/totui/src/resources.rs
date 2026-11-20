@@ -9,6 +9,8 @@ use std::path::{Path, PathBuf};
 
 use image::{ImageFormat, ImageReader, Limits, RgbaImage};
 
+pub mod original;
+
 pub const ART_NAMES: [&str; 8] = [
     "terrain1", "terrain2", "units", "cities", "city", "icons", "people", "dialog",
 ];

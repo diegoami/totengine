@@ -88,7 +88,9 @@ Clippy and CI. Do not repeat the old #352 approval wait. The observation and
 city-memory kernels still remain outside legacy runtime scheduling.
 
 The independently reviewed #361 saved initial human-view implementation is
-present here; its integration targets main after #360. Eligible experimental saved rounds use format-3
+merged at main `09b3088a797674540c48f7e8ff11610d74580c15`. Combined validation
+passed 434 Rust/54 Python tests, 24 goldens, 72 desktop tests, fmt/strict Clippy
+and CI. Eligible experimental saved rounds use format-3
 initializer schema 2 (`experimental-saved-view-v1`): the pinned Original input
 starts with 59 tiles, four units and city 5 size 2, with no initial sight
 refresh. Schema 1/format 2 remain reconstructible; a reviewed-main synthetic
@@ -97,6 +99,27 @@ disclosed engine observation (60 tiles after choosing research on this save).
 This is not an admitted profile or a native prompt-timing claim. Other contexts,
 including startup events, retain schema 1. See `human/saved_view.rs`,
 `tools/import_saved_view_check.py` and `docs/evidence/import-saved-view*`.
+
+#362 is a separate draft (`import-snapshot-validation`, `2b6a28d`) awaiting
+independent review: conservative read-only record checks and raw-field/full-world
+normalization measurement. It is not merged or required by this branch.
+Its 444 Rust/55 Python/24 goldens/72 desktop tests, lint and CI pass.
+
+The next independent #197 slice captures the first reference Original dependency
+set in `totui::resources::original::OriginalCapture`. All twelve required files
+are selected directly from Original and checked by SHA-256; raw buffers,
+parsed/decoded resources and identity remain immutable. Missing/changed/case-
+ambiguous inputs, Lua and path escapes reject; no root/GIF/demo fallback is used
+by this API. Revalidation detects source/dependency changes. The installed pack
+builds the same 145-sprite shared atlas; existing loaders/routes are unchanged.
+See `docs/import-stock-dependencies.md`, `tools/import_dependencies_check.py`
+and `docs/evidence/import-dependencies.json`. This predicate admits no session;
+phase/pending choice, knowledge continuation and the admitted initializer/#198
+private snapshot lifecycle and atomic entry remain.
+Validation: 443 install-backed Rust/55 Python tests, 24 goldens, 81 desktop
+tests, fmt/strict workspace+desktop Clippy, a Windows desktop-target compile
+check and byte-identical dependency evidence reproduction all pass. No Windows
+input or owner acceptance is claimed.
 
 The first-profile gates follow `docs/scenario-entry-contract.md` and the
 six-slice comment on #197; current integration work is tracked in

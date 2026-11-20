@@ -111,3 +111,9 @@ The additional native observation/city-memory kernels are implementation
 building blocks, not amendments adding unrelated admission prerequisites.
 See [the milestone progress map](m17-import-progress.md). This persistence
 slice implements no video/ending screens or native SAV export.
+
+The separate [Original dependency capture](import-stock-dependencies.md) is
+available for future admission wiring. It retains exact raw/parsed/decoded
+inputs and SHA-256 identities of the known first set, with revalidation before
+future confirmation. Existing schema-1/schema-2/format-2 constructors and restore
+do not call it; it is not an admitted initializer or a private snapshot cache.

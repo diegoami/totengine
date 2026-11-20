@@ -371,6 +371,24 @@ pub fn preflight(
             "The scenario calendar is not decoded for this file; dates show as turn numbers".into(),
         );
     }
+    let human = sav.player_civ;
+    if (1..8).contains(&human)
+        && world.civ_alive(human)
+        && resume_blocker(&sav, rules, human).is_none()
+    {
+        match crate::saved_knowledge::SavedMapKnowledge::read(&sav, human) {
+            Ok(knowledge) => {
+                let extra = knowledge.engine_sight_additions(&world)?.len();
+                gaps.push(format!(
+                    "For the file's player, engine sight adds {extra} unexplored tile{} on load; native visibility/contact updates are not matched",
+                    if extra == 1 { "" } else { "s" },
+                ));
+            }
+            Err(reason) => gaps.push(format!(
+                "Stored map knowledge cannot be validated for this context: {reason}"
+            )),
+        }
+    }
     if lua {
         gaps.push("Lua scripts beside the scenario are not run".into());
     }

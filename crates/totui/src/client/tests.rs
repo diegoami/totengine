@@ -4926,6 +4926,43 @@ fn experimental_scenario_entry_lists_preflights_starts_and_reloads() {
 }
 
 #[test]
+fn installed_saved_knowledge_gap_is_visible_before_starting() {
+    let Ok(home) = std::env::var("CIVTOT_HOME") else {
+        return;
+    };
+    let scratch = tempfile::tempdir().unwrap();
+    let mut c = seeded_client(home, scratch.path().join("saves"));
+    c.pick_scenario("Original/Ph_Auto2.SAV").unwrap();
+    assert!(c.loaded.is_none());
+    let frame = c.frame();
+    let text = frame
+        .draws
+        .iter()
+        .filter_map(|d| match d {
+            Draw::Text { text, .. } => Some(text.as_str()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(
+        text.contains("engine sight adds 1 unexplored tile"),
+        "{text}"
+    );
+    assert!(
+        text.contains("native visibility/contact updates are not matched"),
+        "{text}"
+    );
+    assert!(
+        text.contains("original ending and scoring screens"),
+        "the new disclosure must not hide the ending policy: {text}"
+    );
+    assert!(!frame.draws.iter().any(|d| matches!(d, Draw::Text { text, .. } if text.starts_with('+') && text.ends_with("more lines"))), "all Original gaps must be readable");
+    key(&mut c, "Escape");
+    assert!(c.loaded.is_none());
+}
+
+#[test]
 fn initialized_scenario_restore_rejects_changed_dependencies_atomically() {
     let f = Fixture::new();
     let path = f.0.join("Original/Test.sav");

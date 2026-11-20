@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Classic saved-map knowledge projection** (#197): a read-only native-tested
+  view of explored tiles, remembered improvements/city sizes and saved unit
+  visibility. Experimental preflight now discloses the one unexplored tile
+  current engine sight adds on Ph_Auto2 load. Continuing native visibility and
+  faithful entry remain gated.
+
 - **Saves resume their saved turn** (#197, first slice of milestone 17), as
   the original's loader does (static decode of `civ2.bak`, evidence §Saved
   round position).

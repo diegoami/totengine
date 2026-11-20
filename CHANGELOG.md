@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Submarine and mixed-stack observation kernels** (#197): native-tested
+  adjacent detector/stack-size gates and distinct outer-range visibility,
+  including reversed stack heads and per-member order wakes. Runtime import
+  and faithful-profile admission remain gated.
+
 - **Native observation continuation kernels** (#197): stack visibility resets,
   sentry/goto wakes and an atomic stop at native contact-call boundaries. A
   pending conversation returns no partially changed snapshot. These kernels

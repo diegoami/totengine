@@ -22,7 +22,7 @@ from import_knowledge_check import OriginalCity, FRAME, UNIT, CITY, read
 
 
 def run(o, domain, other_domain, k, city_bits, ocean_bits, order, role,
-        human_mask, treaty, active, special, no_units, reset_first):
+        human_mask, treaty, active, special, no_units, reset_first, *, configure=None):
     args = [4,domain,1,other_domain,1,k,city_bits,1,1,0,6,6,255,2 if no_units else 0]
     tiles,units,cities = prepare(o,*args)
     positions = [(6,6),(6+OFFSETS[k][0],6+OFFSETS[k][1])]
@@ -46,6 +46,8 @@ def run(o, domain, other_domain, k, city_bits, ocean_bits, order, role,
     o.write(FRAME-0x50,human_mask & 16,'<I')
     o.write(FRAME-0x24,int(bool(ocean_bits & 1)),'<I')
     o.write(FRAME+12,active,'<I')
+    if configure is not None:
+        configure(o,tiles,units,cities)
     if reset_first:
         o.call(0x56ADFE,0)
     contact = []

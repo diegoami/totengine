@@ -20,7 +20,7 @@
     "crates/engine/src/human/initializer.rs": "b6b9fc0d0d8fbc8f3ceb1bd603c6c6038f521dbe3af4939957a4edf07a8e2c00",
     "crates/totui/src/client/scenario.rs": "30aa68fcb7f24bd519186b75a8b872dbd84eb97e5570438a51fdf4449360a887",
     "crates/engine/src/saved_knowledge.rs": "6161c144c6e60ab2c0724849114658ce897dd52bc48040e4dfa6d7cb9f8e3f66",
-    "crates/engine/src/saved_knowledge/update.rs": "2c5806124a7de87bf968a917248ea8ce1a96768bc73045117dc421a61f4a4855"
+    "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3"
   },
   "triggers": {
     "TURN": {
@@ -595,6 +595,14 @@
         "crates/engine/src/saved_knowledge/update.rs"
       ],
       "finding": "Unpatched civ2.bak executes 24 full stack resets, 1261 completed observation updates and 19 contact-boundary cases. Some updates compose reset and observation. Original callees execute with native redraw disabled; conversation cases stop at 0x526aca entry and compare arguments without replacing or executing it. The new observation adapter handles normal non-invisible coherent surface stacks, native sentry/goto wakes and human/alliance/terrain conditions; an attempted conversation returns ContactRequired without a partial output. Separate reset clears the full selected stack; composed reset/observation is atomic. The older knowledge-only wrapper retains its awake/treaty guards, and the 768 prior update plus 947 reader/exploration vectors remain unchanged. No actual movement/conversation, AI sighting bookkeeping, invisible-unit or city-phase lifecycle, runtime/client activation, checkpoint change, trigger/action coverage change or faithful profile admission."
+    },
+    {
+      "change": "Native submarine/detector gates and coherent mixed-stack observation (#197)",
+      "files": [
+        "crates/engine/src/saved_knowledge.rs",
+        "crates/engine/src/saved_knowledge/update.rs"
+      ],
+      "finding": "1452 additional original civ2.bak contexts (1435 completed, 17 contact-call boundaries) match normal observation knowledge/order writes. Each context also executes the native mode-2 stack counter and asserts linked member count. New flags 8/0x4000 handling distinguishes adjacent submarine-head/count/detector admission from the separate outer-range exclusion and reciprocal gates. Broad observation accepts coherent mixed properties, follows native head links, and wakes members with their own domains; the earlier knowledge-only wrapper retains its non-submarine/matching-sight/awake/treaty guards. Twelve explicit native contexts cover disabled extended sight and goto-ordered tails from the non-blocking #358 review notes. Historical 947 reader/exploration, 768 update and 1304 reset/wake/contact evidence remains unchanged. No WorldState/HumanSession/client activation, checkpoint or profile change, trigger/action coverage change, native movement/conversation/AI sightings/cargo/combat parity, or faithful admission."
     }
   ]
 }

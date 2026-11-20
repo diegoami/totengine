@@ -4907,6 +4907,7 @@ fn experimental_scenario_entry_lists_preflights_starts_and_reloads() {
         "title names the experimental scenario"
     );
     let saved = c.checkpoint().unwrap();
+    assert!(saved.starts_with("totengine-human 3\n"));
     assert!(saved.contains("\nsetup scenario "));
     key(&mut c, "Ctrl+s");
     edit(&mut c, "rome");
@@ -4922,6 +4923,70 @@ fn experimental_scenario_entry_lists_preflights_starts_and_reloads() {
         "{}",
         d.status
     );
+}
+
+#[test]
+fn initialized_scenario_restore_rejects_changed_dependencies_atomically() {
+    let f = Fixture::new();
+    let path = f.0.join("Original/Test.sav");
+    let mut bytes = engine::tests_support::synthetic_save_bytes();
+    bytes[678] = 0;
+    bytes[680] = 1;
+    bytes[681] = 1;
+    bytes[687] = 2;
+    fs::write(&path, &bytes).unwrap();
+    fs::write(f.0.join("Labels.txt"), "@LABELS\n2\nB.C.\nA.D.\n").unwrap();
+    fs::write(
+        f.0.join("Original/Events.txt"),
+        "@IF\nTURN\nturn=Every\n@THEN\nTEXT\nMessage A\nENDTEXT\n@ENDIF\n",
+    )
+    .unwrap();
+    let mut c = f.client();
+    c.pick_scenario("Original/Test.sav").unwrap();
+    let Some(Modal::ScenarioStart(choice)) = c.modal.clone() else {
+        panic!("preflight");
+    };
+    c.start_scenario(&choice).unwrap();
+    c.modal = None;
+    let checkpoint = c.checkpoint().unwrap();
+    assert!(checkpoint.starts_with("totengine-human 3\n"));
+    let source = HumanSession::checkpoint_scenario(&checkpoint).unwrap();
+    let assets = c.assets.clone();
+    for name in [
+        "Labels.txt",
+        "Rules.txt",
+        "Original/Events.txt",
+        "Original/Test.sav",
+        "units.bmp",
+    ] {
+        let file = f.0.join(name);
+        let original = fs::read(&file).unwrap();
+        let mut changed = original.clone();
+        if name.ends_with(".txt") {
+            changed.extend_from_slice(b"\n; changed dependency\n");
+        } else {
+            let n = changed.len();
+            changed[n - 1] ^= 1;
+        }
+        fs::write(&file, changed).unwrap();
+        assert!(
+            c.restore_scenario(&source, &checkpoint).is_err(),
+            "accepted changed {name}"
+        );
+        assert_eq!(
+            c.checkpoint().unwrap(),
+            checkpoint,
+            "failed restore mutated the session for {name}"
+        );
+        assert_eq!(c.assets, assets);
+        fs::write(file, original).unwrap();
+    }
+    fs::rename(&path, path.with_extension("saved-away")).unwrap();
+    assert!(c.restore_scenario(&source, &checkpoint).is_err());
+    assert_eq!(c.checkpoint().unwrap(), checkpoint);
+    fs::rename(path.with_extension("saved-away"), path).unwrap();
+    c.restore_scenario(&source, &checkpoint).unwrap();
+    assert_eq!(c.checkpoint().unwrap(), checkpoint);
 }
 
 /// #326: scenario event TEXT boxes open one at a time as pop-up dialogs on
@@ -5077,6 +5142,22 @@ fn installed_victory_input_fixture() {
     ready(&mut c);
     research(&mut c);
     assert_eq!(c.view().unwrap().phase, Phase::Human);
+    let captured = c.loaded.as_ref().unwrap().session.initializer().unwrap();
+    fs::write(out.join("initializer.json"), serde_json::to_string_pretty(&serde_json::json!({
+        "schema": 1, "checkpoint_format": 3, "profile": engine::human::ScenarioInitializer::PROFILE,
+        "mode": format!("{:?}", captured.mode), "human": captured.human,
+        "initial_phase": format!("{:?}", captured.phase), "cursor": captured.cursor,
+        "saved_turn": captured.saved_turn, "saved_player": captured.player_civ,
+        "saved_active": captured.active_civ, "multiplayer": captured.multiplayer,
+        "seed": captured.source.seed, "policy": captured.policy.id(),
+        "snapshot_fingerprint": format!("{:016x}", captured.source.fingerprint),
+        "initial_world": format!("{:016x}", captured.initial_world),
+        "initial_knowledge": format!("{:016x}", captured.initial_knowledge),
+        "input_events": format!("{:016x}", captured.input_events),
+        "initial_events": format!("{:016x}", captured.initial_events),
+                "initial_rng": captured.initial_rng,
+                "initial_rng_draws": captured.initial_rng_draws,
+    })).unwrap()+"\n").unwrap();
     fs::write(out.join("victorystart.cth"), c.checkpoint().unwrap()).unwrap();
     key(&mut c, "Ctrl+n");
     if matches!(c.modal, Some(Modal::Confirm { .. })) {

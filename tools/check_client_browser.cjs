@@ -12,6 +12,13 @@ fs.mkdirSync(out,{recursive:true});
  await page.goto(origin);
  async function idle(){await page.waitForFunction(()=>typeof frame!=='undefined'&&frame&&!busy&&paintedRevision===frame.revision)}
  async function state(){await idle();return page.evaluate(()=>frame)}
+ async function resizeViewport(width,height){
+  await page.setViewportSize({width,height});
+  const wanted=Math.min(1792,Math.max(1024,Math.floor(width*768/height)));
+  // Resize reports are asynchronous. Await the acknowledged logical stage
+  // before sending a key; an in-flight display update deliberately drops it.
+  await page.waitForFunction(w=>frame?.width===w&&!busy&&!pendingDisplay&&paintedRevision===frame.revision,wanted);
+ }
  async function key(k){await idle();await page.keyboard.press(k);await idle()}
  async function click(label){const f=await state();const t=f.draws.find(d=>d.kind==='text'&&d.text===label);if(!t)throw Error('Missing '+label+' '+f.status);await page.mouse.click(t.x+18,t.y+9);await idle()}
  async function fill(value){await idle();await page.locator('#entry').fill(value);await page.waitForFunction(v=>frame.entry?.value===v&&!busy,value);await idle()}
@@ -78,10 +85,10 @@ fs.mkdirSync(out,{recursive:true});
   await page.waitForFunction(turn=>frame.phase==='Human'&&frame.draws.some(d=>+(d.text?.match(/(?:^| · )Turn (\d+)(?:$| · )/)?.[1])===turn+1),turn,{timeout:30000});await idle();
  }
  await research();await key('Control+s');await save('tenrounds');
- await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:out+'/browser-round11-1440.png'});
+ await resizeViewport(1440,1000);await page.screenshot({path:out+'/browser-round11-1440.png'});
  const final=await state();console.log(JSON.stringify({phase:final.phase,status:final.status,turn:turnOf(final)}));
  // Resume through real dialog input; checkpoints must preserve pending choices.
- await page.setViewportSize({width:1024,height:768});
+ await resizeViewport(1024,768);
  async function load(name){await key('Control+l');await fill(name);await key('Enter')}
  await load('research');await research();await key('b');await click('Save pending choice');await save('researchnext');
  await loadPending('founding');await fill('athena');await key('Enter');

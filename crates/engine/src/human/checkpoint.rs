@@ -1,5 +1,6 @@
 //! Replay-based engine checkpoints. Original resource bytes stay local.
 use super::*;
+use crate::rng::GameRng;
 
 fn fingerprint(bytes: &[u8]) -> u64 {
     bytes.iter().fold(0xcbf2_9ce4_8422_2325, |h, &b| {
@@ -10,15 +11,42 @@ fn fingerprint(bytes: &[u8]) -> u64 {
 impl HumanSession {
     /// Reconstructs private opponent state, receipts, decisions and partial AI
     /// turns at O(recorded work) cost. `resources` is the adapter's canonical
-    /// manifest identity. This is not a native SAV or a browser-visible payload.
+    /// manifest identity for legacy format 2; format 3 uses the dependencies
+    /// captured at construction. This is not a native SAV or browser payload.
     pub fn checkpoint(&self, resources: &str) -> String {
+        // Format 3 is sealed to the manifest captured at construction. A
+        // caller cannot relabel a running scenario by passing new resources.
+        let resources = self
+            .initializer
+            .as_ref()
+            .map_or(resources, |i| i.dependencies.as_str());
+        let version = if self.initializer.is_some() { 3 } else { 2 };
         let rules = tot_kit::emit_rules(&self.game.rules);
         let mut text = format!(
-            "totengine-human 2\nengine {}\nsetup {}\nhuman {}\npolicy {}\nrules {} {:016x}\nresources {} {:016x}\nworld {:016x}\nknowledge {:016x}\nlog {} {:016x}\n",
-            env!("CARGO_PKG_VERSION"), self.origin.descriptor(), self.human, self.policy.id(),
+            "totengine-human {version}\nengine {}\nsetup {}\nhuman {}\npolicy {}\n",
+            env!("CARGO_PKG_VERSION"),
+            self.origin.descriptor(),
+            self.human,
+            self.policy.id(),
+        );
+        if let Some(i) = &self.initializer {
+            text.push_str(&i.descriptor());
+            text.push('\n');
+        }
+        text.push_str(&format!(
+            "rules {} {:016x}\nresources {} {:016x}\nworld {:016x}\nknowledge {:016x}\nlog {} {:016x}\n",
             rules.len(), fingerprint(rules.as_bytes()), resources.len(), fingerprint(resources.as_bytes()),
             self.game.world.checksum(), self.knowledge_fingerprint(), self.game.log().len(), fingerprint(self.game.log().as_bytes()),
-        );
+        ));
+        if self.initializer.is_some() {
+            text.push_str(&format!(
+                "rng {:08x} {} {:08x} {}\n",
+                self.game.world.rng.state(),
+                self.game.world.rng.draws(),
+                self.game.world.combat_rng.state(),
+                self.game.world.combat_rng.draws()
+            ));
+        }
         for op in &self.journal {
             match op {
                 Operation::Advance(n) => text.push_str(&format!("advance {n}\n")),
@@ -41,7 +69,9 @@ impl HumanSession {
     /// without replaying anything, so an adapter can locate the file first.
     pub fn checkpoint_scenario(text: &str) -> Option<ScenarioOrigin> {
         let mut lines = text.lines();
-        lines.next().filter(|l| *l == "totengine-human 2")?;
+        lines
+            .next()
+            .filter(|l| matches!(*l, "totengine-human 2" | "totengine-human 3"))?;
         lines.next()?;
         ScenarioOrigin::parse(lines.next()?.strip_prefix("setup ")?)
     }
@@ -64,9 +94,12 @@ impl HumanSession {
             return Err("human checkpoint exceeds 16 MiB".into());
         }
         let mut lines = text.lines();
-        if lines.next() != Some("totengine-human 2")
-            || lines.next() != Some(&format!("engine {}", env!("CARGO_PKG_VERSION")))
-        {
+        let version = match lines.next() {
+            Some("totengine-human 2") => 2,
+            Some("totengine-human 3") => 3,
+            _ => return Err("unsupported human checkpoint version".into()),
+        };
+        if lines.next() != Some(&format!("engine {}", env!("CARGO_PKG_VERSION"))) {
             return Err("unsupported human checkpoint or engine version".into());
         }
         let setup = lines
@@ -92,6 +125,15 @@ impl HumanSession {
                 .ok_or("unsupported human opponent policy")?,
         )
         .map_err(|_| "unsupported human opponent policy")?;
+        let initializer = if version == 3 {
+            let line = lines.next().ok_or("missing scenario initializer")?;
+            if !line.starts_with("initializer 1 ") {
+                return Err("unsupported scenario initializer version".into());
+            }
+            Some(line)
+        } else {
+            None
+        };
         let canonical_rules = tot_kit::emit_rules(&rules);
         if lines.next()
             != Some(&format!(
@@ -115,8 +157,19 @@ impl HumanSession {
         lines.next().ok_or("missing world fingerprint")?;
         lines.next().ok_or("missing knowledge fingerprint")?;
         lines.next().ok_or("missing order-log identity")?;
+        if version == 3 {
+            lines
+                .next()
+                .filter(|line| line.starts_with("rng "))
+                .ok_or("missing checkpoint RNG assertion")?;
+        }
         let mut session = match origin {
-            Origin::Generated(config) => Self::generated_with_policy(config, rules, human, policy)?,
+            Origin::Generated(config) => {
+                if initializer.is_some() {
+                    return Err("format 3 requires a scenario initializer".into());
+                }
+                Self::generated_with_policy(config, rules, human, policy)?
+            }
             Origin::Scenario(o) => {
                 let (save, events) = scenario.ok_or("this checkpoint needs its scenario file")?;
                 if save.len() != o.len || crate::player::fnv64(save) != o.fingerprint {
@@ -125,9 +178,37 @@ impl HumanSession {
                             .into(),
                     );
                 }
-                Self::scenario(&o.path, save, rules, events, human, policy, o.seed)?
+                if initializer.is_some() {
+                    Self::scenario_initialized(
+                        ScenarioInput {
+                            path: &o.path,
+                            snapshot: save,
+                            rules,
+                            events,
+                        },
+                        human,
+                        policy,
+                        o.seed,
+                        resources,
+                    )?
+                } else {
+                    Self::scenario(&o.path, save, rules, events, human, policy, o.seed)?
+                }
             }
         };
+        if let Some(expected) = initializer {
+            if session
+                .initializer
+                .as_ref()
+                .map(ScenarioInitializer::descriptor)
+                .as_deref()
+                != Some(expected)
+            {
+                return Err(
+                    "scenario initializer differs from the captured inputs or normalization".into(),
+                );
+            }
+        }
         let mut ended = false;
         for (count, line) in lines.by_ref().enumerate() {
             if count > 200_000 {

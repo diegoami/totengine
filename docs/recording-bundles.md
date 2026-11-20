@@ -14,7 +14,7 @@ only shown:
 
 | Section | Content | Class |
 | --- | --- | --- |
-| `gameplay` | The canonical engine checkpoint: `totengine-campaign` for all-AI campaigns, `totengine-human 2` for human sessions. It carries setup, policy identity and the canonical order log. | **Reproducible.** Replaying it reconstructs the game, including private policy state. |
+| `gameplay` | The canonical engine checkpoint: `totengine-campaign` for all-AI campaigns; `totengine-human 2` for generated/legacy human sessions; format 3 for newly initialized experimental scenarios. It carries setup, policy identity and the canonical order log. | **Reproducible.** Replaying it reconstructs the game, including private policy state. Scenario format 3 also needs its bound private source snapshot and dependency manifest; it grants no faithful import admission. |
 | `observer` | Observer stream v1 frames, labelled with a perspective (`all-views`, `spectator`, `civ-N`) and the round of frame 0. | **Derived.** Verification regenerates the frames from `gameplay` and compares them. Full-state perspectives are labelled as such. |
 | `presentation` | NDJSON notes, markers and camera/view changes: one object per line with `round` and `kind`. | **Inert.** It is validated but never executed, and adding or editing it cannot change gameplay. |
 | `resources` | The resource identity text a human session bound (profile, relative names, sizes, fingerprints). | **Identity only.** No paths and no asset bytes. |

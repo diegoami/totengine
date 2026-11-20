@@ -20,10 +20,12 @@ profile before custom calendars, multiple maps or modern scripts.
 > *experimental* path that lists every gap before the game starts. That path
 > is not admission under this contract, which remains the faithful target.
 
-**It is not admitted for human entry or faithful simulation today.** Standard
-Original events already require an unsupported compound/endgame branch, and
-native active-phase/movement/fog import requires further evidence. The other
-corpus inputs expose additional independent blockers. The first loader may
+**It is not admitted for human entry or faithful simulation today.** The
+Original game's compound victory event now has a terminal engine outcome with a
+disclosed video/ending-screen omission policy. Saved-round continuation has a
+bounded single-player path, but native knowledge and remaining entry predicates
+still require further evidence. The other corpus inputs expose additional
+independent blockers. The first loader may
 only activate this profile when every required predicate below is verified;
 otherwise it supplies an actionable rejection. Selecting a candidate does not
 waive missing behavior or authorize stripping its events to make it pass.
@@ -106,10 +108,14 @@ covers neither native imports nor these missing mechanics.
 
 ## Persistence, experiments and recording
 
-Existing human checkpoint format 2 always reconstructs a generated world; it
-cannot represent a native-import initializer. Do not fake an imported snapshot
-by editing its generated seed/setup descriptor. Before native import lands,
-#197 must define a versioned initializer/checkpoint extension with:
+Human checkpoint format 2 supports generated games and legacy experimental
+scenario origins. New experimental scenario sessions use format 3 with a
+[schema-1 initializer](import-initializer.md), binding source/dependencies,
+normalization and initial state before replay. Its profile is explicitly
+`experimental-scenario-v1`; it grants no admission under this contract.
+Do not fake an imported snapshot by editing a generated seed/setup descriptor.
+Before faithful native import lands, #197 must activate an admitted initializer
+profile satisfying all predicates above, with:
 
 - Immutable input snapshot identities (and a private preserved snapshot/reference
   policy), rules/art/text/event dependency identities and the admitted profile.

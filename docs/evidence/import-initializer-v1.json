@@ -1,0 +1,124 @@
+{
+  "schema": 1,
+  "base_sha": "801441074f8fdc820de8eafb5fb3da207cd37827",
+  "scope": "Versioned engine initializer for experimental scenario checkpoint format 3. Not native format evidence or faithful admission.",
+  "initializer": {
+    "checkpoint_format": 3,
+    "cursor": 4,
+    "human": 4,
+    "initial_events": "7683de1ab4d1fdf1",
+    "initial_knowledge": "4c2722983412e0d4",
+    "initial_phase": "Human",
+    "initial_rng": [
+      250784123,
+      250784123
+    ],
+    "initial_rng_draws": [
+      0,
+      0
+    ],
+    "initial_world": "fa22b1e864b8d6f4",
+    "input_events": "40a502f6134f9310",
+    "mode": "SavedRound",
+    "multiplayer": 0,
+    "policy": "builtin-1",
+    "profile": "experimental-scenario-v1",
+    "saved_active": 4,
+    "saved_player": 4,
+    "saved_turn": 43,
+    "schema": 1,
+    "seed": 250784123,
+    "snapshot_fingerprint": "a3bb172e5a27d06f"
+  },
+  "normalization_limits": [
+    "Saved exploration plus the current engine sight/memory model; native remembered-city and reveal rules remain unresolved.",
+    "Engine AI policy and seed, without original saved AI/RNG continuation.",
+    "experimental-scenario-v1 grants no classic-surface-032-v1 admission."
+  ],
+  "fixture": {
+    "source": "private controlled copy of Original/Ph_Auto2.SAV with authored victory prose and denominator=1",
+    "snapshot_sha256": "e1174410740bb5f174d29f1eed485b1e823f3f0d3400f30baf025dcccedc22ef",
+    "events_sha256": "a43f113a1755e1e506d48b92849b9341506fb247908281c9afaf62256b29be50",
+    "start_checkpoint_sha256": "a3ce8411536242a7175258760f0a5e117cca139ce80a9b533abc9d5fe36d22c8",
+    "end_checkpoint_sha256": "e2be96fb2a48f5e35fea48ce28aadc3f5f2aac504d6526962163674da4023f7e"
+  },
+  "real_input": {
+    "browser": "Chromium/Playwright mouse and keyboard; generated ten-round route plus format-3 scenario load, terminal save and reload",
+    "desktop": "Linux SDL/XTest on private Xvfb; same routes",
+    "comparisons": [
+      {
+        "client": "browser",
+        "checkpoint": "victoryafter",
+        "sha256": "e2be96fb2a48f5e35fea48ce28aadc3f5f2aac504d6526962163674da4023f7e",
+        "matches_fixture": true
+      },
+      {
+        "client": "browser",
+        "checkpoint": "victoryrestored",
+        "sha256": "e2be96fb2a48f5e35fea48ce28aadc3f5f2aac504d6526962163674da4023f7e",
+        "matches_fixture": true
+      },
+      {
+        "client": "linux-sdl",
+        "checkpoint": "victoryafter",
+        "sha256": "e2be96fb2a48f5e35fea48ce28aadc3f5f2aac504d6526962163674da4023f7e",
+        "matches_fixture": true
+      },
+      {
+        "client": "linux-sdl",
+        "checkpoint": "victoryrestored",
+        "sha256": "e2be96fb2a48f5e35fea48ce28aadc3f5f2aac504d6526962163674da4023f7e",
+        "matches_fixture": true
+      }
+    ],
+    "windows": "not run",
+    "owner_acceptance": "not claimed"
+  },
+  "regressions": [
+    "initial metadata mutation rejected before journal replay",
+    "changed/missing snapshot rejected",
+    "changed dependency manifest rejected",
+    "changed event text with identical initial world rejected",
+    "uncheckpointed running event input rejected",
+    "partial opponent progression, startup DELAY/one-shot state and terminal outcome replayed",
+    "initial and final RNG assertions checked",
+    "legacy scenario format 2 retained without automatic upgrade",
+    "Labels/Describe byte identities captured without changing legacy identity",
+    "changed rules, events, labels, artwork and snapshot fail without replacing active client session"
+  ],
+  "source_sha256": {
+    "crates/engine/src/events.rs": "07a4e57b0fbb1dd010f62369fcc8bc664b637166e765621bd6e2d66f66fe24e1",
+    "crates/engine/src/human.rs": "b1a58df4f90c1761dda4d8e24bbc6c8161bdc61b02e1fc8ef6b0f8b1a1a82141",
+    "crates/engine/src/human/initializer.rs": "b6b9fc0d0d8fbc8f3ceb1bd603c6c6038f521dbe3af4939957a4edf07a8e2c00",
+    "crates/engine/src/human/initializer/tests.rs": "f843ad22fb137a890897b334d89cff83af2fb90540b82582008a9aefbc95b4fe",
+    "crates/engine/src/human/checkpoint.rs": "418113d3b96fa682127c12debc962e8b4dcd8cafe899157fc252cba7fc57fdea",
+    "crates/totui/src/resources.rs": "bbb42c30b6bffab4d1be72f0ed10ebe56d887b3a42984d42a782d5340710ac90",
+    "crates/totui/src/client/scenario.rs": "30aa68fcb7f24bd519186b75a8b872dbd84eb97e5570438a51fdf4449360a887",
+    "tools/check_client_browser.cjs": "2772c0942b0f0e4a78f4587d68cd3afcd226fe3a826e8cd45ec1d778f0a243ef",
+    "tools/check_client_linux.py": "6e577138a83199930e46381837f351e5cfa9747868787ed000362e4cc0b9b131",
+    "tools/check_victory_route.py": "85650648152d5e4fa02f042b117e1362c2fc3dd7f6b17c565779b1c0266c5dac"
+  },
+  "binaries_sha256": {
+    "totplay": "98c9aebfc2092ee637d68694e961dff7207ef73fbc49b5998067200a40c42e8f",
+    "totdesktop": "bd15287fa2c8d11ae04394d1266f1969dc031295b633c0d3b22797363bf5f220"
+  },
+  "validation": {
+    "full_install_backed_make_test": {
+      "rust_passed": 410,
+      "python_passed": 48,
+      "goldens_passed": 24
+    },
+    "targeted_initializer_tests": {
+      "passed": 6,
+      "note": "Includes startup DELAY/latch coverage added after the full run; the other initializer tests also ran in the full suite."
+    },
+    "desktop_feature_tests": {
+      "passed": 70,
+      "ignored": 10
+    },
+    "format": "passed",
+    "strict_workspace_clippy": "passed",
+    "strict_desktop_clippy": "passed",
+    "scenario_inventory": "source audit matches; no corpus identity or admission changes"
+  }
+}

@@ -100,21 +100,24 @@ impl Client {
         let home = self.scenario_home()?.to_path_buf();
         let (resources, files) = crate::resources::Resources::load_scenario(&home, &choice.path)?;
         let atlas = Atlas::load(&resources)?;
-        let identity = resources.identity();
+        let identity = resources.scenario_identity();
         let civ = choice
             .preflight
             .civs
             .get(choice.civ)
             .ok_or("Choose a civilization")?;
         let seed: u64 = random_seed()?.parse().map_err(|_| "seed")?;
-        let session = HumanSession::scenario(
-            &files.path,
-            &files.bytes,
-            resources.rules.clone(),
-            files.events.map(engine::events::EventEngine::new),
+        let session = HumanSession::scenario_initialized(
+            engine::human::ScenarioInput {
+                path: &files.path,
+                snapshot: &files.bytes,
+                rules: resources.rules.clone(),
+                events: files.events.map(engine::events::EventEngine::new),
+            },
             civ.civ,
             choice.policy,
             seed,
+            &identity,
         )?;
         self.report_return = None;
         self.reset_notices();
@@ -152,7 +155,11 @@ impl Client {
         let (resources, files) = crate::resources::Resources::load_scenario(&home, &origin.path)
             .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))?;
         let atlas = Atlas::load(&resources)?;
-        let identity = resources.identity();
+        let identity = if text.starts_with("totengine-human 3\n") {
+            resources.scenario_identity()
+        } else {
+            resources.identity()
+        };
         let session = HumanSession::restore_with(
             resources.rules.clone(),
             &identity,

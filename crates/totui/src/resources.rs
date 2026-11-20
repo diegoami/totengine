@@ -93,13 +93,18 @@ pub struct Resources {
     pub sheets: BTreeMap<String, RgbaImage>,
     pub missing: Vec<String>,
     pub profile: String,
+    /// Captured alongside parsed optional text. Kept out of legacy identity;
+    /// format-3 scenario initializers bind these exact bytes too.
+    text_sources: BTreeMap<String, Source>,
     pub isotrident: Option<BTreeMap<String, FreecivSprite>>,
     /// The selected profile's Civilopedia (`Describe.txt`, else the root's). It is
-    /// reference text for the client only: it is not part of `sources` and so not
-    /// of the checkpoint identity. `None` when absent or structurally invalid.
+    /// reference text for the client only: not part of legacy `identity()`;
+    /// schema-1 scenario initializers bind the captured bytes separately.
+    /// `None` when absent or structurally invalid.
     pub pedia: Option<tot_kit::Pedia>,
     /// The selected profile's `Labels.txt` (else the root's): era and month
-    /// names for dates (#330). Client presentation only, like `pedia`.
+    /// names for dates (#330). Client presentation only, like `pedia`, and
+    /// bound by the format-3 scenario dependency identity.
     pub labels: Option<tot_kit::Labels>,
 }
 
@@ -291,11 +296,28 @@ impl Resources {
                 return Err(format!("required artwork missing: {key}"));
             }
         }
+        let mut text_sources = BTreeMap::new();
+        let mut load_text = |key: &str, path: PathBuf| {
+            let bytes = read(&path).ok()?;
+            text_sources.insert(
+                key.to_string(),
+                Source {
+                    relative: path
+                        .strip_prefix(&root)
+                        .unwrap()
+                        .to_string_lossy()
+                        .replace('\\', "/"),
+                    bytes: bytes.len(),
+                    fingerprint: fingerprint(&bytes),
+                },
+            );
+            Some(bytes)
+        };
         let pedia = select("describe", &[".txt"])?
-            .and_then(|path| read(&path).ok())
+            .and_then(|path| load_text("describe", path))
             .and_then(|bytes| tot_kit::Pedia::parse(&tot_kit::latin1(&bytes)).ok());
         let labels = select("labels", &[".txt"])?
-            .and_then(|path| read(&path).ok())
+            .and_then(|path| load_text("labels", path))
             .and_then(|bytes| tot_kit::Labels::parse(&tot_kit::latin1(&bytes)));
         Ok(Self {
             rules,
@@ -303,6 +325,7 @@ impl Resources {
             sheets,
             missing,
             profile,
+            text_sources,
             isotrident: None,
             pedia,
             labels,
@@ -392,6 +415,7 @@ impl Resources {
             sources,
             sheets,
             missing: vec![],
+            text_sources: BTreeMap::new(),
             profile: if rules_path.is_some() {
                 "ToT rules + Isotrident"
             } else {
@@ -481,6 +505,24 @@ impl Resources {
                 source.bytes,
                 source.fingerprint
             ));
+        }
+        text
+    }
+
+    /// Dependency identity for format-3 experimental scenario checkpoints.
+    /// Uses only the owned bytes captured at load; it never rereads the install.
+    pub fn scenario_identity(&self) -> String {
+        let mut text = format!("totengine-scenario-dependencies 1\n{}", self.identity());
+        for key in ["describe", "labels"] {
+            match self.text_sources.get(key) {
+                Some(source) => text.push_str(&format!(
+                    "text-{key} {} {} {:016x}\n",
+                    source.relative.to_ascii_lowercase(),
+                    source.bytes,
+                    source.fingerprint,
+                )),
+                None => text.push_str(&format!("text-{key} absent\n")),
+            }
         }
         text
     }

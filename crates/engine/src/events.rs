@@ -220,6 +220,40 @@ fn matches(param: Option<&str>, actual: Option<&str>) -> bool {
 }
 
 impl EventEngine {
+    /// Canonical consistency assertion for versioned scenario initialization.
+    /// HashSet iteration is sorted; every other collection has stable order.
+    pub(crate) fn initializer_fingerprint(&self) -> u64 {
+        let mut fired: Vec<_> = self.fired.iter().copied().collect();
+        fired.sort_unstable();
+        crate::player::fnv64(
+            format!(
+                "event-initializer-state 1|{:?}|{:?}|{:?}|{:?}|{}|{:?}|{:?}|{}|{:?}",
+                self.file,
+                fired,
+                self.log,
+                self.flags,
+                self.continuous,
+                self.active,
+                self.civ_names,
+                self.init_flags,
+                self.pending,
+            )
+            .as_bytes(),
+        )
+    }
+
+    pub(crate) fn pristine_initializer_input(&self) -> bool {
+        self.fired.is_empty()
+            && self.log.is_empty()
+            && self.flags == [0; 8]
+            && self.continuous == 0
+            && self.active.len() == self.file.events.len()
+            && self.active.iter().all(|a| *a == [false; 2])
+            && self.civ_names.iter().all(String::is_empty)
+            && self.pending.is_empty()
+            && self.init_flags == self.file.init_flags
+    }
+
     pub fn new(file: EventFile) -> Self {
         let n = file.events.len();
         let init_flags = file.init_flags;

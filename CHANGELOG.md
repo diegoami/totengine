@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Saved initial human view in the experimental clients** (#197): eligible
+  saved rounds start from stored tile/improvement, unit-visibility and city-size
+  knowledge without an initial sight refresh. A separate schema-2 initializer
+  replays that view and its declared transition to engine observation after
+  gameplay begins. Existing schema-1/format-2 recipes remain unchanged; no
+  faithful profile is admitted by this change.
+
 - **Submarine and mixed-stack observation kernels** (#197): native-tested
   adjacent detector/stack-size gates and distinct outer-range visibility,
   including reversed stack heads and per-member order wakes. Runtime import

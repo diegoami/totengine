@@ -1017,6 +1017,20 @@ impl Game {
         events: Option<EventEngine>,
         human: u8,
     ) -> Result<(Game, bool), String> {
+        Self::scenario_human_with_initial_sight(path, save, seed, rules, events, human, true)
+    }
+
+    /// The saved-view recipe suppresses construction-time sight refresh.
+    /// Normal play still uses the explicit engine continuation policy.
+    pub(crate) fn scenario_human_with_initial_sight(
+        path: &str,
+        save: &[u8],
+        seed: u64,
+        rules: Rules,
+        events: Option<EventEngine>,
+        human: u8,
+        refresh_sight: bool,
+    ) -> Result<(Game, bool), String> {
         let sav = tot_kit::parse_sav(save).map_err(|e| e.to_string())?;
         let mut world = crate::boot(&sav, seed);
         if !(1..=7).contains(&human) || !world.civ_alive(human) {
@@ -1036,8 +1050,10 @@ impl Game {
                 }
             }
         }
-        for c in 1..8 {
-            world.reveal(c);
+        if refresh_sight {
+            for c in 1..8 {
+                world.reveal(c);
+            }
         }
         // SCENARIOLOADED (#328): the original evaluates it once in its
         // game-start routine (civ2.bak 0x4639bf → 0x4d3285, no @AND gate).

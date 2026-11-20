@@ -281,6 +281,58 @@ pub fn resume_blocker(sav: &tot_kit::SaveFile, rules: &Rules, human: u8) -> Opti
     }
 }
 
+/// Eligibility for the experimental saved-initial-view recipe, not native
+/// admission. Startup-event contexts keep their existing schema-1 recipe.
+pub fn saved_view_blocker(
+    sav: &tot_kit::SaveFile,
+    rules: &Rules,
+    events: Option<&EventFile>,
+    human: u8,
+) -> Option<String> {
+    if !(1..8).contains(&human) {
+        return Some("saved view requires a player civilization from 1 to 7".into());
+    }
+    if let Some(reason) = resume_blocker(sav, rules, human) {
+        return Some(reason);
+    }
+    if events.is_some_and(|f| {
+        f.events.iter().any(|e| {
+            std::iter::once(&e.trigger)
+                .chain(&e.and)
+                .any(|t| t.keyword.eq_ignore_ascii_case("SCENARIOLOADED"))
+        })
+    }) {
+        return Some("startup events keep the legacy experimental view recipe".into());
+    }
+    let projection = match crate::saved_knowledge::SavedMapKnowledge::read(sav, human) {
+        Ok(p) => p,
+        Err(e) => return Some(e),
+    };
+    let own_units = sav
+        .units
+        .iter()
+        .filter(|u| u.id() != 0 && u.owner() == human)
+        .count();
+    let own_cities = sav
+        .cities
+        .iter()
+        .filter(|c| c.city_id() != 0 && c.owner() == u16::from(human))
+        .count();
+    if projection.units.iter().filter(|u| u.owner == human).count() != own_units
+        || projection
+            .cities
+            .iter()
+            .filter(|c| c.owner == human)
+            .count()
+            != own_cities
+    {
+        return Some(
+            "stored map knowledge does not show all of the player's own live entities".into(),
+        );
+    }
+    None
+}
+
 /// Inspect scenario bytes for experimental entry. `events` is the parsed
 /// Events.txt beside it (if any), `events_unreadable` that one exists but did
 /// not parse, `lua` that Lua scripts sit beside it.
@@ -376,17 +428,9 @@ pub fn preflight(
         && world.civ_alive(human)
         && resume_blocker(&sav, rules, human).is_none()
     {
-        match crate::saved_knowledge::SavedMapKnowledge::read(&sav, human) {
-            Ok(knowledge) => {
-                let extra = knowledge.engine_sight_additions(&world)?.len();
-                gaps.push(format!(
-                    "For the file's player, engine sight adds {extra} unexplored tile{} on load; native visibility/contact updates are not matched",
-                    if extra == 1 { "" } else { "s" },
-                ));
-            }
-            Err(reason) => gaps.push(format!(
-                "Stored map knowledge cannot be validated for this context: {reason}"
-            )),
+        match saved_view_blocker(&sav,rules,events,human) {
+            None=>gaps.push("For the file's player: starts from saved map knowledge; later play uses engine visibility/contact rules".into()),
+            Some(reason)=>gaps.push(format!("Uses the legacy engine view on load: {reason}; native knowledge/contact continuation is not matched")),
         }
     }
     if lua {

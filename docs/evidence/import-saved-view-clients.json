@@ -1,0 +1,146 @@
+{
+  "schema": 1,
+  "scope": "Experimental saved initial human view and schema-2 replay, not faithful-profile admission.",
+  "fixture": "Private controlled Original copy: future tech 5, science 0, authored guaranteed victory event. No original bytes/assets/images committed.",
+  "initial_view": {
+    "initial_cities": [
+      [
+        5,
+        2
+      ]
+    ],
+    "initial_seen_tiles": 59,
+    "initial_units": [
+      6,
+      9,
+      18,
+      26
+    ],
+    "research_pending": true
+  },
+  "initializer": {
+    "checkpoint_format": 3,
+    "cursor": 4,
+    "human": 4,
+    "initial_events": "7683de1ab4d1fdf1",
+    "initial_knowledge": "9740ffe266efa764",
+    "initial_phase": "Human",
+    "initial_rng": [
+      1723911488,
+      1723911488
+    ],
+    "initial_rng_draws": [
+      0,
+      0
+    ],
+    "initial_world": "b12b6a47d528523e",
+    "input_events": "40a502f6134f9310",
+    "mode": "SavedRound",
+    "multiplayer": 0,
+    "policy": "builtin-1",
+    "profile": "experimental-saved-view-v1",
+    "saved_active": 4,
+    "saved_player": 4,
+    "saved_turn": 43,
+    "schema": 2,
+    "seed": 1723911488,
+    "snapshot_fingerprint": "a3bb172e5a27d06f"
+  },
+  "real_input": {
+    "browser": "Chromium/Playwright mouse and keyboard on scratch loopback host 8841 (--no-open)",
+    "desktop": "Linux SDL/XTest on private Xvfb",
+    "checks": [
+      "saved-map preflight disclosure and cancel",
+      "generated ten-round and pending-choice save/reload route",
+      "schema-2 initial view under research prompt: save without choosing research",
+      "choose research: explicit engine observation continuation",
+      "ENDGAME notices, blocked terminal input and checkpoint restore"
+    ],
+    "checkpoint_comparisons": [
+      {
+        "checkpoint": "research.cth",
+        "sha256": "ee6f19304e120f7b35e3960fa0102cd7affa585425ba964f835f3c994cd53f7c",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "founding.cth",
+        "sha256": "080141cdd924494c366887dbaac78d23636c049d9e97d16f8fa86119beabd2e8",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "normal.cth",
+        "sha256": "8f4bed2da65967202bed870e346d67f1d341d7fc8215767c06ac88d97c37970d",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "tenrounds.cth",
+        "sha256": "6e01626c364b124e9c8e3663abfc3b3e49c2c9782df1280deb172b7d889445de",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "researchnext.cth",
+        "sha256": "080141cdd924494c366887dbaac78d23636c049d9e97d16f8fa86119beabd2e8",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "foundingnext.cth",
+        "sha256": "8f4bed2da65967202bed870e346d67f1d341d7fc8215767c06ac88d97c37970d",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "normalnext.cth",
+        "sha256": "d9ac1ad11b06c1c82b9d516640f93f4876102820a87e72381a4392fb53fe2a5d",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "savedviewinitial.cth",
+        "sha256": "8cdf4e7292bed8fa81150b5d9dc42b5f93432a6297908ec14ca77d86fdf1b0e3",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "savedviewplayed.cth",
+        "sha256": "9bb45152c05cc533aa2e7574e7bfd5ae597ecf4135c7cea2acb0c3a92a114760",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "victoryafter.cth",
+        "sha256": "f90f97f9854f8afaf41c6c831f56b7ef68902ffa8a0acd12a51f77f4a78bc107",
+        "browser_equals_sdl": true
+      },
+      {
+        "checkpoint": "victoryrestored.cth",
+        "sha256": "f90f97f9854f8afaf41c6c831f56b7ef68902ffa8a0acd12a51f77f4a78bc107",
+        "browser_equals_sdl": true
+      }
+    ],
+    "seven_generated_checkpoints_match_previous_baseline": true
+  },
+  "source_sha256": {
+    "crates/engine/src/player.rs": "9d10ca85f09e131eb694948483261021b852ce40d6c64ed3dc1888bf1d0e1935",
+    "crates/engine/src/human.rs": "609734b862bbfaf6fd8b67cef8cc19b97214bdb706f7c073b944d4e070ea28ce",
+    "crates/engine/src/human/initializer.rs": "a750c432e5e2faf2dec9e835ed0a7435afee52a059ddc582122e5addb89af4c2",
+    "crates/engine/src/human/checkpoint.rs": "8548319ef206215e3079e9c960e1be5952d24f62202e293e870c62d45664a031",
+    "crates/engine/src/human/saved_view.rs": "21c6e91b568bfb07a9397ef55bbad8f88faada03d42d7a9f37ef009daf28bc68",
+    "crates/engine/src/scenario.rs": "fb02ddcb8196e44c31b33f10dd8aa5ef0b2ded7cfa801ca3bc8b5002cfd3798a",
+    "crates/totui/src/client/scenario.rs": "7a70307cf98725cbca8384044d41e41e42ce0fdda27c75f5e7357566280e8bed",
+    "crates/totui/src/client/tests.rs": "6f86ef2f29e0933869f0913d21d71d6171163e380517b4ec8f01b58fd962518e",
+    "tools/check_client_browser.cjs": "2821a8cce08e4c3264193c8f1f3a2a3c6ce8bf1760e2fdbdc28a70993022e753",
+    "tools/check_client_linux.py": "a9756b19329e745eddd9deb3f3bf663413de5d26f9c5437cc5fa5c412fc9c9cf",
+    "tools/check_victory_route.py": "8ec554d729198b262e905105144e31b88abb351d7ca51cd55b25dadad0c957e6"
+  },
+  "binaries_sha256": {
+    "totplay": "e806db5e3d487297ef1fb341148ec9df336f8f65b90054e398bf67e952fb8e1c",
+    "totdesktop": "9b1d28485179d1e6a6d54030ca20dd0098b0fecc38a64d46c0fcdee49aaa8ea9"
+  },
+  "private_artifacts": {
+    "browser": "/home/diego/review-tmp/totengine-saved-view-qa-6vptmvqc/browser-report",
+    "desktop": "/home/diego/review-tmp/tot-client-linux-s3vsa_r7",
+    "fixtures": "/home/diego/review-tmp/totengine-saved-view-qa-6vptmvqc/fixtures"
+  },
+  "limits": [
+    "No native UI or native research-prompt timing observation.",
+    "No Windows input or owner acceptance.",
+    "After the first accepted gameplay order, observation is the disclosed engine policy; no faithful profile is admitted.",
+    "No milestone review or tag launched."
+  ]
+}

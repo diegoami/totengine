@@ -78,7 +78,7 @@ fs.mkdirSync(out,{recursive:true});
   for(let n=0;n<40&&!has(await state(),knowledge);n++)await key('PageDown');
   await click(knowledge);
   const f=await state(),t=f.draws.filter(d=>d.kind==='text').map(d=>d.text).join(' ').replace(/\s+/g,' ');
-  if(!t.includes('engine sight adds 1 unexplored tile')||!t.includes('native visibility/contact updates are not matched'))throw Error('saved-knowledge gap missing from preflight');
+  if(!t.includes('starts from saved map knowledge')||!t.includes('later play uses engine visibility/contact rules'))throw Error('saved-knowledge policy missing from preflight');
   if(!t.includes('original ending and scoring screens'))throw Error('preflight lost ending disclosure');
   await page.screenshot({path:out+'/knowledge-preflight.png'});
   await key('Escape');await key('Escape');
@@ -115,6 +115,17 @@ fs.mkdirSync(out,{recursive:true});
  if(victory){
   const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;
   if(!saves)throw Error('set TOTENGINE_CLIENT_SAVES');
+  const initial=path.join(victory,'victoryinitial.cth');
+  if(fs.existsSync(initial)){
+   fs.copyFileSync(initial,path.join(saves,'victoryinitial.cth'));
+   await load('victoryinitial');await idle();
+   if(!has(await state(),'Choose research'))throw Error('saved initial view lost required research');
+   await click('Save pending choice');await save('savedviewinitial');
+   if(!fs.readFileSync(path.join(saves,'savedviewinitial.cth')).equals(fs.readFileSync(initial)))throw Error('saved initial view checkpoint differs');
+   await page.screenshot({path:out+'/saved-view-initial.png'});
+   await research();await key('Control+s');await save('savedviewplayed');
+   if(!fs.readFileSync(path.join(saves,'savedviewplayed.cth')).equals(fs.readFileSync(path.join(victory,'victorystart.cth'))))throw Error('saved-view engine continuation differs');
+  }
   fs.copyFileSync(path.join(victory,'victorystart.cth'),path.join(saves,'victorystart.cth'));
   await load('victorystart');await key('Control+n');
   if(has(await state(),'End your turn with movable units?'))await key('Enter');

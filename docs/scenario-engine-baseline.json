@@ -9,19 +9,21 @@
     "crates/engine/src/events.rs": "07a4e57b0fbb1dd010f62369fcc8bc664b637166e765621bd6e2d66f66fe24e1",
     "crates/engine/src/effects.rs": "a2b75e4c9ed7a7fd06bae65b7394d1637fee7d03954009e3afeafc238803ef85",
     "crates/engine/src/turn.rs": "12008e3af7eea7610fb1b9cbbd3c0b817fedb7be74b1e403c440d3d39e3fb032",
-    "crates/engine/src/player.rs": "1167e5b31165e5259dba55211816263fbf8c7844f2fde40587eb01de09f04537",
-    "crates/engine/src/human.rs": "b1a58df4f90c1761dda4d8e24bbc6c8161bdc61b02e1fc8ef6b0f8b1a1a82141",
-    "crates/engine/src/human/checkpoint.rs": "418113d3b96fa682127c12debc962e8b4dcd8cafe899157fc252cba7fc57fdea",
+    "crates/engine/src/player.rs": "9d10ca85f09e131eb694948483261021b852ce40d6c64ed3dc1888bf1d0e1935",
+    "crates/engine/src/human.rs": "609734b862bbfaf6fd8b67cef8cc19b97214bdb706f7c073b944d4e070ea28ce",
+    "crates/engine/src/human/checkpoint.rs": "8548319ef206215e3079e9c960e1be5952d24f62202e293e870c62d45664a031",
     "crates/engine/src/lib.rs": "1cd9fc382c301aa03ebbaad632cf9df3f16bde72b4489c687769286bdeed7d59",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
     "crates/totui/src/client/mod.rs": "c3c29d3f90eeed285fb6c2a0efc11d6701a504549d67e3d01e59c24facc467e2",
     "crates/totui/src/resources.rs": "bbb42c30b6bffab4d1be72f0ed10ebe56d887b3a42984d42a782d5340710ac90",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
-    "crates/engine/src/human/initializer.rs": "b6b9fc0d0d8fbc8f3ceb1bd603c6c6038f521dbe3af4939957a4edf07a8e2c00",
-    "crates/totui/src/client/scenario.rs": "30aa68fcb7f24bd519186b75a8b872dbd84eb97e5570438a51fdf4449360a887",
+    "crates/engine/src/human/initializer.rs": "a750c432e5e2faf2dec9e835ed0a7435afee52a059ddc582122e5addb89af4c2",
+    "crates/totui/src/client/scenario.rs": "7a70307cf98725cbca8384044d41e41e42ce0fdda27c75f5e7357566280e8bed",
     "crates/engine/src/saved_knowledge.rs": "f900ea415abc50293bfba28b1006a0f1b9a994c25ed01ad6d745eeb973b0a17c",
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
-    "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe"
+    "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
+    "crates/engine/src/human/saved_view.rs": "21c6e91b568bfb07a9397ef55bbad8f88faada03d42d7a9f37ef009daf28bc68",
+    "crates/engine/src/scenario.rs": "fb02ddcb8196e44c31b33f10dd8aa5ef0b2ded7cfa801ca3bc8b5002cfd3798a"
   },
   "triggers": {
     "TURN": {
@@ -612,6 +614,19 @@
         "crates/engine/src/saved_knowledge/city_memory.rs"
       ],
       "finding": "1248 unmodified civ2.bak fragment contexts (0x470bd1..0x470c4e) match snapshot and explicit WorldState adapters. The owner-to-viewer treaty bit 8 or raw Apollo word != -1 refreshes only remembered sizes 1..7; slot 0, city discovery masks, tile memory and other records remain unchanged. Reverse-direction treaties deliberately differ, current sizes are bounded 1..127, owners 0..7 and raw Apollo -2/-1/0/7 are covered. These adapters require a surviving surface city after processing; they do not run city economics, determine death/capture timing, or change legacy scheduling/checkpoints. No run_turn/run_city_phase/client activation, trigger/action coverage change or faithful profile admission. Source is based on merged main 47b1f5b (tree identical to independently reviewed #358); #359 remains separate."
+    },
+    {
+      "change": "Schema-2 saved initial human view in the existing experimental clients (#197)",
+      "files": [
+        "crates/engine/src/player.rs",
+        "crates/engine/src/human.rs",
+        "crates/engine/src/human/checkpoint.rs",
+        "crates/engine/src/human/initializer.rs",
+        "crates/engine/src/human/saved_view.rs",
+        "crates/engine/src/scenario.rs",
+        "crates/totui/src/client/scenario.rs"
+      ],
+      "finding": "Current experimental starts select schema 2 (experimental-saved-view-v1) only for supported saved-round projections showing every own live entity and without SCENARIOLOADED trigger/AND contexts. Construction omits sight refresh and seeds remembered tiles/cities plus saved unit gates; Original/Ph_Auto2.SAV starts at 59 tiles, four own slots and city 5 size 2. Polling/non-gameplay operations and rejected orders keep that epoch; accepted gameplay switches to the explicitly disclosed engine observation (60 tiles after required research selection). Format-3 restore dispatches by schema/profile and validates the initializer before replay; explicit schema-1 construction and format 2 retain their behavior. A synthetic schema-1 checkpoint is byte-identical to reviewed main 47b1f5b. Both real client routes pass 11 equal checkpoints, including seven unchanged generated hashes, plus initial/research/terminal replay. No trigger/action semantics change, classic-profile admission, #198 route, native prompt timing, native continuing-fog/AI/RNG or full dependency/phase admission is claimed."
     }
   ]
 }

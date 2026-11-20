@@ -665,6 +665,70 @@ python3 tools/import_city_memory_check.py --out /tmp/import-city-memory.json \
   --vectors /tmp/import-city-memory-vectors.txt
 ```
 
+#### Saved initial human view in the experimental clients (2026-11-20, #197)
+
+[`import-saved-view.json`](import-saved-view.json) records the installed
+human-session integration regression, re-derived by
+`tools/import_saved_view_check.py`. This is engine integration using the
+earlier native-verified reader gates, not new original-game/UI execution.
+The source SHA-256 must equal the existing pinned reader input.
+
+Eligible saved-round starts now use format-3 initializer **schema 2**, profile
+`experimental-saved-view-v1`, in both clients' existing experimental route.
+Construction skips the generic sight refresh and installs the stored tile/
+remembered-improvement, unit admission and city-mask/size projection before
+the first human view. On `Original/Ph_Auto2.SAV`, that means **59 tiles**, unit
+slots **6/9/18/26**, and city **5 size 2**, without the old extra Madrid tile.
+World state equals boot plus the existing declared movement normalization;
+no city processing or income occurs. The existing engine derives its research
+prompt from the unselected project; native prompt timing remains unclaimed.
+
+Schema 2 deliberately declares `saved-initial-then-engine-v1`. Polling,
+goal edits and production-window closure keep the initial epoch. Failed
+requests keep it too. The first accepted gameplay order starts engine
+observation; on this save, choosing research produces **60** known tiles.
+That measured continuing difference is disclosed before Start, and the
+profile remains experimental, not an admission of faithful continuing fog.
+Startup-event contexts, unsupported projections, another human seat and fresh
+starts keep the schema-1 recipe. The explicit legacy constructor and restore
+dispatch preserve old recipes rather than silently upgrading them.
+
+Authored regressions distinguish hidden nearby units from saved visible units
+outside engine sight, remembered foreign-city size from its current private
+size, and unknown city/failed-order probes from accepted gameplay. They cover
+initial/repeated/no-work views, the transition and partial opponent replay,
+unknown/tampered schema/profile/assertions before journal replay and the
+legacy fallback. Both schemas seal their captured dependencies and assert
+initial/final knowledge and RNG state.
+
+[`import-saved-view-legacy.json`](import-saved-view-legacy.json) pins a
+905-byte **self-authored synthetic** schema-1 checkpoint, generated against
+reviewed main `47b1f5b` in an isolated checkout. The new implementation emits
+byte-identical output and restores it. The regression substitutes only the
+engine-version header on package version changes. No original SAV bytes are
+embedded in this fixture.
+
+[`import-saved-view-clients.json`](import-saved-view-clients.json) records
+completed Chromium/Playwright and SDL/XTest input: preflight/cancel, the
+generated ten-round route, saving/restoring the saved initial epoch under
+research, choosing research, ENDGAME and terminal restore. All **11** checked
+checkpoints match across clients, including all seven unchanged generated
+baseline hashes. The private controlled ending fixture changes future tech,
+science rates and event prose; it is not the pinned admission candidate.
+Screenshots, inputs and copied original resources stay outside Git.
+
+No classic-surface profile or #198 route is activated. Stock dependency,
+record/phase/pending-state admission and the admitted knowledge/continuation
+recipe still require completion and both-client owner acceptance. Original
+AI/cache/shared-RNG continuation remains outside the first-profile contract.
+No native UI, Windows input, owner acceptance, milestone review or tag is
+claimed here.
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT python3 tools/import_saved_view_check.py \
+  --out /tmp/import-saved-view.json
+```
+
 #### Versioned experimental initializer (2026-11-19, #197)
 
 This is engine persistence policy, not a claim about additional native bytes.

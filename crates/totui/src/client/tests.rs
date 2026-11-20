@@ -4945,12 +4945,9 @@ fn installed_saved_knowledge_gap_is_visible_before_starting() {
         .collect::<Vec<_>>()
         .join(" ");
     let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    assert!(text.contains("starts from saved map knowledge"), "{text}");
     assert!(
-        text.contains("engine sight adds 1 unexplored tile"),
-        "{text}"
-    );
-    assert!(
-        text.contains("native visibility/contact updates are not matched"),
+        text.contains("later play uses engine visibility/contact rules"),
         "{text}"
     );
     assert!(
@@ -4960,6 +4957,61 @@ fn installed_saved_knowledge_gap_is_visible_before_starting() {
     assert!(!frame.draws.iter().any(|d| matches!(d, Draw::Text { text, .. } if text.starts_with('+') && text.ends_with("more lines"))), "all Original gaps must be readable");
     key(&mut c, "Escape");
     assert!(c.loaded.is_none());
+}
+
+#[test]
+fn installed_saved_view_uses_schema_two_and_failed_restore_is_atomic() {
+    let Ok(home) = std::env::var("CIVTOT_HOME") else {
+        return;
+    };
+    let f = Fixture::new();
+    let mut c = Client::new(home, f.0.join("saved-view-saves"));
+    c.pick_scenario("Original/Ph_Auto2.SAV").unwrap();
+    let Some(Modal::ScenarioStart(choice)) = c.modal.clone() else {
+        panic!("preflight");
+    };
+    c.start_scenario(&choice).unwrap();
+    c.modal = None;
+    ready(&mut c);
+    let view = c.view().unwrap();
+    assert_eq!(
+        view.observation.seen.iter().filter(|t| t.is_some()).count(),
+        59
+    );
+    assert_eq!(
+        view.observation
+            .units
+            .iter()
+            .map(|u| u.index)
+            .collect::<Vec<_>>(),
+        [6, 9, 18, 26]
+    );
+    assert!(matches!(
+        view.decision,
+        Some(engine::human::Decision::Research { .. })
+    ));
+    let checkpoint = c.checkpoint().unwrap();
+    assert!(checkpoint.contains("initializer 2 profile experimental-saved-view-v1 "));
+    let origin = HumanSession::checkpoint_scenario(&checkpoint).unwrap();
+    let assets = c.assets.clone();
+    let active = c.active;
+    let bad = checkpoint.replacen("initializer 2 ", "initializer 99 ", 1);
+    assert!(c.restore_scenario(&origin, &bad).is_err());
+    assert_eq!(c.checkpoint().unwrap(), checkpoint);
+    assert_eq!(c.assets, assets);
+    assert_eq!(c.active, active);
+    c.restore_scenario(&origin, &checkpoint).unwrap();
+    assert_eq!(c.checkpoint().unwrap(), checkpoint);
+    assert_eq!(
+        c.view()
+            .unwrap()
+            .observation
+            .seen
+            .iter()
+            .filter(|t| t.is_some())
+            .count(),
+        59
+    );
 }
 
 #[test]
@@ -5175,26 +5227,40 @@ fn installed_victory_input_fixture() {
         panic!("preflight");
     };
     c.start_scenario(&choice).unwrap();
+    let initial = c.view().unwrap();
+    fs::write(out.join("victoryinitial.cth"), c.checkpoint().unwrap()).unwrap();
+    fs::write(out.join("saved-view.json"),serde_json::to_string_pretty(&serde_json::json!({
+        "initial_seen_tiles":initial.observation.seen.iter().filter(|t|t.is_some()).count(),
+        "initial_units":initial.observation.units.iter().map(|u|u.index).collect::<Vec<_>>(),
+        "initial_cities":initial.observation.cities.iter().map(|c|(c.index,c.size)).collect::<Vec<_>>(),
+        "research_pending":matches!(initial.decision,Some(engine::human::Decision::Research {..})),
+    })).unwrap()+"\n").unwrap();
     c.modal = None;
     ready(&mut c);
     research(&mut c);
     assert_eq!(c.view().unwrap().phase, Phase::Human);
     let captured = c.loaded.as_ref().unwrap().session.initializer().unwrap();
-    fs::write(out.join("initializer.json"), serde_json::to_string_pretty(&serde_json::json!({
-        "schema": 1, "checkpoint_format": 3, "profile": engine::human::ScenarioInitializer::PROFILE,
-        "mode": format!("{:?}", captured.mode), "human": captured.human,
-        "initial_phase": format!("{:?}", captured.phase), "cursor": captured.cursor,
-        "saved_turn": captured.saved_turn, "saved_player": captured.player_civ,
-        "saved_active": captured.active_civ, "multiplayer": captured.multiplayer,
-        "seed": captured.source.seed, "policy": captured.policy.id(),
-        "snapshot_fingerprint": format!("{:016x}", captured.source.fingerprint),
-        "initial_world": format!("{:016x}", captured.initial_world),
-        "initial_knowledge": format!("{:016x}", captured.initial_knowledge),
-        "input_events": format!("{:016x}", captured.input_events),
-        "initial_events": format!("{:016x}", captured.initial_events),
-                "initial_rng": captured.initial_rng,
-                "initial_rng_draws": captured.initial_rng_draws,
-    })).unwrap()+"\n").unwrap();
+    fs::write(
+        out.join("initializer.json"),
+        serde_json::to_string_pretty(&serde_json::json!({
+            "schema": captured.schema(), "checkpoint_format": 3, "profile": captured.profile(),
+            "mode": format!("{:?}", captured.mode), "human": captured.human,
+            "initial_phase": format!("{:?}", captured.phase), "cursor": captured.cursor,
+            "saved_turn": captured.saved_turn, "saved_player": captured.player_civ,
+            "saved_active": captured.active_civ, "multiplayer": captured.multiplayer,
+            "seed": captured.source.seed, "policy": captured.policy.id(),
+            "snapshot_fingerprint": format!("{:016x}", captured.source.fingerprint),
+            "initial_world": format!("{:016x}", captured.initial_world),
+            "initial_knowledge": format!("{:016x}", captured.initial_knowledge),
+            "input_events": format!("{:016x}", captured.input_events),
+            "initial_events": format!("{:016x}", captured.initial_events),
+                    "initial_rng": captured.initial_rng,
+                    "initial_rng_draws": captured.initial_rng_draws,
+        }))
+        .unwrap()
+            + "\n",
+    )
+    .unwrap();
     fs::write(out.join("victorystart.cth"), c.checkpoint().unwrap()).unwrap();
     key(&mut c, "Ctrl+n");
     if matches!(c.modal, Some(Modal::Confirm { .. })) {

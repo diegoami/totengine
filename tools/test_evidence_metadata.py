@@ -14,6 +14,31 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_saved_view_integration_and_legacy_baseline_metadata(self):
+        report=json.loads((ROOT/'docs/evidence/import-saved-view.json').read_text())
+        native=json.loads((ROOT/'docs/evidence/import-knowledge.json').read_text())
+        self.assertEqual(report['source']['sha256'],native['source']['sha256'])
+        self.assertEqual(report['initializer_schema'],2)
+        self.assertEqual(report['initial_seen_tiles'],native['source']['explored_tiles'])
+        self.assertEqual(report['initial_unit_slots'],native['source']['shown_units'])
+        baseline=json.loads((ROOT/'docs/evidence/import-saved-view-legacy.json').read_text())
+        checkpoint=baseline['checkpoint'];data=(ROOT/checkpoint['path']).read_bytes()
+        self.assertEqual(len(data),checkpoint['length'])
+        self.assertEqual(hashlib.sha256(data).hexdigest(),checkpoint['sha256'])
+        self.assertIn(b'initializer 1 profile experimental-scenario-v1 ',data)
+        for source in baseline['rules']:
+            self.assertEqual(hashlib.sha256((ROOT/source['path']).read_bytes()).hexdigest(),source['sha256'])
+        clients=json.loads((ROOT/'docs/evidence/import-saved-view-clients.json').read_text())
+        self.assertEqual(clients['initial_view']['initial_seen_tiles'],report['initial_seen_tiles'])
+        self.assertEqual(clients['initial_view']['initial_units'],report['initial_unit_slots'])
+        self.assertEqual(clients['initializer']['schema'],2)
+        self.assertEqual(clients['initializer']['profile'],report['profile'])
+        self.assertEqual(len(clients['real_input']['checkpoint_comparisons']),11)
+        old=json.loads((ROOT/'docs/evidence/import-knowledge-clients.json').read_text())
+        new={c['checkpoint']:c['sha256'] for c in clients['real_input']['checkpoint_comparisons']}
+        for checkpoint in old['real_input']['checkpoint_comparisons']:
+            self.assertEqual(new[checkpoint['checkpoint']],checkpoint['sha256'])
+
     def test_city_phase_memory_vectors_match_native_report(self):
         report = json.loads((ROOT / 'docs/evidence/import-city-memory.json').read_text())
         vectors = (ROOT / 'docs/evidence/import-city-memory-vectors.txt').read_bytes()

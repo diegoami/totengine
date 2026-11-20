@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "reference_commit": "47b1f5bde9ad20c431a20656a0cf122eb9bb4546",
+  "method": "Executed schema-1 HumanSession::scenario_initialized against reviewed main production source in an isolated checkout with a fixture-authoring test. New implementation emitted byte-identical checkpoints for the same self-authored synthetic input; no original game assets are included.",
+  "checkpoint": {
+    "path": "crates/engine/tests/fixtures/saved-view-legacy-v1.cth",
+    "sha256": "a40f9c892c4914aab914e87204d26e9b8c78ca07401dba203b0fa7aeac470ec3",
+    "length": 905
+  },
+  "synthetic_input": {
+    "sha256": "4cf7e94f77752831450299e7a48ac1bc182fa2f28ea1cb3e293dfac4676e0fc8",
+    "length": 42302
+  },
+  "rules": [
+    {
+      "path": "crates/engine/tests/fixtures/campaign-rules.txt",
+      "sha256": "edd127e7f6b71b5746cfd61494816d111f566f607a9ffbf2d3f4f724790e0eb2"
+    },
+    {
+      "path": "crates/engine/tests/fixtures/builtin-settings.txt",
+      "sha256": "bda22cca6e0c6a49c27060df635eada260d3b7403b3f1b7b88af4a8a04cf673b"
+    }
+  ],
+  "limits": "Pins the pre-change reconstruction recipe, not cross-engine-version acceptance or native SAV export. The test substitutes only the engine version header when package versions change."
+}

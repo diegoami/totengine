@@ -1,6 +1,6 @@
 //! Shared resumable human turn driver. No window or transport owns scheduling.
 //!
-//! Generated surface games only. Research choices are delivered after the
+//! Generated surface games and versioned experimental imports. Research choices are delivered after the
 //! atomic round; later cities bank science while the completed target is empty.
 //! Views and polling never execute orders or consume either game RNG.
 use std::collections::BTreeMap;
@@ -15,7 +15,11 @@ use crate::production::Built;
 mod reports;
 pub use reports::*;
 mod initializer;
-pub use initializer::{ScenarioInitializer, ScenarioInput, ScenarioStartMode};
+pub use initializer::{
+    ScenarioInitializer, ScenarioInput, ScenarioKnowledgeRecipe, ScenarioStartMode,
+};
+mod saved_view;
+use saved_view::{InitialKnowledge, SavedInitialView};
 
 /// Slot and identity together prevent acting on a reused entity slot.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -220,6 +224,8 @@ pub struct HumanSession {
     known_cities: BTreeMap<usize, (u32, crate::player::CityView)>,
     origin: Origin,
     initializer: Option<ScenarioInitializer>,
+    knowledge_recipe: ScenarioKnowledgeRecipe,
+    saved_initial: Option<SavedInitialView>,
     game: Game,
     human: u8,
     /// The opponents' policy (#261); recorded in checkpoints.
@@ -334,7 +340,7 @@ impl HumanSession {
             policy,
             seed,
             1..=config.civilizations,
-            false,
+            InitialKnowledge::Engine { resumed: false },
         )
     }
 
@@ -352,20 +358,61 @@ impl HumanSession {
         policy: crate::campaign::AiPolicy,
         seed: u64,
     ) -> Result<Self, String> {
+        Self::scenario_with_knowledge(
+            ScenarioInput {
+                path,
+                snapshot: save,
+                rules,
+                events,
+            },
+            human,
+            policy,
+            seed,
+            None,
+        )
+    }
+
+    fn scenario_with_knowledge(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        projection: Option<crate::saved_knowledge::SavedMapKnowledge>,
+    ) -> Result<Self, String> {
+        let ScenarioInput {
+            path,
+            snapshot: save,
+            rules,
+            events,
+        } = input;
         if path.is_empty() || path.len() > 1024 {
             return Err("scenario path must be 1–1024 bytes".into());
         }
-        let (game, resumed) = Game::scenario_human(path, save, seed, rules, events, human)?;
+        let (game, resumed) = if projection.is_some() {
+            Game::scenario_human_with_initial_sight(path, save, seed, rules, events, human, false)?
+        } else {
+            Game::scenario_human(path, save, seed, rules, events, human)?
+        };
+        if projection.is_some() && !resumed {
+            return Err("saved initial view requires the saved-round context".into());
+        }
+        if projection.is_some() && !resumed {
+            return Err("saved initial view requires a supported saved-round context".into());
+        }
         let origin = Origin::Scenario(ScenarioOrigin {
             path: path.to_string(),
             len: save.len(),
             fingerprint: crate::player::fnv64(save),
             seed,
         });
-        Self::with_game(game, origin, human, policy, seed, 1..=7, resumed)
+        let initial = match projection {
+            Some(p) => InitialKnowledge::Saved(p),
+            None => InitialKnowledge::Engine { resumed },
+        };
+        Self::with_game(game, origin, human, policy, seed, 1..=7, initial)
     }
 
-    /// New experimental scenario session with a schema-1 initializer and
+    /// Explicit legacy experimental session with a schema-1 initializer and
     /// format-3 checkpoints. This records a reconstruction policy; it grants
     /// no faithful native-import admission. Dependencies must describe the
     /// same captured bytes used to construct the input, never later rereads.
@@ -375,6 +422,53 @@ impl HumanSession {
         policy: crate::campaign::AiPolicy,
         seed: u64,
         dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::EngineSightV1,
+        )
+    }
+
+    /// Current experimental entry: eligible saved-round contexts use a
+    /// schema-2 saved initial view. Others retain the schema-1 recipe. Both
+    /// remain experimental; subsequent accepted gameplay uses engine fog.
+    pub fn scenario_initialized_current(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        if input.snapshot.len() > 16 * 1024 * 1024 {
+            return Err("scenario snapshot exceeds 16 MiB".into());
+        }
+        let saved = tot_kit::parse_sav(input.snapshot).map_err(|e| e.to_string())?;
+        let recipe = if crate::scenario::saved_view_blocker(
+            &saved,
+            &input.rules,
+            input.events.as_ref().map(|e| &e.file),
+            human,
+        )
+        .is_none()
+        {
+            ScenarioKnowledgeRecipe::SavedInitialThenEngineV1
+        } else {
+            ScenarioKnowledgeRecipe::EngineSightV1
+        };
+        Self::scenario_initialized_recipe(input, human, policy, seed, dependencies, recipe)
+    }
+
+    fn scenario_initialized_recipe(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+        recipe: ScenarioKnowledgeRecipe,
     ) -> Result<Self, String> {
         if !dependencies.starts_with("totengine-scenario-dependencies 1\n")
             || dependencies.len() > 128 * 1024
@@ -399,15 +493,24 @@ impl HumanSession {
             .as_ref()
             .map_or(0, crate::events::EventEngine::initializer_fingerprint);
         let saved = tot_kit::parse_sav(input.snapshot).map_err(|e| e.to_string())?;
-        let mut session = Self::scenario(
-            input.path,
-            input.snapshot,
-            input.rules,
-            input.events,
-            human,
-            policy,
-            seed,
-        )?;
+        let projection = if recipe == ScenarioKnowledgeRecipe::SavedInitialThenEngineV1 {
+            if let Some(reason) = crate::scenario::saved_view_blocker(
+                &saved,
+                &input.rules,
+                input.events.as_ref().map(|e| &e.file),
+                human,
+            ) {
+                return Err(format!(
+                    "saved-view initializer context is unsupported: {reason}"
+                ));
+            }
+            Some(crate::saved_knowledge::SavedMapKnowledge::read(
+                &saved, human,
+            )?)
+        } else {
+            None
+        };
+        let mut session = Self::scenario_with_knowledge(input, human, policy, seed, projection)?;
         session.initializer = Some(ScenarioInitializer::capture(
             &session,
             &saved,
@@ -428,8 +531,17 @@ impl HumanSession {
         policy: crate::campaign::AiPolicy,
         seed: u64,
         opponents: std::ops::RangeInclusive<u8>,
-        resumed: bool,
+        initial: InitialKnowledge,
     ) -> Result<Self, String> {
+        let resumed = match &initial {
+            InitialKnowledge::Engine { resumed } => *resumed,
+            InitialKnowledge::Saved(_) => true,
+        };
+        let knowledge_recipe = if matches!(&initial, InitialKnowledge::Saved(_)) {
+            ScenarioKnowledgeRecipe::SavedInitialThenEngineV1
+        } else {
+            ScenarioKnowledgeRecipe::EngineSightV1
+        };
         for civ in opponents {
             if civ != human {
                 game.players[civ as usize] = match policy {
@@ -472,6 +584,8 @@ impl HumanSession {
             view_cache: std::cell::RefCell::new(None),
             origin,
             initializer: None,
+            knowledge_recipe,
+            saved_initial: None,
             game,
             human,
             policy,
@@ -492,7 +606,10 @@ impl HumanSession {
             event_cursor: 0,
             journal: Vec::new(),
         };
-        session.remember();
+        match initial {
+            InitialKnowledge::Saved(projection) => session.install_saved_view(projection)?,
+            InitialKnowledge::Engine { .. } => session.remember(),
+        }
         if !resumed {
             // A resumed turn skips the turn-start step (0x474b62..0x474b78).
             session.begin_human_turn();
@@ -583,6 +700,9 @@ impl HumanSession {
                 .world
                 .observe(&self.game.rules, self.human, self.last_human.clone());
         observation.seen = self.known_tiles.clone();
+        if let Some(initial) = &self.saved_initial {
+            observation.units = initial.units.clone();
+        }
         observation.cities.retain(|c| c.owner == self.human);
         observation.cities.extend(
             self.known_cities
@@ -749,6 +869,9 @@ impl HumanSession {
             self.decision = None;
         }
         self.collect_event_texts();
+        if self.saved_initial.is_some() {
+            return;
+        }
         let w = &self.game.world;
         let bit = 1u8 << self.human;
         let mut visible = vec![false; w.map.terrain.len()];
@@ -824,11 +947,16 @@ impl HumanSession {
 
     fn knowledge_fingerprint(&self) -> u64 {
         // Versioned checkpoint consistency, not an authenticity signature.
-        format!("{:?} {:?}", self.known_tiles, self.known_cities)
-            .bytes()
-            .fold(0xcbf2_9ce4_8422_2325, |h, b| {
-                (h ^ u64::from(b)).wrapping_mul(0x100_0000_01b3)
-            })
+        let mut data = format!("{:?} {:?}", self.known_tiles, self.known_cities);
+        if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedInitialThenEngineV1 {
+            data.push_str(&format!(
+                " saved-initial-then-engine-v1 {:?}",
+                self.saved_initial
+            ));
+        }
+        data.bytes().fold(0xcbf2_9ce4_8422_2325, |h, b| {
+            (h ^ u64::from(b)).wrapping_mul(0x100_0000_01b3)
+        })
     }
 
     fn require_research(&mut self) {
@@ -1141,6 +1269,9 @@ impl HumanSession {
         }
         if let Some(result) = &result {
             self.last_human = Some(result.clone());
+            if !matches!(request.command, Command::CloseProduction { .. }) {
+                self.saved_initial = None;
+            }
         }
         if order == Some(Order::EndTurn) {
             // Boxes already shown during this turn are not repeated next turn.

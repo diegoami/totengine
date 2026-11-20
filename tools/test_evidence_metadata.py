@@ -14,6 +14,15 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_city_phase_memory_vectors_match_native_report(self):
+        report = json.loads((ROOT / 'docs/evidence/import-city-memory.json').read_text())
+        vectors = (ROOT / 'docs/evidence/import-city-memory-vectors.txt').read_bytes()
+        self.assertEqual(hashlib.sha256(vectors).hexdigest(),report['vectors_sha256'])
+        rows = [line for line in vectors.decode().splitlines()
+                if line and not line.startswith('#')]
+        self.assertEqual(len(rows),report['cases'])
+        self.assertEqual(len(rows),len(set(rows)))
+
     def test_stack_reset_and_contact_vectors_match_native_report(self):
         report = json.loads((ROOT / 'docs/evidence/import-contact.json').read_text())
         vectors = (ROOT / 'docs/evidence/import-contact-vectors.txt').read_bytes()

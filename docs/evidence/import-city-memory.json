@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "fragment": "0x470bd1..0x470c4e",
+  "method": "Execute the original post-city-processing remembered-size refresh.\n\n0x470bd1..0x470c4e executes original instructions without replacements.\nPrepared owner/slot locals represent a surviving city after processing; this\ndoes not run growth/production, ownership changes or a full civilization phase.\nOnly city remembered sizes may change; discovery masks and other bytes stay.",
+  "cases": 1248,
+  "vectors_sha256": "8be5bdbe6c7cc61cbcded55f517b39a37d0d68f8535e6d8f1401b3dc7f8fa688",
+  "limits": "Surviving processed surface cities, owners 0..7 and current sizes 1..127. Memory refresh only; no discovery, phase execution, death/capture timing, live original UI or faithful runtime activation."
+}

@@ -19,8 +19,9 @@
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "b6b9fc0d0d8fbc8f3ceb1bd603c6c6038f521dbe3af4939957a4edf07a8e2c00",
     "crates/totui/src/client/scenario.rs": "30aa68fcb7f24bd519186b75a8b872dbd84eb97e5570438a51fdf4449360a887",
-    "crates/engine/src/saved_knowledge.rs": "6161c144c6e60ab2c0724849114658ce897dd52bc48040e4dfa6d7cb9f8e3f66",
-    "crates/engine/src/saved_knowledge/update.rs": "2c5806124a7de87bf968a917248ea8ce1a96768bc73045117dc421a61f4a4855"
+    "crates/engine/src/saved_knowledge.rs": "f900ea415abc50293bfba28b1006a0f1b9a994c25ed01ad6d745eeb973b0a17c",
+    "crates/engine/src/saved_knowledge/update.rs": "2c5806124a7de87bf968a917248ea8ce1a96768bc73045117dc421a61f4a4855",
+    "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe"
   },
   "triggers": {
     "TURN": {
@@ -595,6 +596,14 @@
         "crates/engine/src/saved_knowledge/update.rs"
       ],
       "finding": "Unpatched civ2.bak executes 24 full stack resets, 1261 completed observation updates and 19 contact-boundary cases. Some updates compose reset and observation. Original callees execute with native redraw disabled; conversation cases stop at 0x526aca entry and compare arguments without replacing or executing it. The new observation adapter handles normal non-invisible coherent surface stacks, native sentry/goto wakes and human/alliance/terrain conditions; an attempted conversation returns ContactRequired without a partial output. Separate reset clears the full selected stack; composed reset/observation is atomic. The older knowledge-only wrapper retains its awake/treaty guards, and the 768 prior update plus 947 reader/exploration vectors remain unchanged. No actual movement/conversation, AI sighting bookkeeping, invisible-unit or city-phase lifecycle, runtime/client activation, checkpoint change, trigger/action coverage change or faithful profile admission."
+    },
+    {
+      "change": "Native post-processing city remembered-size refresh (#197)",
+      "files": [
+        "crates/engine/src/saved_knowledge.rs",
+        "crates/engine/src/saved_knowledge/city_memory.rs"
+      ],
+      "finding": "1248 unmodified civ2.bak fragment contexts (0x470bd1..0x470c4e) match snapshot and explicit WorldState adapters. The owner-to-viewer treaty bit 8 or raw Apollo word != -1 refreshes only remembered sizes 1..7; slot 0, city discovery masks, tile memory and other records remain unchanged. Reverse-direction treaties deliberately differ, current sizes are bounded 1..127, owners 0..7 and raw Apollo -2/-1/0/7 are covered. These adapters require a surviving surface city after processing; they do not run city economics, determine death/capture timing, or change legacy scheduling/checkpoints. No run_turn/run_city_phase/client activation, trigger/action coverage change or faithful profile admission. Source is based on merged main 47b1f5b (tree identical to independently reviewed #358); #359 remains separate."
     }
   ]
 }

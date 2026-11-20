@@ -5,6 +5,8 @@
 //! complete contact/invisibility updates, or faithful scenario admission.
 use tot_kit::{MapBlock, SaveFile};
 
+mod city_memory;
+pub use city_memory::city_phase_memory_after;
 mod update;
 pub use update::{
     clear_unit_stack_visibility, unit_knowledge_after, unit_observation_after,

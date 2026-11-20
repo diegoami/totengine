@@ -23,7 +23,8 @@
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
     "crates/engine/src/human/saved_view.rs": "21c6e91b568bfb07a9397ef55bbad8f88faada03d42d7a9f37ef009daf28bc68",
-    "crates/engine/src/scenario.rs": "fb02ddcb8196e44c31b33f10dd8aa5ef0b2ded7cfa801ca3bc8b5002cfd3798a"
+    "crates/engine/src/scenario.rs": "00bac0a34da4b3966ad9d379fc068b6b8f593ac37c8b835b918fd757ea5f3b4c",
+    "crates/engine/src/scenario/snapshot.rs": "ec564138d8d1f63f9724f7967198623a8c0d9d1373a8275b9b699892f1e49f15"
   },
   "triggers": {
     "TURN": {
@@ -627,6 +628,14 @@
         "crates/totui/src/client/scenario.rs"
       ],
       "finding": "Current experimental starts select schema 2 (experimental-saved-view-v1) only for supported saved-round projections showing every own live entity and without SCENARIOLOADED trigger/AND contexts. Construction omits sight refresh and seeds remembered tiles/cities plus saved unit gates; Original/Ph_Auto2.SAV starts at 59 tiles, four own slots and city 5 size 2. Polling/non-gameplay operations and rejected orders keep that epoch; accepted gameplay switches to the explicitly disclosed engine observation (60 tiles after required research selection). Format-3 restore dispatches by schema/profile and validates the initializer before replay; explicit schema-1 construction and format 2 retain their behavior. A synthetic schema-1 checkpoint is byte-identical to reviewed main 47b1f5b. Both real client routes pass 11 equal checkpoints, including seven unchanged generated hashes, plus initial/research/terminal replay. No trigger/action semantics change, classic-profile admission, #198 route, native prompt timing, native continuing-fog/AI/RNG or full dependency/phase admission is claimed."
+    },
+    {
+      "change": "#197 snapshot preparation: separate read-only classic record check and installed raw-field/full-world normalization measurement",
+      "files": [
+        "crates/engine/src/scenario.rs",
+        "crates/engine/src/scenario/snapshot.rs"
+      ],
+      "finding": "Additive validation API only, unused by current session constructors/restore. No event, trigger/action coverage, scheduling, initializer, runtime admission or checkpoint behavior changes. The pinned input passes the bounded record checks; tail/pending-state, dependency and knowledge-continuation admission gates remain."
     }
   ]
 }

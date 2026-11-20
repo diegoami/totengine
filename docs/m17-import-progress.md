@@ -9,13 +9,13 @@ independently admitted SCN context is separate. No profile is admitted yet.
 The owner-approved #352 and #355–#358 merges are on main at `47b1f5b`.
 That tree matches independently reviewed #358 head `4860090`. #354's Original
 victory event was already merged. Independently reviewed #359 and #360 are
-now merged at main `9856d3f`; #361's reviewed saved-view integration targets
-that main. Observation/city-memory kernels remain separate building blocks.
+now merged at main `9856d3f`; #361's reviewed saved-view integration is merged
+at `09b3088`. Observation/city-memory kernels remain separate building blocks.
 
 | Planned slice | Implemented foundation | Remaining before faithful entry |
 | --- | --- | --- |
 | 1. Saved phase | #352 maps the saved player/active civ and resumes the supported plain single-player human seat. | Enforce the admitted candidate's supported phase/owner context and reject unknown pending-state contexts. |
-| 2. Snapshot without a fresh turn | Saved spent movement is retained; initial city stores/treasury are not advanced. | Declare and measure the admitted recipe's snapshot/cache normalization; validate records/references/stack state and prove no unintended initial refresh. |
+| 2. Snapshot without a fresh turn | Saved spent movement is retained; initial city stores/treasury are not advanced. A separate read-only record checker validates live references/occupancy/stack state; raw-field/full-world measurements establish movement-only differences for the pinned schema-2 start. | Bind these checks to the admitted recipe, finish phase/pending-state and dependency checks; the 3,129-byte post-city tail is not admitted by this record check. |
 | 3. Saved human knowledge | #356 projects 59 explored tiles, four unit slots and city 5 size 2; the saved-view branch wires that projection into the actual session/view and schema-2 replay, without an initial reveal. | Verify/activate an admitted knowledge/continuation recipe. The new recipe is still experimental: choosing research on this candidate starts engine observation with 60 tiles. Do not relabel this normalization faithful without satisfying the frozen predicates. |
 | 4. Original Events | #354 implements futuretech equality, compound RANDOMTURN, terminal ENDGAME and a disclosed AVI/ending-screen omission policy. | Verify the admitted dependency set and initializer preserve the exact supported event input/state/timing; retain the disclosed presentation policy. |
 | 5. Import initializer | #355's format 3 seals snapshot/dependencies, phase, memory/world/event assertions and engine policy/seed/RNG assertions; schema 2 adds a separate experimental saved-initial-view recipe. | Add the admitted profile/recipe and restore path without changing format 2 or either existing experimental recipe; finish dependency/admission checks and private snapshot/reference lifecycle. |
@@ -23,12 +23,19 @@ that main. Observation/city-memory kernels remain separate building blocks.
 
 ## Next integration
 
-The saved-view branch implements the stored initial human projection and
+Merged #361 implements the stored initial human projection and
 schema-2 checkpoint recipe in the experimental path. Its initial view, polling,
 remembered foreign size, hidden-unit gates and checkpoint restoration are
 tested; its subsequent engine observation is explicitly disclosed. The older
 schema-1 checkpoint remains byte-identical to reviewed main on the authored
 legacy fixture.
+
+The [snapshot slice](import-snapshot-validation.md) now supplies conservative
+record preparation and a reproducible normalization measurement, without
+changing the experimental constructors or restore. The pinned save's 38 unit
+slots include one deleted slot; all 37 live units and ten live cities pass.
+All non-movement booted world fields compare exactly and both RNG draw counts
+remain zero. This closes a measured part of slice 2, not the admission gate.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

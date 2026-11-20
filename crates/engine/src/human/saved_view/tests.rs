@@ -540,3 +540,197 @@ fn installed_original_saved_view_matches_the_pinned_reader_projection() {
         std::fs::write(path,format!("{{\n  \"schema\": 1,\n  \"checkpoint_format\": 3,\n  \"initializer_schema\": 2,\n  \"profile\": \"{}\",\n  \"source_fnv64\": \"{:016x}\",\n  \"source_length\": {},\n  \"human\": 4,\n  \"phase\": \"Human\",\n  \"saved_turn\": {},\n  \"initial_seen_tiles\": 59,\n  \"initial_unit_slots\": [6, 9, 18, 26],\n  \"initial_cities\": [[5, 2]],\n  \"legacy_initial_seen_tiles\": 60,\n  \"after_first_gameplay_order_seen_tiles\": 60,\n  \"initial_world\": \"{:016x}\",\n  \"initial_knowledge\": \"{:016x}\",\n  \"initial_checkpoint_fnv64\": \"{:016x}\",\n  \"after_checkpoint_fnv64\": \"{:016x}\",\n  \"roundtrip_initial_and_after_order\": true,\n  \"world_equals_declared_movement_only_normalization\": true\n}}\n",captured.profile(),crate::player::fnv64(&save),save.len(),saved.turn,captured.initial_world,captured.initial_knowledge,crate::player::fnv64(before.as_bytes()),crate::player::fnv64(after.as_bytes()))).unwrap();
     }
 }
+
+/// Independent field comparisons, rather than merely re-running the current
+/// constructor's normalization algorithm as an expected implementation.
+#[test]
+fn installed_snapshot_records_and_normalization_are_measured() {
+    use crate::rng::GameRng;
+    let Some(home) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let home = std::path::PathBuf::from(home);
+    let bytes = std::fs::read(home.join("Original/Ph_Auto2.SAV")).unwrap();
+    let rules = tot_kit::parse_rules(&tot_kit::latin1(
+        &std::fs::read(home.join("Original/Rules.txt")).unwrap(),
+    ));
+    let events = tot_kit::parse_events(&tot_kit::latin1(
+        &std::fs::read(home.join("Original/Events.txt")).unwrap(),
+    ))
+    .unwrap();
+    let checked = crate::scenario::snapshot::CheckedSnapshot::read(&bytes, &rules).unwrap();
+    let saved = checked.save();
+    let s = HumanSession::scenario_initialized_current(
+        ScenarioInput {
+            path: "Original/Ph_Auto2.SAV",
+            snapshot: &bytes,
+            rules: rules.clone(),
+            events: Some(EventEngine::new(events)),
+        },
+        4,
+        AiPolicy::BuiltIn1,
+        7,
+        DEPS,
+    )
+    .unwrap();
+    assert_eq!(
+        s.knowledge_recipe,
+        ScenarioKnowledgeRecipe::SavedInitialThenEngineV1
+    );
+    assert_eq!(s.phase(), Phase::Human);
+    let actual = &s.game.world;
+    assert_eq!(actual.treasury, saved.treasury);
+    assert_eq!(actual.science_rates, saved.science_rates);
+    assert_eq!(actual.tax_rates, saved.tax_rates);
+    assert_eq!(actual.governments, saved.governments);
+    assert_eq!(actual.research, saved.research);
+    assert_eq!(actual.techs, saved.techs);
+    assert_eq!(actual.diplomacy, saved.diplomacy);
+    assert_eq!(actual.wonders, saved.wonders);
+    assert_eq!(actual.city_counts, saved.city_counts);
+    let mut rows = Vec::new();
+    for (slot, (u, raw)) in actual.units.iter().zip(&saved.units).enumerate() {
+        assert_eq!(
+            (u.id, u.owner, u.type_id, u.x, u.y),
+            (raw.id(), raw.owner(), raw.type_id(), raw.x(), raw.y())
+        );
+        assert_eq!(
+            (u.damage, u.orders, u.home, u.veteran),
+            (raw.damage(), raw.orders(), raw.home(), raw.is_veteran())
+        );
+        if u.id != 0 {
+            assert_eq!(Some(u.stack_pos), checked.stack_positions()[slot]);
+            let allowance =
+                actual.movement_allowance(&rules, usize::from(u.type_id), u.owner, u.damage);
+            assert_eq!(
+                u.moves_left,
+                allowance.saturating_sub(u32::from(raw.moves_spent()))
+            );
+            rows.push(format!(
+                "[{slot}, {}, {}, {}, {}, {}]",
+                u.id,
+                u.owner,
+                raw.moves_spent(),
+                allowance,
+                u.moves_left
+            ));
+        }
+    }
+    for (c, raw) in actual.cities.iter().zip(&saved.cities) {
+        assert_eq!(
+            (c.city_id, c.x, c.y, c.owner, c.size),
+            (raw.city_id(), raw.x(), raw.y(), raw.owner(), raw.size())
+        );
+        assert_eq!(
+            (
+                c.food_box,
+                c.shield_box,
+                c.building,
+                c.specialists,
+                c.worked
+            ),
+            (
+                raw.food_box(),
+                raw.shield_box(),
+                raw.build_item(),
+                raw.specialists(),
+                raw.worked()
+            )
+        );
+        assert_eq!(
+            (
+                c.gross_food,
+                c.gross_shields,
+                c.gross_trade,
+                c.net_science,
+                c.net_taxes
+            ),
+            (
+                raw.gross_food(),
+                raw.gross_shields(),
+                raw.gross_trade(),
+                raw.net_science(),
+                raw.net_taxes()
+            )
+        );
+        assert_eq!(
+            (c.flags, c.buildings, c.known_to, c.known_sizes),
+            (
+                raw.flags(),
+                raw.buildings(),
+                raw.known_to(),
+                raw.raw[15..23].try_into().unwrap()
+            )
+        );
+    }
+    for (tile, visible) in actual.map.visible.iter().enumerate() {
+        assert_eq!(*visible, saved.maps[0].visible_to(tile));
+        assert_eq!(
+            actual.map.improvements[tile],
+            saved.maps[0].improvements(tile)
+        );
+    }
+    for civ in 0..7 {
+        let n = saved.map_header.surface();
+        assert_eq!(
+            actual.map.known_improvements[civ],
+            saved.maps[0].visibility[civ * n..(civ + 1) * n]
+        );
+    }
+    // Compare the entire booted engine state after erasing only the permitted
+    // movement difference. This catches income, caches, events, reveal or RNG
+    // work outside the declared recipe, including fields not listed above.
+    let boot = crate::boot(saved, 7);
+    let mut no_movement = actual.clone();
+    for unit in &mut no_movement.units {
+        unit.moves_left = 0;
+    }
+    assert_eq!(no_movement.checksum(), boot.checksum());
+    assert_eq!(format!("{no_movement:?}"), format!("{boot:?}"));
+    assert_eq!((actual.rng.state(), actual.rng.draws()), (7, 0));
+    assert_eq!(
+        (actual.combat_rng.state(), actual.combat_rng.draws()),
+        (7, 0)
+    );
+    let first = s.checkpoint(DEPS);
+    assert!(matches!(s.decision, Some(Decision::Research { .. })));
+    if let Ok(path) = std::env::var("TOTENGINE_SNAPSHOT_EVIDENCE") {
+        std::fs::write(path, format!(
+            "{{\n  \"schema\": 1,\n  \"record_check\": \"classic-snapshot-records-v1\",\n  \"runtime_admitted\": false,\n  \"source_length\": {},\n  \"source_fnv64\": \"{:016x}\",\n  \"trailing_bytes_unchecked\": {},\n  \"unit_slots\": {},\n  \"live_units\": {},\n  \"city_slots\": {},\n  \"live_cities\": {},\n  \"stack_positions\": {:?},\n  \"unit_rows_columns\": [\"slot\", \"identity\", \"owner\", \"spent\", \"allowance\", \"remaining\"],\n  \"unit_rows\": [{}],\n  \"initial_world\": \"{:016x}\",\n  \"boot_world\": \"{:016x}\",\n  \"initial_checkpoint_fnv64\": \"{:016x}\",\n  \"rng_states\": [7, 7],\n  \"rng_draws\": [0, 0],\n  \"only_world_difference_from_boot\": \"movement\",\n  \"required_choice\": \"engine-derived Research; native timing unverified\"\n}}\n",
+            checked.source_length(),checked.source_fingerprint(),checked.trailing_bytes(),
+            saved.units.len(),saved.units.iter().filter(|u|u.id()!=0).count(),saved.cities.len(),saved.cities.iter().filter(|c|c.city_id()!=0).count(),
+            checked.stack_positions().iter().map(|p|p.map_or(-1,i32::from)).collect::<Vec<_>>(),rows.join(", "),
+            actual.checksum(),boot.checksum(),crate::player::fnv64(first.as_bytes()),
+        )).unwrap();
+    }
+}
+
+#[test]
+fn snapshot_normalization_keeps_debt_cached_outputs_and_overdrawn_moves() {
+    let mut bytes = snapshot();
+    let parsed = tot_kit::parse_sav(&bytes).unwrap();
+    bytes[parsed.unit_region.0 + 10] = 250;
+    let city = parsed.city_offset;
+    bytes[city + 28..city + 30].copy_from_slice(&(-19i16).to_le_bytes());
+    bytes[city + 30..city + 32].copy_from_slice(&1200u16.to_le_bytes());
+    bytes[city + 76..city + 78].copy_from_slice(&237u16.to_le_bytes());
+    bytes[city + 78..city + 80].copy_from_slice(&431u16.to_le_bytes());
+    let treasury = tot_kit::OFF_CIV_PROPS + 3348 + 10;
+    bytes[treasury..treasury + 4].copy_from_slice(&(-123456i32).to_le_bytes());
+    crate::scenario::snapshot::CheckedSnapshot::read(&bytes, &rules()).unwrap();
+    let session = current(&bytes);
+    let w = &session.game.world;
+    assert_eq!(w.units[0].moves_left, 0);
+    assert_eq!(w.cities[0].food_box as i16, -19);
+    assert_eq!(
+        (
+            w.cities[0].shield_box,
+            w.cities[0].net_science,
+            w.cities[0].net_taxes
+        ),
+        (1200, 237, 431)
+    );
+    assert_eq!(w.treasury[1], -123456);
+    let text = session.checkpoint(DEPS);
+    assert_eq!(restore(&bytes, &text).unwrap().checkpoint(DEPS), text);
+}

@@ -88,7 +88,9 @@ Clippy and CI. Do not repeat the old #352 approval wait. The observation and
 city-memory kernels still remain outside legacy runtime scheduling.
 
 The independently reviewed #361 saved initial human-view implementation is
-present here; its integration targets main after #360. Eligible experimental saved rounds use format-3
+merged at main `09b3088a797674540c48f7e8ff11610d74580c15`. Combined validation
+passed 434 Rust/54 Python tests, 24 goldens, 72 desktop tests, fmt/strict Clippy
+and CI. Eligible experimental saved rounds use format-3
 initializer schema 2 (`experimental-saved-view-v1`): the pinned Original input
 starts with 59 tiles, four units and city 5 size 2, with no initial sight
 refresh. Schema 1/format 2 remain reconstructible; a reviewed-main synthetic
@@ -97,6 +99,15 @@ disclosed engine observation (60 tiles after choosing research on this save).
 This is not an admitted profile or a native prompt-timing claim. Other contexts,
 including startup events, retain schema 1. See `human/saved_view.rs`,
 `tools/import_saved_view_check.py` and `docs/evidence/import-saved-view*`.
+
+The next #197 snapshot slice adds a separate read-only `CheckedSnapshot`
+record check (not called by existing factories/restore) and measures current
+schema-2 normalization against raw fields and complete booted state. The pinned
+input has 38 unit slots/37 live units, ten live cities and 3,129 post-city bytes
+whose pending-state semantics this check does not establish. Only movement
+differs from boot; both seeded RNGs retain zero draws. No profile is admitted.
+See `docs/import-snapshot-validation.md`, `scenario/snapshot.rs`,
+`tools/import_snapshot_check.py` and `docs/evidence/import-snapshot.json`.
 
 The first-profile gates follow `docs/scenario-entry-contract.md` and the
 six-slice comment on #197; current integration work is tracked in

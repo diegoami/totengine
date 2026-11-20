@@ -1,0 +1,395 @@
+{
+  "schema": 1,
+  "record_check": "classic-snapshot-records-v1",
+  "runtime_admitted": false,
+  "source_length": 72247,
+  "source_fnv64": "0d8e264d74369c1f",
+  "trailing_bytes_unchecked": 3129,
+  "unit_slots": 38,
+  "live_units": 37,
+  "city_slots": 10,
+  "live_cities": 10,
+  "stack_positions": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -1,
+    0,
+    0,
+    0
+  ],
+  "unit_rows_columns": [
+    "slot",
+    "identity",
+    "owner",
+    "spent",
+    "allowance",
+    "remaining"
+  ],
+  "unit_rows": [
+    [
+      0,
+      1,
+      2,
+      3,
+      3,
+      0
+    ],
+    [
+      1,
+      31,
+      6,
+      0,
+      6,
+      6
+    ],
+    [
+      2,
+      3,
+      5,
+      0,
+      3,
+      3
+    ],
+    [
+      3,
+      11,
+      2,
+      6,
+      6,
+      0
+    ],
+    [
+      4,
+      5,
+      7,
+      0,
+      3,
+      3
+    ],
+    [
+      5,
+      12,
+      6,
+      0,
+      3,
+      3
+    ],
+    [
+      6,
+      7,
+      4,
+      0,
+      3,
+      3
+    ],
+    [
+      7,
+      13,
+      7,
+      0,
+      3,
+      3
+    ],
+    [
+      8,
+      14,
+      2,
+      3,
+      3,
+      0
+    ],
+    [
+      9,
+      10,
+      4,
+      0,
+      3,
+      3
+    ],
+    [
+      10,
+      15,
+      5,
+      0,
+      3,
+      3
+    ],
+    [
+      11,
+      16,
+      6,
+      0,
+      3,
+      3
+    ],
+    [
+      12,
+      17,
+      7,
+      0,
+      3,
+      3
+    ],
+    [
+      13,
+      18,
+      2,
+      3,
+      3,
+      0
+    ],
+    [
+      14,
+      20,
+      6,
+      0,
+      3,
+      3
+    ],
+    [
+      15,
+      21,
+      6,
+      0,
+      3,
+      3
+    ],
+    [
+      16,
+      26,
+      5,
+      0,
+      3,
+      3
+    ],
+    [
+      17,
+      23,
+      6,
+      0,
+      3,
+      3
+    ],
+    [
+      18,
+      34,
+      4,
+      0,
+      3,
+      3
+    ],
+    [
+      19,
+      27,
+      5,
+      0,
+      3,
+      3
+    ],
+    [
+      20,
+      28,
+      5,
+      0,
+      6,
+      6
+    ],
+    [
+      21,
+      29,
+      6,
+      0,
+      3,
+      3
+    ],
+    [
+      22,
+      30,
+      7,
+      0,
+      6,
+      6
+    ],
+    [
+      23,
+      32,
+      2,
+      9,
+      3,
+      0
+    ],
+    [
+      24,
+      33,
+      7,
+      0,
+      3,
+      3
+    ],
+    [
+      25,
+      35,
+      2,
+      3,
+      3,
+      0
+    ],
+    [
+      26,
+      42,
+      4,
+      0,
+      3,
+      3
+    ],
+    [
+      27,
+      37,
+      2,
+      3,
+      3,
+      0
+    ],
+    [
+      28,
+      38,
+      7,
+      0,
+      3,
+      3
+    ],
+    [
+      29,
+      39,
+      7,
+      0,
+      3,
+      3
+    ],
+    [
+      30,
+      40,
+      5,
+      0,
+      6,
+      6
+    ],
+    [
+      31,
+      41,
+      6,
+      0,
+      3,
+      3
+    ],
+    [
+      32,
+      46,
+      5,
+      0,
+      3,
+      3
+    ],
+    [
+      33,
+      50,
+      7,
+      0,
+      3,
+      3
+    ],
+    [
+      35,
+      47,
+      5,
+      0,
+      6,
+      6
+    ],
+    [
+      36,
+      48,
+      6,
+      0,
+      3,
+      3
+    ],
+    [
+      37,
+      49,
+      6,
+      0,
+      3,
+      3
+    ]
+  ],
+  "initial_world": "10b0ad237274f265",
+  "boot_world": "a94b7e1e38ceaa95",
+  "initial_checkpoint_fnv64": "b582d970ae048674",
+  "rng_states": [
+    7,
+    7
+  ],
+  "rng_draws": [
+    0,
+    0
+  ],
+  "only_world_difference_from_boot": "movement",
+  "required_choice": "engine-derived Research; native timing unverified",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "inputs": [
+    {
+      "path": "Original/Rules.txt",
+      "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+    },
+    {
+      "path": "Original/Events.txt",
+      "sha256": "742d7475e6fe3431a4e4d08494455f4696b82cd3f53b2805c05eeb6ecc92f312"
+    }
+  ],
+  "method": "Measure classic snapshot records and current engine-only normalization.\n\nRuns installed-input Rust checks; no native game execution or admission.\nOriginal bytes remain private. Retained native reader/framing evidence is\nseparate from this conservative record policy and constructor measurement.",
+  "preserved_fields": [
+    "unit identity/owner/type/coordinates/damage/orders/home/veteran/stack order",
+    "city identity/coordinates/owner/size/food/shields/production/workers/specialists",
+    "city output caches/flags/buildings/knowledge masks/remembered sizes",
+    "treasury/rates/governments/research/techs/diplomacy/wonders/city counts",
+    "map improvements/exploration and all seven remembered-improvement arrays",
+    "all remaining booted world fields, checked by full Debug equality plus checksum"
+  ],
+  "limits": "Read-only record check, not called by current session factories or restore. Tail bytes and native pending-choice state remain unchecked. No stock dependency closure, faithful knowledge continuation, admitted initializer, native AI/RNG continuation, native UI or both-client entry is established."
+}

@@ -14,6 +14,30 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_snapshot_record_and_normalization_measurement(self):
+        report = json.loads((ROOT / 'docs/evidence/import-snapshot.json').read_text())
+        saved = json.loads((ROOT / 'docs/evidence/import-saved-view.json').read_text())
+        self.assertEqual(report['source'], saved['source'])
+        self.assertEqual(report['initial_world'], saved['initial_world'])
+        self.assertEqual(report['source_fnv64'], saved['source_fnv64'])
+        self.assertFalse(report['runtime_admitted'])
+        self.assertEqual(report['only_world_difference_from_boot'], 'movement')
+        self.assertEqual(report['rng_draws'], [0, 0])
+        self.assertGreater(report['trailing_bytes_unchecked'], 0)
+        positions = report['stack_positions']
+        self.assertEqual(len(positions), report['unit_slots'])
+        rows = report['unit_rows']
+        self.assertEqual(len(rows), report['live_units'])
+        self.assertEqual(sum(p >= 0 for p in positions), len(rows))
+        self.assertEqual(len({row[0] for row in rows}), len(rows))
+        self.assertEqual(len({row[1] for row in rows}), len(rows))
+        for slot, identity, owner, spent, allowance, remaining in rows:
+            self.assertGreaterEqual(positions[slot], 0)
+            self.assertGreater(identity, 0)
+            self.assertIn(owner, range(8))
+            self.assertEqual(remaining, max(0, allowance - spent))
+        self.assertTrue(any(row[3] > row[4] for row in rows))
+
     def test_saved_view_integration_and_legacy_baseline_metadata(self):
         report=json.loads((ROOT/'docs/evidence/import-saved-view.json').read_text())
         native=json.loads((ROOT/'docs/evidence/import-knowledge.json').read_text())

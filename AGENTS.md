@@ -86,10 +86,14 @@ old request for #352 merge approval. New city-memory work is on
 `docs/evidence/import-city-memory*` and `saved_knowledge/city_memory.rs`.
 The snapshot/WorldState adapters remain explicit, outside legacy scheduling.
 
-Remaining import gates include complete movement/direct-reveal and city
-lifecycle timing, actual conversations, AI sighting bookkeeping, versioned
-runtime knowledge/checkpoint integration, complete dependency/admission checks
-and #198's atomic faithful entry on both clients with owner acceptance.
+The first-profile gates follow `docs/scenario-entry-contract.md` and the
+six-slice comment on #197; current integration work is tracked in
+`docs/m17-import-progress.md`. Next are an admitted saved-human-view recipe,
+declared/measured snapshot normalization, full dependency/record/phase checks,
+an admitted initializer and #198's atomic entry on both clients with owner
+acceptance. Original AI mission/cache/shared-RNG continuation is explicitly
+outside this first profile; broader native lifecycle/conversation work must
+not silently become an additional milestone prerequisite.
 Milestone 16/#194–#196, #283/#284 and follow-ups #347–#350 still await the
 owner; this work clears none of those gates. No milestone review or tag is
 authorized by these merges; the owner launches milestone reviews.

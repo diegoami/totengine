@@ -463,7 +463,7 @@ size after a scout leaves. This is an internal continuation building block,
 not an exporter or playable import path. Human/world runtime, format-2/3
 checkpoint semantics and profile admission are unchanged.
 
-Still required: the complete visibility-reset lifecycle, first contact, invisibility/detectors,
+Outside this kernel: the complete visibility-reset lifecycle, first contact, invisibility/detectors,
 order wakes, AI sighting bookkeeping, city-phase/alliance/Apollo refreshes,
 loader/startup timing, and versioned runtime/checkpoint integration. No native
 movement, live UI, full continuing-knowledge parity or faithful entry is claimed.
@@ -582,7 +582,10 @@ Neither `run_turn` nor `run_city_phase` calls the new method. Generated/legacy
 world checksums, format-2/3 checkpoint recipes, client observation and profile
 admission are unchanged. Call timing after deletion/capture, complete city and
 unit knowledge lifecycle, actual conversations/AI sightings, startup/dependency
-admission and versioned runtime integration remain gates. No full phase,
+admission and versioned runtime integration remain separate work. First-profile
+admission follows the frozen entry contract, which explicitly excludes
+original AI mission/cache/shared-RNG continuation; these broader boundaries
+are not all additional first-profile prerequisites. No full phase,
 native UI or faithful continuation is claimed by this memory-only check.
 
 ```sh

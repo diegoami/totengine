@@ -72,10 +72,15 @@ partial-opponent replay, terminal replay, and byte-identical legacy/generated
 checkpoint restoration. Both browser and SDL input must save and reload format
 3 scenarios through the existing experimental route.
 
-Faithful admission still needs the complete original knowledge/remembered-city
-lifecycle (the saved readers and bounded unit-update kernel are documented in
-the evidence README; runtime still adds the known extra engine-sight tile), an independently admitted
-SCN startup context where applicable, full dependency checks and the separate
-#198 atomic entry/confirmation routes with owner acceptance. This persistence
-slice does not waive these predicates, adopt original AI/RNG continuation,
-implement video/ending screens, or export native SAV files.
+Faithful admission still needs an admitted saved-human-view recipe: the current
+experimental runtime adds the known extra engine-sight tile on load, and the
+native saved readers are not yet the session's human observation source.
+Snapshot normalization must be declared and measured, and unknown native fog
+memory must reject under the frozen contract. Independently admitted SCN
+startup context is needed where applicable, along with full dependency checks
+and #198's atomic entry/confirmation routes with owner acceptance. Original AI
+mission/cache/RNG continuation is explicitly outside the first profile.
+The additional native observation/city-memory kernels are implementation
+building blocks, not amendments adding unrelated admission prerequisites.
+See [the milestone progress map](m17-import-progress.md). This persistence
+slice implements no video/ending screens or native SAV export.

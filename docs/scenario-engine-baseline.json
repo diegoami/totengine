@@ -23,8 +23,9 @@
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
     "crates/engine/src/human/saved_view.rs": "21c6e91b568bfb07a9397ef55bbad8f88faada03d42d7a9f37ef009daf28bc68",
-    "crates/engine/src/scenario.rs": "fb02ddcb8196e44c31b33f10dd8aa5ef0b2ded7cfa801ca3bc8b5002cfd3798a",
-    "crates/totui/src/resources/original.rs": "4ebdefc6de93f30a7dc8b29647b4b9d5cbe0e8b9aa5b0063a3fbe3b603b51260"
+    "crates/engine/src/scenario.rs": "7725e418a2db9a9e56c6ece18f3c3f2193112c703aa3029007ebb8b8a053e83d",
+    "crates/totui/src/resources/original.rs": "4ebdefc6de93f30a7dc8b29647b4b9d5cbe0e8b9aa5b0063a3fbe3b603b51260",
+    "crates/engine/src/scenario/phase.rs": "f919b6adeab6b2beed51bca5bf57de45387d65351bb779938595d68ce5bde9c9"
   },
   "triggers": {
     "TURN": {
@@ -636,6 +637,14 @@
         "crates/totui/src/resources/original.rs"
       ],
       "finding": "Additive adapter API only, unused by existing constructors, client routes and restore. No trigger/action semantics, scenario scheduling, initializer recipe, runtime admission or checkpoint behavior change. The known Original dependency set builds the same shared atlas; other dependency sets and Lua reject. Record/phase/pending-state and knowledge admission plus the private snapshot lifecycle/#198 entry remain."
+    },
+    {
+      "change": "#197 native phase boundaries: separate loader/round/science evidence, pure boundary kernels and conservative saved-context checker",
+      "files": [
+        "crates/engine/src/scenario.rs",
+        "crates/engine/src/scenario/phase.rs"
+      ],
+      "finding": "Additive, unused by existing factories/restore. No order/event/trigger/action semantics, scheduling, initializer recipe, runtime admission or checkpoint behavior changes. 2395 native cases use no replaced callees; the pinned prefix stops at unit setup after active-slot reset with civ/unit/city records unchanged. Full pending-state/UI/knowledge continuation, admitted initializer and #198 remain separate gates."
     }
   ]
 }

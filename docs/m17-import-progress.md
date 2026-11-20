@@ -12,10 +12,12 @@ victory event was already merged. Independently reviewed #359 and #360 are
 now merged at main `9856d3f`; #361's reviewed saved-view integration is merged
 at `09b3088`. Observation/city-memory kernels remain separate building blocks.
 #362's snapshot record/normalization slice is a separate draft awaiting review.
+#363's reference dependency capture is independently approved and merged at
+`f15092a`, exactly the reviewed `46164cd` tree.
 
 | Planned slice | Implemented foundation | Remaining before faithful entry |
 | --- | --- | --- |
-| 1. Saved phase | #352 maps the saved player/active civ and resumes the supported plain single-player human seat. | Enforce the admitted candidate's supported phase/owner context and reject unknown pending-state contexts. |
+| 1. Saved phase | #352 maps saved round fields. Separate native loader/round/science kernels and a conservative context checker now retain 2,395 native cases, including a pinned prefix through human preparation to unit setup, with no replaced callees. | Bind the checker to an admitted recipe; complete the unit-setup/input and pending-choice boundary. The measured prefix does not establish full modal timing. |
 | 2. Snapshot without a fresh turn | Saved spent movement is retained; initial city stores/treasury are not advanced. | Declare and measure the admitted recipe's snapshot/cache normalization; validate records/references/stack state and prove no unintended initial refresh. |
 | 3. Saved human knowledge | #356 projects 59 explored tiles, four unit slots and city 5 size 2; the saved-view branch wires that projection into the actual session/view and schema-2 replay, without an initial reveal. | Verify/activate an admitted knowledge/continuation recipe. The new recipe is still experimental: choosing research on this candidate starts engine observation with 60 tiles. Do not relabel this normalization faithful without satisfying the frozen predicates. |
 | 4. Original Events | #354 implements futuretech equality, compound RANDOMTURN, terminal ENDGAME and a disclosed AVI/ending-screen omission policy. | Verify the admitted dependency set and initializer preserve the exact supported event input/state/timing; retain the disclosed presentation policy. |
@@ -37,6 +39,14 @@ dependency set, without root/demo/GIF fallback or ignored Lua. All selected
 bytes are bound by SHA-256; the resulting 145-sprite shared atlas matches the
 current Original adapter. Revalidation rejects changed/missing/ambiguous inputs.
 It is not called by current client routes and admits no runtime profile.
+
+The [phase-boundary slice](import-phase-boundaries.md) verifies the resumed
+human-preparation branch and reaches native unit setup on the pinned input.
+The saved active-unit slot is cleared to -1; civ/unit/city records and research
+are retained. Native accumulation requires positive science before an empty
+project can reach selection. This extends the earlier static research decode
+with executable boundary evidence, not a complete live prompt-timing claim.
+The current experimental load-time Research prompt remains its recorded policy.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

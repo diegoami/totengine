@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Native saved-phase and research-entry boundaries** (#197): native-executed
+  loader/round/science kernels and a conservative saved-context check. The pinned
+  prefix reaches unit setup with record state intact and the transient active
+  slot reset; empty-target science reaches its measured selection boundary.
+  Existing factories, checkpoints and client routes are unchanged; full
+  pending-choice/UI coverage and faithful admission remain gated.
+
 - **First Original dependency capture** (#197): a separate immutable capture
   checks the known twelve-file rules/events/text/BMP set by SHA-256, retaining
   the exact raw and parsed/decoded inputs. Missing, changed, ambiguous, escaped

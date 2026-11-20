@@ -117,3 +117,9 @@ available for future admission wiring. It retains exact raw/parsed/decoded
 inputs and SHA-256 identities of the known first set, with revalidation before
 future confirmation. Existing schema-1/schema-2/format-2 constructors and restore
 do not call it; it is not an admitted initializer or a private snapshot cache.
+
+The separate [native phase boundaries](import-phase-boundaries.md) reach unit
+setup on the pinned source without a research-selector call in that prefix.
+An empty saved target is not proof of a saved pending prompt. Existing recipes
+retain their engine-derived Research choice; future admission must bind a
+measured phase/choice recipe without silently changing historical checkpoints.

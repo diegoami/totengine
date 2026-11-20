@@ -68,7 +68,7 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
-### Current work (2026-11-20)
+### Current work (2026-11-21)
 
 Milestone 17, faithful classic import (#197/#198), is the live target.
 The owner approved merging #352 and #355–#358; all five are now on main,
@@ -105,8 +105,10 @@ independent review: conservative read-only record checks and raw-field/full-worl
 normalization measurement. It is not merged or required by this branch.
 Its 444 Rust/55 Python/24 goldens/72 desktop tests, lint and CI pass.
 
-The next independent #197 slice captures the first reference Original dependency
-set in `totui::resources::original::OriginalCapture`. All twelve required files
+#363 (GLM-5.3 AGREE, no MUST-FIX) is merged at main
+`f15092a3523a094aab1e32f6ac5eb4d4bbed3df4`, exactly the reviewed tree. It captures
+the first reference Original dependency set in
+`totui::resources::original::OriginalCapture`. All twelve required files
 are selected directly from Original and checked by SHA-256; raw buffers,
 parsed/decoded resources and identity remain immutable. Missing/changed/case-
 ambiguous inputs, Lua and path escapes reject; no root/GIF/demo fallback is used
@@ -120,6 +122,21 @@ Validation: 443 install-backed Rust/55 Python tests, 24 goldens, 81 desktop
 tests, fmt/strict workspace+desktop Clippy, a Windows desktop-target compile
 check and byte-identical dependency evidence reproduction all pass. No Windows
 input or owner acceptance is claimed.
+
+The next independent #197 phase slice executes native loader/round/science
+boundaries and the pinned human-entry prefix, with no replaced callees.
+`scenario::phase` has separate pure kernels and a conservative context checker;
+current constructors/restore do not call them. The source prefix reaches native
+unit setup `0x472ada`, clearing the saved active-unit slot from 0 to -1 while
+retaining civ/unit/city records. No research selector occurs in that prefix;
+native science 0 returns, science 1 reaches selection for the empty project.
+This is bounded entry evidence, not the complete loader/UI/pending-choice gate.
+Keep schema 1/2 and format 2 unchanged. See `docs/import-phase-boundaries.md`,
+`tools/import_phase_check.py` and `docs/evidence/import-phase*`.
+Validation: all 2,395 native cases reproduce byte-identically (report/vectors),
+447 install-backed Rust/56 Python tests, 24 goldens, 81 desktop tests,
+fmt/strict workspace+desktop Clippy and Windows desktop-target compilation pass.
+No live loader/UI, Windows input or owner acceptance is claimed.
 
 The first-profile gates follow `docs/scenario-entry-contract.md` and the
 six-slice comment on #197; current integration work is tracked in

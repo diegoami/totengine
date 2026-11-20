@@ -257,7 +257,7 @@ fn installed_original_snapshot_matches_the_native_reader_projection() {
         preflight
             .gaps
             .iter()
-            .any(|g| g.contains("engine sight adds 1 unexplored tile")),
+            .any(|g| g.contains("starts from saved map knowledge")),
         "{:?}",
         preflight.gaps
     );

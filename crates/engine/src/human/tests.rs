@@ -1909,7 +1909,7 @@ fn resumed_save_keeps_remembered_improvements_out_of_sight() {
         crate::campaign::AiPolicy::AiV1,
         9,
         1..=7,
-        true,
+        InitialKnowledge::Engine { resumed: true },
     )
     .unwrap();
     assert_eq!(s.phase(), Phase::Human);

@@ -5,6 +5,13 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Saved initial human view in the experimental clients** (#197): eligible
+  saved rounds start from stored tile/improvement, unit-visibility and city-size
+  knowledge without an initial sight refresh. A separate schema-2 initializer
+  replays that view and its declared transition to engine observation after
+  gameplay begins. Existing schema-1/format-2 recipes remain unchanged; no
+  faithful profile is admitted by this change.
+
 - **Post-processing city-memory kernel** (#197): native-tested remembered-size
   refreshes for alliance/Apollo contexts, without discovering cities or
   changing tile knowledge. Explicit snapshot and WorldState adapters prepare

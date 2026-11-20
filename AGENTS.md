@@ -86,6 +86,17 @@ old request for #352 merge approval. New city-memory work is on
 `docs/evidence/import-city-memory*` and `saved_knowledge/city_memory.rs`.
 The snapshot/WorldState adapters remain explicit, outside legacy scheduling.
 
+Saved initial human-view integration is on `import-saved-view`, stacked on
+the city-memory PR #360. Eligible experimental saved rounds use format-3
+initializer schema 2 (`experimental-saved-view-v1`): the pinned Original input
+starts with 59 tiles, four units and city 5 size 2, with no initial sight
+refresh. Schema 1/format 2 remain reconstructible; a reviewed-main synthetic
+checkpoint pins schema-1 bytes. Accepted gameplay then uses explicitly
+disclosed engine observation (60 tiles after choosing research on this save).
+This is not an admitted profile or a native prompt-timing claim. Other contexts,
+including startup events, retain schema 1. See `human/saved_view.rs`,
+`tools/import_saved_view_check.py` and `docs/evidence/import-saved-view*`.
+
 The first-profile gates follow `docs/scenario-entry-contract.md` and the
 six-slice comment on #197; current integration work is tracked in
 `docs/m17-import-progress.md`. Next are an admitted saved-human-view recipe,

@@ -170,7 +170,7 @@ def run():
                         key("Next")
                     click_button(knowledge)
                     text=" ".join(" ".join(d.get("text","") for d in scene()["draws"]).split())
-                    assert "engine sight adds 1 unexplored tile" in text and "native visibility/contact updates are not matched" in text,text
+                    assert "starts from saved map knowledge" in text and "later play uses engine visibility/contact rules" in text,text
                     assert "original ending and scoring screens" in text,text
                     key("Escape");key("Escape")
                     wait(lambda s:s["phase"]=="Setup")
@@ -335,7 +335,7 @@ def run():
                 victory=os.environ.get("TOTENGINE_VICTORY_FIXTURES")
                 if victory:
                     from check_victory_route import run_victory
-                    run_victory(scene,key,save_dialog,load,wait,work,victory)
+                    run_victory(scene,key,save_dialog,load,wait,work,victory,click_button=click_button,research=research)
                 government=os.environ.get("TOTENGINE_GOVERNMENT_FIXTURES")
                 if government:
                     from check_government_route import run_government

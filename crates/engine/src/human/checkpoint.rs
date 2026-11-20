@@ -127,9 +127,7 @@ impl HumanSession {
         .map_err(|_| "unsupported human opponent policy")?;
         let initializer = if version == 3 {
             let line = lines.next().ok_or("missing scenario initializer")?;
-            if !line.starts_with("initializer 1 ") {
-                return Err("unsupported scenario initializer version".into());
-            }
+            ScenarioInitializer::recipe_from_descriptor(line)?;
             Some(line)
         } else {
             None
@@ -178,8 +176,8 @@ impl HumanSession {
                             .into(),
                     );
                 }
-                if initializer.is_some() {
-                    Self::scenario_initialized(
+                if let Some(initializer) = initializer {
+                    Self::scenario_initialized_recipe(
                         ScenarioInput {
                             path: &o.path,
                             snapshot: save,
@@ -190,6 +188,7 @@ impl HumanSession {
                         policy,
                         o.seed,
                         resources,
+                        ScenarioInitializer::recipe_from_descriptor(initializer)?,
                     )?
                 } else {
                     Self::scenario(&o.path, save, rules, events, human, policy, o.seed)?

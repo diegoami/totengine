@@ -8,8 +8,19 @@ from pathlib import Path
 import shutil
 
 
-def run_victory(scene, key, save_dialog, load, wait, work, fixture):
+def run_victory(scene, key, save_dialog, load, wait, work, fixture, click_button=None, research=None):
     fixture = Path(fixture)
+    initial=fixture/'victoryinitial.cth'
+    if initial.exists():
+        assert click_button is not None and research is not None
+        shutil.copyfile(initial,work/'saves/victoryinitial.cth')
+        load('victoryinitial')
+        wait(lambda s:any(d.get('text')=='Choose research' for d in s['draws']))
+        click_button('Save pending choice');save_dialog('savedviewinitial')
+        assert (work/'saves/savedviewinitial.cth').read_bytes()==initial.read_bytes()
+        research()
+        key('Ctrl+s');save_dialog('savedviewplayed')
+        assert (work/'saves/savedviewplayed.cth').read_bytes()==(fixture/'victorystart.cth').read_bytes()
     shutil.copyfile(fixture / 'victorystart.cth', work / 'saves/victorystart.cth')
     load('victorystart')
     key('Ctrl+n')

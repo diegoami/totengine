@@ -107,7 +107,7 @@ impl Client {
             .get(choice.civ)
             .ok_or("Choose a civilization")?;
         let seed: u64 = random_seed()?.parse().map_err(|_| "seed")?;
-        let session = HumanSession::scenario_initialized(
+        let session = HumanSession::scenario_initialized_current(
             engine::human::ScenarioInput {
                 path: &files.path,
                 snapshot: &files.bytes,

@@ -7,12 +7,22 @@ gate remains [classic-surface-032-v1](scenario-entry-contract.md).
 
 ## Boundary
 
-New experimental scenario sessions will use human checkpoint **format 3**
-with initializer schema **1**. Generated games and legacy scenario checkpoints
+New experimental scenario sessions use human checkpoint **format 3**.
+Schema **1** (`experimental-scenario-v1`) preserves the existing engine-sight
+recipe. Schema **2** (`experimental-saved-view-v1`) installs the saved initial
+human map/entities for eligible saved-round contexts, then uses engine
+observation after accepted gameplay begins. Neither profile admits an input
+under classic-surface-032-v1. Generated games and legacy scenario checkpoints
 keep format 2 and its canonical replay. Both clients retain **Open scenario
 (experimental)**; no faithful Open ToT save / scenario route is activated.
-The initializer explicitly identifies its profile as `experimental-scenario-v1`.
-This identifier does not admit any corpus input under classic-surface-032-v1.
+
+The current client factory selects schema 2 only when saved-round eligibility
+and the saved projection pass, all own live entities are shown, and no
+SCENARIOLOADED trigger/AND half is present. Other contexts keep schema 1;
+preflight discloses the chosen initial-view boundary and continued engine
+visibility/contact behavior. The explicit `scenario_initialized` constructor
+keeps schema 1; restore dispatches by the recorded schema/profile, never by
+the current factory's defaults.
 
 The extension binds:
 
@@ -55,6 +65,18 @@ versions or profiles, altered phase/memory assertions and replay divergence
 fail without replacing the active session. The same initializer is retained
 when a checkpoint is saved after partial opponent work or ENDGAME.
 
+Schema 2 suppresses construction-time sight refresh and seeds remembered
+improvements, unit admission and city masks/sizes from the native-verified
+saved projection. Repeated views, zero-work polling, goal edits and production
+window closure retain this initial epoch. The first accepted gameplay order
+switches to the declared engine continuation; failed orders do not. Its
+knowledge fingerprint includes the initial unit projection/epoch, so both the
+saved view and the later transition replay canonically. On the pinned Original
+save, the initial 59 tiles remain under the existing engine-derived required
+research prompt; choosing research starts engine observation with 60 tiles.
+This measures the experimental normalization, not native prompt timing or
+faithful continuing fog. The original's AI/RNG continuation is not claimed.
+
 Format 2 restore deliberately reconstructs the legacy initialization path;
 it must not silently upgrade an existing checkpoint's header or dependencies.
 Labels and Civilopedia remain outside generated/legacy format 2 identity, as
@@ -72,9 +94,9 @@ partial-opponent replay, terminal replay, and byte-identical legacy/generated
 checkpoint restoration. Both browser and SDL input must save and reload format
 3 scenarios through the existing experimental route.
 
-Faithful admission still needs an admitted saved-human-view recipe: the current
-experimental runtime adds the known extra engine-sight tile on load, and the
-native saved readers are not yet the session's human observation source.
+Faithful admission still needs an admitted saved-human-view/continuation
+recipe. Eligible experimental saved rounds now use the stored 59-tile initial
+view; schema 1 and later engine play retain the known engine-sight difference.
 Snapshot normalization must be declared and measured, and unknown native fog
 memory must reject under the frozen contract. Independently admitted SCN
 startup context is needed where applicable, along with full dependency checks

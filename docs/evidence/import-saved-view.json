@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "checkpoint_format": 3,
+  "initializer_schema": 2,
+  "profile": "experimental-saved-view-v1",
+  "source_fnv64": "0d8e264d74369c1f",
+  "source_length": 72247,
+  "human": 4,
+  "phase": "Human",
+  "saved_turn": 43,
+  "initial_seen_tiles": 59,
+  "initial_unit_slots": [
+    6,
+    9,
+    18,
+    26
+  ],
+  "initial_cities": [
+    [
+      5,
+      2
+    ]
+  ],
+  "legacy_initial_seen_tiles": 60,
+  "after_first_gameplay_order_seen_tiles": 60,
+  "initial_world": "10b0ad237274f265",
+  "initial_knowledge": "9740ffe266efa764",
+  "initial_checkpoint_fnv64": "b582d970ae048674",
+  "after_checkpoint_fnv64": "9af7de1057ad6c36",
+  "roundtrip_initial_and_after_order": true,
+  "world_equals_declared_movement_only_normalization": true,
+  "method": "Reproduce the installed saved-human-view integration regression.\n\nThis runs the Rust human-session test, not original-game instructions or UI.\nIts saved projection uses the separately native-verified reader gates. Source\nbytes are checked against the existing pinned corpus identity and stay private.",
+  "initial_decision": "Research required by the existing engine; native prompt timing is not claimed.",
+  "first_gameplay_order": "Research",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "dependencies": "Structural engine-test manifest only; not resource/admission closure.",
+  "limits": "Saved initial human map/entities/city sizes, zero-work polling and checkpoints. Subsequent gameplay uses engine observation rules. No faithful profile, native AI/RNG continuation or native UI execution is admitted."
+}

@@ -14,6 +14,18 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_stack_reset_and_contact_vectors_match_native_report(self):
+        report = json.loads((ROOT / 'docs/evidence/import-contact.json').read_text())
+        vectors = (ROOT / 'docs/evidence/import-contact-vectors.txt').read_bytes()
+        self.assertEqual(hashlib.sha256(vectors).hexdigest(), report['vectors_sha256'])
+        rows = [line for line in vectors.decode().splitlines()
+                if line and not line.startswith('#')]
+        self.assertEqual(len(rows), len(set(rows)))
+        counts = Counter('reset' if line.startswith('R ') else
+                         'contact_boundary' if line.split('|')[1].strip().startswith('C ') else
+                         'completed' for line in rows)
+        self.assertEqual(dict(counts), report['cases'])
+
     def test_unit_knowledge_update_vectors_match_native_report(self):
         report = json.loads((ROOT / 'docs/evidence/import-visibility.json').read_text())
         vectors = (ROOT / 'docs/evidence/import-visibility-vectors.txt').read_bytes()

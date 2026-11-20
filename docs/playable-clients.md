@@ -217,7 +217,10 @@ can play (any with units or cities; the one the file marks as human is
 preselected), the opponents' engine policy, and every gap the engine knows
 about:
 
-- the game starts a fresh engine turn, so every unit gets its full movement;
+- the game starts a fresh engine turn, so every unit gets its full movement,
+  unless the file is a plain single-player save played by its own player:
+  that resumes the saved turn as the original does (#197), with spent
+  movement kept and the human moving first;
 - opponents are played by the engine AI (`builtin-1`, or `ai-v1` when the
   built-in AI cannot read the scenario's Rules), not the original AI's plans;
 - event triggers that never fire, event actions that do nothing yet and

@@ -1873,6 +1873,75 @@ fn scenario_loaded_fires_at_start_and_replays() {
     assert_eq!(restored.view(), v);
 }
 
+/// #197: a resumed save starts from the player's saved knowledge. Tiles out
+/// of sight keep the roads/railroads of the player's remembered-improvement
+/// array; tiles in sight show today's map; the human moves first and the
+/// turn-start step does not run.
+#[test]
+fn resumed_save_keeps_remembered_improvements_out_of_sight() {
+    let mut save = crate::tests_support::synthetic_save_bytes();
+    // Single player, player civ 1, human mask 0x02 (bytes 678/680/687).
+    save[678] = 0;
+    save[680] = 1;
+    save[687] = 0x02;
+    let sav = tot_kit::parse_sav(&save).unwrap();
+    assert_eq!(crate::scenario::resume_blocker(&sav, &rules(), 1), None);
+    let (mut game, resumed) = Game::scenario_human("test.sav", &save, 9, rules(), None, 1).unwrap();
+    assert!(resumed);
+    let n = game.world.map.terrain.len();
+    for i in 0..n {
+        game.world.map.visible[i] |= 0x02;
+        game.world.map.known_improvements[0][i] = 0x10;
+        game.world.map.road[i] = false;
+    }
+    let sight = game.world.visible_indices(1);
+    assert!(sight.len() < n, "the fixture has tiles out of sight");
+    let origin = Origin::Scenario(ScenarioOrigin {
+        path: "test.sav".into(),
+        len: save.len(),
+        fingerprint: crate::player::fnv64(&save),
+        seed: 9,
+    });
+    let s = HumanSession::with_game(
+        game,
+        origin,
+        1,
+        crate::campaign::AiPolicy::AiV1,
+        9,
+        1..=7,
+        true,
+    )
+    .unwrap();
+    assert_eq!(s.phase(), Phase::Human);
+    let seen = s.view().observation.seen;
+    for (i, t) in seen.iter().enumerate() {
+        let t = t.as_ref().expect("every tile was seen");
+        assert_eq!(t.road, !sight.contains(&i), "tile {i}");
+    }
+}
+
+/// #197: what keeps a save from resuming its round.
+#[test]
+fn resume_blockers_name_the_reason() {
+    let base = crate::tests_support::synthetic_save_bytes();
+    let blocker = |edit: &dyn Fn(&mut Vec<u8>), civ: u8| {
+        let mut save = base.clone();
+        save[678] = 0;
+        save[680] = 1;
+        save[687] = 0x02;
+        edit(&mut save);
+        crate::scenario::resume_blocker(&tot_kit::parse_sav(&save).unwrap(), &rules(), civ)
+    };
+    assert_eq!(blocker(&|_| {}, 1), None);
+    assert!(blocker(&|_| {}, 2)
+        .unwrap()
+        .contains("player is civilization 1"));
+    assert!(blocker(&|s| s[678] = 1, 1).unwrap().contains("multiplayer"));
+    assert!(blocker(&|s| s[687] = 0x06, 1)
+        .unwrap()
+        .contains("human mask"));
+}
+
 #[test]
 fn scenario_endgame_is_terminal_and_checkpoint_replay_preserves_outcome_and_text() {
     let mut save = crate::tests_support::synthetic_save_bytes();

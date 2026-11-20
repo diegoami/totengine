@@ -5006,3 +5006,72 @@ Oct 219, Roman Civil Wars Dec 55, Constantine Aug 306 (turn 4), AE 1200 BC
 the original's formatter does. A scenario whose parameters are not located
 (0x33 files) has no date; the preflight says dates show as turn numbers.
 None of the installed scenarios that open is such a file.
+
+### Saved round position (2026-11-19, #197)
+
+This is a static decode of `civ2.bak` (the unpatched executable). The save
+records where in the round it was written, and the loader resumes there. A
+save offset `o` in the game block maps to RAM `0x6073ac + o`: turn @668 is
+`0x607648`, as in §Anarchy resolution.
+
+- **Fields.**
+  - u8@678 (`0x607652`) is the multiplayer type, 0 for a single-player game.
+    It is the same byte the scenario-leader count tests.
+  - u8@680 (`0x607654`) is the player's civilization. The loader copies it
+    to the viewer civ `0x67a6e0` (`0x461c09`).
+  - u8@681 (`0x607655`) is the civilization whose step was running. The
+    main loop writes it as each civ's step begins (`0x4745e4`).
+  - The installed autosaves agree: `Original/Ph_Auto2.SAV` and `Ph_Auto.SAV`
+    have 0/4/4 with human mask `0x10`, `Original/Ca_Auto2.SAV` has 0/1/1
+    with mask `0x02`, and `FallRome/ROMFALL.scn` has 0/1/1 with mask `0x02`.
+- **Loader, single player (`0x461d10`…`0x461d6c`).** The resume civilization
+  `0x5d1570` is set to the player (`0x67a6e0`). In multiplayer
+  (`0x461c31`) it is set to byte 681, or to the first civilization in play.
+  The loader then clears `0x5d0a0c` (`0x461d71`).
+- **Main loop (`0x474574`…).**
+  - The civ loop skips every civilization below `0x5d1570` (`0x4745a5`), so
+    the earlier civilizations have already moved this round.
+  - For the resumed civilization, with `0x5d4fa0` = 0, it jumps past the
+    per-civ turn-start step `0x4725c8` (`0x474b62`…`0x474b78`). That step
+    holds the city phase and anarchy resolution. So spent movement and every
+    city and treasury value stand as saved.
+  - After that civilization it resets `0x5d1570` to 0 (`0x474cd1`…`0x474cdd`).
+    Later civilizations run their full step, and the round closes as usual.
+  - The round's turn-start event checks (TURN, TURNINTERVAL, RANDOMTURN,
+    CHECKFLAG at `0x474516`…`0x47456f`) run only when `0x5d0a0c` is set and
+    the round is not resuming (`0x4744ed`…`0x474510`). They don't run again
+    for the loaded round.
+- **Engine (`engine::scenario::resume_blocker`, `Game::scenario_human`).**
+  - A plain single-player save played by its own player resumes. A plain
+    save is one without scenario flags `0xc0` (`resume_blocker`).
+  - The human moves first, with each unit's allowance less its saved spent
+    byte (+10), clamped at zero. The human's turn-start step does not run.
+  - The human's knowledge starts from its saved visibility bits, and out of
+    sight from its remembered-improvement array (§Apollo; `0x10` road,
+    `0x20` railroad).
+  - Later civilizations and the round close follow the engine's round.
+- **Not resumed:**
+  - scenario files, because their start goes through the scenario routine
+    `0x4639bf`, which is not decoded for this;
+  - multiplayer saves;
+  - another civilization than the file's player;
+  - Rules whose road multiplier is not 3, where the saved byte is not in the
+    engine's thirds (§T1-3: ToTPP's FallRome byte is 15).
+
+  All of these keep the fresh engine turn, and the preflight says which
+  case applies.
+- **Check.** `crates/engine/tests/import_resume_install.rs` runs on
+  Ph_Auto2. It checks:
+  - phase Human at revision 0;
+  - the remaining movement of two in-memory moved units, one of them clamped;
+  - every saved tile kept;
+  - a checkpoint that replays.
+
+  The autosave was written as civ 4's turn began, so none of its units had
+  moved.
+- **Known difference.** Ph_Auto2 shows one extra known tile, stored
+  (27, 12), inside Madrid's radius. The engine's own sight model (decision
+  0003) lets a city see its whole 21-tile radius, while the save says civ 4
+  never saw that tile. The original's reveal rules are not decoded.
+- **Unit test.** `resumed_save_keeps_remembered_improvements_out_of_sight`
+  covers the remembered-improvement path on the synthetic save.

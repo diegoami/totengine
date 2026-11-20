@@ -254,6 +254,33 @@ pub fn event_gaps(events: &EventFile) -> Vec<String> {
     gaps
 }
 
+/// Why a save cannot resume its saved round with `human` as the player (#197;
+/// evidence §Saved round position), or `None` when it can. The original's
+/// single-player loader (civ2.bak 0x461d10..0x461d6c) restarts its civ loop
+/// at the player's civilization, skips that civ's turn-start step and the
+/// round's turn-start events, and runs later civilizations as usual. Scenario
+/// files (parameter flags 0xc0) start through the scenario routine instead,
+/// which is not decoded, so they keep the fresh engine turn.
+pub fn resume_blocker(sav: &tot_kit::SaveFile, rules: &Rules, human: u8) -> Option<String> {
+    if sav.research_settings.flags & 0xc0 != 0 {
+        Some(
+            "scenario files start through the original's scenario routine, which is not decoded"
+                .into(),
+        )
+    } else if sav.multiplayer != 0 {
+        Some("multiplayer saves resume at the active civilization, which is not modelled".into())
+    } else if sav.player_civ != human || sav.human_mask != 1 << human {
+        Some(format!(
+            "the file's player is civilization {} (human mask {:#04x})",
+            sav.player_civ, sav.human_mask
+        ))
+    } else if rules.road_multiplier().unwrap_or(3) != 3 {
+        Some("its Rules use a road multiplier other than 3, so spent movement does not map onto the engine's thirds".into())
+    } else {
+        None
+    }
+}
+
 /// Inspect scenario bytes for experimental entry. `events` is the parsed
 /// Events.txt beside it (if any), `events_unreadable` that one exists but did
 /// not parse, `lua` that Lua scripts sit beside it.
@@ -304,8 +331,17 @@ pub fn preflight(
     if civs.is_empty() {
         return Err("No civilization has units or cities in this file".into());
     }
+    let resume = civs
+        .iter()
+        .find(|c| resume_blocker(&sav, rules, c.civ).is_none())
+        .map(|c| c.name.clone());
     let mut gaps = vec![
-        "Starts a fresh engine turn: every unit gets its full movement again".to_string(),
+        match &resume {
+            Some(name) => format!(
+                "Resumes the saved turn only when you play {name}, the file's player (spent movement kept); any other civilization starts a fresh engine turn"
+            ),
+            None => "Starts a fresh engine turn: every unit gets its full movement again".to_string(),
+        },
         "Opponents are played by the engine AI, not the original AI's saved plans".to_string(),
     ];
     if sav.maps.len() > 1 {

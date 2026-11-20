@@ -1000,10 +1000,15 @@ impl Game {
     }
 
     /// Boot a human game from scenario/save bytes for the experimental
-    /// scenario entry (decision 0008, 2026-11-18). Like [`Game::new`] it starts
-    /// a fresh engine turn (movement reset only); the human mask names the
+    /// scenario entry (decision 0008, 2026-11-18); the human mask names the
     /// player's civilization. The log header binds the install-relative path,
     /// the file identity, the seed, the human, the Rules and the initial state.
+    ///
+    /// When [`crate::scenario::resume_blocker`] finds nothing in the way, the game
+    /// **resumes the saved round** as the original's loader does (#197): no
+    /// fresh turn, each unit keeps its saved spent movement, and the human
+    /// moves first (the second value is `true`). Otherwise it starts a fresh
+    /// engine turn (movement reset only), as before.
     pub(crate) fn scenario_human(
         path: &str,
         save: &[u8],
@@ -1011,14 +1016,26 @@ impl Game {
         rules: Rules,
         events: Option<EventEngine>,
         human: u8,
-    ) -> Result<Game, String> {
+    ) -> Result<(Game, bool), String> {
         let sav = tot_kit::parse_sav(save).map_err(|e| e.to_string())?;
         let mut world = crate::boot(&sav, seed);
         if !(1..=7).contains(&human) || !world.civ_alive(human) {
             return Err("the chosen civilization has no units or cities in this scenario".into());
         }
         world.human_mask = 1 << human;
+        let resumed = crate::scenario::resume_blocker(&sav, &rules, human).is_none();
         world.start_turn(&rules);
+        if resumed {
+            // The loader skips the human's turn-start step (civ2.bak
+            // 0x474b62..0x474b78), so the saved spent movement stands. The
+            // engine counts thirds; resume_blocker requires a multiplier of 3,
+            // where the saved byte is in the same unit. Overdrawn moves clamp.
+            for (u, r) in world.units.iter_mut().zip(&sav.units) {
+                if u.id != 0 {
+                    u.moves_left = u.moves_left.saturating_sub(u32::from(r.moves_spent()));
+                }
+            }
+        }
         for c in 1..8 {
             world.reveal(c);
         }
@@ -1039,13 +1056,16 @@ impl Game {
             fnv64(canonical_rules.as_bytes()),
             world.checksum()
         );
-        Ok(Game {
-            world,
-            rules,
-            events,
-            players: (0..8).map(|_| None).collect(),
-            log,
-        })
+        Ok((
+            Game {
+                world,
+                rules,
+                events,
+                players: (0..8).map(|_| None).collect(),
+                log,
+            },
+            resumed,
+        ))
     }
 
     /// The order log so far.

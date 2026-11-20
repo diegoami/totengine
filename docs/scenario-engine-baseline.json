@@ -5,12 +5,12 @@
   "meaning": "Manually audited implementation coverage, not native conformance or runtime admission. Source changes require a new audit.",
   "source_sha256": {
     "crates/tot-kit/src/events.rs": "1681efdbeffea4104ea049a77c127831a1d8b5ff49d970dfc878d3d1d9125b91",
-    "crates/tot-kit/src/sav.rs": "2525bfa22cdcfa8aab9f295c7b2297f9a18c1920518db452d51e0447cd7b4698",
+    "crates/tot-kit/src/sav.rs": "f0eabfc96dd8ca830c4361dc622fe92e578cd49eef9751fa6e242c65152192ef",
     "crates/engine/src/events.rs": "bed7a25102c67c45d058cb9ed170b9216e233d4c1e5b792e84785418336bef37",
     "crates/engine/src/effects.rs": "a2b75e4c9ed7a7fd06bae65b7394d1637fee7d03954009e3afeafc238803ef85",
     "crates/engine/src/turn.rs": "12008e3af7eea7610fb1b9cbbd3c0b817fedb7be74b1e403c440d3d39e3fb032",
-    "crates/engine/src/player.rs": "eccbc3ab92381974c8cae165f49cf1b0bcc3330c5c1999aae8cc1008cc7cda95",
-    "crates/engine/src/human.rs": "ecae6c182c7561dbfc03dcba052e321c6c217f30861cb28b0e76dae780d7a607",
+    "crates/engine/src/player.rs": "1167e5b31165e5259dba55211816263fbf8c7844f2fde40587eb01de09f04537",
+    "crates/engine/src/human.rs": "dffb77eaacacf3768cf1cc0fb1529ce53755da53d210980f6706bea97b98557e",
     "crates/engine/src/human/checkpoint.rs": "93561747e5704ee6b87acf4c8d413ad7d6aa928d8980f1140ee02c7a53b7771f",
     "crates/engine/src/lib.rs": "26c50f4601e51e9c8cd2ff26c8a9e981abf8aa37ca988c0114f2cc13f3a0e891",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
@@ -526,6 +526,15 @@
         "crates/engine/src/lib.rs"
       ],
       "finding": "0x33 maps are 14 B/tile + 2 (one extra byte per tile after the classic tile records) and follow the raw[7] + 1 map count; units, cities and the 100-B scenario parameter block are at the classic offsets, so 0x33 files now read their calendar and scenario research settings (Warring States: increment -3, start -1404, reproducing the saved years). 0x32 framing and records are unchanged. lib.rs changes one doc comment only. Event trigger/action semantics are unchanged."
+    },
+    {
+      "change": "Resume the saved round for plain single-player saves (#197 slice 1)",
+      "files": [
+        "crates/tot-kit/src/sav.rs",
+        "crates/engine/src/player.rs",
+        "crates/engine/src/human.rs"
+      ],
+      "finding": "SaveFile gains multiplayer (u8@678), player_civ (u8@680) and active_civ (u8@681). Game::scenario_human keeps saved spent movement and HumanSession starts at the human with saved knowledge only when engine::scenario::resume_blocker passes: no scenario flags 0xc0, single player, the chosen civ is the file's player and its only human, road multiplier 3. Everything else keeps the fresh engine turn. Event trigger/action semantics are unchanged; the turn-start events still are not re-run on load because none run at session start."
     },
     {
       "change": "Original victory-event slice of #197: futuretech value, terminal ENDGAME and disclosed AVI policy",

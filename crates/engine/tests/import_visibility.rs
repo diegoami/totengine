@@ -301,6 +301,112 @@ fn contact_context(v: &[usize]) -> (SaveFile, Rules) {
     (save, parse_rules(&text))
 }
 
+fn submarine_context(v: &[usize]) -> (SaveFile, Rules) {
+    let (mut save, _) = contact_context(&v[..13]);
+    let (extended, subs, detectors, mode, tail_order, mixed_domain) =
+        (v[13], v[14], v[15], v[16], v[17], v[18]);
+    let mut text = String::from("@UNITS\n");
+    for id in 0..4 {
+        let mut domain = v[if id < 2 { 0 } else { 1 }];
+        if id % 2 == 1 && mixed_domain & (1 << (id / 2)) != 0 {
+            domain = 0;
+        }
+        let flags = usize::from(extended & (1 << id) != 0)
+            | if subs & (1 << id) != 0 { 8 } else { 0 }
+            | if detectors & (1 << id) != 0 {
+                0x4000
+            } else {
+                0
+            };
+        text.push_str(&format!(
+            "Unit,nil,{domain},1,0,1,1,1,1,1,0,{},nil,{flags:015b}\n",
+            v[6]
+        ));
+    }
+    for (slot, u) in save
+        .units
+        .iter_mut()
+        .enumerate()
+        .filter(|(_, u)| u.id() != 0)
+    {
+        u.raw[8] = slot as u8;
+        u.raw[11] = 1;
+        if slot % 2 == 1 {
+            u.raw[17] = tail_order as u8;
+        }
+    }
+    if mode == 1 {
+        save.units[3].raw = [0; 40];
+        save.units[2].raw[28..30].copy_from_slice(&(-1i16).to_le_bytes());
+    }
+    let reverse: &[usize] = if mode == 2 {
+        &[2]
+    } else if mode == 3 {
+        &[0, 2]
+    } else {
+        &[]
+    };
+    for &first in reverse {
+        save.units[first].raw[26..28].copy_from_slice(&((first + 1) as i16).to_le_bytes());
+        save.units[first].raw[28..30].copy_from_slice(&(-1i16).to_le_bytes());
+        save.units[first + 1].raw[26..28].copy_from_slice(&(-1i16).to_le_bytes());
+        save.units[first + 1].raw[28..30].copy_from_slice(&(first as i16).to_le_bytes());
+    }
+    for c in save.cities.iter_mut().filter(|c| c.city_id() != 0) {
+        c.raw[14] = 1;
+    }
+    (save, parse_rules(&text))
+}
+
+#[test]
+fn native_submarine_detector_and_mixed_stack_vectors_match() {
+    let numbers = |s: &str| {
+        s.split_whitespace()
+            .map(|n| n.parse::<usize>().unwrap())
+            .collect::<Vec<_>>()
+    };
+    let mut counts = [0; 2];
+    let mut review_cases = 0;
+    for line in include_str!("../../../docs/evidence/import-submarine-vectors.txt")
+        .lines()
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+    {
+        let (input, expected) = line.split_once('|').unwrap();
+        let (kind, input) = input.trim().split_once(' ').unwrap();
+        let v = numbers(input);
+        let (save, rules) = submarine_context(&v);
+        let (expected_kind, expected) = expected.trim().split_once(' ').unwrap();
+        counts[usize::from(expected_kind == "C")] += 1;
+        if kind == "F" {
+            review_cases += 1;
+        }
+        assert_observation(save, rules, &v, expected_kind, numbers(expected), line);
+    }
+    assert_eq!(counts, [1435, 17]);
+    assert_eq!(review_cases, 12);
+}
+
+#[test]
+fn broader_observation_keeps_the_legacy_submarine_guard() {
+    let mut v = [
+        0, 0, 1, 0, 3, 255, 0, 16, 13, 0, 0, 0, 0, 15, 4, 0, 1, 255, 0,
+    ];
+    let (save, rules) = submarine_context(&v);
+    assert!(unit_knowledge_after(&save, &rules, 0).is_err());
+    let observed = unit_observation_after(&save, &rules, 0, false).unwrap();
+    assert_eq!(
+        observed.units[2].visibility() & 16,
+        0,
+        "single submarine stays hidden without a detector"
+    );
+    v[14] = 0;
+    let (ordinary, rules) = submarine_context(&v);
+    assert!(
+        unit_knowledge_after(&ordinary, &rules, 0).is_ok(),
+        "the legacy failure was the submarine guard, not an unrelated fixture error"
+    );
+}
+
 #[test]
 fn native_stack_reset_order_wakes_and_contact_boundaries_match() {
     let numbers = |s: &str| {
@@ -335,87 +441,9 @@ fn native_stack_reset_order_wakes_and_contact_boundaries_match() {
             continue;
         }
         let (save, rules) = contact_context(&v);
-        let before = save.clone();
-        let result = if v[12] != 0 {
-            unit_observation_after_reset(&save, &rules, 0, v[9] != 0)
-        } else {
-            unit_observation_after(&save, &rules, 0, v[9] != 0)
-        };
         let (expected_kind, expected) = expected.trim().split_once(' ').unwrap();
-        let expected = numbers(expected);
-        if expected_kind == "C" {
-            assert_eq!(
-                result,
-                Err(UnitObservationError::ContactRequired {
-                    observer: expected[0] as u8,
-                    other: expected[1] as u8,
-                    x: expected[2] as u16,
-                    y: expected[3] as u16,
-                    map: expected[4] as u8
-                }),
-                "{line}"
-            );
-            counts[2] += 1;
-        } else {
-            let out = result.unwrap_or_else(|e| panic!("{line}: {e}"));
-            let mut got: Vec<_> = out
-                .units
-                .iter()
-                .map(|u| usize::from(u.visibility()))
-                .collect();
-            got.extend(out.units.iter().map(|u| usize::from(u.orders())));
-            got.extend(out.cities.iter().map(|c| usize::from(c.known_to())));
-            got.extend(
-                out.cities
-                    .iter()
-                    .map(|c| usize::from(c.known_size(4).unwrap())),
-            );
-            let explored: Vec<_> = (0..96)
-                .filter(|&i| out.maps[0].visible_to(i) & 16 != 0)
-                .collect();
-            got.push(explored.len());
-            got.extend(&explored);
-            assert_eq!(got, expected, "{line}");
-            let mut restored = out.clone();
-            for i in 0..96 {
-                assert_eq!(
-                    out.maps[0].tile_fields[6 * i + 4],
-                    save.maps[0].tile_fields[6 * i + 4]
-                        | if explored.contains(&i) { 16 } else { 0 }
-                );
-                restored.maps[0].tile_fields[6 * i + 4] = save.maps[0].tile_fields[6 * i + 4];
-                for civ in 1..8 {
-                    assert_eq!(
-                        out.maps[0].visibility[(civ - 1) * 96 + i],
-                        if civ == 4 && explored.contains(&i) {
-                            save.maps[0].improvements(i)
-                        } else {
-                            128
-                        }
-                    );
-                }
-            }
-            restored.maps[0]
-                .visibility
-                .clone_from(&save.maps[0].visibility);
-            for (u, old) in restored.units.iter_mut().zip(&save.units) {
-                u.raw[11] = old.raw[11];
-                u.raw[17] = old.raw[17];
-            }
-            for (c, old) in restored.cities.iter_mut().zip(&save.cities) {
-                c.raw[14] = old.raw[14];
-                c.raw[19] = old.raw[19];
-            }
-            assert_eq!(
-                restored, save,
-                "only knowledge and order fields may change: {line}"
-            );
-            counts[1] += 1;
-        }
-        assert_eq!(
-            save, before,
-            "contact must not leak a partially changed snapshot"
-        );
+        counts[if expected_kind == "C" { 2 } else { 1 }] += 1;
+        assert_observation(save, rules, &v, expected_kind, numbers(expected), line);
     }
     assert_eq!(counts, [24, 1261, 19]);
 }
@@ -449,4 +477,90 @@ fn reset_rejects_broken_chains_and_observation_reports_unsupported_inputs() {
         unit_observation_after(&legacy, &legacy_rules, 0, false),
         Err(UnitObservationError::Unsupported(_))
     ));
+}
+
+fn assert_observation(
+    save: SaveFile,
+    rules: Rules,
+    v: &[usize],
+    expected_kind: &str,
+    expected: Vec<usize>,
+    line: &str,
+) {
+    let before = save.clone();
+    let result = if v[12] != 0 {
+        unit_observation_after_reset(&save, &rules, 0, v[9] != 0)
+    } else {
+        unit_observation_after(&save, &rules, 0, v[9] != 0)
+    };
+    if expected_kind == "C" {
+        assert_eq!(
+            result,
+            Err(UnitObservationError::ContactRequired {
+                observer: expected[0] as u8,
+                other: expected[1] as u8,
+                x: expected[2] as u16,
+                y: expected[3] as u16,
+                map: expected[4] as u8
+            }),
+            "{line}"
+        );
+    } else {
+        let out = result.unwrap_or_else(|e| panic!("{line}: {e}"));
+        let mut got: Vec<_> = out
+            .units
+            .iter()
+            .map(|u| usize::from(u.visibility()))
+            .collect();
+        got.extend(out.units.iter().map(|u| usize::from(u.orders())));
+        got.extend(out.cities.iter().map(|c| usize::from(c.known_to())));
+        got.extend(
+            out.cities
+                .iter()
+                .map(|c| usize::from(c.known_size(4).unwrap())),
+        );
+        let explored: Vec<_> = (0..96)
+            .filter(|&i| out.maps[0].visible_to(i) & 16 != 0)
+            .collect();
+        got.push(explored.len());
+        got.extend(&explored);
+        assert_eq!(got, expected, "{line}");
+        let mut restored = out.clone();
+        for i in 0..96 {
+            assert_eq!(
+                out.maps[0].tile_fields[6 * i + 4],
+                save.maps[0].tile_fields[6 * i + 4] | if explored.contains(&i) { 16 } else { 0 }
+            );
+            restored.maps[0].tile_fields[6 * i + 4] = save.maps[0].tile_fields[6 * i + 4];
+            for civ in 1..8 {
+                assert_eq!(
+                    out.maps[0].visibility[(civ - 1) * 96 + i],
+                    if civ == 4 && explored.contains(&i) {
+                        save.maps[0].improvements(i)
+                    } else {
+                        128
+                    }
+                );
+            }
+        }
+        restored.maps[0]
+            .visibility
+            .clone_from(&save.maps[0].visibility);
+        for (u, old) in restored.units.iter_mut().zip(&save.units) {
+            u.raw[11] = old.raw[11];
+            u.raw[17] = old.raw[17];
+        }
+        for (c, old) in restored.cities.iter_mut().zip(&save.cities) {
+            c.raw[14] = old.raw[14];
+            c.raw[19] = old.raw[19];
+        }
+        assert_eq!(
+            restored, save,
+            "only knowledge and order fields may change: {line}"
+        );
+    }
+    assert_eq!(
+        save, before,
+        "contact must not leak a partially changed snapshot"
+    );
 }

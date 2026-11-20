@@ -489,8 +489,11 @@ arguments; it does **not** replace or execute the conversation.
 
 The probe varies all four scout/neighbor domains, land/ocean at both
 endpoints, human masks 0/16/32/48, treaty words 4/5/13, native role 0/7,
-orders 0/3/4/12/28/255, extended sight, city/stack contexts, native contact
+orders 0/3/4/12/28/255, city/stack contexts, native contact
 argument 0/1, literal unit-type slot 9 and optional reset before observation.
+This set enables extended sight at both endpoints; the earlier 768 vectors
+vary it, and the later submarine/mixed-stack set directly checks disabled
+extended sight and goto-ordered tails too.
 Completed cases compare explored bits, all seven improvement caches, city
 knowledge/sizes, unit visibility and unit orders; other map/city/unit bytes
 must remain identical. Conversation-boundary cases compare the exact caller,
@@ -537,6 +540,74 @@ format-2/3 checkpoints are unchanged; no faithful profile is admitted.
 CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
 python3 tools/import_contact_check.py --out /tmp/import-contact.json \
   --vectors /tmp/import-contact-vectors.txt
+```
+
+#### Native submarine flags, detectors and mixed stacks (2026-11-20, #197)
+
+[`import-submarine.json`](import-submarine.json) and
+[`import-submarine-vectors.txt`](import-submarine-vectors.txt) retain 1,452
+further numeric contexts from unpatched `civ2.bak`. The original observation
+loops `0x41f8a7..0x4205a7` and their callees execute unchanged; redraw uses the
+original disabled branch, and conversation cases stop at `0x526aca` entry.
+The same footprint checks cover knowledge/orders and all other map/city/unit
+record bytes. This extends the prior 1,304-case evidence rather than replacing
+it; the earlier evidence files and outputs remain unchanged.
+
+These contexts vary each member's extended-sight (value 1), submarine
+(value 8) and detector (`0x4000`) flags, four domain bytes, endpoint terrain,
+cities, alliance/human contexts and optional resets. They include a single
+foreign unit, paired/mixed stacks, reversed heads at either endpoint and
+land-domain tails in other-domain stacks. The original stack counter
+`0x56b64b(slot, 2)` executes in every context and is asserted to return the
+linked member count (1 or 2), including when the supplied slot is a tail.
+Twelve explicit regression contexts pin disabled extended sight and
+goto-ordered tails, addressing the non-blocking #358 review notes. The probe
+also requires numeric witnesses for a hidden single submarine, a detected
+single submarine, and a two-member stack with a submarine head seen without
+a detector.
+
+Findings are specific to these normal surface observation loops:
+
+- Submarine scouts still refresh explored terrain/improvements through the
+  normal exploration kernel. Adjacent city memory refresh happens before the
+  submarine/land-neighbor early exit; its separate reveal-to-city path is
+  suppressed for a submarine scout.
+- Adjacent reciprocal detection uses the neighboring stack **head's** detector
+  flag. A detector in a non-head member does not replace that gate. Visibility
+  writes still cover the whole linked stack once admitted.
+- A foreign submarine head is hidden from the scout when it is a single unit
+  and the scout lacks the detector flag. A stack count greater than one
+  bypasses that particular gate; the counter counts all linked members, not
+  only ordinary units. The retained numeric witnesses verify this otherwise
+  surprising behavior directly against the original.
+- Outer-range observation has a separate submarine-head exclusion, without
+  that adjacent stack-size/detector exception. It can still refresh city
+  memory. Submarine scouts also skip the outer reciprocal unit/city reveal
+  and outer neighbor-wake paths. These are not universal statements about
+  every renderer, cheat mode, transport or direct reveal action in the game.
+- Goto wake targets the native head/selected slot; sentry wake walks individual
+  members with their own domains. Reversed-head and mixed-domain vectors
+  distinguish link order from record-slot order. Goto-ordered tails remain
+  unchanged in the explicit ordinary adjacent contexts.
+
+`unit_observation_after` and its reset composition now implement these flags
+and coherent mixed stacks, reading each member's Rules properties and native
+link order. The earlier `unit_knowledge_after` remains the conservative awake,
+non-submarine, matching-sight/treaty API. All prior native-vector suites still
+pass. Rust compares the 1,452 new results and permitted write footprint, using
+the same contact/error atomicity checks as the earlier observation suite.
+
+This still activates no HumanSession/WorldState/client policy and changes no
+format-2/3 checkpoint recipe or admitted profile. Complete movement and its
+intermediate side effects, direct reveal actions, city-phase/alliance/Apollo
+memory, actual conversations, AI sighting bookkeeping, loader/startup timing
+and versioned runtime integration remain open. No combat, cargo, live original
+UI or complete continuing-knowledge parity is claimed.
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+python3 tools/import_submarine_check.py --out /tmp/import-submarine.json \
+  --vectors /tmp/import-submarine-vectors.txt
 ```
 
 #### Native post-processing city-size memory (2026-11-20, #197)

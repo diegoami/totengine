@@ -68,6 +68,36 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+### Current work (2026-11-20)
+
+Milestone 17, faithful classic import (#197/#198), is the live target.
+The owner approved merging #352 and #355–#358; all five are now on main,
+ending at `47b1f5bde9ad20c431a20656a0cf122eb9bb4546`. Its tree is identical
+to independently reviewed #358 head `4860090` (GLM-5.3 AGREE, no MUST-FIX).
+This lands saved-round resume, format-3 experimental initializers, saved-map
+readers and bounded unit observation/reset/wake/contact-boundary kernels.
+It does not admit a faithful profile or activate those kernels in runtime fog.
+
+#359 (`import-submarine`) is retargeted to main, CI green, still awaiting its
+own review: 1,452 native submarine/detector/mixed-stack contexts and the #358
+review coverage notes. Its reviewed ancestors are merged; do not repeat the
+old request for #352 merge approval. New city-memory work is on
+`import-city-memory`: `tools/import_city_memory_check.py`,
+`docs/evidence/import-city-memory*` and `saved_knowledge/city_memory.rs`.
+The snapshot/WorldState adapters remain explicit, outside legacy scheduling.
+
+The first-profile gates follow `docs/scenario-entry-contract.md` and the
+six-slice comment on #197; current integration work is tracked in
+`docs/m17-import-progress.md`. Next are an admitted saved-human-view recipe,
+declared/measured snapshot normalization, full dependency/record/phase checks,
+an admitted initializer and #198's atomic entry on both clients with owner
+acceptance. Original AI mission/cache/shared-RNG continuation is explicitly
+outside this first profile; broader native lifecycle/conversation work must
+not silently become an additional milestone prerequisite.
+Milestone 16/#194–#196, #283/#284 and follow-ups #347–#350 still await the
+owner; this work clears none of those gates. No milestone review or tag is
+authorized by these merges; the owner launches milestone reviews.
+
 **v0.21.0 is RELEASED** at exactly reviewed/tagged SHA
 `954e63554d73d07e98e5d3e605979d59ac5ba4d8` (GLM-5.3 AGREE on #346, round
 one, no MUST-FIX). Theme: Layout B and experimental scenario play on both

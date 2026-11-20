@@ -463,7 +463,7 @@ size after a scout leaves. This is an internal continuation building block,
 not an exporter or playable import path. Human/world runtime, format-2/3
 checkpoint semantics and profile admission are unchanged.
 
-Still required: the complete visibility-reset lifecycle, first contact, invisibility/detectors,
+Outside this kernel: the complete visibility-reset lifecycle, first contact, invisibility/detectors,
 order wakes, AI sighting bookkeeping, city-phase/alliance/Apollo refreshes,
 loader/startup timing, and versioned runtime/checkpoint integration. No native
 movement, live UI, full continuing-knowledge parity or faithful entry is claimed.
@@ -608,6 +608,61 @@ UI or complete continuing-knowledge parity is claimed.
 CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
 python3 tools/import_submarine_check.py --out /tmp/import-submarine.json \
   --vectors /tmp/import-submarine-vectors.txt
+```
+
+#### Native post-processing city-size memory (2026-11-20, #197)
+
+[`import-city-memory.json`](import-city-memory.json) and
+[`import-city-memory-vectors.txt`](import-city-memory-vectors.txt) retain
+1,248 original `civ2.bak` contexts for `0x470bd1..0x470c4e`, immediately after
+one surviving city's processing. The fragment runs unchanged without callee
+replacements and stops before the following UI query. It does not execute
+the economic city phase or decide whether a city survived it.
+
+Inputs cover phase/city owners 0..7, each individual alliance bit and combined
+masks, current sizes 1/7/127, three selected city slots, arbitrary previous
+knowledge/size bytes, and Apollo table words -2/-1/0/7. Reverse-direction
+treaties deliberately differ, except on the shared diagonal. Native checks
+compare all 276 bytes of the three city records, not just the selected output.
+
+- The writer reads the **city owner's row**, `diplomacy[owner][viewer] & 8`.
+  It refreshes viewer slots 1..7; slot 0 stays unchanged. The owner's own
+  remembered-size slot has no implicit exception to this predicate.
+- Apollo uses raw saved table entry 25 at `0x607768` (`0x607736 + 2*25`),
+  tested against **-1**, rather than the generic active-wonder predicate.
+  Thus -2 also refreshes all seven sizes here. City creation's separate
+  nonnegative gate and Apollo completion's one-off reveal remain as previously
+  documented; this fragment does not replace either rule.
+- It copies the current size into the selected remembered-size bytes only.
+  City knowledge mask +14, other cities, tile exploration and remembered
+  improvements remain unchanged. In particular, gaining a size value alone
+  must not make an undiscovered foreign city appear.
+
+`saved_knowledge::city_phase_memory_after` returns a new decoded snapshot;
+`WorldState::refresh_city_phase_memory` supplies the same kernel for a future
+versioned runtime policy. Both require a live surface city with owner 0..7 and
+current size 1..127; the snapshot adapter also enforces classic single-player,
+single-surface framing. They update only remembered sizes, reject unsupported
+contexts before mutation, and do not run growth/production or reveal anything.
+Rust compares every native vector through **both** adapters, verifies the
+snapshot write footprint and restored WorldState checksum, checks idempotence,
+and covers undiscovered-city privacy, the self/slot-0 rules and invalid slots/
+owners/maps/sizes. The raw -2 Apollo predicate is pinned explicitly.
+
+Neither `run_turn` nor `run_city_phase` calls the new method. Generated/legacy
+world checksums, format-2/3 checkpoint recipes, client observation and profile
+admission are unchanged. Call timing after deletion/capture, complete city and
+unit knowledge lifecycle, actual conversations/AI sightings, startup/dependency
+admission and versioned runtime integration remain separate work. First-profile
+admission follows the frozen entry contract, which explicitly excludes
+original AI mission/cache/shared-RNG continuation; these broader boundaries
+are not all additional first-profile prerequisites. No full phase,
+native UI or faithful continuation is claimed by this memory-only check.
+
+```sh
+CIVTOT_HOME=/path/to/CIVTOT PYTHONPATH=/path/to/unicorn:tools \
+python3 tools/import_city_memory_check.py --out /tmp/import-city-memory.json \
+  --vectors /tmp/import-city-memory-vectors.txt
 ```
 
 #### Versioned experimental initializer (2026-11-19, #197)

@@ -1,5 +1,26 @@
 # Tier-0 Evidence — first format probe results (2026-11-01)
 
+## First Original dependency capture (#197, 2026-11-20)
+
+[`import-dependencies.json`](import-dependencies.json) binds the installed
+reference Original set: twelve rules/events/text/BMP dependencies plus the
+selected private save, with SHA-256 rows and the explicit no-AVI/ending-screens
+presentation policy. Reproduce with `CIVTOT_HOME=... python3
+tools/import_dependencies_check.py --out /tmp/dependencies.json`.
+
+The Rust adapter captures each file once and parses/decodes those owned buffers;
+Python independently verifies every reported content hash. Captured sheets and
+the resulting 145-sprite shared atlas equal the existing Original adapter.
+Authored fixtures cover missing/changed inputs (including same-length edits),
+case ambiguity, root-fallback refusal, Lua, escaped paths, immutable captures
+and failed revalidation. Raw original bytes/text never enter public evidence.
+
+This is the known first dependency set, not native custom-resource lookup or
+universal official-install/translation acceptance. Existing constructors/routes
+and checkpoint formats are unchanged. It activates no session; record/phase/
+pending-state, knowledge continuation, admitted initializer and #198's private
+snapshot/atomic entry gates remain. [Scope](../import-stock-dependencies.md).
+
 AI/client adoption source study: [C-evo and scenario record](cevo-source-assessment-v1.json)
 pins the downloaded source, media-license exception and an installed Roman Civil
 Wars fixture. [Assessment](../ai-client-reuse-assessment.md) follows the owner's

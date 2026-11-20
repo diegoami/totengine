@@ -1081,6 +1081,31 @@ fn installed_atlas_matches_retained_numeric_manifest() {
 }
 
 #[test]
+fn installed_original_dependency_capture_builds_the_same_shared_atlas() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let capture = crate::resources::original::OriginalCapture::capture(
+        Path::new(&home),
+        "Original/Ph_Auto2.SAV",
+    )
+    .unwrap();
+    let current = Atlas::load(&Resources::load(Path::new(&home), "Original").unwrap()).unwrap();
+    let captured = Atlas::load(capture.resources()).unwrap();
+    assert_eq!(captured.sprites.len(), current.sprites.len());
+    for (name, sprite) in &captured.sprites {
+        let original = &current.sprites[name];
+        assert_eq!(
+            (sprite.w, sprite.h, &sprite.rgba),
+            (original.w, original.h, &original.rgba)
+        );
+    }
+    if let Ok(out) = std::env::var("TOTENGINE_ORIGINAL_ATLAS_EVIDENCE") {
+        fs::write(out, serde_json::to_string_pretty(&serde_json::json!({"sprite_count":captured.sprites.len(),"same_as_existing_original_atlas":true})).unwrap()+"\n").unwrap();
+    }
+}
+
+#[test]
 fn production_draft_budget_and_city_lifecycle_resume_without_double_penalty() {
     let f = Fixture::new();
     let file = f.0.join("Rules.txt");

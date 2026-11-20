@@ -14,6 +14,23 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_submarine_vectors_match_native_report(self):
+        report = json.loads((ROOT / 'docs/evidence/import-submarine.json').read_text())
+        vectors = (ROOT / 'docs/evidence/import-submarine-vectors.txt').read_bytes()
+        self.assertEqual(hashlib.sha256(vectors).hexdigest(), report['vectors_sha256'])
+        rows = [line for line in vectors.decode().splitlines()
+                if line and not line.startswith('#')]
+        self.assertEqual(len(rows),len(set(rows)))
+        counts = Counter('contact_boundary' if line.split('|')[1].strip().startswith('C ') else
+                         'completed' for line in rows)
+        self.assertEqual(dict(counts),report['cases'])
+        self.assertEqual(sum(line.startswith('F ') for line in rows),12)
+        self.assertEqual(set(report['numeric_witnesses']),{
+            'paired_submarine_seen_without_detector',
+            'single_submarine_hidden_without_detector',
+            'single_submarine_seen_by_detector'})
+        self.assertTrue(all(n>0 for n in report['numeric_witnesses'].values()))
+
     def test_stack_reset_and_contact_vectors_match_native_report(self):
         report = json.loads((ROOT / 'docs/evidence/import-contact.json').read_text())
         vectors = (ROOT / 'docs/evidence/import-contact-vectors.txt').read_bytes()

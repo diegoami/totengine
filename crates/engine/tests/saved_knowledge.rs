@@ -264,5 +264,5 @@ fn installed_original_snapshot_matches_the_native_reader_projection() {
     assert!(preflight
         .gaps
         .iter()
-        .any(|g| g.contains("native visibility/contact updates are not matched")));
+        .any(|g| g.contains("later play uses engine visibility/contact rules")));
 }

@@ -19,7 +19,8 @@
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "b6b9fc0d0d8fbc8f3ceb1bd603c6c6038f521dbe3af4939957a4edf07a8e2c00",
     "crates/totui/src/client/scenario.rs": "30aa68fcb7f24bd519186b75a8b872dbd84eb97e5570438a51fdf4449360a887",
-    "crates/engine/src/saved_knowledge.rs": "ad70f9c17b3de509dbeb895e1ee069327bc92de3ce844b36c4a43fa5264b3791"
+    "crates/engine/src/saved_knowledge.rs": "2f61bb2448e31bb7bba182d450d2fa249d01bfe396132ab1ee179ee7fb7adf39",
+    "crates/engine/src/saved_knowledge/update.rs": "b5b2420be1bf3878d1464d7165bdaac87dd863b26242515fa723d78fcb2b799a"
   },
   "triggers": {
     "TURN": {
@@ -27,7 +28,7 @@
       "params": [
         "turn"
       ],
-      "note": "civ2.bak 0x4d2df7: fires when turn=N equals the turn or is Every (-1); Continuous fires every later turn; on turns 22 and 42 an unspent earlier-turn JUSTONCE event fires (evidence README §TURN, TURNINTERVAL and RANDOMTURN evaluators, #328)."
+      "note": "civ2.bak 0x4d2df7: fires when turn=N equals the turn or is Every (-1); Continuous fires every later turn; on turns 22 and 42 an unspent earlier-turn JUSTONCE event fires (evidence README \u00a7TURN, TURNINTERVAL and RANDOMTURN evaluators, #328)."
     },
     "TURNINTERVAL": {
       "status": "modelled_subset",
@@ -64,7 +65,7 @@
     "SCENARIOLOADED": {
       "status": "modelled_subset",
       "params": [],
-      "note": "Fired once when an experimental scenario session starts, before its first view (civ2.bak game start 0x4639bf → 0x4d3285, no @AND gate); replay rebuilds it. The original also re-fires it on loading a saved game; engine checkpoints replay from the scenario start instead."
+      "note": "Fired once when an experimental scenario session starts, before its first view (civ2.bak game start 0x4639bf \u2192 0x4d3285, no @AND gate); replay rebuilds it. The original also re-fires it on loading a saved game; engine checkpoints replay from the scenario start instead."
     },
     "NEGOTIATION": {
       "status": "partial",
@@ -84,7 +85,7 @@
         "threshold",
         "count"
       ],
-      "note": "Evaluated once per turn start after TURN/TURNINTERVAL/RANDOMTURN, then non-continuous flags are cleared (civ2.bak 0x574c3e; evidence README §Event flags). who=name/Somebody/Everybody, Threshold and Count (which the original also treats as a minimum) are modelled; technology= is not and such a trigger never fires. Requires @INITFLAG. One @AND per event is gated as in 0x575cbe."
+      "note": "Evaluated once per turn start after TURN/TURNINTERVAL/RANDOMTURN, then non-continuous flags are cleared (civ2.bak 0x574c3e; evidence README \u00a7Event flags). who=name/Somebody/Everybody, Threshold and Count (which the original also treats as a minimum) are modelled; technology= is not and such a trigger never fires. Requires @INITFLAG. One @AND per event is gated as in 0x575cbe."
     },
     "RECEIVEDTECHNOLOGY": {
       "status": "modelled_subset",
@@ -93,7 +94,7 @@
         "technology",
         "futuretech"
       ],
-      "note": "Polled at turn start after RANDOMTURN (civ2.bak 0x4d306f). technology=N tests known advances; futuretech=N independently tests the living receiver's Future Technology count for equality to N (not a minimum; no technology= required). Anybody polls each civ; TriggerReceiver/TriggerDefender resolves to the matching receiver. The @AND gate applies. Native evidence: original-victory.json and evidence README §Original victory event."
+      "note": "Polled at turn start after RANDOMTURN (civ2.bak 0x4d306f). technology=N tests known advances; futuretech=N independently tests the living receiver's Future Technology count for equality to N (not a minimum; no technology= required). Anybody polls each civ; TriggerReceiver/TriggerDefender resolves to the matching receiver. The @AND gate applies. Native evidence: original-victory.json and evidence README \u00a7Original victory event."
     }
   },
   "actions": {
@@ -122,7 +123,7 @@
         "receiver",
         "technology"
       ],
-      "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original handler 0x4d201e (dispatcher 0x4d3ae8) calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README §GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing."
+      "note": "Applied through grant_advance_with_rules, the engine's model of 0x49dedf, which the original handler 0x4d201e (dispatcher 0x4d3ae8) calls as (civ, tech, 0, 0, 0) for a living receiver 1..=7 (evidence README \u00a7GIVETECHNOLOGY executor). Arguments 3-5, the group-flag-2 interaction and first-discovery/diplomacy side effects are not modelled. Duplicates of known advances do nothing."
     },
     "JUSTONCE": {
       "status": "modelled_subset",
@@ -165,7 +166,7 @@
         "whom",
         "technology"
       ],
-      "note": "Handler 0x567ab4 → 0x4a2363: a living civ 1..=7 loses the advance bit only (advance count, research target and who-knows mask are untouched); Collapse first takes known dependants (0x49c8d4, depth first in index order). Future Technology cannot be taken."
+      "note": "Handler 0x567ab4 \u2192 0x4a2363: a living civ 1..=7 loses the advance bit only (advance count, research target and who-knows mask are untouched); Collapse first takes known dependants (0x49c8d4, depth first in index order). Future Technology cannot be taken."
     },
     "DELAY": {
       "status": "modelled_subset",
@@ -456,7 +457,7 @@
         "crates/engine/src/effects.rs",
         "crates/engine/src/human.rs"
       ],
-      "finding": "GIVETECHNOLOGY now grants the advance through the same grant as research completion, after the original executor's receiver checks (decoded statically: evidence README §GIVETECHNOLOGY executor). Applied::Advance reports it, and a round's gift to the human adds a discovery notice. Human sessions re-run research requirements as before. Other actions, trigger matching, checkpoint text and order logs are unchanged; replay re-applies the grant deterministically."
+      "finding": "GIVETECHNOLOGY now grants the advance through the same grant as research completion, after the original executor's receiver checks (decoded statically: evidence README \u00a7GIVETECHNOLOGY executor). Applied::Advance reports it, and a round's gift to the human adds a discovery notice. Human sessions re-run research requirements as before. Other actions, trigger matching, checkpoint text and order logs are unchanged; replay re-applies the grant deterministically."
     },
     {
       "change": "Scenario event flags, @AND and Continuous (#328)",
@@ -466,7 +467,7 @@
         "crates/engine/src/effects.rs",
         "crates/engine/src/turn.rs"
       ],
-      "finding": "FLAG, CHECKFLAG, Continuous, @INITFLAG and one @AND per event follow a static decode of civ2.bak (evidence README §Event flags, @AND and Continuous). Flags and @AND activations live in EventEngine and rebuild by replay. The turn loop's TURN/TURNINTERVAL/RANDOMTURN order is unchanged; CHECKFLAG and the flag decay follow them. Parser: @AND second triggers are kept apart instead of merging into the first, key=value lines after modifier lines (JUSTONCE, CONTINUOUS, RANDOMIZE, INCAPITAL) stay with the modified action, parameter names match case-insensitively, and @INITFLAG is recorded. Events summary counts are unchanged. Behaviour change for existing files: an @AND event now needs both halves, and capitalised parameters (Defender=, Who=) are now enforced. Human sessions and checkpoints are otherwise unchanged."
+      "finding": "FLAG, CHECKFLAG, Continuous, @INITFLAG and one @AND per event follow a static decode of civ2.bak (evidence README \u00a7Event flags, @AND and Continuous). Flags and @AND activations live in EventEngine and rebuild by replay. The turn loop's TURN/TURNINTERVAL/RANDOMTURN order is unchanged; CHECKFLAG and the flag decay follow them. Parser: @AND second triggers are kept apart instead of merging into the first, key=value lines after modifier lines (JUSTONCE, CONTINUOUS, RANDOMIZE, INCAPITAL) stay with the modified action, parameter names match case-insensitively, and @INITFLAG is recorded. Events summary counts are unchanged. Behaviour change for existing files: an @AND event now needs both halves, and capitalised parameters (Defender=, Who=) are now enforced. Human sessions and checkpoints are otherwise unchanged."
     },
     {
       "change": "Scenario event actions and triggers: TAKETECHNOLOGY, DELAY, CHANGETERRAIN, MAKEAGGRESSION, CREATEUNIT modifiers, RECEIVEDTECHNOLOGY, SCENARIOLOADED (#328)",
@@ -477,7 +478,7 @@
         "crates/engine/src/turn.rs",
         "crates/engine/src/player.rs"
       ],
-      "finding": "Static decode of civ2.bak (evidence README §Event actions). EventEngine queues DELAYs with their trigger context and counts them down at turn start before TURN; RECEIVEDTECHNOLOGY is polled after RANDOMTURN from world facts passed by the turn loop; SCENARIOLOADED fires in Game::scenario_human before the order log's initial checksum, so scenario checkpoints replay it. WorldState applies TAKETECHNOLOGY (bit only, optional collapse), MAKEAGGRESSION (treaty helpers both ways, attitudes; the human treaty-break call is reported, not run), CHANGETERRAIN (destroys cities, removes units, clears tile bytes 0-3) and CREATEUNIT with the decoded placement, Randomize (combat CRT rand per unit), InCapital and homecity. Parser: maprect is CHANGETERRAIN's argument; Collapse/NoCollapse are modifiers. Behaviour changes for existing files: CREATEUNIT now refuses dead owners, other civs' cities and count 128..255, and homes units by homecity=. FallRome goldens are unchanged."
+      "finding": "Static decode of civ2.bak (evidence README \u00a7Event actions). EventEngine queues DELAYs with their trigger context and counts them down at turn start before TURN; RECEIVEDTECHNOLOGY is polled after RANDOMTURN from world facts passed by the turn loop; SCENARIOLOADED fires in Game::scenario_human before the order log's initial checksum, so scenario checkpoints replay it. WorldState applies TAKETECHNOLOGY (bit only, optional collapse), MAKEAGGRESSION (treaty helpers both ways, attitudes; the human treaty-break call is reported, not run), CHANGETERRAIN (destroys cities, removes units, clears tile bytes 0-3) and CREATEUNIT with the decoded placement, Randomize (combat CRT rand per unit), InCapital and homecity. Parser: maprect is CHANGETERRAIN's argument; Collapse/NoCollapse are modifiers. Behaviour changes for existing files: CREATEUNIT now refuses dead owners, other civs' cities and count 128..255, and homes units by homecity=. FallRome goldens are unchanged."
     },
     {
       "change": "Turn triggers decoded: TURN Continuous and turn-22/42 catch-up, TURNINTERVAL interval 0, RANDOMTURN CRT roll; preflight explains BRIBEUNIT/NEGOTIATION, sounds and NOSCHISM (#328)",
@@ -486,7 +487,7 @@
         "crates/engine/src/turn.rs",
         "crates/engine/src/scenario.rs"
       ],
-      "finding": "Static decode of civ2.bak (evidence README §TURN, TURNINTERVAL and RANDOMTURN evaluators). fire_with now evaluates spent events (a spent RANDOMTURN half still draws; the dispatcher refuses it) and passes the event's JUSTONCE to turn_fires. run_turn rolls RANDOMTURN on combat_rng (MSVC CRT rand, 0x5b11d0) with rand() % n + 1 == n instead of the kernel generator's next_below(n) == 0. Behaviour change for existing files: FallRome's 50-turn golden changed (88 event firings, was 98); checkpoints replay through the same path. Preflight wording only for BRIBEUNIT/NEGOTIATION, PLAYWAVEFILE/PLAYAVIFILE and NOSCHISM; no new runtime effect."
+      "finding": "Static decode of civ2.bak (evidence README \u00a7TURN, TURNINTERVAL and RANDOMTURN evaluators). fire_with now evaluates spent events (a spent RANDOMTURN half still draws; the dispatcher refuses it) and passes the event's JUSTONCE to turn_fires. run_turn rolls RANDOMTURN on combat_rng (MSVC CRT rand, 0x5b11d0) with rand() % n + 1 == n instead of the kernel generator's next_below(n) == 0. Behaviour change for existing files: FallRome's 50-turn golden changed (88 event firings, was 98); checkpoints replay through the same path. Preflight wording only for BRIBEUNIT/NEGOTIATION, PLAYWAVEFILE/PLAYAVIFILE and NOSCHISM; no new runtime effect."
     },
     {
       "change": "Wide-screen side column for messages (#337)",
@@ -501,7 +502,7 @@
       "files": [
         "crates/tot-kit/src/rules.rs"
       ],
-      "finding": "Rules::advance_slot adds the executable's fixed advance identifiers (ADVANCE_IDS, civ2.bak 0x5d0a18) and the resolver 0x490440's exact, case-sensitive first match for complete 100-row @CIVILIZE sections; shorter fixture sections keep case-insensitive comment matching. TechTree and the built-in AI's scoring adapter use it; the adapter reads the first 80 unit rows (loader bound 0x413559). Original and FallRome references resolve to the same slots as before; Roman Civil Wars, AE 1200 BC and Constantine now resolve fully and builtin-1 accepts their Rules (evidence README §Advance references). Event matching, checkpoints and order logs are unchanged."
+      "finding": "Rules::advance_slot adds the executable's fixed advance identifiers (ADVANCE_IDS, civ2.bak 0x5d0a18) and the resolver 0x490440's exact, case-sensitive first match for complete 100-row @CIVILIZE sections; shorter fixture sections keep case-insensitive comment matching. TechTree and the built-in AI's scoring adapter use it; the adapter reads the first 80 unit rows (loader bound 0x413559). Original and FallRome references resolve to the same slots as before; Roman Civil Wars, AE 1200 BC and Constantine now resolve fully and builtin-1 accepts their Rules (evidence README \u00a7Advance references). Event matching, checkpoints and order logs are unchanged."
     },
     {
       "change": "Scenario dates and labels (#330)",
@@ -578,6 +579,14 @@
         "crates/engine/src/scenario.rs"
       ],
       "finding": "Native unpatched civ2.bak reader fragments and map helpers execute without replacements: 378 city/unit gates, 189 remembered-size selections, 140 remembered-improvement reads and 240 exploration contexts (including tiny-map wrapping). New read-only SavedMapKnowledge uses explored bits, saved remembered improvements, unit +11 visibility, city +14 knowledge and +15+civ size; it rejects unsupported versions/maps/owners/coordinates/signed-size contexts. The separate pure exploration kernel matches the native controlled vectors. Original/Ph_Auto2.SAV projects 59 explored tiles, four unit slots and city 5 size 2; current engine sight adds one unexplored tile in Madrid's working radius. Preflight now discloses this addition and the unmatched native visibility/contact lifecycle before entry. Generated/experimental runtime observation and all checkpoint semantics remain unchanged; no native loader, complete stack/invisibility/contact/diplomacy continuation or faithful profile admission is activated. Trigger/action coverage unchanged."
+    },
+    {
+      "change": "Bounded native unit knowledge writes (#197)",
+      "files": [
+        "crates/engine/src/saved_knowledge.rs",
+        "crates/engine/src/saved_knowledge/update.rs"
+      ],
+      "finding": "768 unpatched civ2.bak normal-context transitions execute exploration and adjacent/outer city/stack observation loops with original callees, no replacements. The new unit_knowledge_after adapter returns a decoded snapshot with only explored bits, improvement memory, city known masks/sizes and unit visibility OR writes applied. It rejects sleeping/invisible units, unsupported owners, incoherent stacks/occupancy and unestablished treaty contexts before output; shared exploration geometry still matches the earlier 947 reader/exploration vectors. This adapter is not called by WorldState/HumanSession/clients and does not implement visibility reset, first contact, order wakes, AI sightings, city-phase memory or loader/startup timing. No checkpoint/profile/trigger/action coverage change or faithful admission."
     }
   ]
 }

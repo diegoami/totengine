@@ -5,6 +5,11 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Classic unit knowledge-update kernel** (#197): native-tested exploration,
+  remembered city sizes and reciprocal stack visibility in a bounded normal
+  context. Unsupported contacts, invisible/sleeping units and incoherent
+  stacks reject. Runtime integration and faithful entry remain gated.
+
 - **Classic saved-map knowledge projection** (#197): a read-only native-tested
   view of explored tiles, remembered improvements/city sizes and saved unit
   visibility. Experimental preflight now discloses the one unexplored tile

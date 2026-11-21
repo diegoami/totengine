@@ -1,0 +1,276 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "post_city_bytes": 3129,
+  "event_offset_after_cities": 1853,
+  "record_count": 2,
+  "native": {
+    "stop": "004622ea",
+    "blocks": [
+      {
+        "offset": 0,
+        "requested": 4,
+        "available": 4
+      },
+      {
+        "offset": 4,
+        "requested": 4,
+        "available": 4
+      },
+      {
+        "offset": 8,
+        "requested": 276,
+        "available": 276
+      },
+      {
+        "offset": 284,
+        "requested": 276,
+        "available": 276
+      }
+    ],
+    "strings": [
+      {
+        "offset": 560,
+        "bytes": 8
+      },
+      {
+        "offset": 568,
+        "bytes": 67
+      },
+      {
+        "offset": 635,
+        "bytes": 69
+      },
+      {
+        "offset": 704,
+        "bytes": 54
+      },
+      {
+        "offset": 758,
+        "bytes": 68
+      },
+      {
+        "offset": 826,
+        "bytes": 62
+      },
+      {
+        "offset": 888,
+        "bytes": 23
+      },
+      {
+        "offset": 911,
+        "bytes": 11
+      },
+      {
+        "offset": 922,
+        "bytes": 67
+      },
+      {
+        "offset": 989,
+        "bytes": 69
+      },
+      {
+        "offset": 1058,
+        "bytes": 54
+      },
+      {
+        "offset": 1112,
+        "bytes": 68
+      },
+      {
+        "offset": 1180,
+        "bytes": 62
+      },
+      {
+        "offset": 1242,
+        "bytes": 23
+      },
+      {
+        "offset": 1265,
+        "bytes": 11
+      }
+    ],
+    "consumed": 1276,
+    "remaining": 0,
+    "round_flag_before_callback": 0,
+    "round_flag_at_stop": 1,
+    "round_start_gate": [
+      {
+        "resume_civ": 4,
+        "restart": 0,
+        "dispatches": false
+      },
+      {
+        "resume_civ": 4,
+        "restart": 1,
+        "dispatches": true
+      },
+      {
+        "resume_civ": 0,
+        "restart": 0,
+        "dispatches": true
+      }
+    ]
+  },
+  "controlled_cases": {
+    "marker_mismatch": {
+      "stop": "004622ea",
+      "blocks": [
+        {
+          "offset": 0,
+          "requested": 4,
+          "available": 4
+        }
+      ],
+      "strings": [],
+      "consumed": 4,
+      "remaining": 1272,
+      "round_flag_before_callback": null,
+      "round_flag_at_stop": 0
+    },
+    "truncated_count": {
+      "stop": "00463048",
+      "blocks": [
+        {
+          "offset": 0,
+          "requested": 4,
+          "available": 4
+        },
+        {
+          "offset": 4,
+          "requested": 4,
+          "available": 2
+        }
+      ],
+      "strings": [],
+      "consumed": 6,
+      "remaining": 0,
+      "round_flag_before_callback": null,
+      "round_flag_at_stop": 0
+    },
+    "truncated_record": {
+      "stop": "00463043",
+      "blocks": [
+        {
+          "offset": 0,
+          "requested": 4,
+          "available": 4
+        },
+        {
+          "offset": 4,
+          "requested": 4,
+          "available": 4
+        },
+        {
+          "offset": 8,
+          "requested": 276,
+          "available": 275
+        }
+      ],
+      "strings": [],
+      "consumed": 283,
+      "remaining": 0,
+      "round_flag_before_callback": null,
+      "round_flag_at_stop": 0
+    },
+    "truncated_string": {
+      "stop": "00462ff8",
+      "blocks": [
+        {
+          "offset": 0,
+          "requested": 4,
+          "available": 4
+        },
+        {
+          "offset": 4,
+          "requested": 4,
+          "available": 4
+        },
+        {
+          "offset": 8,
+          "requested": 276,
+          "available": 276
+        },
+        {
+          "offset": 284,
+          "requested": 276,
+          "available": 276
+        }
+      ],
+      "strings": [
+        {
+          "offset": 560,
+          "bytes": 8
+        },
+        {
+          "offset": 568,
+          "bytes": 67
+        },
+        {
+          "offset": 635,
+          "bytes": 69
+        },
+        {
+          "offset": 704,
+          "bytes": 54
+        },
+        {
+          "offset": 758,
+          "bytes": 68
+        },
+        {
+          "offset": 826,
+          "bytes": 62
+        },
+        {
+          "offset": 888,
+          "bytes": 23
+        },
+        {
+          "offset": 911,
+          "bytes": 11
+        },
+        {
+          "offset": 922,
+          "bytes": 67
+        },
+        {
+          "offset": 989,
+          "bytes": 69
+        },
+        {
+          "offset": 1058,
+          "bytes": 54
+        },
+        {
+          "offset": 1112,
+          "bytes": 68
+        },
+        {
+          "offset": 1180,
+          "bytes": 62
+        },
+        {
+          "offset": 1242,
+          "bytes": 23
+        }
+      ],
+      "consumed": 1265,
+      "remaining": 10,
+      "round_flag_before_callback": null,
+      "round_flag_at_stop": 0
+    }
+  },
+  "substituted_helpers": {
+    "005b3810": "bounded file read",
+    "005b4110": "marker comparison",
+    "004d16ce": "reset allocation state",
+    "004d170c": "allocate and link record",
+    "0045f346": "bounded NUL-terminated string read with non-null witness pointer"
+  },
+  "scope": "Native outer loader framing, flag write and round-start dispatch. The pre-event prefix, event record meanings and pending choices require separate evidence."
+}

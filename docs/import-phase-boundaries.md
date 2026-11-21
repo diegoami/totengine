@@ -54,3 +54,10 @@ use the measured boundaries rather than treating `target == -1` as proof of
 a saved pending prompt. Full loader/UI/pending-choice behavior, interrupted
 city processing, knowledge continuation and #198 remain separate gates.
 Original AI/shared-RNG continuation is still outside this profile.
+
+The [event-trailer trace](evidence/import-event-tail.json) continues from
+`0x461d7b` on the pinned save. It observes the successful `EVNT` read set
+the round-start flag back to one. The resumed-civ guard still skips
+round-start event dispatch when the restart flag is zero. This explains why
+the earlier loader suffix's flag reset alone is insufficient to characterize
+the full load path.

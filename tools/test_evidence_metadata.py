@@ -14,6 +14,19 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_event_tail_report_matches_snapshot_extent(self):
+        report = json.loads((ROOT / 'docs/evidence/import-event-tail.json').read_text())
+        snapshot = json.loads((ROOT / 'docs/evidence/import-snapshot.json').read_text())
+        self.assertEqual(report['source'], snapshot['source'])
+        self.assertEqual(report['post_city_bytes'], snapshot['trailing_bytes_unchecked'])
+        native = report['native']
+        self.assertEqual(report['event_offset_after_cities'] + native['consumed'],
+                         report['post_city_bytes'])
+        self.assertEqual(native['remaining'], 0)
+        self.assertEqual(native['round_flag_at_stop'], 1)
+        self.assertEqual([row['dispatches'] for row in native['round_start_gate']],
+                         [False, True, True])
+
     def test_native_phase_boundary_metadata_and_pinned_witness(self):
         report = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())
         vectors = (ROOT / 'docs/evidence/import-phase-vectors.txt').read_bytes()

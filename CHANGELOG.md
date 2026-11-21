@@ -5,6 +5,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Scenario previews suspend opponents** (#198). The running game stays at
+  the same point through file selection, preflight, and failed confirmation.
+  Cancelling resumes opponent work only if it was running before.
+
 - **Scenario confirmation checks the previewed inputs** (#198): if the save,
   resolved resources, or Lua presence changes after preflight, the player
   must select the file again. The running session remains available.

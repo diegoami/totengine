@@ -20,6 +20,14 @@ from totctl import walk_save_bytes
 from yields_check import OriginalCity
 
 ENTRY = 0x461D7B
+PREFIX_ENTRY = 0x461748
+PREFIX_HELPERS = {
+    0x45ED54: 'skip post-read refresh helper',
+    0x46D7ED: 'skip presentation helper',
+    0x46D730: 'skip calendar helper',
+    0x45F0F8: 'select the single-player continuation',
+    0x47DD64: 'skip initialization helper',
+}
 CALLBACK = 0x4622DB
 CALLBACK_ROUTINE = range(0x4AC0F5, 0x4AC105)
 SKIP = 0x4622EA
@@ -38,6 +46,58 @@ HELPERS = {
 
 def digest(data):
     return hashlib.sha256(data).hexdigest()
+
+
+def trace_prefix(binary, save, tail):
+    original = OriginalCity(binary)
+    frame(original)
+    original.cpu.mem_write(0x607638, save[652:1250])
+    original.write(FRAME - 0x1990, 1, '<I')
+    original.write(FRAME - 0xFA8, 0x32, '<I')
+    original.write(FRAME - 0xE9C, 0, '<I')
+    original.write(FRAME - 0xD8C, 0, '<I')
+    cursor = 0
+    reads = {}
+    stop = None
+    skipped = []
+
+    def watch(cpu, addr, _size, _data):
+        nonlocal cursor, stop
+        if PREFIX_ENTRY <= addr < ENTRY:
+            return
+        if addr != 0x5B3810 and addr not in PREFIX_HELPERS:
+            stop = addr
+            cpu.emu_stop()
+            return
+        esp = cpu.reg_read(UC_X86_REG_ESP)
+        ret = read(original, esp, '<I')
+        value = 0
+        if addr == 0x5B3810:
+            dst, width, count, handle = struct.unpack('<4I', cpu.mem_read(esp + 4, 16))
+            assert handle == 1 and count == 1
+            payload = tail[cursor:cursor + width]
+            site = f'{ret - 5:08x}'
+            group = reads.setdefault(site, {'width': width, 'calls': 0, 'bytes_read': 0})
+            assert group['width'] == width
+            group['calls'] += 1
+            group['bytes_read'] += len(payload)
+            if payload:
+                cpu.mem_write(dst, payload)
+            cursor += len(payload)
+            value = int(len(payload) == width)
+        else:
+            skipped.append(f'{addr:08x}')
+        cpu.reg_write(UC_X86_REG_EAX, value)
+        cpu.reg_write(UC_X86_REG_ESP, esp + 4)
+        cpu.reg_write(UC_X86_REG_EIP, ret)
+
+    hook = original.cpu.hook_add(UC_HOOK_CODE, watch)
+    try:
+        original.cpu.emu_start(PREFIX_ENTRY, 0, count=50000)
+    finally:
+        original.cpu.hook_del(hook)
+    assert stop is not None
+    return {'stop': f'{stop:08x}', 'consumed': cursor, 'reads': reads, 'skipped': skipped}
 
 
 def trace(binary, data):
@@ -148,10 +208,15 @@ def main():
     assert struct.unpack_from('<H', save, 660)[0] & 0xc0 == 0
     cities = walk_save_bytes(save)['cities']
     city_end = cities['offset'] + cities['size']
-    # Single-player plain-save reads before 0x461d7b: existing 1513-byte
-    # post-city prefix, followed by the 0x154-byte read at 0x461bef.
-    prefix = 1513 + 0x154
-    section = save[city_end + prefix:]
+    tail = save[city_end:]
+    prefix_trace = trace_prefix(binary, save, tail)
+    assert prefix_trace['stop'] == f'{ENTRY:08x}'
+    prefix = prefix_trace['consumed']
+    assert prefix == 1513 + 0x154
+    assert prefix_trace['reads']['00461bef'] == {'width': 340, 'calls': 1, 'bytes_read': 340}
+    truncated_prefix = trace_prefix(binary, save, tail[:prefix - 1])
+    assert truncated_prefix['stop'] == '00463052'
+    section = tail[prefix:]
     original = OriginalCity(binary)
     marker = bytes(original.cpu.mem_read(0x5D4758, 4))
     assert section.startswith(marker) and marker == b'EVNT'
@@ -167,6 +232,24 @@ def main():
     assert [b['available'] for b in native['blocks']] == expected
     assert native['consumed'] == sum(expected) + sum(s['bytes'] for s in native['strings'])
     assert native['remaining'] == 0
+    # These fields have independent decoder evidence in the victory probe.
+    # Hash the installed event text but do not emit or compare string payloads.
+    victory = json.loads((root / 'docs/evidence/original-victory.json').read_text())
+    events_sha = digest((home / 'Original/Events.txt').read_bytes())
+    assert events_sha == victory['events_sha256']
+    first, second = [8 + i * RECORD_SIZE for i in range(records)]
+    fields = {
+        'first_header_words': list(struct.unpack_from('<III', section, first)),
+        'second_header_words': list(struct.unpack_from('<III', section, second)),
+        'first_receiver': struct.unpack_from('<i', section, first + 0x20)[0],
+        'first_futuretech': section[first + 0x30],
+        'second_denominator': struct.unpack_from('<h', section, second + 0x2C)[0],
+    }
+    assert fields == {
+        'first_header_words': [0x100, 0x5001, 0x10000108],
+        'second_header_words': [0x40, 0x5001, 0x40000008],
+        'first_receiver': -2, 'first_futuretech': 5, 'second_denominator': 3,
+    }
     bypass = trace(binary, b'NONE' + section[4:])
     assert bypass['stop'] == f'{SKIP:08x}' and bypass['consumed'] == 4
     assert bypass['round_flag_before_callback'] is None and bypass['round_flag_at_stop'] == 0
@@ -177,16 +260,21 @@ def main():
                         ('truncated_string', 0x462FF8)]:
         assert cases[case]['stop'] == f'{error:08x}'
     report = {
-        'schema': 1,
+        'schema': 2,
         'binary_sha256': digest(binary),
         'source': {'path': path, 'sha256': digest(save)},
         'post_city_bytes': len(save) - city_end,
         'event_offset_after_cities': prefix,
+        'prefix_trace': prefix_trace,
+        'truncated_prefix': truncated_prefix,
+        'prefix_substituted_helpers': {f'{addr:08x}': name for addr, name in PREFIX_HELPERS.items()},
         'record_count': records,
+        'events_txt_sha256': events_sha,
+        'victory_fields': fields,
         'native': native,
         'controlled_cases': cases,
         'substituted_helpers': {f'{addr:08x}': name for addr, name in HELPERS.items()},
-        'scope': 'Native outer loader framing, flag write and round-start dispatch. The pre-event prefix, event record meanings and pending choices require separate evidence.',
+        'scope': 'Native reader extents after the city table, flag write and round-start dispatch. Prefix and event field meanings and pending choices require separate evidence.',
     }
     args.out.write_text(json.dumps(report, indent=2) + '\n')
     print(f"EVNT at city end + {prefix}, {records} records, "

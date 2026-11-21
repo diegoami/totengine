@@ -3,11 +3,21 @@
 ## Original save event trailer (#197)
 
 The pinned Original save reaches the native event reader at city-table end
-plus 1,853 bytes. The offset combines the 1,513-byte single-player prefix and
-the plain-save 340-byte read at `0x461bef`. The marker matches the
+plus 1,853 bytes. A prefix trace from `0x461748` measures each file read in the
+prepared single-player branch. It consumes 1,513 bytes in the earlier reads
+and 340 at `0x461bef`. Cutting one byte from the 340-byte read reaches
+failure branch `0x463052`. The trace supplies the save's header and substitutes
+bounded file I/O and five initialization, calendar, or presentation helpers.
+The marker matches the
 executable's `EVNT` constant. The reader at `0x461d7b` reads that marker,
 the four-byte count, two 276-byte records, and 15 NUL-terminated strings for
 this save. Those reads account for the final 1,276 bytes through EOF.
+The measured trigger, action, and modifier words match the two halves of
+the previously decoded victory rule. The first record specifies anybody
+and Future Technology 5. The second has random denominator 3. Both contain
+action mask `0x5001` and the ending-screen bit. The report binds this check to
+the previously verified `Original/Events.txt` identity. String content and
+other record fields remain open.
 
 The probe executes the outer loader and replaces five file/comparison/
 allocation/string helpers with bounded substitutes. Controlled marker
@@ -17,8 +27,8 @@ and observes the round-start flag change from zero to one. A separate trace
 of `0x4744ed` shows that the flag still skips event dispatch for a resumed
 civ with no restart. The restart and fresh-round cases reach dispatch.
 
-The first 1,853 post-city bytes and the meaning of the serialized event
-records remain outside this probe. Event persistence and pending choices
+The prefix and event fields have measured extents. Their semantic meanings,
+event persistence, and pending choices
 still require evidence for admission. The [numeric report](import-event-tail.json)
 retains offsets, sizes, stop addresses, and SHA-256 input identities.
 

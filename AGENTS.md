@@ -155,6 +155,14 @@ still depends on profile admission.
 reports dependency, snapshot, phase and saved-view checks from one capture.
 The report exposes counts and the unchecked tail extent for milestone 17.
 
+The owner asked to batch import work for milestone review. The
+`m17-import-preparation` branch combines the CLI inspection (#366), the
+scenario picker scheduling fix (#367), and the native trailer trace (#368).
+It also traces the prefix before the event marker. The pinned save's post-city
+reads account for 1,853 prefix bytes and 1,276 event-section bytes through EOF.
+Semantic checks for these fields, pending choices, and knowledge continuation
+remain part of milestone 17. The owner launches the milestone review.
+
 The first-profile gates follow `docs/scenario-entry-contract.md` and the
 six-slice comment on #197; current integration work is tracked in
 `docs/m17-import-progress.md`. Next are an admitted saved-human-view recipe,

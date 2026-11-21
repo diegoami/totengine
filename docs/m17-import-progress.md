@@ -67,7 +67,9 @@ with executable boundary evidence, not a complete live prompt-timing claim.
 The current experimental load-time Research prompt remains its recorded policy.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
-1,276 bytes of the pinned save at 1,853 bytes past the city table. The native
+1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe
+traces the prefix reads from the city table to the event marker and verifies
+that a truncated final prefix block reaches the native error branch. The native
 reader consumes two event records and 15 strings. It sets the round-start
 flag, and the normal resumed-civ guard skips dispatch. Record semantics and
 pending choices remain to be verified.

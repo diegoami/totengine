@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
   "source": {
     "path": "Original/Ph_Auto2.SAV",
@@ -7,7 +7,194 @@
   },
   "post_city_bytes": 3129,
   "event_offset_after_cities": 1853,
+  "prefix_trace": {
+    "stop": "00461d7b",
+    "consumed": 1853,
+    "reads": {
+      "0046178d": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "004617ca": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "00461807": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "00461836": {
+        "width": 2,
+        "calls": 1,
+        "bytes_read": 2
+      },
+      "00461860": {
+        "width": 2,
+        "calls": 1,
+        "bytes_read": 2
+      },
+      "0046189b": {
+        "width": 60,
+        "calls": 1,
+        "bytes_read": 60
+      },
+      "00461990": {
+        "width": 1200,
+        "calls": 1,
+        "bytes_read": 1200
+      },
+      "004619ba": {
+        "width": 106,
+        "calls": 1,
+        "bytes_read": 106
+      },
+      "00461a2b": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461a70": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461ab5": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461afa": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461b3f": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461bef": {
+        "width": 340,
+        "calls": 1,
+        "bytes_read": 340
+      }
+    },
+    "skipped": [
+      "0045ed54",
+      "0046d7ed",
+      "0046d730",
+      "0045f0f8",
+      "0047dd64"
+    ]
+  },
+  "truncated_prefix": {
+    "stop": "00463052",
+    "consumed": 1852,
+    "reads": {
+      "0046178d": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "004617ca": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "00461807": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "00461836": {
+        "width": 2,
+        "calls": 1,
+        "bytes_read": 2
+      },
+      "00461860": {
+        "width": 2,
+        "calls": 1,
+        "bytes_read": 2
+      },
+      "0046189b": {
+        "width": 60,
+        "calls": 1,
+        "bytes_read": 60
+      },
+      "00461990": {
+        "width": 1200,
+        "calls": 1,
+        "bytes_read": 1200
+      },
+      "004619ba": {
+        "width": 106,
+        "calls": 1,
+        "bytes_read": 106
+      },
+      "00461a2b": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461a70": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461ab5": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461afa": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461b3f": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461bef": {
+        "width": 340,
+        "calls": 1,
+        "bytes_read": 339
+      }
+    },
+    "skipped": [
+      "0045ed54",
+      "0046d7ed",
+      "0046d730"
+    ]
+  },
+  "prefix_substituted_helpers": {
+    "0045ed54": "skip post-read refresh helper",
+    "0046d7ed": "skip presentation helper",
+    "0046d730": "skip calendar helper",
+    "0045f0f8": "select the single-player continuation",
+    "0047dd64": "skip initialization helper"
+  },
   "record_count": 2,
+  "events_txt_sha256": "742d7475e6fe3431a4e4d08494455f4696b82cd3f53b2805c05eeb6ecc92f312",
+  "victory_fields": {
+    "first_header_words": [
+      256,
+      20481,
+      268435720
+    ],
+    "second_header_words": [
+      64,
+      20481,
+      1073741832
+    ],
+    "first_receiver": -2,
+    "first_futuretech": 5,
+    "second_denominator": 3
+  },
   "native": {
     "stop": "004622ea",
     "blocks": [
@@ -272,5 +459,5 @@
     "004d170c": "allocate and link record",
     "0045f346": "bounded NUL-terminated string read with non-null witness pointer"
   },
-  "scope": "Native outer loader framing, flag write and round-start dispatch. The pre-event prefix, event record meanings and pending choices require separate evidence."
+  "scope": "Native reader extents after the city table, flag write and round-start dispatch. Prefix and event field meanings and pending choices require separate evidence."
 }

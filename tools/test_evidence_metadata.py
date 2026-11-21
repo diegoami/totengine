@@ -19,6 +19,12 @@ class GoldenMetadata(unittest.TestCase):
         snapshot = json.loads((ROOT / 'docs/evidence/import-snapshot.json').read_text())
         self.assertEqual(report['source'], snapshot['source'])
         self.assertEqual(report['post_city_bytes'], snapshot['trailing_bytes_unchecked'])
+        prefix = report['prefix_trace']
+        self.assertEqual(prefix['consumed'], report['event_offset_after_cities'])
+        self.assertEqual(sum(group['bytes_read'] for group in prefix['reads'].values()),
+                         prefix['consumed'])
+        self.assertEqual(prefix['stop'], '00461d7b')
+        self.assertEqual(report['truncated_prefix']['stop'], '00463052')
         native = report['native']
         self.assertEqual(report['event_offset_after_cities'] + native['consumed'],
                          report['post_city_bytes'])

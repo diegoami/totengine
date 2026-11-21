@@ -90,6 +90,8 @@ pub const APPLIED_ACTIONS: [&str; 15] = [
     "NOCOLLAPSE",
 ];
 
+pub mod phase;
+
 fn summarize(list: &mut Vec<(String, usize)>, key: &str) {
     match list.iter_mut().find(|(k, _)| k == key) {
         Some((_, n)) => *n += 1,

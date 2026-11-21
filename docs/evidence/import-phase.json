@@ -1,0 +1,87 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "code_ranges": [
+    {
+      "start": "00461d15",
+      "end": "00461d7b",
+      "sha256": "8df0e077a844feb46c57ff40d1fe48454d36af6bd3eb90fdcbc4fffd46772fc1"
+    },
+    {
+      "start": "00474b62",
+      "end": "00474c63",
+      "sha256": "0b7a48f5cd94b68602ee45203aa758cfe21f213c58d84b9ed6574f34f4da5e7e"
+    },
+    {
+      "start": "004a1ebf",
+      "end": "004a2098",
+      "sha256": "0a2ef6bd186495891dfca791f6891ef3b4a17b79a93be7f95e92b30d41ecbae1"
+    },
+    {
+      "start": "0040106b",
+      "end": "0040107b",
+      "sha256": "31fedf225676bb99093fdce684795377b7d769be17fc4a6c12295a6bd4b940ed"
+    },
+    {
+      "start": "00473bbe",
+      "end": "00473e75",
+      "sha256": "a3ac3bec7f6e0769cf71d07c55948582963d01a40b9fd0f10cb1efa828bfd346"
+    },
+    {
+      "start": "0047355b",
+      "end": "00473585",
+      "sha256": "f284f0112bdd5e871ae55312f250b0a00d535a6de4162571592fe29e39f2aa7e"
+    }
+  ],
+  "cases": {
+    "loader": 98,
+    "round_guard": 280,
+    "science": 2016,
+    "source_prefix": 1
+  },
+  "vectors_sha256": "73e8a67867dc8655cea83350086a2f8626f3d4e1bef9e2586d5c77fb4ca8bd1c",
+  "replaced_callees": [],
+  "runtime_admitted": false,
+  "stop_addresses": {
+    "round": {
+      "00474bb9": 0,
+      "00474b9a": 1,
+      "00474be4": 2,
+      "00474c63": 3
+    },
+    "science": {
+      "00100000": 0,
+      "004a1ae0": 1,
+      "00477030": 2,
+      "004a1436": 3
+    }
+  },
+  "source_witness": {
+    "player": 4,
+    "active": 4,
+    "human_mask": 16,
+    "progress": 0,
+    "target": -1,
+    "round_boundary": 2,
+    "science_0": [
+      0,
+      0
+    ],
+    "science_1": [
+      1,
+      3
+    ],
+    "unit_setup_prefix": {
+      "stop": "00472ada",
+      "saved_active_unit": 0,
+      "active_unit_at_boundary": -1,
+      "civ_unit_city_records_unchanged": true,
+      "advice_enabled": false
+    }
+  },
+  "scope": "Execute bounded saved-round and research-entry regions of civ2.bak.\n\nNo callee is replaced. The loader suffix starts AFTER network setup. The civ\nguard stops before turn-start/restart/human/AI preparation. A separate pinned\nsource prefix executes human preparation and stops at unit setup 0x472ada;\nit is not a whole human-input loop. Research stops before the first cost/advice/project-selection\ncallee, or returns normally. The original empty helper 0x40106b executes.\nNo chooser, recommendation, modal UI, city phase or live loader is executed.\nOnly derived numeric vectors and identities are emitted; no profile is admitted."
+}

@@ -23,9 +23,10 @@
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
     "crates/engine/src/human/saved_view.rs": "21c6e91b568bfb07a9397ef55bbad8f88faada03d42d7a9f37ef009daf28bc68",
-    "crates/engine/src/scenario.rs": "7725e418a2db9a9e56c6ece18f3c3f2193112c703aa3029007ebb8b8a053e83d",
     "crates/totui/src/resources/original.rs": "4ebdefc6de93f30a7dc8b29647b4b9d5cbe0e8b9aa5b0063a3fbe3b603b51260",
-    "crates/engine/src/scenario/phase.rs": "f919b6adeab6b2beed51bca5bf57de45387d65351bb779938595d68ce5bde9c9"
+    "crates/engine/src/scenario/phase.rs": "f919b6adeab6b2beed51bca5bf57de45387d65351bb779938595d68ce5bde9c9",
+    "crates/engine/src/scenario/snapshot.rs": "ec564138d8d1f63f9724f7967198623a8c0d9d1373a8275b9b699892f1e49f15",
+    "crates/engine/src/scenario.rs": "48f0820312fb5f0d840ce06dff0a17ae3178ff4ddfd03e4c0e9428be38e47b6f"
   },
   "triggers": {
     "TURN": {
@@ -652,6 +653,14 @@
         "crates/totui/src/client/scenario.rs"
       ],
       "finding": "The experimental client compares captured save and dependency identities and Lua presence before constructing a replacement, and generates its asset nonce before committing. Trigger and action coverage, engine scheduling, and checkpoint semantics are unchanged."
+    },
+    {
+      "change": "#197 snapshot preparation: separate read-only classic record check and installed raw-field/full-world normalization measurement",
+      "files": [
+        "crates/engine/src/scenario.rs",
+        "crates/engine/src/scenario/snapshot.rs"
+      ],
+      "finding": "Additive validation API only, unused by current session constructors/restore. No event, trigger/action coverage, scheduling, initializer, runtime admission or checkpoint behavior changes. The pinned input passes the bounded record checks; tail/pending-state, dependency and knowledge-continuation admission gates remain."
     }
   ]
 }

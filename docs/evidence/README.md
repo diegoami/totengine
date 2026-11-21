@@ -55,6 +55,30 @@ and checkpoint formats are unchanged. It activates no session; record/phase/
 pending-state, knowledge continuation, admitted initializer and #198's private
 snapshot/atomic entry gates remain. [Scope](../import-stock-dependencies.md).
 
+## Classic snapshot preparation and normalization (#197, 2026-11-20)
+
+[`import-snapshot.json`](import-snapshot.json) measures the pinned Original
+save through the read-only `scenario::snapshot::CheckedSnapshot` policy and
+the existing schema-2 human constructor. Reproduce with
+`CIVTOT_HOME=... python3 tools/import_snapshot_check.py --out /tmp/snapshot.json`.
+This executes Rust checks, not original-game code or UI. Proven framing,
+coordinates, identities and link accessors retain their separate native evidence.
+
+All 37 live units (38 slots) and ten live cities pass the conservative record
+check. Per-record comparisons retain unit state/stack order, city stores and
+output caches, finances/research/government, map exploration and seven memory
+arrays. Complete booted-state comparison, after erasing only movement, is
+identical; both seeded RNGs have zero draws. Movement rows include already
+spent/overdrawn contexts. Authored regressions additionally retain signed food
+debt and unusual caches/treasury through construction and checkpoint restore.
+
+The checker rejects malformed live references/occupancy/stack graphs and
+preserves deleted-slot and inactive-route payloads. It is not yet called by
+session factories/restore. Its result grants no admission: 3,129 bytes after
+the city table remain outside this check, and pending-state/phase, resource
+closure, admitted knowledge continuation/initializer and both-client entry
+remain independent gates. [Scope](../import-snapshot-validation.md).
+
 AI/client adoption source study: [C-evo and scenario record](cevo-source-assessment-v1.json)
 pins the downloaded source, media-license exception and an installed Roman Civil
 Wars fixture. [Assessment](../ai-client-reuse-assessment.md) follows the owner's

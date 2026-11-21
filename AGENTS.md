@@ -100,10 +100,16 @@ This is not an admitted profile or a native prompt-timing claim. Other contexts,
 including startup events, retain schema 1. See `human/saved_view.rs`,
 `tools/import_saved_view_check.py` and `docs/evidence/import-saved-view*`.
 
-#362 is a separate draft (`import-snapshot-validation`, `2b6a28d`) awaiting
-independent review: conservative read-only record checks and raw-field/full-world
-normalization measurement. It is not merged or required by this branch.
-Its 444 Rust/55 Python/24 goldens/72 desktop tests, lint and CI pass.
+#362 is a draft awaiting independent review. Its original head `2b6a28d`
+passed 444 Rust tests, 55 Python tests, 24 goldens, 72 desktop tests, lint
+and CI. The branch incorporates main through #365. It adds a read-only
+`CheckedSnapshot` record check and measures current
+schema-2 normalization against raw fields and complete booted state. The pinned
+input has 38 unit slots/37 live units, ten live cities and 3,129 post-city bytes
+whose pending-state semantics this check does not establish. Only movement
+differs from boot; both seeded RNGs retain zero draws. No profile is admitted.
+See `docs/import-snapshot-validation.md`, `scenario/snapshot.rs`,
+`tools/import_snapshot_check.py` and `docs/evidence/import-snapshot.json`.
 
 #363 (GLM-5.3 AGREE, no MUST-FIX) is merged at main
 `f15092a3523a094aab1e32f6ac5eb4d4bbed3df4`, exactly the reviewed tree. It captures
@@ -139,7 +145,7 @@ Validation: all 2,395 native cases reproduce byte-identically (report/vectors),
 fmt/strict workspace+desktop Clippy and Windows desktop-target compilation pass.
 No live loader/UI, Windows input or owner acceptance is claimed.
 
-The shared experimental scenario confirmation now checks that the save,
+#365 is merged at `1bce3a9`. The shared experimental confirmation checks that the save,
 resolved resources and Lua presence match preflight before replacing the game.
 Asset nonce allocation also completes before session replacement. This covers
 the stale-input safeguard for the existing route. The separate #198 entry

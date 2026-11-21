@@ -141,7 +141,7 @@ round-trip gate, not implied by importing or saving an engine checkpoint.
 
 | Case | Current evidence | Required before entry/continuation |
 | --- | --- | --- |
-| Original standard candidate | Pinned bytes, supported compound victory event, saved-round resume, stored initial view and experimental format-3 initializer. The known Original dependency capture retains exact raw/parsed/decoded inputs; #362's record/normalization slice is a separate draft. | Bind these predicates to an admitted initializer with verified knowledge continuation, phase/pending-state and private snapshot lifecycle, then #198's atomic both-client route. |
+| Original standard candidate | Pinned bytes, supported compound victory event, saved-round resume, stored initial view and experimental format-3 initializer. The known Original dependency capture retains exact raw/parsed/decoded inputs; The [draft snapshot check](import-snapshot-validation.md) measures record validation and movement normalization. The phase probe reaches native unit setup on the pinned save. | Bind these predicates to an admitted initializer with verified knowledge continuation, phase/pending-state and private snapshot lifecycle, then #198's atomic both-client route. |
 | FallRome | 64 macro blocks, 710 units/146 cities in existing framing | Technology effects and other required macro/context/presentation semantics; custom date/text policy |
 | Roman Civil Wars | Installed hashes, 258 macro blocks, 618 units/159 cities | Delay/flag/randomize/removal/aggression/audio/objective and author-restriction semantics |
 | Midgard | Partial surface framing, declared multiple maps, 12 transporter records | Correct complete layout, map state/transfer simulation and event semantics |

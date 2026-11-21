@@ -180,6 +180,18 @@ def trace(binary, data):
         'round_flag_at_stop': read(original, ROUND_FLAG),
     }
     if before_callback is not None:
+        # Map each witness pointer to the slot where native code stored it.
+        # The witness addresses are private to this trace.
+        for ordinal, entry in enumerate(strings, start=1):
+            pointer = 0x710000 + ordinal * 0x100
+            matches = [
+                (record_index, offset)
+                for record_index, record in enumerate(records)
+                for offset in range(0, RECORD_SIZE, 4)
+                if read(original, record + offset, '<I') == pointer
+            ]
+            assert len(matches) == 1
+            entry['record'], entry['slot'] = matches[0]
         result['round_start_gate'] = []
         for resumed_civ, restart in ((4, 0), (4, 1), (0, 0)):
             original.write(0x5D1570, resumed_civ, '<B')
@@ -190,6 +202,44 @@ def trace(binary, data):
                 'dispatches': boundary == 0x474516,
             })
     return result
+
+
+def compare_victory_strings(section, strings, events):
+    """Compare the known stock block directly without retaining its text."""
+    lines = events.splitlines()
+    commands = [line.strip().upper() for line in lines]
+    assert commands.count(b'@IF') == 1
+    assert commands.count(b'TEXT') == commands.count(b'ENDTEXT') == 1
+    first, last = commands.index(b'TEXT'), commands.index(b'ENDTEXT')
+    assert first < last
+    text_lines = [line.rstrip(b' \t') for line in lines[first + 1:last]]
+    receivers = [line.split(b'=', 1)[1].strip() for line in lines
+                 if line.strip().lower().startswith(b'receiver=')]
+    assert len(receivers) == 1
+    assert commands.count(b'PLAYAVIFILE') == 1
+    video = lines[commands.index(b'PLAYAVIFILE') + 1].strip()
+
+    expected = {(0, 0x18): receivers[0]}
+    for record in (0, 1):
+        for index, line in enumerate(text_lines):
+            expected[(record, 0x34 + index * 4)] = line
+        expected[(record, 0x84)] = video
+    actual = {
+        (entry['record'], entry['slot']):
+            section[entry['offset']:entry['offset'] + entry['bytes'] - 1]
+        for entry in strings
+    }
+    assert len(actual) == len(strings)
+    assert actual.keys() == expected.keys(), 'saved event string slots differ'
+    for slot, value in expected.items():
+        assert actual[slot] == value, f'saved event string differs at slot {slot}'
+    return {
+        'receiver_strings_matched': 1,
+        'text_lines_matched_per_record': [len(text_lines), len(text_lines)],
+        'video_strings_matched': 2,
+        'total_strings_matched': len(actual),
+        'text_line_normalization': 'strip trailing ASCII spaces and tabs from Events.txt lines',
+    }
 
 
 def main():
@@ -233,9 +283,10 @@ def main():
     assert native['consumed'] == sum(expected) + sum(s['bytes'] for s in native['strings'])
     assert native['remaining'] == 0
     # These fields have independent decoder evidence in the victory probe.
-    # Hash the installed event text but do not emit or compare string payloads.
+    # Hash the installed event text and compare payloads without emitting them.
     victory = json.loads((root / 'docs/evidence/original-victory.json').read_text())
-    events_sha = digest((home / 'Original/Events.txt').read_bytes())
+    events = (home / 'Original/Events.txt').read_bytes()
+    events_sha = digest(events)
     assert events_sha == victory['events_sha256']
     first, second = [8 + i * RECORD_SIZE for i in range(records)]
     fields = {
@@ -259,8 +310,20 @@ def main():
     for case, error in [('truncated_count', 0x463048), ('truncated_record', 0x463043),
                         ('truncated_string', 0x462FF8)]:
         assert cases[case]['stop'] == f'{error:08x}'
+    matched = compare_victory_strings(section, native['strings'], events)
+    altered = bytearray(section)
+    text_start = next(s['offset'] for s in native['strings']
+                      if (s['record'], s['slot']) == (0, 0x34))
+    altered[text_start] = ord('x') if altered[text_start] != ord('x') else ord('y')
+    try:
+        compare_victory_strings(altered, native['strings'], events)
+    except AssertionError as error:
+        assert str(error) == 'saved event string differs at slot (0, 52)'
+    else:
+        raise AssertionError('same-length TEXT change was accepted')
+    matched['rejects_same_length_text_change'] = True
     report = {
-        'schema': 2,
+        'schema': 3,
         'binary_sha256': digest(binary),
         'source': {'path': path, 'sha256': digest(save)},
         'post_city_bytes': len(save) - city_end,
@@ -271,10 +334,11 @@ def main():
         'record_count': records,
         'events_txt_sha256': events_sha,
         'victory_fields': fields,
+        'victory_string_comparison': matched,
         'native': native,
         'controlled_cases': cases,
         'substituted_helpers': {f'{addr:08x}': name for addr, name in HELPERS.items()},
-        'scope': 'Native reader extents after the city table, flag write and round-start dispatch. Prefix and event field meanings and pending choices require separate evidence.',
+        'scope': 'Native reader extents, flag write, round-start dispatch and stock victory string comparison. Remaining prefix and event fields and pending choices require separate evidence.',
     }
     args.out.write_text(json.dumps(report, indent=2) + '\n')
     print(f"EVNT at city end + {prefix}, {records} records, "

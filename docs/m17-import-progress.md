@@ -74,8 +74,10 @@ The [event trailer trace](evidence/import-event-tail.json) locates the final
 traces the prefix reads from the city table to the event marker and verifies
 that a truncated final prefix block reaches the native error branch. The native
 reader consumes two event records and 15 strings. It sets the round-start
-flag, and the normal resumed-civ guard skips dispatch. Record semantics and
-pending choices remain to be verified.
+flag, and the normal resumed-civ guard skips dispatch. The 15 embedded
+strings also match the pinned event file after trimming trailing spaces and
+tabs from its TEXT lines. Event persistence and pending choices remain to be
+verified.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

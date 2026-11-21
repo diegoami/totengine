@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 3,
   "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
   "source": {
     "path": "Original/Ph_Auto2.SAV",
@@ -195,6 +195,17 @@
     "first_futuretech": 5,
     "second_denominator": 3
   },
+  "victory_string_comparison": {
+    "receiver_strings_matched": 1,
+    "text_lines_matched_per_record": [
+      6,
+      6
+    ],
+    "video_strings_matched": 2,
+    "total_strings_matched": 15,
+    "text_line_normalization": "strip trailing ASCII spaces and tabs from Events.txt lines",
+    "rejects_same_length_text_change": true
+  },
   "native": {
     "stop": "004622ea",
     "blocks": [
@@ -222,63 +233,93 @@
     "strings": [
       {
         "offset": 560,
-        "bytes": 8
+        "bytes": 8,
+        "record": 0,
+        "slot": 24
       },
       {
         "offset": 568,
-        "bytes": 67
+        "bytes": 67,
+        "record": 0,
+        "slot": 52
       },
       {
         "offset": 635,
-        "bytes": 69
+        "bytes": 69,
+        "record": 0,
+        "slot": 56
       },
       {
         "offset": 704,
-        "bytes": 54
+        "bytes": 54,
+        "record": 0,
+        "slot": 60
       },
       {
         "offset": 758,
-        "bytes": 68
+        "bytes": 68,
+        "record": 0,
+        "slot": 64
       },
       {
         "offset": 826,
-        "bytes": 62
+        "bytes": 62,
+        "record": 0,
+        "slot": 68
       },
       {
         "offset": 888,
-        "bytes": 23
+        "bytes": 23,
+        "record": 0,
+        "slot": 72
       },
       {
         "offset": 911,
-        "bytes": 11
+        "bytes": 11,
+        "record": 0,
+        "slot": 132
       },
       {
         "offset": 922,
-        "bytes": 67
+        "bytes": 67,
+        "record": 1,
+        "slot": 52
       },
       {
         "offset": 989,
-        "bytes": 69
+        "bytes": 69,
+        "record": 1,
+        "slot": 56
       },
       {
         "offset": 1058,
-        "bytes": 54
+        "bytes": 54,
+        "record": 1,
+        "slot": 60
       },
       {
         "offset": 1112,
-        "bytes": 68
+        "bytes": 68,
+        "record": 1,
+        "slot": 64
       },
       {
         "offset": 1180,
-        "bytes": 62
+        "bytes": 62,
+        "record": 1,
+        "slot": 68
       },
       {
         "offset": 1242,
-        "bytes": 23
+        "bytes": 23,
+        "record": 1,
+        "slot": 72
       },
       {
         "offset": 1265,
-        "bytes": 11
+        "bytes": 11,
+        "record": 1,
+        "slot": 132
       }
     ],
     "consumed": 1276,
@@ -459,5 +500,5 @@
     "004d170c": "allocate and link record",
     "0045f346": "bounded NUL-terminated string read with non-null witness pointer"
   },
-  "scope": "Native reader extents after the city table, flag write and round-start dispatch. Prefix and event field meanings and pending choices require separate evidence."
+  "scope": "Native reader extents, flag write, round-start dispatch and stock victory string comparison. Remaining prefix and event fields and pending choices require separate evidence."
 }

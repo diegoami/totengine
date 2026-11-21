@@ -29,6 +29,12 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(report['event_offset_after_cities'] + native['consumed'],
                          report['post_city_bytes'])
         self.assertEqual(native['remaining'], 0)
+        comparison = report['victory_string_comparison']
+        self.assertEqual(comparison['total_strings_matched'], len(native['strings']))
+        self.assertEqual(comparison['text_lines_matched_per_record'], [6, 6])
+        self.assertTrue(comparison['rejects_same_length_text_change'])
+        victory = json.loads((ROOT / 'docs/evidence/original-victory.json').read_text())
+        self.assertEqual(report['events_txt_sha256'], victory['events_sha256'])
         self.assertEqual(native['round_flag_at_stop'], 1)
         self.assertEqual([row['dispatches'] for row in native['round_start_gate']],
                          [False, True, True])

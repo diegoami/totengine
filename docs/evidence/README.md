@@ -16,8 +16,13 @@ The measured trigger, action, and modifier words match the two halves of
 the previously decoded victory rule. The first record specifies anybody
 and Future Technology 5. The second has random denominator 3. Both contain
 action mask `0x5001` and the ending-screen bit. The report binds this check to
-the previously verified `Original/Events.txt` identity. String content and
-other record fields remain open.
+the previously verified `Original/Events.txt` identity. Native stores map
+the 15 string reads to eight slots on the first record and seven on the
+second. All payloads match the pinned event file byte for byte after
+removing trailing ASCII spaces and tabs from its TEXT lines. This covers
+the receiver on the first record and the six TEXT lines and video argument
+on each record. A same-length TEXT edit fails the comparison. The report
+keeps slots, sizes, counts, and input hashes.
 
 The probe executes the outer loader and replaces five file/comparison/
 allocation/string helpers with bounded substitutes. Controlled marker

@@ -100,9 +100,9 @@ This is not an admitted profile or a native prompt-timing claim. Other contexts,
 including startup events, retain schema 1. See `human/saved_view.rs`,
 `tools/import_saved_view_check.py` and `docs/evidence/import-saved-view*`.
 
-#362 is a draft awaiting independent review. Its original head `2b6a28d`
-passed 444 Rust tests, 55 Python tests, 24 goldens, 72 desktop tests, lint
-and CI. The branch incorporates main through #365. It adds a read-only
+#362 is merged at `607ea9e`, with the same tree as independently reviewed
+`4435cee`. Combined validation passed 458 Rust tests, 57 Python tests,
+24 goldens, 82 desktop tests, lint and CI. It adds a read-only
 `CheckedSnapshot` record check and measures current
 schema-2 normalization against raw fields and complete booted state. The pinned
 input has 38 unit slots/37 live units, ten live cities and 3,129 post-city bytes
@@ -150,6 +150,10 @@ resolved resources and Lua presence match preflight before replacing the game.
 Asset nonce allocation also completes before session replacement. This covers
 the stale-input safeguard for the existing route. The separate #198 entry
 still depends on profile admission.
+
+`totctl inspect-original-save "$CIVTOT_HOME" Original/Ph_Auto2.SAV`
+reports dependency, snapshot, phase and saved-view checks from one capture.
+The report exposes counts and the unchecked tail extent for milestone 17.
 
 The first-profile gates follow `docs/scenario-entry-contract.md` and the
 six-slice comment on #197; current integration work is tracked in

@@ -985,6 +985,10 @@ impl Client {
         }
         Ok(())
     }
+    fn opponent_work_running(&self) -> bool {
+        self.advancing && !matches!(self.modal, Some(Modal::Scenarios | Modal::ScenarioStart(_)))
+    }
+
     fn handle(&mut self, input: Input, id: u64) -> Result<(), String> {
         match input {
             Input::Focus { focused } => {
@@ -992,8 +996,11 @@ impl Client {
                 Ok(())
             }
             Input::Tick => {
+                if !self.opponent_work_running() {
+                    return Ok(());
+                }
                 if let Some(l) = self.loaded.as_mut() {
-                    if self.advancing && l.session.phase() == Phase::Opponents {
+                    if l.session.phase() == Phase::Opponents {
                         l.session.advance(16);
                         self.refresh();
                         if self.view().is_some_and(|v| v.phase != Phase::Opponents) {
@@ -3088,7 +3095,8 @@ impl Client {
         }
         // Clear turn-transition feedback (#283): while the opponents run, a
         // framed strip over the map says so; the title bar carries the round.
-        if self.advancing {
+        let advancing = self.opponent_work_running();
+        if advancing {
             let start = draws.len();
             style::modal(&mut draws, 212., 360., 460., 52.);
             draws.push(text(
@@ -3121,7 +3129,7 @@ impl Client {
         Frame {
             city_click: self.pending_city_click.map(|g| g.first),
             revision: self.revision,
-            advancing: self.advancing,
+            advancing,
             phase: view.map_or_else(|| "Setup".into(), |v| format!("{:?}", v.phase)),
             draws,
             entry: self.entry_meta(),

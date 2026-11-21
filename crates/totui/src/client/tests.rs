@@ -5040,6 +5040,59 @@ fn installed_saved_view_uses_schema_two_and_failed_restore_is_atomic() {
 }
 
 #[test]
+fn scenario_picker_suspends_opponents_until_cancel() {
+    let f = Fixture::new();
+    let path = "Original/Test.sav";
+    let original = engine::tests_support::synthetic_save_bytes();
+    fs::write(f.0.join(path), &original).unwrap();
+    let mut c = f.client();
+    start(&mut c);
+    research(&mut c);
+    key(&mut c, "Ctrl+n");
+    if matches!(c.modal, Some(Modal::Confirm { .. })) {
+        key(&mut c, "Enter");
+    }
+    assert_eq!(c.view().unwrap().phase, Phase::Opponents);
+    assert!(c.frame().advancing);
+    button(&mut c, "Pause opponents");
+    for was_running in [false, true] {
+        if was_running {
+            button(&mut c, "Continue opponents");
+        }
+        assert_eq!(c.frame().advancing, was_running);
+        let checkpoint = c.checkpoint().unwrap();
+        button(&mut c, "Open scenario");
+        assert!(matches!(c.modal, Some(Modal::Scenarios)));
+        assert!(!c.frame().advancing);
+        input(&mut c, Input::Tick);
+        assert_eq!(c.checkpoint().unwrap(), checkpoint);
+        button(&mut c, path);
+        assert!(matches!(c.modal, Some(Modal::ScenarioStart(_))));
+        assert!(!c.frame().advancing);
+        input(&mut c, Input::Tick);
+        assert_eq!(c.checkpoint().unwrap(), checkpoint);
+        let mut changed = original.clone();
+        changed[668] ^= 1;
+        fs::write(f.0.join(path), changed).unwrap();
+        key(&mut c, "Enter");
+        assert!(c.status.contains("changed"), "{}", c.status);
+        assert!(matches!(c.modal, Some(Modal::ScenarioStart(_))));
+        assert!(!c.frame().advancing);
+        assert_eq!(c.checkpoint().unwrap(), checkpoint);
+        fs::write(f.0.join(path), &original).unwrap();
+        key(&mut c, "Escape");
+        assert!(matches!(c.modal, Some(Modal::Scenarios)));
+        assert!(!c.frame().advancing);
+        key(&mut c, "Escape");
+        assert!(c.modal.is_none());
+        assert_eq!(c.frame().advancing, was_running);
+        assert_eq!(c.checkpoint().unwrap(), checkpoint);
+        input(&mut c, Input::Tick);
+        assert_eq!(c.checkpoint().unwrap() != checkpoint, was_running);
+    }
+}
+
+#[test]
 fn scenario_confirmation_requires_the_inputs_shown_at_preflight() {
     let f = Fixture::new();
     let path = "Original/Test.sav";

@@ -29,12 +29,33 @@ fn installed_save_reports_checked_records_phase_and_view() {
         .unwrap();
     assert!(output.status.success(), "{output:?}");
     let report: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(report["schema"], 2);
     assert_eq!(report["source"]["path"], source);
     assert_eq!(report["source"]["fnv64"], "0d8e264d74369c1f");
     assert_eq!(report["records"]["unit_slots"], 38);
     assert_eq!(report["records"]["live_units"], 37);
     assert_eq!(report["records"]["live_cities"], 10);
-    assert_eq!(report["records"]["post_city_bytes_unchecked"], 3129);
+    let native: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../docs/evidence/import-event-tail.json"
+    ))
+    .unwrap();
+    assert_eq!(
+        report["records"]["post_city_bytes"],
+        native["post_city_bytes"]
+    );
+    let trailer = &report["event_trailer"];
+    assert_eq!(trailer["prefix_bytes"], native["event_offset_after_cities"]);
+    assert_eq!(trailer["record_count"], native["record_count"]);
+    assert_eq!(trailer["event_section_bytes"], native["native"]["consumed"]);
+    let strings = native["native"]["strings"].as_array().unwrap();
+    assert_eq!(trailer["string_count"], strings.len());
+    assert_eq!(
+        trailer["string_bytes"],
+        strings
+            .iter()
+            .map(|row| row["bytes"].as_u64().unwrap())
+            .sum::<u64>()
+    );
     assert_eq!(report["saved_phase"]["boundary"], "human-preparation");
     assert_eq!(report["saved_phase"]["human_civ"], 4);
     assert_eq!(report["saved_view"]["explored_tiles"], 59);

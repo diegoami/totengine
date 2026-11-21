@@ -32,10 +32,13 @@ reviewed `4ba7d66` tree.
 Run the preparation checks together with
 `totctl inspect-original-save "$CIVTOT_HOME" Original/Ph_Auto2.SAV`.
 The command captures the reference dependencies, checks record relationships
-and saved phase, and projects the saved human view from that capture. Its JSON
-reports counts and the unchecked post-city byte extent. An unsupported input
-returns an error with the failing check. `playable_import` remains false while
-pending-state and knowledge continuation checks are open.
+and saved phase, and projects the saved human view from that capture. Its
+schema-2 JSON includes the post-city byte count and the event trailer extents.
+The trailer check expects the measured plain single-player prefix and `EVNT`
+marker. It uses a 64-record inspection budget and checks string termination
+and EOF. Unknown or malformed inputs return an error with the failing check.
+`playable_import` remains false while event field semantics, pending-state,
+and knowledge continuation checks are open.
 
 Merged #361 implements the stored initial human projection and
 schema-2 checkpoint recipe in the experimental path. Its initial view, polling,

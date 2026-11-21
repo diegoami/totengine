@@ -10,6 +10,8 @@ use engine::{
 use serde_json::{json, Value};
 use totui::resources::original::OriginalCapture;
 
+mod event_tail;
+
 pub fn run(args: &[String]) -> ExitCode {
     let [install, relative] = args else {
         eprintln!("usage: totctl inspect-original-save <install> <Original/file.sav>");
@@ -42,8 +44,12 @@ fn inspect(install: &Path, relative: &str) -> Result<Value, String> {
     };
     let view =
         SavedMapKnowledge::read(save, human).map_err(|error| format!("saved view: {error}"))?;
+    // The snapshot checker has already verified the city table ends within
+    // these captured bytes.
+    let tail_start = files.bytes.len() - snapshot.trailing_bytes();
+    let tail = event_tail::inspect(&files.bytes[tail_start..])?;
     Ok(json!({
-        "schema": 1,
+        "schema": 2,
         "source": {
             "path": files.path,
             "bytes": snapshot.source_length(),
@@ -54,8 +60,9 @@ fn inspect(install: &Path, relative: &str) -> Result<Value, String> {
             "unit_slots": save.units.len(),
             "live_units": snapshot.stack_positions().iter().flatten().count(),
             "live_cities": save.cities.iter().filter(|city| city.city_id() != 0).count(),
-            "post_city_bytes_unchecked": snapshot.trailing_bytes()
+            "post_city_bytes": snapshot.trailing_bytes()
         },
+        "event_trailer": tail,
         "saved_phase": {
             "boundary": phase,
             "human_civ": human,

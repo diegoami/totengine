@@ -153,7 +153,8 @@ still depends on profile admission.
 
 `totctl inspect-original-save "$CIVTOT_HOME" Original/Ph_Auto2.SAV`
 reports dependency, snapshot, phase and saved-view checks from one capture.
-The report exposes counts and the unchecked tail extent for milestone 17.
+The schema-2 report includes event trailer framing and counts. It checks the
+plain single-player Original prefix, event records, string termination, and EOF.
 
 The owner asked to batch import work for milestone review. The
 `m17-import-preparation` branch combines the CLI inspection (#366), the

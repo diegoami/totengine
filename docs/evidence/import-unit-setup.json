@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "prepared_display_mode": 1,
+  "entry": "00474b62",
+  "allowed_calls": [
+    "00473bbe",
+    "0047355b",
+    "00472ada",
+    "004728c3",
+    "0056cb3d",
+    "0056c960",
+    "004030f0",
+    "00568f99",
+    "00568da2",
+    "00568d14",
+    "00568d3e",
+    "00566dad",
+    "00566b9e",
+    "00566d26",
+    "0049c820",
+    "00444a61"
+  ],
+  "replaced_callees": [],
+  "cases": {
+    "pinned": {
+      "stop": "0047297f",
+      "saved_active_slot": 0,
+      "active_slot_at_boundary": 6,
+      "controlled_spent_slots": [],
+      "player_research_target": -1,
+      "player_research_progress": 0,
+      "civ_unit_city_records_unchanged": true
+    },
+    "all_own_units_exhausted": {
+      "stop": "00472a8e",
+      "saved_active_slot": 0,
+      "active_slot_at_boundary": -1,
+      "controlled_spent_slots": [
+        6,
+        9,
+        18,
+        26
+      ],
+      "player_research_target": -1,
+      "player_research_progress": 0,
+      "civ_unit_city_records_unchanged": true
+    },
+    "only_slot_9_ready": {
+      "stop": "0047297f",
+      "saved_active_slot": 0,
+      "active_slot_at_boundary": 9,
+      "controlled_spent_slots": [
+        6,
+        18,
+        26
+      ],
+      "player_research_target": -1,
+      "player_research_progress": 0,
+      "civ_unit_city_records_unchanged": true
+    }
+  },
+  "scope": "Trace the resumed human turn through native active-unit selection.\n\nThe human map mode is prepared before entry. The traces stop at the selected\nunit or no-unit branch before presentation, input, and any research prompt.\nNo callees are replaced. Only numeric observations and input hashes are saved."
+}

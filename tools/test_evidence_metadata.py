@@ -14,6 +14,21 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
+        setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
+        phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())
+        self.assertEqual(setup['source'], phase['source'])
+        self.assertEqual(setup['binary_sha256'], phase['binary_sha256'])
+        self.assertEqual(setup['replaced_callees'], [])
+        cases = setup['cases']
+        self.assertEqual(cases['pinned']['active_slot_at_boundary'], 6)
+        self.assertEqual(cases['only_slot_9_ready']['active_slot_at_boundary'], 9)
+        self.assertEqual(cases['all_own_units_exhausted']['active_slot_at_boundary'], -1)
+        for case in cases.values():
+            self.assertTrue(case['civ_unit_city_records_unchanged'])
+            self.assertEqual(case['player_research_target'], phase['source_witness']['target'])
+            self.assertEqual(case['player_research_progress'], phase['source_witness']['progress'])
+
     def test_event_state_report_has_all_distinct_round_trips(self):
         report = json.loads((ROOT / 'docs/evidence/import-event-state.json').read_text())
         tail = json.loads((ROOT / 'docs/evidence/import-event-tail.json').read_text())

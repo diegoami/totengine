@@ -73,6 +73,10 @@ are retained. Native accumulation requires positive science before an empty
 project can reach selection. This extends the earlier static research decode
 with executable boundary evidence, not a complete live prompt-timing claim.
 The current experimental load-time Research prompt remains its recorded policy.
+The [unit-selection trace](evidence/import-unit-setup.json) follows the
+resumed branch past unit setup in a prepared display context. It reaches the
+selected or exhausted branch with research and live records intact. Modal
+and input-loop timing remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

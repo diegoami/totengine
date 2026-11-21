@@ -61,3 +61,18 @@ the round-start flag back to one. The resumed-civ guard still skips
 round-start event dispatch when the restart flag is zero. This explains why
 the earlier loader suffix's flag reset alone is insufficient to characterize
 the full load path.
+
+The [unit-selection trace](evidence/import-unit-setup.json) extends the
+resumed branch through the native active-unit search. It prepares the
+unit-selection display mode and movement inputs from the pinned Rules.
+The pinned state selects slot 6 at `0x47297f`. Exhausting all four own
+units reaches the no-unit branch at `0x472a8e`. Leaving only slot 9 ready
+selects slot 9. All three executions preserve the prepared civ, unit and
+city records and research remains target -1, progress 0. The stops precede
+presentation and order processing. Other display modes, pending prompts and
+the full native load path still need evidence.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_unit_setup_check.py --out /tmp/unit-setup.json
+cmp docs/evidence/import-unit-setup.json /tmp/unit-setup.json
+```

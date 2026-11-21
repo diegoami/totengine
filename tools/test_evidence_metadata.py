@@ -14,6 +14,26 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_input_handoff_report_matches_the_unit_setup_witness(self):
+        report = json.loads((ROOT / 'docs/evidence/import-input-handoff.json').read_text())
+        setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(report[key], setup[key])
+        cases = report['cases']
+        observation = cases['native_observation']
+        self.assertEqual(observation['active_slot'], setup['cases']['pinned']['active_slot_at_boundary'])
+        self.assertEqual(observation['explored_tiles_before'], 59)
+        self.assertEqual(observation['explored_tiles_after'], 59)
+        self.assertEqual(observation['human_memory_bytes_changed'], 0)
+        self.assertEqual(observation['unit_masks_changed'], 0)
+        self.assertEqual(observation['city_knowledge_records_changed'], 0)
+        self.assertNotIn('0041f704', observation['substituted_calls'])
+        selected = cases['selected_input_control']
+        exhausted = cases['exhausted_input_control']
+        self.assertEqual((selected['return_address'], exhausted['return_address']),
+                         ('0047342e', '00473522'))
+        self.assertIn('0041f704', selected['substituted_calls'])
+
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
         phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())

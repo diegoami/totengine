@@ -77,6 +77,10 @@ The [unit-selection trace](evidence/import-unit-setup.json) follows the
 resumed branch past unit setup in a prepared display context. It reaches the
 selected or exhausted branch with research and live records intact. Modal
 and input-loop timing remain open.
+The [input handoff trace](evidence/import-input-handoff.json) measures the
+pinned selected unit's native observation loops. They leave all 59 explored
+tiles and saved human memory intact. Separate controls with recorded
+substitutions reach input preparation in unit mode and viewing mode.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

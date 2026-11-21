@@ -27,7 +27,7 @@ CALLS = (
 )
 
 
-def witness(home, binary, path, *, exhaust, only_slot=None):
+def prepare(home, binary, path, *, exhaust, only_slot=None):
     original = OriginalCity(binary)
     data, walk, rules, _ = original.load_saved(home, path)
     player, active = data[680], data[681]
@@ -44,6 +44,8 @@ def witness(home, binary, path, *, exhaust, only_slot=None):
         if len(row) > 8:
             original.write(0x5F470A + index * 40, road * int(row[3].rstrip('.')), '<B')
             original.write(0x5F470E + index * 40, 10 * int(row[7].rstrip('hH')), '<B')
+        if len(row) > 13 and row[13] and set(row[13]) <= {'0', '1'}:
+            original.write(0x5F4704 + index * 40, int(row[13], 2), '<I')
     original.write(0x5F5EB8, road, '<B')
 
     controlled_slots = []
@@ -65,6 +67,13 @@ def witness(home, binary, path, *, exhaust, only_slot=None):
     raw_slot = read(original, ACTIVE_SLOT, '<h')
     regions = [(CIV, STRIDE * 8), (UNIT_RECORDS, walk['units']['count'] * 40),
                (0x5FD150, walk['cities']['count'] * 92)]
+    return original, player, raw_slot, regions, controlled_slots
+
+
+def witness(home, binary, path, *, exhaust, only_slot=None):
+    original, player, raw_slot, regions, controlled_slots = prepare(
+        home, binary, path, exhaust=exhaust, only_slot=only_slot
+    )
     before = [bytes(original.cpu.mem_read(addr, size)) for addr, size in regions]
     stop = run(original, ENTRY, {SELECTED, NO_UNIT}, calls=CALLS)
     assert before == [bytes(original.cpu.mem_read(addr, size)) for addr, size in regions]

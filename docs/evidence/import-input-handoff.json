@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "entry": "00474b62",
+  "cases": {
+    "native_observation": {
+      "stop": "004205a7",
+      "active_slot": 6,
+      "display_mode": 1,
+      "research_target": -1,
+      "research_progress": 0,
+      "explored_tiles_before": 59,
+      "explored_tiles_after": 59,
+      "tile_bytes_changed": 0,
+      "human_memory_bytes_changed": 0,
+      "unit_masks_changed": 0,
+      "city_knowledge_records_changed": 0,
+      "substituted_calls": [
+        "005346be",
+        "0040d7e7",
+        "004bf9b6"
+      ]
+    },
+    "selected_input_control": {
+      "stop": "0045abc1",
+      "active_slot": 6,
+      "display_mode": 1,
+      "research_target": -1,
+      "research_progress": 0,
+      "explored_tiles_before": 59,
+      "explored_tiles_after": 59,
+      "tile_bytes_changed": 0,
+      "human_memory_bytes_changed": 0,
+      "unit_masks_changed": 0,
+      "city_knowledge_records_changed": 0,
+      "substituted_calls": [
+        "005346be",
+        "0040d7e7",
+        "004bf9b6",
+        "0041f704",
+        "0041af00",
+        "004bf9b6",
+        "005346be",
+        "0040d7e7",
+        "004bf9b6",
+        "0041f704",
+        "0041af00"
+      ],
+      "return_address": "0047342e"
+    },
+    "exhausted_input_control": {
+      "stop": "0045abc1",
+      "active_slot": -1,
+      "display_mode": 0,
+      "research_target": -1,
+      "research_progress": 0,
+      "explored_tiles_before": 59,
+      "explored_tiles_after": 59,
+      "tile_bytes_changed": 0,
+      "human_memory_bytes_changed": 0,
+      "unit_masks_changed": 0,
+      "city_knowledge_records_changed": 0,
+      "substituted_calls": [
+        "005346be",
+        "0040d510",
+        "004bf9b6",
+        "005346be",
+        "0040d510",
+        "004bf9b6"
+      ],
+      "return_address": "00473522"
+    }
+  },
+  "scope": "Measure native observation and input handoff during a prepared resume.\n\nObservation executes through the tile and remembered-state update loops and\nstops before notification processing. A separate control substitutes the\nwhole observation call to reach the first input-loop preparation call.\nThe report describes every invoked substitute and emits only numeric results."
+}

@@ -76,3 +76,23 @@ the full native load path still need evidence.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_unit_setup_check.py --out /tmp/unit-setup.json
 cmp docs/evidence/import-unit-setup.json /tmp/unit-setup.json
 ```
+
+The [input handoff probe](evidence/import-input-handoff.json) follows the
+selected-unit path through `0x41f704` to `0x4205a7`, before notification
+processing. It substitutes three preceding display calls. The original
+observation loops keep 59 explored tiles and leave tile bytes, the player's
+remembered improvements, unit visibility masks and city knowledge unchanged
+on the pinned input.
+
+Separate selected and exhausted controls reach `0x45abc1` before the
+input loop's event pump. The selected control substitutes the full
+observation call as well as display helpers. It arrives in unit mode at
+slot 6. The exhausted control arrives in viewing mode with no active unit.
+Research still has target -1 and progress 0 in both controls. These
+boundaries leave notification behavior, live input and full loader
+continuation open.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_input_handoff_check.py --out /tmp/input-handoff.json
+cmp docs/evidence/import-input-handoff.json /tmp/input-handoff.json
+```

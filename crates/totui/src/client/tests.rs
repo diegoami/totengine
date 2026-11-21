@@ -5040,6 +5040,62 @@ fn installed_saved_view_uses_schema_two_and_failed_restore_is_atomic() {
 }
 
 #[test]
+fn scenario_confirmation_requires_the_inputs_shown_at_preflight() {
+    let f = Fixture::new();
+    let path = "Original/Test.sav";
+    let save = engine::tests_support::synthetic_save_bytes();
+    fs::write(f.0.join(path), &save).unwrap();
+    let labels = f.0.join("Labels.txt");
+    fs::write(&labels, "@LABELS\n2\nB.C.\nA.D.\n").unwrap();
+    let mut c = f.client();
+    start(&mut c);
+    let before = c.checkpoint().unwrap();
+    let assets = c.assets.clone();
+    let active = c.active;
+    let changed = [
+        (path, {
+            let mut bytes = save.clone();
+            bytes[668] ^= 1;
+            bytes
+        }),
+        ("Labels.txt", b"@LABELS\n2\nBefore\nAfter\n".to_vec()),
+        (
+            "Original/events.lua",
+            b"-- authored test fixture\n".to_vec(),
+        ),
+    ];
+    for (name, replacement) in changed {
+        c.pick_scenario(path).unwrap();
+        let file = f.0.join(name);
+        let original = fs::read(&file).ok();
+        fs::write(&file, replacement).unwrap();
+        key(&mut c, "Enter");
+        assert!(c.status.contains("changed"), "{name}: {}", c.status);
+        assert!(matches!(c.modal, Some(Modal::ScenarioStart(_))));
+        assert_eq!(c.checkpoint().unwrap(), before);
+        assert_eq!(c.assets, assets);
+        assert_eq!(c.active, active);
+        if let Some(bytes) = original {
+            fs::write(&file, bytes).unwrap();
+        } else {
+            fs::remove_file(&file).unwrap();
+        }
+    }
+    c.pick_scenario(path).unwrap();
+    key(&mut c, "Enter");
+    assert_eq!(
+        c.loaded
+            .as_ref()
+            .unwrap()
+            .session
+            .scenario_origin()
+            .unwrap()
+            .path,
+        path
+    );
+}
+
+#[test]
 fn initialized_scenario_restore_rejects_changed_dependencies_atomically() {
     let f = Fixture::new();
     let path = f.0.join("Original/Test.sav");

@@ -18,7 +18,7 @@
     "crates/totui/src/resources.rs": "660e6214248310dd99c7d06ea09abacb9e11f761cf7043a88b41b78ed57a9eea",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "a750c432e5e2faf2dec9e835ed0a7435afee52a059ddc582122e5addb89af4c2",
-    "crates/totui/src/client/scenario.rs": "7a70307cf98725cbca8384044d41e41e42ce0fdda27c75f5e7357566280e8bed",
+    "crates/totui/src/client/scenario.rs": "db9baf9b4d88c52e586d6512c931f6164244b627f655cfac59475d1c7c44ccc8",
     "crates/engine/src/saved_knowledge.rs": "f900ea415abc50293bfba28b1006a0f1b9a994c25ed01ad6d745eeb973b0a17c",
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
@@ -645,6 +645,13 @@
         "crates/engine/src/scenario/phase.rs"
       ],
       "finding": "Additive, unused by existing factories/restore. No order/event/trigger/action semantics, scheduling, initializer recipe, runtime admission or checkpoint behavior changes. 2395 native cases use no replaced callees; the pinned prefix stops at unit setup after active-slot reset with civ/unit/city records unchanged. Full pending-state/UI/knowledge continuation, admitted initializer and #198 remain separate gates."
+    },
+    {
+      "change": "#198 preflight confirmation input binding",
+      "files": [
+        "crates/totui/src/client/scenario.rs"
+      ],
+      "finding": "The experimental client compares captured save and dependency identities and Lua presence before constructing a replacement, and generates its asset nonce before committing. Trigger and action coverage, engine scheduling, and checkpoint semantics are unchanged."
     }
   ]
 }

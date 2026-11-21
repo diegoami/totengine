@@ -123,7 +123,8 @@ tests, fmt/strict workspace+desktop Clippy, a Windows desktop-target compile
 check and byte-identical dependency evidence reproduction all pass. No Windows
 input or owner acceptance is claimed.
 
-The next independent #197 phase slice executes native loader/round/science
+#364 is merged at `34cd97d` after independent AGREE. The #197 phase slice
+executes native loader/round/science
 boundaries and the pinned human-entry prefix, with no replaced callees.
 `scenario::phase` has separate pure kernels and a conservative context checker;
 current constructors/restore do not call them. The source prefix reaches native
@@ -137,6 +138,12 @@ Validation: all 2,395 native cases reproduce byte-identically (report/vectors),
 447 install-backed Rust/56 Python tests, 24 goldens, 81 desktop tests,
 fmt/strict workspace+desktop Clippy and Windows desktop-target compilation pass.
 No live loader/UI, Windows input or owner acceptance is claimed.
+
+The shared experimental scenario confirmation now checks that the save,
+resolved resources and Lua presence match preflight before replacing the game.
+Asset nonce allocation also completes before session replacement. This covers
+the stale-input safeguard for the existing route. The separate #198 entry
+still depends on profile admission.
 
 The first-profile gates follow `docs/scenario-entry-contract.md` and the
 six-slice comment on #197; current integration work is tracked in

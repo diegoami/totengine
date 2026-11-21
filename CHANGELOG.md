@@ -5,6 +5,10 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Scenario confirmation checks the previewed inputs** (#198): if the save,
+  resolved resources, or Lua presence changes after preflight, the player
+  must select the file again. The running session remains available.
+
 - **Native saved-phase and research-entry boundaries** (#197): native-executed
   loader/round/science kernels and a conservative saved-context check. The pinned
   prefix reaches unit setup with record state intact and the transient active

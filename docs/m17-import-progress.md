@@ -14,6 +14,8 @@ at `09b3088`. Observation/city-memory kernels remain separate building blocks.
 #362's snapshot record/normalization slice is a separate draft awaiting review.
 #363's reference dependency capture is independently approved and merged at
 `f15092a`, exactly the reviewed `46164cd` tree.
+#364's phase evidence is merged at `34cd97d`, exactly the independently
+reviewed `4ba7d66` tree.
 
 | Planned slice | Implemented foundation | Remaining before faithful entry |
 | --- | --- | --- |
@@ -22,7 +24,7 @@ at `09b3088`. Observation/city-memory kernels remain separate building blocks.
 | 3. Saved human knowledge | #356 projects 59 explored tiles, four unit slots and city 5 size 2; the saved-view branch wires that projection into the actual session/view and schema-2 replay, without an initial reveal. | Verify/activate an admitted knowledge/continuation recipe. The new recipe is still experimental: choosing research on this candidate starts engine observation with 60 tiles. Do not relabel this normalization faithful without satisfying the frozen predicates. |
 | 4. Original Events | #354 implements futuretech equality, compound RANDOMTURN, terminal ENDGAME and a disclosed AVI/ending-screen omission policy. | Verify the admitted dependency set and initializer preserve the exact supported event input/state/timing; retain the disclosed presentation policy. |
 | 5. Import initializer | #355's format 3 seals snapshot/dependencies, phase, memory/world/event assertions and engine policy/seed/RNG assertions; schema 2 adds a separate experimental saved-initial-view recipe. A separate first-set dependency capture checks all twelve known Original inputs and retains immutable raw/parsed/decoded values plus SHA-256 identities. | Bind the record and dependency predicates to an admitted profile/recipe and restore path without changing existing formats/recipes; finish phase/knowledge admission and the private snapshot/reference lifecycle. |
-| 6. #198 faithful entry | Shared clients already have the separately labelled experimental route and atomic replacement tests. | Implement the distinct Open ToT save/scenario route, positive/negative/missing-resource/cancel/stale-work cases, and both-client owner acceptance. |
+| 6. #198 faithful entry | Shared experimental preflight binds the displayed inputs to confirmation. Changed saves, resolved dependencies, or Lua presence require a new selection. A failed confirmation preserves the active session. | Implement the distinct Open ToT save/scenario route, cover its positive and failure paths, and obtain owner acceptance on both clients. |
 
 ## Next integration
 

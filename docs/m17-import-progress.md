@@ -20,7 +20,7 @@ reviewed `4ba7d66` tree.
 | Planned slice | Implemented foundation | Remaining before faithful entry |
 | --- | --- | --- |
 | 1. Saved phase | #352 maps saved round fields. Separate native loader/round/science kernels and a conservative context checker now retain 2,395 native cases, including a pinned prefix through human preparation to unit setup, with no replaced callees. | Bind the checker to an admitted recipe; complete the unit-setup/input and pending-choice boundary. The measured prefix does not establish full modal timing. |
-| 2. Snapshot without a fresh turn | Saved spent movement is retained; initial city stores/treasury are not advanced. | Declare and measure the admitted recipe's snapshot/cache normalization; validate records/references/stack state and prove no unintended initial refresh. |
+| 2. Snapshot without a fresh turn | Saved spent movement is retained; initial city stores/treasury are not advanced. A separate read-only record checker validates live references/occupancy/stack state; raw-field/full-world measurements establish movement-only differences for the pinned schema-2 start. | Bind these checks to the admitted recipe, finish phase/pending-state and dependency checks; the 3,129-byte post-city tail is not admitted by this record check. |
 | 3. Saved human knowledge | #356 projects 59 explored tiles, four unit slots and city 5 size 2; the saved-view branch wires that projection into the actual session/view and schema-2 replay, without an initial reveal. | Verify/activate an admitted knowledge/continuation recipe. The new recipe is still experimental: choosing research on this candidate starts engine observation with 60 tiles. Do not relabel this normalization faithful without satisfying the frozen predicates. |
 | 4. Original Events | #354 implements futuretech equality, compound RANDOMTURN, terminal ENDGAME and a disclosed AVI/ending-screen omission policy. | Verify the admitted dependency set and initializer preserve the exact supported event input/state/timing; retain the disclosed presentation policy. |
 | 5. Import initializer | #355's format 3 seals snapshot/dependencies, phase, memory/world/event assertions and engine policy/seed/RNG assertions; schema 2 adds a separate experimental saved-initial-view recipe. A separate first-set dependency capture checks all twelve known Original inputs and retains immutable raw/parsed/decoded values plus SHA-256 identities. | Bind the record and dependency predicates to an admitted profile/recipe and restore path without changing existing formats/recipes; finish phase/knowledge admission and the private snapshot/reference lifecycle. |
@@ -34,6 +34,13 @@ remembered foreign size, hidden-unit gates and checkpoint restoration are
 tested; its subsequent engine observation is explicitly disclosed. The older
 schema-1 checkpoint remains byte-identical to reviewed main on the authored
 legacy fixture.
+
+The [snapshot slice](import-snapshot-validation.md) now supplies conservative
+record preparation and a reproducible normalization measurement, without
+changing the experimental constructors or restore. The pinned save's 38 unit
+slots include one deleted slot; all 37 live units and ten live cities pass.
+All non-movement booted world fields compare exactly and both RNG draw counts
+remain zero. This closes a measured part of slice 2, not the admission gate.
 
 The independent [stock dependency slice](import-stock-dependencies.md) provides
 an immutable capture of the selected save and the known twelve-file Original

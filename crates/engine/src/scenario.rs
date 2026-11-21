@@ -7,6 +7,8 @@
 use crate::WorldState;
 use tot_kit::{EventFile, Rules};
 
+pub mod snapshot;
+
 /// Lowercase hex of `bytes` (checkpoint-safe encoding of free text).
 pub fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()

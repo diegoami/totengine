@@ -100,7 +100,7 @@ def trace_prefix(binary, save, tail):
     return {'stop': f'{stop:08x}', 'consumed': cursor, 'reads': reads, 'skipped': skipped}
 
 
-def trace(binary, data):
+def trace(binary, data, *, include_record_words=False):
     original = OriginalCity(binary)
     frame(original)
     cursor = 0
@@ -180,6 +180,11 @@ def trace(binary, data):
         'round_flag_at_stop': read(original, ROUND_FLAG),
     }
     if before_callback is not None:
+        if include_record_words:
+            result['action_and_modifier_words'] = [
+                [read(original, record + offset, '<I') for offset in (4, 8)]
+                for record in records
+            ]
         # Map each witness pointer to the slot where native code stored it.
         # The witness addresses are private to this trace.
         for ordinal, entry in enumerate(strings, start=1):

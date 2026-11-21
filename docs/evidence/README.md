@@ -42,6 +42,22 @@ CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_event_tai
 cmp docs/evidence/import-event-tail.json /tmp/event-tail.json
 ```
 
+The [event state report](import-event-state.json) follows the writer at
+`0x4605df` and the same reader over two synthetic records. The writer's two
+file-output helpers are replaced with bounded in-memory capture. With the
+round flag set, it writes the marker, count, and the two 276-byte records.
+With the flag clear, it skips the event section. All 16 combinations of
+the two active marks in the modifier words and the two spent marks in the
+action words survive the write/read boundary. The pinned victory records
+have neither active nor spent marks set. The probe covers byte persistence
+through these regions. Later loader behavior and engine restoration remain
+open.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_event_state_check.py --out /tmp/event-state.json
+cmp docs/evidence/import-event-state.json /tmp/event-state.json
+```
+
 ## Saved-round and research-entry boundaries (#197, 2026-11-21)
 
 [`import-phase.json`](import-phase.json) and
@@ -1098,7 +1114,7 @@ Static decode of `civ2.bak`, same method as above. Each evaluator walks
 the whole event list (`this+0x698`, next `+0x114`) and passes a match to
 the @AND gate `0x575cbe`, then the dispatcher `0x4d3ae8`. None skips spent
 JUSTONCE events; the dispatcher refuses them (`0x4d3b04`, done bit
-`0x20000000` in the action word `+4`; JUSTONCE is `0x4000` there).
+`0x20000000` in the action word `+4`. JUSTONCE uses `0x40` there).
 
 **TURN** (`0x4d2df7`, code 4; parse `0x4d6e09`…`0x4d6f73`):
 - `turn=` is a word at `+0x2a`; `Every` is stored as -1 (`0x4d6e91`).
@@ -1146,7 +1162,8 @@ it as unimplemented.
   the record's initial state, which is not decoded.
 - A `.sav` loaded mid-game starts with every event unspent, so turn 22 or
   42 can replay a JUSTONCE TURN event that already ran in the original
-  game. Whether spent bits persist in saves is still open (see above).
+  game. The [event state probe](import-event-state.json) measures spent-bit
+  persistence in the native event section when that section is written.
 - Sounds and videos (PLAYWAVEFILE, PLAYAVIFILE) are not played. Sound is
   paused (#322).
 

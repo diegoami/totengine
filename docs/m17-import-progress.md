@@ -76,8 +76,10 @@ that a truncated final prefix block reaches the native error branch. The native
 reader consumes two event records and 15 strings. It sets the round-start
 flag, and the normal resumed-civ guard skips dispatch. The 15 embedded
 strings also match the pinned event file after trimming trailing spaces and
-tabs from its TEXT lines. Event persistence and pending choices remain to be
-verified.
+tabs from its TEXT lines. A [writer and reader probe](evidence/import-event-state.json)
+shows that the active and spent bits survive the event-section write and read.
+Neither mark is set in the pinned save. Later load and continuation behavior,
+engine restoration, and pending choices remain to be verified.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

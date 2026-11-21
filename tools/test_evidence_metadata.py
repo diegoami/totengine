@@ -14,6 +14,22 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_event_state_report_has_all_distinct_round_trips(self):
+        report = json.loads((ROOT / 'docs/evidence/import-event-state.json').read_text())
+        tail = json.loads((ROOT / 'docs/evidence/import-event-tail.json').read_text())
+        self.assertEqual(report['source'], tail['source'])
+        self.assertEqual(report['binary_sha256'], tail['binary_sha256'])
+        self.assertEqual(report['pinned_action_and_modifier_words'],
+                         [tail['victory_fields'][f'{half}_header_words'][1:]
+                          for half in ('first', 'second')])
+        cases = report['cases']
+        self.assertEqual(len(cases), 16)
+        self.assertEqual(len({tuple(map(tuple, case['input'])) for case in cases}), 16)
+        for case in cases:
+            self.assertEqual(case['input'], case['written'])
+            self.assertEqual(case['written'], case['read'])
+        self.assertEqual(report['writer']['bytes_with_round_flag_clear'], 0)
+
     def test_event_tail_report_matches_snapshot_extent(self):
         report = json.loads((ROOT / 'docs/evidence/import-event-tail.json').read_text())
         snapshot = json.loads((ROOT / 'docs/evidence/import-snapshot.json').read_text())

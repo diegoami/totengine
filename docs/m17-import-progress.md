@@ -11,7 +11,8 @@ That tree matches independently reviewed #358 head `4860090`. #354's Original
 victory event was already merged. Independently reviewed #359 and #360 are
 now merged at main `9856d3f`; #361's reviewed saved-view integration is merged
 at `09b3088`. Observation/city-memory kernels remain separate building blocks.
-#362's snapshot record/normalization slice is a separate draft awaiting review.
+#362's snapshot record and normalization slice is merged at `607ea9e` after
+independent AGREE on `4435cee`. Main matches the reviewed tree.
 #363's reference dependency capture is independently approved and merged at
 `f15092a`, exactly the reviewed `46164cd` tree.
 #364's phase evidence is merged at `34cd97d`, exactly the independently
@@ -27,6 +28,14 @@ reviewed `4ba7d66` tree.
 | 6. #198 faithful entry | Shared experimental preflight binds the displayed inputs to confirmation. Changed saves, resolved dependencies, or Lua presence require a new selection. A failed confirmation preserves the active session. | Implement the distinct Open ToT save/scenario route, cover its positive and failure paths, and obtain owner acceptance on both clients. |
 
 ## Next integration
+
+Run the preparation checks together with
+`totctl inspect-original-save "$CIVTOT_HOME" Original/Ph_Auto2.SAV`.
+The command captures the reference dependencies, checks record relationships
+and saved phase, and projects the saved human view from that capture. Its JSON
+reports counts and the unchecked post-city byte extent. An unsupported input
+returns an error with the failing check. `playable_import` remains false while
+pending-state and knowledge continuation checks are open.
 
 Merged #361 implements the stored initial human projection and
 schema-2 checkpoint recipe in the experimental path. Its initial view, polling,

@@ -68,7 +68,7 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
-### Current work (2026-11-20)
+### Current work (2026-11-21)
 
 Milestone 17, faithful classic import (#197/#198), is the live target.
 The owner approved merging #352 and #355–#358; all five are now on main,
@@ -100,14 +100,56 @@ This is not an admitted profile or a native prompt-timing claim. Other contexts,
 including startup events, retain schema 1. See `human/saved_view.rs`,
 `tools/import_saved_view_check.py` and `docs/evidence/import-saved-view*`.
 
-The next #197 snapshot slice adds a separate read-only `CheckedSnapshot`
-record check (not called by existing factories/restore) and measures current
+#362 is a draft awaiting independent review. Its original head `2b6a28d`
+passed 444 Rust tests, 55 Python tests, 24 goldens, 72 desktop tests, lint
+and CI. The branch incorporates main through #365. It adds a read-only
+`CheckedSnapshot` record check and measures current
 schema-2 normalization against raw fields and complete booted state. The pinned
 input has 38 unit slots/37 live units, ten live cities and 3,129 post-city bytes
 whose pending-state semantics this check does not establish. Only movement
 differs from boot; both seeded RNGs retain zero draws. No profile is admitted.
 See `docs/import-snapshot-validation.md`, `scenario/snapshot.rs`,
 `tools/import_snapshot_check.py` and `docs/evidence/import-snapshot.json`.
+
+#363 (GLM-5.3 AGREE, no MUST-FIX) is merged at main
+`f15092a3523a094aab1e32f6ac5eb4d4bbed3df4`, exactly the reviewed tree. It captures
+the first reference Original dependency set in
+`totui::resources::original::OriginalCapture`. All twelve required files
+are selected directly from Original and checked by SHA-256; raw buffers,
+parsed/decoded resources and identity remain immutable. Missing/changed/case-
+ambiguous inputs, Lua and path escapes reject; no root/GIF/demo fallback is used
+by this API. Revalidation detects source/dependency changes. The installed pack
+builds the same 145-sprite shared atlas; existing loaders/routes are unchanged.
+See `docs/import-stock-dependencies.md`, `tools/import_dependencies_check.py`
+and `docs/evidence/import-dependencies.json`. This predicate admits no session;
+phase/pending choice, knowledge continuation and the admitted initializer/#198
+private snapshot lifecycle and atomic entry remain.
+Validation: 443 install-backed Rust/55 Python tests, 24 goldens, 81 desktop
+tests, fmt/strict workspace+desktop Clippy, a Windows desktop-target compile
+check and byte-identical dependency evidence reproduction all pass. No Windows
+input or owner acceptance is claimed.
+
+#364 is merged at `34cd97d` after independent AGREE. The #197 phase slice
+executes native loader/round/science
+boundaries and the pinned human-entry prefix, with no replaced callees.
+`scenario::phase` has separate pure kernels and a conservative context checker;
+current constructors/restore do not call them. The source prefix reaches native
+unit setup `0x472ada`, clearing the saved active-unit slot from 0 to -1 while
+retaining civ/unit/city records. No research selector occurs in that prefix;
+native science 0 returns, science 1 reaches selection for the empty project.
+This is bounded entry evidence, not the complete loader/UI/pending-choice gate.
+Keep schema 1/2 and format 2 unchanged. See `docs/import-phase-boundaries.md`,
+`tools/import_phase_check.py` and `docs/evidence/import-phase*`.
+Validation: all 2,395 native cases reproduce byte-identically (report/vectors),
+447 install-backed Rust/56 Python tests, 24 goldens, 81 desktop tests,
+fmt/strict workspace+desktop Clippy and Windows desktop-target compilation pass.
+No live loader/UI, Windows input or owner acceptance is claimed.
+
+#365 is merged at `1bce3a9`. The shared experimental confirmation checks that the save,
+resolved resources and Lua presence match preflight before replacing the game.
+Asset nonce allocation also completes before session replacement. This covers
+the stale-input safeguard for the existing route. The separate #198 entry
+still depends on profile admission.
 
 The first-profile gates follow `docs/scenario-entry-contract.md` and the
 six-slice comment on #197; current integration work is tracked in

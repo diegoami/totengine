@@ -54,6 +54,19 @@ and llvm-mingw was downloaded as a tarball.
 
 ## Scratch space: `/home/diego/review-tmp`
 
+### Native instruction probes (Unicorn)
+
+The reference Python 3.14 session's Unicorn package is installed outside Git at
+`/home/diego/review-tmp/opencode/unicorn-deps`. Use
+`PYTHONPATH=/home/diego/review-tmp/opencode/unicorn-deps:tools` for native
+instruction checks such as `tools/import_phase_check.py`. These map the private
+unpatched `civ2.bak` into the emulator; they do not launch Wine or game windows.
+Each probe declares its controlled inputs, stops and any replaced callees.
+On another machine install Unicorn in a private environment and substitute its
+package directory; original executables/resources still come from `CIVTOT_HOME`.
+
+### Retained scratch material
+
 Pre-created and approved for external access; **not part of the repo**. Ours:
 
 - `llvm-mingw/` + `llvm-mingw.tar.xz` — the cross toolchain (see table above)

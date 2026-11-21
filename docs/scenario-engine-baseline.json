@@ -15,16 +15,18 @@
     "crates/engine/src/lib.rs": "1cd9fc382c301aa03ebbaad632cf9df3f16bde72b4489c687769286bdeed7d59",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
     "crates/totui/src/client/mod.rs": "c3c29d3f90eeed285fb6c2a0efc11d6701a504549d67e3d01e59c24facc467e2",
-    "crates/totui/src/resources.rs": "bbb42c30b6bffab4d1be72f0ed10ebe56d887b3a42984d42a782d5340710ac90",
+    "crates/totui/src/resources.rs": "660e6214248310dd99c7d06ea09abacb9e11f761cf7043a88b41b78ed57a9eea",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "a750c432e5e2faf2dec9e835ed0a7435afee52a059ddc582122e5addb89af4c2",
-    "crates/totui/src/client/scenario.rs": "7a70307cf98725cbca8384044d41e41e42ce0fdda27c75f5e7357566280e8bed",
+    "crates/totui/src/client/scenario.rs": "db9baf9b4d88c52e586d6512c931f6164244b627f655cfac59475d1c7c44ccc8",
     "crates/engine/src/saved_knowledge.rs": "f900ea415abc50293bfba28b1006a0f1b9a994c25ed01ad6d745eeb973b0a17c",
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
     "crates/engine/src/human/saved_view.rs": "21c6e91b568bfb07a9397ef55bbad8f88faada03d42d7a9f37ef009daf28bc68",
-    "crates/engine/src/scenario.rs": "00bac0a34da4b3966ad9d379fc068b6b8f593ac37c8b835b918fd757ea5f3b4c",
-    "crates/engine/src/scenario/snapshot.rs": "ec564138d8d1f63f9724f7967198623a8c0d9d1373a8275b9b699892f1e49f15"
+    "crates/totui/src/resources/original.rs": "4ebdefc6de93f30a7dc8b29647b4b9d5cbe0e8b9aa5b0063a3fbe3b603b51260",
+    "crates/engine/src/scenario/phase.rs": "f919b6adeab6b2beed51bca5bf57de45387d65351bb779938595d68ce5bde9c9",
+    "crates/engine/src/scenario/snapshot.rs": "ec564138d8d1f63f9724f7967198623a8c0d9d1373a8275b9b699892f1e49f15",
+    "crates/engine/src/scenario.rs": "48f0820312fb5f0d840ce06dff0a17ae3178ff4ddfd03e4c0e9428be38e47b6f"
   },
   "triggers": {
     "TURN": {
@@ -628,6 +630,29 @@
         "crates/totui/src/client/scenario.rs"
       ],
       "finding": "Current experimental starts select schema 2 (experimental-saved-view-v1) only for supported saved-round projections showing every own live entity and without SCENARIOLOADED trigger/AND contexts. Construction omits sight refresh and seeds remembered tiles/cities plus saved unit gates; Original/Ph_Auto2.SAV starts at 59 tiles, four own slots and city 5 size 2. Polling/non-gameplay operations and rejected orders keep that epoch; accepted gameplay switches to the explicitly disclosed engine observation (60 tiles after required research selection). Format-3 restore dispatches by schema/profile and validates the initializer before replay; explicit schema-1 construction and format 2 retain their behavior. A synthetic schema-1 checkpoint is byte-identical to reviewed main 47b1f5b. Both real client routes pass 11 equal checkpoints, including seven unchanged generated hashes, plus initial/research/terminal replay. No trigger/action semantics change, classic-profile admission, #198 route, native prompt timing, native continuing-fog/AI/RNG or full dependency/phase admission is claimed."
+    },
+    {
+      "change": "#197 first Original dependency capture: separate immutable capture with twelve required SHA-256-identified inputs, save identity, presentation policy and revalidation",
+      "files": [
+        "crates/totui/src/resources.rs",
+        "crates/totui/src/resources/original.rs"
+      ],
+      "finding": "Additive adapter API only, unused by existing constructors, client routes and restore. No trigger/action semantics, scenario scheduling, initializer recipe, runtime admission or checkpoint behavior change. The known Original dependency set builds the same shared atlas; other dependency sets and Lua reject. Record/phase/pending-state and knowledge admission plus the private snapshot lifecycle/#198 entry remain."
+    },
+    {
+      "change": "#197 native phase boundaries: separate loader/round/science evidence, pure boundary kernels and conservative saved-context checker",
+      "files": [
+        "crates/engine/src/scenario.rs",
+        "crates/engine/src/scenario/phase.rs"
+      ],
+      "finding": "Additive, unused by existing factories/restore. No order/event/trigger/action semantics, scheduling, initializer recipe, runtime admission or checkpoint behavior changes. 2395 native cases use no replaced callees; the pinned prefix stops at unit setup after active-slot reset with civ/unit/city records unchanged. Full pending-state/UI/knowledge continuation, admitted initializer and #198 remain separate gates."
+    },
+    {
+      "change": "#198 preflight confirmation input binding",
+      "files": [
+        "crates/totui/src/client/scenario.rs"
+      ],
+      "finding": "The experimental client compares captured save and dependency identities and Lua presence before constructing a replacement, and generates its asset nonce before committing. Trigger and action coverage, engine scheduling, and checkpoint semantics are unchanged."
     },
     {
       "change": "#197 snapshot preparation: separate read-only classic record check and installed raw-field/full-world normalization measurement",

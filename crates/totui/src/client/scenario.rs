@@ -20,6 +20,8 @@ const GAP_ROWS: usize = 10;
 #[derive(Clone)]
 pub(super) struct ScenarioChoice {
     pub path: String,
+    identity: String,
+    lua: bool,
     pub preflight: Preflight,
     /// Index into `preflight.civs`.
     pub civ: usize,
@@ -88,6 +90,8 @@ impl Client {
         self.open(Modal::ScenarioStart(Box::new(ScenarioChoice {
             date,
             path: files.path,
+            identity: resources.scenario_identity(),
+            lua: files.lua,
             preflight,
             civ,
             policy,
@@ -99,8 +103,11 @@ impl Client {
     pub(super) fn start_scenario(&mut self, choice: &ScenarioChoice) -> Result<(), String> {
         let home = self.scenario_home()?.to_path_buf();
         let (resources, files) = crate::resources::Resources::load_scenario(&home, &choice.path)?;
-        let atlas = Atlas::load(&resources)?;
         let identity = resources.scenario_identity();
+        if identity != choice.identity || files.lua != choice.lua {
+            return Err("Scenario or resources changed. Go back and select the file again.".into());
+        }
+        let atlas = Atlas::load(&resources)?;
         let civ = choice
             .preflight
             .civs
@@ -119,6 +126,7 @@ impl Client {
             seed,
             &identity,
         )?;
+        let assets = storage::nonce()?;
         self.report_return = None;
         self.reset_notices();
         self.loaded = Some(Loaded {
@@ -127,7 +135,7 @@ impl Client {
             session,
             identity,
         });
-        self.assets = storage::nonce()?;
+        self.assets = assets;
         self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
         self.city_panel = CityPanel::Info;
         self.city_panel_page = 0;

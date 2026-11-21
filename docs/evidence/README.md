@@ -1,5 +1,60 @@
 # Tier-0 Evidence — first format probe results (2026-11-01)
 
+## Saved-round and research-entry boundaries (#197, 2026-11-21)
+
+[`import-phase.json`](import-phase.json) and
+[`import-phase-vectors.txt`](import-phase-vectors.txt) retain 98 loader-suffix,
+280 civ-loop guard and 2,016 science-entry cases plus one pinned human-entry
+prefix. Reproduce with `CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3
+tools/import_phase_check.py --out /tmp/phase.json --vectors /tmp/phase.txt`.
+No callee is replaced; stopped callees never execute. Code-range and binary
+SHA-256 identities, stop addresses and the copied source identity are retained.
+
+The loader suffix selects the player and clears round-start state while keeping
+civ/unit/city blocks intact. The unforced resumed civ skips turn-start. For the
+pinned player 4 context, native human preparation returns with advice disabled;
+the trace reaches unit setup `0x472ada`, first clearing the saved active-unit
+slot (file @674 / RAM `0x60764e`) from 0 to -1. No research selector executes in
+this prefix, and civ/unit/city records remain identical. The stop precedes unit
+setup itself and does not establish the full UI/input path.
+
+Research entry `0x4a1ebf` runs through its original empty helper `0x40106b`
+and stops at return, project cost, advisory or project selection. Nonpositive
+science changes nothing. Positive science wraps the signed progress word; an
+empty target reaches selection only if the result is nonzero, possibly via
+advice. A running target reaches cost evaluation, which is not executed here.
+Every other civ byte stays unchanged. The pinned 0/-1 research state returns
+on science 0 and reaches selection on science 1. This executes the previously
+static accumulation/choice guard (§Research selection), not the chooser/RNG.
+
+`scenario::phase` supplies pure transcriptions and a conservative context
+checker, unused by existing constructors/restore. Active/player mismatch and
+unknown road-multiplier contexts reject rather than receive fresh-turn fallback;
+those stricter preparation checks are not original-game legality claims. No
+profile, full pending-state coverage or live modal timing is admitted.
+[Scope and remaining work](../import-phase-boundaries.md).
+
+## First Original dependency capture (#197, 2026-11-20)
+
+[`import-dependencies.json`](import-dependencies.json) binds the installed
+reference Original set: twelve rules/events/text/BMP dependencies plus the
+selected private save, with SHA-256 rows and the explicit no-AVI/ending-screens
+presentation policy. Reproduce with `CIVTOT_HOME=... python3
+tools/import_dependencies_check.py --out /tmp/dependencies.json`.
+
+The Rust adapter captures each file once and parses/decodes those owned buffers;
+Python independently verifies every reported content hash. Captured sheets and
+the resulting 145-sprite shared atlas equal the existing Original adapter.
+Authored fixtures cover missing/changed inputs (including same-length edits),
+case ambiguity, root-fallback refusal, Lua, escaped paths, immutable captures
+and failed revalidation. Raw original bytes/text never enter public evidence.
+
+This is the known first dependency set, not native custom-resource lookup or
+universal official-install/translation acceptance. Existing constructors/routes
+and checkpoint formats are unchanged. It activates no session; record/phase/
+pending-state, knowledge continuation, admitted initializer and #198's private
+snapshot/atomic entry gates remain. [Scope](../import-stock-dependencies.md).
+
 ## Classic snapshot preparation and normalization (#197, 2026-11-20)
 
 [`import-snapshot.json`](import-snapshot.json) measures the pinned Original

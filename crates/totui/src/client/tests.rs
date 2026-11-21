@@ -1081,6 +1081,31 @@ fn installed_atlas_matches_retained_numeric_manifest() {
 }
 
 #[test]
+fn installed_original_dependency_capture_builds_the_same_shared_atlas() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let capture = crate::resources::original::OriginalCapture::capture(
+        Path::new(&home),
+        "Original/Ph_Auto2.SAV",
+    )
+    .unwrap();
+    let current = Atlas::load(&Resources::load(Path::new(&home), "Original").unwrap()).unwrap();
+    let captured = Atlas::load(capture.resources()).unwrap();
+    assert_eq!(captured.sprites.len(), current.sprites.len());
+    for (name, sprite) in &captured.sprites {
+        let original = &current.sprites[name];
+        assert_eq!(
+            (sprite.w, sprite.h, &sprite.rgba),
+            (original.w, original.h, &original.rgba)
+        );
+    }
+    if let Ok(out) = std::env::var("TOTENGINE_ORIGINAL_ATLAS_EVIDENCE") {
+        fs::write(out, serde_json::to_string_pretty(&serde_json::json!({"sprite_count":captured.sprites.len(),"same_as_existing_original_atlas":true})).unwrap()+"\n").unwrap();
+    }
+}
+
+#[test]
 fn production_draft_budget_and_city_lifecycle_resume_without_double_penalty() {
     let f = Fixture::new();
     let file = f.0.join("Rules.txt");
@@ -5011,6 +5036,62 @@ fn installed_saved_view_uses_schema_two_and_failed_restore_is_atomic() {
             .filter(|t| t.is_some())
             .count(),
         59
+    );
+}
+
+#[test]
+fn scenario_confirmation_requires_the_inputs_shown_at_preflight() {
+    let f = Fixture::new();
+    let path = "Original/Test.sav";
+    let save = engine::tests_support::synthetic_save_bytes();
+    fs::write(f.0.join(path), &save).unwrap();
+    let labels = f.0.join("Labels.txt");
+    fs::write(&labels, "@LABELS\n2\nB.C.\nA.D.\n").unwrap();
+    let mut c = f.client();
+    start(&mut c);
+    let before = c.checkpoint().unwrap();
+    let assets = c.assets.clone();
+    let active = c.active;
+    let changed = [
+        (path, {
+            let mut bytes = save.clone();
+            bytes[668] ^= 1;
+            bytes
+        }),
+        ("Labels.txt", b"@LABELS\n2\nBefore\nAfter\n".to_vec()),
+        (
+            "Original/events.lua",
+            b"-- authored test fixture\n".to_vec(),
+        ),
+    ];
+    for (name, replacement) in changed {
+        c.pick_scenario(path).unwrap();
+        let file = f.0.join(name);
+        let original = fs::read(&file).ok();
+        fs::write(&file, replacement).unwrap();
+        key(&mut c, "Enter");
+        assert!(c.status.contains("changed"), "{name}: {}", c.status);
+        assert!(matches!(c.modal, Some(Modal::ScenarioStart(_))));
+        assert_eq!(c.checkpoint().unwrap(), before);
+        assert_eq!(c.assets, assets);
+        assert_eq!(c.active, active);
+        if let Some(bytes) = original {
+            fs::write(&file, bytes).unwrap();
+        } else {
+            fs::remove_file(&file).unwrap();
+        }
+    }
+    c.pick_scenario(path).unwrap();
+    key(&mut c, "Enter");
+    assert_eq!(
+        c.loaded
+            .as_ref()
+            .unwrap()
+            .session
+            .scenario_origin()
+            .unwrap()
+            .path,
+        path
     );
 }
 

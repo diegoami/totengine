@@ -14,6 +14,54 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_native_phase_boundary_metadata_and_pinned_witness(self):
+        report = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())
+        vectors = (ROOT / 'docs/evidence/import-phase-vectors.txt').read_bytes()
+        self.assertEqual(hashlib.sha256(vectors).hexdigest(), report['vectors_sha256'])
+        rows = [line for line in vectors.decode().splitlines() if line and not line.startswith('#')]
+        self.assertEqual(len(rows), len(set(rows)))
+        counts = Counter(line.split()[0] for line in rows)
+        self.assertEqual(dict(counts), {'L': report['cases']['loader'],
+                                      'R': report['cases']['round_guard'],
+                                      'S': report['cases']['science'],
+                                      'P': report['cases']['source_prefix']})
+        native = json.loads((ROOT / 'docs/evidence/import-knowledge.json').read_text())
+        self.assertEqual(report['source']['sha256'], native['source']['sha256'])
+        self.assertEqual(report['binary_sha256'], native['binary_sha256'])
+        self.assertEqual(report['replaced_callees'], [])
+        self.assertFalse(report['runtime_admitted'])
+        witness = report['source_witness']
+        self.assertEqual((witness['player'], witness['active'], witness['human_mask']), (4, 4, 16))
+        self.assertEqual((witness['progress'], witness['target'], witness['round_boundary']), (0, -1, 2))
+        self.assertEqual(witness['science_0'], [0, 0])
+        self.assertEqual(witness['science_1'], [1, 3])
+        self.assertEqual(witness['unit_setup_prefix']['stop'], '00472ada')
+        self.assertEqual(witness['unit_setup_prefix']['active_unit_at_boundary'], -1)
+        self.assertTrue(witness['unit_setup_prefix']['civ_unit_city_records_unchanged'])
+
+    def test_original_dependency_capture_metadata(self):
+        report = json.loads((ROOT / 'docs/evidence/import-dependencies.json').read_text())
+        saved = json.loads((ROOT / 'docs/evidence/import-saved-view.json').read_text())
+        self.assertEqual(report['source'], saved['source'])
+        self.assertEqual(report['source_fnv64'], saved['source_fnv64'])
+        self.assertFalse(report['runtime_admitted'])
+        self.assertTrue(report['independent_python_hashes_match'])
+        self.assertTrue(report['atlas']['same_as_existing_original_atlas'])
+        self.assertEqual(report['dependency_set'], 'original-reference-dependencies-v1')
+        roles = {'rules', 'events', 'labels', 'describe', 'scenario',
+                 'terrain1', 'terrain2', 'units', 'cities', 'city', 'icons', 'people', 'dialog'}
+        self.assertEqual({item['role'] for item in report['inputs']}, roles)
+        self.assertEqual(len(report['inputs']), len(roles))
+        self.assertEqual(sum(item['dimensions'] is not None for item in report['inputs']), 8)
+        self.assertEqual(hashlib.sha256(report['identity'].encode()).hexdigest(), report['identity_sha256'])
+        self.assertIn(f"dependency-set {report['dependency_set']}\n", report['identity'])
+        self.assertIn(f"presentation {report['presentation']}\n", report['identity'])
+        for item in report['inputs']:
+            self.assertEqual(len(bytes.fromhex(item['sha256'])), 32)
+            self.assertIn(f"sha256 {item['role']} {item['sha256']}\n", report['identity'])
+            self.assertTrue(item['path'].lower().startswith('original/'))
+            self.assertGreater(item['length'], 0)
+
     def test_snapshot_record_and_normalization_measurement(self):
         report = json.loads((ROOT / 'docs/evidence/import-snapshot.json').read_text())
         saved = json.loads((ROOT / 'docs/evidence/import-saved-view.json').read_text())

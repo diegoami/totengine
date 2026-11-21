@@ -5,6 +5,23 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Scenario confirmation checks the previewed inputs** (#198): if the save,
+  resolved resources, or Lua presence changes after preflight, the player
+  must select the file again. The running session remains available.
+
+- **Native saved-phase and research-entry boundaries** (#197): native-executed
+  loader/round/science kernels and a conservative saved-context check. The pinned
+  prefix reaches unit setup with record state intact and the transient active
+  slot reset; empty-target science reaches its measured selection boundary.
+  Existing factories, checkpoints and client routes are unchanged; full
+  pending-choice/UI coverage and faithful admission remain gated.
+
+- **First Original dependency capture** (#197): a separate immutable capture
+  checks the known twelve-file rules/events/text/BMP set by SHA-256, retaining
+  the exact raw and parsed/decoded inputs. Missing, changed, ambiguous, escaped
+  or Lua inputs reject; revalidation detects source changes. Current loaders,
+  checkpoints and client routes keep their behavior; no profile is admitted.
+
 - **Classic snapshot preparation checks** (#197): a separate read-only checker
   rejects inconsistent live record identities, references, occupancy and stack
   links before boot. Installed-input field/full-world measurements retain city

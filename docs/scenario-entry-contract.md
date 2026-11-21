@@ -65,6 +65,12 @@ play. No accidental fallback to authored demo rules is allowed. The optional
 artwork path may only preserve the same original Rules and declared identities;
 unsupported/mismatched scenario units cannot be silently renamed to stock roles.
 
+The separate [first-set capture](import-stock-dependencies.md) now implements
+the known reference pack's dependency predicate: twelve direct Original inputs
+plus an immutable selected-save capture, all bound by SHA-256. It is unused by
+current entry/restore paths and grants no session admission. Alternate installs,
+translations, GIF/root fallback and other art sets require separate evidence.
+
 Future custom packages must supply their declared rules/event/text dependencies.
 Package overrides take priority only through an explicit sheet/text-role policy;
 common Original UI-sheet fallback must be distinguished from unit/terrain art
@@ -135,7 +141,7 @@ round-trip gate, not implied by importing or saving an engine checkpoint.
 
 | Case | Current evidence | Required before entry/continuation |
 | --- | --- | --- |
-| Original standard candidate | Pinned bytes, stock resource inventory, supported compound victory event, saved-round resume, stored initial human view and experimental format-3 initializer. Separate record checks and raw-field/full-world normalization measurement: [snapshot check](import-snapshot-validation.md). | Admitted knowledge continuation, full resource closure, pending-state/phase checks, admitted initializer/private snapshot lifecycle and #198 route. The experimental engine-sight transition remains a known difference. |
+| Original standard candidate | Pinned bytes, supported compound victory event, saved-round resume, stored initial view and experimental format-3 initializer. The known Original dependency capture retains exact raw/parsed/decoded inputs; The [draft snapshot check](import-snapshot-validation.md) measures record validation and movement normalization. The phase probe reaches native unit setup on the pinned save. | Bind these predicates to an admitted initializer with verified knowledge continuation, phase/pending-state and private snapshot lifecycle, then #198's atomic both-client route. |
 | FallRome | 64 macro blocks, 710 units/146 cities in existing framing | Technology effects and other required macro/context/presentation semantics; custom date/text policy |
 | Roman Civil Wars | Installed hashes, 258 macro blocks, 618 units/159 cities | Delay/flag/randomize/removal/aggression/audio/objective and author-restriction semantics |
 | Midgard | Partial surface framing, declared multiple maps, 12 transporter records | Correct complete layout, map state/transfer simulation and event semantics |

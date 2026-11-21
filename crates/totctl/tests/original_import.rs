@@ -61,6 +61,11 @@ fn installed_save_reports_checked_records_phase_and_view() {
     assert_eq!(report["saved_view"]["explored_tiles"], 59);
     assert_eq!(report["saved_view"]["units"], 4);
     assert_eq!(report["saved_view"]["cities"], 1);
+    assert_eq!(report["victory_event"]["matches"], true);
+    assert_eq!(
+        report["victory_event"]["saved_state"],
+        serde_json::json!({"active": [false, false], "spent": [false, false]})
+    );
     assert_eq!(report["playable_import"], false);
     assert_eq!(
         std::fs::read(Path::new(&home).join(source)).unwrap(),

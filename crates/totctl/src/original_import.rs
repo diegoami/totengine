@@ -48,6 +48,16 @@ fn inspect(install: &Path, relative: &str) -> Result<Value, String> {
     // these captured bytes.
     let tail_start = files.bytes.len() - snapshot.trailing_bytes();
     let tail = event_tail::inspect(&files.bytes[tail_start..])?;
+    let victory = files
+        .events
+        .as_ref()
+        .ok_or("reference Events.txt was not parsed")
+        .map_err(str::to_owned)
+        .and_then(|events| tail.victory_state(events));
+    let victory = match victory {
+        Ok(state) => json!({"matches": true, "saved_state": state}),
+        Err(reason) => json!({"matches": false, "reason": reason}),
+    };
     Ok(json!({
         "schema": 2,
         "source": {
@@ -63,6 +73,7 @@ fn inspect(install: &Path, relative: &str) -> Result<Value, String> {
             "post_city_bytes": snapshot.trailing_bytes()
         },
         "event_trailer": tail,
+        "victory_event": victory,
         "saved_phase": {
             "boundary": phase,
             "human_civ": human,

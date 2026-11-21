@@ -37,6 +37,11 @@ schema-2 JSON includes the post-city byte count and the event trailer extents.
 The trailer check expects the measured plain single-player prefix and `EVNT`
 marker. It uses a 64-record inspection budget and checks string termination
 and EOF. Unknown or malformed inputs return an error with the failing check.
+For a well-framed trailer, `victory_event` reports whether the measured rule
+fields and embedded strings match the installed event block. A matching
+definition includes the two halves' saved active and spent marks separately.
+A difference produces a diagnostic within the report. Embedded text remains
+private.
 `playable_import` remains false while event field semantics, pending-state,
 and knowledge continuation checks are open.
 

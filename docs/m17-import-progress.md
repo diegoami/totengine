@@ -57,6 +57,12 @@ project can reach selection. This extends the earlier static research decode
 with executable boundary evidence, not a complete live prompt-timing claim.
 The current experimental load-time Research prompt remains its recorded policy.
 
+The [event trailer trace](evidence/import-event-tail.json) locates the final
+1,276 bytes of the pinned save at 1,853 bytes past the city table. The native
+reader consumes two event records and 15 strings. It sets the round-start
+flag, and the normal resumed-civ guard skips dispatch. Record semantics and
+pending choices remain to be verified.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

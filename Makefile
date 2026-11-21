@@ -22,6 +22,7 @@ test: rust
 	python3 -m unittest discover -s tools -p 'test_evidence_metadata.py'
 	python3 -m py_compile tools/scenario_inventory.py
 	python3 -m py_compile tools/original_victory_check.py tools/check_victory_route.py tools/prepare_victory_input.py
+	python3 -m py_compile tools/import_event_tail_check.py
 	python3 -m py_compile tools/import_knowledge_check.py tools/import_visibility_check.py tools/import_contact_check.py tools/import_submarine_check.py tools/import_city_memory_check.py tools/import_saved_view_check.py tools/import_dependencies_check.py tools/import_phase_check.py tools/import_snapshot_check.py
 	python3 -m py_compile tools/preview_client.py
 	python3 -m py_compile tools/worldgen_compare.py tools/worldgen_capture_manifest.py tools/oracle/dialog_guard.py tools/ai_research_choice_check.py tools/ai_research_value_check.py tools/ai_research_adapter_check.py tools/ai_production_compare.py tools/ai_campaign_audit.py tools/capture_check.py

@@ -1,5 +1,32 @@
 # Tier-0 Evidence — first format probe results (2026-11-01)
 
+## Original save event trailer (#197)
+
+The pinned Original save reaches the native event reader at city-table end
+plus 1,853 bytes. The offset combines the 1,513-byte single-player prefix and
+the plain-save 340-byte read at `0x461bef`. The marker matches the
+executable's `EVNT` constant. The reader at `0x461d7b` reads that marker,
+the four-byte count, two 276-byte records, and 15 NUL-terminated strings for
+this save. Those reads account for the final 1,276 bytes through EOF.
+
+The probe executes the outer loader and replaces five file/comparison/
+allocation/string helpers with bounded substitutes. Controlled marker
+mismatch and truncation cases record the native branches under those
+substitutes. The successful trace executes the empty callback at `0x4ac0f5`
+and observes the round-start flag change from zero to one. A separate trace
+of `0x4744ed` shows that the flag still skips event dispatch for a resumed
+civ with no restart. The restart and fresh-round cases reach dispatch.
+
+The first 1,853 post-city bytes and the meaning of the serialized event
+records remain outside this probe. Event persistence and pending choices
+still require evidence for admission. The [numeric report](import-event-tail.json)
+retains offsets, sizes, stop addresses, and SHA-256 input identities.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_event_tail_check.py --out /tmp/event-tail.json
+cmp docs/evidence/import-event-tail.json /tmp/event-tail.json
+```
+
 ## Saved-round and research-entry boundaries (#197, 2026-11-21)
 
 [`import-phase.json`](import-phase.json) and

@@ -79,8 +79,10 @@ selected or exhausted branch with research and live records intact. Modal
 and input-loop timing remain open.
 The [input handoff trace](evidence/import-input-handoff.json) measures the
 pinned selected unit's native observation loops. They leave all 59 explored
-tiles and saved human memory intact. Separate controls with recorded
-substitutions reach input preparation in unit mode and viewing mode.
+tiles and saved human memory intact. The trace reaches the first
+`PeekMessageA` instruction with both native observation calls executed and
+display helpers substituted. Separate controls also reach that instruction
+in unit mode and viewing mode.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

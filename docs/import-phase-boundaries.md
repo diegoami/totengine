@@ -88,9 +88,14 @@ Separate selected and exhausted controls reach `0x45abc1` before the
 input loop's event pump. The selected control substitutes the full
 observation call as well as display helpers. It arrives in unit mode at
 slot 6. The exhausted control arrives in viewing mode with no active unit.
-Research still has target -1 and progress 0 in both controls. These
-boundaries leave notification behavior, live input and full loader
-continuation open.
+The controls then execute the input-loop prologue and stop at the first
+indirect call to `PeekMessageA` at `0x576ee4`. The probe checks the import
+with `objdump -p`. The pinned selected-unit trace also reaches that
+instruction with both native observation calls intact and the redraw wrapper
+substituted. It keeps 59 explored tiles and leaves the captured knowledge
+bytes unchanged. Research still has target -1 and progress 0 in all three
+cases. These prepared traces stop before Windows input and cannot establish
+live prompt timing or the full loader path.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_input_handoff_check.py --out /tmp/input-handoff.json

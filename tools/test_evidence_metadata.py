@@ -28,11 +28,20 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(observation['unit_masks_changed'], 0)
         self.assertEqual(observation['city_knowledge_records_changed'], 0)
         self.assertNotIn('0041f704', observation['substituted_calls'])
+        self.assertEqual(observation['observation_calls'], [[6, 1], [6, 1]])
+        continued = observation['observation_to_input']
+        self.assertNotIn('0041f704', continued['substituted_calls'])
+        self.assertEqual(continued['first_poll']['active_slot'], 6)
         selected = cases['selected_input_control']
         exhausted = cases['exhausted_input_control']
         self.assertEqual((selected['return_address'], exhausted['return_address']),
                          ('0047342e', '00473522'))
         self.assertIn('0041f704', selected['substituted_calls'])
+        for poll in (selected['first_poll'], exhausted['first_poll'], continued['first_poll']):
+            self.assertEqual(poll['stop_at_call'], '00576ee4')
+            self.assertEqual(poll['import'], 'PeekMessageA')
+            self.assertEqual(poll['message_filter'], [0, 0])
+            self.assertEqual((poll['research_target'], poll['research_progress']), (-1, 0))
 
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())

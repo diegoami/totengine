@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
   "source": {
     "path": "Original/Ph_Auto2.SAV",
@@ -30,6 +30,29 @@
       1073741832
     ]
   ],
+  "startup": {
+    "entry": "00463fa7",
+    "selector": "004d3285",
+    "pinned_witness": {
+      "trigger_words": [
+        256,
+        64
+      ],
+      "round_flag_set_stop": "00463fbe",
+      "round_flag_clear_stop": "00463fc8",
+      "scenario_loaded_control_stop": "004d3ae8",
+      "records_preserved": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
+    },
+    "synthetic_cases": 16
+  },
+  "round_boundary": {
+    "entry": "004744ed",
+    "reset": "00575d9a",
+    "resume_stop": "00474574",
+    "fresh_stop": "00474520"
+  },
   "cases": [
     {
       "input": [
@@ -61,7 +84,10 @@
           64,
           1073741824
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -93,7 +119,10 @@
           64,
           3221225472
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -125,7 +154,10 @@
           64,
           1073741824
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -157,7 +189,10 @@
           64,
           3221225472
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -189,7 +224,10 @@
           536870976,
           1073741824
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -221,7 +259,10 @@
           536870976,
           3221225472
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -253,7 +294,10 @@
           536870976,
           1073741824
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -285,7 +329,10 @@
           536870976,
           3221225472
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -317,7 +364,10 @@
           64,
           1073741824
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -349,7 +399,10 @@
           64,
           3221225472
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -381,7 +434,10 @@
           64,
           1073741824
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -413,7 +469,10 @@
           64,
           3221225472
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -445,7 +504,10 @@
           536870976,
           1073741824
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -477,7 +539,10 @@
           536870976,
           3221225472
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -509,7 +574,10 @@
           536870976,
           1073741824
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     },
     {
       "input": [
@@ -541,8 +609,11 @@
           536870976,
           3221225472
         ]
-      ]
+      ],
+      "startup_preserved_records": true,
+      "resumed_round_preserved_records": true,
+      "fresh_round_cleared_only_active_marks": true
     }
   ],
-  "scope": "Single-player event section writer and reader boundaries. No action dispatch, later loader passes, or engine import compatibility are established."
+  "scope": "Single-player event section writer and reader, a separate game-start selector, and non-Continuous round mark reset. Intervening loader and UI calls, action execution and engine restoration remain outside the trace."
 }

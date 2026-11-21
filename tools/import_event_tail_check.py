@@ -100,7 +100,7 @@ def trace_prefix(binary, save, tail):
     return {'stop': f'{stop:08x}', 'consumed': cursor, 'reads': reads, 'skipped': skipped}
 
 
-def trace(binary, data, *, include_record_words=False):
+def trace(binary, data, *, include_record_words=False, after_load=None):
     original = OriginalCity(binary)
     frame(original)
     cursor = 0
@@ -185,6 +185,8 @@ def trace(binary, data, *, include_record_words=False):
                 [read(original, record + offset, '<I') for offset in (4, 8)]
                 for record in records
             ]
+        if after_load is not None:
+            result['after_load'] = after_load(original, records)
         # Map each witness pointer to the slot where native code stored it.
         # The witness addresses are private to this trace.
         for ordinal, entry in enumerate(strings, start=1):

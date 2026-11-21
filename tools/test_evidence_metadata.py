@@ -28,7 +28,20 @@ class GoldenMetadata(unittest.TestCase):
         for case in cases:
             self.assertEqual(case['input'], case['written'])
             self.assertEqual(case['written'], case['read'])
+            self.assertTrue(case['startup_preserved_records'])
+            self.assertTrue(case['resumed_round_preserved_records'])
+            self.assertTrue(case['fresh_round_cleared_only_active_marks'])
         self.assertEqual(report['writer']['bytes_with_round_flag_clear'], 0)
+        startup = report['startup']
+        self.assertEqual(startup['synthetic_cases'], len(cases))
+        witness = startup['pinned_witness']
+        self.assertEqual(witness['trigger_words'], [0x100, 0x40])
+        self.assertEqual(witness['round_flag_set_stop'], '00463fbe')
+        self.assertEqual(witness['round_flag_clear_stop'], '00463fc8')
+        self.assertEqual(witness['scenario_loaded_control_stop'], '004d3ae8')
+        self.assertTrue(witness['records_preserved'])
+        self.assertEqual(report['round_boundary']['resume_stop'], '00474574')
+        self.assertEqual(report['round_boundary']['fresh_stop'], '00474520')
 
     def test_event_tail_report_matches_snapshot_extent(self):
         report = json.loads((ROOT / 'docs/evidence/import-event-tail.json').read_text())

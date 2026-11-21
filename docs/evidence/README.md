@@ -49,9 +49,20 @@ round flag set, it writes the marker, count, and the two 276-byte records.
 With the flag clear, it skips the event section. All 16 combinations of
 the two active marks in the modifier words and the two spent marks in the
 action words survive the write/read boundary. The pinned victory records
-have neither active nor spent marks set. The probe covers byte persistence
-through these regions. Later loader behavior and engine restoration remain
-open.
+have neither active nor spent marks set.
+
+A separate fragment at `0x463fa7` runs the game-start event selector on the
+records produced by the traced reader. With the round flag set, the native
+selector at `0x4d3285` returns without dispatching the pinned victory records
+or changing any record bytes. The same holds for all 16 synthetic mark
+combinations. With the round flag clear, startup skips the selector. A control
+with one trigger changed to SCENARIOLOADED reaches the dispatcher boundary.
+The probe stops before its first action. At the separate round-start guard
+`0x4744ed`, a normal resume skips the reset and preserves both record
+buffers. A fresh round executes `0x575d9a` and stops at `0x474520`, before
+delay or trigger evaluation. Across all 16 non-Continuous combinations,
+the only changes are cleared active marks. Spent bits persist. The loader
+code between these fragments and engine restoration remain open.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_event_state_check.py --out /tmp/event-state.json

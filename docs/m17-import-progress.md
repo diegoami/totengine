@@ -78,8 +78,13 @@ flag, and the normal resumed-civ guard skips dispatch. The 15 embedded
 strings also match the pinned event file after trimming trailing spaces and
 tabs from its TEXT lines. A [writer and reader probe](evidence/import-event-state.json)
 shows that the active and spent bits survive the event-section write and read.
-Neither mark is set in the pinned save. Later load and continuation behavior,
-engine restoration, and pending choices remain to be verified.
+Neither mark is set in the pinned save. The separate native game-start
+selector preserves both records and dispatches neither victory trigger.
+An explicit SCENARIOLOADED control reaches the dispatcher boundary.
+The native round guard preserves both records on resume and clears only
+active marks for these non-Continuous records when starting a fresh round.
+Intervening loader behavior, engine restoration, and pending choices remain
+to be verified.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

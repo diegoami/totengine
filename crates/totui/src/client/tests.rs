@@ -4189,7 +4189,9 @@ fn installed_classic_resource_icons_have_visible_distinct_glyphs() {
         let sprite = &atlas.sprites[glyph];
         let visible = sprite
             .rgba
-            .chunks_exact(4)
+            .as_chunks::<4>()
+            .0
+            .iter()
             .filter(|pixel| pixel[3] > 0)
             .count();
         assert!((1..196).contains(&visible), "{glyph}");

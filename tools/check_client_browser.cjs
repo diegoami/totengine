@@ -114,6 +114,28 @@ fs.mkdirSync(out,{recursive:true});
  await page.waitForFunction(()=>frame.phase==='Human'&&frame.draws.some(d=>/(?:^| · )Turn 2(?:$| · )/.test(d.text)));await idle();
  await research();await key('Control+s');await save('normalnext');
  async function loadPending(name){if(has(await state(),'Name your city'))await key('Escape');await load(name)}
+ const peace=process.env.TOTENGINE_PEACE_FIXTURES;
+ if(peace){
+  const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;
+  if(!saves)throw Error('set TOTENGINE_CLIENT_SAVES');
+  for(const [name,result] of [['accept','accepted'],['refuse','refused']]){
+   const slot='peace'+name,pending=slot+'pending';
+   const read=name=>fs.readFileSync(path.join(saves,name+'.cth'));
+   fs.copyFileSync(path.join(peace,'peace-'+name+'.cth'),path.join(saves,slot+'.cth'));
+   await load(slot);await research();await key('F3');await click('Talk to civ 2');
+   await click('Review peace proposal');await key('Escape');await click('Review peace proposal');
+   await click('Save pending choice');await save(pending);
+   for(const run of ['direct','resumed']){
+    if(run==='resumed'){await click('Load checkpoint');await save(pending)}
+    await click('Send peace proposal');
+    if(!(await state()).draws.some(d=>d.text?.startsWith('The proposal was '+result+'.')))throw Error('peace result differs '+slot);
+    await click('Save pending choice');await save(slot+run);
+   }
+   if(!read(slot+'direct').equals(read(slot+'resumed')))throw Error('peace replay differs '+slot);
+   await click('Return to contacts');await key('Escape');
+  }
+  await load('normal');
+ }
  const victory=process.env.TOTENGINE_VICTORY_FIXTURES;
  if(victory){
   const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;

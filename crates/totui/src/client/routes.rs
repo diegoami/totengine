@@ -32,6 +32,18 @@ fn slider(row: usize) -> Slider {
 }
 
 impl Client {
+    pub(super) fn reply_to_talks(
+        &mut self,
+        decision: u64,
+        reply: TalksReply,
+    ) -> Result<(), String> {
+        self.order(Command::ReplyToTalks { decision, reply })?;
+        if reply == TalksReply::Leave && self.view().is_some_and(|v| v.decision.is_none()) {
+            self.open(Modal::Contacts);
+        }
+        Ok(())
+    }
+
     fn route_view(&self) -> Result<HumanView, String> {
         let v = self.view().ok_or("Start a game first")?;
         if v.phase != Phase::Human {
@@ -284,6 +296,7 @@ impl Client {
                 Ok(Some(false))
             }
             Modal::Scenarios | Modal::OriginalSaves => Err("Choose a file from the list".into()),
+            Modal::Talks => Err("Choose a conversation action".into()),
             Modal::OriginalSaveReport { .. } => {
                 self.open_original_inspection(Modal::OriginalSaves);
                 Ok(Some(false))
@@ -438,6 +451,57 @@ impl Client {
                         if locked { "Locked" } else { "Lock" }.into(),
                         Action::RateLock(row),
                     );
+                }
+            }
+            Modal::Contacts => {
+                if let Some(v) = self
+                    .view()
+                    .filter(|v| v.phase == Phase::Human && v.decision.is_none())
+                {
+                    for (i, contact) in v
+                        .contacts
+                        .iter()
+                        .enumerate()
+                        .filter(|(_, c)| c.peace_talks_available)
+                    {
+                        add(
+                            702.,
+                            166. + i as f64 * 42.,
+                            110.,
+                            30.,
+                            format!("Talk to civ {}", contact.civilization),
+                            Action::BeginTalks(contact.civilization),
+                        );
+                    }
+                }
+            }
+            Modal::Talks => {
+                if let Some(Decision::Talks { id, stage, .. }) =
+                    self.view().and_then(|v| v.decision)
+                {
+                    let actions: &[(&str, TalksReply)] = match stage {
+                        TalksStage::Topics => &[
+                            ("Leave talks", TalksReply::Leave),
+                            ("Review peace proposal", TalksReply::PreviewPeace),
+                        ],
+                        TalksStage::Proposal => &[
+                            ("Back to topics", TalksReply::Back),
+                            ("Send peace proposal", TalksReply::OfferPeace),
+                        ],
+                        TalksStage::Accepted | TalksStage::Refused => {
+                            &[("Return to contacts", TalksReply::Leave)]
+                        }
+                    };
+                    for (i, &(label, reply)) in actions.iter().enumerate() {
+                        add(
+                            212. + 260. * i as f64,
+                            595.,
+                            240.,
+                            40.,
+                            label.into(),
+                            Action::ReplyToTalks(id, reply),
+                        );
+                    }
                 }
             }
             Modal::Settings => {
@@ -636,12 +700,41 @@ impl Client {
                     };
                     line(draws, y, &contact.name, style::TYPE_BODY, style::TEXT);
                     draws.push(text(
-                        654.,
+                        580.,
                         y,
                         relationship,
                         style::TYPE_SMALL,
                         style::TEXT_DIM,
                     ));
+                }
+            }
+            Modal::Talks => {
+                if let Some(Decision::Talks { other, stage, .. }) = v.decision {
+                    let name = v
+                        .contacts
+                        .iter()
+                        .find(|c| c.civilization == other)
+                        .map(|c| c.name.as_str())
+                        .unwrap_or("Contact");
+                    line(draws, 177., name, style::TYPE_BODY, style::TEXT_BRIGHT);
+                    let message = match stage {
+                        TalksStage::Topics => "Unconditional peace is available for discussion.",
+                        TalksStage::Proposal => {
+                            "Send a proposal to end the war without payments or exchanges."
+                        }
+                        TalksStage::Accepted => {
+                            "The proposal was accepted. Both sides now have a peace treaty."
+                        }
+                        TalksStage::Refused => "The proposal was refused. The war continues.",
+                    };
+                    line(draws, 220., message, style::TYPE_SMALL, style::TEXT);
+                    line(
+                        draws,
+                        255.,
+                        &format!("Opponent response policy {}", engine::human::PEACE_POLICY),
+                        style::TYPE_SMALL,
+                        style::TEXT_DIM,
+                    );
                 }
             }
             Modal::Rates {

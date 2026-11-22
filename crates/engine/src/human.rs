@@ -13,7 +13,7 @@ use crate::player::{CityName, Game, Observation, Order, OrderResult, ACTION_CAP}
 use crate::production::Built;
 
 mod diplomacy;
-pub use diplomacy::{ContactRelationship, KnownContact};
+pub use diplomacy::{ContactRelationship, KnownContact, TalksReply, TalksStage, PEACE_POLICY};
 mod reports;
 pub use reports::*;
 mod initializer;
@@ -41,6 +41,11 @@ pub enum Phase {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Decision {
+    Talks {
+        id: u64,
+        other: u8,
+        stage: TalksStage,
+    },
     /// `default` is the first candidate on the path to the research goal
     /// (`0x49c8d4`), when a goal is set; a goal never skips the prompt.
     Research {
@@ -70,6 +75,13 @@ pub enum Decision {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
+    BeginTalks {
+        other: u8,
+    },
+    ReplyToTalks {
+        decision: u64,
+        reply: TalksReply,
+    },
     Worker {
         city: Entity,
         tile: u8,
@@ -1086,9 +1098,32 @@ impl HumanSession {
             return Err("session request limit reached");
         }
         let mut new_decision = None;
+        let mut talks = None;
         let mut new_rates_review = false;
         let mut new_goal = None;
         let order = match (&self.decision, request.command) {
+            (None, Command::BeginTalks { other }) => {
+                self.check_peace_contact(other)?;
+                talks = Some((other, TalksStage::Topics));
+                None
+            }
+            (
+                Some(Decision::Talks { id, other, stage }),
+                Command::ReplyToTalks { decision, reply },
+            ) if *id == decision => {
+                let other = *other;
+                let next = match (*stage, reply) {
+                    (TalksStage::Topics, TalksReply::PreviewPeace) => Some(TalksStage::Proposal),
+                    (TalksStage::Proposal, TalksReply::Back) => Some(TalksStage::Topics),
+                    (TalksStage::Proposal, TalksReply::OfferPeace) => {
+                        Some(self.offer_peace(other)?)
+                    }
+                    (_, TalksReply::Leave) => None,
+                    _ => return Err("This reply is unavailable in the current conversation"),
+                };
+                talks = next.map(|stage| (other, stage));
+                None
+            }
             (_, Command::Goal { advance }) => {
                 if let Some(a) = advance {
                     if !self
@@ -1253,6 +1288,9 @@ impl HumanSession {
                 let id = self.allocate_decision();
                 Decision::Founding { id, unit }
             });
+            if let Some((other, stage)) = talks {
+                self.decision = Some(self.talks_decision(other, stage));
+            }
             if new_rates_review {
                 self.open_rate_review();
             }

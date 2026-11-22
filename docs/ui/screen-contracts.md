@@ -292,13 +292,27 @@ must return to topics, and finishing must restore the foreign report. Do not
 convert generic Escape into accepting a selected demand.
 
 The contact report and intelligence report expose different detail levels.
-F3 or **Advisors → Known contacts** opens a read-only list in both clients.
+F3 or **Advisors → Known contacts** opens the list in both clients. Inspecting
+it sends no command. A separate Talk action is available for a living engine
+opponent known to the player and recorded as at war. The player reviews the
+unconditional proposal, goes back to topics, leaves, or explicitly sends it.
+Save and Load work at each stage through the normal checkpoint slots.
 The engine contact view admits a named civilization only when the
 viewer's outgoing contact bit is set. It exposes the slot, name, and recorded
 peace, alliance, or war flags. Absent or contradictory relationship flags
 produce an unspecified relationship. This uses the observed contact gate and
-existing treaty flag mapping in [the evidence](../evidence/README.md), and
-supplies neither intelligence fields nor conversation availability.
+existing treaty flag mapping in [the evidence](../evidence/README.md). The
+view exposes no foreign intelligence fields or private attitude values.
+
+The playable response policy is `engine-peace-v1`. A living opponent
+accepts unconditional peace when its own record also shows contact and war
+and its recorded attitude toward the player is at most 50. Acceptance uses
+the existing bilateral treaty setter to record peace. Refusal leaves the
+world unchanged. The versioned journal records the conversation commands,
+including back and leave, and rebuilds the same pending stage or result on
+load. Native response generation, refusal consequences and enforcement of
+treaties in combat remain outside this slice.
+
 The [peace-state probe](../evidence/diplomacy-peace.json) executes the
 native prefix at `0x44a949` through the treaty and attitude updates. In
 12 controlled cases, it sets `0x4004` in both treaty words, clears the

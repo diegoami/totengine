@@ -7,14 +7,14 @@
     "crates/tot-kit/src/events.rs": "1681efdbeffea4104ea049a77c127831a1d8b5ff49d970dfc878d3d1d9125b91",
     "crates/tot-kit/src/sav.rs": "8fe3d7f2010506ee636bc01a6cf4b8bb59942b8f0c861afff186a4bab2389f60",
     "crates/engine/src/events.rs": "07a4e57b0fbb1dd010f62369fcc8bc664b637166e765621bd6e2d66f66fe24e1",
-    "crates/engine/src/effects.rs": "a2b75e4c9ed7a7fd06bae65b7394d1637fee7d03954009e3afeafc238803ef85",
+    "crates/engine/src/effects.rs": "d29d64e017bea5d3054028340750d61d8b57d40d26336bf6c1adf563e08aaf01",
     "crates/engine/src/turn.rs": "12008e3af7eea7610fb1b9cbbd3c0b817fedb7be74b1e403c440d3d39e3fb032",
     "crates/engine/src/player.rs": "9d10ca85f09e131eb694948483261021b852ce40d6c64ed3dc1888bf1d0e1935",
-    "crates/engine/src/human.rs": "02ae078f50512675fc3c90bf595db6d9ee92ec3dd812a3e225d24a98263e82ec",
-    "crates/engine/src/human/checkpoint.rs": "8548319ef206215e3079e9c960e1be5952d24f62202e293e870c62d45664a031",
-    "crates/engine/src/lib.rs": "1cd9fc382c301aa03ebbaad632cf9df3f16bde72b4489c687769286bdeed7d59",
+    "crates/engine/src/human.rs": "aad79073723d66da21163b8105c1aab334e47a53c9e5905978f1af8387791067",
+    "crates/engine/src/human/checkpoint.rs": "15c9928f1df42900b48a004455b1a15eb8e1bbe966930d663f4e9c275a5ccbfe",
+    "crates/engine/src/lib.rs": "8a2bb9704eb55b058fd15c745c59119b94e04bf1199fcf708ea60f64cbc03204",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
-    "crates/totui/src/client/mod.rs": "d5b2d51651e1636ed5004dd1d714b30e1bd318fe5a1969c3034ded7864f6b1a7",
+    "crates/totui/src/client/mod.rs": "bbb6452aee7d065fc643ed0bfad4363ff2c0db34c232080b45b9d86c80b6b0e5",
     "crates/totui/src/resources.rs": "acb8a961654e7649038afef4e6d86cd843ad3daacf3492aa2b87ec9220b1ce84",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "a750c432e5e2faf2dec9e835ed0a7435afee52a059ddc582122e5addb89af4c2",
@@ -31,8 +31,8 @@
     "crates/totui/src/resources/original/inspection.rs": "ec6a036c655cb80392624cac5a4e9adedb22d8f4a57222863bc6a36d8b46d98a",
     "crates/totui/src/resources/original/inspection/event_tail.rs": "4cc8d7b0e2c19ce605c522302dabb605ca0ce5fc24e959892e19eab634326644",
     "crates/totui/src/resources/original/inspection/evidence.rs": "1e810f24ceb3f87c657c0b3a7fce2b51bea3f42649bd82c9feb138fb35a121d4",
-    "crates/engine/src/human/diplomacy.rs": "f03e690ce5f4df9907ee423ce11ed53d95c6f49231817bfa9b14ac1a11d12653",
-    "crates/totui/src/client/routes.rs": "3fd70050d5cbf6ec79e2540af12ca6aa530055041e5dfea54953f8067b120274",
+    "crates/engine/src/human/diplomacy.rs": "09d1a2fe9aebd0d7b9a8b71198f44e6db95ca8536ccecd4b8b9a10c064e1c4dd",
+    "crates/totui/src/client/routes.rs": "94912cc39399ba6288404da0820731983316a3319a80aee23b605277c763fd1d",
     "crates/totui/src/client/chrome.rs": "7a86a4f9ac9f7b36ac9654aec825ad97896bb4bdccb4edb48f6164b24381a80b",
     "crates/totui/src/client/desktop.rs": "4963d40a643ba890f51519180a2b10dd25152be81fd449fffef82039772b30d3",
     "crates/totui/src/client/play.js": "bcd50c52ceacdc0363e3a7cd1d2e2fa2be40ec83e0c4a051c73ebb5b6f49d6f2"
@@ -717,6 +717,19 @@
         "crates/totui/src/client/play.js"
       ],
       "finding": "Both clients expose the shared filtered HumanView contact rows via F3 and Advisors. Opening and closing the panel submits no orders and adds no conversation, event or checkpoint state."
+    },
+    {
+      "change": "#199/#200 bounded checkpointable peace talks",
+      "files": [
+        "crates/engine/src/effects.rs",
+        "crates/engine/src/human.rs",
+        "crates/engine/src/human/checkpoint.rs",
+        "crates/engine/src/human/diplomacy.rs",
+        "crates/engine/src/lib.rs",
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/client/routes.rs"
+      ],
+      "finding": "Talks use typed engine decisions and a versioned journal. The engine-peace-v1 response records bilateral peace on acceptance or leaves the world unchanged on refusal. No scenario trigger coverage or native import profile changes."
     }
   ]
 }

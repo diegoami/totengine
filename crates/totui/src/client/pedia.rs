@@ -23,6 +23,14 @@ const TEXT_X: f64 = 212.;
 const LIST_Y: f64 = 190.;
 const ROW_H: f64 = 27.;
 
+#[derive(Clone)]
+pub(super) struct PediaOrigin {
+    modal: Modal,
+    choice: Option<i32>,
+    page: usize,
+    focus_button: usize,
+}
+
 /// Greedy word wrap at `width` characters; long words are kept whole.
 pub(super) fn wrap(text: &str, width: usize) -> Vec<String> {
     let mut lines = Vec::new();
@@ -83,6 +91,7 @@ impl Client {
             scroll: 0,
             back: None,
         });
+        self.focus_pedia_accept();
         self.status =
             "Civilopedia: Left/Right choose a category, Up/Down select, Enter reads, Esc closes."
                 .into();
@@ -90,11 +99,11 @@ impl Client {
     }
 
     /// Open straight into the description of rules entry `id`; Esc returns to `back`.
-    pub(super) fn open_pedia_for(
+    fn open_pedia_for(
         &mut self,
         section: &str,
         id: usize,
-        back: Option<(Modal, Option<i32>)>,
+        back: PediaOrigin,
     ) -> Result<(), String> {
         let p = self.pedia().ok_or_else(Self::pedia_unavailable)?;
         let s = p
@@ -112,7 +121,7 @@ impl Client {
             selected: entry,
             reading: true,
             scroll: 0,
-            back: back.map(|(m, c)| Box::new((m, c))),
+            back: Some(Box::new(back)),
         });
         self.focus_pedia_accept();
         Ok(())
@@ -121,7 +130,16 @@ impl Client {
     /// Research prompt help: describe the highlighted advance; Esc returns to the choice.
     pub(super) fn pedia_for_research_choice(&mut self) -> Result<(), String> {
         let advance = self.choice.ok_or("Select a research topic first")?;
-        let back = self.modal.clone().map(|m| (m, self.choice));
+        let modal = self
+            .modal
+            .clone()
+            .ok_or("Open the research chooser first")?;
+        let back = PediaOrigin {
+            modal,
+            choice: self.choice,
+            page: self.page,
+            focus_button: self.focus_button,
+        };
         self.open_pedia_for("ADVANCE", advance as usize, back)
     }
 
@@ -225,6 +243,7 @@ impl Client {
                         *selected = step(*selected, delta, total);
                     }
                 }
+                self.focus_pedia_accept();
             }
             "ArrowLeft" | "ArrowRight" if !reading => {
                 let at = present.iter().position(|&i| i == section).unwrap_or(0);
@@ -245,6 +264,17 @@ impl Client {
 
     /// Enter / Accept: read the selected entry, or go back to the list.
     pub(super) fn pedia_accept(&mut self) -> Result<(), String> {
+        if matches!(
+            self.modal,
+            Some(Modal::Pedia {
+                reading: true,
+                back: Some(_),
+                ..
+            })
+        ) {
+            self.pedia_cancel();
+            return Ok(());
+        }
         if let Some(Modal::Pedia {
             reading, scroll, ..
         }) = &mut self.modal
@@ -261,17 +291,10 @@ impl Client {
             return false;
         };
         if let Some(origin) = back {
-            let (modal, choice) = *origin;
-            self.open(modal);
-            if let Some(c) = choice {
-                self.choice = Some(c);
-                self.page = self
-                    .current_choices()
-                    .iter()
-                    .position(|(id, _)| *id == c)
-                    .unwrap_or(0)
-                    / 12;
-            }
+            self.open(origin.modal);
+            self.choice = origin.choice;
+            self.page = origin.page;
+            self.focus_button = origin.focus_button;
             return true;
         }
         if reading {
@@ -389,16 +412,18 @@ impl Client {
                 style::TEXT_DIM,
             ));
         }
-        let source = self
+        if let Some(source) = self
             .loaded
             .as_ref()
-            .map_or("", |l| l.resources.profile.as_str());
-        draws.push(text(
-            TEXT_X,
-            566.,
-            &format!("Text from this profile's Describe.txt ({source})."),
-            style::TYPE_SMALL,
-            style::TEXT_DIM,
-        ));
+            .and_then(|l| l.resources.describe_source())
+        {
+            draws.push(text(
+                TEXT_X,
+                566.,
+                &format!("Text from {source}"),
+                style::TYPE_SMALL,
+                style::TEXT_DIM,
+            ));
+        }
     }
 }

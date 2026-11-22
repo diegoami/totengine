@@ -14,7 +14,7 @@ KEYS = {'ArrowDown': 'Down', 'ArrowUp': 'Up', 'ArrowLeft': 'Left', 'ArrowRight':
 
 def title(scene):
     for d in scene['draws']:
-        if d.get('kind') == 'text' and d['x'] == 212 and d['y'] == 125 and d['size'] == 22:
+        if d.get('kind') == 'text' and d['x'] == 212 and d['y'] == 125 and d['size'] in (20, 22):
             return d['text']
     return None
 
@@ -33,6 +33,8 @@ def run_government(scene, key, click_button, save_dialog, load, wait, work, fixt
             click_button(step['label'])
         elif op == 'entry':
             save_dialog(step['value'])
+        elif op == 'text':
+            assert any(d.get('text') == step['value'] for d in scene()['draws']), 'missing text: ' + step['value']
         elif op == 'research':
             if any(d.get('text') == 'Choose research' for d in scene()['draws']):
                 key('Down'); key('Return'); wait(lambda s: s['status'] == 'research-set')

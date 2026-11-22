@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "route": "scenario_pedia_route",
+  "clients": [
+    "Chromium",
+    "Linux SDL"
+  ],
+  "window": [
+    960,
+    720
+  ],
+  "steps": 40,
+  "route_sha256": "6652f49aab462fbfdd8a31543d8dd76632d733521db9b006f02d0ca76b9d0bca",
+  "fixture": {
+    "save_sha256": "bd2439fac66d3a21b9825144dd61b18c96f58227ae00079343e4ed9fc1b07c4a",
+    "describe_sha256": "189aeabbb93c19daf9469c796f5e07d2d6176bbe401a876162134247c8503510"
+  },
+  "checkpoint_sha256": {
+    "pedstart.cth": "1c3feb56e7b3c7cf03f424fc3c1fdfc0705d21e8cc6ff4d79466acf3eb4e25f0",
+    "pedpending.cth": "1c3feb56e7b3c7cf03f424fc3c1fdfc0705d21e8cc6ff4d79466acf3eb4e25f0",
+    "pedbrowsed.cth": "7798e3524ffa7c5646247b730fd24bf57017647f15ca2f7c781ba9bb623336b0",
+    "pedreports.cth": "7798e3524ffa7c5646247b730fd24bf57017647f15ca2f7c781ba9bb623336b0"
+  },
+  "verified": [
+    "Authored scenario article and exact Describe.txt source path",
+    "Research help scroll and return on Enter and Escape, including after checkpoint reload",
+    "Second-page entry opens and returns to the same list position",
+    "Scenario city report sorting and drill-down return",
+    "Both clients match the pending and read-only browsing/report checkpoints"
+  ]
+}

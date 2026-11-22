@@ -1,7 +1,7 @@
 // Recorded science/rates/government route through real browser input (#196).
 const fs=require('fs'),path=require('path');
-const keys={'Ctrl+n':'Control+n','Ctrl+s':'Control+s','Shift+t':'Shift+T','Shift+r':'Shift+R'};
-function title(f){const d=f.draws.find(d=>d.kind==='text'&&d.x===212&&d.y===125&&d.size===22);return d?d.text:null}
+const keys={'Ctrl+l':'Control+l','Ctrl+n':'Control+n','Ctrl+s':'Control+s','Shift+t':'Shift+T','Shift+r':'Shift+R'};
+function title(f){const d=f.draws.find(d=>d.kind==='text'&&d.x===212&&d.y===125&&[20,22].includes(d.size));return d?d.text:null}
 exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out,start='govstart',shot='government-route-final.png',startTitle=null})=>{
  const route=JSON.parse(fs.readFileSync(path.join(fixture,'route.json'),'utf8'));
  fs.copyFileSync(path.join(fixture,start+'.cth'),path.join(saves,start+'.cth'));
@@ -11,6 +11,9 @@ exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out,start=
   if(step.op==='key')await key(keys[step.key]||step.key);
   else if(step.op==='button')await click(step.label);
   else if(step.op==='entry')await save(step.value);
+  else if(step.op==='text'){
+   if(!(await state()).draws.some(d=>d.kind==='text'&&d.text===step.value))throw Error('missing text '+step.value);
+  }
   else if(step.op==='research'){const f=await state();if(f.draws.some(d=>d.text==='Choose research')){await key('ArrowDown');await key('Enter');await page.waitForFunction(()=>frame.status==='research-set')}}
   else if(step.op==='endturn'){
    const f=await state();const turn=parseInt(f.draws.find(d=>d.text?.startsWith('Turn ')).text.split(' ')[1]);

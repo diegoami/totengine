@@ -545,6 +545,12 @@ impl Resources {
         text
     }
 
+    pub(crate) fn describe_source(&self) -> Option<&str> {
+        self.text_sources
+            .get("describe")
+            .map(|source| source.relative.as_str())
+    }
+
     pub fn crop(&self, sheet: &str, rect: Rect, mask: Mask) -> Result<RgbaImage, String> {
         crop(
             self.sheets

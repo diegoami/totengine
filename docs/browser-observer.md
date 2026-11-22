@@ -6,6 +6,27 @@ capabilities #183, headless experiments #184 and session recording #186. The
 current usage below remains the implemented baseline; complete scenario event/
 objective/map inspection and unified recording are future packages.
 
+## Desktop observation from a civilization's seat
+
+The desktop target is an AI-driven game in the regular game window. Choose
+the civilization to watch. Its map, fog, panels, reports and notifications
+use the same filtered view as when playing that civilization. The AI plays
+that seat as well as the other civilizations.
+
+Show the watched civilization's actions as they happen, paced so individual
+moves and decisions can be followed. Pause and single-step control simulation
+progress. The point of view stays with the chosen civilization during other
+turns, and any opponent actions shown must pass the ordinary visibility rules.
+Use validated orders, including required decisions, so a watched game's order
+journal remains replayable.
+
+The first slice should verify a generated game in the desktop window. Apply
+the same mode to supported scenarios with their resource profile and event
+notices. The browser observer described below serves spectator inspection
+and round-by-round replay.
+
+## Browser spectator and replay
+
 The browser watches the v0.10 built-in opponent by default through the existing
 player API (decision 0002), with original-derived research, expansion, military
 targeting and city occupation. `--builtin` explicitly selects that default;

@@ -231,6 +231,7 @@ impl Client {
                     Action::Report(ReportFamily::CityStatus),
                 ),
                 item("Defense", "F2", Action::Report(ReportFamily::Defense)),
+                item("Known contacts", "F3", Action::Contacts),
                 item("Attitude", "F4", Action::Report(ReportFamily::Attitude)),
                 item("Trade", "F5", Action::Report(ReportFamily::Trade)),
                 item("Science", "F6", Action::Science),

@@ -21,6 +21,7 @@ test: rust
 	python3 -m unittest discover -s tools -p 'test_scenario_inventory.py'
 	python3 -m unittest discover -s tools -p 'test_evidence_metadata.py'
 	python3 -m py_compile tools/scenario_inventory.py
+	python3 -m py_compile tools/diplomacy_peace_check.py
 	python3 -m py_compile tools/original_victory_check.py tools/check_victory_route.py tools/prepare_victory_input.py
 	python3 -m py_compile tools/import_event_tail_check.py tools/import_event_state_check.py tools/import_unit_setup_check.py tools/import_input_handoff_check.py tools/import_history_check.py tools/import_loader_exit_check.py
 	python3 -m py_compile tools/import_knowledge_check.py tools/import_visibility_check.py tools/import_contact_check.py tools/import_submarine_check.py tools/import_city_memory_check.py tools/import_saved_view_check.py tools/import_dependencies_check.py tools/import_phase_check.py tools/import_snapshot_check.py tools/import_pinned_observation_check.py

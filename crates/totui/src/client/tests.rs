@@ -5406,6 +5406,101 @@ fn scenario_event_texts_open_as_pop_ups_one_at_a_time() {
 }
 
 #[test]
+fn known_contacts_opens_from_key_and_advisor_menu_without_changing_the_game() {
+    let f = Fixture::new();
+    let mut bytes = engine::tests_support::synthetic_save_bytes();
+    let civ_two = tot_kit::OFF_CIV_NAMES + 242 + 26;
+    bytes[civ_two..civ_two + 9].copy_from_slice(b"Neighbors");
+    let civ_three = civ_two + 242;
+    bytes[civ_three..civ_three + 6].copy_from_slice(b"Hidden");
+    let outgoing = tot_kit::OFF_CIV_PROPS + 3348 + 40;
+    bytes[outgoing + 8..outgoing + 12].copy_from_slice(&5u32.to_le_bytes());
+    let path = "Original/Contacts.sav";
+    fs::write(f.0.join(path), bytes).unwrap();
+    let mut c = f.client();
+    c.pick_scenario(path).unwrap();
+    key(&mut c, "Enter");
+    ready(&mut c);
+    research(&mut c);
+    let checkpoint = c.checkpoint().unwrap();
+
+    for open in [false, true] {
+        if open {
+            button(&mut c, "Known contacts");
+        } else {
+            key(&mut c, "F3");
+        }
+        assert!(matches!(c.modal, Some(Modal::Contacts)), "{}", c.status);
+        let texts = c.frame().draws;
+        for expected in ["Neighbors", "Peace"] {
+            assert!(texts
+                .iter()
+                .any(|d| matches!(d, Draw::Text { text, .. } if text == expected)));
+        }
+        assert!(!texts
+            .iter()
+            .any(|d| matches!(d, Draw::Text { text, .. } if text == "Hidden")));
+        key(&mut c, if open { "Enter" } else { "Escape" });
+        assert!(c.modal.is_none());
+        assert_eq!(c.checkpoint().unwrap(), checkpoint);
+    }
+}
+
+#[test]
+fn peace_proposal_can_go_back_and_resume_to_the_same_result() {
+    for (attitude, label, expected) in [
+        (50, "accept", TalksStage::Accepted),
+        (51, "refuse", TalksStage::Refused),
+    ] {
+        let f = Fixture::new();
+        let path = "Original/Peace.sav";
+        fs::write(
+            f.0.join(path),
+            engine::tests_support::synthetic_peace_save(attitude),
+        )
+        .unwrap();
+        let mut c = f.client();
+        c.pick_scenario(path).unwrap();
+        key(&mut c, "Enter");
+        ready(&mut c);
+        research(&mut c);
+        key(&mut c, "F3");
+        button(&mut c, "Talk to civ 2");
+        button(&mut c, "Review peace proposal");
+        key(&mut c, "Escape");
+        assert!(matches!(
+            c.view().unwrap().decision,
+            Some(Decision::Talks {
+                stage: TalksStage::Topics,
+                ..
+            })
+        ));
+        button(&mut c, "Review peace proposal");
+        let pending = c.checkpoint().unwrap();
+        button(&mut c, "Save pending choice");
+        edit(&mut c, label);
+        key(&mut c, "Enter");
+        assert_eq!(c.checkpoint().unwrap(), pending);
+
+        let mut resumed = f.client();
+        key(&mut resumed, "Ctrl+l");
+        edit(&mut resumed, label);
+        key(&mut resumed, "Enter");
+        assert_eq!(resumed.checkpoint().unwrap(), pending);
+        assert!(matches!(resumed.modal, Some(Modal::Talks)));
+        button(&mut c, "Send peace proposal");
+        button(&mut resumed, "Send peace proposal");
+        assert_eq!(c.checkpoint().unwrap(), resumed.checkpoint().unwrap());
+        assert!(
+            matches!(resumed.view().unwrap().decision, Some(Decision::Talks { stage, .. }) if stage == expected)
+        );
+        button(&mut resumed, "Return to contacts");
+        assert!(matches!(resumed.modal, Some(Modal::Contacts)));
+        assert!(resumed.view().unwrap().decision.is_none());
+    }
+}
+
+#[test]
 fn scenario_game_over_shows_every_box_and_blocks_further_play() {
     let f = Fixture::new();
     let mut c = f.client();
@@ -5480,8 +5575,48 @@ fn scenario_game_over_shows_every_box_and_blocks_further_play() {
     assert_eq!(c.checkpoint(), checkpoint);
 }
 
-/// Private fixture author for real browser/SDL input. The input directory
-/// contains a controlled Original save/events copy; no assets are emitted.
+/// Write authored peace snapshots and matching checkpoints for real input tests
+/// in a private copy of the installation.
+#[test]
+#[ignore]
+fn installed_peace_input_fixture() {
+    let home = PathBuf::from(std::env::var_os("CIVTOT_HOME").expect("private copied installation"));
+    let out =
+        PathBuf::from(std::env::var_os("TOTENGINE_PEACE_OUT").expect("private fixture output"));
+    fs::create_dir_all(&out).unwrap();
+    for (name, attitude) in [("accept", 50), ("refuse", 51)] {
+        let path = format!("Original/peace-{name}.sav");
+        let bytes = engine::tests_support::synthetic_peace_save(attitude);
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(home.join(&path))
+            .unwrap();
+        std::io::Write::write_all(&mut file, &bytes).unwrap();
+        let (resources, files) = crate::resources::Resources::load_scenario(&home, &path).unwrap();
+        let identity = resources.scenario_identity();
+        let session = HumanSession::scenario_initialized_current(
+            engine::human::ScenarioInput {
+                path: &files.path,
+                snapshot: &files.bytes,
+                rules: resources.rules,
+                events: files.events.map(engine::events::EventEngine::new),
+            },
+            1,
+            engine::campaign::AiPolicy::BuiltIn1,
+            7,
+            &identity,
+        )
+        .unwrap();
+        fs::write(
+            out.join(format!("peace-{name}.cth")),
+            session.checkpoint(&identity),
+        )
+        .unwrap();
+    }
+}
+
+/// Private fixture author for real browser/SDL input on the ENDGAME route.
 #[test]
 #[ignore]
 fn installed_victory_input_fixture() {

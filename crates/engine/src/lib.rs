@@ -924,6 +924,19 @@ mod tests {
 
 /// Test fixtures shared with the doc tests (not public API).
 pub mod tests_support {
+    /// Small named two-seat scenario for testing SDK and client peace talks.
+    pub fn synthetic_peace_save(attitude: u8) -> Vec<u8> {
+        let mut bytes = synthetic_save_bytes();
+        let civ_two = tot_kit::OFF_CIV_NAMES + 242 + 26;
+        bytes[civ_two..civ_two + 9].copy_from_slice(b"Neighbors");
+        let civ_one = tot_kit::OFF_CIV_PROPS + 3348;
+        let civ_two = civ_one + 3348;
+        let treaty = (1u32 | 0x2000).to_le_bytes();
+        bytes[civ_one + 48..civ_one + 52].copy_from_slice(&treaty);
+        bytes[civ_two + 44..civ_two + 48].copy_from_slice(&treaty);
+        bytes[civ_two + 73] = attitude;
+        bytes
+    }
 
     /// A minimal decodable 0x32 file (mirrors tot-kit's unit test fixture
     /// recipe): 4×4 stored map, 2 units, 8-slot city grid.

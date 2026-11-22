@@ -1,0 +1,500 @@
+{
+  "schema": 2,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "entry": "0044a949",
+  "stop": "0044a992",
+  "cases": [
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        20,
+        99
+      ],
+      "attitudes": [
+        20,
+        50
+      ]
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        99,
+        20
+      ],
+      "attitudes": [
+        99,
+        20
+      ]
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        60,
+        255
+      ],
+      "attitudes": [
+        60,
+        50
+      ]
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        20,
+        99
+      ],
+      "attitudes": [
+        20,
+        50
+      ]
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        99,
+        20
+      ],
+      "attitudes": [
+        99,
+        20
+      ]
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        60,
+        255
+      ],
+      "attitudes": [
+        60,
+        50
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        20,
+        99
+      ],
+      "attitudes": [
+        20,
+        50
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        99,
+        20
+      ],
+      "attitudes": [
+        99,
+        20
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        60,
+        255
+      ],
+      "attitudes": [
+        60,
+        50
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        20,
+        99
+      ],
+      "attitudes": [
+        20,
+        50
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        99,
+        20
+      ],
+      "attitudes": [
+        99,
+        20
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        60,
+        255
+      ],
+      "attitudes": [
+        60,
+        50
+      ]
+    }
+  ],
+  "offer_gate": {
+    "entry": "00452cc1",
+    "cases": [
+      {
+        "treaty": 1,
+        "prior_local": 0,
+        "forced": 0,
+        "suppressed": 0,
+        "threshold_base": 5,
+        "unsigned_civ_byte_38": 10,
+        "signed_pair_byte_80": 2,
+        "reaches_offer_helper": true
+      },
+      {
+        "treaty": 1,
+        "prior_local": 0,
+        "forced": 0,
+        "suppressed": 0,
+        "threshold_base": 5,
+        "unsigned_civ_byte_38": 11,
+        "signed_pair_byte_80": 2,
+        "reaches_offer_helper": false
+      },
+      {
+        "treaty": 1,
+        "prior_local": 0,
+        "forced": 0,
+        "suppressed": 0,
+        "threshold_base": 5,
+        "unsigned_civ_byte_38": 12,
+        "signed_pair_byte_80": 2,
+        "reaches_offer_helper": false
+      },
+      {
+        "treaty": 1,
+        "prior_local": 0,
+        "forced": 0,
+        "suppressed": 0,
+        "threshold_base": 5,
+        "unsigned_civ_byte_38": 7,
+        "signed_pair_byte_80": -2,
+        "reaches_offer_helper": false
+      },
+      {
+        "treaty": 1,
+        "prior_local": 0,
+        "forced": 0,
+        "suppressed": 1,
+        "threshold_base": 5,
+        "unsigned_civ_byte_38": 10,
+        "signed_pair_byte_80": 2,
+        "reaches_offer_helper": false
+      },
+      {
+        "treaty": 1,
+        "prior_local": 0,
+        "forced": 1,
+        "suppressed": 1,
+        "threshold_base": 5,
+        "unsigned_civ_byte_38": 12,
+        "signed_pair_byte_80": 2,
+        "reaches_offer_helper": true
+      },
+      {
+        "treaty": 1,
+        "prior_local": 1,
+        "forced": 0,
+        "suppressed": 1,
+        "threshold_base": 5,
+        "unsigned_civ_byte_38": 12,
+        "signed_pair_byte_80": 2,
+        "reaches_offer_helper": true
+      },
+      {
+        "treaty": 3,
+        "prior_local": 1,
+        "forced": 0,
+        "suppressed": 1,
+        "threshold_base": 5,
+        "unsigned_civ_byte_38": 12,
+        "signed_pair_byte_80": 2,
+        "reaches_offer_helper": false
+      }
+    ]
+  },
+  "encounter_gate": {
+    "entry": "00526aca",
+    "cases": [
+      {
+        "pair": [
+          0,
+          2
+        ],
+        "turn": 20,
+        "human_mask": 2,
+        "viewer": 1,
+        "outgoing_treaty": 0,
+        "last_contact": 20,
+        "stop": "0052877c",
+        "boundary": "return"
+      },
+      {
+        "pair": [
+          1,
+          2
+        ],
+        "turn": 0,
+        "human_mask": 2,
+        "viewer": 1,
+        "outgoing_treaty": 0,
+        "last_contact": 0,
+        "stop": "0052877c",
+        "boundary": "return"
+      },
+      {
+        "pair": [
+          1,
+          2
+        ],
+        "turn": 20,
+        "human_mask": 0,
+        "viewer": 1,
+        "outgoing_treaty": 0,
+        "last_contact": 20,
+        "stop": "00526eaa",
+        "boundary": "other_seat"
+      },
+      {
+        "pair": [
+          1,
+          2
+        ],
+        "turn": 20,
+        "human_mask": 2,
+        "viewer": 2,
+        "outgoing_treaty": 0,
+        "last_contact": 20,
+        "stop": "00526eaa",
+        "boundary": "other_seat"
+      },
+      {
+        "pair": [
+          1,
+          2
+        ],
+        "turn": 20,
+        "human_mask": 2,
+        "viewer": 1,
+        "outgoing_treaty": 0,
+        "last_contact": 20,
+        "stop": "00526ea2",
+        "boundary": "conversation"
+      },
+      {
+        "pair": [
+          1,
+          2
+        ],
+        "turn": 20,
+        "human_mask": 2,
+        "viewer": 1,
+        "outgoing_treaty": 1,
+        "last_contact": 5,
+        "stop": "00526eaa",
+        "boundary": "other_seat"
+      },
+      {
+        "pair": [
+          1,
+          2
+        ],
+        "turn": 20,
+        "human_mask": 2,
+        "viewer": 1,
+        "outgoing_treaty": 1,
+        "last_contact": 4,
+        "stop": "00526ea2",
+        "boundary": "conversation"
+      },
+      {
+        "pair": [
+          1,
+          2
+        ],
+        "turn": 20,
+        "human_mask": 2,
+        "viewer": 1,
+        "outgoing_treaty": 1,
+        "last_contact": -1,
+        "stop": "00526ea2",
+        "boundary": "conversation"
+      },
+      {
+        "pair": [
+          1,
+          2
+        ],
+        "turn": 20,
+        "human_mask": 2,
+        "viewer": 1,
+        "outgoing_treaty": 65537,
+        "last_contact": 20,
+        "stop": "00526ea2",
+        "boundary": "conversation"
+      }
+    ]
+  },
+  "resolution_gate": {
+    "entry": "004530a0",
+    "cases": [
+      {
+        "final_status": 0,
+        "stop": "004530b9",
+        "boundary": "apply_peace"
+      },
+      {
+        "final_status": 1,
+        "stop": "004530d6",
+        "boundary": "refusal_notice"
+      },
+      {
+        "final_status": -1,
+        "stop": "004530d6",
+        "boundary": "refusal_notice"
+      }
+    ]
+  },
+  "scope": "Native treaty/attitude prefix and contact, offer and response gates from controlled inputs. No substituted callees. Stops precede offer helper, refusal presentation and post-treaty callbacks."
+}

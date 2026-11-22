@@ -420,7 +420,7 @@ impl WorldState {
 
     /// Treaty set helper `0x4545d2`: both directions; 8 also sets 4, any
     /// of 0xe clears 0x2a60, war 0x2000 clears 0xe and adds 0x200000.
-    fn treaty_set(&mut self, a: u8, b: u8, mut mask: u32) {
+    pub(crate) fn treaty_set(&mut self, a: u8, b: u8, mut mask: u32) {
         if mask & 8 != 0 {
             self.treaty_set(a, b, 4);
         }

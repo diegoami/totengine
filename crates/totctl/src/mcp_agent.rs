@@ -583,6 +583,9 @@ fn decision_json(decision: &Decision, rules: &tot_kit::Rules) -> Value {
             .map_or_else(|| format!("Advance {a}"), |t| t.name.clone())
     };
     match decision {
+        Decision::Talks { id, other, .. } => json!({
+            "type": "talks", "decision": id, "contact": other,
+        }),
         Decision::Research {
             id,
             available,

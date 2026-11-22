@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "clients": [
+    "Chromium",
+    "Linux SDL"
+  ],
+  "policy": "engine-peace-v1",
+  "source": "Authored snapshots via the installed_peace_input_fixture test in a private install copy",
+  "checks": [
+    "Preview and back to topics",
+    "Save while proposal is pending",
+    "Send and save, reload the pending proposal, then send and save again",
+    "Identical before/after checkpoints across both clients"
+  ],
+  "cases": [
+    {
+      "fixture": "accept",
+      "snapshot_sha256": "32626f8973cd58e67532b4c251b76f606d3ce09b108e1c04e791a0ae4b124701",
+      "initial_checkpoint_sha256": "387d26379a44e27c5e1948cad2cf6872681c74522f4f1cb6bd746ef135514fc7",
+      "pending_checkpoint_sha256": "92123c2d7a4f584e603f2dd8f4f71c8673854ff7371ceae95eda24d0edb9d468",
+      "direct_and_resumed_checkpoint_sha256": "84369d0ef585e264cef32227e7242909639574e0b4441735a22cfbb7a8834059"
+    },
+    {
+      "fixture": "refuse",
+      "snapshot_sha256": "bd59d22e7012eeb05e5f37f7786a31159eba58a787677f2b8716307c956d6455",
+      "initial_checkpoint_sha256": "9972b4991b7d17ea846c5e2c16cbc567c912aebeedede73a7696d4bb405f79d9",
+      "pending_checkpoint_sha256": "a22103aff2ba5e3d73d902adcd6b93fb9e59399947bd2c69a4f31d628b976684",
+      "direct_and_resumed_checkpoint_sha256": "1e6fe12dd41591247fcd0d5a828cb248d8f0cfce2cff31156f1d9835a1d70fd3"
+    }
+  ]
+}

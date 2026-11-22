@@ -255,6 +255,10 @@ impl HumanSession {
 impl Command {
     fn encode(self) -> String {
         match self {
+            Self::BeginTalks { other } => format!("talk-v1 {other}"),
+            Self::ReplyToTalks { decision, reply } => {
+                format!("talk-reply-v1 {decision} {}", reply.token())
+            }
             Self::Worker { city, tile } => format!("worker {} {} {}", city.slot, city.id, tile),
             Self::Specialist { city, slot } => {
                 format!("specialist {} {} {}", city.slot, city.id, slot)
@@ -314,6 +318,13 @@ impl Command {
     fn decode(text: &str) -> Option<Self> {
         let fields: Vec<_> = text.split_whitespace().collect();
         match fields.as_slice() {
+            ["talk-v1", other] => Some(Self::BeginTalks {
+                other: other.parse().ok()?,
+            }),
+            ["talk-reply-v1", id, reply] => Some(Self::ReplyToTalks {
+                decision: id.parse().ok()?,
+                reply: TalksReply::from_token(reply)?,
+            }),
             ["skip", slot, id] => Some(Self::Skip {
                 unit: Entity {
                     slot: slot.parse().ok()?,

@@ -19,7 +19,8 @@ mod tips;
 use crate::resources::Resources;
 pub use atlas::{Atlas, Sprite};
 use engine::human::{
-    Command, Decision, Entity, HumanSession, HumanView, Phase, ReportFamily, Request,
+    Command, Decision, Entity, HumanSession, HumanView, Phase, ReportFamily, Request, TalksReply,
+    TalksStage,
 };
 use engine::newgame::NewGameConfig;
 use engine::player::CityName;
@@ -297,6 +298,8 @@ enum Modal {
     },
     /// The keyboard help overlay (#284): original keys plus our additions.
     Help,
+    Contacts,
+    Talks,
     /// The persistent message log (#284), newest first, paged.
     Messages,
     /// Opt-in enhancements (#284): the B-layer settings, all off by default.
@@ -383,6 +386,9 @@ enum Action {
     DismissNotices,
     /// Opens the keyboard help overlay.
     Help,
+    Contacts,
+    BeginTalks(u8),
+    ReplyToTalks(u64, TalksReply),
     Research,
     Rates,
     Revolution,
@@ -698,6 +704,7 @@ impl Client {
     }
     fn required(&mut self) {
         match self.view().and_then(|v| v.decision) {
+            Some(Decision::Talks { .. }) => self.open(Modal::Talks),
             Some(Decision::Founding { .. }) => self.open(Modal::Name),
             Some(Decision::Research {
                 available, default, ..
@@ -1182,6 +1189,8 @@ impl Client {
                             | Action::ReportSort(_)
                             | Action::ReportFamily(_)
                             | Action::PediaSection(_)
+                            | Action::BeginTalks(_)
+                            | Action::ReplyToTalks(..)
                     ) {
                         return self.action(b.action.clone());
                     }
@@ -1263,6 +1272,7 @@ impl Client {
                 "F6" => self.action(Action::Science),
                 "F1" => self.action(Action::Report(ReportFamily::CityStatus)),
                 "F2" => self.action(Action::Report(ReportFamily::Defense)),
+                "F3" => self.action(Action::Contacts),
                 "F4" => self.action(Action::Report(ReportFamily::Attitude)),
                 "F5" => self.action(Action::Report(ReportFamily::Trade)),
                 "F7" => self.action(Action::Report(ReportFamily::Wonders)),
@@ -1405,6 +1415,12 @@ impl Client {
             }
             Action::Toggle(e) => self.toggle_enhancement(e),
             Action::Settings => self.open(Modal::Settings),
+            Action::Contacts => {
+                self.view().ok_or("Start a game first")?;
+                self.open(Modal::Contacts);
+            }
+            Action::BeginTalks(other) => self.order(Command::BeginTalks { other })?,
+            Action::ReplyToTalks(decision, reply) => self.reply_to_talks(decision, reply)?,
             Action::Scenarios => self.open_scenarios()?,
             Action::InspectOriginalSaves => self.open_original_saves()?,
             Action::ScenarioPick(path) => {
@@ -1641,6 +1657,8 @@ impl Client {
                     | Modal::Science
                     | Modal::Notice { .. }
                     | Modal::Help
+                    | Modal::Contacts
+                    | Modal::Talks
                     | Modal::Messages
                     | Modal::Settings
                     | Modal::Scenarios
@@ -1807,6 +1825,19 @@ impl Client {
                 self.required();
             }
             Action::Cancel => {
+                if matches!(self.modal, Some(Modal::Talks)) {
+                    let Some(Decision::Talks { id, stage, .. }) =
+                        self.view().and_then(|v| v.decision)
+                    else {
+                        return Err("The conversation changed".into());
+                    };
+                    let reply = if stage == TalksStage::Proposal {
+                        TalksReply::Back
+                    } else {
+                        TalksReply::Leave
+                    };
+                    return self.reply_to_talks(id, reply);
+                }
                 if self.route_cancel() {
                     return Ok(());
                 }
@@ -1830,6 +1861,7 @@ impl Client {
                     Some(Decision::Founding { .. }) => "City naming remains pending.",
                     Some(Decision::Government { .. }) => "A government choice remains pending.",
                     Some(Decision::Rates { .. }) => "A rate review remains pending.",
+                    Some(Decision::Talks { .. }) => "A conversation remains pending.",
                     None if production_cancel => {
                         "Production selection cancelled; existing item unchanged."
                     }
@@ -2442,7 +2474,7 @@ impl Client {
             }
             if matches!(
                 modal,
-                Modal::Name | Modal::Research | Modal::Government { .. }
+                Modal::Name | Modal::Research | Modal::Government { .. } | Modal::Talks
             ) || matches!(
                 modal,
                 Modal::Rates {
@@ -2484,7 +2516,10 @@ impl Client {
             if !matches!(modal,Modal::Purchase {quote,..} if quote.price > quote.treasury)
                 && !matches!(
                     modal,
-                    Modal::Scenarios | Modal::OriginalSaves | Modal::OriginalSaveReport { .. }
+                    Modal::Scenarios
+                        | Modal::OriginalSaves
+                        | Modal::OriginalSaveReport { .. }
+                        | Modal::Talks
                 )
             {
                 add(
@@ -2499,6 +2534,7 @@ impl Client {
                         Modal::Science
                         | Modal::Notice { .. }
                         | Modal::Help
+                        | Modal::Contacts
                         | Modal::Messages
                         | Modal::Settings => "Close [Enter]",
                         Modal::Report { .. } => "Open city [Enter]",
@@ -2512,7 +2548,7 @@ impl Client {
                 );
             }
             // A required government choice has no cancel button (owner decision).
-            if !matches!(modal, Modal::Government { .. }) {
+            if !matches!(modal, Modal::Government { .. } | Modal::Talks) {
                 add(
                     572.,
                     595.,
@@ -2529,6 +2565,7 @@ impl Client {
                         Modal::Science
                         | Modal::Notice { .. }
                         | Modal::Help
+                        | Modal::Contacts
                         | Modal::Messages
                         | Modal::Settings
                         | Modal::Report { .. }
@@ -2831,6 +2868,8 @@ impl Client {
                     Modal::Science => "Science advisor",
                     Modal::Notice { title, .. } => title,
                     Modal::Help => "Keys",
+                    Modal::Contacts => "Known contacts",
+                    Modal::Talks => "Peace talks",
                     Modal::Messages => "Messages",
                     Modal::Settings => "Enhancements (optional, off by default)",
                     Modal::Report { .. } => "Reports",

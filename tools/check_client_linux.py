@@ -179,6 +179,8 @@ def run():
                 write("7")
                 button(start_label)
                 wait(lambda s:has(s,"Choose research"));button("Save pending choice");save_dialog("research");research()
+                key("F3");wait(lambda s:has(s,"Known contacts") and has(s,"No known contacts."))
+                key("Escape")
                 key("b");wait(lambda s:has(s,"Name your city"));button("Save pending choice");save_dialog("founding")
                 wait(lambda s:has(s,"Name your city"));write("athenx");key("BackSpace");key("a");key("Return");wait(lambda s:s["status"]=="founded 0")
                 button("Choose production")
@@ -332,6 +334,25 @@ def run():
                         key("Escape");key("8");key("Return")
                         key("Ctrl+s");save_dialog(name+"after")
                         assert (work/"saves"/(name+"after.cth")).read_bytes()==(Path(fixtures)/("after-"+name+".cth")).read_bytes(),name
+                peace=os.environ.get("TOTENGINE_PEACE_FIXTURES")
+                if peace:
+                    import shutil
+                    for name, result in [("accept", "accepted"), ("refuse", "refused")]:
+                        slot = "peace" + name
+                        pending = slot + "pending"
+                        shutil.copyfile(Path(peace) / ("peace-" + name + ".cth"), work / "saves" / (slot + ".cth"))
+                        load(slot);research();key("F3");click_button("Talk to civ 2")
+                        click_button("Review peace proposal");key("Escape");click_button("Review peace proposal")
+                        click_button("Save pending choice");save_dialog(pending)
+                        for run in ["direct", "resumed"]:
+                            if run == "resumed":
+                                click_button("Load checkpoint");save_dialog(pending)
+                            click_button("Send peace proposal")
+                            wait(lambda s:any(d.get("text", "").startswith("The proposal was " + result + ".") for d in s["draws"]))
+                            click_button("Save pending choice");save_dialog(slot + run)
+                        assert (work / "saves" / (slot + "direct.cth")).read_bytes() == (work / "saves" / (slot + "resumed.cth")).read_bytes()
+                        click_button("Return to contacts");key("Escape")
+                    load("normal")
                 victory=os.environ.get("TOTENGINE_VICTORY_FIXTURES")
                 if victory:
                     from check_victory_route import run_victory

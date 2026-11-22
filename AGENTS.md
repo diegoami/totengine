@@ -85,6 +85,11 @@ Native response generation and later side effects remain outside this slice.
 See the Diplomacy and intelligence section of `docs/ui/screen-contracts.md`.
 The owner launches milestone reviews.
 
+The owner directed work to milestone 19 (#201/#202). The existing reports
+and Civilopedia shipped in v0.19.0. Current work on `m19-scenario-reference`
+checks scenario-specific reference text and the return to the research chooser.
+See `docs/ui/reports-milestone.md` for scope and acceptance.
+
 ### Current work (2026-11-21)
 
 Milestone 17, faithful classic import (#197/#198), is the live target.

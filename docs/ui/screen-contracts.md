@@ -358,10 +358,14 @@ Evidence: U05/U08/U12/U23/U24/U26. Report families and fields:
 | Demographics           | Values, units, ranks, selected competitor comparisons       | Derive public/earned values explicitly.                                |
 | Spaceships             | Early standard game reports unavailable                     | Late assembly/launch/arrival layouts unobserved.                       |
 
-**First slice (unreleased, #201/#202):** City status, Defense, Attitude, Trade and Wonders (own hosts only) are implemented as own-civilization read-only views, extended with the public-figure families Ranked cities (F8), Score (F9) and Demographics (F11) — public world data the original also reports (U23/U24), still inert; see [reports-milestone.md](reports-milestone.md). The other families below remain unscoped.
+The v0.19.0 reports slice (#201/#202) includes read-only own-civilization City
+status, Defense, Attitude, Trade, and Wonders (own hosts only). Ranked cities
+(F8), Score (F9), and Demographics (F11) use the public figures observed in
+U23/U24. See [the milestone scope and walkthrough](reports-milestone.md).
 
-The Civilopedia needs scenario-provided names/descriptions and entity links,
-but its detailed navigation/media behavior is still uninspected. Preferences,
+The Civilopedia uses the scenario's selected description file and supports
+returning from research help. Detailed native navigation and media remain
+unverified. Preferences,
 city-report notifications and help are first-class routes, not hidden developer
 settings. Report/UI font, scale, scrolling and keyboard selection need tests
 with long custom names, large city lists and foreign text.

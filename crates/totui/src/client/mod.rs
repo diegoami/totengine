@@ -312,7 +312,7 @@ enum Modal {
         selected: usize,
         reading: bool,
         scroll: usize,
-        back: Option<Box<(Modal, Option<i32>)>>,
+        back: Option<Box<pedia::PediaOrigin>>,
     },
     /// An own-civilization report; `selected` indexes the sorted rows.
     Report {
@@ -2539,6 +2539,7 @@ impl Client {
                         | Modal::Settings => "Close [Enter]",
                         Modal::Report { .. } => "Open city [Enter]",
                         Modal::Pedia { reading: false, .. } => "Read [Enter]",
+                        Modal::Pedia { back: Some(_), .. } => "Back to research [Enter]",
                         Modal::Pedia { .. } => "Back to list [Enter]",
                         Modal::ScenarioStart(_) => "Start experimental game [Enter]",
                         _ => "Accept [Enter]",

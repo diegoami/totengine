@@ -3030,6 +3030,22 @@ impl Rec {
         self.0
             .push(serde_json::json!({"op":"button","label":label,"title":title(c)}));
     }
+    fn menu(&mut self, c: &mut Client, label: &str) {
+        let button = c
+            .buttons()
+            .into_iter()
+            .find(|b| b.label == label && matches!(b.action, Action::Menu(_)))
+            .expect("menu title");
+        input(
+            c,
+            Input::Click {
+                x: button.x + 3.,
+                y: button.y + 3.,
+            },
+        );
+        self.0
+            .push(serde_json::json!({"op":"button","label":label,"title":title(c)}));
+    }
     fn entry(&mut self, c: &mut Client, name: &str) {
         edit(c, name);
         key(c, "Enter");
@@ -3040,6 +3056,17 @@ impl Rec {
         self.key(c, "Ctrl+s");
         self.entry(c, name);
         self.0.push(serde_json::json!({"op":"compare","name":name}));
+    }
+    fn expect_text(&mut self, c: &Client, expected: &str) {
+        assert!(
+            c.frame()
+                .draws
+                .iter()
+                .any(|d| matches!(d, Draw::Text { text, .. } if text == expected)),
+            "missing text {expected:?}"
+        );
+        self.0
+            .push(serde_json::json!({"op":"text","value":expected,"title":title(c)}));
     }
     fn research(&mut self, c: &mut Client) {
         research(c);
@@ -3537,7 +3564,7 @@ fn generated_reports_route() {
     assert!(c.loaded.is_some(), "{}", c.status);
     let mut r = Rec(Vec::new());
     r.key(&mut c, "F1");
-    assert_eq!(title(&c), "Reports");
+    assert!(matches!(c.modal, Some(Modal::Report { .. })));
     r.key(&mut c, "F2");
     r.key(&mut c, "F4");
     r.key(&mut c, "F7");
@@ -3558,7 +3585,7 @@ fn generated_reports_route() {
     assert_eq!(title(&c), serde_json::Value::Null);
     assert!(c.city_open);
     r.key(&mut c, "Escape");
-    assert_eq!(title(&c), "Reports");
+    assert!(matches!(c.modal, Some(Modal::Report { .. })));
     assert!(matches!(
         c.modal,
         Some(Modal::Report {
@@ -3569,8 +3596,9 @@ fn generated_reports_route() {
         })
     ));
     r.key(&mut c, "Escape");
+    r.menu(&mut c, "Advisors");
     r.button(&mut c, "City status");
-    assert_eq!(title(&c), "Reports");
+    assert!(matches!(c.modal, Some(Modal::Report { .. })));
     r.key(&mut c, "Escape");
     r.save(&mut c, "repdone");
     let read = |n: &str| fs::read(out.join(format!("{n}.cth"))).unwrap();
@@ -3689,25 +3717,34 @@ fn research_help_describes_the_highlighted_advance_and_returns_to_the_choice() {
     assert!(c.status.contains("Select a research topic"), "{}", c.status);
     key(&mut c, "ArrowDown");
     let chosen = c.choice;
-    button(&mut c, "Civilopedia");
-    assert!(
-        matches!(
-            c.modal,
-            Some(Modal::Pedia {
-                reading: true,
-                section: 0,
-                ..
-            })
-        ),
-        "{}",
-        c.status
-    );
-    key(&mut c, "Escape");
-    assert!(matches!(c.modal, Some(Modal::Research)));
-    assert_eq!(
-        c.choice, chosen,
-        "the highlighted topic survives the lookup"
-    );
+    let origin = (c.page, c.focus_button);
+    for back in ["Enter", "Escape"] {
+        button(&mut c, "Civilopedia");
+        assert!(
+            matches!(
+                c.modal,
+                Some(Modal::Pedia {
+                    reading: true,
+                    section: 0,
+                    ..
+                })
+            ),
+            "{}",
+            c.status
+        );
+        assert!(c
+            .frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Text { text, .. } if text == "Text from Describe.txt")));
+        key(&mut c, back);
+        assert!(matches!(c.modal, Some(Modal::Research)));
+        assert_eq!(
+            c.choice, chosen,
+            "the highlighted topic survives the lookup"
+        );
+        assert_eq!((c.page, c.focus_button), origin);
+    }
     assert_eq!(c.checkpoint().unwrap(), before);
     key(&mut c, "Enter");
     assert!(c.modal.is_none(), "{}", c.status);
@@ -3748,7 +3785,8 @@ fn generated_pedia_route() {
     r.key(&mut c, "Enter");
     assert_eq!(title(&c), serde_json::Value::Null);
     // The main lookup: categories, reading, scrolling, back.
-    r.button(&mut c, "Civilopedia");
+    r.menu(&mut c, "Civilopedia");
+    r.button(&mut c, "Civilopedia…");
     assert_eq!(title(&c), "Civilopedia");
     r.key(&mut c, "ArrowRight");
     r.key(&mut c, "ArrowRight");
@@ -3760,6 +3798,131 @@ fn generated_pedia_route() {
     r.key(&mut c, "Escape");
     assert_eq!(title(&c), serde_json::Value::Null);
     r.save(&mut c, "pedend");
+    fs::write(
+        out.join("route.json"),
+        serde_json::to_vec_pretty(&r.0).unwrap(),
+    )
+    .unwrap();
+}
+
+/// A private scenario fixture with authored reference text and a long list.
+#[test]
+#[ignore = "private install copy required for the real-input scenario reference route"]
+fn scenario_pedia_route() {
+    let out = PathBuf::from(std::env::var("TOTENGINE_PEDIA_OUT").expect("private output"));
+    fs::create_dir_all(&out).unwrap();
+    let home = std::env::var("CIVTOT_HOME").expect("private copied install");
+    let profile = Path::new(&home).join("Scenario/AuthorReference");
+    fs::create_dir_all(profile.parent().unwrap()).unwrap();
+    fs::create_dir(&profile).unwrap();
+    let mut save = engine::tests_support::synthetic_save_bytes();
+    let human = tot_kit::OFF_CIV_PROPS + 3348;
+    let human_research = human + 18;
+    save[human_research..human_research + 2].copy_from_slice(&(-1i16).to_le_bytes());
+    save[human + 29] = 1;
+    // This fixture ends with eight 92-byte city records.
+    let city = save.len() - 8 * 92;
+    save[city..city + 2].copy_from_slice(&2u16.to_le_bytes());
+    save[city + 34..city + 50].fill(0);
+    let city_name = b"Reference Grove";
+    save[city + 34..city + 34 + city_name.len()].copy_from_slice(city_name);
+    save[city + 86..city + 90].copy_from_slice(&1u32.to_le_bytes());
+    fs::write(profile.join("Info.sav"), save).unwrap();
+    let mut describe = String::from("@ADVANCE_DESCRIPTIONS\n@@ADVANCE_INDEX\n");
+    for id in 0..100 {
+        describe.push_str(&format!("{},\n", id % 13));
+    }
+    describe.push_str("-2,\n");
+    for id in 0..13 {
+        describe.push_str(&format!(
+            "\n@@Scenario topic {id}\nAuthored scenario reference.\n\n{}\n",
+            "word ".repeat(400)
+        ));
+    }
+    describe.push_str("@This must be here to terminate search!!!\n");
+    fs::write(profile.join("Describe.txt"), describe).unwrap();
+    let (resources, files) =
+        Resources::load_scenario(Path::new(&home), "Scenario/AuthorReference/Info.sav").unwrap();
+    let identity = resources.scenario_identity();
+    let initial = HumanSession::scenario_initialized_current(
+        engine::human::ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: resources.rules,
+            events: files.events.map(engine::events::EventEngine::new),
+        },
+        1,
+        engine::campaign::AiPolicy::BuiltIn1,
+        7,
+        &identity,
+    )
+    .unwrap();
+    storage::save(&out, "pedstart", &initial.checkpoint(&identity)).unwrap();
+    let mut c = seeded_client(home, out.clone());
+    button(&mut c, "Load engine checkpoint");
+    edit(&mut c, "pedstart");
+    key(&mut c, "Enter");
+    assert!(matches!(c.modal, Some(Modal::Research)), "{}", c.status);
+    let start = c.checkpoint().unwrap();
+    let source = "Text from Scenario/AuthorReference/Describe.txt";
+    let mut r = Rec(Vec::new());
+    r.key(&mut c, "ArrowDown");
+    let choice = c.choice;
+    r.button(&mut c, "Civilopedia");
+    r.expect_text(&c, source);
+    r.expect_text(&c, "Authored scenario reference.");
+    r.key(&mut c, "PageDown");
+    assert!(matches!(c.modal, Some(Modal::Pedia { scroll, .. }) if scroll > 0));
+    r.key(&mut c, "Enter");
+    assert!(matches!(c.modal, Some(Modal::Research)));
+    assert_eq!(c.choice, choice);
+    r.button(&mut c, "Save pending choice");
+    r.entry(&mut c, "pedpending");
+    r.0.push(serde_json::json!({"op":"compare","name":"pedpending"}));
+    assert_eq!(c.checkpoint().unwrap(), start);
+    r.key(&mut c, "ArrowDown");
+    r.key(&mut c, "Enter");
+    assert!(c.modal.is_none(), "{}", c.status);
+    let before_browse = c.checkpoint().unwrap();
+    r.menu(&mut c, "Civilopedia");
+    r.button(&mut c, "Civilopedia…");
+    r.key(&mut c, "PageDown");
+    r.expect_text(&c, "Scenario topic 12");
+    r.key(&mut c, "Enter");
+    assert!(matches!(
+        c.modal,
+        Some(Modal::Pedia {
+            reading: true,
+            selected: 12,
+            ..
+        })
+    ));
+    r.expect_text(&c, source);
+    r.key(&mut c, "Escape");
+    r.expect_text(&c, "Scenario topic 12");
+    r.key(&mut c, "Escape");
+    r.save(&mut c, "pedbrowsed");
+    assert_eq!(c.checkpoint().unwrap(), before_browse);
+    r.key(&mut c, "F1");
+    r.expect_text(&c, "Reference Grove");
+    r.key(&mut c, "s");
+    r.key(&mut c, "Enter");
+    assert!(c.city_open);
+    r.key(&mut c, "Escape");
+    assert!(matches!(c.modal, Some(Modal::Report { sort: 1, .. })));
+    r.expect_text(&c, "Reference Grove");
+    r.key(&mut c, "Escape");
+    r.save(&mut c, "pedreports");
+    assert_eq!(c.checkpoint().unwrap(), before_browse);
+    r.key(&mut c, "Ctrl+l");
+    r.entry(&mut c, "pedpending");
+    r.key(&mut c, "ArrowDown");
+    r.button(&mut c, "Civilopedia");
+    r.expect_text(&c, source);
+    r.key(&mut c, "Escape");
+    assert_eq!(c.checkpoint().unwrap(), start);
+    r.key(&mut c, "Escape");
+    assert!(c.modal.is_none());
     fs::write(
         out.join("route.json"),
         serde_json::to_vec_pretty(&r.0).unwrap(),

@@ -368,7 +368,14 @@ def run():
                 pedia=os.environ.get("TOTENGINE_PEDIA_FIXTURES")
                 if pedia:
                     from check_government_route import run_government
+                    compact = os.environ.get("TOTENGINE_PEDIA_COMPACT") == "1"
+                    if compact:
+                        resize(display,window,960,720);sync(display,0);time.sleep(.3)
+                        attr = Attributes()
+                        assert get_attributes(display,window,c.byref(attr)) and (attr.width, attr.height) == (960, 720), "compact Civilopedia window size differs"
                     run_government(scene,key,click_button,save_dialog,load,wait,work,pedia,start="pedstart",start_title="Choose research")
+                    if compact:
+                        resize(display,window,1024,768);sync(display,0);time.sleep(.3)
                 panels=os.environ.get("TOTENGINE_PANELS_FIXTURES")
                 if panels:
                     from check_city_panels import run_panels

@@ -14,8 +14,8 @@
     "crates/engine/src/human/checkpoint.rs": "15c9928f1df42900b48a004455b1a15eb8e1bbe966930d663f4e9c275a5ccbfe",
     "crates/engine/src/lib.rs": "8a2bb9704eb55b058fd15c745c59119b94e04bf1199fcf708ea60f64cbc03204",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
-    "crates/totui/src/client/mod.rs": "bbb6452aee7d065fc643ed0bfad4363ff2c0db34c232080b45b9d86c80b6b0e5",
-    "crates/totui/src/resources.rs": "acb8a961654e7649038afef4e6d86cd843ad3daacf3492aa2b87ec9220b1ce84",
+    "crates/totui/src/client/mod.rs": "fc915f471f4052fb34cea512302a21edf05222d90bf9462918a8e392d05d53a5",
+    "crates/totui/src/resources.rs": "9209415b886285d8b330d2601c3d6f5a76a2456d487ad7e09f067b907b14c3f4",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "a750c432e5e2faf2dec9e835ed0a7435afee52a059ddc582122e5addb89af4c2",
     "crates/totui/src/client/scenario.rs": "63fd139969174f13de2b7cc8b24102c2300519013b0b348d467dc58bb1c32b97",
@@ -35,7 +35,8 @@
     "crates/totui/src/client/routes.rs": "94912cc39399ba6288404da0820731983316a3319a80aee23b605277c763fd1d",
     "crates/totui/src/client/chrome.rs": "7a86a4f9ac9f7b36ac9654aec825ad97896bb4bdccb4edb48f6164b24381a80b",
     "crates/totui/src/client/desktop.rs": "4963d40a643ba890f51519180a2b10dd25152be81fd449fffef82039772b30d3",
-    "crates/totui/src/client/play.js": "bcd50c52ceacdc0363e3a7cd1d2e2fa2be40ec83e0c4a051c73ebb5b6f49d6f2"
+    "crates/totui/src/client/play.js": "bcd50c52ceacdc0363e3a7cd1d2e2fa2be40ec83e0c4a051c73ebb5b6f49d6f2",
+    "crates/totui/src/client/pedia.rs": "daaeb8d7b9c34661a2f0cafa9fd0a030fae6bbfb22b897119fc16902c1feeb43"
   },
   "triggers": {
     "TURN": {
@@ -737,6 +738,15 @@
         "crates/engine/src/human.rs"
       ],
       "finding": "An accepted treaty starts the existing engine observation continuation for schema-2 sessions. Refusal and the other talks replies preserve the saved initial epoch. The schema-2 checkpoint replay uses the same transition."
+    },
+    {
+      "change": "#201/#202 scenario Civilopedia provenance and contextual navigation",
+      "files": [
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/client/pedia.rs",
+        "crates/totui/src/resources.rs"
+      ],
+      "finding": "The source label uses the captured Describe.txt path. Enter and Escape in contextual help restore research selection, page and focus. Ordinary browsing preserves the selected entry across paging and reading. Inspection mutates no engine, scenario or checkpoint state."
     }
   ]
 }

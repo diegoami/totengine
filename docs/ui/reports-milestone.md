@@ -1,10 +1,8 @@
 # Milestone 19 — own-civilization reports on both clients (#201, #202)
 
-Status: **first slice open as PR #247, extended with Attitude and Wonders on a stacked
-branch; extended again with the public families Ranked cities/Score/Demographics;
-not released, not owner-accepted.** Scope is deliberately small: report families
-whose fields the engine already computes and verifies, shared by the browser and
-desktop clients.
+The eight report families and Civilopedia shipped in v0.19.0. Milestone 19
+still needs owner acceptance on both clients. The scope is the report fields
+the engine computes and verifies, shared by the browser and desktop clients.
 
 ## Admitted families
 
@@ -23,11 +21,9 @@ Field sets follow the inspected original reports (discovery U05 city status, U23
 defense/trade/ranked/demographics, U24 score). **Layout, column order, labels and
 the sort/paging controls are ours**: the original's exact column set, sorting and
 drill-down behavior were not traced, so no native-parity claim is made (the
-demographics categories in particular are our own selection). Not in this slice:
-Foreign (F3, needs the diplomacy model), the
-defense casualty timeline, supply/demand, Spaceships (F12) and the
-Civilopedia/reference lookup — the last now ships separately through
-`tot_kit::Pedia`.
+demographics categories in particular are our own selection). The separate
+F3 known-contact panel belongs to milestone 18. The casualty timeline,
+supply/demand and Spaceships (F12) remain outside this package.
 
 ## Rules for the views
 
@@ -51,7 +47,7 @@ Civilopedia/reference lookup — the last now ships separately through
 
 ## Client behavior (shared controller, `totui/src/client/reports.rs`)
 
-- F1/F2/F4/F5/F7 or the bottom-row **Reports** button open a report; F1/F2/F4/F5/F7 or the tabs switch
+- F1/F2/F4/F5/F7 or the **Advisors** menu open a report; F1/F2/F4/F5/F7 or the tabs switch
   family. Reports are blocked while a required decision is pending.
 - Up/Down select, PageUp/PageDown page (12 rows), **S** cycles the sort column, a header
   button sorts that column and flips direction on a second click; rows sort case-insensitively
@@ -92,15 +88,52 @@ checked by `crates/tot-kit/tests/pedia_install.rs`):
 - The text is copyrighted and is never committed: tests use authored synthetic text, and the
   real-install recorder reads it at run time only.
 
-Client: a **Civilopedia** button (bottom row; the original menu declares no hotkey) opens
+The **Civilopedia** menu opens
 category tabs, a paged title list and a scrollable reading view (Left/Right category, Up/Down
 select or scroll, PageUp/PageDown, Enter reads/goes back, Esc steps back then closes). In the
-required research prompt a **Civilopedia** button describes the highlighted advance and Esc
-returns to the same choice with the same highlight, answering "help returns to that choice".
-The open demo has no `Describe.txt` and reports the lookup as unavailable; the text is not part
-of the checkpoint identity. Word wrap is approximate (a fixed character width), not the
+required research prompt a **Civilopedia** button describes the highlighted advance.
+Enter or Escape returns to the same research choice, page and keyboard focus. The
+footer names the selected file, including the root fallback when used. The open
+demo reports the lookup as unavailable. Generated and legacy format-2 checkpoints
+keep their original resource identity. Format-3 scenario checkpoints bind the
+selected text in their dependency manifest. Word wrap is approximate (a fixed character width), not the
 original's layout. Not covered: media, hyperlinks between entries, search, unit/terrain
 pictures, and the "About" entry.
 
 Evidence: unit tests plus a recorded 15-step real-input route (`generated_pedia_route`)
 replayed through SDL and Chromium with byte-identical checkpoints.
+
+## Scenario report and reference walkthrough
+
+Use a private install copy containing the root and Original image and text
+resources. The fixture author adds a new `Scenario/AuthorReference` directory
+with an authored save and an authored `Describe.txt`.
+
+```sh
+export CIVTOT_HOME=/path/to/private/install
+export TOTENGINE_PEDIA_OUT=/path/to/private/reference-fixtures
+cargo test -p totui --lib scenario_pedia_route -- --ignored
+export TOTENGINE_PEDIA_FIXTURES="$TOTENGINE_PEDIA_OUT"
+export TOTENGINE_PEDIA_COMPACT=1
+cargo build -p totui --features desktop --bins
+python3 tools/check_client_linux.py
+```
+
+For Chromium, start `totplay --no-open --port=8844` with the same private
+install and a scratch `TOTENGINE_SAVES` directory. Run
+`tools/check_client_browser.cjs` with `TOTENGINE_CLIENT_ORIGIN` set to the
+loopback address, `TOTENGINE_CLIENT_SAVES` set to the host's scratch save folder,
+and the same fixture and compact-layout variables. Both runners use a
+960×720 window for this walkthrough.
+
+Load `pedstart.cth`, highlight a research topic, and open Civilopedia.
+Verify the authored text and its source path, scroll, and use Enter to
+return to the same choice. After deciding on research, browse to the second
+page of the standalone index and check that Enter reads the selected topic.
+Open City status, change the sort, drill into Reference Grove, and return to
+the same report. Reload the pending checkpoint and repeat the contextual
+lookup with Escape. The runners compare snapshots of the pending decision
+and the unchanged game after reference browsing and reporting.
+The [40-step evidence record](../evidence/client-scenario-reference-route-v1.json)
+retains the authored fixture, route and checkpoint hashes. Provenance and
+navigation were checked through real Chromium and Linux SDL input.

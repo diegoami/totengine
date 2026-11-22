@@ -12,6 +12,8 @@ use crate::newgame::NewGameConfig;
 use crate::player::{CityName, Game, Observation, Order, OrderResult, ACTION_CAP};
 use crate::production::Built;
 
+mod diplomacy;
+pub use diplomacy::{ContactRelationship, KnownContact};
 mod reports;
 pub use reports::*;
 mod initializer;
@@ -180,6 +182,8 @@ pub struct HumanView {
     pub phase: Phase,
     pub game_over: Option<crate::events::EventGameOver>,
     pub observation: Observation,
+    /// Contact identities and recorded relationships visible to this seat.
+    pub contacts: Vec<KnownContact>,
     pub decision: Option<Decision>,
     pub notices: Vec<Notice>,
     /// Scenario event TEXT boxes shown to the human since its last turn ended
@@ -712,6 +716,7 @@ impl HumanSession {
         );
         observation.cities.sort_by_key(|c| c.index);
         HumanView {
+            contacts: diplomacy::known_contacts(&self.game.world, self.human),
             goal: self.goal,
             goal_choices: self.game.world.goal_choices(&self.game.rules, self.human),
             anarchy_choice_turn: self

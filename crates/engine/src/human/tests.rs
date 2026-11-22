@@ -21,6 +21,45 @@ fn config() -> NewGameConfig {
 fn session(human: u8) -> HumanSession {
     HumanSession::generated(config(), rules(), human).unwrap()
 }
+
+#[test]
+fn human_view_discloses_only_outgoing_known_contacts() {
+    let mut cfg = config();
+    cfg.civilizations = 6;
+    let mut session = HumanSession::generated(cfg, rules(), 1).unwrap();
+    let world = &mut session.game.world;
+    world.diplomacy = [[0; 8]; 8];
+    world.diplomacy[1][0] = 1;
+    world.diplomacy[1][1] = 1;
+    world.diplomacy[2][1] = 1 | 4;
+    world.diplomacy[1][3] = 1 | 4 | 8;
+    world.diplomacy[1][4] = 1 | 0x2000;
+    world.diplomacy[1][5] = 1 | 4 | 0x2000;
+    world.diplomacy[1][6] = 1 | 4 | 0x1000;
+    world.diplomacy[1][7] = 1 | 4;
+    let checkpoint = session.checkpoint("assets");
+    let contacts = session.view().contacts;
+    assert_eq!(
+        contacts
+            .iter()
+            .map(|c| (c.civilization, c.relationship))
+            .collect::<Vec<_>>(),
+        [
+            (3, ContactRelationship::Alliance),
+            (4, ContactRelationship::War),
+            (5, ContactRelationship::Unspecified),
+            (6, ContactRelationship::Peace),
+        ]
+    );
+    for contact in contacts {
+        assert_eq!(
+            contact.name,
+            session.game.world.civ_name(contact.civilization)
+        );
+    }
+    assert_eq!(session.checkpoint("assets"), checkpoint);
+}
+
 #[test]
 fn opponent_policy_is_recorded_and_round_trips_through_checkpoints() {
     // The default policy's checkpoints stay byte-identical to pre-#261 ones.

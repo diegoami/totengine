@@ -10,7 +10,7 @@
     "crates/engine/src/effects.rs": "a2b75e4c9ed7a7fd06bae65b7394d1637fee7d03954009e3afeafc238803ef85",
     "crates/engine/src/turn.rs": "12008e3af7eea7610fb1b9cbbd3c0b817fedb7be74b1e403c440d3d39e3fb032",
     "crates/engine/src/player.rs": "9d10ca85f09e131eb694948483261021b852ce40d6c64ed3dc1888bf1d0e1935",
-    "crates/engine/src/human.rs": "609734b862bbfaf6fd8b67cef8cc19b97214bdb706f7c073b944d4e070ea28ce",
+    "crates/engine/src/human.rs": "02ae078f50512675fc3c90bf595db6d9ee92ec3dd812a3e225d24a98263e82ec",
     "crates/engine/src/human/checkpoint.rs": "8548319ef206215e3079e9c960e1be5952d24f62202e293e870c62d45664a031",
     "crates/engine/src/lib.rs": "1cd9fc382c301aa03ebbaad632cf9df3f16bde72b4489c687769286bdeed7d59",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
@@ -30,7 +30,8 @@
     "crates/totui/src/client/storage.rs": "5a9286c964d84fa6c22776f8eff59ea8bd9845a927a7f258ae99445a7035791f",
     "crates/totui/src/resources/original/inspection.rs": "ec6a036c655cb80392624cac5a4e9adedb22d8f4a57222863bc6a36d8b46d98a",
     "crates/totui/src/resources/original/inspection/event_tail.rs": "4cc8d7b0e2c19ce605c522302dabb605ca0ce5fc24e959892e19eab634326644",
-    "crates/totui/src/resources/original/inspection/evidence.rs": "1e810f24ceb3f87c657c0b3a7fce2b51bea3f42649bd82c9feb138fb35a121d4"
+    "crates/totui/src/resources/original/inspection/evidence.rs": "1e810f24ceb3f87c657c0b3a7fce2b51bea3f42649bd82c9feb138fb35a121d4",
+    "crates/engine/src/human/diplomacy.rs": "f03e690ce5f4df9907ee423ce11ed53d95c6f49231817bfa9b14ac1a11d12653"
   },
   "triggers": {
     "TURN": {
@@ -693,6 +694,14 @@
         "crates/totui/src/resources/original/inspection.rs"
       ],
       "finding": "The separate inspection picker uses the same immutable Original capture and checks as totctl. It displays selected human-view counts and compatibility diagnostics while pausing opponent scheduling. Back preserves the active session and prior scheduling state. No new playable profile or trigger/action support."
+    },
+    {
+      "change": "#199 read-only known contacts in the human view",
+      "files": [
+        "crates/engine/src/human.rs",
+        "crates/engine/src/human/diplomacy.rs"
+      ],
+      "finding": "The viewer's outgoing contact bit gates the displayed civilization name and relationship. Projection adds no private intelligence fields, contact creation, proposals, checkpoint fields, or turn effects."
     }
   ]
 }

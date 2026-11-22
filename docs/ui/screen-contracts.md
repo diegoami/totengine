@@ -292,6 +292,19 @@ must return to topics, and finishing must restore the foreign report. Do not
 convert generic Escape into accepting a selected demand.
 
 The contact report and intelligence report expose different detail levels.
+The first engine contact view admits a named civilization only when the
+viewer's outgoing contact bit is set. It exposes the slot, name, and recorded
+peace, alliance, or war flags. Absent or contradictory relationship flags
+produce an unspecified relationship. This uses the observed contact gate and
+existing treaty flag mapping in [the evidence](../evidence/README.md), and
+supplies neither intelligence fields nor conversation availability.
+The [peace-state probe](../evidence/diplomacy-peace.json) executes the
+native prefix at `0x44a949` through the treaty and attitude updates. In
+12 controlled cases, it sets `0x4004` in both treaty words, clears the
+conflicting bits, and caps the second civilization's attitude toward the
+first at 50. The probe stops before the first post-treaty callback.
+Offer eligibility, refusal, and later side effects still need evidence.
+
 The inspected intelligence view includes government, treasury, capital,
 research, treaties and known advances, plus city navigation. Exact eligibility
 for every field is still unverified; the engine must explicitly supply what

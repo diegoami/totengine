@@ -1,0 +1,273 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "entry": "0044a949",
+  "stop": "0044a992",
+  "cases": [
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        20,
+        99
+      ],
+      "attitudes": [
+        20,
+        50
+      ]
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        99,
+        20
+      ],
+      "attitudes": [
+        99,
+        20
+      ]
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        60,
+        255
+      ],
+      "attitudes": [
+        60,
+        50
+      ]
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        20,
+        99
+      ],
+      "attitudes": [
+        20,
+        50
+      ]
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        99,
+        20
+      ],
+      "attitudes": [
+        99,
+        20
+      ]
+    },
+    {
+      "pair": [
+        1,
+        2
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        60,
+        255
+      ],
+      "attitudes": [
+        60,
+        50
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        20,
+        99
+      ],
+      "attitudes": [
+        20,
+        50
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        99,
+        20
+      ],
+      "attitudes": [
+        99,
+        20
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        16389,
+        16389
+      ],
+      "initial_attitudes": [
+        60,
+        255
+      ],
+      "attitudes": [
+        60,
+        50
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        20,
+        99
+      ],
+      "attitudes": [
+        20,
+        50
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        99,
+        20
+      ],
+      "attitudes": [
+        99,
+        20
+      ]
+    },
+    {
+      "pair": [
+        4,
+        7
+      ],
+      "initial_words": [
+        2105953,
+        2109953
+      ],
+      "treaty_words": [
+        2113541,
+        2113541
+      ],
+      "initial_attitudes": [
+        60,
+        255
+      ],
+      "attitudes": [
+        60,
+        50
+      ]
+    }
+  ],
+  "scope": "Controlled inputs and native treaty/attitude prefix with no substituted callees. Stops before post-treaty callbacks. No offer or refusal is executed."
+}

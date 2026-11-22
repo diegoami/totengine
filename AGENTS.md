@@ -68,6 +68,21 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
 
 ## Status shorthand
 
+### Current work (2026-11-22)
+
+The owner approved merging the milestone 17 integration batch after review
+and directed work to milestone 18. #369 merged at `9f80641` with the exact
+tree reviewed at `31a386e` by Kimi K3.1 Pro (AGREE, no MUST-FIX). #197/#198
+remain open for playable admission. Findings #370–#373 are follow-ups.
+
+Milestone 18 begins with #199 on `m18-diplomacy-contact`. The shared
+human view projects known contact identities and recorded relationships from
+the viewer's treaty row. The first native peace probe checks the treaty and
+attitude writes before the post-treaty callbacks. Offer/refusal evidence,
+authoritative resumable decisions, and #200's both-client route still remain.
+See the Diplomacy and intelligence section of `docs/ui/screen-contracts.md`.
+The owner launches milestone reviews.
+
 ### Current work (2026-11-21)
 
 Milestone 17, faithful classic import (#197/#198), is the live target.

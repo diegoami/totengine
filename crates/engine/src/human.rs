@@ -1312,9 +1312,11 @@ impl HumanSession {
         }
         if let Some(result) = &result {
             self.last_human = Some(result.clone());
-            if !matches!(request.command, Command::CloseProduction { .. }) {
-                self.saved_initial = None;
-            }
+        }
+        if talks.is_some_and(|(_, stage)| stage == TalksStage::Accepted)
+            || (result.is_some() && !matches!(request.command, Command::CloseProduction { .. }))
+        {
+            self.saved_initial = None;
         }
         if order == Some(Order::EndTurn) {
             // Boxes already shown during this turn are not repeated next turn.

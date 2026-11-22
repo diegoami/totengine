@@ -1121,7 +1121,8 @@ above. Addresses marked ✓ were spot-checked by hand.
 **Still unsupported:**
 - BRIBEUNIT. Its trigger hook is `0x574aeb` in the unit transfer
   `0x4a7eb3`, but the engine has no bribery.
-- NEGOTIATION and Negotiator (no diplomacy UI).
+- Native NEGOTIATION and Negotiator event integration. Both clients expose
+  known contacts and bounded peace talks under the engine response policy.
 - NOSCHISM, PLAYWAVEFILE and the other actions the preflight lists.
 - *(Done in §TURN, TURNINTERVAL and RANDOMTURN evaluators: the TURN
   `Continuous` and turn-22/42 cases and RANDOMTURN's CRT roll.)*

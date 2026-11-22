@@ -10,7 +10,7 @@
     "crates/engine/src/effects.rs": "d29d64e017bea5d3054028340750d61d8b57d40d26336bf6c1adf563e08aaf01",
     "crates/engine/src/turn.rs": "12008e3af7eea7610fb1b9cbbd3c0b817fedb7be74b1e403c440d3d39e3fb032",
     "crates/engine/src/player.rs": "9d10ca85f09e131eb694948483261021b852ce40d6c64ed3dc1888bf1d0e1935",
-    "crates/engine/src/human.rs": "aad79073723d66da21163b8105c1aab334e47a53c9e5905978f1af8387791067",
+    "crates/engine/src/human.rs": "0ee97000b55183897b8013ed5a0ba0bd9e354109bab2dea3c69f45dd5b82d410",
     "crates/engine/src/human/checkpoint.rs": "15c9928f1df42900b48a004455b1a15eb8e1bbe966930d663f4e9c275a5ccbfe",
     "crates/engine/src/lib.rs": "8a2bb9704eb55b058fd15c745c59119b94e04bf1199fcf708ea60f64cbc03204",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
@@ -730,6 +730,13 @@
         "crates/totui/src/client/routes.rs"
       ],
       "finding": "Talks use typed engine decisions and a versioned journal. The engine-peace-v1 response records bilateral peace on acceptance or leaves the world unchanged on refusal. No scenario trigger coverage or native import profile changes."
+    },
+    {
+      "change": "#375 engine observation after accepted peace",
+      "files": [
+        "crates/engine/src/human.rs"
+      ],
+      "finding": "An accepted treaty starts the existing engine observation continuation for schema-2 sessions. Refusal and the other talks replies preserve the saved initial epoch. The schema-2 checkpoint replay uses the same transition."
     }
   ]
 }

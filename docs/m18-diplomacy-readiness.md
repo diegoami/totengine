@@ -22,6 +22,11 @@ details, and combat enforcement outside its scope. See the
 [screen contract](ui/screen-contracts.md#diplomacy-and-intelligence) and
 [native boundary evidence](evidence/diplomacy-peace.json).
 
+On a schema-2 experimental import, accepted peace starts the declared engine
+observation continuation. Preview, Back, Leave and refusal retain the saved
+initial view. A schema-2 regression verifies the transition and compares the
+restored view and checkpoint with uninterrupted play.
+
 ## Reproduce
 
 Use a private install copy containing the root and Original text and image

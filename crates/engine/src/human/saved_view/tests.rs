@@ -127,6 +127,66 @@ fn restore(save: &[u8], text: &str) -> Result<HumanSession, String> {
 }
 
 #[test]
+fn only_accepted_peace_leaves_the_saved_view_and_replays_the_transition() {
+    for attitude in [50, 51] {
+        let mut save = snapshot();
+        let name = tot_kit::OFF_CIV_NAMES + 242 + 26;
+        save[name..name + 9].copy_from_slice(b"Neighbors");
+        let human = tot_kit::OFF_CIV_PROPS + 3348;
+        let other = human + 3348;
+        let treaty = 0x2001u32.to_le_bytes();
+        save[human + 48..human + 52].copy_from_slice(&treaty);
+        save[other + 44..other + 48].copy_from_slice(&treaty);
+        save[other + 73] = attitude;
+
+        let mut session = current(&save);
+        let initial = session.view().observation.seen;
+        let reply = |session: &mut HumanSession, reply| {
+            let Some(Decision::Talks { id, .. }) = session.view().decision else {
+                panic!("expected a conversation");
+            };
+            send(
+                session,
+                Command::ReplyToTalks {
+                    decision: id,
+                    reply,
+                },
+            )
+            .unwrap()
+        };
+        send(&mut session, Command::BeginTalks { other: 2 }).unwrap();
+        for action in [
+            TalksReply::PreviewPeace,
+            TalksReply::Back,
+            TalksReply::Leave,
+        ] {
+            reply(&mut session, action);
+            assert!(session.saved_initial.is_some());
+            assert_eq!(session.view().observation.seen, initial);
+        }
+        send(&mut session, Command::BeginTalks { other: 2 }).unwrap();
+        reply(&mut session, TalksReply::PreviewPeace);
+        let mut resumed = restore(&save, &session.checkpoint(DEPS)).unwrap();
+        assert!(resumed.saved_initial.is_some());
+        assert_eq!(
+            reply(&mut resumed, TalksReply::OfferPeace),
+            reply(&mut session, TalksReply::OfferPeace)
+        );
+        let accepted = attitude == 50;
+        let expected_treaty = if accepted { 0x4005 } else { 0x2001 };
+        assert_eq!(session.game.world.diplomacy[1][2], expected_treaty);
+        assert_eq!(session.game.world.diplomacy[2][1], expected_treaty);
+        assert_eq!(session.saved_initial.is_none(), accepted);
+        assert_eq!(session.view().observation.seen != initial, accepted);
+        let outcome = session.checkpoint(DEPS);
+        assert_eq!(resumed.checkpoint(DEPS), outcome);
+        let restored = restore(&save, &outcome).unwrap();
+        assert_eq!(restored.saved_initial.is_none(), accepted);
+        assert_eq!(restored.view(), session.view());
+    }
+}
+
+#[test]
 fn saved_initial_view_uses_stored_entity_gates_and_city_sizes() {
     let save = snapshot();
     let s = current(&save);

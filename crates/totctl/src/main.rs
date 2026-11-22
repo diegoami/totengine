@@ -10,6 +10,7 @@ use engine::rng::GameRng as _;
 mod experiment;
 mod mcp;
 mod mcp_agent;
+mod original_import;
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().collect();
@@ -30,6 +31,7 @@ fn main() -> ExitCode {
         Some("mcp") => mcp::cmd_mcp(&args[2..]),
         Some("record") => cmd_record(&args[2..]),
         Some("experiment") => experiment::cmd_experiment(&args[2..]),
+        Some("inspect-original-save") => original_import::run(&args[2..]),
         Some("--version") | Some("-V") => {
             println!("totctl {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
@@ -44,6 +46,7 @@ fn main() -> ExitCode {
                         \x20                        — inspect, replay-verify or recover session recordings (#206)\n\
                         {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
+                        {prog} inspect-original-save <install> <Original/file.sav> — report import checks as JSON\n\
                         {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai | --ai-v1 | --builtin]\n\
                         \x20                        — random players, AI v0 (--ai), AI v1 (--ai-v1), or built-in AI (--builtin)\n\
                         {prog} replay <file.sav|scn> <order.log>\n\

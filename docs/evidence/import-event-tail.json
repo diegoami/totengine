@@ -1,0 +1,504 @@
+{
+  "schema": 3,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "post_city_bytes": 3129,
+  "event_offset_after_cities": 1853,
+  "prefix_trace": {
+    "stop": "00461d7b",
+    "consumed": 1853,
+    "reads": {
+      "0046178d": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "004617ca": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "00461807": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "00461836": {
+        "width": 2,
+        "calls": 1,
+        "bytes_read": 2
+      },
+      "00461860": {
+        "width": 2,
+        "calls": 1,
+        "bytes_read": 2
+      },
+      "0046189b": {
+        "width": 60,
+        "calls": 1,
+        "bytes_read": 60
+      },
+      "00461990": {
+        "width": 1200,
+        "calls": 1,
+        "bytes_read": 1200
+      },
+      "004619ba": {
+        "width": 106,
+        "calls": 1,
+        "bytes_read": 106
+      },
+      "00461a2b": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461a70": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461ab5": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461afa": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461b3f": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461bef": {
+        "width": 340,
+        "calls": 1,
+        "bytes_read": 340
+      }
+    },
+    "skipped": [
+      "0045ed54",
+      "0046d7ed",
+      "0046d730",
+      "0045f0f8",
+      "0047dd64"
+    ]
+  },
+  "truncated_prefix": {
+    "stop": "00463052",
+    "consumed": 1852,
+    "reads": {
+      "0046178d": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "004617ca": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "00461807": {
+        "width": 1,
+        "calls": 21,
+        "bytes_read": 21
+      },
+      "00461836": {
+        "width": 2,
+        "calls": 1,
+        "bytes_read": 2
+      },
+      "00461860": {
+        "width": 2,
+        "calls": 1,
+        "bytes_read": 2
+      },
+      "0046189b": {
+        "width": 60,
+        "calls": 1,
+        "bytes_read": 60
+      },
+      "00461990": {
+        "width": 1200,
+        "calls": 1,
+        "bytes_read": 1200
+      },
+      "004619ba": {
+        "width": 106,
+        "calls": 1,
+        "bytes_read": 106
+      },
+      "00461a2b": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461a70": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461ab5": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461afa": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461b3f": {
+        "width": 2,
+        "calls": 8,
+        "bytes_read": 16
+      },
+      "00461bef": {
+        "width": 340,
+        "calls": 1,
+        "bytes_read": 339
+      }
+    },
+    "skipped": [
+      "0045ed54",
+      "0046d7ed",
+      "0046d730"
+    ]
+  },
+  "prefix_substituted_helpers": {
+    "0045ed54": "skip post-read refresh helper",
+    "0046d7ed": "skip presentation helper",
+    "0046d730": "skip calendar helper",
+    "0045f0f8": "select the single-player continuation",
+    "0047dd64": "skip initialization helper"
+  },
+  "record_count": 2,
+  "events_txt_sha256": "742d7475e6fe3431a4e4d08494455f4696b82cd3f53b2805c05eeb6ecc92f312",
+  "victory_fields": {
+    "first_header_words": [
+      256,
+      20481,
+      268435720
+    ],
+    "second_header_words": [
+      64,
+      20481,
+      1073741832
+    ],
+    "first_receiver": -2,
+    "first_futuretech": 5,
+    "second_denominator": 3
+  },
+  "victory_string_comparison": {
+    "receiver_strings_matched": 1,
+    "text_lines_matched_per_record": [
+      6,
+      6
+    ],
+    "video_strings_matched": 2,
+    "total_strings_matched": 15,
+    "text_line_normalization": "strip trailing ASCII spaces and tabs from Events.txt lines",
+    "rejects_same_length_text_change": true
+  },
+  "native": {
+    "stop": "004622ea",
+    "blocks": [
+      {
+        "offset": 0,
+        "requested": 4,
+        "available": 4
+      },
+      {
+        "offset": 4,
+        "requested": 4,
+        "available": 4
+      },
+      {
+        "offset": 8,
+        "requested": 276,
+        "available": 276
+      },
+      {
+        "offset": 284,
+        "requested": 276,
+        "available": 276
+      }
+    ],
+    "strings": [
+      {
+        "offset": 560,
+        "bytes": 8,
+        "record": 0,
+        "slot": 24
+      },
+      {
+        "offset": 568,
+        "bytes": 67,
+        "record": 0,
+        "slot": 52
+      },
+      {
+        "offset": 635,
+        "bytes": 69,
+        "record": 0,
+        "slot": 56
+      },
+      {
+        "offset": 704,
+        "bytes": 54,
+        "record": 0,
+        "slot": 60
+      },
+      {
+        "offset": 758,
+        "bytes": 68,
+        "record": 0,
+        "slot": 64
+      },
+      {
+        "offset": 826,
+        "bytes": 62,
+        "record": 0,
+        "slot": 68
+      },
+      {
+        "offset": 888,
+        "bytes": 23,
+        "record": 0,
+        "slot": 72
+      },
+      {
+        "offset": 911,
+        "bytes": 11,
+        "record": 0,
+        "slot": 132
+      },
+      {
+        "offset": 922,
+        "bytes": 67,
+        "record": 1,
+        "slot": 52
+      },
+      {
+        "offset": 989,
+        "bytes": 69,
+        "record": 1,
+        "slot": 56
+      },
+      {
+        "offset": 1058,
+        "bytes": 54,
+        "record": 1,
+        "slot": 60
+      },
+      {
+        "offset": 1112,
+        "bytes": 68,
+        "record": 1,
+        "slot": 64
+      },
+      {
+        "offset": 1180,
+        "bytes": 62,
+        "record": 1,
+        "slot": 68
+      },
+      {
+        "offset": 1242,
+        "bytes": 23,
+        "record": 1,
+        "slot": 72
+      },
+      {
+        "offset": 1265,
+        "bytes": 11,
+        "record": 1,
+        "slot": 132
+      }
+    ],
+    "consumed": 1276,
+    "remaining": 0,
+    "round_flag_before_callback": 0,
+    "round_flag_at_stop": 1,
+    "round_start_gate": [
+      {
+        "resume_civ": 4,
+        "restart": 0,
+        "dispatches": false
+      },
+      {
+        "resume_civ": 4,
+        "restart": 1,
+        "dispatches": true
+      },
+      {
+        "resume_civ": 0,
+        "restart": 0,
+        "dispatches": true
+      }
+    ]
+  },
+  "controlled_cases": {
+    "marker_mismatch": {
+      "stop": "004622ea",
+      "blocks": [
+        {
+          "offset": 0,
+          "requested": 4,
+          "available": 4
+        }
+      ],
+      "strings": [],
+      "consumed": 4,
+      "remaining": 1272,
+      "round_flag_before_callback": null,
+      "round_flag_at_stop": 0
+    },
+    "truncated_count": {
+      "stop": "00463048",
+      "blocks": [
+        {
+          "offset": 0,
+          "requested": 4,
+          "available": 4
+        },
+        {
+          "offset": 4,
+          "requested": 4,
+          "available": 2
+        }
+      ],
+      "strings": [],
+      "consumed": 6,
+      "remaining": 0,
+      "round_flag_before_callback": null,
+      "round_flag_at_stop": 0
+    },
+    "truncated_record": {
+      "stop": "00463043",
+      "blocks": [
+        {
+          "offset": 0,
+          "requested": 4,
+          "available": 4
+        },
+        {
+          "offset": 4,
+          "requested": 4,
+          "available": 4
+        },
+        {
+          "offset": 8,
+          "requested": 276,
+          "available": 275
+        }
+      ],
+      "strings": [],
+      "consumed": 283,
+      "remaining": 0,
+      "round_flag_before_callback": null,
+      "round_flag_at_stop": 0
+    },
+    "truncated_string": {
+      "stop": "00462ff8",
+      "blocks": [
+        {
+          "offset": 0,
+          "requested": 4,
+          "available": 4
+        },
+        {
+          "offset": 4,
+          "requested": 4,
+          "available": 4
+        },
+        {
+          "offset": 8,
+          "requested": 276,
+          "available": 276
+        },
+        {
+          "offset": 284,
+          "requested": 276,
+          "available": 276
+        }
+      ],
+      "strings": [
+        {
+          "offset": 560,
+          "bytes": 8
+        },
+        {
+          "offset": 568,
+          "bytes": 67
+        },
+        {
+          "offset": 635,
+          "bytes": 69
+        },
+        {
+          "offset": 704,
+          "bytes": 54
+        },
+        {
+          "offset": 758,
+          "bytes": 68
+        },
+        {
+          "offset": 826,
+          "bytes": 62
+        },
+        {
+          "offset": 888,
+          "bytes": 23
+        },
+        {
+          "offset": 911,
+          "bytes": 11
+        },
+        {
+          "offset": 922,
+          "bytes": 67
+        },
+        {
+          "offset": 989,
+          "bytes": 69
+        },
+        {
+          "offset": 1058,
+          "bytes": 54
+        },
+        {
+          "offset": 1112,
+          "bytes": 68
+        },
+        {
+          "offset": 1180,
+          "bytes": 62
+        },
+        {
+          "offset": 1242,
+          "bytes": 23
+        }
+      ],
+      "consumed": 1265,
+      "remaining": 10,
+      "round_flag_before_callback": null,
+      "round_flag_at_stop": 0
+    }
+  },
+  "substituted_helpers": {
+    "005b3810": "bounded file read",
+    "005b4110": "marker comparison",
+    "004d16ce": "reset allocation state",
+    "004d170c": "allocate and link record",
+    "0045f346": "bounded NUL-terminated string read with non-null witness pointer"
+  },
+  "scope": "Native reader extents, flag write, round-start dispatch and stock victory string comparison. Remaining prefix and event fields and pending choices require separate evidence."
+}

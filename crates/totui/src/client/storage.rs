@@ -3,6 +3,11 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
+use sha2::{Digest, Sha256};
+
+const MAX_SAVE_BYTES: usize = 16 * 1024 * 1024;
+const SNAPSHOT_DIGEST_BYTES: usize = 32;
+
 pub fn nonce() -> Result<String, String> {
     let mut bytes = [0u8; 24];
     getrandom::fill(&mut bytes).map_err(|e| format!("OS randomness unavailable: {e}"))?;
@@ -61,10 +66,10 @@ pub fn load(root: &Path, name: &str) -> Result<String, String> {
     let mut bytes = Vec::new();
     fs::File::open(p)
         .map_err(|e| e.to_string())?
-        .take(16 * 1024 * 1024 + 1)
+        .take(MAX_SAVE_BYTES as u64 + 1)
         .read_to_end(&mut bytes)
         .map_err(|e| e.to_string())?;
-    if bytes.len() > 16 * 1024 * 1024 {
+    if bytes.len() > MAX_SAVE_BYTES {
         return Err("Checkpoint exceeds 16 MiB".into());
     }
     String::from_utf8(bytes).map_err(|_| {
@@ -73,7 +78,7 @@ pub fn load(root: &Path, name: &str) -> Result<String, String> {
 }
 pub fn save(root: &Path, name: &str, text: &str) -> Result<(), String> {
     let target = slot(root, name)?;
-    if text.len() > 16 * 1024 * 1024 {
+    if text.len() > MAX_SAVE_BYTES {
         return Err("Checkpoint exceeds 16 MiB".into());
     }
     fs::create_dir_all(root).map_err(|e| e.to_string())?;
@@ -84,6 +89,100 @@ pub fn save(root: &Path, name: &str, text: &str) -> Result<(), String> {
     temp.persist_noclobber(&target)
         .map(|_| ())
         .map_err(|e| format!("Could not create checkpoint; choose a new name: {e}"))
+}
+
+/// Publish the private input before its checkpoint. The checkpoint text is
+/// still portable and contains only the original relative path and identity.
+pub(super) fn save_scenario(
+    root: &Path,
+    name: &str,
+    text: &str,
+    snapshot: &[u8],
+) -> Result<(), String> {
+    let target = slot(root, name)?;
+    if target.symlink_metadata().is_ok() {
+        return Err("Checkpoint already exists; choose a new name".into());
+    }
+    if text.len() > MAX_SAVE_BYTES || snapshot.len() > MAX_SAVE_BYTES {
+        return Err("Checkpoint or scenario snapshot exceeds 16 MiB".into());
+    }
+    fs::create_dir_all(root).map_err(|e| e.to_string())?;
+    let directory = root.join(".scenario-inputs");
+    let builder = fs::DirBuilder::new();
+    #[cfg(unix)]
+    let builder = {
+        use std::os::unix::fs::DirBuilderExt;
+        let mut builder = builder;
+        builder.mode(0o700);
+        builder
+    };
+    if let Err(error) = builder.create(&directory) {
+        if error.kind() != std::io::ErrorKind::AlreadyExists {
+            return Err(format!(
+                "Cannot create private scenario input folder: {error}"
+            ));
+        }
+    }
+    match scenario_snapshot(root, text)? {
+        Some(existing) if existing != snapshot => {
+            return Err("Private scenario snapshot differs from the captured input".into());
+        }
+        Some(_) => {}
+        None => {
+            let path = snapshot_path(&directory, text)?;
+            let mut temp =
+                tempfile::NamedTempFile::new_in(&directory).map_err(|e| e.to_string())?;
+            temp.write_all(&Sha256::digest(snapshot))
+                .and_then(|_| temp.write_all(snapshot))
+                .and_then(|_| temp.as_file().sync_all())
+                .map_err(|e| format!("Could not write private scenario snapshot: {e}"))?;
+            if let Err(error) = temp.persist_noclobber(path) {
+                if error.error.kind() != std::io::ErrorKind::AlreadyExists
+                    || scenario_snapshot(root, text)?.as_deref() != Some(snapshot)
+                {
+                    return Err(format!(
+                        "Could not preserve private scenario snapshot: {error}"
+                    ));
+                }
+            }
+        }
+    }
+    save(root, name, text)
+}
+
+fn snapshot_path(directory: &Path, text: &str) -> Result<PathBuf, String> {
+    match directory.symlink_metadata() {
+        Ok(meta) if !meta.is_dir() => {
+            return Err("Private scenario input folder must be a directory".into());
+        }
+        Ok(_) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(format!("Cannot read private scenario input folder: {e}")),
+    }
+    Ok(directory.join(format!("{:x}.snapshot", Sha256::digest(text))))
+}
+
+/// Absence keeps older checkpoints on their original installation reference.
+/// An existing private copy must pass its digest and the normal replay checks.
+pub(super) fn scenario_snapshot(root: &Path, text: &str) -> Result<Option<Vec<u8>>, String> {
+    let path = snapshot_path(&root.join(".scenario-inputs"), text)?;
+    match path.symlink_metadata() {
+        Ok(meta) if !meta.is_file() => return Err("Private scenario input must be a file".into()),
+        Ok(_) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(e) => return Err(format!("Cannot read private scenario snapshot: {e}")),
+    }
+    let mut file =
+        fs::File::open(path).map_err(|e| format!("Cannot open private scenario snapshot: {e}"))?;
+    let mut digest = [0; SNAPSHOT_DIGEST_BYTES];
+    let mut bytes = Vec::new();
+    file.read_exact(&mut digest)
+        .and_then(|_| file.take(MAX_SAVE_BYTES as u64 + 1).read_to_end(&mut bytes))
+        .map_err(|e| format!("Cannot read private scenario snapshot: {e}"))?;
+    if bytes.len() > MAX_SAVE_BYTES || Sha256::digest(&bytes)[..] != digest {
+        return Err("Private scenario snapshot is damaged".into());
+    }
+    Ok(Some(bytes))
 }
 
 /// Host-side setup memory (#266 shortlist): the last successfully started

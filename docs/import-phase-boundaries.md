@@ -54,3 +54,91 @@ use the measured boundaries rather than treating `target == -1` as proof of
 a saved pending prompt. Full loader/UI/pending-choice behavior, interrupted
 city processing, knowledge continuation and #198 remain separate gates.
 Original AI/shared-RNG continuation is still outside this profile.
+
+The [event-trailer trace](evidence/import-event-tail.json) continues from
+`0x461d7b` on the pinned save. It observes the successful `EVNT` read set
+the round-start flag back to one. The resumed-civ guard still skips
+round-start event dispatch when the restart flag is zero. This explains why
+the earlier loader suffix's flag reset alone is insufficient to characterize
+the full load path.
+
+The [post-event probe](evidence/import-loader-exit.json) runs the event reader
+and continues in the same prepared memory from `0x4622ea` to `0x462e0d`.
+With two display-helper calls substituted and nonnegative sign controls, it
+preserves the civ, unit, city and loaded event records, the tiles, and all
+seven civ caches. The round-start flag remains one, the resume civ remains
+four, and research stays at target -1 with zero progress. A separate suffix
+exercises mode restoration after the file-close boundary. It shows that
+restoring a different mode can fill an empty human mask using the living
+resume civ or the first living civ.
+
+The pinned execution also continues through the final Rules refresh to
+the successful same-mode return at `0x4630e3`. The probe supplies the parsed
+`CIVILIZE`, `IMPROVE`, `ENDWONDER` and `UNITS` rows in place of the section and
+file readers, plus a successful closing of the virtual save handle. The
+native token conversion and table writes execute and count 89 enabled
+advances. Civ, unit, city and event records, tiles, caches and the pinned
+phase all compare unchanged through return.
+
+The original loader caller retains options bits `0x0000c000` from the save
+and takes the rest from process preferences. Two controlled preferences on
+the pinned save reach different human preparation branches. Enabling advice
+reaches the native advice path, while the preference matching the save
+returns from its gate. The probe stops before processing advisory state or
+displaying a dialog. The save's own advice bit therefore cannot determine the
+entry path by itself. Admission still needs an explicit verified preference
+policy and evidence from the ensuing decision and input paths.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_loader_exit_check.py --out /tmp/loader-exit.json
+cmp docs/evidence/import-loader-exit.json /tmp/loader-exit.json
+```
+
+The [unit-selection trace](evidence/import-unit-setup.json) extends the
+resumed branch through the native active-unit search. It prepares the
+unit-selection display mode and movement inputs from the pinned Rules.
+The pinned state selects slot 6 at `0x47297f`. Exhausting all four own
+units reaches the no-unit branch at `0x472a8e`. Leaving only slot 9 ready
+selects slot 9. All three executions preserve the prepared civ, unit and
+city records and research remains target -1, progress 0. The stops precede
+presentation and order processing. Other display modes, pending prompts and
+the full native load path still need evidence.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_unit_setup_check.py --out /tmp/unit-setup.json
+cmp docs/evidence/import-unit-setup.json /tmp/unit-setup.json
+```
+
+The [input handoff probe](evidence/import-input-handoff.json) follows the
+selected-unit path through `0x41f704` to `0x4205a7`, before notification
+processing. It substitutes three preceding display calls. The original
+observation loops keep 59 explored tiles and leave tile bytes, the player's
+remembered improvements, unit visibility masks and city knowledge unchanged
+on the pinned input.
+
+Separate selected and exhausted controls reach `0x45abc1` before the
+input loop's event pump. The selected control substitutes the full
+observation call as well as display helpers. It arrives in unit mode at
+slot 6. The exhausted control arrives in viewing mode with no active unit.
+The controls then execute the input-loop prologue and stop at the first
+indirect call to `PeekMessageA` at `0x576ee4`. The probe checks the import
+with `objdump -p`. The pinned selected-unit trace also reaches that
+instruction with both native observation calls intact and the redraw wrapper
+substituted. It keeps 59 explored tiles and leaves the captured knowledge
+bytes unchanged. Research still has target -1 and progress 0 in all three
+cases. These prepared traces stop before Windows input and cannot establish
+live prompt timing or the full loader path.
+
+An empty-queue control returns zero from the first `PeekMessageA`, runs the
+native idle branch, and supplies an empty result for its second,
+message-filtered call at `0x577011` (filter `0x3bd`). With the host
+background callback disabled, all three paths reach the next general poll at
+`0x576ee4`. The idle iteration preserves the selected slot, display mode,
+and every byte of the civ, unit, and city records. The traced pinned path
+also preserves all captured human knowledge. Real queued messages and their
+handlers remain open.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_input_handoff_check.py --out /tmp/input-handoff.json
+cmp docs/evidence/import-input-handoff.json /tmp/input-handoff.json
+```

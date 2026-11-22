@@ -282,7 +282,11 @@ impl Client {
                 self.report_open_city()?;
                 Ok(Some(false))
             }
-            Modal::Scenarios => Err("Choose a scenario file from the list".into()),
+            Modal::Scenarios | Modal::OriginalSaves => Err("Choose a file from the list".into()),
+            Modal::OriginalSaveReport { .. } => {
+                self.open_original_inspection(Modal::OriginalSaves);
+                Ok(Some(false))
+            }
             Modal::ScenarioStart(choice) => {
                 self.start_scenario(choice)?;
                 Ok(Some(true))
@@ -344,7 +348,7 @@ impl Client {
                 self.modal = None;
                 true
             }
-            Some(Modal::Scenarios) => {
+            Some(Modal::Scenarios | Modal::OriginalSaves) => {
                 self.modal = None;
                 true
             }
@@ -352,6 +356,10 @@ impl Client {
                 if self.open_scenarios().is_err() {
                     self.modal = None;
                 }
+                true
+            }
+            Some(Modal::OriginalSaveReport { .. }) => {
+                self.open_original_inspection(Modal::OriginalSaves);
                 true
             }
             _ => false,
@@ -585,7 +593,13 @@ impl Client {
             self.settings_draws(draws);
             return;
         }
-        if matches!(modal, Modal::Scenarios | Modal::ScenarioStart(_)) {
+        if matches!(
+            modal,
+            Modal::Scenarios
+                | Modal::ScenarioStart(_)
+                | Modal::OriginalSaves
+                | Modal::OriginalSaveReport { .. }
+        ) {
             self.scenario_draws(modal, draws);
             return;
         }

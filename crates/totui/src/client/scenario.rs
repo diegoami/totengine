@@ -6,6 +6,7 @@
 //! presented as faithful scenario play (`docs/scenario-entry-contract.md`
 //! remains the faithful target).
 use super::*;
+use crate::resources::original::OriginalCapture;
 use engine::campaign::AiPolicy;
 use engine::scenario::Preflight;
 
@@ -43,6 +44,14 @@ impl Client {
 
     /// Opens the scenario list.
     pub(super) fn open_scenarios(&mut self) -> Result<(), String> {
+        self.open_scenario_list(Modal::Scenarios)
+    }
+
+    pub(super) fn open_original_saves(&mut self) -> Result<(), String> {
+        self.open_scenario_list(Modal::OriginalSaves)
+    }
+
+    fn open_scenario_list(&mut self, modal: Modal) -> Result<(), String> {
         let home = self.scenario_home()?.to_path_buf();
         self.scenarios = crate::resources::list_scenarios(&home);
         if self.scenarios.is_empty() {
@@ -51,8 +60,64 @@ impl Client {
                     .into(),
             );
         }
-        self.open(Modal::Scenarios);
+        self.open(modal);
         Ok(())
+    }
+
+    pub(super) fn inspect_original_save(&mut self, path: &str) -> Result<(), String> {
+        let home = self.scenario_home()?;
+        let report =
+            OriginalCapture::capture(home, path).and_then(|capture| capture.inspect_save());
+        let lines = match report {
+            Ok(report) => {
+                let phase = &report["saved_phase"];
+                let view = &report["saved_view"];
+                let trace = &report["native_resume_trace"];
+                let event = &report["victory_event"];
+                vec![
+                    "Matched the reference Original dependencies.".into(),
+                    format!(
+                        "Turn {} · saved human civilization {}",
+                        phase["turn"], phase["human_civ"]
+                    ),
+                    format!(
+                        "Saved human view · {} explored tiles, {} units, {} cities",
+                        view["explored_tiles"], view["units"], view["cities"]
+                    ),
+                    if trace["matches_fixture"] == true {
+                        "The save matches the retained native resume measurements.".into()
+                    } else {
+                        "The save differs from the native resume fixture.".into()
+                    },
+                    if event["matches"] == true {
+                        "The checked embedded victory fields match Original/Events.txt.".into()
+                    } else {
+                        format!(
+                            "Victory event differs. {}",
+                            event["reason"].as_str().unwrap_or_default()
+                        )
+                    },
+                    "Faithful play requires verified pending decisions and ongoing map knowledge."
+                        .into(),
+                ]
+            }
+            Err(reason) => vec![
+                reason,
+                "Select a classic single-player SAV and its stock inputs in Original.".into(),
+            ],
+        };
+        self.open_original_inspection(Modal::OriginalSaveReport {
+            path: path.into(),
+            lines,
+        });
+        Ok(())
+    }
+
+    /// Issue a fresh modal ID while retaining the file list page for Back.
+    pub(super) fn open_original_inspection(&mut self, modal: Modal) {
+        let page = self.page;
+        self.open(modal);
+        self.page = page;
     }
 
     /// Reads the chosen file and opens its preflight; nothing starts yet.
@@ -134,6 +199,7 @@ impl Client {
             atlas,
             session,
             identity,
+            scenario_snapshot: Some(files.bytes),
         });
         self.assets = assets;
         self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
@@ -160,8 +226,10 @@ impl Client {
         text: &str,
     ) -> Result<(), String> {
         let home = self.scenario_home()?.to_path_buf();
-        let (resources, files) = crate::resources::Resources::load_scenario(&home, &origin.path)
-            .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))?;
+        let snapshot = storage::scenario_snapshot(&self.saves, text)?;
+        let (resources, files) =
+            crate::resources::Resources::load_scenario_inputs(&home, &origin.path, snapshot)
+                .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))?;
         let atlas = Atlas::load(&resources)?;
         let identity = if text.starts_with("totengine-human 3\n") {
             resources.scenario_identity()
@@ -184,6 +252,7 @@ impl Client {
             atlas,
             identity,
             session,
+            scenario_snapshot: Some(files.bytes),
         });
         self.assets = assets;
         Ok(())
@@ -202,7 +271,7 @@ impl Client {
             });
         };
         match modal {
-            Modal::Scenarios => {
+            Modal::Scenarios | Modal::OriginalSaves => {
                 let pages = self.scenarios.len().div_ceil(SCENARIO_ROWS);
                 for (row, path) in self
                     .scenarios
@@ -245,19 +314,35 @@ impl Client {
 
     pub(super) fn scenario_draws(&self, modal: &Modal, draws: &mut Vec<Draw>) {
         match modal {
-            Modal::Scenarios => {
+            Modal::Scenarios | Modal::OriginalSaves => {
                 let pages = self.scenarios.len().div_ceil(SCENARIO_ROWS).max(1);
+                let mode = if matches!(modal, Modal::OriginalSaves) {
+                    "read-only compatibility checks"
+                } else {
+                    "experimental: gaps are listed before starting"
+                };
                 draws.push(text(
                     212.,
                     150.,
                     &format!(
-                        "{} files in the installation · page {} of {pages} · experimental: gaps are listed before starting",
+                        "{} files in the installation · page {} of {pages} · {mode}",
                         self.scenarios.len(),
                         self.page + 1
                     ),
                     style::TYPE_SMALL,
                     style::TEXT_DIM,
                 ));
+            }
+            Modal::OriginalSaveReport { path, lines } => {
+                draws.push(text(212., 150., path, style::TYPE_BODY, style::TEXT_BRIGHT));
+                let mut y = 198.;
+                for paragraph in lines {
+                    for line in pedia::wrap(paragraph, 70) {
+                        draws.push(text(212., y, &line, style::TYPE_SMALL, style::TEXT));
+                        y += 21.;
+                    }
+                    y += 12.;
+                }
             }
             Modal::ScenarioStart(choice) => {
                 let p = &choice.preflight;

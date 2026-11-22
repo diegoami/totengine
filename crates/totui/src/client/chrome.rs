@@ -179,6 +179,11 @@ impl Client {
                 item("Load game…", "Ctrl+L", Action::Load),
                 item("New game…", "", Action::NewGame),
                 item("Open scenario…", "", Action::Scenarios),
+                item(
+                    "Inspect ToT save / scenario…",
+                    "",
+                    Action::InspectOriginalSaves,
+                ),
                 item("Settings…", "", Action::Settings),
                 item("Keys…", "?", Action::Help),
                 item("Close client", "", Action::Quit),

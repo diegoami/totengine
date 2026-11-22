@@ -435,6 +435,16 @@ impl Resources {
     /// plus the scenario bytes and the Events.txt beside it. Both join the
     /// resource identity, so a changed file never restores a checkpoint.
     pub fn load_scenario(home: &Path, relative: &str) -> Result<(Self, ScenarioFiles), String> {
+        Self::load_scenario_inputs(home, relative, None)
+    }
+
+    /// Restore with the adapter's private copy of the selected file. The
+    /// scenario folder still supplies the same checked dependencies.
+    pub(crate) fn load_scenario_inputs(
+        home: &Path,
+        relative: &str,
+        snapshot: Option<Vec<u8>>,
+    ) -> Result<(Self, ScenarioFiles), String> {
         let relative = relative.replace('\\', "/");
         let (folder, file) = relative
             .rsplit_once('/')
@@ -444,11 +454,17 @@ impl Resources {
             .canonicalize()
             .map_err(|e| format!("installation directory: {e}"))?;
         let dir = contained(&root, root.join(folder))?;
-        let path = contained(
-            &root,
-            child(&dir, file)?.ok_or_else(|| format!("scenario file missing: {relative}"))?,
-        )?;
-        let bytes = read(&path)?;
+        let bytes = match snapshot {
+            Some(bytes) => bytes,
+            None => {
+                let path = contained(
+                    &root,
+                    child(&dir, file)?
+                        .ok_or_else(|| format!("scenario file missing: {relative}"))?,
+                )?;
+                read(&path)?
+            }
+        };
         resources.sources.insert(
             "scenario".into(),
             Source {

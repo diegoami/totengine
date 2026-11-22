@@ -14,19 +14,23 @@
     "crates/engine/src/human/checkpoint.rs": "8548319ef206215e3079e9c960e1be5952d24f62202e293e870c62d45664a031",
     "crates/engine/src/lib.rs": "1cd9fc382c301aa03ebbaad632cf9df3f16bde72b4489c687769286bdeed7d59",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
-    "crates/totui/src/client/mod.rs": "c3c29d3f90eeed285fb6c2a0efc11d6701a504549d67e3d01e59c24facc467e2",
-    "crates/totui/src/resources.rs": "660e6214248310dd99c7d06ea09abacb9e11f761cf7043a88b41b78ed57a9eea",
+    "crates/totui/src/client/mod.rs": "76873c2fadc48799f8c2eeeadcec4cb1649fe995ecffa27a883c21aefbf8a43d",
+    "crates/totui/src/resources.rs": "acb8a961654e7649038afef4e6d86cd843ad3daacf3492aa2b87ec9220b1ce84",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "a750c432e5e2faf2dec9e835ed0a7435afee52a059ddc582122e5addb89af4c2",
-    "crates/totui/src/client/scenario.rs": "db9baf9b4d88c52e586d6512c931f6164244b627f655cfac59475d1c7c44ccc8",
+    "crates/totui/src/client/scenario.rs": "63fd139969174f13de2b7cc8b24102c2300519013b0b348d467dc58bb1c32b97",
     "crates/engine/src/saved_knowledge.rs": "f900ea415abc50293bfba28b1006a0f1b9a994c25ed01ad6d745eeb973b0a17c",
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
     "crates/engine/src/human/saved_view.rs": "21c6e91b568bfb07a9397ef55bbad8f88faada03d42d7a9f37ef009daf28bc68",
-    "crates/totui/src/resources/original.rs": "4ebdefc6de93f30a7dc8b29647b4b9d5cbe0e8b9aa5b0063a3fbe3b603b51260",
+    "crates/totui/src/resources/original.rs": "e1247947481f740cd0197ae7c8069a686e275697e1aa50e4f714b731c461d96c",
     "crates/engine/src/scenario/phase.rs": "f919b6adeab6b2beed51bca5bf57de45387d65351bb779938595d68ce5bde9c9",
     "crates/engine/src/scenario/snapshot.rs": "ec564138d8d1f63f9724f7967198623a8c0d9d1373a8275b9b699892f1e49f15",
-    "crates/engine/src/scenario.rs": "48f0820312fb5f0d840ce06dff0a17ae3178ff4ddfd03e4c0e9428be38e47b6f"
+    "crates/engine/src/scenario.rs": "48f0820312fb5f0d840ce06dff0a17ae3178ff4ddfd03e4c0e9428be38e47b6f",
+    "crates/totui/src/client/storage.rs": "5a9286c964d84fa6c22776f8eff59ea8bd9845a927a7f258ae99445a7035791f",
+    "crates/totui/src/resources/original/inspection.rs": "ec6a036c655cb80392624cac5a4e9adedb22d8f4a57222863bc6a36d8b46d98a",
+    "crates/totui/src/resources/original/inspection/event_tail.rs": "4cc8d7b0e2c19ce605c522302dabb605ca0ce5fc24e959892e19eab634326644",
+    "crates/totui/src/resources/original/inspection/evidence.rs": "1e810f24ceb3f87c657c0b3a7fce2b51bea3f42649bd82c9feb138fb35a121d4"
   },
   "triggers": {
     "TURN": {
@@ -661,6 +665,34 @@
         "crates/engine/src/scenario/snapshot.rs"
       ],
       "finding": "Additive validation API only, unused by current session constructors/restore. No event, trigger/action coverage, scheduling, initializer, runtime admission or checkpoint behavior changes. The pinned input passes the bounded record checks; tail/pending-state, dependency and knowledge-continuation admission gates remain."
+    },
+    {
+      "change": "#198 suspend opponent scheduling during experimental scenario selection",
+      "files": [
+        "crates/totui/src/client/mod.rs"
+      ],
+      "finding": "The scenario list and preflight suspend client ticks and advertise suspended work to both adapters. Cancelling restores the previous scheduling state. Engine order, initializer, checkpoint, trigger and action coverage stay unchanged."
+    },
+    {
+      "change": "#198 local scenario checkpoint source preservation",
+      "files": [
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/client/scenario.rs",
+        "crates/totui/src/client/storage.rs",
+        "crates/totui/src/resources.rs"
+      ],
+      "finding": "Explicit engine checkpoint save writes the captured scenario privately before publishing the slot. Restore verifies the private source, current dependencies, and canonical replay. Checkpoint formats, event/phase policies, and original sources are unchanged."
+    },
+    {
+      "change": "#198 read-only compatibility preview in both clients",
+      "files": [
+        "crates/totui/src/client/chrome.rs",
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/client/routes.rs",
+        "crates/totui/src/client/scenario.rs",
+        "crates/totui/src/resources/original/inspection.rs"
+      ],
+      "finding": "The separate inspection picker uses the same immutable Original capture and checks as totctl. It displays selected human-view counts and compatibility diagnostics while pausing opponent scheduling. Back preserves the active session and prior scheduling state. No new playable profile or trigger/action support."
     }
   ]
 }

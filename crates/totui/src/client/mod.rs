@@ -351,6 +351,11 @@ enum Modal {
     /// and the preflight shown before starting.
     Scenarios,
     ScenarioStart(Box<scenario::ScenarioChoice>),
+    OriginalSaves,
+    OriginalSaveReport {
+        path: String,
+        lines: Vec<String>,
+    },
 }
 #[derive(Clone)]
 enum Action {
@@ -358,6 +363,7 @@ enum Action {
     Start,
     /// Opens the experimental scenario list.
     Scenarios,
+    InspectOriginalSaves,
     ScenarioPick(String),
     ScenarioCiv(usize),
     Civs,
@@ -454,6 +460,7 @@ struct Loaded {
     atlas: Atlas,
     session: HumanSession,
     identity: String,
+    scenario_snapshot: Option<Vec<u8>>,
 }
 
 #[derive(Clone, Copy)]
@@ -985,6 +992,19 @@ impl Client {
         }
         Ok(())
     }
+    fn opponent_work_running(&self) -> bool {
+        self.advancing
+            && !matches!(
+                self.modal,
+                Some(
+                    Modal::Scenarios
+                        | Modal::ScenarioStart(_)
+                        | Modal::OriginalSaves
+                        | Modal::OriginalSaveReport { .. }
+                )
+            )
+    }
+
     fn handle(&mut self, input: Input, id: u64) -> Result<(), String> {
         match input {
             Input::Focus { focused } => {
@@ -992,8 +1012,11 @@ impl Client {
                 Ok(())
             }
             Input::Tick => {
+                if !self.opponent_work_running() {
+                    return Ok(());
+                }
                 if let Some(l) = self.loaded.as_mut() {
-                    if self.advancing && l.session.phase() == Phase::Opponents {
+                    if l.session.phase() == Phase::Opponents {
                         l.session.advance(16);
                         self.refresh();
                         if self.view().is_some_and(|v| v.phase != Phase::Opponents) {
@@ -1118,7 +1141,7 @@ impl Client {
         let _ = match &self.modal {
             Some(Modal::Report { .. }) => self.report_key(key).unwrap_or(Ok(())),
             Some(Modal::Pedia { .. }) => self.pedia_key(key).unwrap_or(Ok(())),
-            Some(Modal::Messages | Modal::Load | Modal::Scenarios) => {
+            Some(Modal::Messages | Modal::Load | Modal::Scenarios | Modal::OriginalSaves) => {
                 self.action(Action::Page(delta))
             }
             Some(_) if !self.current_choices().is_empty() => self.action(Action::Page(delta)),
@@ -1330,6 +1353,7 @@ impl Client {
                     atlas,
                     session,
                     identity,
+                    scenario_snapshot: None,
                 });
                 self.assets = storage::nonce()?;
                 self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
@@ -1382,7 +1406,14 @@ impl Client {
             Action::Toggle(e) => self.toggle_enhancement(e),
             Action::Settings => self.open(Modal::Settings),
             Action::Scenarios => self.open_scenarios()?,
-            Action::ScenarioPick(path) => self.pick_scenario(&path)?,
+            Action::InspectOriginalSaves => self.open_original_saves()?,
+            Action::ScenarioPick(path) => {
+                if matches!(self.modal, Some(Modal::OriginalSaves)) {
+                    self.inspect_original_save(&path)?;
+                } else {
+                    self.pick_scenario(&path)?;
+                }
+            }
             Action::ScenarioCiv(i) => {
                 if let Some(Modal::ScenarioStart(choice)) = &mut self.modal {
                     if i < choice.preflight.civs.len() {
@@ -1549,7 +1580,7 @@ impl Client {
                     self.notice_log.len().saturating_sub(1) / MESSAGE_ROWS
                 } else if matches!(self.modal, Some(Modal::Load)) {
                     storage::list(&self.saves).len().saturating_sub(1) / LOAD_ROWS
-                } else if matches!(self.modal, Some(Modal::Scenarios)) {
+                } else if matches!(self.modal, Some(Modal::Scenarios | Modal::OriginalSaves)) {
                     self.scenarios.len().saturating_sub(1) / scenario::SCENARIO_ROWS
                 } else {
                     self.current_choices().len().saturating_sub(1) / 12
@@ -1614,6 +1645,8 @@ impl Client {
                     | Modal::Settings
                     | Modal::Scenarios
                     | Modal::ScenarioStart(_)
+                    | Modal::OriginalSaves
+                    | Modal::OriginalSaveReport { .. }
                     | Modal::Report { .. }
                     | Modal::Pedia { .. }
                     | Modal::Goal => unreachable!("handled by route_accept"),
@@ -1704,11 +1737,17 @@ impl Client {
                     }
                     Modal::Save => {
                         let l = self.loaded.as_ref().ok_or("Start a game first")?;
-                        storage::save(
-                            &self.saves,
-                            &self.entry,
-                            &l.session.checkpoint(&l.identity),
-                        )?;
+                        let checkpoint = l.session.checkpoint(&l.identity);
+                        if let Some(snapshot) = &l.scenario_snapshot {
+                            storage::save_scenario(
+                                &self.saves,
+                                &self.entry,
+                                &checkpoint,
+                                snapshot,
+                            )?;
+                        } else {
+                            storage::save(&self.saves, &self.entry, &checkpoint)?;
+                        }
                         self.status = format!("Engine checkpoint saved: {}", self.entry);
                     }
                     Modal::Load => {
@@ -1740,6 +1779,7 @@ impl Client {
                                 atlas,
                                 identity,
                                 session,
+                                scenario_snapshot: None,
                             });
                             self.assets = assets;
                         }
@@ -2442,7 +2482,10 @@ impl Client {
                 }
             }
             if !matches!(modal,Modal::Purchase {quote,..} if quote.price > quote.treasury)
-                && !matches!(modal, Modal::Scenarios)
+                && !matches!(
+                    modal,
+                    Modal::Scenarios | Modal::OriginalSaves | Modal::OriginalSaveReport { .. }
+                )
             {
                 add(
                     212.,
@@ -2479,8 +2522,10 @@ impl Client {
                         Modal::Rates { review: None, .. } => "Discard [Esc]",
                         Modal::Rates { .. } => "Reset split [Esc]",
                         Modal::Revolution => "Cancel [Esc]",
-                        Modal::Goal | Modal::ScenarioStart(_) => "Back [Esc]",
-                        Modal::Scenarios => "Close [Esc]",
+                        Modal::Goal
+                        | Modal::ScenarioStart(_)
+                        | Modal::OriginalSaveReport { .. } => "Back [Esc]",
+                        Modal::Scenarios | Modal::OriginalSaves => "Close [Esc]",
                         Modal::Science
                         | Modal::Notice { .. }
                         | Modal::Help
@@ -2589,6 +2634,14 @@ impl Client {
                 36.,
                 "Enhancements…".into(),
                 Action::Settings,
+            );
+            add(
+                520.,
+                603.,
+                404.,
+                36.,
+                "Inspect ToT save / scenario".into(),
+                Action::InspectOriginalSaves,
             );
             return b;
         }
@@ -2793,6 +2846,8 @@ impl Client {
                     Modal::Load => "Load engine checkpoint (same resources)",
                     Modal::Scenarios => "Open scenario (experimental)",
                     Modal::ScenarioStart(_) => "Scenario preflight (experimental)",
+                    Modal::OriginalSaves => "Inspect ToT save / scenario",
+                    Modal::OriginalSaveReport { .. } => "ToT save inspection",
                     Modal::NewGame => "Start a new game? Unsaved progress will be lost.",
                     Modal::Quit => "Close client? Save first if you want to resume.",
                 }
@@ -3088,7 +3143,8 @@ impl Client {
         }
         // Clear turn-transition feedback (#283): while the opponents run, a
         // framed strip over the map says so; the title bar carries the round.
-        if self.advancing {
+        let advancing = self.opponent_work_running();
+        if advancing {
             let start = draws.len();
             style::modal(&mut draws, 212., 360., 460., 52.);
             draws.push(text(
@@ -3121,7 +3177,7 @@ impl Client {
         Frame {
             city_click: self.pending_city_click.map(|g| g.first),
             revision: self.revision,
-            advancing: self.advancing,
+            advancing,
             phase: view.map_or_else(|| "Setup".into(), |v| format!("{:?}", v.phase)),
             draws,
             entry: self.entry_meta(),

@@ -1,0 +1,206 @@
+{
+  "schema": 3,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "entry": "00474b62",
+  "cases": {
+    "native_observation": {
+      "stop": "004205a7",
+      "active_slot": 6,
+      "display_mode": 1,
+      "research_target": -1,
+      "research_progress": 0,
+      "explored_tiles_before": 59,
+      "explored_tiles_after": 59,
+      "tile_bytes_changed": 0,
+      "human_memory_bytes_changed": 0,
+      "unit_masks_changed": 0,
+      "city_knowledge_records_changed": 0,
+      "substituted_calls": [
+        "005346be",
+        "0040d7e7",
+        "004bf9b6"
+      ],
+      "observation_to_input": {
+        "substituted_calls": [
+          "00467c89",
+          "0041af00",
+          "004bf9b6",
+          "005346be",
+          "0040d7e7",
+          "004bf9b6",
+          "00467c89",
+          "0041af00"
+        ],
+        "first_poll": {
+          "stop_at_call": "00576ee4",
+          "import": "PeekMessageA",
+          "window_filter": 0,
+          "message_filter": [
+            0,
+            0
+          ],
+          "remove": 1,
+          "active_slot": 6,
+          "unit_orders_byte": 255,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "idle_iteration": {
+          "initial_queue_result": "empty",
+          "filtered_polls": [
+            {
+              "call": "00577011",
+              "message_filter": [
+                957,
+                957
+              ]
+            }
+          ],
+          "next_general_poll": "00576ee4",
+          "active_slot": 6,
+          "display_mode": 1,
+          "civ_unit_city_records_unchanged": true
+        }
+      },
+      "observation_calls": [
+        [
+          6,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ]
+    },
+    "selected_input_control": {
+      "stop": "0045abc1",
+      "active_slot": 6,
+      "display_mode": 1,
+      "research_target": -1,
+      "research_progress": 0,
+      "explored_tiles_before": 59,
+      "explored_tiles_after": 59,
+      "tile_bytes_changed": 0,
+      "human_memory_bytes_changed": 0,
+      "unit_masks_changed": 0,
+      "city_knowledge_records_changed": 0,
+      "substituted_calls": [
+        "005346be",
+        "0040d7e7",
+        "004bf9b6",
+        "0041f704",
+        "0041af00",
+        "004bf9b6",
+        "005346be",
+        "0040d7e7",
+        "004bf9b6",
+        "0041f704",
+        "0041af00"
+      ],
+      "return_address": "0047342e",
+      "first_poll": {
+        "stop_at_call": "00576ee4",
+        "import": "PeekMessageA",
+        "window_filter": 0,
+        "message_filter": [
+          0,
+          0
+        ],
+        "remove": 1,
+        "active_slot": 6,
+        "unit_orders_byte": 255,
+        "research_target": -1,
+        "research_progress": 0
+      },
+      "idle_iteration": {
+        "initial_queue_result": "empty",
+        "filtered_polls": [
+          {
+            "call": "00577011",
+            "message_filter": [
+              957,
+              957
+            ]
+          }
+        ],
+        "next_general_poll": "00576ee4",
+        "active_slot": 6,
+        "display_mode": 1,
+        "civ_unit_city_records_unchanged": true
+      },
+      "observation_calls": [
+        [
+          6,
+          1
+        ],
+        [
+          6,
+          1
+        ]
+      ]
+    },
+    "exhausted_input_control": {
+      "stop": "0045abc1",
+      "active_slot": -1,
+      "display_mode": 0,
+      "research_target": -1,
+      "research_progress": 0,
+      "explored_tiles_before": 59,
+      "explored_tiles_after": 59,
+      "tile_bytes_changed": 0,
+      "human_memory_bytes_changed": 0,
+      "unit_masks_changed": 0,
+      "city_knowledge_records_changed": 0,
+      "substituted_calls": [
+        "005346be",
+        "0040d510",
+        "004bf9b6",
+        "005346be",
+        "0040d510",
+        "004bf9b6"
+      ],
+      "return_address": "00473522",
+      "first_poll": {
+        "stop_at_call": "00576ee4",
+        "import": "PeekMessageA",
+        "window_filter": 0,
+        "message_filter": [
+          0,
+          0
+        ],
+        "remove": 1,
+        "active_slot": -1,
+        "unit_orders_byte": null,
+        "research_target": -1,
+        "research_progress": 0
+      },
+      "idle_iteration": {
+        "initial_queue_result": "empty",
+        "filtered_polls": [
+          {
+            "call": "00577011",
+            "message_filter": [
+              957,
+              957
+            ]
+          }
+        ],
+        "next_general_poll": "00576ee4",
+        "active_slot": -1,
+        "display_mode": 0,
+        "civ_unit_city_records_unchanged": true
+      },
+      "observation_calls": []
+    }
+  },
+  "scope": "Measure native observation and input handoff during a prepared resume.\n\nObservation executes through the tile and remembered-state update loops and\ncontinues with a redraw substitute. A separate control substitutes the\nwhole observation call. Both paths reach the first PeekMessageA instruction\nthrough the native input-loop prologue. An empty-queue control measures one\nidle iteration. No Windows input is executed.\nThe report describes every invoked substitute and emits only derived results."
+}

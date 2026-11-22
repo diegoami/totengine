@@ -5040,6 +5040,127 @@ fn installed_saved_view_uses_schema_two_and_failed_restore_is_atomic() {
 }
 
 #[test]
+fn scenario_picker_suspends_opponents_until_cancel() {
+    let f = Fixture::new();
+    let path = "Original/Test.sav";
+    let original = engine::tests_support::synthetic_save_bytes();
+    fs::write(f.0.join(path), &original).unwrap();
+    let mut c = f.client();
+    start(&mut c);
+    research(&mut c);
+    key(&mut c, "Ctrl+n");
+    if matches!(c.modal, Some(Modal::Confirm { .. })) {
+        key(&mut c, "Enter");
+    }
+    assert_eq!(c.view().unwrap().phase, Phase::Opponents);
+    assert!(c.frame().advancing);
+    button(&mut c, "Pause opponents");
+    for was_running in [false, true] {
+        if was_running {
+            button(&mut c, "Continue opponents");
+        }
+        assert_eq!(c.frame().advancing, was_running);
+        let checkpoint = c.checkpoint().unwrap();
+        button(&mut c, "Open scenario");
+        assert!(matches!(c.modal, Some(Modal::Scenarios)));
+        assert!(!c.frame().advancing);
+        input(&mut c, Input::Tick);
+        assert_eq!(c.checkpoint().unwrap(), checkpoint);
+        button(&mut c, path);
+        assert!(matches!(c.modal, Some(Modal::ScenarioStart(_))));
+        assert!(!c.frame().advancing);
+        input(&mut c, Input::Tick);
+        assert_eq!(c.checkpoint().unwrap(), checkpoint);
+        let mut changed = original.clone();
+        changed[668] ^= 1;
+        fs::write(f.0.join(path), changed).unwrap();
+        key(&mut c, "Enter");
+        assert!(c.status.contains("changed"), "{}", c.status);
+        assert!(matches!(c.modal, Some(Modal::ScenarioStart(_))));
+        assert!(!c.frame().advancing);
+        assert_eq!(c.checkpoint().unwrap(), checkpoint);
+        fs::write(f.0.join(path), &original).unwrap();
+        key(&mut c, "Escape");
+        assert!(matches!(c.modal, Some(Modal::Scenarios)));
+        assert!(!c.frame().advancing);
+        key(&mut c, "Escape");
+        assert!(c.modal.is_none());
+        assert_eq!(c.frame().advancing, was_running);
+        assert_eq!(c.checkpoint().unwrap(), checkpoint);
+        input(&mut c, Input::Tick);
+        assert_eq!(c.checkpoint().unwrap() != checkpoint, was_running);
+    }
+}
+
+#[test]
+fn original_save_inspection_keeps_an_active_session_and_its_scheduling() {
+    let f = Fixture::new();
+    let path = "Original/Test.sav";
+    fs::write(f.0.join(path), b"invalid save").unwrap();
+    let mut c = f.client();
+    start(&mut c);
+    research(&mut c);
+    key(&mut c, "Ctrl+n");
+    if matches!(c.modal, Some(Modal::Confirm { .. })) {
+        key(&mut c, "Enter");
+    }
+    assert_eq!(c.view().unwrap().phase, Phase::Opponents);
+    assert!(c.frame().advancing);
+    let checkpoint = c.checkpoint().unwrap();
+    let assets = c.assets.clone();
+    button(&mut c, "Inspect ToT save / scenario");
+    assert!(matches!(c.modal, Some(Modal::OriginalSaves)));
+    let list_modal = c.modal_id;
+    button(&mut c, path);
+    let Some(Modal::OriginalSaveReport { lines, .. }) = &c.modal else {
+        panic!("expected inspection report");
+    };
+    assert!(
+        lines[0].contains("required dependency missing"),
+        "{lines:?}"
+    );
+    assert_ne!(c.modal_id, list_modal);
+    assert!(!c.frame().advancing);
+    input(&mut c, Input::Tick);
+    key(&mut c, "Enter");
+    assert!(matches!(c.modal, Some(Modal::OriginalSaves)));
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    assert!(c.frame().advancing);
+    assert_eq!(c.assets, assets);
+    assert_eq!(c.checkpoint().unwrap(), checkpoint);
+}
+
+#[test]
+fn installed_original_inspection_reports_the_saved_human_view() {
+    let Ok(home) = std::env::var("CIVTOT_HOME") else {
+        return;
+    };
+    let scratch = tempfile::tempdir().unwrap();
+    let mut c = seeded_client(home, scratch.path().join("saves"));
+    button(&mut c, "Inspect ToT save / scenario");
+    let source = "Original/Ph_Auto2.SAV";
+    let index = c.scenarios.iter().position(|p| p == source).unwrap();
+    for _ in 0..index / scenario::SCENARIO_ROWS {
+        key(&mut c, "PageDown");
+    }
+    button(&mut c, source);
+    let Some(Modal::OriginalSaveReport { lines, .. }) = &c.modal else {
+        panic!("expected inspection report");
+    };
+    assert!(
+        lines.iter().any(|l| l.contains("59 explored tiles")),
+        "{lines:?}"
+    );
+    assert!(lines.iter().any(|l| l.contains("retained native resume")));
+    assert!(c.checkpoint().is_none());
+    assert!(!scratch.path().join("saves").exists());
+    key(&mut c, "Escape");
+    assert!(matches!(c.modal, Some(Modal::OriginalSaves)));
+    assert_eq!(c.page, index / scenario::SCENARIO_ROWS);
+}
+
+#[test]
 fn scenario_confirmation_requires_the_inputs_shown_at_preflight() {
     let f = Fixture::new();
     let path = "Original/Test.sav";
@@ -5157,6 +5278,71 @@ fn initialized_scenario_restore_rejects_changed_dependencies_atomically() {
     fs::rename(path.with_extension("saved-away"), path).unwrap();
     c.restore_scenario(&source, &checkpoint).unwrap();
     assert_eq!(c.checkpoint().unwrap(), checkpoint);
+}
+
+#[test]
+fn private_scenario_snapshot_restores_after_source_replacement() {
+    let f = Fixture::new();
+    let path = "Original/Test.sav";
+    let source = f.0.join(path);
+    let original = engine::tests_support::synthetic_save_bytes();
+    fs::write(&source, &original).unwrap();
+    let mut c = f.client();
+    c.pick_scenario(path).unwrap();
+    key(&mut c, "Enter");
+    let checkpoint = c.checkpoint().unwrap();
+    let saves = f.saves();
+    let private = saves.join(".scenario-inputs");
+    assert!(!private.exists(), "starting a scenario writes no snapshot");
+
+    fs::write(&source, b"replacement autosave").unwrap();
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "private");
+    key(&mut c, "Enter");
+    let text = storage::load(&saves, "private").unwrap();
+    assert_eq!(text, checkpoint);
+    assert_eq!(
+        storage::scenario_snapshot(&saves, &text).unwrap().unwrap(),
+        original
+    );
+    assert_eq!(storage::list(&saves), ["private"]);
+    assert!(storage::save_scenario(&saves, "private", &text, b"different").is_err());
+
+    let mut d = f.client();
+    key(&mut d, "Ctrl+l");
+    edit(&mut d, "private");
+    key(&mut d, "Enter");
+    assert_eq!(d.checkpoint().unwrap(), checkpoint, "{}", d.status);
+    assert_eq!(fs::read(&source).unwrap(), b"replacement autosave");
+    fs::remove_file(&source).unwrap();
+    d.restore_scenario(&HumanSession::checkpoint_scenario(&text).unwrap(), &text)
+        .unwrap();
+
+    let origin = HumanSession::checkpoint_scenario(&text).unwrap();
+    let assets = d.assets.clone();
+    let rules = f.0.join("Rules.txt");
+    let original_rules = fs::read(&rules).unwrap();
+    fs::write(
+        &rules,
+        [original_rules.as_slice(), b"\n; changed\n"].concat(),
+    )
+    .unwrap();
+    assert!(d.restore_scenario(&origin, &text).is_err());
+    fs::write(&rules, original_rules).unwrap();
+
+    let cached = fs::read_dir(private)
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    fs::write(cached, b"truncated private snapshot").unwrap();
+    assert!(storage::save_scenario(&saves, "unpublished", &text, &original).is_err());
+    assert_eq!(storage::list(&saves), ["private"]);
+    fs::write(&source, original).unwrap();
+    assert!(d.restore_scenario(&origin, &text).is_err());
+    assert_eq!(d.checkpoint().unwrap(), checkpoint);
+    assert_eq!(d.assets, assets);
 }
 
 /// #326: scenario event TEXT boxes open one at a time as pop-up dialogs on

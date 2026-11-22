@@ -2,7 +2,7 @@
 
 Milestone 17 / #197, the rules/resource part of the frozen
 [entry contract](scenario-entry-contract.md). The shared adapter supplies
-the CLI report and the read-only **Inspect ToT save / scenario** route in
+the CLI report and the read-only **Inspect Original SAV** route in
 both clients. Playable admission and initialization have their own predicates.
 
 The first bounded dependency set is the installed reference Original pack,

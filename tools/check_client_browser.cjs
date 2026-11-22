@@ -163,7 +163,22 @@ fs.mkdirSync(out,{recursive:true});
   await key('Control+n');await key('Control+s');await save('victoryafter');
   const expected=fs.readFileSync(path.join(victory,'victoryend.cth'));
   if(!fs.readFileSync(path.join(saves,'victoryafter.cth')).equals(expected))throw Error('terminal checkpoint differs');
-  await load('victoryafter');
+  if(process.env.TOTENGINE_VICTORY_RECOVERY==='1'){
+   const source=path.join(process.env.CIVTOT_HOME,'Original','Victory.sav');
+   const backupDir=fs.mkdtempSync(path.join(path.dirname(source),'.victory-recovery-'));
+   const backup=path.join(backupDir,'Victory.sav');
+   fs.renameSync(source,backup);
+   try{
+    fs.writeFileSync(source,'replacement autosave',{flag:'wx'});
+    await load('victoryafter');
+    if(!(await state()).status.startsWith('Experimental scenario checkpoint restored'))throw Error('checkpoint did not restore with the source replaced');
+   }finally{
+    fs.renameSync(backup,source);
+    fs.rmdirSync(backupDir);
+   }
+  }else{
+   await load('victoryafter');
+  }
   if((await state()).phase!=='GameOver')throw Error('terminal state lost on load');
   for(let i=0;i<3;i++)await key('Enter');
   await key('Control+s');await save('victoryrestored');

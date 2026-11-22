@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "route": "TOTENGINE_VICTORY_RECOVERY=1 with the authored ENDGAME fixture and private install copies",
+  "snapshot_sha256": "e1174410740bb5f174d29f1eed485b1e823f3f0d3400f30baf025dcccedc22ef",
+  "shared_saved_and_restored_checkpoint_sha256": "e2bf9e6cd094dd1668b0f8460c39e1056bc240c54587d3865638ed91858503f4",
+  "cases": [
+    {
+      "client": "Chromium",
+      "source_during_restore": "replaced",
+      "restore_status_verified": true,
+      "source_restored_after_test": true
+    },
+    {
+      "client": "Linux SDL",
+      "source_during_restore": "removed",
+      "restore_status_verified": true,
+      "source_restored_after_test": true
+    }
+  ]
+}

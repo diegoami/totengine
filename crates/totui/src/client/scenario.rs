@@ -44,14 +44,6 @@ impl Client {
 
     /// Opens the scenario list.
     pub(super) fn open_scenarios(&mut self) -> Result<(), String> {
-        self.open_scenario_list(Modal::Scenarios)
-    }
-
-    pub(super) fn open_original_saves(&mut self) -> Result<(), String> {
-        self.open_scenario_list(Modal::OriginalSaves)
-    }
-
-    fn open_scenario_list(&mut self, modal: Modal) -> Result<(), String> {
         let home = self.scenario_home()?.to_path_buf();
         self.scenarios = crate::resources::list_scenarios(&home);
         if self.scenarios.is_empty() {
@@ -60,7 +52,17 @@ impl Client {
                     .into(),
             );
         }
-        self.open(modal);
+        self.open(Modal::Scenarios);
+        Ok(())
+    }
+
+    pub(super) fn open_original_saves(&mut self) -> Result<(), String> {
+        let saves = OriginalCapture::list_saves(self.scenario_home()?)?;
+        if saves.is_empty() {
+            return Err("No SAV files found directly under Original".into());
+        }
+        self.scenarios = saves;
+        self.open(Modal::OriginalSaves);
         Ok(())
     }
 
@@ -316,16 +318,16 @@ impl Client {
         match modal {
             Modal::Scenarios | Modal::OriginalSaves => {
                 let pages = self.scenarios.len().div_ceil(SCENARIO_ROWS).max(1);
-                let mode = if matches!(modal, Modal::OriginalSaves) {
-                    "read-only compatibility checks"
+                let label = if matches!(modal, Modal::OriginalSaves) {
+                    "SAV files directly under Original"
                 } else {
-                    "experimental: gaps are listed before starting"
+                    "scenario and save files in the installation"
                 };
                 draws.push(text(
                     212.,
                     150.,
                     &format!(
-                        "{} files in the installation · page {} of {pages} · {mode}",
+                        "{} {label} · page {} of {pages}",
                         self.scenarios.len(),
                         self.page + 1
                     ),

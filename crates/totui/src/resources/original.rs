@@ -109,6 +109,31 @@ impl OriginalCapture {
         Self::capture_with_pins(home, relative, &PINS)
     }
 
+    /// Direct Original SAV candidates, sorted by name. Each candidate still
+    /// needs its own dependency and save checks before it can be inspected.
+    pub(crate) fn list_saves(home: &Path) -> Result<Vec<String>, String> {
+        let (_, folder) = original_folder(home)?;
+        let mut candidates = BTreeMap::new();
+        for entry in fs::read_dir(&folder).map_err(|e| format!("Original directory: {e}"))? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            let name = entry.file_name();
+            let Some(name) = name.to_str().filter(|name| !name.starts_with('.')) else {
+                continue;
+            };
+            if is_save_name(name) {
+                candidates
+                    .entry(name.to_ascii_lowercase())
+                    .and_modify(|candidate| *candidate = None)
+                    .or_insert_with(|| {
+                        contained(&folder, entry.path())
+                            .is_ok_and(|path| path.is_file())
+                            .then(|| format!("Original/{name}"))
+                    });
+            }
+        }
+        Ok(candidates.into_values().flatten().take(400).collect())
+    }
+
     pub fn resources(&self) -> &Resources {
         &self.resources
     }
@@ -143,22 +168,13 @@ impl OriginalCapture {
 
     fn capture_with_pins(home: &Path, relative: &str, pins: &[Pin]) -> Result<Self, String> {
         let selected = relative.replace('\\', "/");
-        let parts: Vec<_> = selected.split('/').collect();
-        if parts.len() != 2
-            || !parts[0].eq_ignore_ascii_case("Original")
-            || !parts[1].is_ascii()
-            || parts[1].chars().any(|c| c.is_control() || c == ':')
-            || !parts[1].to_ascii_lowercase().ends_with(".sav")
-        {
-            return Err("this dependency set requires a SAV directly in Original".into());
-        }
-        let root = home
-            .canonicalize()
-            .map_err(|e| format!("installation directory: {e}"))?;
-        let folder = contained(
-            &root,
-            child(&root, "Original")?.ok_or("Original directory missing")?,
-        )?;
+        let (_, filename) = selected
+            .split_once('/')
+            .filter(|(folder, filename)| {
+                folder.eq_ignore_ascii_case("Original") && is_save_name(filename)
+            })
+            .ok_or("this dependency set requires a SAV directly in Original")?;
+        let (root, folder) = original_folder(home)?;
         reject_lua(&folder)?;
         let mut buffers = BTreeMap::new();
         let mut sources = BTreeMap::new();
@@ -196,7 +212,7 @@ impl OriginalCapture {
             buffers.insert(role.to_owned(), data.clone());
             Ok(data)
         };
-        let snapshot = load("scenario", parts[1])?;
+        let snapshot = load("scenario", filename)?;
         for pin in pins {
             let data = load(pin.role, pin.file)?;
             if data.len() != pin.bytes || sha256(&data) != pin.sha256 {
@@ -255,6 +271,25 @@ impl OriginalCapture {
             identity,
         })
     }
+}
+
+fn is_save_name(filename: &str) -> bool {
+    filename.is_ascii()
+        && !filename
+            .chars()
+            .any(|c| c.is_control() || matches!(c, ':' | '/' | '\\'))
+        && filename.to_ascii_lowercase().ends_with(".sav")
+}
+
+fn original_folder(home: &Path) -> Result<(PathBuf, PathBuf), String> {
+    let root = home
+        .canonicalize()
+        .map_err(|e| format!("installation directory: {e}"))?;
+    let folder = contained(
+        &root,
+        child(&root, "Original")?.ok_or("Original directory missing")?,
+    )?;
+    Ok((root, folder))
 }
 
 fn reject_lua(folder: &Path) -> Result<(), String> {

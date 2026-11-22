@@ -82,6 +82,11 @@ peace evidence covers local offer and final-status branches plus the treaty
 and attitude writes before callbacks. Both clients have bounded
 checkpointable peace talks backed by the explicit engine-peace-v1 policy.
 Native response generation and later side effects remain outside this slice.
+The owner authorized merging #374 after Kimi K3.1 Pro gave AGREE at
+`0fe51b9` and verified #375/#376. Main `129418d` has the reviewed tree.
+Milestone 18 still awaits owner acceptance on both clients. The next batch
+addresses import review follow-ups #370–#373 independently of playable
+admission.
 See the Diplomacy and intelligence section of `docs/ui/screen-contracts.md`.
 The owner launches milestone reviews.
 

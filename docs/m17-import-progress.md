@@ -34,7 +34,7 @@ Run the preparation checks together with
 The command captures the reference dependencies, checks record relationships
 and saved phase, and projects the saved human view from that capture. Its
 schema-2 JSON includes the post-city byte count and the event trailer extents.
-The same checks drive **Inspect ToT save / scenario** on both clients. The
+The same checks drive **Inspect Original SAV** on both clients. The
 inspection shows the selected human's saved view counts and the matching
 reference evidence or the input error. It leaves the game and saves intact.
 The trailer check expects the measured plain single-player prefix and `EVNT`

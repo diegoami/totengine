@@ -149,5 +149,5 @@
   },
   "method": "Reproduce the first Original dependency capture and shared-atlas check.\n\nRuns Rust adapter/atlas tests and independently hashes the selected private\nfiles with Python. No native game code/UI executes and no session is admitted.",
   "independent_python_hashes_match": true,
-  "limits": "Only the known twelve-file Original dependency set and an owned SAV capture. No root/GIF/translation/alternate-art/custom/Lua dependency admission. Current constructors, checkpoints and client routes are unchanged. Record/phase/pending-state and knowledge-continuation admission, an admitted initializer and private snapshot lifecycle/#198 entry still remain."
+  "limits": "Only the known twelve-file Original dependency set and an owned SAV capture. No root/GIF/translation/alternate-art/custom/Lua dependency admission. The CLI and both clients use this capture for read-only Original SAV inspection. Experimental checkpoints can separately preserve their captured input in private storage. This dependency capture supplies neither a playable profile nor a playable entry. Pending-state and knowledge-continuation evidence and an admitted initializer are still required."
 }

@@ -5,7 +5,9 @@ is a scratch copy. Outcome checkpoints must match byte for byte, including
 after terminal-input rejection and a save/load cycle.
 """
 from pathlib import Path
+import os
 import shutil
+import tempfile
 
 
 def run_victory(scene, key, save_dialog, load, wait, work, fixture, click_button=None, research=None):
@@ -35,7 +37,19 @@ def run_victory(scene, key, save_dialog, load, wait, work, fixture, click_button
     save_dialog('victoryafter')
     expected = (fixture / 'victoryend.cth').read_bytes()
     assert (work / 'saves/victoryafter.cth').read_bytes() == expected
-    load('victoryafter')
+    if os.environ.get('TOTENGINE_VICTORY_RECOVERY') == '1':
+        source = Path(os.environ['CIVTOT_HOME']) / 'Original/Victory.sav'
+        folder = Path(tempfile.mkdtemp(prefix='.victory-recovery-', dir=source.parent))
+        backup = folder / 'Victory.sav'
+        source.rename(backup)
+        try:
+            load('victoryafter')
+            assert scene()['status'].startswith('Experimental scenario checkpoint restored'), scene()['status']
+        finally:
+            backup.rename(source)
+            folder.rmdir()
+    else:
+        load('victoryafter')
     assert scene()['phase'] == 'GameOver'
     for _ in range(3):
         key('Return')

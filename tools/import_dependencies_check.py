@@ -50,9 +50,10 @@ def main():
     report["limits"] = (
         "Only the known twelve-file Original dependency set and an owned SAV capture. "
         "No root/GIF/translation/alternate-art/custom/Lua dependency admission. "
-        "Current constructors, checkpoints and client routes are unchanged. "
-        "Record/phase/pending-state and knowledge-continuation admission, an admitted "
-        "initializer and private snapshot lifecycle/#198 entry still remain."
+        "The CLI and both clients use this capture for read-only Original SAV inspection. "
+        "Experimental checkpoints can separately preserve their captured input in private storage. "
+        "This dependency capture supplies neither a playable profile nor a playable entry. "
+        "Pending-state and knowledge-continuation evidence and an admitted initializer are still required."
     )
     args.out.write_text(json.dumps(report, indent=2) + "\n")
     print(f"Original capture: {len(report['inputs']) - 1} dependencies plus save; "

@@ -87,6 +87,20 @@ restored checkpoints matched each other and the saved checkpoint byte for
 byte. A shared adapter test also covers cache corruption, changed Rules and
 failure to publish a checkpoint when its snapshot cannot be written.
 
+To reproduce the source changes, prepare the
+[private victory fixtures](evidence/README.md#original-victory-event-2026-11-19-197)
+and give each runner its own copy of that scratch installation. Start the
+browser host and run the browser script with the same scratch install and
+save folder. Supply `TOTENGINE_VICTORY_FIXTURES` and set
+`TOTENGINE_VICTORY_RECOVERY=1` when running either input script. Chromium
+temporarily replaces the copied source and Linux temporarily removes it.
+Both runners require the restored-session status while the original source
+is unavailable, then restore the source file and compare checkpoints.
+Compare `victoryafter.cth` and `victoryrestored.cth` from the browser save
+folder with the same names in the Linux runner's scratch `saves` directory.
+The [source recovery record](evidence/import-source-recovery.json) retains
+the fixture and checkpoint identities.
+
 Schema 2 suppresses construction-time sight refresh and seeds remembered
 improvements, unit admission and city masks/sizes from the native-verified
 saved projection. Repeated views, zero-work polling, goal edits and production

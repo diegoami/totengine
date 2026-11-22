@@ -5108,7 +5108,7 @@ fn original_save_inspection_keeps_an_active_session_and_its_scheduling() {
     assert!(c.frame().advancing);
     let checkpoint = c.checkpoint().unwrap();
     let assets = c.assets.clone();
-    button(&mut c, "Inspect ToT save / scenario");
+    button(&mut c, "Inspect Original SAV");
     assert!(matches!(c.modal, Some(Modal::OriginalSaves)));
     let list_modal = c.modal_id;
     button(&mut c, path);
@@ -5138,7 +5138,7 @@ fn installed_original_inspection_reports_the_saved_human_view() {
     };
     let scratch = tempfile::tempdir().unwrap();
     let mut c = seeded_client(home, scratch.path().join("saves"));
-    button(&mut c, "Inspect ToT save / scenario");
+    button(&mut c, "Inspect Original SAV");
     let source = "Original/Ph_Auto2.SAV";
     let index = c.scenarios.iter().position(|p| p == source).unwrap();
     for _ in 0..index / scenario::SCENARIO_ROWS {
@@ -5158,6 +5158,46 @@ fn installed_original_inspection_reports_the_saved_human_view() {
     key(&mut c, "Escape");
     assert!(matches!(c.modal, Some(Modal::OriginalSaves)));
     assert_eq!(c.page, index / scenario::SCENARIO_ROWS);
+}
+
+#[test]
+fn original_inspection_lists_direct_savs_and_preserves_the_list_page() {
+    let f = Fixture::new();
+    for i in 0..13 {
+        fs::write(f.0.join(format!("Original/Save{i:02}.SAV")), b"fixture").unwrap();
+    }
+    fs::create_dir_all(f.0.join("Original/Nested")).unwrap();
+    for path in [
+        "Original/Unsupported.scn",
+        "Original/Nested/Other.sav",
+        "Root.sav",
+    ] {
+        fs::write(f.0.join(path), b"fixture").unwrap();
+    }
+    let mut c = f.client();
+    button(&mut c, "Inspect Original SAV");
+    assert_eq!(
+        c.scenarios,
+        (0..13)
+            .map(|i| format!("Original/Save{i:02}.SAV"))
+            .collect::<Vec<_>>()
+    );
+    key(&mut c, "PageDown");
+    assert_eq!(c.page, 1);
+    let path = "Original/Save12.SAV";
+    for page_key in ["PageDown", "PageUp"] {
+        button(&mut c, path);
+        assert!(matches!(c.modal, Some(Modal::OriginalSaveReport { .. })));
+        key(&mut c, page_key);
+        key(&mut c, "Escape");
+        assert!(matches!(c.modal, Some(Modal::OriginalSaves)));
+        assert_eq!(c.page, 1);
+        assert!(c.buttons().iter().any(|b| b.label == path));
+    }
+    c.inspect_original_save("Original/Unsupported.scn").unwrap();
+    assert!(
+        matches!(&c.modal, Some(Modal::OriginalSaveReport { lines, .. }) if lines[0].contains("SAV directly in Original"))
+    );
 }
 
 #[test]

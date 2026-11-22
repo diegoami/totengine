@@ -1591,6 +1591,7 @@ impl Client {
             }
             Action::Choose(id) => self.choice = Some(id),
             Action::Slot(name) => self.entry = name,
+            Action::Page(_) if matches!(self.modal, Some(Modal::OriginalSaveReport { .. })) => {}
             Action::Page(delta) => {
                 let last = if matches!(self.modal, Some(Modal::Messages)) {
                     self.notice_log.len().saturating_sub(1) / MESSAGE_ROWS
@@ -2677,7 +2678,7 @@ impl Client {
                 603.,
                 404.,
                 36.,
-                "Inspect ToT save / scenario".into(),
+                "Inspect Original SAV".into(),
                 Action::InspectOriginalSaves,
             );
             return b;
@@ -2885,7 +2886,7 @@ impl Client {
                     Modal::Load => "Load engine checkpoint (same resources)",
                     Modal::Scenarios => "Open scenario (experimental)",
                     Modal::ScenarioStart(_) => "Scenario preflight (experimental)",
-                    Modal::OriginalSaves => "Inspect ToT save / scenario",
+                    Modal::OriginalSaves => "Inspect Original SAV",
                     Modal::OriginalSaveReport { .. } => "ToT save inspection",
                     Modal::NewGame => "Start a new game? Unsaved progress will be lost.",
                     Modal::Quit => "Close client? Save first if you want to resume.",

@@ -37,6 +37,9 @@ schema-2 JSON includes the post-city byte count and the event trailer extents.
 The trailer check expects the measured plain single-player prefix and `EVNT`
 marker. It uses a 64-record inspection budget and checks string termination
 and EOF. Unknown or malformed inputs return an error with the failing check.
+The CLI also bounds the signed count in the 340-byte history block before
+`EVNT`. The pinned save has zero entries. Native append and reset checks
+establish the layout and 12-entry capacity.
 For a well-framed trailer, `victory_event` reports whether the measured rule
 fields and embedded strings match the installed event block. A matching
 definition includes the two halves' saved active and spent marks separately.

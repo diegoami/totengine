@@ -1,0 +1,144 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "source_witness": {
+    "offset_after_cities": 1513,
+    "bytes": 340,
+    "used_entries": 0
+  },
+  "layout": {
+    "count_offset": 0,
+    "capacity": 12,
+    "turn_words_offset": 2,
+    "first_byte_array_offset": 26,
+    "second_byte_array_offset": 38,
+    "label_array_offset": 50,
+    "label_stride": 24
+  },
+  "append": {
+    "entry": "0048be1f",
+    "stop": "0048bea3",
+    "cases": [
+      {
+        "initial_count": 0,
+        "final_count": 1,
+        "changed_offsets": [
+          0,
+          2,
+          3,
+          26,
+          38,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61
+        ],
+        "substituted_calls": [
+          "0047a074",
+          "005b1220"
+        ]
+      },
+      {
+        "initial_count": 11,
+        "final_count": 12,
+        "changed_offsets": [
+          0,
+          24,
+          25,
+          37,
+          49,
+          314,
+          315,
+          316,
+          317,
+          318,
+          319,
+          320,
+          321,
+          322,
+          323,
+          324,
+          325
+        ],
+        "substituted_calls": [
+          "0047a074",
+          "005b1220"
+        ]
+      },
+      {
+        "initial_count": 12,
+        "final_count": 12,
+        "changed_offsets": [],
+        "substituted_calls": []
+      }
+    ]
+  },
+  "reset": {
+    "entry": "00487e4a",
+    "cleared_offsets": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      50,
+      74,
+      98,
+      122,
+      146,
+      170,
+      194,
+      218,
+      242,
+      266,
+      290,
+      314
+    ]
+  },
+  "scope": "Append, reset and pinned count. Entry payload meanings beyond the turn and label fields and the unused ending bytes remain open."
+}

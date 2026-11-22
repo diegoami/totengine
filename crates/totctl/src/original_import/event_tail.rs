@@ -5,6 +5,9 @@ use serde::Serialize;
 use tot_kit::{EventFile, Value};
 
 const PREFIX_BYTES: usize = 1853;
+// Native append and reset witnesses in docs/evidence/import-history.json.
+const HISTORY_OFFSET: usize = 1513;
+const HISTORY_CAPACITY: i16 = 12;
 const RECORD_BYTES: usize = 276;
 // The inspection command targets a stock reference with two records.
 // Use a fixed reader budget for other inputs until that scope expands.
@@ -17,6 +20,7 @@ const SPENT: u32 = 0x2000_0000;
 #[derive(Debug, PartialEq, Eq, Serialize)]
 pub(super) struct EventTail<'a> {
     prefix_bytes: usize,
+    history_entries: i16,
     record_count: usize,
     string_count: usize,
     string_bytes: usize,
@@ -38,6 +42,12 @@ pub(super) fn inspect(tail: &[u8]) -> Result<EventTail<'_>, String> {
     let section = tail
         .get(PREFIX_BYTES..)
         .ok_or("event trailer: truncated post-city prefix")?;
+    let history_entries = i16::from_le_bytes([tail[HISTORY_OFFSET], tail[HISTORY_OFFSET + 1]]);
+    if !(0..=HISTORY_CAPACITY).contains(&history_entries) {
+        return Err(format!(
+            "event trailer: invalid history entry count {history_entries}"
+        ));
+    }
     let data = section
         .strip_prefix(b"EVNT")
         .ok_or("event trailer: expected EVNT at post-city offset 1853")?;
@@ -89,6 +99,7 @@ pub(super) fn inspect(tail: &[u8]) -> Result<EventTail<'_>, String> {
     }
     Ok(EventTail {
         prefix_bytes: PREFIX_BYTES,
+        history_entries,
         record_count: count,
         string_count: slots.len(),
         string_bytes,
@@ -267,6 +278,14 @@ mod tests {
         tail.pop();
         tail.push(0);
         assert_eq!(inspect(&tail).unwrap().string_count, 1);
+        for count in [-1i16, HISTORY_CAPACITY + 1] {
+            tail[HISTORY_OFFSET..HISTORY_OFFSET + 2].copy_from_slice(&count.to_le_bytes());
+            assert!(inspect(&tail)
+                .unwrap_err()
+                .contains("invalid history entry count"));
+        }
+        tail[HISTORY_OFFSET..HISTORY_OFFSET + 2].copy_from_slice(&HISTORY_CAPACITY.to_le_bytes());
+        assert_eq!(inspect(&tail).unwrap().history_entries, HISTORY_CAPACITY);
         tail.push(0);
         assert!(inspect(&tail).unwrap_err().contains("unrecognized bytes"));
     }

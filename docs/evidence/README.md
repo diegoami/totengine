@@ -69,6 +69,20 @@ CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_event_sta
 cmp docs/evidence/import-event-state.json /tmp/event-state.json
 ```
 
+The [history block report](import-history.json) accounts for the 340 bytes
+read immediately before the event marker. The native append fragment at
+`0x48be1f` increments the signed count, stores the current turn, fills two
+byte arrays, and stores a label. It appends at counts 0 and 11 and leaves a
+full 12-entry buffer intact. The probe supplies an authored label through
+two substituted name helpers. The native reset at `0x487e4a` clears the
+count, turn array, first byte array, and first byte of each label. The pinned
+save has zero entries. Remaining payload meanings and unused bytes stay open.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_history_check.py --out /tmp/history.json
+cmp docs/evidence/import-history.json /tmp/history.json
+```
+
 ## Saved-round and research-entry boundaries (#197, 2026-11-21)
 
 [`import-phase.json`](import-phase.json) and

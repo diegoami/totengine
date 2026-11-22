@@ -55,6 +55,7 @@ fn installed_save_reports_checked_records_phase_and_view() {
         native["post_city_bytes"]
     );
     let trailer = &report["event_trailer"];
+    assert_eq!(trailer["history_entries"], 0);
     assert_eq!(trailer["prefix_bytes"], native["event_offset_after_cities"]);
     assert_eq!(trailer["record_count"], native["record_count"]);
     assert_eq!(trailer["event_section_bytes"], native["native"]["consumed"]);

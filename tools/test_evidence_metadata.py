@@ -14,6 +14,19 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class GoldenMetadata(unittest.TestCase):
+    def test_native_history_block_matches_trailer_extent(self):
+        history = json.loads((ROOT / 'docs/evidence/import-history.json').read_text())
+        tail = json.loads((ROOT / 'docs/evidence/import-event-tail.json').read_text())
+        self.assertEqual(history['source'], tail['source'])
+        self.assertEqual(history['binary_sha256'], tail['binary_sha256'])
+        witness = history['source_witness']
+        self.assertEqual(witness['offset_after_cities'] + witness['bytes'],
+                         tail['event_offset_after_cities'])
+        self.assertEqual(witness['used_entries'], 0)
+        self.assertEqual([(row['initial_count'], row['final_count'])
+                          for row in history['append']['cases']], [(0, 1), (11, 12), (12, 12)])
+        self.assertEqual(history['append']['cases'][-1]['changed_offsets'], [])
+
     def test_input_handoff_report_matches_the_unit_setup_witness(self):
         report = json.loads((ROOT / 'docs/evidence/import-input-handoff.json').read_text())
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())

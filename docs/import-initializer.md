@@ -34,9 +34,13 @@ The extension binds:
 - The install-relative source path, captured byte length and fingerprint;
   the same original snapshot must be supplied again on restore. Original
   bytes stay private and are never embedded in public evidence or recordings.
-  This slice uses an external input reference: retain the exact selected
-  bytes at the recorded relative path (a byte-identical private installation
-  copy also works). A private snapshot-cache lifecycle belongs with #198.
+  Desktop and browser checkpoint saves preserve the captured bytes locally
+  under `.scenario-inputs` in the checkpoint folder. Each copy is bound to
+  the checkpoint text by its SHA-256 filename and verified on read. Existing
+  checkpoints without a private copy still use the exact original at the
+  recorded relative path. The installed rules, resources and events must still
+  match. Copying the checkpoint alone requires supplying the original input
+  again.
 - The dependency manifest captured with the session: rules, map/unit/interface
   artwork and Events.txt identities, plus resolved Labels.txt and Describe.txt
   identities. Optional missing text is explicit through manifest absence.
@@ -69,6 +73,19 @@ by canonical re-emission, as format 2 does. Missing/changed inputs, unknown
 versions or profiles, altered phase/memory assertions and replay divergence
 fail without replacing the active session. The same initializer is retained
 when a checkpoint is saved after partial opponent work or ENDGAME.
+
+No private copy is written during preflight or play. The client's explicit
+Save checkpoint action stages the snapshot first and creates the checkpoint
+slot only after the copy is available. Neither operation overwrites an
+existing slot or original input. The private folder is outside the checkpoint
+list and is not packaged with recordings. It may contain unused copies after
+deleting a checkpoint or after an interrupted save. Back up the folder
+privately when the original source bytes might no longer be available.
+In the controlled ENDGAME route, Chromium restored after replacement of the
+private install's source save and Linux SDL restored after removal. Both
+restored checkpoints matched each other and the saved checkpoint byte for
+byte. A shared adapter test also covers cache corruption, changed Rules and
+failure to publish a checkpoint when its snapshot cannot be written.
 
 Schema 2 suppresses construction-time sight refresh and seeds remembered
 improvements, unit admission and city masks/sizes from the native-verified

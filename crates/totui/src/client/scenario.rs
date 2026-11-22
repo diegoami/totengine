@@ -134,6 +134,7 @@ impl Client {
             atlas,
             session,
             identity,
+            scenario_snapshot: Some(files.bytes),
         });
         self.assets = assets;
         self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
@@ -160,8 +161,10 @@ impl Client {
         text: &str,
     ) -> Result<(), String> {
         let home = self.scenario_home()?.to_path_buf();
-        let (resources, files) = crate::resources::Resources::load_scenario(&home, &origin.path)
-            .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))?;
+        let snapshot = storage::scenario_snapshot(&self.saves, text)?;
+        let (resources, files) =
+            crate::resources::Resources::load_scenario_inputs(&home, &origin.path, snapshot)
+                .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))?;
         let atlas = Atlas::load(&resources)?;
         let identity = if text.starts_with("totengine-human 3\n") {
             resources.scenario_identity()
@@ -184,6 +187,7 @@ impl Client {
             atlas,
             identity,
             session,
+            scenario_snapshot: Some(files.bytes),
         });
         self.assets = assets;
         Ok(())

@@ -5212,6 +5212,71 @@ fn initialized_scenario_restore_rejects_changed_dependencies_atomically() {
     assert_eq!(c.checkpoint().unwrap(), checkpoint);
 }
 
+#[test]
+fn private_scenario_snapshot_restores_after_source_replacement() {
+    let f = Fixture::new();
+    let path = "Original/Test.sav";
+    let source = f.0.join(path);
+    let original = engine::tests_support::synthetic_save_bytes();
+    fs::write(&source, &original).unwrap();
+    let mut c = f.client();
+    c.pick_scenario(path).unwrap();
+    key(&mut c, "Enter");
+    let checkpoint = c.checkpoint().unwrap();
+    let saves = f.saves();
+    let private = saves.join(".scenario-inputs");
+    assert!(!private.exists(), "starting a scenario writes no snapshot");
+
+    fs::write(&source, b"replacement autosave").unwrap();
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "private");
+    key(&mut c, "Enter");
+    let text = storage::load(&saves, "private").unwrap();
+    assert_eq!(text, checkpoint);
+    assert_eq!(
+        storage::scenario_snapshot(&saves, &text).unwrap().unwrap(),
+        original
+    );
+    assert_eq!(storage::list(&saves), ["private"]);
+    assert!(storage::save_scenario(&saves, "private", &text, b"different").is_err());
+
+    let mut d = f.client();
+    key(&mut d, "Ctrl+l");
+    edit(&mut d, "private");
+    key(&mut d, "Enter");
+    assert_eq!(d.checkpoint().unwrap(), checkpoint, "{}", d.status);
+    assert_eq!(fs::read(&source).unwrap(), b"replacement autosave");
+    fs::remove_file(&source).unwrap();
+    d.restore_scenario(&HumanSession::checkpoint_scenario(&text).unwrap(), &text)
+        .unwrap();
+
+    let origin = HumanSession::checkpoint_scenario(&text).unwrap();
+    let assets = d.assets.clone();
+    let rules = f.0.join("Rules.txt");
+    let original_rules = fs::read(&rules).unwrap();
+    fs::write(
+        &rules,
+        [original_rules.as_slice(), b"\n; changed\n"].concat(),
+    )
+    .unwrap();
+    assert!(d.restore_scenario(&origin, &text).is_err());
+    fs::write(&rules, original_rules).unwrap();
+
+    let cached = fs::read_dir(private)
+        .unwrap()
+        .next()
+        .unwrap()
+        .unwrap()
+        .path();
+    fs::write(cached, b"truncated private snapshot").unwrap();
+    assert!(storage::save_scenario(&saves, "unpublished", &text, &original).is_err());
+    assert_eq!(storage::list(&saves), ["private"]);
+    fs::write(&source, original).unwrap();
+    assert!(d.restore_scenario(&origin, &text).is_err());
+    assert_eq!(d.checkpoint().unwrap(), checkpoint);
+    assert_eq!(d.assets, assets);
+}
+
 /// #326: scenario event TEXT boxes open one at a time as pop-up dialogs on
 /// the human's turn, after required choices, and each is logged once.
 #[test]

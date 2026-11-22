@@ -454,6 +454,7 @@ struct Loaded {
     atlas: Atlas,
     session: HumanSession,
     identity: String,
+    scenario_snapshot: Option<Vec<u8>>,
 }
 
 #[derive(Clone, Copy)]
@@ -1337,6 +1338,7 @@ impl Client {
                     atlas,
                     session,
                     identity,
+                    scenario_snapshot: None,
                 });
                 self.assets = storage::nonce()?;
                 self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
@@ -1711,11 +1713,17 @@ impl Client {
                     }
                     Modal::Save => {
                         let l = self.loaded.as_ref().ok_or("Start a game first")?;
-                        storage::save(
-                            &self.saves,
-                            &self.entry,
-                            &l.session.checkpoint(&l.identity),
-                        )?;
+                        let checkpoint = l.session.checkpoint(&l.identity);
+                        if let Some(snapshot) = &l.scenario_snapshot {
+                            storage::save_scenario(
+                                &self.saves,
+                                &self.entry,
+                                &checkpoint,
+                                snapshot,
+                            )?;
+                        } else {
+                            storage::save(&self.saves, &self.entry, &checkpoint)?;
+                        }
                         self.status = format!("Engine checkpoint saved: {}", self.entry);
                     }
                     Modal::Load => {
@@ -1747,6 +1755,7 @@ impl Client {
                                 atlas,
                                 identity,
                                 session,
+                                scenario_snapshot: None,
                             });
                             self.assets = assets;
                         }

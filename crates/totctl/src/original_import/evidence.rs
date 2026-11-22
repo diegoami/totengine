@@ -4,6 +4,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 
 const HANDOFF: &str = include_str!("../../../../docs/evidence/import-input-handoff.json");
+const LOADER_EXIT: &str = include_str!("../../../../docs/evidence/import-loader-exit.json");
 
 pub(super) fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
@@ -20,6 +21,14 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
     }
     let observed = &report["cases"]["native_observation"];
     let resumed = &observed["observation_to_input"];
+    let loader: Value =
+        serde_json::from_str(LOADER_EXIT).map_err(|error| format!("loader evidence: {error}"))?;
+    if loader["source"]["sha256"] != save_sha256
+        || loader["rules_sha256"] != rules_sha256
+        || loader["binary_sha256"] != report["binary_sha256"]
+    {
+        return Err("retained loader and input traces refer to different inputs".into());
+    }
     Ok(json!({
         "matches_fixture": true,
         "scope": "prepared native resume with display and empty-queue substitutes",
@@ -28,6 +37,11 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
         "explored_tiles_at_observation_boundary": observed["explored_tiles_after"],
         "first_poll": resumed["first_poll"],
         "idle_iteration": resumed["idle_iteration"],
+        "loader_regions": {
+            "report": "docs/evidence/import-loader-exit.json",
+            "after_event_read": loader["after_event_read"],
+            "same_mode_return": loader["mode_restore"]["cases"]["same_mode"]
+        },
     }))
 }
 

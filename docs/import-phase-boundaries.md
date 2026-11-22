@@ -62,6 +62,22 @@ round-start event dispatch when the restart flag is zero. This explains why
 the earlier loader suffix's flag reset alone is insufficient to characterize
 the full load path.
 
+The [post-event probe](evidence/import-loader-exit.json) runs the event reader
+and continues in the same prepared memory from `0x4622ea` to `0x462e0d`.
+With two display-helper calls substituted and nonnegative sign controls, it
+preserves the civ, unit, city and loaded event records, the tiles, and all
+seven civ caches. The round-start flag remains one, the resume civ remains
+four, and research stays at target -1 with zero progress. A separate suffix
+starts after the final refresh and file close. It shows that the same-mode
+successful return preserves that phase and that restoring a different mode can
+fill an empty human mask using the living resume civ or the first living civ.
+The interval between the two measurements still needs evidence.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_loader_exit_check.py --out /tmp/loader-exit.json
+cmp docs/evidence/import-loader-exit.json /tmp/loader-exit.json
+```
+
 The [unit-selection trace](evidence/import-unit-setup.json) extends the
 resumed branch through the native active-unit search. It prepares the
 unit-selection display mode and movement inputs from the pinned Rules.

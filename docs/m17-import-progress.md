@@ -24,7 +24,7 @@ reviewed `4ba7d66` tree.
 | 2. Snapshot without a fresh turn | Saved spent movement is retained; initial city stores/treasury are not advanced. A separate read-only record checker validates live references/occupancy/stack state; raw-field/full-world measurements establish movement-only differences for the pinned schema-2 start. | Bind these checks to the admitted recipe, finish phase/pending-state and dependency checks; the 3,129-byte post-city tail is not admitted by this record check. |
 | 3. Saved human knowledge | #356 projects 59 explored tiles, four unit slots and city 5 size 2; the saved-view branch wires that projection into the actual session/view and schema-2 replay, without an initial reveal. | Verify/activate an admitted knowledge/continuation recipe. The new recipe is still experimental: choosing research on this candidate starts engine observation with 60 tiles. Do not relabel this normalization faithful without satisfying the frozen predicates. |
 | 4. Original Events | #354 implements futuretech equality, compound RANDOMTURN, terminal ENDGAME and a disclosed AVI/ending-screen omission policy. | Verify the admitted dependency set and initializer preserve the exact supported event input/state/timing; retain the disclosed presentation policy. |
-| 5. Import initializer | #355's format 3 seals snapshot/dependencies, phase, memory/world/event assertions and engine policy/seed/RNG assertions; schema 2 adds a separate experimental saved-initial-view recipe. A separate first-set dependency capture checks all twelve known Original inputs and retains immutable raw/parsed/decoded values plus SHA-256 identities. | Bind the record and dependency predicates to an admitted profile/recipe and restore path without changing existing formats/recipes; finish phase/knowledge admission and the private snapshot/reference lifecycle. |
+| 5. Import initializer | #355's format 3 seals snapshot/dependencies, phase, memory/world/event assertions and engine policy/seed/RNG assertions; schema 2 adds a separate experimental saved-initial-view recipe. A separate first-set dependency capture checks all twelve known Original inputs and retains immutable raw/parsed/decoded values plus SHA-256 identities. Both clients preserve the captured input locally on explicit checkpoint save. | Bind the record and dependency predicates to an admitted profile/recipe and restore path without changing existing formats/recipes; finish phase/knowledge admission. |
 | 6. #198 faithful entry | Shared experimental preflight binds the displayed inputs to confirmation. Changed saves, resolved dependencies, or Lua presence require a new selection. The picker and preflight suspend opponent work. Cancelling restores the previous scheduling state. | Implement the distinct Open ToT save/scenario route, cover its positive and failure paths, and obtain owner acceptance on both clients. |
 
 ## Next integration
@@ -48,7 +48,8 @@ private.
 The `native_resume_trace` report binds the measured startup observations
 to the SHA-256 of the captured save and Rules.txt. A different save
 can pass record checks and still show a fixture mismatch. An exact match
-includes the earlier prepared trace's first input poll and idle iteration.
+includes the post-event loader and mode-restoration measurements, the first
+input poll and an idle iteration.
 `playable_import` remains false while event field semantics, pending-state,
 and knowledge continuation checks are open.
 
@@ -92,6 +93,14 @@ display helpers substituted. Separate controls also reach that instruction
 in unit mode and viewing mode.
 A controlled empty queue returns each path to the next general poll with
 its selected slot, display mode, research and live records intact.
+
+The [pinned observation vectors](evidence/import-pinned-observation.txt)
+compare the raw changes from four own unit slots at their saved positions and
+four controlled adjacent positions. Existing Rust observation matches every
+tile and cache delta without changing unit or city records. The controlled
+inputs update occupancy and ownership before executing the observation loop.
+This isolates observation from movement and stops before notification
+processing with active contacts disabled.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

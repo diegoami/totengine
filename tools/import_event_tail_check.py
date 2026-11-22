@@ -100,8 +100,10 @@ def trace_prefix(binary, save, tail):
     return {'stop': f'{stop:08x}', 'consumed': cursor, 'reads': reads, 'skipped': skipped}
 
 
-def trace(binary, data, *, include_record_words=False, after_load=None):
-    original = OriginalCity(binary)
+def trace(binary, data, *, include_record_words=False, after_load=None,
+          original=None, record_base=FIRST_RECORD):
+    if original is None:
+        original = OriginalCity(binary)
     frame(original)
     cursor = 0
     blocks = []
@@ -144,7 +146,7 @@ def trace(binary, data, *, include_record_words=False, after_load=None):
             value = 0
         elif addr == 0x4D170C:
             assert len(records) < 64
-            value = FIRST_RECORD + len(records) * 0x200
+            value = record_base + len(records) * 0x200
             if records:
                 original.write(records[-1] + RECORD_SIZE, value, '<I')
             else:

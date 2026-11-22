@@ -1,0 +1,14 @@
+# binary_sha256 f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14
+# save_sha256 5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef
+# rules_sha256 640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef
+# native 0041f704 to 004205a7; active_contacts=0; no replaced callees
+# unit_slot destination_x destination_y tile_byte_deltas cache_byte_deltas
+# deltas are offset:before:after; civ/unit/city records remain unchanged
+6 - - - -
+9 - - - -
+18 - - - -
+26 - - - -
+6 62 4 670:0:16 6191:0:1,6231:1:0
+6 62 6 - 6231:1:0,6271:0:1
+6 63 7 - 6231:1:0,6311:0:1
+18 50 10 2548:0:16 6385:1:0,6425:0:1

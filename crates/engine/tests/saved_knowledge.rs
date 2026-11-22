@@ -266,3 +266,75 @@ fn installed_original_snapshot_matches_the_native_reader_projection() {
         .iter()
         .any(|g| g.contains("later play uses engine visibility/contact rules")));
 }
+
+#[test]
+fn installed_original_observation_matches_native_sparse_updates() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let folder = std::path::Path::new(&home).join("Original");
+    let original = tot_kit::parse_sav_file(&folder.join("Ph_Auto2.SAV")).unwrap();
+    let rules = tot_kit::parse_rules(&tot_kit::latin1(
+        &std::fs::read(folder.join("Rules.txt")).unwrap(),
+    ));
+    let vectors = include_str!("../../../docs/evidence/import-pinned-observation.txt");
+    let delta = |before: &[u8], after: &[u8]| {
+        assert_eq!(before.len(), after.len());
+        before
+            .iter()
+            .zip(after)
+            .enumerate()
+            .filter(|(_, (a, b))| a != b)
+            .map(|(i, (a, b))| format!("{i}:{a}:{b}"))
+            .collect::<Vec<_>>()
+            .join(",")
+    };
+    let mut count = 0;
+    for line in vectors.lines().filter(|line| !line.starts_with('#')) {
+        let fields: Vec<_> = line.split_whitespace().collect();
+        let [slot, x, y, tiles, memory] = fields.as_slice() else {
+            panic!("invalid native vector: {line}");
+        };
+        let slot = slot.parse::<usize>().unwrap();
+        let mut prepared = original.clone();
+        if *x != "-" {
+            let (x, y) = (x.parse::<u16>().unwrap(), y.parse::<u16>().unwrap());
+            let unit = &mut prepared.units[slot];
+            let index = |x, y| {
+                original
+                    .map_header
+                    .stored_index(usize::from(x), usize::from(y))
+                    .unwrap()
+            };
+            let old = 6 * index(unit.x(), unit.y());
+            let new = 6 * index(x, y);
+            unit.raw[..2].copy_from_slice(&x.to_le_bytes());
+            unit.raw[2..4].copy_from_slice(&y.to_le_bytes());
+            let map = &mut prepared.maps[0].tile_fields;
+            map[old + 1] &= !1;
+            map[old + 5] |= 0xf0;
+            map[new + 1] |= 1;
+            map[new + 5] = map[new + 5] & 0x0f | (original.player_civ << 4);
+        }
+        let output =
+            engine::saved_knowledge::unit_observation_after(&prepared, &rules, slot, false)
+                .unwrap();
+        let before = &prepared.maps[0];
+        let after = &output.maps[0];
+        assert_eq!(
+            delta(&before.tile_fields, &after.tile_fields),
+            tiles.trim_matches('-'),
+            "{line}"
+        );
+        assert_eq!(
+            delta(&before.visibility, &after.visibility),
+            memory.trim_matches('-'),
+            "{line}"
+        );
+        assert_eq!(prepared.units, output.units);
+        assert_eq!(prepared.cities, output.cities);
+        assert_eq!(prepared.diplomacy, output.diplomacy);
+        count += 1;
+    }
+    assert_eq!(count, 8);
+}

@@ -1,0 +1,140 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules_sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef",
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "after_event_read": {
+    "entry": "004622ea",
+    "stop": "00462e0d",
+    "round_flag_written_by_reader": 1,
+    "display_call_sites": [
+      "004622ea",
+      "00462c07"
+    ],
+    "phase": {
+      "multiplayer_mode": 0,
+      "human_mask": 16,
+      "resume_civ": 4,
+      "round_start_flag": 1,
+      "research_target": -1,
+      "research_progress": 0
+    },
+    "civ_unit_city_event_records_unchanged": true,
+    "tiles_and_remembered_improvements_unchanged": true
+  },
+  "mode_restore": {
+    "entry": "00462ec7",
+    "stop": "004630e3",
+    "cases": {
+      "same_mode": {
+        "before": {
+          "multiplayer_mode": 0,
+          "human_mask": 16,
+          "resume_civ": 4,
+          "round_start_flag": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "multiplayer_mode": 0,
+          "human_mask": 16,
+          "resume_civ": 4,
+          "round_start_flag": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "pre_load_mode": 0,
+        "return_status": 0,
+        "living_mask": 245
+      },
+      "preserve_existing_human": {
+        "before": {
+          "multiplayer_mode": 0,
+          "human_mask": 16,
+          "resume_civ": 4,
+          "round_start_flag": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "multiplayer_mode": 1,
+          "human_mask": 16,
+          "resume_civ": 4,
+          "round_start_flag": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "pre_load_mode": 1,
+        "return_status": 0,
+        "living_mask": 245
+      },
+      "add_resume_human": {
+        "before": {
+          "multiplayer_mode": 1,
+          "human_mask": 0,
+          "resume_civ": 4,
+          "round_start_flag": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "multiplayer_mode": 1,
+          "human_mask": 16,
+          "resume_civ": 4,
+          "round_start_flag": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "pre_load_mode": 0,
+        "return_status": 0,
+        "living_mask": 20
+      },
+      "first_living_fallback": {
+        "before": {
+          "multiplayer_mode": 1,
+          "human_mask": 0,
+          "resume_civ": 4,
+          "round_start_flag": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "multiplayer_mode": 1,
+          "human_mask": 4,
+          "resume_civ": 4,
+          "round_start_flag": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "pre_load_mode": 0,
+        "return_status": 0,
+        "living_mask": 36
+      },
+      "failed_load_bypasses_mode_restore": {
+        "before": {
+          "multiplayer_mode": 1,
+          "human_mask": 0,
+          "resume_civ": 4,
+          "round_start_flag": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "multiplayer_mode": 1,
+          "human_mask": 0,
+          "resume_civ": 4,
+          "round_start_flag": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "pre_load_mode": 0,
+        "return_status": 1,
+        "living_mask": 20
+      }
+    }
+  },
+  "scope": "Prepared native EVNT reader and post-read prefix with display substitutes. Separate native mode restoration starts after skipped final refresh and close."
+}

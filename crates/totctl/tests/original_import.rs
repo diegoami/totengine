@@ -43,6 +43,18 @@ fn installed_save_reports_checked_records_phase_and_view() {
     let witnessed = &native["cases"]["native_observation"]["observation_to_input"];
     assert_eq!(trace["first_poll"], witnessed["first_poll"]);
     assert_eq!(trace["idle_iteration"], witnessed["idle_iteration"]);
+    let loader: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../docs/evidence/import-loader-exit.json"
+    ))
+    .unwrap();
+    assert_eq!(
+        trace["loader_regions"]["after_event_read"],
+        loader["after_event_read"]
+    );
+    assert_eq!(
+        trace["loader_regions"]["same_mode_return"],
+        loader["mode_restore"]["cases"]["same_mode"]
+    );
     assert_eq!(report["records"]["unit_slots"], 38);
     assert_eq!(report["records"]["live_units"], 37);
     assert_eq!(report["records"]["live_cities"], 10);

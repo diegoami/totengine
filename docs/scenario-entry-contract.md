@@ -67,8 +67,8 @@ unsupported/mismatched scenario units cannot be silently renamed to stock roles.
 
 The separate [first-set capture](import-stock-dependencies.md) now implements
 the known reference pack's dependency predicate: twelve direct Original inputs
-plus an immutable selected-save capture, all bound by SHA-256. It is unused by
-current entry/restore paths and grants no session admission. Alternate installs,
+plus an immutable selected-save capture, all bound by SHA-256. The CLI and
+read-only client inspection use this capture. Alternate installs,
 translations, GIF/root fallback and other art sets require separate evidence.
 
 Future custom packages must supply their declared rules/event/text dependencies.
@@ -141,7 +141,7 @@ round-trip gate, not implied by importing or saving an engine checkpoint.
 
 | Case | Current evidence | Required before entry/continuation |
 | --- | --- | --- |
-| Original standard candidate | Pinned bytes, supported compound victory event, saved-round resume, stored initial view and experimental format-3 initializer. The dependency capture retains the Original inputs. The [snapshot check](import-snapshot-validation.md) validates records and measures movement normalization. The phase probe reaches native unit setup on the pinned save. | Bind these predicates to an admitted initializer with verified knowledge continuation, phase/pending-state and private snapshot lifecycle, then #198's atomic both-client route. |
+| Original standard candidate | Pinned bytes, supported compound victory event, saved-round resume, stored initial view and experimental format-3 initializer. The dependency capture retains the Original inputs for inspection, and explicit client checkpoint saves preserve the selected source locally. The [snapshot check](import-snapshot-validation.md) validates records and measures movement normalization. Native phase probes reach the input poll in the prepared context. | Bind these predicates to an admitted initializer with verified knowledge continuation and phase/pending-state, then #198's atomic playable route. |
 | FallRome | 64 macro blocks, 710 units/146 cities in existing framing | Technology effects and other required macro/context/presentation semantics; custom date/text policy |
 | Roman Civil Wars | Installed hashes, 258 macro blocks, 618 units/159 cities | Delay/flag/randomize/removal/aggression/audio/objective and author-restriction semantics |
 | Midgard | Partial surface framing, declared multiple maps, 12 transporter records | Correct complete layout, map state/transfer simulation and event semantics |

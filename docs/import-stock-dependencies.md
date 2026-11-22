@@ -1,8 +1,9 @@
 # First Original dependency capture
 
 Milestone 17 / #197, the rules/resource part of the frozen
-[entry contract](scenario-entry-contract.md). This is a separate adapter API;
-it activates no profile, initializer, constructor or client route.
+[entry contract](scenario-entry-contract.md). The shared adapter supplies
+the CLI report and the read-only **Inspect ToT save / scenario** route in
+both clients. Playable admission and initialization have their own predicates.
 
 The first bounded dependency set is the installed reference Original pack,
 identified by byte lengths and SHA-256 content identities. Existing engine
@@ -39,8 +40,8 @@ Acceptance covers an installed positive capture, derived metadata reproduction,
 and authored missing/changed rules/events/text/art, case ambiguity, path escape,
 Lua, root-fallback refusal, retained byte identity after source mutation and
 revalidation failures. Public evidence contains only identities/counts/dimensions,
-never source assets, save bytes or original text. The private snapshot-cache
-lifecycle remains with #198.
+never source assets, save bytes or original text. The client checkpoint
+[snapshot lifecycle](import-initializer.md) is covered separately.
 
 Passing this dependency predicate says nothing about SAV framing/records,
 human/pending phase, knowledge continuation or an admitted initializer. #362's

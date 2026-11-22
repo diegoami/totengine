@@ -25,7 +25,7 @@ reviewed `4ba7d66` tree.
 | 3. Saved human knowledge | #356 projects 59 explored tiles, four unit slots and city 5 size 2; the saved-view branch wires that projection into the actual session/view and schema-2 replay, without an initial reveal. | Verify/activate an admitted knowledge/continuation recipe. The new recipe is still experimental: choosing research on this candidate starts engine observation with 60 tiles. Do not relabel this normalization faithful without satisfying the frozen predicates. |
 | 4. Original Events | #354 implements futuretech equality, compound RANDOMTURN, terminal ENDGAME and a disclosed AVI/ending-screen omission policy. | Verify the admitted dependency set and initializer preserve the exact supported event input/state/timing; retain the disclosed presentation policy. |
 | 5. Import initializer | #355's format 3 seals snapshot/dependencies, phase, memory/world/event assertions and engine policy/seed/RNG assertions; schema 2 adds a separate experimental saved-initial-view recipe. A separate first-set dependency capture checks all twelve known Original inputs and retains immutable raw/parsed/decoded values plus SHA-256 identities. Both clients preserve the captured input locally on explicit checkpoint save. | Bind the record and dependency predicates to an admitted profile/recipe and restore path without changing existing formats/recipes; finish phase/knowledge admission. |
-| 6. #198 faithful entry | Shared experimental preflight binds the displayed inputs to confirmation. Changed saves, resolved dependencies, or Lua presence require a new selection. The picker and preflight suspend opponent work. Cancelling restores the previous scheduling state. | Implement the distinct Open ToT save/scenario route, cover its positive and failure paths, and obtain owner acceptance on both clients. |
+| 6. #198 faithful entry | Shared experimental preflight binds the displayed inputs to confirmation. Changed saves, resolved dependencies, or Lua presence require a new selection. Both clients also expose the shared Original inspection checks in a read-only picker. Both routes suspend opponent work and restore the previous scheduling state on exit. | Enable a distinct playable Open ToT save/scenario route after admission, cover its positive and failure paths, and obtain owner acceptance on both clients. |
 
 ## Next integration
 
@@ -34,6 +34,9 @@ Run the preparation checks together with
 The command captures the reference dependencies, checks record relationships
 and saved phase, and projects the saved human view from that capture. Its
 schema-2 JSON includes the post-city byte count and the event trailer extents.
+The same checks drive **Inspect ToT save / scenario** on both clients. The
+inspection shows the selected human's saved view counts and the matching
+reference evidence or the input error. It leaves the game and saves intact.
 The trailer check expects the measured plain single-player prefix and `EVNT`
 marker. It uses a 64-record inspection budget and checks string termination
 and EOF. Unknown or malformed inputs return an error with the failing check.
@@ -72,7 +75,8 @@ an immutable capture of the selected save and the known twelve-file Original
 dependency set, without root/demo/GIF fallback or ignored Lua. All selected
 bytes are bound by SHA-256; the resulting 145-sprite shared atlas matches the
 current Original adapter. Revalidation rejects changed/missing/ambiguous inputs.
-It is not called by current client routes and admits no runtime profile.
+The CLI and both client inspection routes use the capture. The playable
+experimental route still uses its existing dependency resolution.
 
 The [phase-boundary slice](import-phase-boundaries.md) verifies the resumed
 human-preparation branch and reaches native unit setup on the pinned input.

@@ -1,14 +1,9 @@
 //! Connect the captured input to the retained native resume trace by hash.
 
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 
-const HANDOFF: &str = include_str!("../../../../docs/evidence/import-input-handoff.json");
-const LOADER_EXIT: &str = include_str!("../../../../docs/evidence/import-loader-exit.json");
-
-pub(super) fn sha256(bytes: &[u8]) -> String {
-    format!("{:x}", Sha256::digest(bytes))
-}
+const HANDOFF: &str = include_str!("../../../../../../docs/evidence/import-input-handoff.json");
+const LOADER_EXIT: &str = include_str!("../../../../../../docs/evidence/import-loader-exit.json");
 
 pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Value, String> {
     let report: Value =
@@ -48,6 +43,7 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::resources::original::sha256;
 
     #[test]
     fn either_input_change_excludes_native_observations() {

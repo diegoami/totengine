@@ -5093,6 +5093,74 @@ fn scenario_picker_suspends_opponents_until_cancel() {
 }
 
 #[test]
+fn original_save_inspection_keeps_an_active_session_and_its_scheduling() {
+    let f = Fixture::new();
+    let path = "Original/Test.sav";
+    fs::write(f.0.join(path), b"invalid save").unwrap();
+    let mut c = f.client();
+    start(&mut c);
+    research(&mut c);
+    key(&mut c, "Ctrl+n");
+    if matches!(c.modal, Some(Modal::Confirm { .. })) {
+        key(&mut c, "Enter");
+    }
+    assert_eq!(c.view().unwrap().phase, Phase::Opponents);
+    assert!(c.frame().advancing);
+    let checkpoint = c.checkpoint().unwrap();
+    let assets = c.assets.clone();
+    button(&mut c, "Inspect ToT save / scenario");
+    assert!(matches!(c.modal, Some(Modal::OriginalSaves)));
+    let list_modal = c.modal_id;
+    button(&mut c, path);
+    let Some(Modal::OriginalSaveReport { lines, .. }) = &c.modal else {
+        panic!("expected inspection report");
+    };
+    assert!(
+        lines[0].contains("required dependency missing"),
+        "{lines:?}"
+    );
+    assert_ne!(c.modal_id, list_modal);
+    assert!(!c.frame().advancing);
+    input(&mut c, Input::Tick);
+    key(&mut c, "Enter");
+    assert!(matches!(c.modal, Some(Modal::OriginalSaves)));
+    key(&mut c, "Escape");
+    assert!(c.modal.is_none());
+    assert!(c.frame().advancing);
+    assert_eq!(c.assets, assets);
+    assert_eq!(c.checkpoint().unwrap(), checkpoint);
+}
+
+#[test]
+fn installed_original_inspection_reports_the_saved_human_view() {
+    let Ok(home) = std::env::var("CIVTOT_HOME") else {
+        return;
+    };
+    let scratch = tempfile::tempdir().unwrap();
+    let mut c = seeded_client(home, scratch.path().join("saves"));
+    button(&mut c, "Inspect ToT save / scenario");
+    let source = "Original/Ph_Auto2.SAV";
+    let index = c.scenarios.iter().position(|p| p == source).unwrap();
+    for _ in 0..index / scenario::SCENARIO_ROWS {
+        key(&mut c, "PageDown");
+    }
+    button(&mut c, source);
+    let Some(Modal::OriginalSaveReport { lines, .. }) = &c.modal else {
+        panic!("expected inspection report");
+    };
+    assert!(
+        lines.iter().any(|l| l.contains("59 explored tiles")),
+        "{lines:?}"
+    );
+    assert!(lines.iter().any(|l| l.contains("retained native resume")));
+    assert!(c.checkpoint().is_none());
+    assert!(!scratch.path().join("saves").exists());
+    key(&mut c, "Escape");
+    assert!(matches!(c.modal, Some(Modal::OriginalSaves)));
+    assert_eq!(c.page, index / scenario::SCENARIO_ROWS);
+}
+
+#[test]
 fn scenario_confirmation_requires_the_inputs_shown_at_preflight() {
     let f = Fixture::new();
     let path = "Original/Test.sav";

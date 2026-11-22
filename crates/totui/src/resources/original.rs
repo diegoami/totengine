@@ -4,6 +4,8 @@ use super::*;
 use sha2::{Digest, Sha256};
 use std::borrow::Cow;
 
+mod inspection;
+
 #[derive(Clone)]
 struct Pin {
     role: &'static str,

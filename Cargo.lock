@@ -507,6 +507,7 @@ dependencies = [
  "engine",
  "serde",
  "serde_json",
+ "sha2",
  "tot-kit",
  "tot-record",
  "totui",

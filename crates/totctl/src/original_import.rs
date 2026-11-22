@@ -11,6 +11,7 @@ use serde_json::{json, Value};
 use totui::resources::original::OriginalCapture;
 
 mod event_tail;
+mod evidence;
 
 pub fn run(args: &[String]) -> ExitCode {
     let [install, relative] = args else {
@@ -34,6 +35,12 @@ fn inspect(install: &Path, relative: &str) -> Result<Value, String> {
         .map_err(|error| format!("dependency capture: {error}"))?;
     let files = capture.files();
     let rules = &capture.resources().rules;
+    let source_sha256 = evidence::sha256(&files.bytes);
+    let rules_sha256 = evidence::sha256(
+        capture
+            .captured_bytes("rules")
+            .ok_or("reference Rules.txt bytes are unavailable")?,
+    );
     let snapshot = CheckedSnapshot::read(&files.bytes, rules)?;
     let save = snapshot.save();
     let human = save.player_civ;
@@ -63,9 +70,11 @@ fn inspect(install: &Path, relative: &str) -> Result<Value, String> {
         "source": {
             "path": files.path,
             "bytes": snapshot.source_length(),
-            "fnv64": format!("{:016x}", snapshot.source_fingerprint())
+            "fnv64": format!("{:016x}", snapshot.source_fingerprint()),
+            "sha256": source_sha256
         },
         "dependency_set": OriginalCapture::SET,
+        "native_resume_trace": evidence::resume_trace(&source_sha256, &rules_sha256)?,
         "records": {
             "unit_slots": save.units.len(),
             "live_units": snapshot.stack_positions().iter().flatten().count(),

@@ -32,6 +32,17 @@ fn installed_save_reports_checked_records_phase_and_view() {
     assert_eq!(report["schema"], 2);
     assert_eq!(report["source"]["path"], source);
     assert_eq!(report["source"]["fnv64"], "0d8e264d74369c1f");
+    let native: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../docs/evidence/import-input-handoff.json"
+    ))
+    .unwrap();
+    assert_eq!(report["source"]["sha256"], native["source"]["sha256"]);
+    let trace = &report["native_resume_trace"];
+    assert_eq!(trace["matches_fixture"], true);
+    assert_eq!(trace["binary_sha256"], native["binary_sha256"]);
+    let witnessed = &native["cases"]["native_observation"]["observation_to_input"];
+    assert_eq!(trace["first_poll"], witnessed["first_poll"]);
+    assert_eq!(trace["idle_iteration"], witnessed["idle_iteration"]);
     assert_eq!(report["records"]["unit_slots"], 38);
     assert_eq!(report["records"]["live_units"], 37);
     assert_eq!(report["records"]["live_cities"], 10);

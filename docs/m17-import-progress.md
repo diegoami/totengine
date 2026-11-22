@@ -42,6 +42,10 @@ fields and embedded strings match the installed event block. A matching
 definition includes the two halves' saved active and spent marks separately.
 A difference produces a diagnostic within the report. Embedded text remains
 private.
+The `native_resume_trace` report binds the measured startup observations
+to the SHA-256 of the captured save and Rules.txt. A different save
+can pass record checks and still show a fixture mismatch. An exact match
+includes the earlier prepared trace's first input poll and idle iteration.
 `playable_import` remains false while event field semantics, pending-state,
 and knowledge continuation checks are open.
 

@@ -1,5 +1,5 @@
 {
-  "schema": 2,
+  "schema": 3,
   "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
   "source": {
     "path": "Original/Ph_Auto2.SAV",
@@ -52,6 +52,22 @@
           "unit_orders_byte": 255,
           "research_target": -1,
           "research_progress": 0
+        },
+        "idle_iteration": {
+          "initial_queue_result": "empty",
+          "filtered_polls": [
+            {
+              "call": "00577011",
+              "message_filter": [
+                957,
+                957
+              ]
+            }
+          ],
+          "next_general_poll": "00576ee4",
+          "active_slot": 6,
+          "display_mode": 1,
+          "civ_unit_city_records_unchanged": true
         }
       },
       "observation_calls": [
@@ -105,6 +121,22 @@
         "research_target": -1,
         "research_progress": 0
       },
+      "idle_iteration": {
+        "initial_queue_result": "empty",
+        "filtered_polls": [
+          {
+            "call": "00577011",
+            "message_filter": [
+              957,
+              957
+            ]
+          }
+        ],
+        "next_general_poll": "00576ee4",
+        "active_slot": 6,
+        "display_mode": 1,
+        "civ_unit_city_records_unchanged": true
+      },
       "observation_calls": [
         [
           6,
@@ -151,8 +183,24 @@
         "research_target": -1,
         "research_progress": 0
       },
+      "idle_iteration": {
+        "initial_queue_result": "empty",
+        "filtered_polls": [
+          {
+            "call": "00577011",
+            "message_filter": [
+              957,
+              957
+            ]
+          }
+        ],
+        "next_general_poll": "00576ee4",
+        "active_slot": -1,
+        "display_mode": 0,
+        "civ_unit_city_records_unchanged": true
+      },
       "observation_calls": []
     }
   },
-  "scope": "Measure native observation and input handoff during a prepared resume.\n\nObservation executes through the tile and remembered-state update loops and\ncontinues with a redraw substitute. A separate control substitutes the\nwhole observation call. Both paths reach the first PeekMessageA instruction\nthrough the native input-loop prologue. No Windows input is executed.\nThe report describes every invoked substitute and emits only derived results."
+  "scope": "Measure native observation and input handoff during a prepared resume.\n\nObservation executes through the tile and remembered-state update loops and\ncontinues with a redraw substitute. A separate control substitutes the\nwhole observation call. Both paths reach the first PeekMessageA instruction\nthrough the native input-loop prologue. An empty-queue control measures one\nidle iteration. No Windows input is executed.\nThe report describes every invoked substitute and emits only derived results."
 }

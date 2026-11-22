@@ -83,6 +83,8 @@ tiles and saved human memory intact. The trace reaches the first
 `PeekMessageA` instruction with both native observation calls executed and
 display helpers substituted. Separate controls also reach that instruction
 in unit mode and viewing mode.
+A controlled empty queue returns each path to the next general poll with
+its selected slot, display mode, research and live records intact.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

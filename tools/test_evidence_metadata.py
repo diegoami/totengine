@@ -42,6 +42,14 @@ class GoldenMetadata(unittest.TestCase):
             self.assertEqual(poll['import'], 'PeekMessageA')
             self.assertEqual(poll['message_filter'], [0, 0])
             self.assertEqual((poll['research_target'], poll['research_progress']), (-1, 0))
+        for path in (selected, exhausted, continued):
+            idle = path['idle_iteration']
+            self.assertEqual(idle['initial_queue_result'], 'empty')
+            self.assertEqual(idle['filtered_polls'],
+                             [{'call': '00577011', 'message_filter': [0x3bd, 0x3bd]}])
+            self.assertEqual(idle['next_general_poll'], path['first_poll']['stop_at_call'])
+            self.assertEqual(idle['active_slot'], path['first_poll']['active_slot'])
+            self.assertTrue(idle['civ_unit_city_records_unchanged'])
 
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())

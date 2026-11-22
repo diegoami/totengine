@@ -97,6 +97,15 @@ bytes unchanged. Research still has target -1 and progress 0 in all three
 cases. These prepared traces stop before Windows input and cannot establish
 live prompt timing or the full loader path.
 
+An empty-queue control returns zero from the first `PeekMessageA`, runs the
+native idle branch, and supplies an empty result for its second,
+message-filtered call at `0x577011` (filter `0x3bd`). With the host
+background callback disabled, all three paths reach the next general poll at
+`0x576ee4`. The idle iteration preserves the selected slot, display mode,
+and every byte of the civ, unit, and city records. The traced pinned path
+also preserves all captured human knowledge. Real queued messages and their
+handlers remain open.
+
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_input_handoff_check.py --out /tmp/input-handoff.json
 cmp docs/evidence/import-input-handoff.json /tmp/input-handoff.json

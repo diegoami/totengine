@@ -4,7 +4,8 @@
 Observation executes through the tile and remembered-state update loops and
 continues with a redraw substitute. A separate control substitutes the
 whole observation call. Both paths reach the first PeekMessageA instruction
-through the native input-loop prologue. No Windows input is executed.
+through the native input-loop prologue. An empty-queue control measures one
+idle iteration. No Windows input is executed.
 The report describes every invoked substitute and emits only derived results.
 """
 
@@ -25,7 +26,10 @@ OBSERVE = 0x41F704
 AFTER_OBSERVATION = 0x4205A7
 INPUT_PREPARATION = 0x45ABC1
 PEEK_MESSAGE_CALL = 0x576EE4
+IDLE_FILTER_CALL = 0x577011
 POLL_HELPERS = (0x45ABA2, 0x59B09D, 0x4A399A, 0x40BF70, 0x576ECF)
+IDLE_HELPERS = (INPUT_PREPARATION, 0x4029F0, 0x57704E, 0x576FF6, 0x56C960, 0x4030F0,
+                0x568F99, 0x568DA2, 0x568D14, 0x568D3E)
 OBSERVATION_REDRAW = 0x467C89
 DISPLAY_HELPERS = (0x5346BE, 0x40D7E7, 0x4BF9B6, 0x41AF00, 0x40D510, 0x45A4B0)
 OBSERVATION_HELPERS = (
@@ -66,6 +70,48 @@ def first_poll(original, player):
         'unit_orders_byte': orders,
         'research_target': before[0],
         'research_progress': before[1],
+    }
+
+
+def idle_iteration(original, regions):
+    """Continue from the first PeekMessageA call with an empty queue."""
+    original.write(0x5E04EC, 0, '<I')  # no host background callback
+    slot = read(original, ACTIVE_SLOT, '<h')
+    display_mode = read(original, 0x67A6E8)
+    before = [bytes(original.cpu.mem_read(address, size)) for address, size in regions]
+    polls = []
+
+    def empty_queue(cpu, address, _size, _data):
+        if address != IDLE_FILTER_CALL:
+            return
+        esp = cpu.reg_read(UC_X86_REG_ESP)
+        arguments = [read(original, esp + offset, '<I') for offset in (4, 8, 12, 16)]
+        assert arguments == [0, 0x3BD, 0x3BD, 1]
+        polls.append({'call': f'{address:08x}', 'message_filter': arguments[1:3]})
+        # Model PeekMessageA's return and stdcall cleanup, without a Windows MSG.
+        cpu.reg_write(UC_X86_REG_EAX, 0)
+        cpu.reg_write(UC_X86_REG_ESP, esp + 20)
+        cpu.reg_write(UC_X86_REG_EIP, address + 6)
+
+    cpu = original.cpu
+    hook = cpu.hook_add(UC_HOOK_CODE, empty_queue)
+    try:
+        cpu.reg_write(UC_X86_REG_EAX, 0)
+        cpu.reg_write(UC_X86_REG_ESP, cpu.reg_read(UC_X86_REG_ESP) + 20)
+        run(original, PEEK_MESSAGE_CALL + 6, {PEEK_MESSAGE_CALL}, calls=POLL_HELPERS + IDLE_HELPERS)
+    finally:
+        cpu.hook_del(hook)
+    assert len(polls) == 1
+    assert read(original, ACTIVE_SLOT, '<h') == slot
+    assert read(original, 0x67A6E8) == display_mode
+    assert [bytes(cpu.mem_read(address, size)) for address, size in regions] == before
+    return {
+        'initial_queue_result': 'empty',
+        'filtered_polls': polls,
+        'next_general_poll': f'{PEEK_MESSAGE_CALL:08x}',
+        'active_slot': slot,
+        'display_mode': display_mode,
+        'civ_unit_city_records_unchanged': True,
     }
 
 
@@ -135,6 +181,7 @@ def witness(home, binary, path, *, exhaust, observation):
     if not observation:
         result['return_address'] = f'{read(original, original.cpu.reg_read(UC_X86_REG_ESP), "<I"):08x}'
         result['first_poll'] = first_poll(original, player)
+        result['idle_iteration'] = idle_iteration(original, regions)
     else:
         # Add the redraw wrapper to the existing display substitutes.
         substitutes.add(OBSERVATION_REDRAW)
@@ -150,6 +197,7 @@ def witness(home, binary, path, *, exhaust, observation):
         result['observation_to_input'] = {
             'substituted_calls': callbacks[earlier:],
             'first_poll': first_poll(original, player),
+            'idle_iteration': idle_iteration(original, regions),
         }
         assert bytes(original.cpu.mem_read(0x700000, 6 * area)) == after_tiles
         assert bytes(original.cpu.mem_read(viewer_cache, area)) == after_cache
@@ -203,7 +251,7 @@ def main():
     assert '0041f704' not in exhausted['substituted_calls']
     assert all(case['research_target'] == -1 and case['research_progress'] == 0
                for case in cases.values())
-    report = {'schema': 2, 'binary_sha256': setup['binary_sha256'], 'source': setup['source'],
+    report = {'schema': 3, 'binary_sha256': setup['binary_sha256'], 'source': setup['source'],
               'rules': setup['rules'], 'entry': f'{ENTRY:08x}', 'cases': cases,
               'scope': __doc__.strip()}
     args.out.write_text(json.dumps(report, indent=2) + '\n')

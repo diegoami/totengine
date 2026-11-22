@@ -200,6 +200,7 @@ impl Client {
             session,
             identity,
             scenario_snapshot: Some(files.bytes),
+            watch: None,
         });
         self.assets = assets;
         self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
@@ -253,6 +254,7 @@ impl Client {
             identity,
             session,
             scenario_snapshot: Some(files.bytes),
+            watch: None,
         });
         self.assets = assets;
         Ok(())

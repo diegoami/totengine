@@ -174,20 +174,34 @@ impl Client {
             },
         };
         match m {
-            0 => vec![
-                item("Save game…", "Ctrl+S", Action::Save),
-                item("Load game…", "Ctrl+L", Action::Load),
-                item("New game…", "", Action::NewGame),
-                item("Open scenario…", "", Action::Scenarios),
-                item(
-                    "Inspect ToT save / scenario…",
-                    "",
-                    Action::InspectOriginalSaves,
-                ),
-                item("Settings…", "", Action::Settings),
-                item("Keys…", "?", Action::Help),
-                item("Close client", "", Action::Quit),
-            ],
+            0 => {
+                let mut items = vec![
+                    item("Save game…", "Ctrl+S", Action::Save),
+                    item("Load game…", "Ctrl+L", Action::Load),
+                    item("New game…", "", Action::NewGame),
+                    item("Open scenario…", "", Action::Scenarios),
+                    item(
+                        "Inspect ToT save / scenario…",
+                        "",
+                        Action::InspectOriginalSaves,
+                    ),
+                    item("Settings…", "", Action::Settings),
+                    item("Keys…", "?", Action::Help),
+                ];
+                if self.desktop_watch_enabled {
+                    items.push(item(
+                        if self.watching_seat() {
+                            "Stop watching"
+                        } else {
+                            "Watch this civilization"
+                        },
+                        "Ctrl+W",
+                        Action::WatchSeat,
+                    ));
+                }
+                items.push(item("Close client", "", Action::Quit));
+                items
+            }
             1 => vec![
                 item("Tax rates…", "Shift+T", Action::Rates),
                 item("Revolution…", "Shift+R", Action::Revolution),
@@ -617,7 +631,29 @@ impl Client {
                 Action::Production(city),
             );
         }
-        if v.phase == Phase::Opponents {
+        if let Some(watch) = self.watch() {
+            add(
+                cx,
+                672.,
+                144.,
+                38.,
+                if watch.running {
+                    "Pause watching"
+                } else {
+                    "Resume watching"
+                }
+                .into(),
+                Action::WatchPause,
+            );
+            add(
+                cx + 148.,
+                672.,
+                CW - 148.,
+                38.,
+                "Step".into(),
+                Action::WatchStep,
+            );
+        } else if v.phase == Phase::Opponents {
             add(
                 cx,
                 672.,

@@ -22,6 +22,8 @@ pub use initializer::{
 };
 mod saved_view;
 use saved_view::{InitialKnowledge, SavedInitialView};
+mod watch;
+pub use watch::SeatWatcher;
 
 /// Slot and identity together prevent acting on a reused entity slot.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

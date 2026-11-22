@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "client": "Linux SDL over private Xvfb with actual keyboard input",
+  "runner": "tools/check_client_linux.py with TOTENGINE_DESKTOP_WATCH=1",
+  "initial_checkpoint_sha256": "6cb08a72358dd87d83fc946de40a5e63f264f727a4f45999fdc6ce162013c8be",
+  "paused_checkpoint_sha256": "080141cdd924494c366887dbaac78d23636c049d9e97d16f8fa86119beabd2e8",
+  "after_step_checkpoint_sha256": "c979932d503ade86c1d27a2509de44b2a0e28e401bd67dd22fd4795eac766b12",
+  "journal_operations_added": 1,
+  "step_was_paused": true,
+  "original_checkpoint_restored": true
+}

@@ -16,6 +16,7 @@ mod selection;
 pub mod storage;
 mod style;
 mod tips;
+mod watch;
 use crate::resources::Resources;
 pub use atlas::{Atlas, Sprite};
 use engine::human::{
@@ -375,6 +376,9 @@ enum Action {
     Size,
     Mode,
     Work,
+    WatchSeat,
+    WatchPause,
+    WatchStep,
     Found,
     /// Opens the enhancements settings.
     Settings,
@@ -467,6 +471,7 @@ struct Loaded {
     session: HumanSession,
     identity: String,
     scenario_snapshot: Option<Vec<u8>>,
+    watch: Option<watch::DesktopWatch>,
 }
 
 #[derive(Clone, Copy)]
@@ -518,6 +523,7 @@ pub struct Client {
     event_seen: u64,
     pub closed: bool,
     advancing: bool,
+    desktop_watch_enabled: bool,
     saves: PathBuf,
     home: String,
     seed: String,
@@ -596,6 +602,7 @@ impl Client {
             loaded: None,
             closed: false,
             advancing: false,
+            desktop_watch_enabled: false,
             notice_log: Vec::new(),
             notice_turn: None,
             notice_unread: false,
@@ -914,6 +921,13 @@ impl Client {
         }
     }
     fn order(&mut self, command: Command) -> Result<(), String> {
+        if self.watching_seat() {
+            return Err("Stop watching before giving an order".into());
+        }
+        self.apply_order(command)
+    }
+
+    fn apply_order(&mut self, command: Command) -> Result<(), String> {
         let loaded = self.loaded.as_mut().ok_or("Start a game first")?;
         let v = loaded.session.view();
         let result = loaded.session.submit(Request {
@@ -1000,6 +1014,9 @@ impl Client {
         Ok(())
     }
     fn opponent_work_running(&self) -> bool {
+        if let Some(watch) = self.watch() {
+            return watch.running && self.can_watch_step();
+        }
         self.advancing
             && !matches!(
                 self.modal,
@@ -1021,6 +1038,9 @@ impl Client {
             Input::Tick => {
                 if !self.opponent_work_running() {
                     return Ok(());
+                }
+                if self.watching_seat() {
+                    return self.step_watched_seat();
                 }
                 if let Some(l) = self.loaded.as_mut() {
                     if l.session.phase() == Phase::Opponents {
@@ -1160,6 +1180,14 @@ impl Client {
         };
     }
     fn key(&mut self, key: &str) -> Result<(), String> {
+        if self.desktop_watch_enabled {
+            match key {
+                "Ctrl+w" => return self.action(Action::WatchSeat),
+                "Ctrl+p" => return self.action(Action::WatchPause),
+                "Ctrl+." => return self.action(Action::WatchStep),
+                _ => (),
+            }
+        }
         if let Some(result) = self.menu_key(key) {
             return result;
         }
@@ -1364,6 +1392,7 @@ impl Client {
                     session,
                     identity,
                     scenario_snapshot: None,
+                    watch: None,
                 });
                 self.assets = storage::nonce()?;
                 self.advancing = self.view().is_some_and(|v| v.phase == Phase::Opponents);
@@ -1396,6 +1425,12 @@ impl Client {
                     return Err("Opponents are not waiting".into());
                 }
                 self.advancing = !self.advancing;
+            }
+            Action::WatchSeat => self.toggle_watched_seat()?,
+            Action::WatchPause => self.pause_watched_seat()?,
+            Action::WatchStep => {
+                self.set_watch_running(false)?;
+                self.step_watched_seat()?;
             }
             Action::Mode => {
                 if self.moving {
@@ -1785,6 +1820,7 @@ impl Client {
                                 &text,
                             )?;
                             l.session = restored;
+                            l.watch = None;
                         } else {
                             let (resources, atlas) = self.load_resources()?;
                             let identity = resources.identity();
@@ -1798,6 +1834,7 @@ impl Client {
                                 identity,
                                 session,
                                 scenario_snapshot: None,
+                                watch: None,
                             });
                             self.assets = assets;
                         }
@@ -3184,7 +3221,7 @@ impl Client {
         // Clear turn-transition feedback (#283): while the opponents run, a
         // framed strip over the map says so; the title bar carries the round.
         let advancing = self.opponent_work_running();
-        if advancing {
+        if advancing && !self.watching_seat() {
             let start = draws.len();
             style::modal(&mut draws, 212., 360., 460., 52.);
             draws.push(text(
@@ -3204,10 +3241,26 @@ impl Client {
             shift(&mut draws[start..], self.dx());
         }
         draws.push(rect(0., 744., self.stage_w, 24., style::STATUS_BG));
+        let feedback = self.watch().map_or_else(
+            || self.feedback(),
+            |watch| {
+                format!(
+                    "Watching · {} · Ctrl+P pause/resume · Ctrl+. step · Ctrl+W stop · {}",
+                    if !watch.running {
+                        "paused"
+                    } else if self.can_watch_step() {
+                        "running"
+                    } else {
+                        "waiting"
+                    },
+                    self.feedback(),
+                )
+            },
+        );
         draws.push(text(
             10.,
             749.,
-            &self.feedback().chars().take(145).collect::<String>(),
+            &feedback.chars().take(145).collect::<String>(),
             style::TYPE_SMALL,
             style::GOLD,
         ));

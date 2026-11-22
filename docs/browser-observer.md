@@ -8,22 +8,29 @@ objective/map inspection and unified recording are future packages.
 
 ## Desktop observation from a civilization's seat
 
-The desktop target is an AI-driven game in the regular game window. Choose
-the civilization to watch. Its map, fog, panels, reports and notifications
-use the same filtered view as when playing that civilization. The AI plays
-that seat as well as the other civilizations.
+In the desktop game, choose your civilization in setup and start or load a
+session. Open **Game → Watch this civilization** or press **Ctrl+W**. The
+regular map, fog, panels, reports and notifications stay on that civilization.
+The configured engine AI plays the watched seat as well as the other
+civilizations.
 
-Show the watched civilization's actions as they happen, paced so individual
-moves and decisions can be followed. Pause and single-step control simulation
-progress. The point of view stays with the chosen civilization during other
-turns, and any opponent actions shown must pass the ordinary visibility rules.
-Use validated orders, including required decisions, so a watched game's order
-journal remains replayable.
+Moves and required decisions are paced at one step every 400 ms. Use
+**Ctrl+P** to pause or resume, **Ctrl+.** for one step, and **Ctrl+W** to
+stop watching. The point of view stays with the chosen civilization during
+other turns. Inspection dialogs pause automatic play until closed. While
+watching, gameplay commands come from the AI through the validated player
+route. Saving keeps the resulting journal. Loading restores the game with
+manual controls, and you can choose to watch it again.
 
-The first slice should verify a generated game in the desktop window. Apply
-the same mode to supported scenarios with their resource profile and event
-notices. The browser observer described below serves spectator inspection
-and round-by-round replay.
+The first slice exercises a generated desktop game. To reproduce the native
+input check, set `TOTENGINE_DESKTOP_WATCH=1` with
+`tools/check_client_linux.py`. The [input record](evidence/desktop-seat-watch.json)
+captures one paused step and the return to the starting checkpoint. The
+controller regression also checks that a watched round replays without an AI
+driver present. The same controls are available on loaded
+experimental games. Scenario fidelity and viewpoint switching remain open.
+The browser observer described below serves spectator inspection and
+round-by-round replay.
 
 ## Browser spectator and replay
 

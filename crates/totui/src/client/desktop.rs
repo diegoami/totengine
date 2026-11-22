@@ -106,6 +106,9 @@ fn key(k: Keycode, shift: bool, ctrl: bool) -> Option<String> {
             Keycode::S => Some("Ctrl+s".into()),
             Keycode::L => Some("Ctrl+l".into()),
             Keycode::N => Some("Ctrl+n".into()),
+            Keycode::W => Some("Ctrl+w".into()),
+            Keycode::P => Some("Ctrl+p".into()),
+            Keycode::Period => Some("Ctrl+.".into()),
             _ => None,
         };
     }
@@ -211,6 +214,8 @@ fn default_window_size(screen: (u32, u32)) -> (u32, u32) {
 }
 
 pub fn run(mut client: Client) -> Result<(), String> {
+    client.desktop_watch_enabled = true;
+    let mut last_watch_step = Instant::now();
     let font = fontdue::Font::from_bytes(
         std::fs::read(font_path()).map_err(|e| {
             format!("System font missing: {e}. Set TOTENGINE_FONT to an owned TTF file.")
@@ -438,7 +443,16 @@ pub fn run(mut client: Client) -> Result<(), String> {
                         } else if !repeat {
                             key(k, shift, ctrl)
                                 .filter(|s| {
-                                    matches!(s.as_str(), "Enter" | "Escape" | "Tab" | "ShiftTab")
+                                    matches!(
+                                        s.as_str(),
+                                        "Enter"
+                                            | "Escape"
+                                            | "Tab"
+                                            | "ShiftTab"
+                                            | "Ctrl+w"
+                                            | "Ctrl+p"
+                                            | "Ctrl+."
+                                    )
                                 })
                                 .map(|key| Input::Key { key })
                         } else {
@@ -472,9 +486,19 @@ pub fn run(mut client: Client) -> Result<(), String> {
                 let _ = batch.submit(&mut client, id, revision, input);
             }
         }
-        if client.frame().phase == "Opponents" && client.frame().advancing {
+        let watching = client.watching_seat();
+        if client.opponent_work_running()
+            && if watching {
+                last_watch_step.elapsed() >= Duration::from_millis(400)
+            } else {
+                client.frame().phase == "Opponents"
+            }
+        {
             id += 1;
             let _ = client.input(client.frame().revision, id, Input::Tick);
+            if watching {
+                last_watch_step = Instant::now();
+            }
         }
         if client.closed {
             break;

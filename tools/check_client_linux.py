@@ -179,6 +179,22 @@ def run():
                 write("7")
                 button(start_label)
                 wait(lambda s:has(s,"Choose research"));button("Save pending choice");save_dialog("research");research()
+                if os.environ.get("TOTENGINE_DESKTOP_WATCH") == "1":
+                    key("Ctrl+s");save_dialog("watchstart")
+                    key("Ctrl+w");wait(lambda s:s["advancing"])
+                    key("Ctrl+p");wait(lambda s:not s["advancing"])
+                    paused_revision = scene()["revision"]
+                    time.sleep(.65)
+                    assert scene()["revision"] == paused_revision, "paused watch kept stepping"
+                    trace = work / "trace.jsonl"
+                    before = json.loads(trace.read_text().splitlines()[-1])["checkpoint"]
+                    key("Ctrl+period")
+                    after = json.loads(trace.read_text().splitlines()[-1])["checkpoint"]
+                    orders = lambda checkpoint: [line for line in checkpoint.splitlines() if line.startswith(("input ", "advance "))]
+                    assert len(orders(after)) == len(orders(before)) + 1, "watch step must record one accepted action"
+                    assert not scene()["advancing"]
+                    key("Ctrl+w")
+                    key("Ctrl+l");save_dialog("watchstart")
                 key("F3");wait(lambda s:has(s,"Known contacts") and has(s,"No known contacts."))
                 key("Escape")
                 key("b");wait(lambda s:has(s,"Name your city"));button("Save pending choice");save_dialog("founding")

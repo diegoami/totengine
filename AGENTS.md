@@ -87,8 +87,15 @@ The owner launches milestone reviews.
 
 The owner directed work to milestone 19 (#201/#202). The existing reports
 and Civilopedia shipped in v0.19.0. Current work on `m19-scenario-reference`
-checks scenario-specific reference text and the return to the research chooser.
+checked scenario-specific reference text and the return to the research chooser.
+#378 merged at `e006ded` after independent AGREE at `2819f1c`; the merged
+tree matches exactly. Owner acceptance on both clients remains open.
 See `docs/ui/reports-milestone.md` for scope and acceptance.
+
+The owner clarified the next observer target as watching from a chosen
+civilization's normal player view while AI plays that seat. The
+`desktop-seat-observer` branch adds desktop pacing, pause and single-step
+through validated player commands. See `docs/browser-observer.md`.
 
 ### Current work (2026-11-21)
 

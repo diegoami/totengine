@@ -10,15 +10,15 @@
     "crates/engine/src/effects.rs": "d29d64e017bea5d3054028340750d61d8b57d40d26336bf6c1adf563e08aaf01",
     "crates/engine/src/turn.rs": "12008e3af7eea7610fb1b9cbbd3c0b817fedb7be74b1e403c440d3d39e3fb032",
     "crates/engine/src/player.rs": "9d10ca85f09e131eb694948483261021b852ce40d6c64ed3dc1888bf1d0e1935",
-    "crates/engine/src/human.rs": "0ee97000b55183897b8013ed5a0ba0bd9e354109bab2dea3c69f45dd5b82d410",
+    "crates/engine/src/human.rs": "0a94b55c9e8ba118c90941ab959824b86453bd020ffd22b27b7b19a857948cde",
     "crates/engine/src/human/checkpoint.rs": "15c9928f1df42900b48a004455b1a15eb8e1bbe966930d663f4e9c275a5ccbfe",
     "crates/engine/src/lib.rs": "8a2bb9704eb55b058fd15c745c59119b94e04bf1199fcf708ea60f64cbc03204",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
-    "crates/totui/src/client/mod.rs": "fc915f471f4052fb34cea512302a21edf05222d90bf9462918a8e392d05d53a5",
+    "crates/totui/src/client/mod.rs": "5e0f87708762d8f70ba0b668d5df9ad0c22dd60847c155793bf5c1d6f079048d",
     "crates/totui/src/resources.rs": "9209415b886285d8b330d2601c3d6f5a76a2456d487ad7e09f067b907b14c3f4",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "a750c432e5e2faf2dec9e835ed0a7435afee52a059ddc582122e5addb89af4c2",
-    "crates/totui/src/client/scenario.rs": "63fd139969174f13de2b7cc8b24102c2300519013b0b348d467dc58bb1c32b97",
+    "crates/totui/src/client/scenario.rs": "8ea939a4a99d84a416831a2b4e07164905d29971398023947cec20277438d85f",
     "crates/engine/src/saved_knowledge.rs": "f900ea415abc50293bfba28b1006a0f1b9a994c25ed01ad6d745eeb973b0a17c",
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
@@ -33,10 +33,12 @@
     "crates/totui/src/resources/original/inspection/evidence.rs": "1e810f24ceb3f87c657c0b3a7fce2b51bea3f42649bd82c9feb138fb35a121d4",
     "crates/engine/src/human/diplomacy.rs": "09d1a2fe9aebd0d7b9a8b71198f44e6db95ca8536ccecd4b8b9a10c064e1c4dd",
     "crates/totui/src/client/routes.rs": "94912cc39399ba6288404da0820731983316a3319a80aee23b605277c763fd1d",
-    "crates/totui/src/client/chrome.rs": "7a86a4f9ac9f7b36ac9654aec825ad97896bb4bdccb4edb48f6164b24381a80b",
-    "crates/totui/src/client/desktop.rs": "4963d40a643ba890f51519180a2b10dd25152be81fd449fffef82039772b30d3",
+    "crates/totui/src/client/chrome.rs": "3fe6e63317217dcfc13bd8a4aeadfbb7c6023ab60b01b2e9a7b7c559d688f4f9",
+    "crates/totui/src/client/desktop.rs": "9b79e576abe448d277db05d208a1919da67479b0f769305b4e6efaedfece0d61",
     "crates/totui/src/client/play.js": "bcd50c52ceacdc0363e3a7cd1d2e2fa2be40ec83e0c4a051c73ebb5b6f49d6f2",
-    "crates/totui/src/client/pedia.rs": "daaeb8d7b9c34661a2f0cafa9fd0a030fae6bbfb22b897119fc16902c1feeb43"
+    "crates/totui/src/client/pedia.rs": "daaeb8d7b9c34661a2f0cafa9fd0a030fae6bbfb22b897119fc16902c1feeb43",
+    "crates/engine/src/human/watch.rs": "e86e2f70ee6fb2850f42f3c41a325caf37662509fc8184cdd3d539a5c53b1b38",
+    "crates/totui/src/client/watch.rs": "0fec68f018d0c6e2c83fc37a64496253f0de17a48965755f3392032a344c01b2"
   },
   "triggers": {
     "TURN": {
@@ -747,6 +749,19 @@
         "crates/totui/src/resources.rs"
       ],
       "finding": "The source label uses the captured Describe.txt path. Enter and Escape in contextual help restore research selection, page and focus. Ordinary browsing preserves the selected entry across paging and reading. Inspection mutates no engine, scenario or checkpoint state."
+    },
+    {
+      "change": "Desktop AI watch from an existing player seat",
+      "files": [
+        "crates/engine/src/human.rs",
+        "crates/engine/src/human/watch.rs",
+        "crates/totui/src/client/chrome.rs",
+        "crates/totui/src/client/desktop.rs",
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/client/scenario.rs",
+        "crates/totui/src/client/watch.rs"
+      ],
+      "finding": "Desktop can turn on bounded AI play for the selected seat through ordinary validated human commands and opponent work. It retains the normal filtered view and journals accepted actions. Pausing, pacing and camera intent are presentation state. No native scenario profile is admitted."
     }
   ]
 }

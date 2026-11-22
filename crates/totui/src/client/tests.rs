@@ -5256,6 +5256,56 @@ fn scenario_picker_suspends_opponents_until_cancel() {
 }
 
 #[test]
+fn desktop_watched_seat_steps_plays_and_replays_through_validated_commands() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    c.desktop_watch_enabled = true;
+    button(&mut c, "Start game");
+    let initial = c.checkpoint().unwrap();
+    assert!(matches!(c.modal, Some(Modal::Research)));
+    key(&mut c, "Ctrl+w");
+    assert!(c.frame().advancing);
+    key(&mut c, "Ctrl+p");
+    input(&mut c, Input::Tick);
+    assert_eq!(c.checkpoint().unwrap(), initial);
+    let revision = c.view().unwrap().revision;
+    key(&mut c, "Ctrl+.");
+    assert_eq!(c.view().unwrap().revision, revision + 1);
+    assert!(c.modal.is_none());
+    assert!(!c.frame().advancing);
+    let before = c.checkpoint().unwrap();
+    assert!(c.order(Command::EndTurn).is_err());
+    assert_eq!(c.checkpoint().unwrap(), before);
+
+    key(&mut c, "Ctrl+p");
+    key(&mut c, "F1");
+    assert!(matches!(c.modal, Some(Modal::Report { .. })));
+    input(&mut c, Input::Tick);
+    assert_eq!(c.checkpoint().unwrap(), before);
+    key(&mut c, "Escape");
+    let turn = c.view().unwrap().observation.turn;
+    for _ in 0..1024 {
+        if c.view().unwrap().observation.turn > turn {
+            break;
+        }
+        input(&mut c, Input::Tick);
+    }
+    assert!(c.view().unwrap().observation.turn > turn, "{}", c.status);
+    let watched = c.checkpoint().unwrap();
+    assert!(watched.lines().any(|line| {
+        line.starts_with("input ") && (line.contains(" move ") || line.contains(" name "))
+    }));
+    key(&mut c, "Ctrl+w");
+    assert!(!c.watching_seat());
+    assert_eq!(c.checkpoint().unwrap(), watched);
+    let loaded = c.loaded.as_ref().unwrap();
+    let replay =
+        HumanSession::restore(loaded.resources.rules.clone(), &loaded.identity, &watched).unwrap();
+    assert_eq!(replay.view(), loaded.session.view());
+    assert_eq!(replay.checkpoint(&loaded.identity), watched);
+}
+
+#[test]
 fn original_save_inspection_keeps_an_active_session_and_its_scheduling() {
     let f = Fixture::new();
     let path = "Original/Test.sav";

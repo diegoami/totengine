@@ -77,9 +77,10 @@ remain open for playable admission. Findings #370–#373 are follow-ups.
 
 Milestone 18 begins with #199 on `m18-diplomacy-contact`. The shared
 human view projects known contact identities and recorded relationships from
-the viewer's treaty row. The first native peace probe checks the treaty and
-attitude writes before the post-treaty callbacks. Offer/refusal evidence,
-authoritative resumable decisions, and #200's both-client route still remain.
+the viewer's treaty row, exposed by the shared read-only F3 panel. Native
+peace evidence covers local offer and final-status branches plus the treaty
+and attitude writes before callbacks. Global eligibility, response generation,
+authoritative resumable decisions, and #200's playable route still remain.
 See the Diplomacy and intelligence section of `docs/ui/screen-contracts.md`.
 The owner launches milestone reviews.
 

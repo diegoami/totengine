@@ -404,7 +404,7 @@ addEventListener("keydown", (e) => {
   if (["Enter", "Escape", "Tab", "ShiftTab", "ArrowLeft", "ArrowRight",
        "ArrowUp", "ArrowDown", "PageUp", "PageDown", " ", "+", "-", "=",
        "Ctrl+s", "Ctrl+l", "Ctrl+n", "Shift+z", "Shift+t", "Shift+r",
-       "F1", "F2", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11"].includes(key) ||
+       "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11"].includes(key) ||
       (!editing && /^[abvcwzxfremosl123456789?]$/.test(key))) {
     e.preventDefault();
     send({ type: "key", key });

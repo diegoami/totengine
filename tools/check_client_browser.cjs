@@ -86,6 +86,9 @@ fs.mkdirSync(out,{recursive:true});
  }
  await idle();await click('Generated seed');await fill('7');await click(startLabel);
  await click('Save pending choice');await save('research');await research();
+ await key('F3');
+ if(!has(await state(),'Known contacts')||!has(await state(),'No known contacts.'))throw Error('F3 contact panel missing');
+ await key('Escape');
  await key('b');await click('Save pending choice');await save('founding');await fill('athenx');await page.keyboard.press('Backspace');await page.keyboard.type('a');await page.waitForFunction(()=>frame.entry?.value==='athena'&&!busy);await key('Enter');
  await click('Choose production');
  for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes(unitChoice)))break}

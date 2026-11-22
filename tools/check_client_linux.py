@@ -179,6 +179,8 @@ def run():
                 write("7")
                 button(start_label)
                 wait(lambda s:has(s,"Choose research"));button("Save pending choice");save_dialog("research");research()
+                key("F3");wait(lambda s:has(s,"Known contacts") and has(s,"No known contacts."))
+                key("Escape")
                 key("b");wait(lambda s:has(s,"Name your city"));button("Save pending choice");save_dialog("founding")
                 wait(lambda s:has(s,"Name your city"));write("athenx");key("BackSpace");key("a");key("Return");wait(lambda s:s["status"]=="founded 0")
                 button("Choose production")

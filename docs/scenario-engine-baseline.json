@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "8548319ef206215e3079e9c960e1be5952d24f62202e293e870c62d45664a031",
     "crates/engine/src/lib.rs": "1cd9fc382c301aa03ebbaad632cf9df3f16bde72b4489c687769286bdeed7d59",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
-    "crates/totui/src/client/mod.rs": "76873c2fadc48799f8c2eeeadcec4cb1649fe995ecffa27a883c21aefbf8a43d",
+    "crates/totui/src/client/mod.rs": "d5b2d51651e1636ed5004dd1d714b30e1bd318fe5a1969c3034ded7864f6b1a7",
     "crates/totui/src/resources.rs": "acb8a961654e7649038afef4e6d86cd843ad3daacf3492aa2b87ec9220b1ce84",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "a750c432e5e2faf2dec9e835ed0a7435afee52a059ddc582122e5addb89af4c2",
@@ -31,7 +31,11 @@
     "crates/totui/src/resources/original/inspection.rs": "ec6a036c655cb80392624cac5a4e9adedb22d8f4a57222863bc6a36d8b46d98a",
     "crates/totui/src/resources/original/inspection/event_tail.rs": "4cc8d7b0e2c19ce605c522302dabb605ca0ce5fc24e959892e19eab634326644",
     "crates/totui/src/resources/original/inspection/evidence.rs": "1e810f24ceb3f87c657c0b3a7fce2b51bea3f42649bd82c9feb138fb35a121d4",
-    "crates/engine/src/human/diplomacy.rs": "f03e690ce5f4df9907ee423ce11ed53d95c6f49231817bfa9b14ac1a11d12653"
+    "crates/engine/src/human/diplomacy.rs": "f03e690ce5f4df9907ee423ce11ed53d95c6f49231817bfa9b14ac1a11d12653",
+    "crates/totui/src/client/routes.rs": "3fd70050d5cbf6ec79e2540af12ca6aa530055041e5dfea54953f8067b120274",
+    "crates/totui/src/client/chrome.rs": "7a86a4f9ac9f7b36ac9654aec825ad97896bb4bdccb4edb48f6164b24381a80b",
+    "crates/totui/src/client/desktop.rs": "4963d40a643ba890f51519180a2b10dd25152be81fd449fffef82039772b30d3",
+    "crates/totui/src/client/play.js": "bcd50c52ceacdc0363e3a7cd1d2e2fa2be40ec83e0c4a051c73ebb5b6f49d6f2"
   },
   "triggers": {
     "TURN": {
@@ -702,6 +706,17 @@
         "crates/engine/src/human/diplomacy.rs"
       ],
       "finding": "The viewer's outgoing contact bit gates the displayed civilization name and relationship. Projection adds no private intelligence fields, contact creation, proposals, checkpoint fields, or turn effects."
+    },
+    {
+      "change": "#200 read-only known contact panel",
+      "files": [
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/client/routes.rs",
+        "crates/totui/src/client/chrome.rs",
+        "crates/totui/src/client/desktop.rs",
+        "crates/totui/src/client/play.js"
+      ],
+      "finding": "Both clients expose the shared filtered HumanView contact rows via F3 and Advisors. Opening and closing the panel submits no orders and adds no conversation, event or checkpoint state."
     }
   ]
 }

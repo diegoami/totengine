@@ -292,7 +292,8 @@ must return to topics, and finishing must restore the foreign report. Do not
 convert generic Escape into accepting a selected demand.
 
 The contact report and intelligence report expose different detail levels.
-The first engine contact view admits a named civilization only when the
+F3 or **Advisors → Known contacts** opens a read-only list in both clients.
+The engine contact view admits a named civilization only when the
 viewer's outgoing contact bit is set. It exposes the slot, name, and recorded
 peace, alliance, or war flags. Absent or contradictory relationship flags
 produce an unspecified relationship. This uses the observed contact gate and
@@ -303,7 +304,17 @@ native prefix at `0x44a949` through the treaty and attitude updates. In
 12 controlled cases, it sets `0x4004` in both treaty words, clears the
 conflicting bits, and caps the second civilization's attitude toward the
 first at 50. The probe stops before the first post-treaty callback.
-Offer eligibility, refusal, and later side effects still need evidence.
+Eight prepared offer cases execute the local checks at `0x452cc1` through
+the branch to the next offer helper or the skip path. They cover the strict
+score threshold, suppression, and two bypasses. Three prepared final statuses
+at `0x4530a0` reach the treaty-call site on zero or the refusal presentation
+branch on nonzero, with civ records intact at each stop. These checks leave
+the offer helper, response generation, and later side effects open.
+Nine single-player encounter cases at `0x526aca` cover turn zero, barbarians,
+the selected human seat, and the 15/16-turn contact boundary. Unknown contact,
+a negative last-contact turn, or outgoing bit `0x10000` bypasses that interval
+check. The probe clears the scenario event gate and stops before conversation
+dispatch or the other seat's checks. It does not execute a meeting.
 
 The inspected intelligence view includes government, treasury, capital,
 research, treaties and known advances, plus city navigation. Exact eligibility

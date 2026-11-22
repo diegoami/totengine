@@ -272,6 +272,7 @@ impl Client {
             Modal::Science
             | Modal::Notice { .. }
             | Modal::Help
+            | Modal::Contacts
             | Modal::Messages
             | Modal::Settings => Ok(Some(true)),
             Modal::Pedia { .. } => {
@@ -344,7 +345,13 @@ impl Client {
                 self.open(Modal::Science);
                 true
             }
-            Some(Modal::Notice { .. } | Modal::Help | Modal::Messages | Modal::Settings) => {
+            Some(
+                Modal::Notice { .. }
+                | Modal::Help
+                | Modal::Contacts
+                | Modal::Messages
+                | Modal::Settings,
+            ) => {
                 self.modal = None;
                 true
             }
@@ -608,6 +615,35 @@ impl Client {
             draws.push(text(212., y, s, size, color));
         };
         match modal {
+            Modal::Contacts => {
+                use engine::human::ContactRelationship;
+                if v.contacts.is_empty() {
+                    line(
+                        draws,
+                        172.,
+                        "No known contacts.",
+                        style::TYPE_BODY,
+                        style::TEXT,
+                    );
+                }
+                for (row, contact) in v.contacts.iter().enumerate() {
+                    let y = 172. + row as f64 * 42.;
+                    let relationship = match contact.relationship {
+                        ContactRelationship::Unspecified => "Unspecified",
+                        ContactRelationship::Peace => "Peace",
+                        ContactRelationship::Alliance => "Alliance",
+                        ContactRelationship::War => "War",
+                    };
+                    line(draws, y, &contact.name, style::TYPE_BODY, style::TEXT);
+                    draws.push(text(
+                        654.,
+                        y,
+                        relationship,
+                        style::TYPE_SMALL,
+                        style::TEXT_DIM,
+                    ));
+                }
+            }
             Modal::Rates {
                 review,
                 government,
@@ -800,6 +836,7 @@ const HELP: [&[(&str, &str)]; 2] = [
         ("Advisors", ""),
         ("F1", "City status"),
         ("F2", "Defense (units)"),
+        ("F3", "Known contacts"),
         ("F4", "Attitude (mood)"),
         ("F5", "Trade"),
         ("F6", "Science"),

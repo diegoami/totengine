@@ -122,6 +122,7 @@ fn key(k: Keycode, shift: bool, ctrl: bool) -> Option<String> {
         Keycode::Escape => "Escape",
         Keycode::F1 => "F1",
         Keycode::F2 => "F2",
+        Keycode::F3 => "F3",
         Keycode::F4 => "F4",
         Keycode::F5 => "F5",
         Keycode::F6 => "F6",
@@ -1052,6 +1053,7 @@ mod tests {
         for (k, want) in [
             (Keycode::F1, "F1"),
             (Keycode::F2, "F2"),
+            (Keycode::F3, "F3"),
             (Keycode::F5, "F5"),
             (Keycode::F8, "F8"),
             (Keycode::F9, "F9"),

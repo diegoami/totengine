@@ -5406,6 +5406,47 @@ fn scenario_event_texts_open_as_pop_ups_one_at_a_time() {
 }
 
 #[test]
+fn known_contacts_opens_from_key_and_advisor_menu_without_changing_the_game() {
+    let f = Fixture::new();
+    let mut bytes = engine::tests_support::synthetic_save_bytes();
+    let civ_two = tot_kit::OFF_CIV_NAMES + 242 + 26;
+    bytes[civ_two..civ_two + 9].copy_from_slice(b"Neighbors");
+    let civ_three = civ_two + 242;
+    bytes[civ_three..civ_three + 6].copy_from_slice(b"Hidden");
+    let outgoing = tot_kit::OFF_CIV_PROPS + 3348 + 40;
+    bytes[outgoing + 8..outgoing + 12].copy_from_slice(&5u32.to_le_bytes());
+    let path = "Original/Contacts.sav";
+    fs::write(f.0.join(path), bytes).unwrap();
+    let mut c = f.client();
+    c.pick_scenario(path).unwrap();
+    key(&mut c, "Enter");
+    ready(&mut c);
+    research(&mut c);
+    let checkpoint = c.checkpoint().unwrap();
+
+    for open in [false, true] {
+        if open {
+            button(&mut c, "Known contacts");
+        } else {
+            key(&mut c, "F3");
+        }
+        assert!(matches!(c.modal, Some(Modal::Contacts)), "{}", c.status);
+        let texts = c.frame().draws;
+        for expected in ["Neighbors", "Peace"] {
+            assert!(texts
+                .iter()
+                .any(|d| matches!(d, Draw::Text { text, .. } if text == expected)));
+        }
+        assert!(!texts
+            .iter()
+            .any(|d| matches!(d, Draw::Text { text, .. } if text == "Hidden")));
+        key(&mut c, if open { "Enter" } else { "Escape" });
+        assert!(c.modal.is_none());
+        assert_eq!(c.checkpoint().unwrap(), checkpoint);
+    }
+}
+
+#[test]
 fn scenario_game_over_shows_every_box_and_blocks_further_play() {
     let f = Fixture::new();
     let mut c = f.client();

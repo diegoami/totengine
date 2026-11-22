@@ -297,6 +297,7 @@ enum Modal {
     },
     /// The keyboard help overlay (#284): original keys plus our additions.
     Help,
+    Contacts,
     /// The persistent message log (#284), newest first, paged.
     Messages,
     /// Opt-in enhancements (#284): the B-layer settings, all off by default.
@@ -383,6 +384,7 @@ enum Action {
     DismissNotices,
     /// Opens the keyboard help overlay.
     Help,
+    Contacts,
     Research,
     Rates,
     Revolution,
@@ -1263,6 +1265,7 @@ impl Client {
                 "F6" => self.action(Action::Science),
                 "F1" => self.action(Action::Report(ReportFamily::CityStatus)),
                 "F2" => self.action(Action::Report(ReportFamily::Defense)),
+                "F3" => self.action(Action::Contacts),
                 "F4" => self.action(Action::Report(ReportFamily::Attitude)),
                 "F5" => self.action(Action::Report(ReportFamily::Trade)),
                 "F7" => self.action(Action::Report(ReportFamily::Wonders)),
@@ -1405,6 +1408,10 @@ impl Client {
             }
             Action::Toggle(e) => self.toggle_enhancement(e),
             Action::Settings => self.open(Modal::Settings),
+            Action::Contacts => {
+                self.view().ok_or("Start a game first")?;
+                self.open(Modal::Contacts);
+            }
             Action::Scenarios => self.open_scenarios()?,
             Action::InspectOriginalSaves => self.open_original_saves()?,
             Action::ScenarioPick(path) => {
@@ -1641,6 +1648,7 @@ impl Client {
                     | Modal::Science
                     | Modal::Notice { .. }
                     | Modal::Help
+                    | Modal::Contacts
                     | Modal::Messages
                     | Modal::Settings
                     | Modal::Scenarios
@@ -2499,6 +2507,7 @@ impl Client {
                         Modal::Science
                         | Modal::Notice { .. }
                         | Modal::Help
+                        | Modal::Contacts
                         | Modal::Messages
                         | Modal::Settings => "Close [Enter]",
                         Modal::Report { .. } => "Open city [Enter]",
@@ -2529,6 +2538,7 @@ impl Client {
                         Modal::Science
                         | Modal::Notice { .. }
                         | Modal::Help
+                        | Modal::Contacts
                         | Modal::Messages
                         | Modal::Settings
                         | Modal::Report { .. }
@@ -2831,6 +2841,7 @@ impl Client {
                     Modal::Science => "Science advisor",
                     Modal::Notice { title, .. } => title,
                     Modal::Help => "Keys",
+                    Modal::Contacts => "Known contacts",
                     Modal::Messages => "Messages",
                     Modal::Settings => "Enhancements (optional, off by default)",
                     Modal::Report { .. } => "Reports",

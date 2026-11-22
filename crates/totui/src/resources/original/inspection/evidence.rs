@@ -35,7 +35,8 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
         "loader_regions": {
             "report": "docs/evidence/import-loader-exit.json",
             "after_event_read": loader["after_event_read"],
-            "same_mode_return": loader["mode_restore"]["cases"]["same_mode"]
+            "same_mode_return": loader["mode_restore"]["cases"]["same_mode"],
+            "caller_options": loader["caller_options"]
         },
     }))
 }

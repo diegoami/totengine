@@ -30,7 +30,7 @@
     "crates/totui/src/client/storage.rs": "5a9286c964d84fa6c22776f8eff59ea8bd9845a927a7f258ae99445a7035791f",
     "crates/totui/src/resources/original/inspection.rs": "ec6a036c655cb80392624cac5a4e9adedb22d8f4a57222863bc6a36d8b46d98a",
     "crates/totui/src/resources/original/inspection/event_tail.rs": "4cc8d7b0e2c19ce605c522302dabb605ca0ce5fc24e959892e19eab634326644",
-    "crates/totui/src/resources/original/inspection/evidence.rs": "cba40eedc33efd004d67beb036c6ac797eeb12e205bc21b37b4de0b2809135a3"
+    "crates/totui/src/resources/original/inspection/evidence.rs": "1e810f24ceb3f87c657c0b3a7fce2b51bea3f42649bd82c9feb138fb35a121d4"
   },
   "triggers": {
     "TURN": {

@@ -51,8 +51,8 @@ private.
 The `native_resume_trace` report binds the measured startup observations
 to the SHA-256 of the captured save and Rules.txt. A different save
 can pass record checks and still show a fixture mismatch. An exact match
-includes the post-event loader and mode-restoration measurements, the first
-input poll and an idle iteration.
+includes the post-event loader and Rules refresh through the prepared
+same-mode return, the first input poll and an idle iteration.
 `playable_import` remains false while event field semantics, pending-state,
 and knowledge continuation checks are open.
 

@@ -55,6 +55,10 @@ fn installed_save_reports_checked_records_phase_and_view() {
         trace["loader_regions"]["same_mode_return"],
         loader["mode_restore"]["cases"]["same_mode"]
     );
+    assert_eq!(
+        trace["loader_regions"]["caller_options"],
+        loader["caller_options"]
+    );
     assert_eq!(report["records"]["unit_slots"], 38);
     assert_eq!(report["records"]["live_units"], 37);
     assert_eq!(report["records"]["live_cities"], 10);

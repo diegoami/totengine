@@ -68,10 +68,26 @@ With two display-helper calls substituted and nonnegative sign controls, it
 preserves the civ, unit, city and loaded event records, the tiles, and all
 seven civ caches. The round-start flag remains one, the resume civ remains
 four, and research stays at target -1 with zero progress. A separate suffix
-starts after the final refresh and file close. It shows that the same-mode
-successful return preserves that phase and that restoring a different mode can
-fill an empty human mask using the living resume civ or the first living civ.
-The interval between the two measurements still needs evidence.
+exercises mode restoration after the file-close boundary. It shows that
+restoring a different mode can fill an empty human mask using the living
+resume civ or the first living civ.
+
+The pinned execution also continues through the final Rules refresh to
+the successful same-mode return at `0x4630e3`. The probe supplies the parsed
+`CIVILIZE`, `IMPROVE`, `ENDWONDER` and `UNITS` rows in place of the section and
+file readers, plus a successful closing of the virtual save handle. The
+native token conversion and table writes execute and count 89 enabled
+advances. Civ, unit, city and event records, tiles, caches and the pinned
+phase all compare unchanged through return.
+
+The original loader caller retains options bits `0x0000c000` from the save
+and takes the rest from process preferences. Two controlled preferences on
+the pinned save reach different human preparation branches. Enabling advice
+reaches the native advice path, while the preference matching the save
+returns from its gate. The probe stops before processing advisory state or
+displaying a dialog. The save's own advice bit therefore cannot determine the
+entry path by itself. Admission still needs an explicit verified preference
+policy and evidence from the ensuing decision and input paths.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_loader_exit_check.py --out /tmp/loader-exit.json

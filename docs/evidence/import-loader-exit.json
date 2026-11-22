@@ -1,5 +1,5 @@
 {
-  "schema": 1,
+  "schema": 2,
   "source": {
     "path": "Original/Ph_Auto2.SAV",
     "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
@@ -23,7 +23,27 @@
       "research_progress": 0
     },
     "civ_unit_city_event_records_unchanged": true,
-    "tiles_and_remembered_improvements_unchanged": true
+    "tiles_and_remembered_improvements_unchanged": true,
+    "final_refresh": {
+      "entry": "00462e0d",
+      "stop": "004630e3",
+      "rows_by_section": {
+        "CIVILIZE": 100,
+        "IMPROVE": 68,
+        "ENDWONDER": 28,
+        "UNITS": 80
+      },
+      "enabled_advances": 89,
+      "close_call_sites": [
+        "00462ebf"
+      ],
+      "substituted_helpers": [
+        "00486659",
+        "004866dc",
+        "005b1950"
+      ],
+      "return_status": 0
+    }
   },
   "mode_restore": {
     "entry": "00462ec7",
@@ -136,5 +156,42 @@
       }
     }
   },
-  "scope": "Prepared native EVNT reader and post-read prefix with display substitutes. Separate native mode restoration starts after skipped final refresh and close."
+  "caller_options": {
+    "entry": "00463e69",
+    "retained_saved_bits": "0000c000",
+    "cases": {
+      "same_preferences": {
+        "saved": "01cd3258",
+        "configured": "01cd3258",
+        "merged": "01cd3258",
+        "stop": "00463f54",
+        "return_status": 0,
+        "human_advice_gate": "00473e6b"
+      },
+      "different_advice_bit": {
+        "saved": "01cd3258",
+        "configured": "01cd3358",
+        "merged": "01cd3358",
+        "stop": "00463f54",
+        "return_status": 0,
+        "human_advice_gate": "00473be0"
+      },
+      "saved_bits_win": {
+        "saved": "01cd7258",
+        "configured": "01cdb258",
+        "merged": "01cd7258",
+        "stop": "00463f54",
+        "return_status": 0,
+        "human_advice_gate": "00473e6b"
+      },
+      "failed_load": {
+        "saved": "01cd3258",
+        "configured": "00000000",
+        "merged": "00000000",
+        "stop": "00463e96",
+        "return_status": 1
+      }
+    }
+  },
+  "scope": "Prepared native EVNT reader through return with display, Rules section/row, and file-close substitutes. Separate mode and caller-preference controls."
 }

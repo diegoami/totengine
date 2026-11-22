@@ -34,7 +34,7 @@ def read(o, at, fmt='<i'):
     return struct.unpack(fmt, o.cpu.mem_read(at, struct.calcsize(fmt)))[0]
 
 
-def run(o, start, stops, *, calls=()):
+def run(o, start, stops, *, calls=(), instruction_limit=100000):
     reached = []
     allowed = set(calls)
 
@@ -50,7 +50,7 @@ def run(o, start, stops, *, calls=()):
 
     hook = o.cpu.hook_add(UC_HOOK_CODE, watch)
     try:
-        o.cpu.emu_start(start, 0, count=100000)
+        o.cpu.emu_start(start, 0, count=instruction_limit)
     finally:
         o.cpu.hook_del(hook)
     assert len(reached) == 1, hex(o.cpu.reg_read(o.ip))

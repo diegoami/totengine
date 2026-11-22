@@ -1,5 +1,18 @@
-use crate::resources::{Mask, Rect, Resources};
+use super::{Client, Draw};
+use crate::resources::{self, Mask, Rect, Resources};
 use std::collections::BTreeMap;
+use std::path::Path;
+
+// Interior cells of the magenta grid in the measured classic GIF sheet.
+pub(super) const CLASSIC_CELLS: [(&str, u32, u32); 5] = [
+    ("classic-food", 1, 305),
+    ("classic-shields", 16, 305),
+    ("classic-science", 31, 320),
+    ("classic-tax", 16, 320),
+    ("classic-luxury", 1, 320),
+];
+const CLASSIC_SIZE: u32 = 14;
+const CLASSIC_BACKDROP: [u8; 3] = [255, 159, 163];
 
 pub struct Sprite {
     pub w: u32,
@@ -10,6 +23,46 @@ pub struct Atlas {
     pub sprites: BTreeMap<String, Sprite>,
 }
 impl Atlas {
+    pub(super) fn load_for_install(resources: &Resources, home: &Path) -> Result<Self, String> {
+        let mut atlas = Self::load(resources)?;
+        if let Some(sheet) = resources::classic_icon_sheet(home) {
+            let icons: Option<BTreeMap<_, _>> = CLASSIC_CELLS
+                .into_iter()
+                .map(|(name, x, y)| {
+                    let rect = Rect {
+                        x,
+                        y,
+                        w: CLASSIC_SIZE,
+                        h: CLASSIC_SIZE,
+                    };
+                    let mut image = resources::crop(&sheet, rect, Mask::default()).ok()?;
+                    for pixel in image.pixels_mut() {
+                        if pixel.0[..3] == CLASSIC_BACKDROP {
+                            pixel[3] = 0;
+                        }
+                    }
+                    let visible = image.pixels().filter(|pixel| pixel[3] != 0).count();
+                    (1..(CLASSIC_SIZE * CLASSIC_SIZE) as usize)
+                        .contains(&visible)
+                        .then(|| {
+                            (
+                                name.to_string(),
+                                Sprite {
+                                    w: rect.w,
+                                    h: rect.h,
+                                    rgba: image.into_raw(),
+                                },
+                            )
+                        })
+                })
+                .collect();
+            if let Some(icons) = icons {
+                atlas.sprites.extend(icons);
+            }
+        }
+        Ok(atlas)
+    }
+
     pub fn load(resources: &Resources) -> Result<Self, String> {
         if resources.isotrident.is_some() {
             return super::isotrident::atlas(resources);
@@ -147,5 +200,24 @@ impl Atlas {
             }
         }
         Ok(Self { sprites })
+    }
+}
+
+impl Client {
+    pub(super) fn classic_icons_active(&self) -> bool {
+        self.enhancements.classic_icons
+            && self
+                .atlas()
+                .is_some_and(|atlas| atlas.sprites.contains_key("classic-food"))
+    }
+
+    pub(super) fn classic_icon(&self, sprite: &str, x: f64, y: f64) -> Option<Draw> {
+        self.classic_icons_active().then(|| Draw::Sprite {
+            sprite: sprite.into(),
+            x,
+            y,
+            w: f64::from(CLASSIC_SIZE),
+            h: f64::from(CLASSIC_SIZE),
+        })
     }
 }

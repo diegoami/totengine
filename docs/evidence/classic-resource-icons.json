@@ -1,0 +1,51 @@
+{
+  "decoded_rgba_sha256": "533560f64d8031b4f82de40dc041275eacd6d10a8e55380f0590e4fc13f24189",
+  "schema": 1,
+  "sheet_size": [
+    640,
+    480
+  ],
+  "source": "Icons.gif",
+  "sprites": {
+    "classic-food": {
+      "height": 14,
+      "rgba_sha256": "a2a4c069466b0d2cf4d094ada125799a3546a0e51fccd270c5786b592c1975ef",
+      "visible_pixels": 142,
+      "width": 14,
+      "x": 1,
+      "y": 305
+    },
+    "classic-luxury": {
+      "height": 14,
+      "rgba_sha256": "576ebed7e998caa45845bf65f7e05b3a2f4879203c2aacce0bb98c9fb3a219e9",
+      "visible_pixels": 92,
+      "width": 14,
+      "x": 1,
+      "y": 320
+    },
+    "classic-science": {
+      "height": 14,
+      "rgba_sha256": "78592e5ee2d26f3852cd093393dcee38b60fbc0ecbb3f2b6126c7491931274ba",
+      "visible_pixels": 72,
+      "width": 14,
+      "x": 31,
+      "y": 320
+    },
+    "classic-shields": {
+      "height": 14,
+      "rgba_sha256": "927ff1d021a1b9ac18b74ca0ff29df9bff05e43dbd53480f3413f367c0b9d125",
+      "visible_pixels": 118,
+      "width": 14,
+      "x": 16,
+      "y": 305
+    },
+    "classic-tax": {
+      "height": 14,
+      "rgba_sha256": "190fbd9432403b3e577c2ddc55d18e4b0863423f82a747b03e8fc3c5e2cd7e88",
+      "visible_pixels": 156,
+      "width": 14,
+      "x": 16,
+      "y": 320
+    }
+  }
+}

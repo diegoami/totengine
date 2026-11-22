@@ -172,7 +172,7 @@ impl Client {
         if identity != choice.identity || files.lua != choice.lua {
             return Err("Scenario or resources changed. Go back and select the file again.".into());
         }
-        let atlas = Atlas::load(&resources)?;
+        let atlas = self.load_atlas(&resources)?;
         let civ = choice
             .preflight
             .civs
@@ -231,7 +231,7 @@ impl Client {
         let (resources, files) =
             crate::resources::Resources::load_scenario_inputs(&home, &origin.path, snapshot)
                 .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))?;
-        let atlas = Atlas::load(&resources)?;
+        let atlas = self.load_atlas(&resources)?;
         let identity = if text.starts_with("totengine-human 3\n") {
             resources.scenario_identity()
         } else {

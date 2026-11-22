@@ -103,6 +103,26 @@ fs.mkdirSync(out,{recursive:true});
  await click('Choose production');
  for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes(unitChoice)))break}
  await key('Enter');await key('Control+s');await save('normal');
+ if(process.env.TOTENGINE_CLASSIC_ICONS==='1'){
+  const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;
+  if(!saves)throw Error('set TOTENGINE_CLIENT_SAVES');
+  const glyph=(f,name)=>f.draws.some(d=>d.kind==='sprite'&&d.sprite==='classic-'+name);
+  if(glyph(await state(),'food'))throw Error('classic icons are on by default');
+  await click('Game');await click('Settings…');
+  await click('[ ] Classic resource icons');await key('Escape');
+  const hud=await state();
+  if(!glyph(hud,'food'))throw Error('classic food glyph missing from map');
+  const sprite=await page.request.get(origin+'/sprite/'+hud.assets+'/classic-food');
+  if(!sprite.ok()||(await sprite.body()).length!==8+14*14*4)throw Error('classic sprite was not served');
+  await click('Manage city');
+  const city=await state();
+  if(!['food','shields','science','tax','luxury'].every(name=>glyph(city,name)))throw Error('classic glyph missing from city');
+  await key('Escape');await key('Control+s');await save('classicicons');
+  const read=name=>fs.readFileSync(path.join(saves,name+'.cth'));
+  if(!read('classicicons').equals(read('normal')))throw Error('changing icons affected the checkpoint');
+  await click('Game');await click('Settings…');await click('[x] Classic resource icons');await key('Escape');
+  if(glyph(await state(),'food'))throw Error('turning icons off left a glyph on the map');
+ }
  await page.screenshot({path:out+'/browser-map.png'});
  for(let n=0;n<10;n++){
   await research();const turn=turnOf(await state());

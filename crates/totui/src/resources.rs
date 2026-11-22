@@ -170,6 +170,22 @@ pub fn list_scenarios(home: &Path) -> Vec<String> {
     found
 }
 
+/// The optional classic icon sheet belongs to the installation root.
+/// This optional read does not add a dependency to the resource identity.
+pub(crate) fn classic_icon_sheet(home: &Path) -> Option<RgbaImage> {
+    if home.as_os_str().is_empty() {
+        return None;
+    }
+    let root = home.canonicalize().ok()?;
+    let path = contained(&root, child(&root, "Icons.gif").ok()??).ok()?;
+    let bytes = read(&path).ok()?;
+    if image::guess_format(&bytes).ok()? != ImageFormat::Gif {
+        return None;
+    }
+    let sheet = decode_format(&bytes, ImageFormat::Gif).ok()?;
+    (sheet.dimensions() == (640, 480)).then_some(sheet)
+}
+
 #[derive(serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct FreecivSprite {

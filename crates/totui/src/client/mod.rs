@@ -270,6 +270,7 @@ pub(crate) enum Enhancement {
     GoalEstimates,
     OrderStrip,
     MessageDock,
+    ClassicIcons,
 }
 #[derive(Clone)]
 enum Modal {
@@ -660,7 +661,7 @@ impl Client {
     fn load_resources(&self) -> Result<(Resources, Atlas), String> {
         if !self.home.trim().is_empty() {
             match Resources::load(Path::new(&self.home), "Original")
-                .and_then(|r| Atlas::load(&r).map(|a| (r, a)))
+                .and_then(|r| self.load_atlas(&r).map(|a| (r, a)))
             {
                 Ok(loaded) => return Ok(loaded),
                 Err(original_error) => {
@@ -676,15 +677,23 @@ impl Client {
                     };
                     let pack = self.fallback_pack.as_ref().ok_or(original_error)?;
                     let r = Resources::load_isotrident(pack, Some(&path))?;
-                    let a = Atlas::load(&r)?;
+                    let a = self.load_atlas(&r)?;
                     return Ok((r, a));
                 }
             }
         }
         let pack = self.fallback_pack.as_ref().ok_or("Isotrident artwork pack missing; install it beside the client or set TOTENGINE_ISOTRIDENT")?;
         let r = Resources::load_isotrident(pack, None)?;
-        let a = Atlas::load(&r)?;
+        let a = self.load_atlas(&r)?;
         Ok((r, a))
+    }
+    fn load_atlas(&self, resources: &Resources) -> Result<Atlas, String> {
+        let home = if self.home.trim().is_empty() {
+            ""
+        } else {
+            &self.home
+        };
+        Atlas::load_for_install(resources, Path::new(home))
     }
     pub fn atlas(&self) -> Option<&Atlas> {
         self.loaded.as_ref().map(|l| &l.atlas)
@@ -783,6 +792,10 @@ impl Client {
             Enhancement::GoalEstimates => (&mut self.enhancements.goal_estimates, "Goal estimates"),
             Enhancement::OrderStrip => (&mut self.enhancements.order_strip, "Order strip"),
             Enhancement::MessageDock => (&mut self.enhancements.message_dock, "Message dock"),
+            Enhancement::ClassicIcons => (
+                &mut self.enhancements.classic_icons,
+                "Classic resource icons",
+            ),
         };
         *flag = !*flag;
         let state = if *flag { "on" } else { "off" };
@@ -790,6 +803,14 @@ impl Client {
             Ok(()) => format!("{name}: {state}."),
             Err(why) => format!("{name}: {state} for this session (not saved: {why})."),
         };
+        if matches!(e, Enhancement::ClassicIcons)
+            && self.enhancements.classic_icons
+            && self.loaded.is_some()
+            && !self.classic_icons_active()
+        {
+            self.status
+                .push_str(" Icons.gif is unavailable for this game.");
+        }
     }
     /// The overlay's latest-turn lines and its frame `(x, y, w, h)`.
     fn notice_overlay_rect(&self) -> (Vec<&str>, (f64, f64, f64, f64)) {

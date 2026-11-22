@@ -273,6 +273,9 @@ pub struct Enhancements {
     /// The message log docked in the map's right column (#313).
     #[serde(default)]
     pub message_dock: bool,
+    /// Use the install's classic resource glyphs in city readouts.
+    #[serde(default)]
+    pub classic_icons: bool,
 }
 
 pub const ENHANCEMENTS_FORMAT: &str = "totengine-enhancements 1";

@@ -14,11 +14,11 @@
     "crates/engine/src/human/checkpoint.rs": "15c9928f1df42900b48a004455b1a15eb8e1bbe966930d663f4e9c275a5ccbfe",
     "crates/engine/src/lib.rs": "8a2bb9704eb55b058fd15c745c59119b94e04bf1199fcf708ea60f64cbc03204",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
-    "crates/totui/src/client/mod.rs": "5e0f87708762d8f70ba0b668d5df9ad0c22dd60847c155793bf5c1d6f079048d",
-    "crates/totui/src/resources.rs": "9209415b886285d8b330d2601c3d6f5a76a2456d487ad7e09f067b907b14c3f4",
+    "crates/totui/src/client/mod.rs": "ee989e2d1d20b0e0a8ea215a3365a9bab8a1ff70c0de89a57f6fd04f7c0bc83b",
+    "crates/totui/src/resources.rs": "8868c734c58e782740f00b737be5790647dc212c62598c2be6c088c68d08c309",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "a750c432e5e2faf2dec9e835ed0a7435afee52a059ddc582122e5addb89af4c2",
-    "crates/totui/src/client/scenario.rs": "8ea939a4a99d84a416831a2b4e07164905d29971398023947cec20277438d85f",
+    "crates/totui/src/client/scenario.rs": "74715eaa025c97229b3485e2e2e277d7ca8b01932e758a483a6f243ba5ee17e9",
     "crates/engine/src/saved_knowledge.rs": "f900ea415abc50293bfba28b1006a0f1b9a994c25ed01ad6d745eeb973b0a17c",
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
@@ -27,18 +27,20 @@
     "crates/engine/src/scenario/phase.rs": "f919b6adeab6b2beed51bca5bf57de45387d65351bb779938595d68ce5bde9c9",
     "crates/engine/src/scenario/snapshot.rs": "ec564138d8d1f63f9724f7967198623a8c0d9d1373a8275b9b699892f1e49f15",
     "crates/engine/src/scenario.rs": "48f0820312fb5f0d840ce06dff0a17ae3178ff4ddfd03e4c0e9428be38e47b6f",
-    "crates/totui/src/client/storage.rs": "5a9286c964d84fa6c22776f8eff59ea8bd9845a927a7f258ae99445a7035791f",
+    "crates/totui/src/client/storage.rs": "5c5540e72242d364c46a25350d1235b17ff289eb5a37aaef5a2e83130ec0eaaf",
     "crates/totui/src/resources/original/inspection.rs": "ec6a036c655cb80392624cac5a4e9adedb22d8f4a57222863bc6a36d8b46d98a",
     "crates/totui/src/resources/original/inspection/event_tail.rs": "4cc8d7b0e2c19ce605c522302dabb605ca0ce5fc24e959892e19eab634326644",
     "crates/totui/src/resources/original/inspection/evidence.rs": "1e810f24ceb3f87c657c0b3a7fce2b51bea3f42649bd82c9feb138fb35a121d4",
     "crates/engine/src/human/diplomacy.rs": "09d1a2fe9aebd0d7b9a8b71198f44e6db95ca8536ccecd4b8b9a10c064e1c4dd",
-    "crates/totui/src/client/routes.rs": "94912cc39399ba6288404da0820731983316a3319a80aee23b605277c763fd1d",
-    "crates/totui/src/client/chrome.rs": "3fe6e63317217dcfc13bd8a4aeadfbb7c6023ab60b01b2e9a7b7c559d688f4f9",
+    "crates/totui/src/client/routes.rs": "7eca1797718c48bde87035d1c8a4b308e6efc94dfd0ace97e2c50d64fdd1e4a6",
+    "crates/totui/src/client/chrome.rs": "77361ada24b81fcaa9867f5edc7e257275d343739e9756758b66aeed90d4b9b6",
     "crates/totui/src/client/desktop.rs": "9b79e576abe448d277db05d208a1919da67479b0f769305b4e6efaedfece0d61",
     "crates/totui/src/client/play.js": "bcd50c52ceacdc0363e3a7cd1d2e2fa2be40ec83e0c4a051c73ebb5b6f49d6f2",
     "crates/totui/src/client/pedia.rs": "daaeb8d7b9c34661a2f0cafa9fd0a030fae6bbfb22b897119fc16902c1feeb43",
     "crates/engine/src/human/watch.rs": "e86e2f70ee6fb2850f42f3c41a325caf37662509fc8184cdd3d539a5c53b1b38",
-    "crates/totui/src/client/watch.rs": "0fec68f018d0c6e2c83fc37a64496253f0de17a48965755f3392032a344c01b2"
+    "crates/totui/src/client/watch.rs": "0fec68f018d0c6e2c83fc37a64496253f0de17a48965755f3392032a344c01b2",
+    "crates/totui/src/client/atlas.rs": "7cd33eadad90d869d926248a02f547aab7a1854cadec631cebf5817d1a12a2ba",
+    "crates/totui/src/client/city.rs": "582f21c061861afde3ae3e24a812eb69da24c877728ba90594e45f42eb7505d3"
   },
   "triggers": {
     "TURN": {
@@ -762,6 +764,20 @@
         "crates/totui/src/client/watch.rs"
       ],
       "finding": "Desktop can turn on bounded AI play for the selected seat through ordinary validated human commands and opponent work. It retains the normal filtered view and journals accepted actions. Pausing, pacing and camera intent are presentation state. No native scenario profile is admitted."
+    },
+    {
+      "change": "Optional classic city resource icons",
+      "files": [
+        "crates/totui/src/resources.rs",
+        "crates/totui/src/client/atlas.rs",
+        "crates/totui/src/client/chrome.rs",
+        "crates/totui/src/client/city.rs",
+        "crates/totui/src/client/mod.rs",
+        "crates/totui/src/client/routes.rs",
+        "crates/totui/src/client/scenario.rs",
+        "crates/totui/src/client/storage.rs"
+      ],
+      "finding": "Both clients can render a measured set of classic glyphs from the install root GIF. The atlas supplements ordinary artwork without altering captured input identities, scenario interpretation or gameplay checkpoints."
     }
   ]
 }

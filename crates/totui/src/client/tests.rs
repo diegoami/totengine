@@ -4125,6 +4125,98 @@ fn enhancements_default_off_toggle_persist_and_never_touch_the_game() {
 }
 
 #[test]
+fn classic_resource_icons_toggle_without_changing_the_game() {
+    let f = Fixture::new();
+    let path = f.0.join("Icons.gif");
+    let mut sheet = image::RgbaImage::from_pixel(640, 480, image::Rgba([255, 159, 163, 255]));
+    for (_, x, y) in super::atlas::CLASSIC_CELLS {
+        sheet.put_pixel(x + 10, y + 10, image::Rgba([0, 200, 0, 255]));
+    }
+    sheet.save(&path).unwrap();
+
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    let before = c.checkpoint().unwrap();
+    let assets = c.assets.clone();
+    let shows = |c: &Client, expected: &str| {
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Sprite { sprite, .. } if sprite == expected))
+    };
+    assert!(!shows(&c, "classic-food"));
+    button(&mut c, "Settings");
+    button(&mut c, "[ ] Classic resource icons");
+    key(&mut c, "Escape");
+    assert!(shows(&c, "classic-food"));
+    button(&mut c, "Manage city");
+    for glyph in ["food", "shields", "science", "tax", "luxury"] {
+        assert!(shows(&c, &format!("classic-{glyph}")));
+    }
+    key(&mut c, "Escape");
+    assert_eq!(c.checkpoint().unwrap(), before);
+    assert_eq!(c.assets, assets);
+    assert!(f.client().enhancements.classic_icons);
+
+    fs::write(path, b"not a GIF").unwrap();
+    let mut fallback = f.client();
+    start(&mut fallback);
+    founding(&mut fallback);
+    assert!(!shows(&fallback, "classic-food"));
+    assert!(!fallback
+        .atlas()
+        .unwrap()
+        .sprites
+        .contains_key("classic-food"));
+    assert_eq!(fallback.checkpoint().unwrap(), before);
+}
+
+#[test]
+fn installed_classic_resource_icons_have_visible_distinct_glyphs() {
+    use sha2::{Digest, Sha256};
+    let Some(home) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let home = Path::new(&home);
+    let Some(sheet) = crate::resources::classic_icon_sheet(home) else {
+        return;
+    };
+    let resources = Resources::load(home, "Original").unwrap();
+    let atlas = Atlas::load_for_install(&resources, home).unwrap();
+    let mut evidence = BTreeMap::new();
+    for (glyph, x, y) in super::atlas::CLASSIC_CELLS {
+        let sprite = &atlas.sprites[glyph];
+        let visible = sprite
+            .rgba
+            .chunks_exact(4)
+            .filter(|pixel| pixel[3] > 0)
+            .count();
+        assert!((1..196).contains(&visible), "{glyph}");
+        evidence.insert(
+            glyph,
+            serde_json::json!({
+                "x": x, "y": y, "width": sprite.w, "height": sprite.h, "visible_pixels": visible,
+                "rgba_sha256": format!("{:x}", Sha256::digest(&sprite.rgba)),
+            }),
+        );
+    }
+    let hashes: std::collections::BTreeSet<_> = evidence
+        .values()
+        .map(|sprite| sprite["rgba_sha256"].as_str().unwrap())
+        .collect();
+    assert_eq!(hashes.len(), 5);
+    if let Some(out) = std::env::var_os("TOTENGINE_CLASSIC_ICON_EVIDENCE") {
+        let report = serde_json::json!({
+            "schema": 1, "source": "Icons.gif", "sheet_size": [sheet.width(), sheet.height()],
+            "decoded_rgba_sha256": format!("{:x}", Sha256::digest(sheet.as_raw())),
+            "sprites": evidence,
+        });
+        fs::write(out, serde_json::to_string_pretty(&report).unwrap() + "\n").unwrap();
+    }
+}
+
+#[test]
 fn mouse_wheel_scrolls_lists_only_and_never_touches_the_game() {
     let f = Fixture::new();
     let mut c = f.client();

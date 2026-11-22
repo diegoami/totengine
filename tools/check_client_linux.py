@@ -204,6 +204,19 @@ def run():
                     key("Down")
                     if any(d.get("text","").startswith("●") and unit_choice in d["text"] for d in scene()["draws"]):break
                 key("Return");wait(lambda s:s["status"]=="prod-set");key("Ctrl+s");save_dialog("normal")
+                if os.environ.get("TOTENGINE_CLASSIC_ICONS") == "1":
+                    def glyph(s,name):
+                        return any(d.get("sprite") == "classic-" + name for d in s["draws"])
+                    assert not glyph(scene(),"food"), "classic icons are on by default"
+                    click_button("Game");click_button("Settings…")
+                    click_button("[ ] Classic resource icons");key("Escape")
+                    wait(lambda s:glyph(s,"food"))
+                    click_button("Manage city")
+                    assert all(glyph(scene(),name) for name in ("food","shields","science","tax","luxury"))
+                    key("Escape");key("Ctrl+s");save_dialog("classicicons")
+                    assert (work/"saves/classicicons.cth").read_bytes() == (work/"saves/normal.cth").read_bytes()
+                    click_button("Game");click_button("Settings…");click_button("[x] Classic resource icons");key("Escape")
+                    assert not glyph(scene(),"food"), "turning icons off left a glyph on the map"
                 for _ in range(10):
                     research();turn=turn_of(scene())
                     key("Ctrl+n")

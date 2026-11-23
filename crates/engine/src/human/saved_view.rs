@@ -295,6 +295,7 @@ impl HumanSession {
                 civ,
                 unit,
                 to,
+                self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1,
             )
             .ok()?;
             (observed, OrderResult::Moved)

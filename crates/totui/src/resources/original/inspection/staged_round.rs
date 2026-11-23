@@ -412,6 +412,7 @@ pub(super) fn check_saved_opponent_combat(
     if recorded_crt != Some(format!("{crt:08x}").as_str()) {
         return Err("the checked combat diverged from the prepared CRT state".into());
     }
+    let replay_events = events.clone();
     let mut replay = HumanSession::restore_with(
         rules.clone(),
         resources,
@@ -421,10 +422,43 @@ pub(super) fn check_saved_opponent_combat(
     if replay.advance(1) != 1 || replay.checkpoint(resources) != after {
         return Err("the checked combat did not replay".into());
     }
+    let stack = &native["following_field_stack"];
+    let mover = stack["after"]
+        .as_array()
+        .and_then(|units| units.first())
+        .ok_or("prepared field-stack mover missing")?;
+    let (x, y): (u16, u16) = serde_json::from_value(mover["position"].clone())
+        .map_err(|error| format!("invalid prepared field stack position: {error}"))?;
+    let slot = mover["slot"]
+        .as_u64()
+        .ok_or("prepared field-stack slot missing")?;
+    let civ = mover["owner"]
+        .as_u64()
+        .ok_or("prepared field-stack owner missing")?;
+    let order = format!(
+        "T {} C {civ} move {slot} {x} {y} = moved\n",
+        initial.observation.turn
+    );
+    let (prior, after) = reach_opponent_order(&mut session, resources, &order)?;
+    let view = session.view();
+    if view.observation.seen != initial.observation.seen
+        || json!(view.observation.seen.iter().flatten().count()) != stack["explored_tiles"]
+    {
+        return Err("the checked field-stack entry changed the saved player view".into());
+    }
+    let mut replay = HumanSession::restore_with(
+        rules.clone(),
+        resources,
+        &prior,
+        Some((&files.bytes, replay_events)),
+    )?;
+    if replay.advance(1) != 1 || replay.checkpoint(resources) != after {
+        return Err("the checked field-stack entry did not replay".into());
+    }
     Ok(json!({
         "verified": true, "initializer_schema": 7,
         "profile": engine::human::ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE,
-        "explored_tiles": explored, "combat_rng_matches": true, "checkpoint_replays": true,
+        "explored_tiles": explored, "combat_rng_matches": true, "field_stack_replays": true, "checkpoint_replays": true,
     }))
 }
 

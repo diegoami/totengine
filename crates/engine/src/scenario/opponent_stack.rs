@@ -93,6 +93,7 @@ pub(crate) fn stage(
     civ: u8,
     slot: usize,
     to: (u16, u16),
+    field_stack: bool,
 ) -> Result<SaveFile, String> {
     let unit = world
         .units
@@ -129,7 +130,9 @@ pub(crate) fn stage(
                 "saved opponent step into an empty city is outside the checked context".into(),
             );
         }
-    } else if members.iter().any(|&s| world.units[s].owner != civ) || !friendly_city(city) {
+    } else if members.iter().any(|&s| world.units[s].owner != civ)
+        || !(friendly_city(city) || field_stack && city.is_none())
+    {
         return Err("saved opponent step needs empty land or a friendly city stack".into());
     }
     if source.len() > 1

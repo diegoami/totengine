@@ -276,7 +276,8 @@ observation runs through the native-derived kernel, and the engine
 commits the result when the saved human view and remembered improvements
 still match. Other outcomes and immediate macro effects use the existing
 engine path. The event fallback leaves the initial RNG and event state
-intact so the prior path can apply them once.
+intact so the prior path can apply them once. This recipe also permits a
+checked unseen move into a friendly stack outside a city.
 
 The [prepared combat trace](evidence/import-opponent-combat-view.json)
 continues the three measured opponent moves. A native Rules refresh
@@ -285,7 +286,11 @@ The seed-7 control wins in place, removes the defender and keeps all
 59 explored tiles and remembered improvements. Seed 1 also wins and
 leaves the attacker with five damage. The inspector and install-backed
 replay match the seed-7 outcome and final combat CRT state and restore
-the checkpoint on either side. These are controlled battles. Native
+the checkpoint on either side. The seed-1 engine control also matches the
+native survivor damage and final CRT state. The following field-stack
+move goes from (11, 45) to (9, 45) and appends slot 4 after slot 7.
+It also keeps 59 tiles and replays from its checkpoint. These are
+controlled native actions. Native
 opponent policy, macro dispatch and broader combat contexts remain
 separate from this check.
 

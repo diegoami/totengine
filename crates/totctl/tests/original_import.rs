@@ -168,6 +168,7 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "profile": "experimental-saved-opponent-combat-v1",
             "explored_tiles": 59,
             "combat_rng_matches": true,
+            "field_stack_replays": true,
             "checkpoint_replays": true,
         })
     );

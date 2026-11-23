@@ -3,6 +3,7 @@
 
 The native Rules refresh loads the combat tables before the battle. Each
 control supplies an explicit CRT seed and the engine's spatial order.
+The seed-7 control then continues through a separate field-stack move.
 Windows timing and presentation are substituted. Native opponent policy,
 live input, and macro dispatch are outside this witness.
 """
@@ -133,6 +134,11 @@ def main():
     for seed in (7, 1):
         def entry(original, player, city):
             cases[str(seed)] = execute(original, player, city, rules, seed)
+            if seed == 7:
+                cases[str(seed)]['following_field_stack'] = move_opponent(
+                    original, player, (4, 5, 3), (4, 7), (11, 45), (9, 45),
+                    ((7, -1), (-1, 4)),
+                )
 
         def prepared(original, player, regions):
             trace(original, player, regions, clear_preference_bit=False, skip_selected=True,

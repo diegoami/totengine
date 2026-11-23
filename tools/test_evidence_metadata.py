@@ -167,6 +167,11 @@ class GoldenMetadata(unittest.TestCase):
             self.assertFalse(case['viewer_memory_changed'])
             self.assertEqual(case['after'][0]['damage'], damage)
             self.assertEqual([u['alive'] for u in case['after']], [True, False])
+        stack = report['cases']['7']['following_field_stack']
+        self.assertEqual(stack['explored_tiles'], 59)
+        self.assertEqual(stack['after'][0]['position'], [9, 45])
+        self.assertEqual([unit['next'] for unit in stack['after']], [-1, 4])
+        self.assertFalse(stack['viewer_memory_changed'])
 
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())

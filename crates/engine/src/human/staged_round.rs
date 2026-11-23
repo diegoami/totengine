@@ -678,6 +678,28 @@ staged-round-test
             )
             .unwrap()
         };
+        // Vary only the combat CRT in a direct control. The observed
+        // native seed-1 battle wounds the survivor without changing fog.
+        let mut wounded = restore(&prior);
+        wounded.game.world.combat_rng = crate::combat::CrtRand::new(1);
+        assert_eq!(
+            wounded.try_saved_opponent_move(
+                5,
+                Order::Move {
+                    unit: 20,
+                    to: (22, 46)
+                }
+            ),
+            Some(OrderResult::Attacked { won: true })
+        );
+        assert_eq!(wounded.game.world.combat_rng.state(), 0x95475fb6);
+        assert_eq!(wounded.game.world.units[20].damage, 5);
+        assert_eq!(
+            wounded.saved_move_state.as_ref().unwrap().units[20].damage(),
+            5
+        );
+        assert_eq!(wounded.known_tiles, after.observation.seen);
+
         let mut eventful = restore(&prior);
         let unit = &eventful.game.world.units[22];
         let name = rules.unit_names()[usize::from(unit.type_id)];
@@ -707,5 +729,28 @@ staged-round-test
         assert_eq!(game.game.world.combat_rng.state(), 0x0a14e6e2);
         assert_eq!(replay.checkpoint(deps), checkpoint);
         assert_eq!(restore(&checkpoint).view(), after);
+
+        let mut reached_stack = false;
+        for _ in 0..32 {
+            assert_eq!(game.advance(1), 1);
+            assert_eq!(replay.advance(1), 1);
+            if game
+                .game
+                .log()
+                .lines()
+                .last()
+                .unwrap()
+                .contains(" C 7 move 4 9 45 = moved")
+            {
+                reached_stack = true;
+                break;
+            }
+        }
+        assert!(reached_stack, "did not reach measured field stack");
+        let saved = game.saved_move_state.as_ref().unwrap();
+        assert_eq!(saved.units[4].stack_prev(), 7);
+        assert_eq!(saved.units[7].stack_next(), 4);
+        assert_eq!(game.view().observation.seen, initial.observation.seen);
+        assert_eq!(game.checkpoint(deps), replay.checkpoint(deps));
     }
 }

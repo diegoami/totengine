@@ -108,7 +108,70 @@
         "0040d510",
         "00467c89",
         "00467d19"
-      ]
+      ],
+      "following_field_stack": {
+        "entry": "0054c69b",
+        "arguments": [
+          4,
+          5,
+          3
+        ],
+        "return": 1,
+        "explored_tiles": 59,
+        "viewer_memory_changed": false,
+        "before": [
+          {
+            "slot": 4,
+            "position": [
+              11,
+              45
+            ],
+            "owner": 7,
+            "spent": 0,
+            "previous": -1,
+            "next": -1
+          },
+          {
+            "slot": 7,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 0,
+            "previous": -1,
+            "next": -1
+          }
+        ],
+        "after": [
+          {
+            "slot": 4,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 6,
+            "previous": 7,
+            "next": -1
+          },
+          {
+            "slot": 7,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 0,
+            "previous": -1,
+            "next": 4
+          }
+        ],
+        "substitutes": [
+          "00577011",
+          "00467d19"
+        ]
+      }
     },
     "1": {
       "crt_before": 1,
@@ -211,5 +274,5 @@
       ]
     }
   },
-  "scope": "Execute a controlled native battle after the three unseen opponent moves.\n\nThe native Rules refresh loads the combat tables before the battle. Each\ncontrol supplies an explicit CRT seed and the engine's spatial order.\nWindows timing and presentation are substituted. Native opponent policy,\nlive input, and macro dispatch are outside this witness."
+  "scope": "Execute a controlled native battle after the three unseen opponent moves.\n\nThe native Rules refresh loads the combat tables before the battle. Each\ncontrol supplies an explicit CRT seed and the engine's spatial order.\nThe seed-7 control then continues through a separate field-stack move.\nWindows timing and presentation are substituted. Native opponent policy,\nlive input, and macro dispatch are outside this witness."
 }

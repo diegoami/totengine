@@ -182,7 +182,9 @@ the native seed-7 control wins in place and leaves the human's 59 tiles
 and memory unchanged. The engine replay matches its combat CRT state and
 restores across the same order. The test also confirms that an immediate
 battle event uses the existing engine path with its full RNG and effects.
-Broader combat and pending choices remain open.
+The same recipe now reaches the following unseen field stack, where slot
+4 joins slot 7 and the saved player still sees 59 tiles. Broader combat
+and pending choices remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

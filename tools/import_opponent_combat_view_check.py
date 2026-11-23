@@ -133,6 +133,35 @@ def partial_movement(original, viewer, seed):
             'crt_before': before, 'crt_after': after}
 
 
+def singleton_movement(original, viewer, seed):
+    road = move_opponent(original, viewer, (28, 3, 3), (28, 12),
+                         (13, 41), (13, 43), ((-1, -1), (-1, -1)))
+    assert road['after'][0]['spent'] == 1
+    if seed is not None:
+        original.write(CRT, seed, '<I')
+    before = read(original, CRT, '<I')
+    after = (214013 * before + 2531011) & 0xffffffff
+    roll = ((after >> 16) & 0x7fff) % 9
+    moved = roll < 2
+    position = (15, 43) if moved else (13, 43)
+    step = move_opponent(original, viewer, (28, 1, 3), (28,), (13, 43), position, ((-1, -1),))
+    assert read(original, CRT, '<I') == after and step['explored_tiles'] == 59
+    assert step['after'][0]['spent'] == (10 if moved else 3)
+    return {**step, 'destination': [15, 43], 'moved': moved, 'roll': roll,
+            'crt_before': before, 'crt_after': after}
+
+
+def unconnected_road(original, viewer):
+    before = read(original, CRT, '<I')
+    step = move_opponent(original, viewer, (29, 0, 3), (29,), (8, 44), (9, 43), ((-1, -1),))
+    assert step['before'][0]['spent'] == 0 and step['after'][0]['spent'] == 3
+    held = move_opponent(original, viewer, (29, 3, 3), (29, 24, 4), (9, 43), (9, 43),
+                         ((-1, -1), (-1, 4), (24, -1)), expected_return=0)
+    assert held['before'] == held['after']
+    assert read(original, CRT, '<I') == before
+    return {**step, 'crt_after': before, 'refused_followup': held}
+
+
 def set_route(original, x, y, flags):
     width = read(original, 0x6705A0, '<h') // 2
     address = TILES + 6 * (y * width + x // 2) + 1
@@ -153,7 +182,7 @@ def main():
         assert hashlib.sha256((home / source['path']).read_bytes()).hexdigest() == source['sha256']
     rules = parse_rules(str(home / evidence['rules']['path']))
 
-    def run_case(seed, field_routes=None, city_control=None, departure_control=None, partial_seed=None):
+    def run_case(seed, field_routes=None, city_control=None, departure_control=None, partial_seed=None, singleton_seed=None):
         def entry(original, player, city):
             nonlocal result
             result = execute(original, player, city, rules, seed)
@@ -195,6 +224,10 @@ def main():
                 )
                 if departure_control is None:
                     result['following_partial_move'] = partial_movement(original, player, partial_seed)
+                    if partial_seed is None:
+                        result['following_singleton_move'] = singleton_movement(original, player, singleton_seed)
+                        if singleton_seed is None:
+                            result['following_unconnected_road'] = unconnected_road(original, player)
 
         def prepared(original, player, regions):
             trace(original, player, regions, clear_preference_bit=False, skip_selected=True,
@@ -238,9 +271,14 @@ def main():
     partial_controls = {str(seed): run_case(7, partial_seed=seed)['following_partial_move']
                         for seed in (0, 1, 3, 7)}
     assert [case['roll'] for case in partial_controls.values()] == [2, 5, 0, 1]
+    assert cases['7']['following_singleton_move']['roll'] == 6
+    singleton_controls = {str(seed): run_case(7, singleton_seed=seed)['following_singleton_move']
+                          for seed in (0, 5)}
+    assert [case['roll'] for case in singleton_controls.values()] == [2, 0]
     report = {'schema': 1, **{key: evidence[key] for key in ('binary_sha256', 'source', 'rules')},
               'cases': cases, 'route_controls': controls, 'city_arrival_controls': city_controls,
-              'city_departure_controls': departures, 'partial_movement_controls': partial_controls, 'scope': __doc__.strip()}
+              'city_departure_controls': departures, 'partial_movement_controls': partial_controls,
+              'singleton_movement_controls': singleton_controls, 'scope': __doc__.strip()}
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')
 

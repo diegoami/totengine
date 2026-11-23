@@ -427,6 +427,8 @@ pub(super) fn check_saved_opponent_combat(
         ("city arrival", "following_city_arrival"),
         ("city departure", "following_city_departure"),
         ("partial move", "following_partial_move"),
+        ("singleton move", "following_singleton_move"),
+        ("unconnected road", "following_unconnected_road"),
     ] {
         let step = &native[key];
         let mover = step["after"]
@@ -481,7 +483,8 @@ pub(super) fn check_saved_opponent_combat(
         "profile": engine::human::ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE,
         "explored_tiles": explored, "combat_rng_matches": true, "field_stack_replays": true,
         "city_arrival_replays": true, "city_departure_replays": true,
-        "partial_movement_replays": true, "checkpoint_replays": true,
+        "partial_movement_replays": true, "singleton_movement_replays": true,
+        "unconnected_road_replays": true, "checkpoint_replays": true,
     }))
 }
 

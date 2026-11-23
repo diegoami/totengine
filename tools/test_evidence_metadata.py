@@ -190,6 +190,24 @@ class GoldenMetadata(unittest.TestCase):
              for case in report['partial_movement_controls'].values()],
             [(2, False, 3), (5, False, 3), (0, True, 7), (1, True, 7)],
         )
+        singleton = report['cases']['7']['following_singleton_move']
+        self.assertEqual(singleton['crt_before'], partial['crt_after'])
+        self.assertEqual(singleton['crt_after'], 0x6f277c6c)
+        self.assertEqual(singleton['roll'], 6)
+        self.assertFalse(singleton['moved'])
+        self.assertEqual(singleton['after'][0]['position'], [13, 43])
+        self.assertEqual(singleton['after'][0]['spent'], 3)
+        self.assertEqual(
+            [(case['roll'], case['moved'], case['after'][0]['spent'])
+             for case in report['singleton_movement_controls'].values()],
+            [(2, False, 3), (0, True, 10)],
+        )
+        road = report['cases']['7']['following_unconnected_road']
+        self.assertEqual(road['after'][0]['position'], [9, 43])
+        self.assertEqual(road['after'][0]['spent'], 3)
+        self.assertEqual(road['crt_after'], singleton['crt_after'])
+        self.assertEqual(road['refused_followup']['return'], 0)
+        self.assertEqual(road['refused_followup']['before'], road['refused_followup']['after'])
         departure = report['cases']['7']['following_city_departure']
         self.assertEqual(departure['explored_tiles'], 59)
         self.assertEqual(departure['after'][0]['spent'], 1)

@@ -316,7 +316,18 @@ more exhausts the unit in place. The pinned sequence draws five,
 leaves the stack links intact, and replays the updated combat CRT state.
 Four prepared seeds also exercise the cutoff and the two possible
 positions without changing the saved view. The engine uses its
-checkpointed CRT for this guarded operation.
+checkpointed CRT for this guarded operation. The same rule applies to
+the next Warrior's unstacked move from the road at (13, 43) to the
+mountain at (15, 43). The cost is nine thirds and the pinned sequence
+rolls six with two thirds left, exhausting the Warrior on the road.
+A seed-zero control confirms the cutoff. A seed-five control crosses
+into the mountain and records ten spent thirds. Both preserve the saved
+view and the pinned attempt replays through its RNG advance. The next
+Phalanx enters a road from a tile without one. It spends all three
+movement thirds, with no CRT draw, and the original refuses its next
+attempt. The staged recipe uses the checked unstacked land movement
+when a road is present at exactly one end of the step.
+
 Native opponent policy, macro dispatch and broader combat contexts remain
 outside these controlled actions.
 

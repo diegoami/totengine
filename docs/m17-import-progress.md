@@ -195,8 +195,15 @@ its stack there. The replay matches the one-third cost and keeps 59
 tiles. The Warrior's following attempt to enter a forest rolls against
 the two movement thirds left. The pinned sequence exhausts the Warrior
 in place, preserves the field stack and view, and replays its CRT state.
-Controlled native and engine seeds check both outcomes. Broader combat
-and pending choices remain open.
+Controlled native and engine seeds check both outcomes. The next Warrior
+also exhausts its movement on a road while trying to enter a mountain
+alone. That attempt uses the same checkpointed CRT and retains the 59-tile
+view. The Phalanx follows onto a road from a tile without one and
+exhausts its movement at the normal terrain cost. The engine replay
+now preserves the saved projection through the final opponent order
+in round 43. At round close it begins the existing engine observation
+path. Round-boundary knowledge, broader combat and pending choices
+remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

@@ -172,6 +172,8 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "city_arrival_replays": true,
             "city_departure_replays": true,
             "partial_movement_replays": true,
+            "singleton_movement_replays": true,
+            "unconnected_road_replays": true,
             "checkpoint_replays": true,
         })
     );

@@ -841,5 +841,93 @@ staged-round-test
         assert_eq!(replay.advance(1), 1);
         assert_eq!(replay.checkpoint(deps), after_partial_move);
         assert_eq!(restore(&after_partial_move).view(), game.view());
+        assert_eq!(game.advance(1), 1);
+        assert!(game
+            .game
+            .log()
+            .lines()
+            .last()
+            .unwrap()
+            .contains(" C 7 move 28 13 43 = moved"));
+        let before_mountain = game.checkpoint(deps);
+        let order = Order::Move {
+            unit: 28,
+            to: (15, 43),
+        };
+        for (seed, crt, outcome, position, spent) in [
+            (0, 0x00269ec3, OrderResult::MovementExhausted, (13, 43), 3),
+            (5, 0x36f2b4, OrderResult::Moved, (15, 43), 10),
+        ] {
+            let mut control = restore(&before_mountain);
+            control.game.world.combat_rng = crate::combat::CrtRand::new(seed);
+            assert_eq!(control.try_saved_opponent_move(7, order), Some(outcome));
+            assert_eq!(control.game.world.combat_rng.state(), crt);
+            assert_eq!(control.game.world.combat_rng.draws(), 1);
+            let unit = &control.game.world.units[28];
+            assert_eq!(
+                (unit.x, unit.y, unit.moves_left),
+                (position.0, position.1, 0)
+            );
+            assert_eq!(
+                control.saved_move_state.as_ref().unwrap().units[28].raw[10],
+                spent
+            );
+            assert_eq!(control.view().observation.seen, initial.observation.seen);
+        }
+        assert_eq!(replay.advance(1), 1);
+        assert_eq!(replay.checkpoint(deps), before_mountain);
+        assert_eq!(game.advance(1), 1);
+        assert!(game
+            .game
+            .log()
+            .lines()
+            .last()
+            .unwrap()
+            .contains(" C 7 move 28 15 43 = movement exhausted"));
+        assert_eq!(game.game.world.combat_rng.state(), 0x6f277c6c);
+        let saved = game.saved_move_state.as_ref().unwrap();
+        assert_eq!(
+            (
+                saved.units[28].x(),
+                saved.units[28].y(),
+                saved.units[28].raw[10]
+            ),
+            (13, 43, 3)
+        );
+        assert_eq!(game.view().observation.seen, initial.observation.seen);
+        assert_eq!(replay.advance(1), 1);
+        assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
+        let mountain_crt = game.game.world.combat_rng.state();
+        assert_eq!(game.advance(1), 1);
+        assert!(game
+            .game
+            .log()
+            .lines()
+            .last()
+            .unwrap()
+            .contains(" C 7 move 29 9 43 = moved"));
+        assert_eq!(game.game.world.combat_rng.state(), mountain_crt);
+        let saved = game.saved_move_state.as_ref().unwrap();
+        assert_eq!(
+            (
+                saved.units[29].x(),
+                saved.units[29].y(),
+                saved.units[29].raw[10]
+            ),
+            (9, 43, 3)
+        );
+        assert_eq!(game.game.world.units[29].moves_left, 0);
+        assert_eq!(game.view().observation.seen, initial.observation.seen);
+        assert_eq!(replay.advance(1), 1);
+        assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
+        for expected in [" C 7 move 33 10 42 = moved", " C 7 end = ended"] {
+            assert_eq!(game.advance(1), 1);
+            assert!(game.game.log().lines().last().unwrap().contains(expected));
+            assert!(game.saved_move_state.is_some());
+            assert_eq!(game.view().observation.seen, initial.observation.seen);
+            assert_eq!(replay.advance(1), 1);
+            assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
+        }
+        assert_eq!(game.cursor, 8);
     }
 }

@@ -473,6 +473,180 @@
         "roll": 5,
         "crt_before": 169141986,
         "crt_after": 602010141
+      },
+      "following_singleton_move": {
+        "entry": "0054c69b",
+        "arguments": [
+          28,
+          1,
+          3
+        ],
+        "return": 1,
+        "explored_tiles": 59,
+        "viewer_memory_changed": false,
+        "before": [
+          {
+            "slot": 28,
+            "position": [
+              13,
+              43
+            ],
+            "owner": 7,
+            "spent": 1,
+            "previous": -1,
+            "next": -1
+          }
+        ],
+        "after": [
+          {
+            "slot": 28,
+            "position": [
+              13,
+              43
+            ],
+            "owner": 7,
+            "spent": 3,
+            "previous": -1,
+            "next": -1
+          }
+        ],
+        "substitutes": [
+          "00577011"
+        ],
+        "destination": [
+          15,
+          43
+        ],
+        "moved": false,
+        "roll": 6,
+        "crt_before": 602010141,
+        "crt_after": 1864858732
+      },
+      "following_unconnected_road": {
+        "entry": "0054c69b",
+        "arguments": [
+          29,
+          0,
+          3
+        ],
+        "return": 1,
+        "explored_tiles": 59,
+        "viewer_memory_changed": false,
+        "before": [
+          {
+            "slot": 29,
+            "position": [
+              8,
+              44
+            ],
+            "owner": 7,
+            "spent": 0,
+            "previous": -1,
+            "next": -1
+          }
+        ],
+        "after": [
+          {
+            "slot": 29,
+            "position": [
+              9,
+              43
+            ],
+            "owner": 7,
+            "spent": 3,
+            "previous": -1,
+            "next": -1
+          }
+        ],
+        "substitutes": [
+          "00577011",
+          "00467d19"
+        ],
+        "crt_after": 1864858732,
+        "refused_followup": {
+          "entry": "0054c69b",
+          "arguments": [
+            29,
+            3,
+            3
+          ],
+          "return": 0,
+          "explored_tiles": 59,
+          "viewer_memory_changed": false,
+          "before": [
+            {
+              "slot": 29,
+              "position": [
+                9,
+                43
+              ],
+              "owner": 7,
+              "spent": 3,
+              "previous": -1,
+              "next": -1
+            },
+            {
+              "slot": 24,
+              "position": [
+                9,
+                45
+              ],
+              "owner": 7,
+              "spent": 3,
+              "previous": -1,
+              "next": 4
+            },
+            {
+              "slot": 4,
+              "position": [
+                9,
+                45
+              ],
+              "owner": 7,
+              "spent": 6,
+              "previous": 24,
+              "next": -1
+            }
+          ],
+          "after": [
+            {
+              "slot": 29,
+              "position": [
+                9,
+                43
+              ],
+              "owner": 7,
+              "spent": 3,
+              "previous": -1,
+              "next": -1
+            },
+            {
+              "slot": 24,
+              "position": [
+                9,
+                45
+              ],
+              "owner": 7,
+              "spent": 3,
+              "previous": -1,
+              "next": 4
+            },
+            {
+              "slot": 4,
+              "position": [
+                9,
+                45
+              ],
+              "owner": 7,
+              "spent": 6,
+              "previous": 24,
+              "next": -1
+            }
+          ],
+          "substitutes": [
+            "00577011"
+          ]
+        }
       }
     },
     "1": {
@@ -970,6 +1144,105 @@
       "roll": 1,
       "crt_before": 7,
       "crt_after": 4029102
+    }
+  },
+  "singleton_movement_controls": {
+    "0": {
+      "entry": "0054c69b",
+      "arguments": [
+        28,
+        1,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 28,
+          "position": [
+            13,
+            43
+          ],
+          "owner": 7,
+          "spent": 1,
+          "previous": -1,
+          "next": -1
+        }
+      ],
+      "after": [
+        {
+          "slot": 28,
+          "position": [
+            13,
+            43
+          ],
+          "owner": 7,
+          "spent": 3,
+          "previous": -1,
+          "next": -1
+        }
+      ],
+      "substitutes": [
+        "00577011"
+      ],
+      "destination": [
+        15,
+        43
+      ],
+      "moved": false,
+      "roll": 2,
+      "crt_before": 0,
+      "crt_after": 2531011
+    },
+    "5": {
+      "entry": "0054c69b",
+      "arguments": [
+        28,
+        1,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 28,
+          "position": [
+            13,
+            43
+          ],
+          "owner": 7,
+          "spent": 1,
+          "previous": -1,
+          "next": -1
+        }
+      ],
+      "after": [
+        {
+          "slot": 28,
+          "position": [
+            15,
+            43
+          ],
+          "owner": 7,
+          "spent": 10,
+          "previous": -1,
+          "next": -1
+        }
+      ],
+      "substitutes": [
+        "00577011",
+        "00467d19"
+      ],
+      "destination": [
+        15,
+        43
+      ],
+      "moved": true,
+      "roll": 0,
+      "crt_before": 5,
+      "crt_after": 3601076
     }
   },
   "scope": "Execute a controlled native battle after the three unseen opponent moves.\n\nThe native Rules refresh loads the combat tables before the battle. Each\ncontrol supplies an explicit CRT seed and the engine's spatial order.\nThe seed-7 control then crosses between a field stack and a friendly city.\nWindows timing and presentation are substituted. Native opponent policy,\nlive input, and macro dispatch are outside this witness."

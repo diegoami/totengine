@@ -170,6 +170,15 @@ pub(crate) fn stage(
         .map
         .stored_index(to.0, to.1)
         .ok_or("saved stack destination missing")?;
+    let unstacked_road_boundary = field_stack
+        && source.len() == 1
+        && members.is_empty()
+        && origin_city.is_none()
+        && city.is_none()
+        && world.map.road[from] != world.map.road[dest]
+        && !world.map.rail[from]
+        && !world.map.rail[dest];
+    let partial_movement = field_departure || unstacked_road_boundary;
     if world.map.hut_at(to.0, to.1) {
         return Err("saved stack move cannot enter a hut".into());
     }
@@ -187,23 +196,23 @@ pub(crate) fn stage(
             rail: world.map.rail[field],
         })
     } else {
-        (field_to_field || field_departure).then(|| MovementRoute {
+        (field_to_field || partial_movement).then(|| MovementRoute {
             road: world.map.road[from] && world.map.road[dest],
             rail: world.map.rail[from] && world.map.rail[dest],
         })
     };
-    let spent = field_departure.then(|| {
+    let spent = partial_movement.then(|| {
         world
             .movement_allowance(rules, usize::from(unit.type_id), civ, unit.damage)
             .saturating_sub(unit.moves_left)
     });
-    let result = world.move_unit_with_routes(rules, slot, to.0, to.1, route, field_departure);
+    let result = world.move_unit_with_routes(rules, slot, to.0, to.1, route, partial_movement);
     if result.battle.is_some() || result.hut || result.zoc_ended {
         return Err("saved stack move did not resolve as ordinary movement".into());
     }
     let mut updated = if result.moved {
         clear_unit_stack_visibility(saved, slot)?
-    } else if field_departure && result.cost_thirds > 0 {
+    } else if partial_movement && result.cost_thirds > 0 {
         saved.clone()
     } else {
         return Err("saved stack move was refused".into());

@@ -95,7 +95,7 @@ def move_into_unseen_city(original, viewer):
                          ((19, -1), (34, 2), (-1, 19)))
 
 
-def move_opponent(original, viewer, arguments, slots, origin, destination, links):
+def move_opponent(original, viewer, arguments, slots, origin, destination, links, *, expected_return=1):
     """Supply an engine spatial order to native movement."""
     cpu = original.cpu
     area = read(original, 0x6705A4, '<h')
@@ -141,8 +141,9 @@ def move_opponent(original, viewer, arguments, slots, origin, destination, links
         cpu.hook_del(hook)
     after = [unit(slot) for slot in slots]
     assert saved == knowledge()
-    assert result == 1 and before[0]['position'] == list(origin) and after[0]['position'] == list(destination)
-    assert tuple((record['previous'], record['next']) for record in after) == links
+    assert result == expected_return, (arguments, result, after)
+    assert before[0]['position'] == list(origin) and after[0]['position'] == list(destination)
+    assert tuple((record['previous'], record['next']) for record in after) == links, after
     return {
         'entry': '0054c69b', 'arguments': list(arguments), 'return': result,
         'explored_tiles': sum(saved[0]), 'viewer_memory_changed': False,

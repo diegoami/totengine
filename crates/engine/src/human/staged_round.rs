@@ -748,6 +748,7 @@ staged-round-test
         }
         assert!(reached_stack, "did not reach measured field stack");
         let saved = game.saved_move_state.as_ref().unwrap();
+        assert_eq!(game.game.world.units[4].moves_left, 0);
         assert_eq!(saved.units[4].stack_prev(), 7);
         assert_eq!(saved.units[7].stack_next(), 4);
         assert_eq!(game.view().observation.seen, initial.observation.seen);

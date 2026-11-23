@@ -172,6 +172,18 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(stack['after'][0]['position'], [9, 45])
         self.assertEqual([unit['next'] for unit in stack['after']], [-1, 4])
         self.assertFalse(stack['viewer_memory_changed'])
+        self.assertEqual(stack['after'][0]['spent'], 6)
+        self.assertEqual(report['cases']['7']['refused_departure']['return'], 0)
+        arrival = report['cases']['7']['following_city_arrival']
+        self.assertEqual(arrival['explored_tiles'], 59)
+        self.assertEqual(arrival['after'][0]['spent'], 1)
+        self.assertEqual([unit['next'] for unit in arrival['after']], [24, -1, -1])
+        self.assertEqual(
+            [(case['origin_flags'], case['destination_flags'], case['spent'])
+             for case in report['route_controls']],
+            [(0, 0, 6), (0, 16, 6), (0, 48, 6), (16, 0, 6), (16, 16, 1),
+             (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
+        )
 
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())

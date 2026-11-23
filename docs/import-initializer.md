@@ -289,10 +289,19 @@ replay match the seed-7 outcome and final combat CRT state and restore
 the checkpoint on either side. The seed-1 engine control also matches the
 native survivor damage and final CRT state. The following field-stack
 move goes from (11, 45) to (9, 45) and appends slot 4 after slot 7.
-It also keeps 59 tiles and replays from its checkpoint. These are
-controlled native actions. Native
-opponent policy, macro dispatch and broader combat contexts remain
-separate from this check.
+It also keeps 59 tiles and replays from its checkpoint. Nine controls
+vary the routes on the two tiles. Native movement uses the terrain cost
+when either tile lacks a route, charges one third when both have roads,
+and charges zero when both have rail. The actual forest destination only
+has a road on the arrival tile. The native move spends six thirds against
+an allowance of three and refuses the next step. The staged field-stack
+recipe uses the tested route rule and exhausts the Settler's movement.
+The next checked native move leaves that field stack for a friendly city.
+Slot 7 spends one third and links ahead of slot 24, with the human view
+still at 59 tiles. The engine recipe stops before this city arrival while
+its placement and route rules are investigated. Native opponent policy,
+macro dispatch and broader combat contexts remain outside these
+controlled actions.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_combat_view_check.py --out /tmp/opponent-combat-view.json

@@ -23,11 +23,11 @@
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
     "crates/engine/src/human/saved_view.rs": "2cef6804114549ec09a84835b5d01ba306bcbec32439bcae5c774fa3a147b647",
-    "crates/engine/src/human/staged_round.rs": "60ace13ed5311c177e2e823dacf177fad0f6fb8837e9e81dfbf81060a3319715",
+    "crates/engine/src/human/staged_round.rs": "c9a72f140f396bdf67fa5128d1f50e3a234cbc74f5ea12c051c41fc5d3e7b266",
     "crates/totui/src/resources/original.rs": "e1247947481f740cd0197ae7c8069a686e275697e1aa50e4f714b731c461d96c",
     "crates/engine/src/scenario/phase.rs": "f919b6adeab6b2beed51bca5bf57de45387d65351bb779938595d68ce5bde9c9",
     "crates/engine/src/scenario/snapshot.rs": "f58f1af03368cfd0e377213290f5d53f81058fb9ec1d81931a784cec9e0c15a9",
-    "crates/engine/src/scenario/opponent_stack.rs": "6bc3f72b0d5f0965c01f9e2c96d30521de8180ead25ba89aa6c5724675d620c4",
+    "crates/engine/src/scenario/opponent_stack.rs": "0997360bb3539991d40e59b43ce1206a183d547e9d7d453617d25aa799f54151",
     "crates/engine/src/scenario/opponent_combat.rs": "8cc5b28ee42c29f9d199482cc4d0ff71672c4b7e81ca7b228ad76384f7517c73",
     "crates/engine/src/scenario.rs": "d2ef542b6de6cfe05b682e67fc70a53479cb080deac60820a0718174a9e5cd7b",
     "crates/totui/src/client/storage.rs": "5a9286c964d84fa6c22776f8eff59ea8bd9845a927a7f258ae99445a7035791f",
@@ -40,7 +40,8 @@
     "crates/totui/src/client/chrome.rs": "7a86a4f9ac9f7b36ac9654aec825ad97896bb4bdccb4edb48f6164b24381a80b",
     "crates/totui/src/client/desktop.rs": "4963d40a643ba890f51519180a2b10dd25152be81fd449fffef82039772b30d3",
     "crates/totui/src/client/play.js": "bcd50c52ceacdc0363e3a7cd1d2e2fa2be40ec83e0c4a051c73ebb5b6f49d6f2",
-    "crates/totui/src/client/pedia.rs": "daaeb8d7b9c34661a2f0cafa9fd0a030fae6bbfb22b897119fc16902c1feeb43"
+    "crates/totui/src/client/pedia.rs": "daaeb8d7b9c34661a2f0cafa9fd0a030fae6bbfb22b897119fc16902c1feeb43",
+    "crates/engine/src/movement.rs": "fa0d1bc72aaf067319ae2b4eba6677ae91d7b3be8085482be75f8823823129a5"
   },
   "triggers": {
     "TURN": {

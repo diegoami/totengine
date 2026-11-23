@@ -3,7 +3,7 @@
 
 The native Rules refresh loads the combat tables before the battle. Each
 control supplies an explicit CRT seed and the engine's spatial order.
-The seed-7 control then continues through a separate field-stack move.
+The seed-7 control then continues through a field stack and a city arrival.
 Windows timing and presentation are substituted. Native opponent policy,
 live input, and macro dispatch are outside this witness.
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 from unicorn import UC_HOOK_CODE
 from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EIP, UC_X86_REG_ESP
 
-from import_city_view_check import measure, move_into_unseen_city, move_opponent
+from import_city_view_check import TILES, measure, move_into_unseen_city, move_opponent
 from import_input_handoff_check import IDLE_FILTER_CALL, witness
 from import_loader_exit_check import rules_refresh
 from import_phase_check import FRAME, frame, read
@@ -130,27 +130,53 @@ def main():
         source = evidence[role]
         assert hashlib.sha256((home / source['path']).read_bytes()).hexdigest() == source['sha256']
     rules = parse_rules(str(home / evidence['rules']['path']))
-    cases = {}
-    for seed in (7, 1):
+    def run_case(seed, routes=None):
         def entry(original, player, city):
-            cases[str(seed)] = execute(original, player, city, rules, seed)
-            if seed == 7:
-                cases[str(seed)]['following_field_stack'] = move_opponent(
-                    original, player, (4, 5, 3), (4, 7), (11, 45), (9, 45),
-                    ((7, -1), (-1, 4)),
-                )
+            nonlocal result
+            result = execute(original, player, city, rules, seed)
+            if seed != 7:
+                return
+            if routes is not None:
+                width = read(original, 0x6705A0, '<h') // 2
+                for x, flags in zip((11, 9), routes):
+                    address = TILES + 6 * (45 * width + x // 2) + 1
+                    original.write(address, (read(original, address, '<B') & ~0x30) | flags, '<B')
+            stack = move_opponent(original, player, (4, 5, 3), (4, 7), (11, 45), (9, 45),
+                                  ((7, -1), (-1, 4)))
+            result['following_field_stack'] = stack
+            if routes is None:
+                refused = move_opponent(original, player, (4, 3, 3), (4, 7), (9, 45), (9, 45),
+                                        ((7, -1), (-1, 4)), expected_return=0)
+                assert refused['after'] == stack['after'] and refused['after'][0]['spent'] == 6
+                result['refused_departure'] = refused
+                arrival = move_opponent(original, player, (7, 4, 3), (7, 4, 24),
+                                        (9, 45), (8, 46), ((-1, 24), (-1, -1), (7, -1)))
+                assert arrival['after'][0]['spent'] == 1
+                result['following_city_arrival'] = arrival
 
         def prepared(original, player, regions):
             trace(original, player, regions, clear_preference_bit=False, skip_selected=True,
                   at_city_entry=entry)
 
+        result = None
         witness(home, binary, evidence['source']['path'], exhaust=False,
                 observation=True, after_idle=prepared)
+        assert result is not None
+        return result
 
+    cases = {str(seed): run_case(seed) for seed in (7, 1)}
     assert [cases[str(seed)]['after'][0]['damage'] for seed in (7, 1)] == [0, 5]
     assert all(case['viewer_explored_tiles'] == 59 for case in cases.values())
+    controls = []
+    for origin in (0, 0x10, 0x30):
+        for destination in (0, 0x10, 0x30):
+            stack = run_case(7, (origin, destination))['following_field_stack']
+            assert stack['before'][0]['spent'] == 0 and stack['explored_tiles'] == 59
+            controls.append({'origin_flags': origin, 'destination_flags': destination,
+                             'spent': stack['after'][0]['spent']})
+    assert [case['spent'] for case in controls] == [6, 6, 6, 6, 1, 1, 6, 1, 0]
     report = {'schema': 1, **{key: evidence[key] for key in ('binary_sha256', 'source', 'rules')},
-              'cases': cases, 'scope': __doc__.strip()}
+              'cases': cases, 'route_controls': controls, 'scope': __doc__.strip()}
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')
 

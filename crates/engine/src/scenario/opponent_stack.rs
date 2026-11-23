@@ -160,7 +160,9 @@ pub(crate) fn stage(
         return Err("saved stack move cannot enter a hut".into());
     }
     let mut updated = clear_unit_stack_visibility(saved, slot)?;
-    let result = world.move_unit(rules, slot, to.0, to.1);
+    let connected_routes =
+        field_stack && !members.is_empty() && city.is_none() && city_at(origin).is_none();
+    let result = world.move_unit_with_routes(rules, slot, to.0, to.1, connected_routes);
     if !result.moved || result.battle.is_some() || result.hut || result.zoc_ended {
         return Err("saved stack move did not resolve as ordinary movement".into());
     }

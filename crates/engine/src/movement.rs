@@ -127,6 +127,18 @@ impl WorldState {
     /// unit stays put when the move is illegal (domain, impassable
     /// destination, or no movement left).
     pub fn move_unit(&mut self, rules: &Rules, unit_idx: usize, x: u16, y: u16) -> MoveOutcome {
+        self.move_unit_with_routes(rules, unit_idx, x, y, false)
+    }
+
+    /// The checked saved field-stack context requires a route on both tiles.
+    pub(crate) fn move_unit_with_routes(
+        &mut self,
+        rules: &Rules,
+        unit_idx: usize,
+        x: u16,
+        y: u16,
+        connected_routes: bool,
+    ) -> MoveOutcome {
         let none = MoveOutcome {
             moved: false,
             cost_thirds: 0,
@@ -175,9 +187,14 @@ impl WorldState {
             .unwrap_or(1)
             .max(1);
         let mut cost = base_cost * 3; // thirds
-        if self.map.rail[dest_idx] {
+        let origin_idx = self.map.stored_index(unit.x, unit.y);
+        let rail = self.map.rail[dest_idx]
+            && (!connected_routes || origin_idx.is_some_and(|idx| self.map.rail[idx]));
+        let road = self.map.road[dest_idx]
+            && (!connected_routes || origin_idx.is_some_and(|idx| self.map.road[idx]));
+        if rail {
             cost = 0;
-        } else if self.map.road[dest_idx] {
+        } else if road {
             // road multiplier: M road tiles per movement point
             let mult = rules.road_multiplier().unwrap_or(3).max(1);
             cost = (3 / mult).max(1);

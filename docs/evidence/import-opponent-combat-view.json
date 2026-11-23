@@ -171,6 +171,153 @@
           "00577011",
           "00467d19"
         ]
+      },
+      "refused_departure": {
+        "entry": "0054c69b",
+        "arguments": [
+          4,
+          3,
+          3
+        ],
+        "return": 0,
+        "explored_tiles": 59,
+        "viewer_memory_changed": false,
+        "before": [
+          {
+            "slot": 4,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 6,
+            "previous": 7,
+            "next": -1
+          },
+          {
+            "slot": 7,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 0,
+            "previous": -1,
+            "next": 4
+          }
+        ],
+        "after": [
+          {
+            "slot": 4,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 6,
+            "previous": 7,
+            "next": -1
+          },
+          {
+            "slot": 7,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 0,
+            "previous": -1,
+            "next": 4
+          }
+        ],
+        "substitutes": [
+          "00577011"
+        ]
+      },
+      "following_city_arrival": {
+        "entry": "0054c69b",
+        "arguments": [
+          7,
+          4,
+          3
+        ],
+        "return": 1,
+        "explored_tiles": 59,
+        "viewer_memory_changed": false,
+        "before": [
+          {
+            "slot": 7,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 0,
+            "previous": -1,
+            "next": 4
+          },
+          {
+            "slot": 4,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 6,
+            "previous": 7,
+            "next": -1
+          },
+          {
+            "slot": 24,
+            "position": [
+              8,
+              46
+            ],
+            "owner": 7,
+            "spent": 0,
+            "previous": -1,
+            "next": -1
+          }
+        ],
+        "after": [
+          {
+            "slot": 7,
+            "position": [
+              8,
+              46
+            ],
+            "owner": 7,
+            "spent": 1,
+            "previous": -1,
+            "next": 24
+          },
+          {
+            "slot": 4,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 6,
+            "previous": -1,
+            "next": -1
+          },
+          {
+            "slot": 24,
+            "position": [
+              8,
+              46
+            ],
+            "owner": 7,
+            "spent": 0,
+            "previous": 7,
+            "next": -1
+          }
+        ],
+        "substitutes": [
+          "00577011",
+          "00467d19"
+        ]
       }
     },
     "1": {
@@ -274,5 +421,52 @@
       ]
     }
   },
-  "scope": "Execute a controlled native battle after the three unseen opponent moves.\n\nThe native Rules refresh loads the combat tables before the battle. Each\ncontrol supplies an explicit CRT seed and the engine's spatial order.\nThe seed-7 control then continues through a separate field-stack move.\nWindows timing and presentation are substituted. Native opponent policy,\nlive input, and macro dispatch are outside this witness."
+  "route_controls": [
+    {
+      "origin_flags": 0,
+      "destination_flags": 0,
+      "spent": 6
+    },
+    {
+      "origin_flags": 0,
+      "destination_flags": 16,
+      "spent": 6
+    },
+    {
+      "origin_flags": 0,
+      "destination_flags": 48,
+      "spent": 6
+    },
+    {
+      "origin_flags": 16,
+      "destination_flags": 0,
+      "spent": 6
+    },
+    {
+      "origin_flags": 16,
+      "destination_flags": 16,
+      "spent": 1
+    },
+    {
+      "origin_flags": 16,
+      "destination_flags": 48,
+      "spent": 1
+    },
+    {
+      "origin_flags": 48,
+      "destination_flags": 0,
+      "spent": 6
+    },
+    {
+      "origin_flags": 48,
+      "destination_flags": 16,
+      "spent": 1
+    },
+    {
+      "origin_flags": 48,
+      "destination_flags": 48,
+      "spent": 0
+    }
+  ],
+  "scope": "Execute a controlled native battle after the three unseen opponent moves.\n\nThe native Rules refresh loads the combat tables before the battle. Each\ncontrol supplies an explicit CRT seed and the engine's spatial order.\nThe seed-7 control then continues through a field stack and a city arrival.\nWindows timing and presentation are substituted. Native opponent policy,\nlive input, and macro dispatch are outside this witness."
 }

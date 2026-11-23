@@ -183,8 +183,14 @@ and memory unchanged. The engine replay matches its combat CRT state and
 restores across the same order. The test also confirms that an immediate
 battle event uses the existing engine path with its full RNG and effects.
 The same recipe now reaches the following unseen field stack, where slot
-4 joins slot 7 and the saved player still sees 59 tiles. Broader combat
-and pending choices remain open.
+4 joins slot 7 and the saved player still sees 59 tiles. Nine native
+controls establish how the routes on both tiles affect the cost.
+The engine now exhausts the Settler's movement on the actual field-stack
+step, matching the native refusal of its next move. The next native move
+enters the friendly city at (8, 46) from the field stack. It spends one
+third, links slot 7 ahead of slot 24, and retains the 59-tile human view.
+That city arrival is the next saved-view continuation boundary. Broader
+combat and pending choices remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

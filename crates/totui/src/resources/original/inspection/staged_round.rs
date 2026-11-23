@@ -242,17 +242,34 @@ pub(super) fn check_saved_city_view(
 }
 
 fn issue_saved_handoff(session: &mut HumanSession, human: u8, trace: &Value) -> Result<(), String> {
-    let skips = trace["round_handoff"]["spend_saved_movement"]["dispatched"]
-        .as_array()
-        .filter(|messages| messages.len() == 4)
-        .ok_or("native city-view evidence is missing its skips")?;
-    for input in skips {
-        if input["character"] != 32 {
-            return Err("native city-view evidence contains a different order".into());
-        }
-        let raw_slot = input["active_slot"]
-            .as_u64()
-            .ok_or("native Skip slot missing")?;
+    let slots = if session
+        .initializer()
+        .is_some_and(|initializer| initializer.schema() == 7)
+    {
+        trace["saved_viewport"]["cases"]["saved_anchor"]["skip_order"]
+            .as_array()
+            .filter(|slots| slots.len() == 4)
+            .ok_or("native saved-viewport evidence is missing its skips")?
+            .iter()
+            .map(|slot| slot.as_u64().ok_or("native Skip slot missing"))
+            .collect::<Result<Vec<_>, _>>()?
+    } else {
+        trace["round_handoff"]["spend_saved_movement"]["dispatched"]
+            .as_array()
+            .filter(|messages| messages.len() == 4)
+            .ok_or("native city-view evidence is missing its skips")?
+            .iter()
+            .map(|input| {
+                if input["character"] != 32 {
+                    return Err("native city-view evidence contains a different order");
+                }
+                input["active_slot"]
+                    .as_u64()
+                    .ok_or("native Skip slot missing")
+            })
+            .collect::<Result<Vec<_>, _>>()?
+    };
+    for raw_slot in slots {
         let view = session.view();
         let unit = *view
             .units

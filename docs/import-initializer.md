@@ -392,6 +392,9 @@ seed 7, and preserves a private copy of the SAV beside the checkpoint.
 The original install supplies its reference resources at restore. A
 pristine checkpoint selects slot 9 at the saved viewport. During play the
 shared client uses the last inspected tile when the checked saved-view
-session reaches the next human turn. A later checkpoint load uses the
-ordinary client selection policy. This load path is experimental. Faithful
+session reaches the next human turn. For a checked Skip it selects the
+nearest ready unit from the exhausted unit's tile. The native saved-anchor
+sequence is 9, 6, 26, 18 and enters the first opponent city phase with
+anchor (51, 9). Engine inspection replays that sequence. A later
+checkpoint load uses the ordinary client selection policy. This load path is experimental. Faithful
 SAV entry remains open under #198.

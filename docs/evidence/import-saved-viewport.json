@@ -94,7 +94,18 @@
             1
           ]
         ]
-      }
+      },
+      "skip_order": [
+        6,
+        9,
+        26,
+        18
+      ],
+      "after_skip_anchor": [
+        51,
+        9
+      ],
+      "opponent_city_slot": 6
     },
     "saved_anchor": {
       "anchor": [
@@ -170,8 +181,19 @@
             1
           ]
         ]
-      }
+      },
+      "skip_order": [
+        9,
+        6,
+        26,
+        18
+      ],
+      "after_skip_anchor": [
+        51,
+        9
+      ],
+      "opponent_city_slot": 6
     }
   },
-  "scope": "Trace the saved viewport into the prepared native resume input poll.\n\nThe plain single-player post-city prefix reads into the two native\nselector coordinates. Repeat the existing prepared resume with those\ncoordinates and with the zero-anchor control. The probe supplies a\ndisplay context and empty message queue."
+  "scope": "Trace the saved viewport into the prepared native resume input poll.\n\nThe plain single-player post-city prefix reads into the two native\nselector coordinates. Repeat the existing prepared resume with those\ncoordinates and with the zero-anchor control. Then send Space to each\nselected unit until the first opponent city phase. The probe supplies\na display context and controlled message queues."
 }

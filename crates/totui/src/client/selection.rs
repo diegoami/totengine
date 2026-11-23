@@ -13,14 +13,22 @@ impl Client {
             .map(|u| (u.x, u.y))
     }
 
-    pub(super) fn schedule_turn_from_inspection(&mut self) {
-        let focus = self
-            .inspect
-            .and_then(|anchor| self.loaded.as_ref()?.session.saved_initial_focus(anchor));
-        if let Some(focus) = focus {
-            self.active = Some(focus);
+    fn select_saved_focus(&mut self, anchor: Option<(u16, u16)>) -> bool {
+        let selected = anchor.and_then(|at| self.loaded.as_ref()?.session.saved_initial_focus(at));
+        if let Some(unit) = selected {
+            self.active = Some(unit);
         }
-        self.schedule_unit(None, focus.is_none());
+        selected.is_some()
+    }
+
+    pub(super) fn schedule_turn_from_inspection(&mut self) {
+        let focused = self.select_saved_focus(self.inspect);
+        self.schedule_unit(None, !focused);
+    }
+
+    pub(super) fn schedule_after_skip(&mut self, unit: Entity, anchor: Option<(u16, u16)>) {
+        self.select_saved_focus(anchor);
+        self.schedule_unit(Some(unit), false);
     }
 
     /// Keep a ready actor, otherwise advance after its slot. Explicit end-turn

@@ -5249,11 +5249,9 @@ fn installed_checked_checkpoint_uses_saved_viewport_and_next_turn_anchor() {
     assert!(c.moving);
 
     for slot in [9, 6, 26, 18] {
-        let view = c.view().unwrap();
-        let actor = *view.units.iter().find(|actor| actor.slot == slot).unwrap();
-        c.active = Some(actor);
-        c.inspect = c.active_position();
-        c.order(Command::Skip { unit: actor }).unwrap();
+        assert_eq!(c.active.map(|actor| actor.slot), Some(slot));
+        key(&mut c, " ");
+        assert_eq!(c.status, "skipped");
     }
     assert_eq!(c.inspect, Some((51, 9)));
     c.order(Command::EndTurn).unwrap();

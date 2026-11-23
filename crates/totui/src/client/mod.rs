@@ -930,8 +930,17 @@ impl Client {
         }
         self.refresh();
         match command {
-            Command::Move { unit, .. } | Command::Occupy { unit, .. } | Command::Skip { unit } => {
+            Command::Move { unit, .. } | Command::Occupy { unit, .. } => {
                 self.schedule_unit(Some(unit), false);
+            }
+            Command::Skip { unit } => {
+                let anchor = v
+                    .observation
+                    .units
+                    .iter()
+                    .find(|actor| actor.index == unit.slot)
+                    .map(|actor| (actor.x, actor.y));
+                self.schedule_after_skip(unit, anchor);
             }
             Command::Research { .. } | Command::NameCity { .. } | Command::CancelFound { .. } => {
                 self.schedule_unit(None, true);

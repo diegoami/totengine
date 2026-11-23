@@ -225,9 +225,10 @@ and an adjacent private input snapshot only after the captured save passes
 the checked replay. The shared desktop and browser Load path restores the
 sealed reference resources and starts a pristine checkpoint at the saved
 viewport. At the next human turn it uses the last inspected tile as the
-anchor for the guarded selector. The existing cycling policy still applies
-to individual orders. Faithful client admission, wider combat and pending
-choices remain open.
+anchor for the guarded selector. The checked Skip path follows the native
+sequence 9, 6, 26, 18 from the saved viewport and returns to slot 18 on
+turn 44. Wider unit cycling contexts, faithful client admission, wider
+combat and pending choices remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

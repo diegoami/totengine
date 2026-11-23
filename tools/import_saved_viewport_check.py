@@ -3,8 +3,9 @@
 
 The plain single-player post-city prefix reads into the two native
 selector coordinates. Repeat the existing prepared resume with those
-coordinates and with the zero-anchor control. The probe supplies a
-display context and empty message queue.
+coordinates and with the zero-anchor control. Then send Space to each
+selected unit until the first opponent city phase. The probe supplies
+a display context and controlled message queues.
 """
 import argparse
 import hashlib
@@ -16,6 +17,7 @@ import struct
 from import_event_tail_check import trace_prefix
 from import_input_handoff_check import measure_handoff
 from import_phase_check import read
+from import_round_handoff_check import trace
 from import_unit_setup_check import prepare
 from totctl import walk_save
 
@@ -70,7 +72,15 @@ def main():
         assert handoff['explored_tiles_after'] == 59
         assert handoff['human_memory_bytes_changed'] == 0
         assert handoff['research_target'] == -1 and handoff['research_progress'] == 0
-        cases[label] = {'anchor': coordinates, 'handoff': handoff}
+        spent = trace(original, player, regions, clear_preference_bit=False, skip_selected=True)
+        skip_order = [step['active_slot'] for step in spent['dispatched']]
+        assert skip_order == ([9, 6, 26, 18] if label == 'saved_anchor' else [6, 9, 26, 18])
+        assert [step['character'] for step in spent['dispatched']] == [32] * 4
+        assert spent['boundary'] == 'city-phase-entry' and spent['city_slot'] == 6
+        final_anchor = [read(original, address, '<h') for address in VIEWPORT_READS.values()]
+        assert final_anchor == [51, 9]
+        cases[label] = {'anchor': coordinates, 'handoff': handoff, 'skip_order': skip_order,
+                        'after_skip_anchor': final_anchor, 'opponent_city_slot': spent['city_slot']}
 
     report = {'schema': 1, **{key: prior[key] for key in ('binary_sha256', 'source', 'rules')},
               'fields': fields, 'cases': cases, 'scope': __doc__.strip()}

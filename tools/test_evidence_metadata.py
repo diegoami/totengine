@@ -277,6 +277,9 @@ class GoldenMetadata(unittest.TestCase):
             self.assertEqual(handoff['explored_tiles_after'], 59)
             self.assertEqual(handoff['human_memory_bytes_changed'], 0)
             self.assertEqual(handoff['observation_to_input']['first_poll']['active_slot'], slot)
+            self.assertEqual(case['skip_order'], [9, 6, 26, 18] if label == 'saved_anchor' else [6, 9, 26, 18])
+            self.assertEqual(case['after_skip_anchor'], [51, 9])
+            self.assertEqual(case['opponent_city_slot'], 6)
 
     def test_fresh_human_focus_raster_covers_every_tile(self):
         report = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())

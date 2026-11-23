@@ -41,6 +41,12 @@ pub(super) struct VictoryState {
     spent: [bool; 2],
 }
 
+impl VictoryState {
+    pub(super) fn is_pristine(&self) -> bool {
+        self.active == [false; 2] && self.spent == [false; 2]
+    }
+}
+
 /// Check extents and retain borrowed records for the definition comparison.
 pub(super) fn inspect(tail: &[u8]) -> Result<EventTail<'_>, String> {
     let section = tail

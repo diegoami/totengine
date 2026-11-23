@@ -5,6 +5,7 @@ Use the pinned event trailer, supply stock Rules rows and process preferences,
 and carry the same prepared memory into resumed input. Two controls vary only
 the player's research progress or government. The probe substitutes display and
 host queue operations and stops at the first input poll and an idle iteration.
+Two event controls retain a single active or spent mark through that boundary.
 """
 import argparse
 import json
@@ -41,7 +42,12 @@ def main():
     options = int.from_bytes(data[654:658], 'little')
     anchor = viewport['cases']['saved_anchor']['anchor']
 
-    def case(*, progress=None, government=None):
+    def case(*, progress=None, government=None, marked_word=None):
+        trailer = bytearray(tail)
+        if marked_word is not None:
+            offset = 8 + marked_word
+            word = int.from_bytes(trailer[offset:offset + 4], 'little')
+            trailer[offset:offset + 4] = (word | 0x20000000).to_bytes(4, 'little')
         original, player, _, regions, _ = prepare(home, binary, path, exhaust=False)
         seat = CIV + STRIDE * player
         if progress is not None:
@@ -69,11 +75,18 @@ def main():
             assert poll['research_target'] == -1 and poll['research_progress'] == (progress or 0)
             assert poll['active_slot'] == 9 and result['explored_tiles_after'] == 59
             assert result['human_memory_bytes_changed'] == 0
-            return {'loader_phase': loader['phase'], 'caller': caller,
+            assert len(records) == 2
+            marks = {
+                'active': [bool(read(original, record + 8, '<I') & mask)
+                           for record, mask in zip(records, (0x20000000, 0x80000000), strict=True)],
+                'spent': [bool(read(original, record + 4, '<I') & 0x20000000) for record in records],
+            }
+            assert marks == {'active': [marked_word == 8, False], 'spent': [marked_word == 4, False]}
+            return {'loader_phase': loader['phase'], 'caller': caller, 'event_marks_at_poll': marks,
                     'government_at_poll': read(original, seat + 29, '<B'),
                     'input': poll, 'idle': result['observation_to_input']['idle_iteration']}
 
-        loaded = trace(binary, tail, original=original, record_base=0x7F0000, after_load=finish)
+        loaded = trace(binary, bytes(trailer), original=original, record_base=0x7F0000, after_load=finish)
         assert loaded['remaining'] == 0 and loaded['round_flag_at_stop'] == 1
         guards = loaded['round_start_gate']
         assert guards == [
@@ -86,7 +99,8 @@ def main():
     report = {
         'schema': 1, **{key: viewport[key] for key in ('source', 'rules', 'binary_sha256')},
         'anchor': anchor, 'cases': {'pinned': case(), 'stored_progress': case(progress=1),
-                                    'anarchy': case(government=0)}, 'scope': __doc__.strip(),
+                                    'anarchy': case(government=0), 'active_event': case(marked_word=8),
+                                    'spent_event': case(marked_word=4)}, 'scope': __doc__.strip(),
     }
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')

@@ -24,6 +24,12 @@ impl OriginalCapture {
             human::{HumanSession, ScenarioInput},
         };
         let report = self.inspect_save()?;
+        if report["saved_event_initialization"]["has_stored_marks"] == true {
+            return Err(
+                "The save has active or spent victory marks that the checked replay cannot restore"
+                    .into(),
+            );
+        }
         if report["saved_pending_choice_check"]["verified"] != true {
             return Err(
                 "The captured save has no verified pending-choice boundary for this replay".into(),
@@ -32,7 +38,7 @@ impl OriginalCapture {
         if report["saved_viewport_check"]["verified"] != true
             || report["saved_opponent_combat_check"]["verified"] != true
             || report["saved_wait_check"]["verified"] != true
-            || report["victory_event"]["matches"] != true
+            || report["saved_event_initialization"]["verified"] != true
         {
             return Err("The captured save did not pass the checked Original replay checks".into());
         }
@@ -99,11 +105,29 @@ impl OriginalCapture {
             .ok_or("reference Events.txt was not parsed")
             .map_err(str::to_owned)
             .and_then(|events| tail.victory_state(events));
+        let trace = evidence::resume_trace(&source_sha256, &rules_sha256)?;
+        let event_initialization = match &victory {
+            Ok(state) if !state.is_pristine() => json!({
+                "verified": false, "has_stored_marks": true,
+                "reason": "the checked replay initializer needs pristine victory records",
+            }),
+            Ok(state)
+                if trace["matches_fixture"] == true
+                    && json!(state)
+                        == trace["pending_choice"]["cases"]["pinned"]["event_marks_at_poll"] =>
+            {
+                json!({"verified": true, "has_stored_marks": false, "policy": "pristine-event-engine"})
+            }
+            Ok(_) => json!({
+                "verified": false, "has_stored_marks": false,
+                "reason": "no matching native event state at the input boundary",
+            }),
+            Err(reason) => json!({"verified": false, "reason": reason}),
+        };
         let victory = match victory {
             Ok(state) => json!({"matches": true, "saved_state": state}),
             Err(reason) => json!({"matches": false, "reason": reason}),
         };
-        let trace = evidence::resume_trace(&source_sha256, &rules_sha256)?;
         let pending = if trace["matches_fixture"] == true {
             staged_round::check_pending_choice(self, human, &trace["pending_choice"])
                 .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
@@ -192,6 +216,7 @@ impl OriginalCapture {
             },
             "event_trailer": tail,
             "victory_event": victory,
+            "saved_event_initialization": event_initialization,
             "saved_phase": {
                 "boundary": phase,
                 "human_civ": human,

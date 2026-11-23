@@ -90,19 +90,38 @@ fn installed_prepare_original_replay_writes_loadable_private_checkpoint() {
     let progress = 2944 + 4 * 3348 + 16;
     assert_eq!(&changed[progress..progress + 2], &0i16.to_le_bytes());
     changed[progress..progress + 2].copy_from_slice(&1i16.to_le_bytes());
-    std::fs::write(changed_install.join(source), changed).unwrap();
     let rejected = destination.join("rejected");
-    let output = Command::new(env!("CARGO_BIN_EXE_totctl"))
-        .arg("prepare-original-replay")
-        .arg(&changed_install)
-        .arg(source)
-        .arg(&rejected)
-        .arg("changed")
-        .output()
-        .unwrap();
+    let prepare_changed = || {
+        Command::new(env!("CARGO_BIN_EXE_totctl"))
+            .arg("prepare-original-replay")
+            .arg(&changed_install)
+            .arg(source)
+            .arg(&rejected)
+            .arg("changed")
+            .output()
+            .unwrap()
+    };
+    std::fs::write(changed_install.join(source), changed).unwrap();
+    let output = prepare_changed();
     assert_eq!(output.status.code(), Some(1), "{output:?}");
     assert!(String::from_utf8_lossy(&output.stderr).contains("no verified pending-choice boundary"));
     assert!(!rejected.exists());
+
+    let source_bytes = &capture.files().bytes;
+    let save = tot_kit::parse_sav(source_bytes).unwrap();
+    let event_records = save.city_offset + 92 * save.cities.len() + 1853;
+    assert_eq!(&source_bytes[event_records..event_records + 4], b"EVNT");
+    for mark_offset in [4, 8] {
+        let mut marked = source_bytes.clone();
+        let word = event_records + 8 + mark_offset;
+        let value = u32::from_le_bytes(marked[word..word + 4].try_into().unwrap());
+        marked[word..word + 4].copy_from_slice(&(value | 0x20000000).to_le_bytes());
+        std::fs::write(changed_install.join(source), marked).unwrap();
+        let output = prepare_changed();
+        assert_eq!(output.status.code(), Some(1), "{output:?}");
+        assert!(String::from_utf8_lossy(&output.stderr).contains("active or spent victory marks"));
+        assert!(!rejected.exists());
+    }
     std::fs::remove_dir_all(destination).unwrap();
 }
 
@@ -265,6 +284,12 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "verified": true, "boundary": "prepared-resume-input",
             "research_target": -1, "research_progress": 0, "government": 1,
             "pending_decision": false,
+        })
+    );
+    assert_eq!(
+        report["saved_event_initialization"],
+        json!({
+            "verified": true, "has_stored_marks": false, "policy": "pristine-event-engine",
         })
     );
     assert_eq!(report["playable_import"], false);

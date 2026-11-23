@@ -247,6 +247,17 @@ class GoldenMetadata(unittest.TestCase):
             self.assertEqual(case['input']['stop_at_call'], case['idle']['next_general_poll'])
             self.assertEqual([branch['dispatches'] for branch in case['round_start_controls']], [False, True, True])
 
+    def test_prepared_resume_keeps_native_victory_marks(self):
+        report = json.loads((ROOT / 'docs/evidence/import-pending-choice.json').read_text())
+        for name, active, spent in [('pinned', False, False), ('active_event', True, False),
+                                    ('spent_event', False, True)]:
+            case = report['cases'][name]
+            self.assertEqual(case['event_marks_at_poll'], {
+                'active': [active, False], 'spent': [spent, False],
+            })
+            self.assertEqual(case['input']['active_slot'], 9)
+            self.assertFalse(case['round_start_controls'][0]['dispatches'])
+
     def test_native_wait_records_deferral_without_spending_movement(self):
         report = json.loads((ROOT / 'docs/evidence/import-wait.json').read_text())
         viewport = json.loads((ROOT / 'docs/evidence/import-saved-viewport.json').read_text())

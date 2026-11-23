@@ -251,8 +251,12 @@ selector preserves both records and dispatches neither victory trigger.
 An explicit SCENARIOLOADED control reaches the dispatcher boundary.
 The native round guard preserves both records on resume and clears only
 active marks for these non-Continuous records when starting a fresh round.
-Intervening loader behavior, engine restoration, and pending choices remain
-to be verified.
+The composed pending-choice probe verifies that a supplied active or
+spent mark survives the loader, Rules refresh and first input poll.
+The pinned event records arrive with both marks clear. The inspector
+checks that they can initialize the engine's pristine event state.
+Checkpoint preparation rejects marked records rather than starting them
+clean. Reconstruction of a running native macro state remains open.
 
 The [pending-choice probe](evidence/import-pending-choice.json) carries
 the prepared event-loaded state through the stock Rules refresh and

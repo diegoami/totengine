@@ -258,7 +258,11 @@ available with a stored progress of one or with Anarchy. Those controls
 establish the resume boundary. Fresh-turn science and government
 resolution remain distinct. The inspector compares the exact pinned
 capture and the engine's initial decision state. An experimental
-checkpoint preparation requires that comparison to pass.
+checkpoint preparation requires that comparison to pass. The same probe
+checks the two victory records. The pinned marks are clear. Controls that
+set an active or spent mark retain it at the first poll. Experimental
+checkpoint preparation accepts the pristine initial event state and
+rejects these marked controls.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_pending_choice_check.py --out /tmp/import-pending-choice.json

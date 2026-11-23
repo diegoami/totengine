@@ -42,6 +42,7 @@ impl OriginalCapture {
             || report["saved_production_check"]["verified"] != true
             || report["saved_citizens_check"]["verified"] != true
             || report["saved_purchase_check"]["verified"] != true
+            || report["saved_human_production_check"]["verified"] != true
             || report["saved_event_initialization"]["verified"] != true
         {
             return Err("The captured save did not pass the checked Original replay checks".into());
@@ -51,7 +52,7 @@ impl OriginalCapture {
             .and_then(|value| u8::try_from(value).ok())
             .ok_or("checked save has no human seat")?;
         let files = self.files();
-        let session = HumanSession::scenario_initialized_saved_opponent_combat(
+        let session = HumanSession::scenario_initialized_saved_human_production(
             ScenarioInput {
                 path: &files.path,
                 snapshot: &files.bytes,
@@ -174,6 +175,16 @@ impl OriginalCapture {
         } else {
             Value::Null
         };
+        let human_production = if purchase["verified"] == true && citizens["verified"] == true {
+            staged_round::check_saved_human_production(
+                self,
+                human,
+                &trace["saved_human_production"],
+            )
+            .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
         let land_step = if trace["matches_fixture"] == true {
             compare_land_step(
                 &snapshot,
@@ -235,6 +246,7 @@ impl OriginalCapture {
             "saved_production_check": production,
             "saved_citizens_check": citizens,
             "saved_purchase_check": purchase,
+            "saved_human_production_check": human_production,
             "staged_round_check": staged,
             "saved_movement_check": movement,
             "saved_city_view_check": city_view,

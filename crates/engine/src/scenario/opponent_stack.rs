@@ -46,7 +46,7 @@ fn link_stack(save: &mut SaveFile, world: &WorldState, slots: &[usize]) -> Resul
 }
 
 /// Extend the private observation snapshot with births already verified to
-/// be in unseen processed cities. New records start with a clear unit mask.
+/// be in processed cities. New records start with a clear unit mask.
 pub(crate) fn record_city_births(
     saved: &mut SaveFile,
     world: &mut WorldState,

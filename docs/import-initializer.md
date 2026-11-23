@@ -492,12 +492,22 @@ slot 22 at (53, 9), with zero movement spent and zero shields left in the
 city box. The map and remembered improvements remain intact through the
 first input poll, with 59 explored tiles and slot 18 active.
 
-The checked engine's same worker edit and purchase replay identically on
-Chromium and Linux SDL, including saving and reloading before ending the
-turn. At turn 44 the engine places the Phalanx in slot 38, leaves two
-shields, and uses engine observation with 60 explored tiles. Native
-production allocation, shield timing and saved-view continuation need
-further checks at this boundary.
+Initializer schema 8 (`experimental-saved-human-production-v1`) stages
+a single ordinary land unit built in a known human city. It runs the
+bounded native observation kernel with the same active-contact argument
+as the witnessed production call. The path retains saved knowledge only
+when that operation leaves the staged snapshot intact. The checked replay
+keeps the original 59 tiles and shows the new Phalanx. Native first
+credits two shields, subtracts the unit cost, then clears the surplus
+at `0x4c748e`. Starting with five extra shields reaches the same reset.
+Schema 8 clears the box when the guarded birth succeeds. Schema 7
+replays its original 60-tile engine observation and two-shield surplus
+for this sequence.
+
+The checked engine places the Phalanx in slot 38. The native prepared
+case uses slot 22. The inspector reports both slots and checks the
+map, production result and checkpoint replay. Faithful import admission
+remains open.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_human_city_birth_check.py --out /tmp/import-human-city-birth.json

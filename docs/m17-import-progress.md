@@ -298,10 +298,13 @@ witnessed turn-44 boundary. Native city work produces a Phalanx in
 slot 22, consumes the shield box, and keeps the map and remembered
 improvements through the first input poll. Chromium and Linux SDL
 produce identical checked engine checkpoints after the same worker
-edit and purchase, after reload, and after advancing to turn 44. The
-engine enters that turn with a Phalanx in slot 38, two shields in
-the city box, and 60 explored tiles. The unedited control keeps 59.
-Visible-city production and its ensuing human view remain open.
+edit and purchase, after reload, and after advancing to turn 44. Schema 8 now preserves
+the original 59-tile view through the supported human unit birth by
+checking the staged snapshot with the native observation kernel. The
+native production trace also confirms the shield reset for two starting
+balances. Schema 8 clears the box at the supported birth. The engine
+uses slot 38, and the inspector reports the difference from the prepared
+native slot 22. Schema 7 replays its 60-tile view and two-shield surplus.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

@@ -630,6 +630,108 @@ pub(super) fn check_saved_citizens(
     Ok(json!({"verified": true, "cases": cases.len(), "checkpoint_replays": true}))
 }
 
+pub(super) fn check_saved_human_production(
+    capture: &OriginalCapture,
+    human: u8,
+    trace: &Value,
+) -> Result<Value, String> {
+    let native = &trace["human_city_birth"];
+    let files = capture.files();
+    let rules = &capture.resources().rules;
+    let events = files.events.clone().map(EventEngine::new);
+    let identity = capture.identity();
+    let mut session = HumanSession::scenario_initialized_saved_human_production(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: rules.clone(),
+            events: events.clone(),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        identity,
+    )?;
+    let initial = session.view();
+    let city = *initial
+        .cities
+        .iter()
+        .find(|city| json!(city.slot) == native["city"])
+        .ok_or("the prepared production city is absent")?;
+    let submit = |session: &mut HumanSession, command| {
+        let revision = session.view().revision;
+        session.submit(Request {
+            civ: human,
+            revision,
+            id: revision + 1,
+            command,
+        })
+    };
+    submit(&mut session, Command::Worker { city, tile: 4 })?;
+    let quote = session
+        .view()
+        .city_production
+        .iter()
+        .find(|p| p.index == city.slot)
+        .ok_or("the prepared city has no purchase view")?
+        .hurry?;
+    submit(&mut session, Command::Buy { city, quote })?;
+    submit(&mut session, Command::EndTurn)?;
+    session.advance(128);
+    let after = session.view();
+    let mut new_units = after.observation.units.iter().filter(|u| {
+        !initial
+            .observation
+            .units
+            .iter()
+            .any(|old| old.index == u.index)
+    });
+    let unit = new_units
+        .next()
+        .ok_or("the prepared city produced no visible unit")?;
+    if after.phase != Phase::Human
+        || after.decision.is_some()
+        || json!(after.observation.turn) != native["turn"]
+        || after.observation.seen != initial.observation.seen
+        || json!(after.observation.seen.iter().flatten().count()) != native["explored_at_poll"]
+        || json!([unit.x, unit.y]) != native["unit"]["position"]
+        || json!(unit.owner) != native["unit"]["owner"]
+        || json!(unit.type_id) != native["unit"]["type"]
+        || new_units.next().is_some()
+    {
+        return Err("the checked city production differs from the measured saved view".into());
+    }
+    let checkpoint = session.checkpoint(identity);
+    let replay = HumanSession::restore_with(
+        rules.clone(),
+        identity,
+        &checkpoint,
+        Some((&files.bytes, events)),
+    )?;
+    if replay.view() != after || replay.checkpoint(identity) != checkpoint {
+        return Err("the checked human production did not replay".into());
+    }
+    let shields = after
+        .observation
+        .cities
+        .iter()
+        .find(|c| c.index == city.slot)
+        .and_then(|c| c.shield_box)
+        .ok_or("the production city shield box is absent")?;
+    if json!(shields) != native["shields_after"] {
+        return Err("the human production shield box differs from the native completion".into());
+    }
+    Ok(json!({
+        "verified": true,
+        "explored_tiles": native["explored_at_poll"],
+        "engine_unit_slot": unit.index,
+        "native_unit_slot": native["unit"]["slot"],
+        "engine_shields": shields,
+        "native_shields": native["shields_after"],
+        "checkpoint_replays": true,
+    }))
+}
+
 pub(super) fn check_saved_purchase(
     capture: &OriginalCapture,
     human: u8,

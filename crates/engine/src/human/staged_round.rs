@@ -12,12 +12,13 @@ impl HumanSession {
     pub(super) fn run_staged_city_pass(&mut self, civ: u8) {
         let human = civ == self.human;
         let keep_view = self.saved_move_state.is_some()
-            && (!human || self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1)
+            && (!human || self.knowledge_recipe.checked_replay())
             && matches!(
                 self.knowledge_recipe,
                 ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
                     | ScenarioKnowledgeRecipe::SavedOpponentStackV1
                     | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                    | ScenarioKnowledgeRecipe::SavedHumanProductionV1
             );
         let before = keep_view.then(|| self.game.world.clone());
         if !keep_view {
@@ -748,6 +749,93 @@ staged-round-test
         );
         assert_eq!(game.view().observation.seen, original_view.observation.seen);
         assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
+    }
+
+    #[test]
+    fn installed_paid_human_unit_keeps_the_saved_map() {
+        let Some((snapshot, rules, events)) = installed_original() else {
+            return;
+        };
+        let deps = "totengine-scenario-dependencies 1\nhuman-production-test\n";
+        for (recipe, explored, shields) in [
+            (ScenarioKnowledgeRecipe::SavedOpponentCombatV1, 60, 2),
+            (ScenarioKnowledgeRecipe::SavedHumanProductionV1, 59, 0),
+        ] {
+            let mut session = HumanSession::scenario_initialized_recipe(
+                ScenarioInput {
+                    path: "Original/Ph_Auto2.SAV",
+                    snapshot: &snapshot,
+                    rules: rules.clone(),
+                    events: Some(events.clone()),
+                },
+                4,
+                AiPolicy::BuiltIn1,
+                7,
+                deps,
+                recipe,
+            )
+            .unwrap();
+            let initial = session.view();
+            let city = *initial.cities.iter().find(|c| c.slot == 5).unwrap();
+            let submit = |session: &mut HumanSession, command| {
+                let revision = session.view().revision;
+                session
+                    .submit(Request {
+                        civ: 4,
+                        revision,
+                        id: revision + 1,
+                        command,
+                    })
+                    .unwrap()
+            };
+            submit(&mut session, Command::Worker { city, tile: 4 });
+            let quote = session
+                .view()
+                .city_production
+                .iter()
+                .find(|p| p.index == city.slot)
+                .unwrap()
+                .hurry
+                .unwrap();
+            submit(&mut session, Command::Buy { city, quote });
+            submit(&mut session, Command::EndTurn);
+            session.advance(128);
+            let after = session.view();
+            assert_eq!(after.phase, Phase::Human);
+            assert_eq!(after.observation.turn, 44);
+            assert_eq!(after.observation.seen.iter().flatten().count(), explored);
+            let new_unit = after
+                .observation
+                .units
+                .iter()
+                .find(|u| !initial.units.iter().any(|old| old.slot == u.index))
+                .unwrap();
+            assert_eq!(
+                (new_unit.owner, new_unit.type_id, new_unit.x, new_unit.y),
+                (4, 3, 53, 9)
+            );
+            let city_after = after
+                .observation
+                .cities
+                .iter()
+                .find(|c| c.index == city.slot)
+                .unwrap();
+            assert_eq!(city_after.shield_box, Some(shields));
+            if recipe == ScenarioKnowledgeRecipe::SavedHumanProductionV1 {
+                assert_eq!(after.observation.seen, initial.observation.seen);
+                assert!(session.saved_move_state.is_some());
+            }
+            let checkpoint = session.checkpoint(deps);
+            let replay = HumanSession::restore_with(
+                rules.clone(),
+                deps,
+                &checkpoint,
+                Some((&snapshot, Some(events.clone()))),
+            )
+            .unwrap();
+            assert_eq!(replay.checkpoint(deps), checkpoint);
+            assert_eq!(replay.view(), after);
+        }
     }
 
     #[test]

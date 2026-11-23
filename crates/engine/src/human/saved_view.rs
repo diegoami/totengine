@@ -39,7 +39,7 @@ impl HumanSession {
 
     fn saved_focus_candidates(&self, anchor: (u16, u16)) -> Option<Vec<SavedFocusCandidate>> {
         let saved = self.saved_move_state.as_ref()?;
-        if self.knowledge_recipe != ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+        if !self.knowledge_recipe.checked_replay()
             || self.phase() != Phase::Human
             || self.decision.is_some()
             || (u32::from(anchor.0) + u32::from(anchor.1)) & 1 != 0
@@ -303,6 +303,8 @@ impl HumanSession {
         {
             return Err("city pass changed a city identity or discovery mask".into());
         }
+        let checked_human_birth =
+            human_pass && self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedHumanProductionV1;
         let mut births = Vec::new();
         for (slot, unit) in world.units.iter().enumerate() {
             if let Some(old) = before.units.get(slot).filter(|unit| unit.id != 0) {
@@ -334,11 +336,22 @@ impl HumanSession {
                     let city = &world.cities[*slot];
                     city.owner == u16::from(civ) && (city.x, city.y) == (unit.x, unit.y)
                 });
-                if unit.owner != civ
-                    || !from_city
-                    || self.known_tiles.get(at).is_none_or(Option::is_some)
-                {
-                    return Err("city pass created a unit outside an unseen processed city".into());
+                let known = self
+                    .known_tiles
+                    .get(at)
+                    .ok_or("city birth is off the saved map")?;
+                let covered_birth = if checked_human_birth {
+                    known.is_some()
+                        && summary.built.as_slice()
+                            == [(usize::from(unit.home), crate::production::Built::Unit(slot))]
+                        && self.game.rules.unit_domain(usize::from(unit.type_id)) == Some(0)
+                        && unit.damage == 0
+                        && !unit.veteran
+                } else {
+                    known.is_none()
+                };
+                if unit.owner != civ || !from_city || !covered_birth {
+                    return Err("city pass created a unit outside the checked birth context".into());
                 }
                 births.push((slot, at));
             }
@@ -347,7 +360,10 @@ impl HumanSession {
         let mut observed = saved.clone();
         if human_pass {
             for (slot, unit) in world.units.iter().enumerate() {
-                if unit.id == 0 || unit.owner != civ {
+                if unit.id == 0
+                    || unit.owner != civ
+                    || (checked_human_birth && births.iter().any(|&(born, _)| born == slot))
+                {
                     continue;
                 }
                 let record = observed
@@ -365,6 +381,7 @@ impl HumanSession {
             self.knowledge_recipe,
             ScenarioKnowledgeRecipe::SavedOpponentStackV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                | ScenarioKnowledgeRecipe::SavedHumanProductionV1
         ) {
             crate::scenario::opponent_stack::record_city_births(
                 &mut observed,
@@ -372,6 +389,22 @@ impl HumanSession {
                 &births,
             )?;
         }
+        let human_production_city =
+            if let (true, &[(slot, _)]) = (checked_human_birth, births.as_slice()) {
+                let after = crate::saved_knowledge::unit_observation_after(
+                    &observed,
+                    &self.game.rules,
+                    slot,
+                    true,
+                )
+                .map_err(|error| error.to_string())?;
+                if after != observed {
+                    return Err("saved human city birth changed captured observation".into());
+                }
+                Some(usize::from(updated_world.units[slot].home))
+            } else {
+                None
+            };
         for (slot, _) in &summary.city_accounts {
             updated_world.refresh_city_phase_memory(*slot)?;
             let city = &updated_world.cities[*slot];
@@ -384,6 +417,11 @@ impl HumanSession {
             }
             record.raw[11] = city.size as u8;
             record.raw[15..23].copy_from_slice(&city.known_sizes);
+            if Some(*slot) == human_production_city {
+                // The native human production tail at 0x4c748e clears overflow.
+                updated_world.cities[*slot].shield_box = 0;
+                record.raw[30..32].fill(0);
+            }
         }
         let projection = SavedMapKnowledge::read(&observed, self.human)?;
         let prepared = Self::prepare_saved_view(&updated_world, self.human, projection)?;
@@ -399,6 +437,7 @@ impl HumanSession {
             ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
                 | ScenarioKnowledgeRecipe::SavedOpponentStackV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                | ScenarioKnowledgeRecipe::SavedHumanProductionV1
         ) || self.saved_move_state.is_none()
         {
             return false;
@@ -417,6 +456,7 @@ impl HumanSession {
             self.knowledge_recipe,
             ScenarioKnowledgeRecipe::SavedOpponentStackV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                | ScenarioKnowledgeRecipe::SavedHumanProductionV1
         ) {
             return None;
         }
@@ -432,7 +472,7 @@ impl HumanSession {
             }
         }
         let mut world = self.game.world.clone();
-        let is_combat = self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+        let is_combat = self.knowledge_recipe.checked_replay()
             && world
                 .units
                 .iter()
@@ -459,7 +499,7 @@ impl HumanSession {
                 civ,
                 unit,
                 to,
-                self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1,
+                self.knowledge_recipe.checked_replay(),
             )
             .ok()?
         };
@@ -496,8 +536,7 @@ impl HumanSession {
             return Ok(None);
         };
         let refused = "the saved-view movement phase cannot resolve that order";
-        let checked_replay =
-            self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1;
+        let checked_replay = self.knowledge_recipe.checked_replay();
         let mut world;
         let (observed, result) = match order {
             Order::Move { unit, to } => {

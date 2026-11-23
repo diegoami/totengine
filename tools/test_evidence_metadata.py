@@ -243,11 +243,18 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(birth['applied_worker'], workers['cases'][0]['after'])
         self.assertEqual(birth['shields_before'], purchase['pinned']['shields_after'])
         self.assertEqual(birth['shields_after'], 0)
+        self.assertEqual(birth['shield_writes'], [
+            ['004c62e0', 20, 22], ['004c6607', 22, 2], ['004c748e', 2, 0],
+        ])
+        self.assertEqual(report['surplus_control']['shield_writes'], [
+            ['004c62e0', 25, 27], ['004c6607', 27, 7], ['004c748e', 7, 0],
+        ])
         self.assertEqual([birth[key] for key in ('explored_before', 'explored_after',
                                                  'explored_at_poll')], [59, 59, 59])
         self.assertEqual((birth['tile_byte_changes'], birth['remembered_bytes_changed']), ([], 0))
         self.assertEqual(birth['unit'],
                          {'slot': 22, 'type': 3, 'owner': 4, 'position': [53, 9], 'spent': 0})
+        self.assertEqual(birth['observation_arguments'], [[22, 1]])
         self.assertEqual(birth['first_poll']['active_slot'], 18)
 
     def test_native_production_purchase_preserves_saved_knowledge(self):

@@ -48,6 +48,11 @@ fn installed_prepare_original_replay_writes_loadable_private_checkpoint() {
     let output = prepare();
     assert!(output.status.success(), "{output:?}");
     let checkpoint = storage::load(&destination, "checked-turn").unwrap();
+    assert!(checkpoint
+        .lines()
+        .nth(5)
+        .unwrap()
+        .starts_with("initializer 8 profile "));
     let capture = OriginalCapture::capture(Path::new(&home), source).unwrap();
     assert_eq!(
         HumanSession::checkpoint_scenario(&checkpoint).unwrap().path,
@@ -314,6 +319,18 @@ fn installed_save_reports_checked_records_phase_and_view() {
         report["saved_purchase_check"],
         json!({
             "verified": true, "price": 19, "checkpoint_replays": true,
+        })
+    );
+    assert_eq!(
+        report["saved_human_production_check"],
+        json!({
+            "verified": true,
+            "explored_tiles": 59,
+            "engine_unit_slot": 38,
+            "native_unit_slot": 22,
+            "engine_shields": 0,
+            "native_shields": 0,
+            "checkpoint_replays": true,
         })
     );
     assert_eq!(report["playable_import"], false);

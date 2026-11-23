@@ -5,13 +5,14 @@ Prepare round 44 from the established opponent and annual trace. Supply the
 measured city worker, specialist, shield and treasury results before the
 human city pass. Run the native turn start and input preparation. Disable
 autosave and substitute the redraw call, as in the quiet turn-44 control.
+The surplus control starts with five more stored shields.
 """
 import argparse
 import json
 import os
 from pathlib import Path
 
-from unicorn import UC_HOOK_CODE
+from unicorn import UC_HOOK_CODE, UC_HOOK_MEM_WRITE
 from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EIP, UC_X86_REG_ESP
 
 from import_event_tail_check import digest
@@ -26,7 +27,7 @@ OBSERVE = 0x41F704
 REDRAW = 0x467C89
 
 
-def city_pass(original, viewer, city_region, worker, purchase):
+def city_pass(original, viewer, city_region, worker, purchase, stored):
     cpu = original.cpu
     city = city_region[0] + CITY_SLOT * 92
     area = read(original, 0x6705A4, '<h')
@@ -46,36 +47,54 @@ def city_pass(original, viewer, city_region, worker, purchase):
     assert read(original, city + 59, '<b') == purchase['item']
     original.write(city + 24, worker['specialists'], '<I')
     original.write(city + 50, worker['worked'], '<I')
-    original.write(city + 30, purchase['shields_after'], '<H')
+    original.write(city + 30, stored, '<H')
     original.write(CIV + STRIDE * viewer + 10, purchase['treasury_after'], '<i')
     options = read(original, 0x60763A, '<I')
     original.write(0x60763A, options & ~0x2000, '<I')
     tiles_before, known_before, memory_before, units_before = capture()
     calls = []
+    observations = []
+    shield_writes = []
 
     def trace(cpu, address, _size, _data):
         if address in (REDRAW, OBSERVE):
             calls.append(f'{address:08x}')
+        if address == OBSERVE:
+            stack = cpu.reg_read(UC_X86_REG_ESP)
+            observations.append([read(original, stack + offset, '<I') for offset in (4, 8)])
         if address == REDRAW:
             stack = cpu.reg_read(UC_X86_REG_ESP)
             cpu.reg_write(UC_X86_REG_EAX, 0)
             cpu.reg_write(UC_X86_REG_ESP, stack + 4)
             cpu.reg_write(UC_X86_REG_EIP, read(original, stack, '<I'))
 
+    def write_shields(cpu, _access, _address, size, value, _data):
+        assert size == 2
+        shield_writes.append([f'{cpu.reg_read(UC_X86_REG_EIP):08x}',
+                              read(original, city + 30, '<H'), value])
+
+    shield_hook = cpu.hook_add(UC_HOOK_MEM_WRITE, write_shields, begin=city + 30, end=city + 31)
     hook = cpu.hook_add(UC_HOOK_CODE, trace)
     try:
         original.call(TURN_START, viewer)
     finally:
         cpu.hook_del(hook)
+        cpu.hook_del(shield_hook)
     assert cpu.reg_read(UC_X86_REG_EIP) == 0x100000
     tiles_after, known_after, memory_after, units_after = capture()
     assert known_before == known_after and memory_before == memory_after
     assert calls == ['00467c89', '0041f704', '00467c89']
     slot, = units_after.keys() - units_before.keys()
+    assert observations == [[slot, 1]]
     unit = units_after[slot]
     position = [int.from_bytes(unit[i:i + 2], 'little') for i in (0, 2)]
     shields_after = read(original, city + 30, '<H')
     assert (slot, unit[8], unit[9], position, unit[10], shields_after) == (22, 3, 4, [53, 9], 0, 0)
+    assert shield_writes == [
+        ['004c62e0', stored, stored + 2],
+        ['004c6607', stored + 2, stored - 18],
+        ['004c748e', stored - 18, 0],
+    ]
 
     frame(original)
     original.write(FRAME - 0x6AC, viewer, '<I')
@@ -88,11 +107,11 @@ def city_pass(original, viewer, city_region, worker, purchase):
     assert handoff['active_slot'] == 18 and sum(known_poll) == 59
     return {
         'turn': read(original, 0x607648, '<h'), 'city': CITY_SLOT,
-        'applied_worker': worker, 'shields_before': purchase['shields_after'],
+        'applied_worker': worker, 'shields_before': stored, 'shield_writes': shield_writes,
         'shields_after': shields_after, 'unit': {
             'slot': slot, 'type': unit[8], 'owner': unit[9], 'position': position, 'spent': unit[10],
         },
-        'city_pass_calls': calls,
+        'city_pass_calls': calls, 'observation_arguments': observations,
         'tile_byte_changes': [(i, a, b) for i, (a, b) in enumerate(zip(tiles_before, tiles_after))
                               if a != b],
         'explored_before': sum(known_before), 'explored_after': sum(known_after),
@@ -118,15 +137,21 @@ def main():
         item = purchase[key]
         assert digest((home / item['path']).read_bytes()) == item['sha256']
     rules = parse_rules(home / purchase['rules']['path'])
-    annual, birth = prepare_round(
-        home, binary, purchase['source']['path'], rules,
-        lambda original, viewer, city_region: city_pass(
-            original, viewer, city_region, workers['cases'][0]['after'], purchase['pinned'],
-        ),
-    )
-    assert annual['annual_update'] == round_close['annual_update']
+    def prepared_birth(stored):
+        annual, birth = prepare_round(
+            home, binary, purchase['source']['path'], rules,
+            lambda original, viewer, city_region: city_pass(
+                original, viewer, city_region, workers['cases'][0]['after'],
+                purchase['pinned'], stored,
+            ),
+        )
+        assert annual['annual_update'] == round_close['annual_update']
+        return birth
+
+    paid = purchase['pinned']['shields_after']
     report = {'schema': 1, **{key: purchase[key] for key in keys},
-              'human_city_birth': birth, 'scope': __doc__.strip()}
+              'human_city_birth': prepared_birth(paid),
+              'surplus_control': prepared_birth(paid + 5), 'scope': __doc__.strip()}
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')
 

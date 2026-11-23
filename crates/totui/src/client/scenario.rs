@@ -260,9 +260,22 @@ impl Client {
         let mut snapshot = storage::scenario_snapshot(&self.saves, text)?;
         let reference_recipe = text.starts_with("totengine-human 3\n")
             && text.lines().nth(5).is_some_and(|line| {
-                line.strip_prefix("initializer 7 profile ")
-                    .and_then(|profile| profile.split_whitespace().next())
-                    == Some(engine::human::ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE)
+                use engine::human::ScenarioInitializer;
+                let mut fields = line.split_whitespace();
+                matches!(
+                    (fields.next(), fields.next(), fields.next(), fields.next()),
+                    (
+                        Some("initializer"),
+                        Some("7"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("8"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_HUMAN_PRODUCTION_PROFILE)
+                    )
+                )
             });
         let legacy_snapshot = if reference_recipe {
             snapshot.clone()

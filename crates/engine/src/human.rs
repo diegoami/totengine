@@ -582,6 +582,24 @@ impl HumanSession {
         )
     }
 
+    /// Keep the saved view through a checked human city unit birth.
+    pub fn scenario_initialized_saved_human_production(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedHumanProductionV1,
+        )
+    }
+
     fn scenario_initialized_recipe(
         input: ScenarioInput<'_>,
         human: u8,
@@ -620,6 +638,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
                 | ScenarioKnowledgeRecipe::SavedOpponentStackV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                | ScenarioKnowledgeRecipe::SavedHumanProductionV1
         ) {
             crate::scenario::phase::saved_human_entry(&saved, &input.rules, human)?;
             crate::scenario::snapshot::CheckedSnapshot::read(input.snapshot, &input.rules)?;
@@ -655,6 +674,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
                 | ScenarioKnowledgeRecipe::SavedOpponentStackV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                | ScenarioKnowledgeRecipe::SavedHumanProductionV1
         ) {
             session.saved_move_state = Some(saved.clone());
         }
@@ -740,6 +760,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
                     | ScenarioKnowledgeRecipe::SavedOpponentStackV1
                     | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                    | ScenarioKnowledgeRecipe::SavedHumanProductionV1
             )
             .then(StagedRound::default),
             game,
@@ -1123,6 +1144,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
                 | ScenarioKnowledgeRecipe::SavedOpponentStackV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                | ScenarioKnowledgeRecipe::SavedHumanProductionV1
         ) {
             data.push_str(if self.saved_move_state.is_some() {
                 " saved-land-movement-active"
@@ -1130,7 +1152,7 @@ impl HumanSession {
                 " saved-land-movement-finished"
             });
         }
-        if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1 {
+        if self.knowledge_recipe.checked_replay() {
             if let Some(saved) = &self.saved_move_state {
                 let deferred: Vec<_> = saved
                     .units
@@ -1220,7 +1242,7 @@ impl HumanSession {
             .world
             .resolve_anarchy(&self.game.rules, self.human)
         {
-            if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1 {
+            if self.knowledge_recipe.checked_replay() {
                 self.finish_saved_movement();
             }
             let eligible = self
@@ -1632,8 +1654,7 @@ impl HumanSession {
 
     fn close_round(&mut self) {
         let staged = self.staged_round.is_some();
-        let saved_viewer = (self.knowledge_recipe
-            == ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+        let saved_viewer = (self.knowledge_recipe.checked_replay()
             && self.saved_move_state.is_some())
         .then_some(self.human);
         let mut kept_view = false;

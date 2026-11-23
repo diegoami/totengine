@@ -51,17 +51,16 @@ pub(super) fn check(capture: &OriginalCapture, human: u8) -> Result<Value, Strin
         return Err("staged city pass did not advance exactly once".into());
     }
     let after_pass = session.checkpoint(resources);
-    let order_log = |text: &str| {
-        text.lines()
-            .find(|line| line.starts_with("log "))
-            .map(str::to_owned)
-    };
+    let order_log = checkpoint_line(&before_pass, "log ")?;
+    let city_state = checkpoint_line(&after_pass, "world ")?;
     if replay.checkpoint(resources) != after_pass
         || session.view().observation.turn != entry.observation.turn
-        || order_log(&before_pass).is_none()
-        || order_log(&after_pass) != order_log(&before_pass)
+        || checkpoint_line(&after_pass, "log ")? != order_log
+        || checkpoint_line(&before_pass, "world ")? == city_state
     {
-        return Err("staged city pass changed turn or orders, or did not replay".into());
+        return Err(
+            "staged city pass did not change the world on the same turn before orders".into(),
+        );
     }
     let mut replay = restore(&after_pass)?;
     if session.advance(1) != 1 || replay.advance(1) != 1 {
@@ -70,8 +69,7 @@ pub(super) fn check(capture: &OriginalCapture, human: u8) -> Result<Value, Strin
     let after_order = session.checkpoint(resources);
     if replay.checkpoint(resources) != after_order
         || session.view().observation.turn != entry.observation.turn
-        || order_log(&after_order).is_none()
-        || order_log(&after_order) == order_log(&after_pass)
+        || checkpoint_line(&after_order, "log ")? == order_log
     {
         return Err("staged opponent order did not reach a replayable same-turn log entry".into());
     }
@@ -84,4 +82,11 @@ pub(super) fn check(capture: &OriginalCapture, human: u8) -> Result<Value, Strin
         "second_work_item": "opponent-order",
         "checkpoints_replay": true,
     }))
+}
+
+fn checkpoint_line<'a>(checkpoint: &'a str, prefix: &str) -> Result<&'a str, String> {
+    checkpoint
+        .lines()
+        .find(|line| line.starts_with(prefix))
+        .ok_or_else(|| format!("staged checkpoint is missing {}", prefix.trim()))
 }

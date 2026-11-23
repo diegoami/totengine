@@ -164,5 +164,11 @@ staged-round-test
         assert_eq!(stepwise.view(), game.view());
         assert_eq!(stepwise.game.world.checksum(), game.game.world.checksum());
         assert_eq!(stepwise.game.log(), game.game.log());
+
+        // The measured positive-science control reaches a choice. Check the
+        // engine's opportunity separately from the replayed zero-science turn.
+        stepwise.game.world.research[4].progress = 1;
+        stepwise.require_research();
+        assert!(matches!(stepwise.decision, Some(Decision::Research { .. })));
     }
 }

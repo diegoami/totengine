@@ -14,6 +14,8 @@ pub(super) const CLASSIC_CELLS: [(&str, u32, u32); 5] = [
 const CLASSIC_SIZE: u32 = 14;
 const CLASSIC_BACKDROP: [u8; 3] = [255, 159, 163];
 
+const CLASSIC_UNIT_COUNT: u8 = 54;
+
 pub struct Sprite {
     pub w: u32,
     pub h: u32,
@@ -59,6 +61,11 @@ impl Atlas {
             if let Some(icons) = icons {
                 atlas.sprites.extend(icons);
             }
+        }
+        if let Some(units) =
+            resources::classic_unit_sheet(resources, home).and_then(|sheet| classic_units(&sheet))
+        {
+            atlas.sprites.extend(units);
         }
         Ok(atlas)
     }
@@ -203,7 +210,65 @@ impl Atlas {
     }
 }
 
+fn classic_units(sheet: &image::RgbaImage) -> Option<BTreeMap<String, Sprite>> {
+    // Green grid intersections surround the six 9-column rows of Original units.
+    if !(0..=6)
+        .all(|row| (0..=9).all(|col| sheet.get_pixel(col * 65, row * 49).0 == [0, 255, 0, 255]))
+    {
+        return None;
+    }
+    (0..CLASSIC_UNIT_COUNT)
+        .map(|id| {
+            let id = u32::from(id);
+            let rect = Rect {
+                x: 1 + (id % 9) * 65,
+                y: 1 + (id / 9) * 49,
+                w: 64,
+                h: 48,
+            };
+            let mut unit = resources::crop(sheet, rect, Mask::default()).ok()?;
+            for pixel in unit.pixels_mut() {
+                if pixel.0[..3] == [135, 83, 135] {
+                    pixel[3] = 0;
+                }
+            }
+            let visible = unit.pixels().filter(|pixel| pixel[3] > 0).count();
+            if !(1..(rect.w * rect.h) as usize).contains(&visible) {
+                return None;
+            }
+            // Align the bottom edges so the 48-pixel art has the same map
+            // anchor, draw rectangle and hit-testing coordinates as ToT art.
+            let mut padded = image::RgbaImage::new(64, 64);
+            image::imageops::replace(&mut padded, &unit, 0, 16);
+            Some((
+                format!("classic-unit-{id}"),
+                Sprite {
+                    w: padded.width(),
+                    h: padded.height(),
+                    rgba: padded.into_raw(),
+                },
+            ))
+        })
+        .collect()
+}
+
 impl Client {
+    pub(super) fn classic_units_available(&self) -> bool {
+        self.atlas()
+            .is_some_and(|atlas| atlas.sprites.contains_key("classic-unit-0"))
+    }
+
+    pub(super) fn unit_sprite(&self, type_id: u8) -> String {
+        if self.enhancements.classic_units
+            && type_id < CLASSIC_UNIT_COUNT
+            && self.classic_units_available()
+        {
+            format!("classic-unit-{type_id}")
+        } else {
+            format!("unit-{type_id}")
+        }
+    }
+
     pub(super) fn classic_icons_active(&self) -> bool {
         self.enhancements.classic_icons
             && self

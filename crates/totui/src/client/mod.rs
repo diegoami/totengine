@@ -271,6 +271,7 @@ pub(crate) enum Enhancement {
     OrderStrip,
     MessageDock,
     ClassicIcons,
+    ClassicUnits,
 }
 #[derive(Clone)]
 enum Modal {
@@ -796,6 +797,7 @@ impl Client {
                 &mut self.enhancements.classic_icons,
                 "Classic resource icons",
             ),
+            Enhancement::ClassicUnits => (&mut self.enhancements.classic_units, "Classic unit art"),
         };
         *flag = !*flag;
         let state = if *flag { "on" } else { "off" };
@@ -810,6 +812,14 @@ impl Client {
         {
             self.status
                 .push_str(" Icons.gif is unavailable for this game.");
+        }
+        if matches!(e, Enhancement::ClassicUnits)
+            && self.enhancements.classic_units
+            && self.loaded.is_some()
+            && !self.classic_units_available()
+        {
+            self.status
+                .push_str(" Classic Units.gif art is unavailable for this game.");
         }
     }
     /// The overlay's latest-turn lines and its frame `(x, y, w, h)`.
@@ -3423,7 +3433,7 @@ impl Client {
                 y: py - 48. * self.zoom,
                 w: 64. * self.zoom,
                 h: 64. * self.zoom,
-                sprite: format!("unit-{}", u.type_id),
+                sprite: self.unit_sprite(u.type_id),
                 unit: u.index,
                 own: u.owner == o.civ,
                 selected,

@@ -241,7 +241,7 @@ impl Client {
                     y: y - 4.,
                     w: 32.,
                     h: 24.,
-                    sprite: format!("unit-{}", u.type_id),
+                    sprite: self.unit_sprite(u.type_id),
                 });
             }
             draws.push(text(

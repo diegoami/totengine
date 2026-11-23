@@ -276,6 +276,9 @@ pub struct Enhancements {
     /// Use the install's classic resource glyphs in city readouts.
     #[serde(default)]
     pub classic_icons: bool,
+    /// Use the install's classic unit sprites with stock Original.
+    #[serde(default)]
+    pub classic_units: bool,
 }
 
 pub const ENHANCEMENTS_FORMAT: &str = "totengine-enhancements 1";

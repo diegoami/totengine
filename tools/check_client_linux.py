@@ -195,6 +195,19 @@ def run():
                     assert not scene()["advancing"]
                     key("Ctrl+w")
                     key("Ctrl+l");save_dialog("watchstart")
+                if os.environ.get("TOTENGINE_CLASSIC_UNITS") == "1":
+                    def unit(s, prefix):
+                        return any(d.get("sprite", "").startswith(prefix) for d in s["draws"])
+                    assert unit(scene(), "unit-") and not unit(scene(), "classic-unit-")
+                    key("Ctrl+s");save_dialog("unitbefore")
+                    click_button("Game");click_button("Settings…")
+                    click_button("[ ] Classic unit art");key("Escape")
+                    wait(lambda s:unit(s,"classic-unit-"))
+                    key("Ctrl+s");save_dialog("unitclassic")
+                    assert (work/"saves/unitbefore.cth").read_bytes() == (work/"saves/unitclassic.cth").read_bytes()
+                    click_button("Game");click_button("Settings…")
+                    click_button("[x] Classic unit art");key("Escape")
+                    wait(lambda s:unit(s,"unit-") and not unit(s,"classic-unit-"))
                 key("F3");wait(lambda s:has(s,"Known contacts") and has(s,"No known contacts."))
                 key("Escape")
                 key("b");wait(lambda s:has(s,"Name your city"));button("Save pending choice");save_dialog("founding")

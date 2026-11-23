@@ -173,11 +173,32 @@ pub fn list_scenarios(home: &Path) -> Vec<String> {
 /// The optional classic icon sheet belongs to the installation root.
 /// This optional read does not add a dependency to the resource identity.
 pub(crate) fn classic_icon_sheet(home: &Path) -> Option<RgbaImage> {
+    classic_gif(home, "Icons.gif")
+}
+
+/// The measured Civ II unit layout shares slots 0–53 with stock Original.
+/// Check the captured sources so a replacement Rules or Units file keeps its art.
+pub(crate) fn classic_unit_sheet(resources: &Resources, home: &Path) -> Option<RgbaImage> {
+    let stock = resources.profile.eq_ignore_ascii_case("Original")
+        && [
+            ("rules", "Original/Rules.txt", 0xa9ef2d861874b2fa),
+            ("units", "Original/Units.bmp", 0x679cf7982ee5f90c),
+        ]
+        .into_iter()
+        .all(|(role, path, fingerprint)| {
+            resources.sources.get(role).is_some_and(|source| {
+                source.relative.eq_ignore_ascii_case(path) && source.fingerprint == fingerprint
+            })
+        });
+    stock.then(|| classic_gif(home, "Units.gif")).flatten()
+}
+
+fn classic_gif(home: &Path, name: &str) -> Option<RgbaImage> {
     if home.as_os_str().is_empty() {
         return None;
     }
     let root = home.canonicalize().ok()?;
-    let path = contained(&root, child(&root, "Icons.gif").ok()??).ok()?;
+    let path = contained(&root, child(&root, name).ok()??).ok()?;
     let bytes = read(&path).ok()?;
     if image::guess_format(&bytes).ok()? != ImageFormat::Gif {
         return None;

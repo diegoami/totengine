@@ -5324,6 +5324,38 @@ fn installed_checked_checkpoint_uses_saved_viewport_and_next_turn_anchor() {
     assert_eq!(c.inspect, Some((51, 9)));
     assert!(c.moving);
 
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "checked-turn");
+    key(&mut c, "Enter");
+    let initial = c.view().unwrap();
+    let city = *initial.cities.iter().find(|city| city.slot == 5).unwrap();
+    c.order(Command::Worker { city, tile: 4 }).unwrap();
+    let quote = c
+        .view()
+        .unwrap()
+        .city_production
+        .iter()
+        .find(|production| production.index == city.slot)
+        .unwrap()
+        .hurry
+        .unwrap();
+    c.order(Command::Buy { city, quote }).unwrap();
+    let anchor = *initial.units.iter().find(|actor| actor.slot == 18).unwrap();
+    c.action(Action::Unit(anchor)).unwrap();
+    assert_eq!(c.inspect, Some((51, 9)));
+    c.order(Command::EndTurn).unwrap();
+    for _ in 0..32 {
+        if c.view().unwrap().phase == Phase::Human {
+            break;
+        }
+        input(&mut c, Input::Tick);
+    }
+    let after = c.view().unwrap();
+    assert_eq!(after.observation.turn, 44);
+    assert_eq!(after.observation.seen, initial.observation.seen);
+    assert_eq!(c.active, Some(anchor));
+    assert!(c.moving);
+
     let before = c.checkpoint().unwrap();
     let assets = c.assets.clone();
     let active = c.active;

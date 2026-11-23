@@ -27,6 +27,43 @@ OBSERVE = 0x41F704
 REDRAW = 0x467C89
 
 
+def city_stack_focus(original, newborn, units):
+    anchors = ((51, 9), (53, 9), (54, 8), (61, 5), (0, 0))
+    coordinates = (0x5F46FC, 0x5F46F8)
+    previous = [read(original, address, '<h') for address in coordinates]
+    active = read(original, 0x60764E, '<h')
+    assert active == -1
+    stacked = 26
+    links = [(newborn, -1, stacked), (stacked, newborn, -1)]
+    for slot, before, after in links:
+        raw = units[slot]
+        assert tuple(int.from_bytes(raw[i:i + 2], 'little', signed=True) for i in (26, 28)) == (before, after)
+
+    def sweep():
+        selections = []
+        for anchor in anchors:
+            for address, value in zip(coordinates, anchor, strict=True):
+                original.write(address, value, '<h')
+            selections.append(original.call(0x56CB3D, 0xffffffff, 1))
+        return selections
+
+    try:
+        normal = sweep()
+        for slot, before, after in links:
+            original.write(UNIT_TABLE + slot * 40 + 26, after, '<h')
+            original.write(UNIT_TABLE + slot * 40 + 28, before, '<h')
+        reversed_head = sweep()
+    finally:
+        for slot, before, after in links:
+            original.write(UNIT_TABLE + slot * 40 + 26, before, '<h')
+            original.write(UNIT_TABLE + slot * 40 + 28, after, '<h')
+        for address, value in zip(coordinates, previous, strict=True):
+            original.write(address, value, '<h')
+    assert normal == reversed_head == [18, newborn, newborn, 9, 6]
+    return {'anchors': anchors, 'choices': normal, 'reversed_head_choices': reversed_head,
+            'original_stack': [newborn, stacked]}
+
+
 def city_pass(original, viewer, city_region, worker, purchase, stored):
     cpu = original.cpu
     city = city_region[0] + CITY_SLOT * 92
@@ -96,6 +133,7 @@ def city_pass(original, viewer, city_region, worker, purchase, stored):
         ['004c748e', stored - 18, 0],
     ]
 
+    focus = city_stack_focus(original, slot, units_after)
     frame(original)
     original.write(FRAME - 0x6AC, viewer, '<I')
     count = read(original, UNIT_COUNT, '<h')
@@ -116,7 +154,7 @@ def city_pass(original, viewer, city_region, worker, purchase, stored):
                               if a != b],
         'explored_before': sum(known_before), 'explored_after': sum(known_after),
         'explored_at_poll': sum(known_poll), 'remembered_bytes_changed': 0,
-        'first_poll': handoff['observation_to_input']['first_poll'],
+        'first_poll': handoff['observation_to_input']['first_poll'], 'focus': focus,
     }
 
 

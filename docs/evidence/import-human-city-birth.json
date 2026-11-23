@@ -74,6 +74,48 @@
       "unit_orders_byte": 255,
       "research_target": -1,
       "research_progress": 0
+    },
+    "focus": {
+      "anchors": [
+        [
+          51,
+          9
+        ],
+        [
+          53,
+          9
+        ],
+        [
+          54,
+          8
+        ],
+        [
+          61,
+          5
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "choices": [
+        18,
+        22,
+        22,
+        9,
+        6
+      ],
+      "reversed_head_choices": [
+        18,
+        22,
+        22,
+        9,
+        6
+      ],
+      "original_stack": [
+        22,
+        26
+      ]
     }
   },
   "surplus_control": {
@@ -141,6 +183,48 @@
       "unit_orders_byte": 255,
       "research_target": -1,
       "research_progress": 0
+    },
+    "focus": {
+      "anchors": [
+        [
+          51,
+          9
+        ],
+        [
+          53,
+          9
+        ],
+        [
+          54,
+          8
+        ],
+        [
+          61,
+          5
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "choices": [
+        18,
+        22,
+        22,
+        9,
+        6
+      ],
+      "reversed_head_choices": [
+        18,
+        22,
+        22,
+        9,
+        6
+      ],
+      "original_stack": [
+        22,
+        26
+      ]
     }
   },
   "scope": "Measure the first native human city pass after the pinned production purchase.\n\nPrepare round 44 from the established opponent and annual trace. Supply the\nmeasured city worker, specialist, shield and treasury results before the\nhuman city pass. Run the native turn start and input preparation. Disable\nautosave and substitute the redraw call, as in the quiet turn-44 control.\nThe surplus control starts with five more stored shields."

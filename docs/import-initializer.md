@@ -506,8 +506,13 @@ for this sequence.
 
 The checked engine places the Phalanx in slot 38. The native prepared
 case uses slot 22. The inspector reports both slots and checks the
-map, production result and checkpoint replay. Faithful import admission
-remains open.
+map, production result and checkpoint replay. The selector also covers
+a coherent pair of own land units in a city. At the five witnessed
+inspection anchors, native selection follows slot order for a distance
+tie, including when the two stack links are reversed. The checked
+engine follows the same rule using its own slots. The live turn handoff
+selects slot 18 from (51, 9) even with the new stack in the city.
+Faithful import admission remains open.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_human_city_birth_check.py --out /tmp/import-human-city-birth.json

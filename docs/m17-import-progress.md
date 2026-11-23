@@ -305,6 +305,10 @@ native production trace also confirms the shield reset for two starting
 balances. Schema 8 clears the box at the supported birth. The engine
 uses slot 38, and the inspector reports the difference from the prepared
 native slot 22. Schema 7 replays its 60-tile view and two-shield surplus.
+The native selector still chooses the same slots when the prepared
+two-unit city stack is reversed. The checked turn handoff selects among
+coherent own city pairs and uses the native distance and slot ordering.
+The inspector verifies five anchors before and after replay.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

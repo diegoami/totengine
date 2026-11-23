@@ -255,6 +255,12 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(birth['unit'],
                          {'slot': 22, 'type': 3, 'owner': 4, 'position': [53, 9], 'spent': 0})
         self.assertEqual(birth['observation_arguments'], [[22, 1]])
+        self.assertEqual(birth['focus'], {
+            'anchors': [[51, 9], [53, 9], [54, 8], [61, 5], [0, 0]],
+            'choices': [18, 22, 22, 9, 6],
+            'reversed_head_choices': [18, 22, 22, 9, 6],
+            'original_stack': [22, 26],
+        })
         self.assertEqual(birth['first_poll']['active_slot'], 18)
 
     def test_native_production_purchase_preserves_saved_knowledge(self):

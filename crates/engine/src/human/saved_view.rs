@@ -30,14 +30,18 @@ impl HumanSession {
     /// Select a ready unit from a supplied map anchor in the checked
     /// surface context. Deferred units stay available for direct orders.
     pub fn saved_initial_focus(&self, anchor: (u16, u16)) -> Option<Entity> {
-        self.saved_focus_candidates(anchor)?
+        self.saved_focus_candidates(anchor, true)?
             .into_iter()
             .filter(|candidate| !candidate.deferred)
             .min_by_key(|candidate| candidate.distance)
             .map(|candidate| candidate.unit)
     }
 
-    fn saved_focus_candidates(&self, anchor: (u16, u16)) -> Option<Vec<SavedFocusCandidate>> {
+    fn saved_focus_candidates(
+        &self,
+        anchor: (u16, u16),
+        allow_city_stack: bool,
+    ) -> Option<Vec<SavedFocusCandidate>> {
         let saved = self.saved_move_state.as_ref()?;
         if !self.knowledge_recipe.checked_replay()
             || self.phase() != Phase::Human
@@ -60,8 +64,11 @@ impl HumanSession {
                 || (raw.owner(), raw.x(), raw.y()) != (unit.owner, unit.x, unit.y)
                 || raw.type_id() != unit.type_id
                 || raw.map_id() != 0
-                || raw.stack_prev() != -1
-                || raw.stack_next() != -1
+                || ((raw.stack_prev(), raw.stack_next()) != (-1, -1)
+                    && !(allow_city_stack
+                        && self.knowledge_recipe
+                            == ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                        && self.saved_focus_city_pair(saved, slot)))
                 || raw.orders() != 255
                 || unit.orders != 255
                 || unit.is_leader
@@ -85,12 +92,50 @@ impl HumanSession {
         Some(candidates)
     }
 
+    fn saved_focus_city_pair(&self, saved: &tot_kit::SaveFile, slot: usize) -> bool {
+        let unit = &saved.units[slot];
+        let (neighbor, head) = match (unit.stack_prev(), unit.stack_next()) {
+            (-1, next) if next >= 0 => (next as usize, true),
+            (prev, -1) if prev >= 0 => (prev as usize, false),
+            _ => return false,
+        };
+        let world = &self.game.world;
+        let Some(other) = saved.units.get(neighbor) else {
+            return false;
+        };
+        let expected = if head {
+            (slot as i16, -1)
+        } else {
+            (-1, slot as i16)
+        };
+        other.id() != 0
+            && (other.owner(), other.x(), other.y(), other.map_id())
+                == (unit.owner(), unit.x(), unit.y(), 0)
+            && (other.stack_prev(), other.stack_next()) == expected
+            && world.units.get(neighbor).is_some_and(|u| {
+                (u.id, u.owner, u.x, u.y, u.stack_pos)
+                    == (
+                        other.id(),
+                        unit.owner(),
+                        unit.x(),
+                        unit.y(),
+                        u16::from(head),
+                    )
+            })
+            && world.units[slot].stack_pos == u16::from(!head)
+            && world.cities.iter().any(|city| {
+                city.city_id != 0
+                    && city.map_id == 0
+                    && (city.owner, city.x, city.y) == (u16::from(unit.owner()), unit.x(), unit.y())
+            })
+    }
+
     fn saved_wait_candidates(&self, actor: Entity) -> Option<Vec<SavedFocusCandidate>> {
         let unit = self.game.world.units.get(actor.slot)?;
         if unit.id == 0 || unit.id != actor.id || unit.owner != self.human || unit.moves_left == 0 {
             return None;
         }
-        self.saved_focus_candidates((unit.x, unit.y))
+        self.saved_focus_candidates((unit.x, unit.y), false)
     }
 
     pub fn can_wait_in_saved_view(&self, actor: Entity) -> bool {
@@ -150,7 +195,7 @@ impl HumanSession {
         if unit.moves_left != 0 {
             return;
         }
-        if let Some(candidates) = self.saved_focus_candidates((unit.x, unit.y)) {
+        if let Some(candidates) = self.saved_focus_candidates((unit.x, unit.y), false) {
             if candidates.iter().all(|unit| unit.deferred) {
                 let previous = (!candidates.is_empty()).then_some(slot);
                 if let Some(saved) = &mut self.saved_move_state {

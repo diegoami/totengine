@@ -824,6 +824,18 @@ staged-round-test
             if recipe == ScenarioKnowledgeRecipe::SavedHumanProductionV1 {
                 assert_eq!(after.observation.seen, initial.observation.seen);
                 assert!(session.saved_move_state.is_some());
+                for (anchor, expected) in [
+                    ((51, 9), 18),
+                    ((53, 9), 26),
+                    ((54, 8), 26),
+                    ((61, 5), 9),
+                    ((0, 0), 6),
+                ] {
+                    assert_eq!(
+                        session.saved_initial_focus(anchor).map(|u| u.slot),
+                        Some(expected)
+                    );
+                }
             }
             let checkpoint = session.checkpoint(deps);
             let replay = HumanSession::restore_with(

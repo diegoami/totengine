@@ -701,6 +701,40 @@ pub(super) fn check_saved_human_production(
     {
         return Err("the checked city production differs from the measured saved view".into());
     }
+    let focus = &native["focus"];
+    let anchors: Vec<(u16, u16)> = serde_json::from_value(focus["anchors"].clone())
+        .map_err(|error| format!("invalid prepared focus anchors: {error}"))?;
+    let choices: Vec<usize> = serde_json::from_value(focus["choices"].clone())
+        .map_err(|error| format!("invalid prepared focus choices: {error}"))?;
+    let stack: [usize; 2] = serde_json::from_value(focus["original_stack"].clone())
+        .map_err(|error| format!("invalid prepared production stack: {error}"))?;
+    if anchors.len() != choices.len()
+        || anchors.is_empty()
+        || focus["choices"] != focus["reversed_head_choices"]
+        || json!(stack[0]) != native["unit"]["slot"]
+    {
+        return Err("the prepared city focus evidence is inconsistent".into());
+    }
+    let expected: Vec<_> = choices
+        .into_iter()
+        .map(|slot| {
+            if slot == stack[0] {
+                unit.index.min(stack[1])
+            } else {
+                slot
+            }
+        })
+        .collect();
+    let verify_focus = |session: &HumanSession| {
+        anchors.iter().zip(&expected).all(|(&anchor, &slot)| {
+            session
+                .saved_initial_focus(anchor)
+                .is_some_and(|unit| unit.slot == slot)
+        })
+    };
+    if !verify_focus(&session) {
+        return Err("the checked city stack focus differs from the native selection rule".into());
+    }
     let checkpoint = session.checkpoint(identity);
     let replay = HumanSession::restore_with(
         rules.clone(),
@@ -708,7 +742,8 @@ pub(super) fn check_saved_human_production(
         &checkpoint,
         Some((&files.bytes, events)),
     )?;
-    if replay.view() != after || replay.checkpoint(identity) != checkpoint {
+    if replay.view() != after || replay.checkpoint(identity) != checkpoint || !verify_focus(&replay)
+    {
         return Err("the checked human production did not replay".into());
     }
     let shields = after
@@ -725,6 +760,7 @@ pub(super) fn check_saved_human_production(
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
         "engine_unit_slot": unit.index,
+        "focus_cases": anchors.len(),
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],

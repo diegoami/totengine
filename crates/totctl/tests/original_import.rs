@@ -178,6 +178,7 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "fresh_human_view_replays": true,
             "fresh_orders_replay": true,
             "native_ready_slot": 18,
+            "native_focus_matches": true,
             "checkpoint_replays": true,
         })
     );

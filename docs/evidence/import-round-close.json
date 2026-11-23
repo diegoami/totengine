@@ -85,6 +85,23 @@
     "turn_start_substitutes": [
       "00467c89"
     ],
+    "focus": {
+      "entry": "0056cb3d",
+      "anchor": [
+        51,
+        9
+      ],
+      "selected": 18,
+      "width": 80,
+      "height": 50,
+      "selected_counts": {
+        "6": 738,
+        "9": 31,
+        "18": 995,
+        "26": 236
+      },
+      "raster_fnv64": "7e7439622d2c54a6"
+    },
     "handoff": {
       "stop": "004205a7",
       "active_slot": 18,

@@ -213,8 +213,10 @@ The engine synchronizes the four own units' movement budgets in its
 deferred per-civ pass. Independent Skip and northwest probes at that
 handoff match saved movement expenditure and observation. Skip retains
 59 tiles. The northwest move adds the one native tile. Both replay from
-checkpoints. Native client focus ordering, wider combat and pending
-choices remain open.
+checkpoints. The guarded initial-focus function matches the native
+selection at all 2,000 prepared map anchors, including slot 18 at
+(51, 9). Client anchor handoff, wider combat and pending choices remain
+open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

@@ -260,6 +260,17 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(first_poll['active_slot'], 18)
         self.assertEqual((first_poll['research_target'], first_poll['research_progress']), (-1, 0))
 
+    def test_fresh_human_focus_raster_covers_every_tile(self):
+        report = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
+        focus = report['fresh_human_input']['focus']
+        self.assertEqual(focus['entry'], '0056cb3d')
+        self.assertEqual(focus['anchor'], [51, 9])
+        self.assertEqual(focus['selected'], 18)
+        self.assertEqual((focus['width'], focus['height']), (80, 50))
+        self.assertEqual(set(focus['selected_counts']), {'6', '9', '18', '26'})
+        self.assertEqual(sum(focus['selected_counts'].values()), 2000)
+        self.assertRegex(focus['raster_fnv64'], r'^[0-9a-f]{16}$')
+
     def test_fresh_human_orders_match_native_budget_and_view_deltas(self):
         report = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
         skip = report['fresh_orders']['skip']

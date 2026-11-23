@@ -19,6 +19,57 @@ struct PreparedView {
 }
 
 impl HumanSession {
+    /// Select an initial focus from a supplied map anchor in the checked
+    /// surface context. The caller owns viewport and subsequent cycling.
+    pub fn saved_initial_focus(&self, anchor: (u16, u16)) -> Option<Entity> {
+        let saved = self.saved_move_state.as_ref()?;
+        if self.knowledge_recipe != ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+            || self.phase() != Phase::Human
+            || self.decision.is_some()
+            || (u32::from(anchor.0) + u32::from(anchor.1)) & 1 != 0
+        {
+            return None;
+        }
+        let world = &self.game.world;
+        world.map.stored_index(anchor.0, anchor.1)?;
+        let width = 2 * world.map.stored_w as i32;
+        let flat = world.game_flags & 0x8000 != 0;
+        let mut nearest = None;
+        let mut distance = i32::MAX;
+        for (slot, unit) in world.units.iter().enumerate() {
+            if unit.id == 0 || unit.owner != self.human || unit.moves_left == 0 {
+                continue;
+            }
+            let raw = saved.units.get(slot)?;
+            if raw.id() != unit.id
+                || (raw.owner(), raw.x(), raw.y()) != (unit.owner, unit.x, unit.y)
+                || raw.map_id() != 0
+                || raw.attr() & 0x4000 != 0
+                || raw.stack_prev() != -1
+                || raw.stack_next() != -1
+                || raw.orders() != 255
+                || unit.orders != 255
+                || unit.is_leader
+                || self.game.rules.unit_domain(usize::from(unit.type_id)) != Some(0)
+            {
+                return None;
+            }
+            let score = crate::placement::diamond_distance(
+                width,
+                flat,
+                i32::from(anchor.0),
+                i32::from(anchor.1),
+                i32::from(unit.x),
+                i32::from(unit.y),
+            );
+            if score < distance {
+                distance = score;
+                nearest = Some(Entity { slot, id: unit.id });
+            }
+        }
+        nearest
+    }
+
     pub(super) fn install_saved_view(
         &mut self,
         projection: SavedMapKnowledge,

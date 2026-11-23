@@ -350,7 +350,10 @@ private snapshot records native expenditure and direction for the
 checked full-budget step. The engine matches the four raw tile changes,
 two remembered-improvement changes, and all five changed unit bytes.
 The inspector checks that slot 18 is ready and that both orders replay.
-Native automatic client selection remains open.
+A separate native selector control compares every valid anchor with the
+engine's guarded initial-focus function. All 2,000 results agree using
+the wrapped diamond distance and the first ready slot on ties. Clients
+still need to supply the corresponding native viewport anchor.
 
 Native opponent policy, the outer-loop UI, wider macro behavior and
 broader combat contexts remain outside these controlled actions.

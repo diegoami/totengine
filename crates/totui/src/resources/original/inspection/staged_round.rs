@@ -553,6 +553,33 @@ pub(super) fn check_saved_opponent_combat(
             "the staged next human turn differs from the prepared view or research state".into(),
         );
     }
+    let focus = &round["fresh_human_input"]["focus"];
+    let anchor: (u16, u16) = serde_json::from_value(focus["anchor"].clone())
+        .map_err(|error| format!("invalid prepared unit focus anchor: {error}"))?;
+    if session
+        .saved_initial_focus(anchor)
+        .map(|unit| unit.slot as u64)
+        != Some(active)
+        || focus["selected"] != native_handoff["active_slot"]
+    {
+        return Err("the staged initial focus differs from the native selection".into());
+    }
+    let width: u16 = serde_json::from_value(focus["width"].clone())
+        .map_err(|error| format!("invalid prepared focus width: {error}"))?;
+    let height: u16 = serde_json::from_value(focus["height"].clone())
+        .map_err(|error| format!("invalid prepared focus height: {error}"))?;
+    let mut raster = 0xcbf2_9ce4_8422_2325u64;
+    for y in 0..height {
+        for x in (y % 2..width).step_by(2) {
+            let selected = session
+                .saved_initial_focus((x, y))
+                .ok_or("a prepared focus anchor has no staged unit")?;
+            raster = (raster ^ selected.slot as u64).wrapping_mul(0x100_0000_01b3);
+        }
+    }
+    if focus["raster_fnv64"] != json!(format!("{raster:016x}")) {
+        return Err("the staged focus differs across the prepared map anchors".into());
+    }
     let actor = view
         .units
         .iter()
@@ -625,7 +652,7 @@ pub(super) fn check_saved_opponent_combat(
         "partial_movement_replays": true, "singleton_movement_replays": true,
         "unconnected_road_replays": true, "round_close_replays": true,
         "fresh_human_view_replays": true, "fresh_orders_replay": true,
-        "native_ready_slot": active, "checkpoint_replays": true,
+        "native_ready_slot": active, "native_focus_matches": true, "checkpoint_replays": true,
     }))
 }
 

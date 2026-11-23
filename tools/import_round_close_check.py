@@ -117,6 +117,31 @@ def annual_update(original, viewer):
             'crt_draws': len(draws), 'host_calls': dict(Counter(hosts))}
 
 
+def initial_focus(original):
+    addresses = (0x5F46FC, 0x5F46F8)
+    anchor = tuple(read(original, address, '<h') for address in addresses)
+    assert read(original, 0x60764E, '<h') == -1
+    width, height = (read(original, address, '<h') for address in (0x6705A0, 0x6705A2))
+    selected = original.call(0x56CB3D, 0xffffffff, 1)
+    count = Counter()
+    digest = 0xcbf29ce484222325
+    try:
+        for y in range(height):
+            original.write(addresses[1], y, '<h')
+            for x in range(y % 2, width, 2):
+                original.write(addresses[0], x, '<h')
+                slot = original.call(0x56CB3D, 0xffffffff, 1)
+                assert slot in (6, 9, 18, 26)
+                count[slot] += 1
+                digest = ((digest ^ slot) * 0x100000001b3) & 0xffffffffffffffff
+    finally:
+        for address, value in zip(addresses, anchor, strict=True):
+            original.write(address, value, '<h')
+    return {'entry': '0056cb3d', 'anchor': anchor, 'selected': selected,
+            'width': width, 'height': height, 'selected_counts': dict(sorted(count.items())),
+            'raster_fnv64': f'{digest:016x}'}
+
+
 def fresh_human_input(original, viewer, city_region, key):
     cpu = original.cpu
     area = read(original, 0x6705A4, '<h')
@@ -156,6 +181,8 @@ def fresh_human_input(original, viewer, city_region, key):
     assert before == budgets() == {'6': 0, '9': 0, '18': 0, '26': 0}
     assert initial == knowledge()
 
+    focus = initial_focus(original)
+    assert focus['anchor'] == (51, 9) and focus['selected'] == 18
     frame(original)
     original.write(FRAME - 0x6AC, viewer, '<I')
     count = read(original, 0x607666, '<h')
@@ -172,7 +199,7 @@ def fresh_human_input(original, viewer, city_region, key):
     assert order['after']['research_progress'] == 0
     assert order['observation_arguments'] == [[18, 1]]
     return {'autosave_disabled': bool(options & 0x2000), 'spent_after_annual_update': before,
-            'turn_start_substitutes': substitutes, 'handoff': handoff}, order
+            'turn_start_substitutes': substitutes, 'focus': focus, 'handoff': handoff}, order
 
 
 def main():

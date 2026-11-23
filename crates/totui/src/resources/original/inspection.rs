@@ -47,6 +47,16 @@ impl OriginalCapture {
             Ok(state) => json!({"matches": true, "saved_state": state}),
             Err(reason) => json!({"matches": false, "reason": reason}),
         };
+        let trace = evidence::resume_trace(&source_sha256, &rules_sha256)?;
+        let land_step = if trace["matches_fixture"] == true {
+            compare_land_step(
+                &snapshot,
+                rules,
+                &trace["first_orders"]["cases"]["move_northwest"],
+            )?
+        } else {
+            Value::Null
+        };
         Ok(json!({
             "schema": 2,
             "source": {
@@ -56,7 +66,8 @@ impl OriginalCapture {
                 "sha256": source_sha256
             },
             "dependency_set": OriginalCapture::SET,
-            "native_resume_trace": evidence::resume_trace(&source_sha256, &rules_sha256)?,
+            "native_resume_trace": trace,
+            "saved_land_step": land_step,
             "records": {
                 "unit_slots": save.units.len(),
                 "live_units": snapshot.stack_positions().iter().flatten().count(),
@@ -78,4 +89,64 @@ impl OriginalCapture {
             "playable_import": false
         }))
     }
+}
+
+fn byte_changes<'a>(
+    before: &'a [u8],
+    after: &'a [u8],
+) -> impl Iterator<Item = (usize, u8, u8)> + 'a {
+    before
+        .iter()
+        .zip(after)
+        .enumerate()
+        .filter_map(|(index, (&old, &new))| (old != new).then_some((index, old, new)))
+}
+
+fn compare_land_step(
+    snapshot: &CheckedSnapshot,
+    rules: &tot_kit::Rules,
+    native: &Value,
+) -> Result<Value, String> {
+    let slot = native["before"]["active_slot"]
+        .as_u64()
+        .and_then(|slot| usize::try_from(slot).ok())
+        .ok_or("native land step evidence has no unit slot")?;
+    let to: (u16, u16) = serde_json::from_value(native["unit_position_after"].clone())
+        .map_err(|error| format!("native land step evidence: {error}"))?;
+    let step = match snapshot.project_land_step(rules, slot, to) {
+        Ok(step) => step,
+        Err(reason) => return Ok(json!({"matches": false, "reason": reason})),
+    };
+    let before = &snapshot.save().maps[0];
+    let tiles: Vec<_> = byte_changes(&before.tile_fields, &step.map.tile_fields).collect();
+    let area = snapshot.save().map_header.surface();
+    let cache: Vec<_> = byte_changes(&before.visibility, &step.map.visibility)
+        .map(|(index, old, new)| (index / area + 1, index % area, old, new))
+        .collect();
+    let explored_tiles = step.view.tiles.iter().flatten().count();
+    let tile_bytes_match = json!(tiles) == native["tile_byte_changes"];
+    let cache_bytes_match = json!(cache) == native["cache_byte_changes"];
+    let allowance = native["active_unit_type_allowance"]
+        .as_u64()
+        .ok_or("native land step evidence has no movement allowance")?;
+    let spent = native["unit_byte_changes"]
+        .as_array()
+        .and_then(|bytes| {
+            bytes
+                .iter()
+                .find(|row| row["byte"] == 10 && row["slot"] == slot)
+        })
+        .and_then(|row| row["after"].as_u64())
+        .ok_or("native land step evidence has no resulting movement cost")?;
+    Ok(json!({
+        "matches": tile_bytes_match && cache_bytes_match && step.position == to
+            && u64::from(step.moves_left) == allowance.saturating_sub(spent)
+            && json!(explored_tiles) == native["explored_tiles"],
+        "unit_slot": slot,
+        "position": step.position,
+        "moves_left": step.moves_left,
+        "explored_tiles": explored_tiles,
+        "tile_bytes_match": tile_bytes_match,
+        "cache_bytes_match": cache_bytes_match,
+    }))
 }

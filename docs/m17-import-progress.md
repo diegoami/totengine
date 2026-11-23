@@ -114,6 +114,14 @@ kernel reproduces its raw deltas after matching occupancy and ownership;
 the current engine move still exposes one extra tile near Madrid. The pinned
 comparison is available from `inspect-original-save` by input identity.
 
+The checker now executes this land step in a temporary engine world. It
+uses the saved movement budget and transfers the new position and occupancy
+to the stack-reset and observation kernels. The `saved_land_step` inspection
+result matches the position, zero movement left, all four tile byte changes
+and both remembered cache changes. The move adds only the one native tile.
+Occupied tiles, cities, huts and other unverified move contexts do not enter
+this comparison path. It produces no live session or checkpoint.
+
 The [native city science trace](evidence/import-city-science-entry.json) runs
 the saved player's only city in isolation. It computes zero science and
 returns with the empty project. Supplying one point at the same call boundary

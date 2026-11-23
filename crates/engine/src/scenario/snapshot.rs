@@ -1,8 +1,19 @@
 //! Read-only record preparation for the first classic profile (#197).
 //! Passing this check is not admission: phase/pending state, dependencies
 //! and knowledge continuation still have independent gates.
+use crate::saved_knowledge::{unit_observation_after_reset, SavedMapKnowledge};
 use std::collections::{BTreeMap, BTreeSet};
-use tot_kit::{Rules, SaveFile};
+use tot_kit::{MapBlock, Rules, SaveFile};
+
+/// Projection of one ordinary land move from a checked save. The map holds
+/// the observed bits and per-civilization memory, separate from the engine's
+/// generic reveal. This does not retain native movement-history bytes.
+pub struct SavedLandStep {
+    pub map: MapBlock,
+    pub view: SavedMapKnowledge,
+    pub position: (u16, u16),
+    pub moves_left: u32,
+}
 
 /// Owned parsed records that passed the bounded structural policy. Immutable
 /// access keeps the result bound to the bytes checked. This is not a session
@@ -38,6 +49,78 @@ impl CheckedSnapshot {
     /// Native linked-list order, keyed by record slot; deleted slots are None.
     pub fn stack_positions(&self) -> &[Option<u16>] {
         &self.stack_positions
+    }
+
+    /// Prepare an ordinary unstacked land step by the saved player for
+    /// read-only continuation comparison. Execute movement on a temporary
+    /// world and feed its destination to the native-derived observation
+    /// kernel, without any generic reveal. Special destinations have their
+    /// own event, contact or stack lifecycles and require separate evidence.
+    pub fn project_land_step(
+        &self,
+        rules: &Rules,
+        slot: usize,
+        to: (u16, u16),
+    ) -> Result<SavedLandStep, String> {
+        let save = &self.save;
+        let player = save.player_civ;
+        super::phase::saved_human_entry(save, rules, player)?;
+        let unit = save
+            .units
+            .get(slot)
+            .filter(|u| u.id() != 0)
+            .ok_or("saved land step requires a live unit")?;
+        if unit.owner() != player
+            || unit.stack_prev() != -1
+            || unit.stack_next() != -1
+            || unit.orders() != 255
+            || rules.unit_domain(usize::from(unit.type_id())) != Some(0)
+        {
+            return Err("saved land step requires the player's awake unstacked land unit".into());
+        }
+        let index = |(x, y)| {
+            save.map_header
+                .stored_index(usize::from(x), usize::from(y))
+                .filter(|_| (u32::from(x) + u32::from(y)) % 2 == 0)
+                .ok_or("saved land step requires valid surface coordinates")
+        };
+        let from = index((unit.x(), unit.y()))?;
+        let dest = index(to)?;
+        let map = &save.maps[0];
+        if map.has_city(from) || map.has_city(dest) || map.has_unit(dest) || map.terrain(dest) == 10
+        {
+            return Err("saved land step requires an empty land destination outside a city".into());
+        }
+
+        let mut world = crate::boot(save, 0);
+        if world.map.hut_at(to.0, to.1) {
+            return Err("saved land step cannot enter a hut".into());
+        }
+        let allowance =
+            world.movement_allowance(rules, usize::from(unit.type_id()), player, unit.damage());
+        world.units[slot].moves_left = allowance.saturating_sub(u32::from(unit.moves_spent()));
+        let moved = world.move_unit(rules, slot, to.0, to.1);
+        if !moved.moved || moved.zoc_ended || moved.battle.is_some() || moved.hut {
+            return Err("saved land step did not resolve as ordinary movement".into());
+        }
+        let moved_unit = &world.units[slot];
+        let position = (moved_unit.x, moved_unit.y);
+        let mut changed = save.clone();
+        changed.units[slot].raw[..2].copy_from_slice(&position.0.to_le_bytes());
+        changed.units[slot].raw[2..4].copy_from_slice(&position.1.to_le_bytes());
+        let tile_bytes = &mut changed.maps[0].tile_fields;
+        tile_bytes[6 * from + 1] &= !1;
+        tile_bytes[6 * dest + 1] |= 1;
+        tile_bytes[6 * dest + 5] = (tile_bytes[6 * dest + 5] & 15) | (world.map.owner[dest] << 4);
+        let mut observed = unit_observation_after_reset(&changed, rules, slot, true)
+            .map_err(|error| format!("saved land step observation: {error}"))?;
+        let view = SavedMapKnowledge::read(&observed, player)?;
+        Ok(SavedLandStep {
+            map: observed.maps.remove(0),
+            view,
+            position,
+            moves_left: moved_unit.moves_left,
+        })
     }
 
     /// Validate engine preparation bounds, not universal original-game

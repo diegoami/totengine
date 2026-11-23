@@ -128,6 +128,18 @@ fn installed_save_reports_checked_records_phase_and_view() {
     );
     assert_eq!(report["playable_import"], false);
     assert_eq!(
+        report["saved_land_step"],
+        json!({
+            "matches": true,
+            "unit_slot": 6,
+            "position": [62, 4],
+            "moves_left": 0,
+            "explored_tiles": 60,
+            "tile_bytes_match": true,
+            "cache_bytes_match": true,
+        })
+    );
+    assert_eq!(
         std::fs::read(Path::new(&home).join(source)).unwrap(),
         before
     );
@@ -139,10 +151,12 @@ fn installed_native_first_move_matches_saved_knowledge_kernel() {
         return;
     };
     let install = Path::new(&home).join("Original");
-    let save = tot_kit::parse_sav_file(&install.join("Ph_Auto2.SAV")).unwrap();
+    let bytes = std::fs::read(install.join("Ph_Auto2.SAV")).unwrap();
     let rules = tot_kit::parse_rules(&tot_kit::latin1(
         &std::fs::read(install.join("Rules.txt")).unwrap(),
     ));
+    let snapshot = engine::scenario::snapshot::CheckedSnapshot::read(&bytes, &rules).unwrap();
+    let save = snapshot.save();
     let native: Value = serde_json::from_str(FIRST_ORDERS).unwrap();
     let moved = &native["cases"]["move_northwest"];
     assert_eq!(moved["observation_arguments"], json!([[6, 1]]));
@@ -155,22 +169,18 @@ fn installed_native_first_move_matches_saved_knowledge_kernel() {
     };
     let old = coordinate(&moved["unit_position_before"]);
     let destination = coordinate(&moved["unit_position_after"]);
-    let index = |(x, y)| {
-        save.map_header
-            .stored_index(x as usize, y as usize)
-            .unwrap()
-    };
     assert_eq!((save.units[slot].x(), save.units[slot].y()), old);
-
-    let mut prepared = save.clone();
-    prepared.maps[0].tile_fields[index(old) * 6 + 1] &= !1;
-    prepared.maps[0].tile_fields[index(destination) * 6 + 1] |= 1;
-    let owner = &mut prepared.maps[0].tile_fields[index(destination) * 6 + 5];
-    *owner = (*owner & 15) | save.player_civ << 4;
-    prepared.units[slot].raw[..2].copy_from_slice(&destination.0.to_le_bytes());
-    prepared.units[slot].raw[2..4].copy_from_slice(&destination.1.to_le_bytes());
-    let measured =
-        engine::saved_knowledge::unit_observation_after(&prepared, &rules, slot, true).unwrap();
+    assert!(
+        snapshot.project_land_step(&rules, slot, (61, 5)).is_err(),
+        "a stack move requires separate continuation"
+    );
+    let measured = snapshot
+        .project_land_step(&rules, slot, destination)
+        .unwrap();
+    assert_eq!(measured.position, destination);
+    assert_eq!(measured.moves_left, 0);
+    assert_eq!(measured.view.tiles.iter().flatten().count(), 60);
+    assert_eq!((save.units[slot].x(), save.units[slot].y()), old);
     let delta = |before: &[u8], after: &[u8]| {
         before
             .iter()
@@ -180,20 +190,17 @@ fn installed_native_first_move_matches_saved_knowledge_kernel() {
             .collect::<Vec<_>>()
     };
     assert_eq!(
-        json!(delta(
-            &save.maps[0].tile_fields,
-            &measured.maps[0].tile_fields
-        )),
+        json!(delta(&save.maps[0].tile_fields, &measured.map.tile_fields)),
         moved["tile_byte_changes"]
     );
     let area = save.maps[0].tile_fields.len() / 6;
-    let cache_delta = delta(&save.maps[0].visibility, &measured.maps[0].visibility)
+    let cache_delta = delta(&save.maps[0].visibility, &measured.map.visibility)
         .into_iter()
         .map(|(i, old, new)| (i / area + 1, i % area, old, new))
         .collect::<Vec<_>>();
     assert_eq!(json!(cache_delta), moved["cache_byte_changes"]);
 
-    let mut world = engine::boot(&save, 7);
+    let mut world = engine::boot(save, 7);
     world.start_turn(&rules);
     let owner = save.player_civ;
     assert_eq!(world.units[slot].moves_left, 3);
@@ -218,7 +225,8 @@ fn installed_native_first_move_matches_saved_knowledge_kernel() {
             .collect::<Vec<_>>()
     };
     let native_visible = visible(
-        measured.maps[0]
+        measured
+            .map
             .tile_fields
             .iter()
             .skip(4)

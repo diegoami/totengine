@@ -171,7 +171,9 @@ stays at 59 tiles. The earlier engine fallback reached 60 on that order.
 The new [opponent-stack recipe](import-initializer.md#experimental-opponent-stack-movement)
 keeps 59 tiles on the same command, appends the mover in native stack order
 and replays the result. The next move to empty land at (41, 37) also
-retains the saved view in native and engine checks. A move that changes the measured human projection
+retains the saved view in native and engine checks. Slot 19 then detaches
+from the middle of the unseen city stack for (42, 36), relinking the
+remaining units in both cases. A move that changes the measured human projection
 or lies outside the supported stack context uses staged engine observation.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final

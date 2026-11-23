@@ -542,7 +542,7 @@ impl HumanSession {
         )
     }
 
-    /// Opt into guarded opponent moves to unseen empty land and friendly city stacks.
+    /// Opt into guarded opponent moves between unseen land and friendly city stacks.
     pub fn scenario_initialized_saved_opponent_stack(
         input: ScenarioInput<'_>,
         human: u8,

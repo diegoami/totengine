@@ -568,5 +568,26 @@ staged-round-test
         let unit = &game.game.world.units[10];
         assert_eq!((unit.x, unit.y, unit.stack_pos), (41, 37, 0));
         assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
+        assert_eq!(game.advance(1), 1);
+        assert_eq!(replay.advance(1), 1);
+        assert!(game
+            .game
+            .log()
+            .lines()
+            .last()
+            .unwrap()
+            .contains(" C 5 move 19 42 36 = moved"));
+        let observed = game.saved_move_state.as_ref().unwrap();
+        assert_eq!(observed.units[34].stack_next(), 2);
+        assert_eq!(observed.units[2].stack_prev(), 34);
+        assert_eq!(
+            (
+                observed.units[19].stack_prev(),
+                observed.units[19].stack_next()
+            ),
+            (-1, -1)
+        );
+        assert_eq!(game.view().observation.seen, original_view.observation.seen);
+        assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
     }
 }

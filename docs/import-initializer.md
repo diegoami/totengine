@@ -238,8 +238,9 @@ cmp docs/evidence/import-city-view.json /tmp/city-view.json
 ## Experimental opponent stack movement
 
 Schema 6, `experimental-saved-opponent-stack-v1`, extends the city-view
-recipe to guarded opponent land steps from an unseen singleton. The
-destination can be unseen empty land or an unseen friendly city stack. The step uses ordinary engine
+recipe to guarded opponent land steps between unseen tiles. The mover
+can go from a singleton to empty land or a friendly city stack. It can
+leave a friendly city stack with clear unit masks for empty land. The step uses ordinary engine
 movement, appends the mover to the existing stack, and runs the
 native-derived unit observation on a temporary snapshot. The recipe
 commits the result when the saved player's projection and remembered
@@ -256,7 +257,9 @@ slot 2 after slots 34 and 19 at (43, 37). The engine command now produces
 the same stack order and the same 59-tile view. The inspector and
 install-backed tests verify replay immediately before and after the move.
 The following move of slot 10 from (41, 39) to empty land at (41, 37)
-also keeps 59 tiles and replays. A known destination declines the
-guarded path. Broad opponent movement,
+also keeps 59 tiles and replays. Slot 19 then leaves the middle of the city
+stack for (42, 36), while the two units it leaves behind link 34 → 2.
+The three ordered moves retain the same viewer memory. A known
+destination declines the guarded path. Broad opponent movement,
 changing spatial knowledge and native pending choices still need
 admission work.

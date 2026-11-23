@@ -303,7 +303,11 @@ pub(super) fn check_saved_opponent_stack(
     let initial = session.view();
     let observed = &trace["city_view"]["observed"];
     let mut moves_checked = 0;
-    for key in ["prepared_opponent_move", "prepared_opponent_empty_move"] {
+    for key in [
+        "prepared_opponent_move",
+        "prepared_opponent_empty_move",
+        "prepared_opponent_departure",
+    ] {
         let native = &observed[key];
         let mover = native["after"]
             .as_array()

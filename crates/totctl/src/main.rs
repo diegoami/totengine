@@ -40,8 +40,8 @@ fn main() -> ExitCode {
             eprintln!(
                 "usage: {prog} worldgen <out.mp> [--seed S] [--width W] [--height H] [--land-percent P]\n\
                         {prog} campaign <Rules.txt> [--policy ai-v1|builtin-1] [--turns N] [--seed S] [--civs C] [--difficulty D] [--width W] [--height H] [--land-percent P] [--checkpoint OUT] [--resume FILE] [--log OUT] [--stream OUT] [--record OUT.totrec [--record-every K]]\n\
-                        {prog} experiment check <manifest.json> | run <manifest.json> --out <new-folder>\n\
-                        \x20                        — validate or run a headless experiment manifest (#203)\n\
+                        {prog} experiment check|run|resume|compare <manifest.json> [options]\n\
+                        \x20                        — validate, run, resume, or compare headless experiments (#203/#204)\n\
                         {prog} record info <bundle.totrec> | verify <bundle.totrec> <Rules.txt> | recover <journal> <out.totrec>\n\
                         \x20                        — inspect, replay-verify or recover session recordings (#206)\n\
                         {prog} mp <file.mp>   — decode an .MP map header and tiles\n\

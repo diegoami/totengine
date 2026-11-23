@@ -1,4 +1,4 @@
-//! `totctl experiment check|run` (#203, generated-world slice).
+//! Generated-world experiments (#203/#204).
 use std::path::Path;
 use std::process::{Command, Output};
 
@@ -51,7 +51,8 @@ fn manifests_validate_expand_run_reproducibly_and_never_overwrite() {
         "seeds": [3, 5],
         "variants": [
             {"name": "easy", "difficulty": 0},
-            {"name": "hard", "difficulty": 4, "policy": "ai-v1"}
+            {"name": "hard", "difficulty": 4, "policy": "ai-v1"},
+            {"name": "easy-legacy", "difficulty": 0, "policy": "ai-v1"}
         ]
     });
     let write = |name: &str, value: &serde_json::Value| {
@@ -59,9 +60,9 @@ fn manifests_validate_expand_run_reproducibly_and_never_overwrite() {
     };
     write("m.json", &manifest);
 
-    // check: four runs, seed variation separate from deliberate changes.
+    // check: six runs, seed variation separate from deliberate changes.
     let check = ok(&totctl(&["experiment", "check", "m.json"], &dir));
-    assert!(check.contains("runs        : 4\n"), "{check}");
+    assert!(check.contains("runs        : 6\n"), "{check}");
     assert!(check.contains("easy-s3"), "{check}");
     assert!(check.contains("changed difficulty=0"), "{check}");
     assert!(
@@ -83,7 +84,7 @@ fn manifests_validate_expand_run_reproducibly_and_never_overwrite() {
             .unwrap();
     assert_eq!(summary["format"], "totengine-experiment-summary 1");
     let runs = summary["runs"].as_array().unwrap();
-    assert_eq!(runs.len(), 4);
+    assert_eq!(runs.len(), 6);
     for run in runs {
         assert_eq!(run["status"], "completed", "{run}");
         let recording = format!("out1/{}", run["recording"].as_str().unwrap());
@@ -146,6 +147,121 @@ fn manifests_validate_expand_run_reproducibly_and_never_overwrite() {
             "{file}"
         );
     }
+
+    // A deliberate stop writes resumable checkpoints. A process can also stop
+    // between runs before the summary exists; missing runs start normally.
+    let paused = ok(&totctl(
+        &[
+            "experiment",
+            "run",
+            "m.json",
+            "--out",
+            "partial",
+            "--round-limit",
+            "2",
+        ],
+        &dir,
+    ));
+    assert!(paused.contains("paused"), "{paused}");
+    assert!(paused.contains("Stopped"), "{paused}");
+    let compare = |left: &str, right: &str| {
+        ok(&totctl(
+            &["experiment", "compare", "m.json", left, right],
+            &dir,
+        ))
+    };
+    assert!(compare("partial/easy-s3.totrec", "out1/easy-s3.totrec")
+        .contains("Matching gameplay prefix through 2 rounds"));
+    assert!(compare("out1/easy-s3.totrec", "out1/hard-s3.totrec")
+        .contains("First divergence at log line 2 after 0 completed rounds"));
+    let policy = compare("out1/easy-s3.totrec", "out1/easy-legacy-s3.totrec");
+    assert!(
+        policy.contains("after 0 completed rounds\nleft: T "),
+        "{policy}"
+    );
+    assert!(policy.contains("\nright: T "), "{policy}");
+
+    std::fs::remove_file(dir.join("partial/summary.json")).unwrap();
+    std::fs::remove_file(dir.join("partial/hard-s5.totrec")).unwrap();
+    std::fs::copy(
+        dir.join("out1/hard-s3.totrec"),
+        dir.join("partial/hard-s3.totrec"),
+    )
+    .unwrap();
+    let before_resume = std::fs::read(dir.join("partial/easy-s3.totrec")).unwrap();
+    ok(&totctl(
+        &[
+            "experiment",
+            "resume",
+            "m.json",
+            "--from",
+            "partial",
+            "--out",
+            "resumed",
+        ],
+        &dir,
+    ));
+    for entry in std::fs::read_dir(dir.join("out1")).unwrap() {
+        let name = entry.unwrap().file_name();
+        assert_eq!(
+            std::fs::read(dir.join("out1").join(&name)).unwrap(),
+            std::fs::read(dir.join("resumed").join(&name)).unwrap(),
+            "{name:?}"
+        );
+    }
+    assert_eq!(
+        std::fs::read(dir.join("partial/easy-s3.totrec")).unwrap(),
+        before_resume
+    );
+    assert!(compare("out1/easy-s3.totrec", "resumed/easy-s3.totrec")
+        .contains("Identical gameplay logs through 6 rounds"));
+
+    // Mismatched inputs stop before the destination exists. One damaged
+    // recording fails only its run and leaves the rest available.
+    let mut renamed = manifest.clone();
+    renamed["name"] = serde_json::json!("different");
+    write("different.json", &renamed);
+    let mismatch = err(&totctl(
+        &[
+            "experiment",
+            "resume",
+            "different.json",
+            "--from",
+            "partial",
+            "--out",
+            "mismatch",
+        ],
+        &dir,
+    ));
+    assert!(mismatch.contains("prior batch identity"), "{mismatch}");
+    assert!(!dir.join("mismatch").exists());
+    std::fs::copy(
+        dir.join("partial/easy-s3.totrec"),
+        dir.join("partial/easy-s5.totrec"),
+    )
+    .unwrap();
+    let damaged = ok(&totctl(
+        &[
+            "experiment",
+            "resume",
+            "m.json",
+            "--from",
+            "partial",
+            "--out",
+            "damaged",
+        ],
+        &dir,
+    ));
+    assert!(damaged.contains("FAILED"), "{damaged}");
+    assert!(
+        damaged.contains("recording does not match this batch run"),
+        "{damaged}"
+    );
+    assert!(!dir.join("damaged/easy-s5.totrec").exists());
+    assert_eq!(
+        std::fs::read(dir.join("damaged/easy-s3.totrec")).unwrap(),
+        std::fs::read(dir.join("out1/easy-s3.totrec")).unwrap()
+    );
 
     // Existing outputs are never overwritten.
     let before = std::fs::read(dir.join("out1/summary.json")).unwrap();

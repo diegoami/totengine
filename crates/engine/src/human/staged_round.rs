@@ -12,7 +12,11 @@ impl HumanSession {
     pub(super) fn run_staged_city_pass(&mut self, civ: u8) {
         let keep_view = civ != self.human
             && self.saved_move_state.is_some()
-            && self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1;
+            && matches!(
+                self.knowledge_recipe,
+                ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentStackV1
+            );
         let before = keep_view.then(|| self.game.world.clone());
         if !keep_view {
             self.finish_saved_movement();
@@ -431,5 +435,115 @@ staged-round-test
         }
         assert!(game.saved_move_state.is_none());
         assert_eq!(game.checkpoint(deps), replay.checkpoint(deps));
+    }
+
+    #[test]
+    fn installed_opponent_stack_order_replays_with_the_saved_view() {
+        let Some((snapshot, rules, events)) = installed_original() else {
+            return;
+        };
+        let deps = "totengine-scenario-dependencies 1\nsaved-opponent-stack-test\n";
+        let mut game = HumanSession::scenario_initialized_saved_opponent_stack(
+            ScenarioInput {
+                path: "Original/Ph_Auto2.SAV",
+                snapshot: &snapshot,
+                rules: rules.clone(),
+                events: Some(events.clone()),
+            },
+            4,
+            AiPolicy::BuiltIn1,
+            7,
+            deps,
+        )
+        .unwrap();
+        assert_eq!(game.initializer().unwrap().schema(), 6);
+        for slot in [6, 9, 26, 18] {
+            let view = game.view();
+            let unit = *view.units.iter().find(|unit| unit.slot == slot).unwrap();
+            game.submit(Request {
+                civ: 4,
+                revision: view.revision,
+                id: view.revision + 1,
+                command: Command::Skip { unit },
+            })
+            .unwrap();
+        }
+        let revision = game.view().revision;
+        game.submit(Request {
+            civ: 4,
+            revision,
+            id: revision + 1,
+            command: Command::EndTurn,
+        })
+        .unwrap();
+        let original_view = game.view();
+        let mut prior = game.checkpoint(deps);
+        let mut reached = false;
+        for _ in 0..64 {
+            assert_eq!(game.advance(1), 1);
+            if game
+                .game
+                .log()
+                .lines()
+                .last()
+                .unwrap()
+                .contains(" C 5 move 2 43 37 = moved")
+            {
+                reached = true;
+                break;
+            }
+            prior = game.checkpoint(deps);
+        }
+        assert!(reached, "did not reach checked stack move");
+        let after = game.view();
+        assert!(game.saved_move_state.is_some());
+        assert_eq!(original_view.observation.seen, after.observation.seen);
+        assert_eq!(original_view.observation.units, after.observation.units);
+        assert_eq!(after.observation.seen.iter().flatten().count(), 59);
+        let units = &game.game.world.units;
+        for (position, slot) in [34, 19, 2].into_iter().enumerate() {
+            assert_eq!(
+                (units[slot].x, units[slot].y, units[slot].stack_pos),
+                (43, 37, position as u16)
+            );
+        }
+        let restore = |text: &str| {
+            HumanSession::restore_with(
+                rules.clone(),
+                deps,
+                text,
+                Some((&snapshot, Some(events.clone()))),
+            )
+            .unwrap()
+        };
+        let saved = game.saved_move_state.as_ref().unwrap();
+        assert_eq!(saved.units[34].stack_next(), 19);
+        assert_eq!(
+            (saved.units[19].stack_prev(), saved.units[19].stack_next()),
+            (34, 2)
+        );
+        assert_eq!(saved.units[2].stack_prev(), 19);
+        let mut visible = restore(&prior);
+        let dest = visible.game.world.map.stored_index(43, 37).unwrap();
+        visible.saved_move_state.as_mut().unwrap().maps[0].tile_fields[6 * dest + 4] |= 1 << 4;
+        let world_identity = visible.game.world.checksum();
+        let log = visible.game.log().to_owned();
+        assert_eq!(
+            visible.try_saved_opponent_stack(
+                5,
+                Order::Move {
+                    unit: 2,
+                    to: (43, 37)
+                }
+            ),
+            None
+        );
+        assert_eq!(visible.game.world.checksum(), world_identity);
+        assert_eq!(visible.game.log(), log);
+        let checkpoint = game.checkpoint(deps);
+        let mut replay = restore(&prior);
+        assert_eq!(replay.advance(1), 1);
+        assert_eq!(replay.checkpoint(deps), checkpoint);
+        assert_eq!(restore(&checkpoint).view(), after);
     }
 }

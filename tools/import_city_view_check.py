@@ -73,13 +73,16 @@ def measure(original, viewer, city):
     after = view()
     created = [
         {'slot': slot, 'position': [x, y], 'owner': owner,
-         'tile_known': after[0][y * (width // 2) + x // 2], 'viewer_mask': visible}
+         'tile_known': after[0][y * (width // 2) + x // 2], 'viewer_mask': visible,
+         'visibility_byte': read(original, UNITS + 40 * slot + 11, '<B'),
+         'orders': read(original, UNITS + 40 * slot + 17, '<B')}
         for slot, (identity, x, y, owner, visible) in after[2].items()
         if slot not in before[2] or before[2][slot][0] != identity
     ]
     assert before[:2] == after[:2]
     assert all(after[2].get(slot) == unit for slot, unit in before[2].items())
     assert len(created) == 1 and not created[0]['tile_known']
+    assert (created[0]['visibility_byte'], created[0]['orders']) == (0, 255)
     return {'city_slot': city, 'stop': f'{PRODUCTION_CHOICE:08x}',
             'viewer_explored_tiles': sum(after[0]), 'viewer_memory_changed': False,
             'previous_unit_knowledge_changed': False,

@@ -135,7 +135,8 @@ class GoldenMetadata(unittest.TestCase):
         self.assertFalse(observed['previous_unit_knowledge_changed'])
         self.assertEqual(observed['created_units'],
                          [{'slot': 34, 'position': [43, 37], 'owner': 5,
-                           'tile_known': False, 'viewer_mask': False}])
+                           'tile_known': False, 'viewer_mask': False,
+                           'visibility_byte': 0, 'orders': 255}])
         move = observed['prepared_opponent_move']
         self.assertEqual(move['arguments'], [2, 1, 3])
         self.assertEqual(move['explored_tiles'], 59)

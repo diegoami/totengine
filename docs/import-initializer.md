@@ -233,3 +233,28 @@ one move without running the native production selector or opponent policy.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_city_view_check.py --out /tmp/city-view.json
 cmp docs/evidence/import-city-view.json /tmp/city-view.json
 ```
+
+
+## Experimental opponent stack movement
+
+Schema 6, `experimental-saved-opponent-stack-v1`, extends the city-view
+recipe to a guarded opponent land step into an unseen friendly city stack.
+The origin must be an unseen singleton. The step uses ordinary engine
+movement, appends the mover to the existing stack, and runs the
+native-derived unit observation on a temporary snapshot. The recipe
+commits the result when the saved player's projection and remembered
+improvements still match. Other movement kinds and an observed change
+continue through the staged engine policy.
+
+The private observation snapshot records births already guarded by the
+unseen-city pass. The pinned native birth had clear visibility and no
+standing orders. The new engine records start unobserved, with stack links
+reconstructed from the existing engine allocation order.
+
+The measured [native stack move](evidence/import-city-view.json) joins
+slot 2 after slots 34 and 19 at (43, 37). The engine command now produces
+the same stack order and the same 59-tile view. The inspector and
+install-backed tests verify replay immediately before and after the move.
+A known destination declines the guarded path. Broad opponent movement,
+changing spatial knowledge and native pending choices still need
+admission work.

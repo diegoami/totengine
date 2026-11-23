@@ -222,7 +222,7 @@ pub(crate) fn stage_saved_unit_skip(
     Ok(observed)
 }
 
-fn apply_saved_observation(world: &mut crate::WorldState, observed: &SaveFile) {
+pub(crate) fn apply_saved_observation(world: &mut crate::WorldState, observed: &SaveFile) {
     let map = &observed.maps[0];
     for (tile, bytes) in map.tile_fields.as_chunks::<6>().0.iter().enumerate() {
         world.map.improvements[tile] = bytes[1];

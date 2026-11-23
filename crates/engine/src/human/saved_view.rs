@@ -154,6 +154,7 @@ impl HumanSession {
         {
             return Err("city pass changed a city identity or discovery mask".into());
         }
+        let mut births = Vec::new();
         for (slot, unit) in world.units.iter().enumerate() {
             if let Some(old) = before.units.get(slot).filter(|unit| unit.id != 0) {
                 if (
@@ -190,11 +191,19 @@ impl HumanSession {
                 {
                     return Err("city pass created a unit outside an unseen processed city".into());
                 }
+                births.push((slot, at));
             }
         }
 
         let mut observed = saved.clone();
         let mut updated_world = world.clone();
+        if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentStackV1 {
+            crate::scenario::opponent_stack::record_city_births(
+                &mut observed,
+                &mut updated_world,
+                &births,
+            )?;
+        }
         for (slot, _) in &summary.city_accounts {
             updated_world.refresh_city_phase_memory(*slot)?;
             let city = &updated_world.cities[*slot];
@@ -217,8 +226,11 @@ impl HumanSession {
     }
 
     pub(super) fn keeps_city_view_for_opponent_order(&self, civ: u8, order: Order) -> bool {
-        if self.knowledge_recipe != ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
-            || self.saved_move_state.is_none()
+        if !matches!(
+            self.knowledge_recipe,
+            ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedOpponentStackV1
+        ) || self.saved_move_state.is_none()
         {
             return false;
         }
@@ -229,6 +241,53 @@ impl HumanSession {
             Order::SetResearch { .. } => self.game.world.free_research[usize::from(civ)] == 0,
             _ => false,
         }
+    }
+
+    pub(super) fn try_saved_opponent_stack(
+        &mut self,
+        civ: u8,
+        order: Order,
+    ) -> Option<OrderResult> {
+        if self.knowledge_recipe != ScenarioKnowledgeRecipe::SavedOpponentStackV1 {
+            return None;
+        }
+        let (Some(saved), Order::Move { unit, to }) = (&self.saved_move_state, order) else {
+            return None;
+        };
+        let before = SavedMapKnowledge::read(saved, self.human).ok()?;
+        let moving = self.game.world.units.get(unit)?;
+        for (x, y) in [(moving.x, moving.y), to] {
+            let tile = self.game.world.map.stored_index(x, y)?;
+            if before.tiles.get(tile)?.is_some() {
+                return None;
+            }
+        }
+        let mut world = self.game.world.clone();
+        let observed = crate::scenario::opponent_stack::stage(
+            saved,
+            &self.game.rules,
+            &mut world,
+            civ,
+            unit,
+            to,
+        )
+        .ok()?;
+        let after = SavedMapKnowledge::read(&observed, self.human).ok()?;
+        let area = saved.map_header.surface();
+        let offset = (usize::from(self.human) - 1) * area;
+        let memory = offset..offset + area;
+        if before != after
+            || saved.maps[0].visibility[memory.clone()] != observed.maps[0].visibility[memory]
+        {
+            return None;
+        }
+        let view = Self::prepare_saved_view(&world, self.human, after).ok()?;
+        let result = self
+            .game
+            .commit_saved_view_order(world, civ, order, OrderResult::Moved);
+        self.set_saved_view(view);
+        self.saved_move_state = Some(observed);
+        Some(result)
     }
 
     pub(super) fn finish_saved_movement(&mut self) {

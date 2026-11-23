@@ -24,7 +24,9 @@
         ],
         "owner": 5,
         "tile_known": false,
-        "viewer_mask": false
+        "viewer_mask": false,
+        "visibility_byte": 0,
+        "orders": 255
       }
     ],
     "presentation_substitutes": [

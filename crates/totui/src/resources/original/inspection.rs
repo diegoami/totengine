@@ -80,6 +80,12 @@ impl OriginalCapture {
         } else {
             Value::Null
         };
+        let opponent_stack = if city_view["verified"] == true {
+            staged_round::check_saved_opponent_stack(self, human, &trace)
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
         Ok(json!({
             "schema": 2,
             "source": {
@@ -94,6 +100,7 @@ impl OriginalCapture {
             "staged_round_check": staged,
             "saved_movement_check": movement,
             "saved_city_view_check": city_view,
+            "saved_opponent_stack_check": opponent_stack,
             "records": {
                 "unit_slots": save.units.len(),
                 "live_units": snapshot.stack_positions().iter().flatten().count(),

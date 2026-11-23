@@ -167,7 +167,11 @@ checkpoint. The first engine production order retains that view.
 Opponent moves and other unverified orders switch to engine observation.
 The same probe now measures the first engine spatial order as a direct
 native move into the unseen stack at (43, 37). Native human knowledge
-stays at 59 tiles. The current engine fallback reaches 60 on that order.
+stays at 59 tiles. The earlier engine fallback reached 60 on that order.
+The new [opponent-stack recipe](import-initializer.md#experimental-opponent-stack-movement)
+keeps 59 tiles on the same command, appends the mover in native stack order
+and replays the result. A move that changes the measured human projection
+or lies outside the supported stack context uses staged engine observation.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

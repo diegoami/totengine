@@ -183,37 +183,7 @@ pub(super) fn check_saved_city_view(
         7,
         resources,
     )?;
-    let skips = trace["round_handoff"]["spend_saved_movement"]["dispatched"]
-        .as_array()
-        .filter(|messages| messages.len() == 4)
-        .ok_or("native city-view evidence is missing its skips")?;
-    for input in skips {
-        if input["character"] != 32 {
-            return Err("native city-view evidence contains a different order".into());
-        }
-        let raw_slot = input["active_slot"]
-            .as_u64()
-            .ok_or("native Skip slot missing")?;
-        let view = session.view();
-        let unit = *view
-            .units
-            .iter()
-            .find(|unit| unit.slot as u64 == raw_slot)
-            .ok_or("saved city-view Skip unit missing")?;
-        session.submit(Request {
-            civ: human,
-            id: view.revision + 1,
-            revision: view.revision,
-            command: Command::Skip { unit },
-        })?;
-    }
-    let before_end = session.view();
-    session.submit(Request {
-        civ: human,
-        id: before_end.revision + 1,
-        revision: before_end.revision,
-        command: Command::EndTurn,
-    })?;
+    issue_saved_handoff(&mut session, human, trace)?;
     let before = session.view();
     let before_pass = session.checkpoint(resources);
     let report = &trace["city_view"]["observed"];
@@ -269,6 +239,129 @@ pub(super) fn check_saved_city_view(
         "unit_knowledge_unchanged": true, "first_opponent_order_preserved_view": true,
         "checkpoint_replays": true,
     }))
+}
+
+fn issue_saved_handoff(session: &mut HumanSession, human: u8, trace: &Value) -> Result<(), String> {
+    let skips = trace["round_handoff"]["spend_saved_movement"]["dispatched"]
+        .as_array()
+        .filter(|messages| messages.len() == 4)
+        .ok_or("native city-view evidence is missing its skips")?;
+    for input in skips {
+        if input["character"] != 32 {
+            return Err("native city-view evidence contains a different order".into());
+        }
+        let raw_slot = input["active_slot"]
+            .as_u64()
+            .ok_or("native Skip slot missing")?;
+        let view = session.view();
+        let unit = *view
+            .units
+            .iter()
+            .find(|unit| unit.slot as u64 == raw_slot)
+            .ok_or("saved city-view Skip unit missing")?;
+        session.submit(Request {
+            civ: human,
+            id: view.revision + 1,
+            revision: view.revision,
+            command: Command::Skip { unit },
+        })?;
+    }
+    let before_end = session.view();
+    session.submit(Request {
+        civ: human,
+        id: before_end.revision + 1,
+        revision: before_end.revision,
+        command: Command::EndTurn,
+    })?;
+    Ok(())
+}
+
+/// Find the pinned move in the canonical log identity without publishing
+/// the opponent order log into the player's interface.
+pub(super) fn check_saved_opponent_stack(
+    capture: &OriginalCapture,
+    human: u8,
+    trace: &Value,
+) -> Result<Value, String> {
+    let files = capture.files();
+    let rules = &capture.resources().rules;
+    let events = files.events.clone().map(EventEngine::new);
+    let resources = capture.identity();
+    let mut session = HumanSession::scenario_initialized_saved_opponent_stack(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: rules.clone(),
+            events: events.clone(),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        resources,
+    )?;
+    issue_saved_handoff(&mut session, human, trace)?;
+    let initial = session.view();
+    let native = &trace["city_view"]["observed"]["prepared_opponent_move"];
+    let mover = native["after"]
+        .as_array()
+        .and_then(|units| units.first())
+        .ok_or("prepared stack move evidence is missing the mover")?;
+    let (x, y): (u16, u16) = serde_json::from_value(mover["position"].clone())
+        .map_err(|error| format!("invalid prepared stack position: {error}"))?;
+    let slot = mover["slot"]
+        .as_u64()
+        .ok_or("prepared stack slot missing")?;
+    let civ = mover["owner"]
+        .as_u64()
+        .ok_or("prepared stack owner missing")?;
+    let order = format!(
+        "T {} C {civ} move {slot} {x} {y} = moved\n",
+        initial.observation.turn
+    );
+    for _ in 0..64 {
+        let prior = session.checkpoint(resources);
+        let log = checkpoint_line(&prior, "log ")?;
+        let (bytes, digest) = log[4..]
+            .split_once(' ')
+            .ok_or("invalid checkpoint log identity")?;
+        let bytes: usize = bytes.parse().map_err(|_| "invalid checkpoint log length")?;
+        let digest =
+            u64::from_str_radix(digest, 16).map_err(|_| "invalid checkpoint log fingerprint")?;
+        let extended = order.as_bytes().iter().fold(digest, |h, &byte| {
+            (h ^ u64::from(byte)).wrapping_mul(0x100_0000_01b3)
+        });
+        let expected_log = format!("log {} {extended:016x}", bytes + order.len());
+        if session.advance(1) != 1 {
+            break;
+        }
+        let after = session.checkpoint(resources);
+        if checkpoint_line(&after, "log ")? != expected_log {
+            continue;
+        }
+        let view = session.view();
+        let explored = view.observation.seen.iter().flatten().count();
+        if json!(explored) != native["explored_tiles"]
+            || view.observation.seen != initial.observation.seen
+            || view.observation.units != initial.observation.units
+        {
+            return Err("the stack move did not preserve the measured player view".into());
+        }
+        let mut replay = HumanSession::restore_with(
+            rules.clone(),
+            resources,
+            &prior,
+            Some((&files.bytes, events.clone())),
+        )?;
+        if replay.advance(1) != 1 || replay.checkpoint(resources) != after {
+            return Err("the checked stack move did not replay".into());
+        }
+        return Ok(json!({
+            "verified": true, "initializer_schema": 6,
+            "profile": engine::human::ScenarioInitializer::SAVED_OPPONENT_STACK_PROFILE,
+            "explored_tiles": explored, "checkpoint_replays": true,
+        }));
+    }
+    Err("staged opponent did not reach the measured stack move".into())
 }
 
 fn checkpoint_line<'a>(checkpoint: &'a str, prefix: &str) -> Result<&'a str, String> {

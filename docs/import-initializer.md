@@ -353,7 +353,12 @@ The inspector checks that slot 18 is ready and that both orders replay.
 A separate native selector control compares every valid anchor with the
 engine's guarded initial-focus function. All 2,000 results agree using
 the wrapped diamond distance and the first ready slot on ties. Clients
-still need to supply the corresponding native viewport anchor.
+still need to apply the anchor on entry and retain it for later input.
+The [saved viewport probe](evidence/import-saved-viewport.json) binds
+the initial (61, 5) to signed words at post-city offsets 63 and 65.
+Native resume selects slot 9 from those bytes. The original prepared
+control supplies (0, 0) and selects slot 6. Both retain 59 tiles.
+The inspector checks the captured-byte anchor and both selections.
 
 Native opponent policy, the outer-loop UI, wider macro behavior and
 broader combat contexts remain outside these controlled actions.
@@ -366,4 +371,9 @@ cmp docs/evidence/import-opponent-combat-view.json /tmp/opponent-combat-view.jso
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_round_close_check.py --out /tmp/import-round-close.json
 cmp docs/evidence/import-round-close.json /tmp/import-round-close.json
+```
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_saved_viewport_check.py --out /tmp/import-saved-viewport.json
+cmp docs/evidence/import-saved-viewport.json /tmp/import-saved-viewport.json
 ```

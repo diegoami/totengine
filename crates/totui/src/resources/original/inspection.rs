@@ -49,6 +49,12 @@ impl OriginalCapture {
             Err(reason) => json!({"matches": false, "reason": reason}),
         };
         let trace = evidence::resume_trace(&source_sha256, &rules_sha256)?;
+        let viewport = if trace["matches_fixture"] == true {
+            staged_round::check_saved_viewport(self, human, tail.viewport, &trace["saved_viewport"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
         let land_step = if trace["matches_fixture"] == true {
             compare_land_step(
                 &snapshot,
@@ -103,6 +109,7 @@ impl OriginalCapture {
             "dependency_set": OriginalCapture::SET,
             "native_resume_trace": trace,
             "saved_land_step": land_step,
+            "saved_viewport_check": viewport,
             "staged_round_check": staged,
             "saved_movement_check": movement,
             "saved_city_view_check": city_view,

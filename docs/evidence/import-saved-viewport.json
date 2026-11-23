@@ -1,0 +1,177 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "fields": {
+    "00461836": {
+      "target": "005f46fc",
+      "post_city_offset": 63
+    },
+    "00461860": {
+      "target": "005f46f8",
+      "post_city_offset": 65
+    }
+  },
+  "cases": {
+    "zero_anchor": {
+      "anchor": [
+        0,
+        0
+      ],
+      "handoff": {
+        "stop": "004205a7",
+        "active_slot": 6,
+        "display_mode": 1,
+        "research_target": -1,
+        "research_progress": 0,
+        "explored_tiles_before": 59,
+        "explored_tiles_after": 59,
+        "tile_bytes_changed": 0,
+        "human_memory_bytes_changed": 0,
+        "unit_masks_changed": 0,
+        "city_knowledge_records_changed": 0,
+        "substituted_calls": [
+          "005346be",
+          "0040d7e7",
+          "004bf9b6"
+        ],
+        "observation_to_input": {
+          "substituted_calls": [
+            "00467c89",
+            "0041af00",
+            "004bf9b6",
+            "005346be",
+            "0040d7e7",
+            "004bf9b6",
+            "00467c89",
+            "0041af00"
+          ],
+          "first_poll": {
+            "stop_at_call": "00576ee4",
+            "import": "PeekMessageA",
+            "window_filter": 0,
+            "message_filter": [
+              0,
+              0
+            ],
+            "remove": 1,
+            "active_slot": 6,
+            "unit_orders_byte": 255,
+            "research_target": -1,
+            "research_progress": 0
+          },
+          "idle_iteration": {
+            "initial_queue_result": "empty",
+            "filtered_polls": [
+              {
+                "call": "00577011",
+                "message_filter": [
+                  957,
+                  957
+                ]
+              }
+            ],
+            "next_general_poll": "00576ee4",
+            "active_slot": 6,
+            "display_mode": 1,
+            "civ_unit_city_records_unchanged": true
+          }
+        },
+        "observation_calls": [
+          [
+            6,
+            1
+          ],
+          [
+            6,
+            1
+          ]
+        ]
+      }
+    },
+    "saved_anchor": {
+      "anchor": [
+        61,
+        5
+      ],
+      "handoff": {
+        "stop": "004205a7",
+        "active_slot": 9,
+        "display_mode": 1,
+        "research_target": -1,
+        "research_progress": 0,
+        "explored_tiles_before": 59,
+        "explored_tiles_after": 59,
+        "tile_bytes_changed": 0,
+        "human_memory_bytes_changed": 0,
+        "unit_masks_changed": 0,
+        "city_knowledge_records_changed": 0,
+        "substituted_calls": [
+          "005346be",
+          "0040d7e7",
+          "004bf9b6"
+        ],
+        "observation_to_input": {
+          "substituted_calls": [
+            "00467c89",
+            "0041af00",
+            "004bf9b6",
+            "005346be",
+            "0040d7e7",
+            "004bf9b6",
+            "00467c89",
+            "0041af00"
+          ],
+          "first_poll": {
+            "stop_at_call": "00576ee4",
+            "import": "PeekMessageA",
+            "window_filter": 0,
+            "message_filter": [
+              0,
+              0
+            ],
+            "remove": 1,
+            "active_slot": 9,
+            "unit_orders_byte": 255,
+            "research_target": -1,
+            "research_progress": 0
+          },
+          "idle_iteration": {
+            "initial_queue_result": "empty",
+            "filtered_polls": [
+              {
+                "call": "00577011",
+                "message_filter": [
+                  957,
+                  957
+                ]
+              }
+            ],
+            "next_general_poll": "00576ee4",
+            "active_slot": 9,
+            "display_mode": 1,
+            "civ_unit_city_records_unchanged": true
+          }
+        },
+        "observation_calls": [
+          [
+            9,
+            1
+          ],
+          [
+            9,
+            1
+          ]
+        ]
+      }
+    }
+  },
+  "scope": "Trace the saved viewport into the prepared native resume input poll.\n\nThe plain single-player post-city prefix reads into the two native\nselector coordinates. Repeat the existing prepared resume with those\ncoordinates and with the zero-anchor control. The probe supplies a\ndisplay context and empty message queue."
+}

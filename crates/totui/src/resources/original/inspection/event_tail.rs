@@ -5,6 +5,8 @@ use serde::Serialize;
 use tot_kit::{EventFile, Value};
 
 const PREFIX_BYTES: usize = 1853;
+// Native viewport reads at 00461836 and 00461860.
+const VIEWPORT_OFFSET: usize = 63;
 // Native append and reset witnesses in docs/evidence/import-history.json.
 const HISTORY_OFFSET: usize = 1513;
 const HISTORY_CAPACITY: i16 = 12;
@@ -20,6 +22,8 @@ const SPENT: u32 = 0x2000_0000;
 #[derive(Debug, PartialEq, Eq, Serialize)]
 pub(super) struct EventTail<'a> {
     prefix_bytes: usize,
+    #[serde(skip)]
+    pub(super) viewport: (i16, i16),
     history_entries: i16,
     record_count: usize,
     string_count: usize,
@@ -97,8 +101,12 @@ pub(super) fn inspect(tail: &[u8]) -> Result<EventTail<'_>, String> {
             strings.len()
         ));
     }
+    let [x0, x1, y0, y1] = tail[VIEWPORT_OFFSET..VIEWPORT_OFFSET + 4]
+        .try_into()
+        .expect("validated post-city prefix contains the viewport");
     Ok(EventTail {
         prefix_bytes: PREFIX_BYTES,
+        viewport: (i16::from_le_bytes([x0, x1]), i16::from_le_bytes([y0, y1])),
         history_entries,
         record_count: count,
         string_count: slots.len(),

@@ -215,8 +215,12 @@ handoff match saved movement expenditure and observation. Skip retains
 59 tiles. The northwest move adds the one native tile. Both replay from
 checkpoints. The guarded initial-focus function matches the native
 selection at all 2,000 prepared map anchors, including slot 18 at
-(51, 9). Client anchor handoff, wider combat and pending choices remain
-open.
+(51, 9). A [saved viewport probe](evidence/import-saved-viewport.json)
+binds the resume anchor to signed words at post-city offsets 63 and 65.
+The saved (61, 5) anchor selects slot 9 and preserves all 59 tiles.
+The zero-anchor preparation used by earlier controls selects slot 6.
+The inspector compares both cases against one captured session. Client
+anchor handoff, wider combat and pending choices remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

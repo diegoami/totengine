@@ -159,6 +159,12 @@ fn installed_save_reports_checked_records_phase_and_view() {
         report["victory_event"]["saved_state"],
         serde_json::json!({"active": [false, false], "spent": [false, false]})
     );
+    assert_eq!(
+        report["saved_viewport_check"],
+        json!({
+            "verified": true, "anchor": [61, 5], "selected_slot": 9, "zero_anchor_slot": 6,
+        })
+    );
     assert_eq!(report["playable_import"], false);
     assert_eq!(
         report["saved_opponent_combat_check"],

@@ -260,6 +260,24 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(first_poll['active_slot'], 18)
         self.assertEqual((first_poll['research_target'], first_poll['research_progress']), (-1, 0))
 
+    def test_saved_viewport_changes_the_prepared_resume_selection(self):
+        report = json.loads((ROOT / 'docs/evidence/import-saved-viewport.json').read_text())
+        prefix = json.loads((ROOT / 'docs/evidence/import-event-tail.json').read_text())
+        self.assertEqual(report['source'], prefix['source'])
+        self.assertEqual(report['binary_sha256'], prefix['binary_sha256'])
+        self.assertEqual(report['fields'], {
+            '00461836': {'target': '005f46fc', 'post_city_offset': 63},
+            '00461860': {'target': '005f46f8', 'post_city_offset': 65},
+        })
+        for label, anchor, slot in [('zero_anchor', [0, 0], 6), ('saved_anchor', [61, 5], 9)]:
+            case = report['cases'][label]
+            self.assertEqual(case['anchor'], anchor)
+            handoff = case['handoff']
+            self.assertEqual(handoff['active_slot'], slot)
+            self.assertEqual(handoff['explored_tiles_after'], 59)
+            self.assertEqual(handoff['human_memory_bytes_changed'], 0)
+            self.assertEqual(handoff['observation_to_input']['first_poll']['active_slot'], slot)
+
     def test_fresh_human_focus_raster_covers_every_tile(self):
         report = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
         focus = report['fresh_human_input']['focus']

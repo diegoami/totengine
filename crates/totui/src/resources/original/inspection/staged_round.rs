@@ -353,6 +353,56 @@ pub(super) fn check_saved_opponent_stack(
     }))
 }
 
+pub(super) fn check_saved_viewport(
+    capture: &OriginalCapture,
+    human: u8,
+    viewport: (i16, i16),
+    trace: &Value,
+) -> Result<Value, String> {
+    let anchor = (
+        u16::try_from(viewport.0).map_err(|_| "saved viewport x is negative")?,
+        u16::try_from(viewport.1).map_err(|_| "saved viewport y is negative")?,
+    );
+    if json!(anchor) != trace["cases"]["saved_anchor"]["anchor"] {
+        return Err("the captured viewport differs from the native resume input".into());
+    }
+    let files = capture.files();
+    let session = HumanSession::scenario_initialized_saved_opponent_combat(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: capture.resources().rules.clone(),
+            events: files.events.clone().map(EventEngine::new),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        capture.identity(),
+    )?;
+    let view = session.view();
+    for label in ["saved_anchor", "zero_anchor"] {
+        let native = &trace["cases"][label];
+        let anchor: (u16, u16) = serde_json::from_value(native["anchor"].clone())
+            .map_err(|error| format!("invalid native viewport anchor: {error}"))?;
+        let selected = session
+            .saved_initial_focus(anchor)
+            .ok_or("the saved viewport has no checked ready unit")?;
+        if json!(selected.slot) != native["handoff"]["active_slot"]
+            || json!(view.observation.seen.iter().flatten().count())
+                != native["handoff"]["explored_tiles_after"]
+            || view.decision.is_some()
+        {
+            return Err("initial unit focus differs from the prepared native resume".into());
+        }
+    }
+    Ok(json!({
+        "verified": true,
+        "anchor": anchor,
+        "selected_slot": trace["cases"]["saved_anchor"]["handoff"]["active_slot"],
+        "zero_anchor_slot": trace["cases"]["zero_anchor"]["handoff"]["active_slot"],
+    }))
+}
+
 pub(super) fn check_saved_opponent_combat(
     capture: &OriginalCapture,
     human: u8,

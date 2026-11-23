@@ -273,6 +273,11 @@ executes the commit and city-refresh fragment for three legal choices.
 The native path preserves the full tile array and remembered improvements.
 The checked replay now preserves the same saved view across a rate
 change. The inspector checks the rate pairs and restores each checkpoint.
+The [native production commit](evidence/import-saved-production.json)
+also retains the map and remembered improvements for a no-op and a
+switch from item 3 to item -42. The latter keeps six of twelve shields.
+The checked quoted-production order preserves that view and replays
+with the same build item and shield box.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

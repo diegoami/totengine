@@ -437,3 +437,14 @@ The inspector verifies each case and restores the resulting checkpoint.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_saved_rates_check.py --out /tmp/import-saved-rates.json
 cmp docs/evidence/import-saved-rates.json /tmp/import-saved-rates.json
 ```
+
+### Quoted production in a checked saved view
+
+The [prepared native commit](evidence/import-saved-production.json)
+captures the switch budget, executes the build and shield writes, and
+stops before further presentation. City 5 keeps 12 shields when its
+item stays at 3 and retains 6 when switching to item -42. Both controls
+keep the 59-tile saved view and its remembered improvements. The
+checked replay uses the validated quote and retains the same view. The
+inspector compares the selected item and shields and restores each
+checkpoint.

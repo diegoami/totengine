@@ -532,12 +532,17 @@ impl HumanSession {
                 );
                 (step, OrderResult::Skipped)
             }
-            Order::SetRates { science, tax } if checked_replay && self.decision.is_none() => {
+            Order::SetRates { .. } | Order::QuotedProduction { .. }
+                if checked_replay && self.decision.is_none() =>
+            {
                 let before = &self.game.world;
                 world = before.clone();
                 let result = world.apply_order(&self.game.rules, None, self.human, order);
-                if result != OrderResult::RatesSet
-                    || world.map != before.map
+                if !matches!(
+                    (order, &result),
+                    (Order::SetRates { .. }, OrderResult::RatesSet)
+                        | (Order::QuotedProduction { .. }, OrderResult::ProductionSet)
+                ) || world.map != before.map
                     || world.units != before.units
                     || world.cities.len() != before.cities.len()
                     || world.cities.iter().zip(&before.cities).any(|(city, old)| {
@@ -548,8 +553,22 @@ impl HumanSession {
                     return Ok(None);
                 }
                 let mut updated = saved.clone();
-                updated.science_rates[usize::from(self.human)] = science;
-                updated.tax_rates[usize::from(self.human)] = tax;
+                match order {
+                    Order::SetRates { science, tax } => {
+                        updated.science_rates[usize::from(self.human)] = science;
+                        updated.tax_rates[usize::from(self.human)] = tax;
+                    }
+                    Order::QuotedProduction { city, .. } => {
+                        let world_city = &world.cities[city];
+                        let record = updated.cities.get_mut(city).ok_or(refused)?;
+                        if record.city_id() != world_city.city_id {
+                            return Err(refused);
+                        }
+                        record.raw[30..32].copy_from_slice(&world_city.shield_box.to_le_bytes());
+                        record.raw[59] = world_city.building as u8;
+                    }
+                    _ => unreachable!(),
+                }
                 (Ok(updated), result)
             }
             _ => return Ok(None),

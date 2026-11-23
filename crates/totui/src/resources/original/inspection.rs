@@ -39,6 +39,7 @@ impl OriginalCapture {
             || report["saved_opponent_combat_check"]["verified"] != true
             || report["saved_wait_check"]["verified"] != true
             || report["saved_rates_check"]["verified"] != true
+            || report["saved_production_check"]["verified"] != true
             || report["saved_event_initialization"]["verified"] != true
         {
             return Err("The captured save did not pass the checked Original replay checks".into());
@@ -153,6 +154,12 @@ impl OriginalCapture {
         } else {
             Value::Null
         };
+        let production = if pending["verified"] == true {
+            staged_round::check_saved_production(self, human, &trace["saved_production"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
         let land_step = if trace["matches_fixture"] == true {
             compare_land_step(
                 &snapshot,
@@ -211,6 +218,7 @@ impl OriginalCapture {
             "saved_pending_choice_check": pending,
             "saved_wait_check": wait,
             "saved_rates_check": rates,
+            "saved_production_check": production,
             "staged_round_check": staged,
             "saved_movement_check": movement,
             "saved_city_view_check": city_view,

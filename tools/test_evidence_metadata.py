@@ -232,6 +232,17 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_production_commit_preserves_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-saved-production.json').read_text())
+        rates = json.loads((ROOT / 'docs/evidence/import-saved-rates.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], rates[key])
+        self.assertEqual((report['entry'], report['stop']), ('00434e58', '00434ee4'))
+        self.assertEqual([(case['city'], case['item'], case['shields'])
+                          for case in report['cases']], [(5, 3, 12), (5, -42, 6)])
+        self.assertTrue(all(case['explored_tiles'] == 59 and case['tile_bytes_changed'] == 0
+                            and case['remembered_bytes_changed'] == 0 for case in report['cases']))
+
     def test_native_rate_commit_preserves_saved_knowledge(self):
         report = json.loads((ROOT / 'docs/evidence/import-saved-rates.json').read_text())
         pinned = json.loads((ROOT / 'docs/evidence/import-pending-choice.json').read_text())

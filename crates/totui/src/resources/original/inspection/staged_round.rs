@@ -538,6 +538,93 @@ pub(super) fn check_saved_rates(
     Ok(json!({"verified": true, "cases": cases.len(), "checkpoint_replays": true}))
 }
 
+pub(super) fn check_saved_production(
+    capture: &OriginalCapture,
+    human: u8,
+    trace: &Value,
+) -> Result<Value, String> {
+    let files = capture.files();
+    let rules = &capture.resources().rules;
+    let events = files.events.clone().map(EventEngine::new);
+    let identity = capture.identity();
+    let initial = HumanSession::scenario_initialized_saved_opponent_combat(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: rules.clone(),
+            events: events.clone(),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        identity,
+    )?;
+    let view = initial.view();
+    let first = initial.checkpoint(identity);
+    let restore = |text: &str| {
+        HumanSession::restore_with(
+            rules.clone(),
+            identity,
+            text,
+            Some((&files.bytes, events.clone())),
+        )
+    };
+    let cases = trace["cases"]
+        .as_array()
+        .filter(|cases| !cases.is_empty())
+        .ok_or("prepared production evidence has no cases")?;
+    for native in cases {
+        let slot = native["city"]
+            .as_u64()
+            .ok_or("prepared production city missing")?;
+        let city = *view
+            .cities
+            .iter()
+            .find(|city| city.slot as u64 == slot)
+            .ok_or("prepared production city is absent from the saved view")?;
+        let item: i8 = serde_json::from_value(native["item"].clone())
+            .map_err(|error| format!("invalid prepared production item: {error}"))?;
+        let mut session = restore(&first)?;
+        let quote = session.preview_production(city, item)?;
+        if json!(quote.current_item) != native["before_item"]
+            || json!(quote.current_shields) != native["before_shields"]
+            || json!(quote.retained) != native["shields"]
+        {
+            return Err("the checked production budget differs from the native commit".into());
+        }
+        let response = session.submit(Request {
+            civ: human,
+            revision: view.revision,
+            id: view.revision + 1,
+            command: Command::QuotedProduction { city, quote },
+        })?;
+        let after = session.view();
+        let changed = after
+            .observation
+            .cities
+            .iter()
+            .find(|c| c.index == city.slot)
+            .ok_or("the changed production city is absent from the view")?;
+        if response.result != Some(OrderResult::ProductionSet)
+            || after.observation.seen != view.observation.seen
+            || after.observation.units != view.observation.units
+            || json!(after.observation.seen.iter().flatten().count()) != native["explored_tiles"]
+            || changed.building != Some(item)
+            || json!(changed.shield_box) != native["shields"]
+        {
+            return Err(
+                "the checked production commit differs from the prepared native view".into(),
+            );
+        }
+        let checkpoint = session.checkpoint(identity);
+        let replay = restore(&checkpoint)?;
+        if replay.view() != after || replay.checkpoint(identity) != checkpoint {
+            return Err("the checked production change did not replay".into());
+        }
+    }
+    Ok(json!({"verified": true, "cases": cases.len(), "checkpoint_replays": true}))
+}
+
 pub(super) fn check_saved_wait(
     capture: &OriginalCapture,
     human: u8,

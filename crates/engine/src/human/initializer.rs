@@ -27,6 +27,7 @@ pub enum ScenarioKnowledgeRecipe {
     SavedMovementStagedRoundV1,
     SavedCityViewStagedRoundV1,
     SavedOpponentStackV1,
+    SavedOpponentCombatV1,
 }
 
 /// Captured before any human request or opponent work. All original bytes
@@ -69,6 +70,8 @@ impl ScenarioInitializer {
 
     pub const SAVED_OPPONENT_STACK_PROFILE: &'static str = "experimental-saved-opponent-stack-v1";
 
+    pub const SAVED_OPPONENT_COMBAT_PROFILE: &'static str = "experimental-saved-opponent-combat-v1";
+
     pub fn schema(&self) -> u8 {
         match self.knowledge_recipe {
             ScenarioKnowledgeRecipe::EngineSightV1 => 1,
@@ -77,6 +80,7 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 => 4,
             ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1 => 5,
             ScenarioKnowledgeRecipe::SavedOpponentStackV1 => 6,
+            ScenarioKnowledgeRecipe::SavedOpponentCombatV1 => 7,
         }
     }
     pub fn profile(&self) -> &'static str {
@@ -87,6 +91,7 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 => Self::SAVED_MOVEMENT_PROFILE,
             ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1 => Self::SAVED_CITY_VIEW_PROFILE,
             ScenarioKnowledgeRecipe::SavedOpponentStackV1 => Self::SAVED_OPPONENT_STACK_PROFILE,
+            ScenarioKnowledgeRecipe::SavedOpponentCombatV1 => Self::SAVED_OPPONENT_COMBAT_PROFILE,
         }
     }
 
@@ -171,6 +176,11 @@ impl ScenarioInitializer {
                 Self::SAVED_OPPONENT_STACK_PROFILE,
                 "saved-opponent-stack-then-engine-v1",
             ),
+            ScenarioKnowledgeRecipe::SavedOpponentCombatV1 => (
+                7,
+                Self::SAVED_OPPONENT_COMBAT_PROFILE,
+                "saved-opponent-combat-then-engine-v1",
+            ),
         };
         format!(
             "initializer {schema} profile {profile} source {} {} {:016x} mode {mode} saved {} {} {} {} human {} phase {:?} cursor {} policy {} seed {} movement {movement} knowledge {knowledge} world {:016x} memory {:016x} choice {:016x} events {:016x} {:016x} rng {:08x} {} {:08x} {} dependencies {} {:016x} {}",
@@ -214,6 +224,11 @@ impl ScenarioInitializer {
             Self::SAVED_OPPONENT_STACK_PROFILE
         )) {
             Ok(ScenarioKnowledgeRecipe::SavedOpponentStackV1)
+        } else if line.starts_with(&format!(
+            "initializer 7 profile {} ",
+            Self::SAVED_OPPONENT_COMBAT_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentCombatV1)
         } else {
             Err("unsupported scenario initializer version or profile".into())
         }

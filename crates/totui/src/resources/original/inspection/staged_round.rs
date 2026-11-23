@@ -353,6 +353,81 @@ pub(super) fn check_saved_opponent_stack(
     }))
 }
 
+pub(super) fn check_saved_opponent_combat(
+    capture: &OriginalCapture,
+    human: u8,
+    trace: &Value,
+) -> Result<Value, String> {
+    let files = capture.files();
+    let rules = &capture.resources().rules;
+    let events = files.events.clone().map(EventEngine::new);
+    let resources = capture.identity();
+    let native = &trace["opponent_combat"]["cases"]["7"];
+    let seed = native["crt_before"]
+        .as_u64()
+        .ok_or("prepared combat seed missing")?;
+    let mut session = HumanSession::scenario_initialized_saved_opponent_combat(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: rules.clone(),
+            events: events.clone(),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        seed,
+        resources,
+    )?;
+    issue_saved_handoff(&mut session, human, trace)?;
+    let initial = session.view();
+    let participants = native["before"]
+        .as_array()
+        .filter(|values| values.len() == 2)
+        .ok_or("prepared combat participants missing")?;
+    let (x, y): (u16, u16) = serde_json::from_value(participants[1]["position"].clone())
+        .map_err(|error| format!("invalid prepared combat destination: {error}"))?;
+    let attacker = participants[0]["slot"]
+        .as_u64()
+        .ok_or("prepared combat slot missing")?;
+    let civ = participants[0]["owner"]
+        .as_u64()
+        .ok_or("prepared combat owner missing")?;
+    let order = format!(
+        "T {} C {civ} move {attacker} {x} {y} = attack won\n",
+        initial.observation.turn
+    );
+    let (prior, after) = reach_opponent_order(&mut session, resources, &order)?;
+    let actual = session.view();
+    let explored = actual.observation.seen.iter().flatten().count();
+    if actual.observation.seen != initial.observation.seen
+        || actual.observation.units != initial.observation.units
+        || json!(explored) != native["viewer_explored_tiles"]
+    {
+        return Err("the checked combat changed the saved player view".into());
+    }
+    let crt = native["crt_after"]
+        .as_u64()
+        .ok_or("prepared combat final CRT state missing")?;
+    let recorded_crt = checkpoint_line(&after, "rng ")?.split_whitespace().nth(3);
+    if recorded_crt != Some(format!("{crt:08x}").as_str()) {
+        return Err("the checked combat diverged from the prepared CRT state".into());
+    }
+    let mut replay = HumanSession::restore_with(
+        rules.clone(),
+        resources,
+        &prior,
+        Some((&files.bytes, events)),
+    )?;
+    if replay.advance(1) != 1 || replay.checkpoint(resources) != after {
+        return Err("the checked combat did not replay".into());
+    }
+    Ok(json!({
+        "verified": true, "initializer_schema": 7,
+        "profile": engine::human::ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE,
+        "explored_tiles": explored, "combat_rng_matches": true, "checkpoint_replays": true,
+    }))
+}
+
 fn reach_opponent_order(
     session: &mut HumanSession,
     resources: &str,

@@ -263,3 +263,33 @@ The three ordered moves retain the same viewer memory. A known
 destination declines the guarded path. Broad opponent movement,
 changing spatial knowledge and native pending choices still need
 admission work.
+
+
+## Experimental unseen opponent combat
+
+Schema 7, `experimental-saved-opponent-combat-v1`, extends the staged
+recipe to the checked class of a winning attack between two unseen
+opponent land singletons outside cities. It runs the existing engine
+combat and event entry points on temporary state. On a checked outcome
+the defender is removed from the private snapshot, the survivor's
+observation runs through the native-derived kernel, and the engine
+commits the result when the saved human view and remembered improvements
+still match. Other outcomes and immediate macro effects use the existing
+engine path. The event fallback leaves the initial RNG and event state
+intact so the prior path can apply them once.
+
+The [prepared combat trace](evidence/import-opponent-combat-view.json)
+continues the three measured opponent moves. A native Rules refresh
+supplies the combat tables before directing slot 20 against slot 22.
+The seed-7 control wins in place, removes the defender and keeps all
+59 explored tiles and remembered improvements. Seed 1 also wins and
+leaves the attacker with five damage. The inspector and install-backed
+replay match the seed-7 outcome and final combat CRT state and restore
+the checkpoint on either side. These are controlled battles. Native
+opponent policy, macro dispatch and broader combat contexts remain
+separate from this check.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_combat_view_check.py --out /tmp/opponent-combat-view.json
+cmp docs/evidence/import-opponent-combat-view.json /tmp/opponent-combat-view.json
+```

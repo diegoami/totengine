@@ -7,6 +7,7 @@
 use crate::WorldState;
 use tot_kit::{EventFile, Rules};
 
+pub(crate) mod opponent_combat;
 pub(crate) mod opponent_stack;
 pub mod snapshot;
 

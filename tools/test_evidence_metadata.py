@@ -153,6 +153,21 @@ class GoldenMetadata(unittest.TestCase):
         self.assertFalse(departure['viewer_memory_changed'])
         self.assertEqual([unit['next'] for unit in departure['after']], [-1, 2, -1])
 
+    def test_native_opponent_combat_preserves_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-combat-view.json').read_text())
+        city = json.loads((ROOT / 'docs/evidence/import-city-view.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(report[key], city[key])
+        for seed, damage in [('7', 0), ('1', 5)]:
+            case = report['cases'][seed]
+            self.assertEqual(case['crt_before'], int(seed))
+            self.assertEqual(case['observation_calls'], [[20, 1]])
+            self.assertEqual(case['rules_refresh']['rows_by_section']['UNITS'], 80)
+            self.assertEqual(case['viewer_explored_tiles'], 59)
+            self.assertFalse(case['viewer_memory_changed'])
+            self.assertEqual(case['after'][0]['damage'], damage)
+            self.assertEqual([u['alive'] for u in case['after']], [True, False])
+
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
         phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())

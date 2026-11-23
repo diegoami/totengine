@@ -176,6 +176,14 @@ from the middle of the unseen city stack for (42, 36), relinking the
 remaining units in both cases. A move that changes the measured human projection
 or lies outside the supported stack context uses staged engine observation.
 
+The [opponent-combat recipe](import-initializer.md#experimental-unseen-opponent-combat)
+now stages the next measured unseen attack. With a complete Rules refresh,
+the native seed-7 control wins in place and leaves the human's 59 tiles
+and memory unchanged. The engine replay matches its combat CRT state and
+restores across the same order. The test also confirms that an immediate
+battle event uses the existing engine path with its full RNG and effects.
+Broader combat and pending choices remain open.
+
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe
 traces the prefix reads from the city table to the event marker and verifies

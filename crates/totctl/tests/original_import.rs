@@ -161,6 +161,17 @@ fn installed_save_reports_checked_records_phase_and_view() {
     );
     assert_eq!(report["playable_import"], false);
     assert_eq!(
+        report["saved_opponent_combat_check"],
+        json!({
+            "verified": true,
+            "initializer_schema": 7,
+            "profile": "experimental-saved-opponent-combat-v1",
+            "explored_tiles": 59,
+            "combat_rng_matches": true,
+            "checkpoint_replays": true,
+        })
+    );
+    assert_eq!(
         report["saved_opponent_stack_check"],
         json!({
             "verified": true,

@@ -197,7 +197,11 @@ impl HumanSession {
 
         let mut observed = saved.clone();
         let mut updated_world = world.clone();
-        if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentStackV1 {
+        if matches!(
+            self.knowledge_recipe,
+            ScenarioKnowledgeRecipe::SavedOpponentStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+        ) {
             crate::scenario::opponent_stack::record_city_births(
                 &mut observed,
                 &mut updated_world,
@@ -230,6 +234,7 @@ impl HumanSession {
             self.knowledge_recipe,
             ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
                 | ScenarioKnowledgeRecipe::SavedOpponentStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
         ) || self.saved_move_state.is_none()
         {
             return false;
@@ -243,12 +248,12 @@ impl HumanSession {
         }
     }
 
-    pub(super) fn try_saved_opponent_stack(
-        &mut self,
-        civ: u8,
-        order: Order,
-    ) -> Option<OrderResult> {
-        if self.knowledge_recipe != ScenarioKnowledgeRecipe::SavedOpponentStackV1 {
+    pub(super) fn try_saved_opponent_move(&mut self, civ: u8, order: Order) -> Option<OrderResult> {
+        if !matches!(
+            self.knowledge_recipe,
+            ScenarioKnowledgeRecipe::SavedOpponentStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+        ) {
             return None;
         }
         let (Some(saved), Order::Move { unit, to }) = (&self.saved_move_state, order) else {
@@ -263,15 +268,37 @@ impl HumanSession {
             }
         }
         let mut world = self.game.world.clone();
-        let observed = crate::scenario::opponent_stack::stage(
-            saved,
-            &self.game.rules,
-            &mut world,
-            civ,
-            unit,
-            to,
-        )
-        .ok()?;
+        let is_combat = self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+            && world
+                .units
+                .iter()
+                .any(|u| u.id != 0 && u.owner != civ && (u.x, u.y) == to);
+        let mut events = None;
+        let (observed, result) = if is_combat {
+            events = self.game.events.clone();
+            let observed = crate::scenario::opponent_combat::stage(
+                saved,
+                &self.game.rules,
+                &mut world,
+                events.as_mut(),
+                civ,
+                unit,
+                to,
+            )
+            .ok()?;
+            (observed, OrderResult::Attacked { won: true })
+        } else {
+            let observed = crate::scenario::opponent_stack::stage(
+                saved,
+                &self.game.rules,
+                &mut world,
+                civ,
+                unit,
+                to,
+            )
+            .ok()?;
+            (observed, OrderResult::Moved)
+        };
         let after = SavedMapKnowledge::read(&observed, self.human).ok()?;
         let area = saved.map_header.surface();
         let offset = (usize::from(self.human) - 1) * area;
@@ -282,9 +309,10 @@ impl HumanSession {
             return None;
         }
         let view = Self::prepare_saved_view(&world, self.human, after).ok()?;
-        let result = self
-            .game
-            .commit_saved_view_order(world, civ, order, OrderResult::Moved);
+        if is_combat {
+            self.game.events = events;
+        }
+        let result = self.game.commit_saved_view_order(world, civ, order, result);
         self.set_saved_view(view);
         self.saved_move_state = Some(observed);
         Some(result)

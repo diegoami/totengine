@@ -16,6 +16,7 @@ impl HumanSession {
                 self.knowledge_recipe,
                 ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
                     | ScenarioKnowledgeRecipe::SavedOpponentStackV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
             );
         let before = keep_view.then(|| self.game.world.clone());
         if !keep_view {
@@ -529,7 +530,7 @@ staged-round-test
         let world_identity = visible.game.world.checksum();
         let log = visible.game.log().to_owned();
         assert_eq!(
-            visible.try_saved_opponent_stack(
+            visible.try_saved_opponent_move(
                 5,
                 Order::Move {
                     unit: 2,
@@ -589,5 +590,122 @@ staged-round-test
         );
         assert_eq!(game.view().observation.seen, original_view.observation.seen);
         assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
+    }
+
+    #[test]
+    fn installed_opponent_combat_replays_without_revealing_a_tile() {
+        let Some((snapshot, rules, events)) = installed_original() else {
+            return;
+        };
+        let deps = "totengine-scenario-dependencies 1\nsaved-opponent-combat-test\n";
+        let mut game = HumanSession::scenario_initialized_saved_opponent_combat(
+            ScenarioInput {
+                path: "Original/Ph_Auto2.SAV",
+                snapshot: &snapshot,
+                rules: rules.clone(),
+                events: Some(events.clone()),
+            },
+            4,
+            AiPolicy::BuiltIn1,
+            7,
+            deps,
+        )
+        .unwrap();
+        assert_eq!(game.initializer().unwrap().schema(), 7);
+        for slot in [6, 9, 26, 18] {
+            let view = game.view();
+            let unit = *view.units.iter().find(|unit| unit.slot == slot).unwrap();
+            game.submit(Request {
+                civ: 4,
+                revision: view.revision,
+                id: view.revision + 1,
+                command: Command::Skip { unit },
+            })
+            .unwrap();
+        }
+        let revision = game.view().revision;
+        game.submit(Request {
+            civ: 4,
+            revision,
+            id: revision + 1,
+            command: Command::EndTurn,
+        })
+        .unwrap();
+        let initial = game.view();
+        let mut prior = game.checkpoint(deps);
+        let mut reached = false;
+        for _ in 0..64 {
+            assert_eq!(game.advance(1), 1);
+            if game
+                .game
+                .log()
+                .lines()
+                .last()
+                .unwrap()
+                .contains(" C 5 move 20 22 46 = attack won")
+            {
+                reached = true;
+                break;
+            }
+            prior = game.checkpoint(deps);
+        }
+        assert!(reached, "did not reach measured opponent battle");
+        let after = game.view();
+        let saved = game
+            .saved_move_state
+            .as_ref()
+            .expect("battle keeps the saved projection");
+        assert_eq!(initial.observation.seen, after.observation.seen);
+        assert_eq!(initial.observation.units, after.observation.units);
+        assert_eq!(after.observation.seen.iter().flatten().count(), 59);
+        assert_eq!(saved.units[22].id(), 0);
+        assert_eq!(
+            (
+                saved.units[20].x(),
+                saved.units[20].y(),
+                saved.units[20].damage()
+            ),
+            (23, 45, 0)
+        );
+        let index = game.game.world.map.stored_index(22, 46).unwrap();
+        assert_eq!(saved.maps[0].tile_fields[6 * index + 1] & 1, 0);
+        let restore = |text: &str| {
+            HumanSession::restore_with(
+                rules.clone(),
+                deps,
+                text,
+                Some((&snapshot, Some(events.clone()))),
+            )
+            .unwrap()
+        };
+        let mut eventful = restore(&prior);
+        let unit = &eventful.game.world.units[22];
+        let name = rules.unit_names()[usize::from(unit.type_id)];
+        let script = format!("@IF\nUNITKILLED\nunit={name}\nattacker=ANYBODY\ndefender=ANYBODY\n@THEN\nTEXT\nObserved battle\nENDTEXT\n@ENDIF");
+        eventful.game.events = Some(crate::events::EventEngine::new(
+            tot_kit::parse_events(&script).unwrap(),
+        ));
+        let order = Order::Move {
+            unit: 20,
+            to: (22, 46),
+        };
+        let before = eventful.game.world.checksum();
+        assert_eq!(eventful.try_saved_opponent_move(5, order), None);
+        assert_eq!(eventful.game.world.checksum(), before);
+        assert_eq!(eventful.game.world.combat_rng.state(), 7);
+        assert!(eventful.game.events.as_ref().unwrap().log.is_empty());
+        assert_eq!(
+            eventful.game.submit(5, order),
+            OrderResult::Attacked { won: true }
+        );
+        assert_eq!(eventful.game.events.as_ref().unwrap().log.len(), 1);
+
+        let checkpoint = game.checkpoint(deps);
+        let mut replay = restore(&prior);
+        assert_eq!(replay.game.world.combat_rng.state(), 7);
+        assert_eq!(replay.advance(1), 1);
+        assert_eq!(game.game.world.combat_rng.state(), 0x0a14e6e2);
+        assert_eq!(replay.checkpoint(deps), checkpoint);
+        assert_eq!(restore(&checkpoint).view(), after);
     }
 }

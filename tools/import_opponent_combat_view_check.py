@@ -1,0 +1,153 @@
+#!/usr/bin/env python3
+"""Execute a controlled native battle after the three unseen opponent moves.
+
+The native Rules refresh loads the combat tables before the battle. Each
+control supplies an explicit CRT seed and the engine's spatial order.
+Windows timing and presentation are substituted. Native opponent policy,
+live input, and macro dispatch are outside this witness.
+"""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+
+from unicorn import UC_HOOK_CODE
+from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EIP, UC_X86_REG_ESP
+
+from import_city_view_check import measure, move_into_unseen_city, move_opponent
+from import_input_handoff_check import IDLE_FILTER_CALL, witness
+from import_loader_exit_check import rules_refresh
+from import_phase_check import FRAME, frame, read
+from import_round_handoff_check import trace
+from totctl import parse_rules
+
+CRT = 0x5E2590
+PRESENTATION = {0x40D510, 0x467C89, 0x467D19}
+IMPORTS = {
+    b'\xff\x15\xbc\x1a\x69\x00': ('timeGetTime', 0),
+    b'\xff\x15\xe8\x17\x69\x00': ('GetTickCount', 0),
+    b'\xff\x15\xa0\x17\x69\x00': ('OutputDebugStringA', 4),
+}
+
+
+def execute(original, viewer, city, rules, seed):
+    measure(original, viewer, city)
+    move_into_unseen_city(original, viewer)
+    move_opponent(original, viewer, (10, 7, 3), (10,), (41, 39), (41, 37), ((-1, -1),))
+    move_opponent(original, viewer, (19, 6, 3), (19, 34, 2), (43, 37), (42, 36),
+                  ((-1, -1), (-1, 2), (34, -1)))
+
+    frame(original)
+    original.write(FRAME - 0x1990, 1, '<I')  # successful virtual save close
+    original.write(FRAME - 0xe9c, 0, '<I')
+    loaded = rules_refresh(original, rules)
+
+    cpu = original.cpu
+    area = read(original, 0x6705A4, '<h')
+    cache = read(original, 0x5DEAD0 + 4 * viewer, '<I')
+
+    def knowledge():
+        tiles = cpu.mem_read(0x700000, area * 6)
+        return ([bool(mask & (1 << viewer)) for mask in tiles[4::6]],
+                bytes(cpu.mem_read(cache, area)))
+
+    def unit(slot):
+        base = 0x607C58 + 40 * slot
+        return {'slot': slot, 'owner': read(original, base + 9, '<B'),
+                'position': [read(original, base + off, '<h') for off in (0, 2)],
+                'alive': read(original, base + 30, '<I') != 0,
+                'spent': read(original, base + 10, '<B'),
+                'damage': read(original, base + 12, '<B')}
+
+    original.write(CRT, seed, '<I')
+    before = [unit(slot) for slot in (20, 22)]
+    saved = knowledge()
+    tick = 0
+    hosts = []
+    display = []
+    observes = []
+
+    def boundary(emu, at, size, _data):
+        nonlocal tick
+        sp = emu.reg_read(UC_X86_REG_ESP)
+        if at == 0x41F704:
+            observes.append([read(original, sp + off) for off in (4, 8)])
+        instruction = bytes(emu.mem_read(at, size))
+        if instruction in IMPORTS:
+            name, arguments = IMPORTS[instruction]
+            hosts.append(name)
+            if name != 'OutputDebugStringA':
+                tick += 1000
+                emu.reg_write(UC_X86_REG_EAX, tick)
+            emu.reg_write(UC_X86_REG_ESP, sp + arguments)
+            emu.reg_write(UC_X86_REG_EIP, at + size)
+        elif at == IDLE_FILTER_CALL:
+            hosts.append('PeekMessageA')
+            assert [read(original, sp + off) for off in (4, 8, 12, 16)] == [0, 0x3BD, 0x3BD, 1]
+            emu.reg_write(UC_X86_REG_EAX, 0)
+            emu.reg_write(UC_X86_REG_ESP, sp + 20)
+            emu.reg_write(UC_X86_REG_EIP, at + size)
+        elif at in PRESENTATION:
+            display.append(f'{at:08x}')
+            emu.reg_write(UC_X86_REG_EAX, 0)
+            emu.reg_write(UC_X86_REG_ESP, sp + 4)
+            emu.reg_write(UC_X86_REG_EIP, read(original, sp, '<I'))
+
+    hook = cpu.hook_add(UC_HOOK_CODE, boundary)
+    try:
+        result = original.call(0x54C69B, 20, 4, 3)
+    finally:
+        cpu.hook_del(hook)
+    after = [unit(slot) for slot in (20, 22)]
+    assert result == 1 and [u['alive'] for u in before] == [True, True]
+    assert [u['alive'] for u in after] == [True, False]
+    assert before[0]['position'] == after[0]['position'] == [23, 45]
+    assert before[1]['position'] == [22, 46]
+    assert observes == [[20, 1]]
+    assert saved == knowledge()
+    return {
+        'crt_before': seed, 'crt_after': read(original, CRT, '<I'),
+        'arguments': [20, 4, 3], 'return': result,
+        'before': before, 'after': after,
+        'viewer_explored_tiles': sum(saved[0]), 'viewer_memory_changed': False,
+        'observation_calls': observes, 'rules_refresh': loaded,
+        'host_substitutes': hosts, 'display_substitutes': display,
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--out', type=Path, required=True)
+    args = parser.parse_args()
+    root = Path(__file__).resolve().parent.parent
+    evidence = json.loads((root / 'docs/evidence/import-city-view.json').read_text())
+    home = Path(os.environ['CIVTOT_HOME'])
+    binary = (home / 'civ2.bak').read_bytes()
+    assert hashlib.sha256(binary).hexdigest() == evidence['binary_sha256']
+    for role in ('source', 'rules'):
+        source = evidence[role]
+        assert hashlib.sha256((home / source['path']).read_bytes()).hexdigest() == source['sha256']
+    rules = parse_rules(str(home / evidence['rules']['path']))
+    cases = {}
+    for seed in (7, 1):
+        def entry(original, player, city):
+            cases[str(seed)] = execute(original, player, city, rules, seed)
+
+        def prepared(original, player, regions):
+            trace(original, player, regions, clear_preference_bit=False, skip_selected=True,
+                  at_city_entry=entry)
+
+        witness(home, binary, evidence['source']['path'], exhaust=False,
+                observation=True, after_idle=prepared)
+
+    assert [cases[str(seed)]['after'][0]['damage'] for seed in (7, 1)] == [0, 5]
+    assert all(case['viewer_explored_tiles'] == 59 for case in cases.values())
+    report = {'schema': 1, **{key: evidence[key] for key in ('binary_sha256', 'source', 'rules')},
+              'cases': cases, 'scope': __doc__.strip()}
+    with args.out.open('x') as output:
+        output.write(json.dumps(report, indent=2) + '\n')
+
+
+if __name__ == '__main__':
+    main()

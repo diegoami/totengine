@@ -49,7 +49,7 @@ def changes(before, after):
             if old != new]
 
 
-def execute(original, player, regions, key):
+def execute(original, player, regions, key, *, return_address=RETURN):
     move = key == NORTHWEST
     entry = KEY_CALLBACK if move else CHARACTER_CALLBACK
     cpu = original.cpu
@@ -112,9 +112,9 @@ def execute(original, player, regions, key):
 
     hook = cpu.hook_add(UC_HOOK_CODE, substitute)
     try:
-        cpu.mem_write(0x108000, struct.pack('<II', RETURN, key))
+        cpu.mem_write(0x108000, struct.pack('<II', return_address, key))
         cpu.reg_write(original.sp, 0x108000)
-        run(original, entry, {RETURN}, calls=ALLOWED_CALLS, instruction_limit=200000)
+        run(original, entry, {return_address}, calls=ALLOWED_CALLS, instruction_limit=200000)
     finally:
         cpu.hook_del(hook)
 

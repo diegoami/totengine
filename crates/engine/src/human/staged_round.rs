@@ -986,6 +986,64 @@ staged-round-test
         }
         let checkpoint = game.checkpoint(deps);
         assert_eq!(restore(&checkpoint).view(), game.view());
+        let mut moving = restore(&checkpoint);
+        let actor = *moving
+            .view()
+            .units
+            .iter()
+            .find(|unit| unit.slot == 18)
+            .unwrap();
+        let before = moving.saved_move_state.as_ref().unwrap().clone();
+        let request = Request {
+            civ: 4,
+            id: 201,
+            revision: moving.view().revision,
+            command: Command::Move {
+                unit: actor,
+                to: (50, 8),
+            },
+        };
+        assert_eq!(
+            moving.submit(request).unwrap().result,
+            Some(OrderResult::Moved)
+        );
+        let after = moving.saved_move_state.as_ref().unwrap();
+        let raw = &after.units[18].raw;
+        assert_eq!(
+            (
+                after.units[18].x(),
+                after.units[18].y(),
+                raw[6],
+                raw[10],
+                raw[13]
+            ),
+            (50, 8, 64, 6, 6)
+        );
+        assert_eq!(moving.game.world.units[18].moves_left, 0);
+        let changes = |before: &[u8], after: &[u8]| -> Vec<(usize, u8, u8)> {
+            before
+                .iter()
+                .zip(after)
+                .enumerate()
+                .filter_map(|(index, (&a, &b))| (a != b).then_some((index, a, b)))
+                .collect()
+        };
+        assert_eq!(
+            changes(&before.units[18].raw, &after.units[18].raw),
+            [(0, 51, 50), (2, 9, 8), (6, 0, 64), (10, 0, 6), (13, 255, 6)]
+        );
+        assert_eq!(
+            changes(&before.maps[0].tile_fields, &after.maps[0].tile_fields),
+            [(2068, 0, 16), (2071, 0, 1), (2075, 240, 64), (2311, 1, 0)]
+        );
+        let area = before.map_header.surface();
+        assert_eq!(
+            changes(&before.maps[0].visibility, &after.maps[0].visibility),
+            [(3 * area + 345, 0, 1), (3 * area + 385, 1, 0)]
+        );
+        assert_eq!(moving.view().observation.seen.iter().flatten().count(), 60);
+        assert_eq!(restore(&moving.checkpoint(deps)).view(), moving.view());
+
         let unit = *game
             .view()
             .units
@@ -1003,7 +1061,12 @@ staged-round-test
             .result,
             Some(OrderResult::Skipped)
         );
-        assert!(game.saved_move_state.is_some());
+        let stopped = game.saved_move_state.as_ref().unwrap();
+        assert_eq!(
+            (stopped.units[18].moves_spent(), stopped.units[18].raw[13]),
+            (3, 255)
+        );
+        assert_eq!(game.view().observation.seen.iter().flatten().count(), 59);
         assert_eq!(restore(&game.checkpoint(deps)).view(), game.view());
     }
 }

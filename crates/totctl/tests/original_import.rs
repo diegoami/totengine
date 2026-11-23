@@ -176,6 +176,7 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "unconnected_road_replays": true,
             "round_close_replays": true,
             "fresh_human_view_replays": true,
+            "fresh_orders_replay": true,
             "native_ready_slot": 18,
             "checkpoint_replays": true,
         })

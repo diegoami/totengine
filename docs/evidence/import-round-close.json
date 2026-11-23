@@ -157,5 +157,201 @@
       ]
     }
   },
-  "scope": "Measure saved human knowledge across a prepared native annual update.\n\nAdvance the pinned save through the checked opponent moves, then run the\nunpatched annual update called by the single-player outer loop. Windows\nrectangle and directory calls operate on emulator memory. The supplied\nend-of-round position and host directory failures are controlled inputs."
+  "fresh_orders": {
+    "skip": {
+      "entry": "0040f592",
+      "input_code": 32,
+      "handlers": [
+        "00547530"
+      ],
+      "move_arguments": [],
+      "observation_arguments": [
+        [
+          18,
+          1
+        ]
+      ],
+      "before": {
+        "active_slot": 18,
+        "display_mode": 1,
+        "research_target": -1,
+        "research_progress": 0
+      },
+      "after": {
+        "active_slot": 18,
+        "display_mode": 1,
+        "research_target": -1,
+        "research_progress": 0
+      },
+      "unit_position_before": [
+        51,
+        9
+      ],
+      "unit_position_after": [
+        51,
+        9
+      ],
+      "active_unit_type_allowance": 3,
+      "unit_byte_changes": [
+        {
+          "slot": 18,
+          "byte": 10,
+          "before": 0,
+          "after": 3
+        }
+      ],
+      "civ_city_bytes_unchanged": true,
+      "tile_byte_changes": [],
+      "cache_byte_changes": [],
+      "explored_tiles": 59,
+      "presentation_substitutes": [
+        "00467c89"
+      ],
+      "host_substitutes": [
+        {
+          "import": "PeekMessageA",
+          "filter": [
+            957,
+            957
+          ],
+          "result": 0
+        }
+      ]
+    },
+    "move_northwest": {
+      "entry": "0040fbd4",
+      "input_code": 167,
+      "handlers": [],
+      "move_arguments": [
+        [
+          18,
+          6,
+          3
+        ]
+      ],
+      "observation_arguments": [
+        [
+          18,
+          1
+        ]
+      ],
+      "before": {
+        "active_slot": 18,
+        "display_mode": 1,
+        "research_target": -1,
+        "research_progress": 0
+      },
+      "after": {
+        "active_slot": 18,
+        "display_mode": 1,
+        "research_target": -1,
+        "research_progress": 0
+      },
+      "unit_position_before": [
+        51,
+        9
+      ],
+      "unit_position_after": [
+        50,
+        8
+      ],
+      "active_unit_type_allowance": 3,
+      "unit_byte_changes": [
+        {
+          "slot": 18,
+          "byte": 0,
+          "before": 51,
+          "after": 50
+        },
+        {
+          "slot": 18,
+          "byte": 2,
+          "before": 9,
+          "after": 8
+        },
+        {
+          "slot": 18,
+          "byte": 6,
+          "before": 0,
+          "after": 64
+        },
+        {
+          "slot": 18,
+          "byte": 10,
+          "before": 0,
+          "after": 6
+        },
+        {
+          "slot": 18,
+          "byte": 13,
+          "before": 255,
+          "after": 6
+        }
+      ],
+      "civ_city_bytes_unchanged": true,
+      "tile_byte_changes": [
+        [
+          2068,
+          0,
+          16
+        ],
+        [
+          2071,
+          0,
+          1
+        ],
+        [
+          2075,
+          240,
+          64
+        ],
+        [
+          2311,
+          1,
+          0
+        ]
+      ],
+      "cache_byte_changes": [
+        [
+          4,
+          345,
+          0,
+          1
+        ],
+        [
+          4,
+          385,
+          1,
+          0
+        ]
+      ],
+      "explored_tiles": 60,
+      "presentation_substitutes": [
+        "0040d7e7",
+        "0045a4b0",
+        "005373eb",
+        "00467c89"
+      ],
+      "host_substitutes": [
+        {
+          "import": "XD_InFlushSendBuffer",
+          "result": 0
+        },
+        {
+          "import": "PeekMessageA",
+          "filter": [
+            957,
+            957
+          ],
+          "result": 0
+        },
+        {
+          "import": "GetAsyncKeyState",
+          "key": 16,
+          "result": 0
+        }
+      ]
+    }
+  },
+  "scope": "Measure saved human knowledge across the annual update and fresh input.\n\nAdvance the pinned save through the checked opponent moves, then run the\nunpatched annual update called by the single-player outer loop. Windows\nrectangle and directory calls operate on emulator memory. The supplied\nend-of-round position and host directory failures are controlled inputs.\nEach fresh input control starts from the same turn-44 handoff."
 }

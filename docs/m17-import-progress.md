@@ -210,9 +210,11 @@ projection through the remaining opponent work and the quiet turn-44
 human city pass. The native probe reaches its first input poll with the
 same 59 tiles, an empty research project, and unit slot 18 selected.
 The engine synchronizes the four own units' movement budgets in its
-deferred per-civ pass and verifies the same view and a replayed Skip.
-Native client focus ordering, wider combat, and pending choices remain
-open.
+deferred per-civ pass. Independent Skip and northwest probes at that
+handoff match saved movement expenditure and observation. Skip retains
+59 tiles. The northwest move adds the one native tile. Both replay from
+checkpoints. Native client focus ordering, wider combat and pending
+choices remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Measure saved human knowledge across a prepared native annual update.
+"""Measure saved human knowledge across the annual update and fresh input.
 
 Advance the pinned save through the checked opponent moves, then run the
 unpatched annual update called by the single-player outer loop. Windows
 rectangle and directory calls operate on emulator memory. The supplied
 end-of-round position and host directory failures are controlled inputs.
+Each fresh input control starts from the same turn-44 handoff.
 """
 from collections import Counter
 import argparse
@@ -17,6 +18,7 @@ from unicorn import UC_HOOK_CODE
 from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EIP, UC_X86_REG_ESP
 
 from import_city_view_check import TILES, move_opponent
+from import_first_order_check import NORTHWEST, execute as first_order
 from import_input_handoff_check import measure_handoff, witness
 from import_opponent_combat_view_check import (
     CRT, execute, partial_movement, singleton_movement, unconnected_road,
@@ -115,7 +117,7 @@ def annual_update(original, viewer):
             'crt_draws': len(draws), 'host_calls': dict(Counter(hosts))}
 
 
-def fresh_human_input(original, viewer, city_region):
+def fresh_human_input(original, viewer, city_region, key):
     cpu = original.cpu
     area = read(original, 0x6705A4, '<h')
     pointer = read(original, 0x5DEAD0 + 4 * viewer, '<I')
@@ -164,8 +166,13 @@ def fresh_human_input(original, viewer, city_region):
     assert handoff['active_slot'] == 18
     assert handoff['observation_to_input']['first_poll']['active_slot'] == 18
     assert handoff['research_target'] == -1 and handoff['research_progress'] == 0
+    order = first_order(original, viewer, regions, key, return_address=0x100040)
+    assert order['before']['active_slot'] == 18
+    assert order['after']['research_target'] == -1
+    assert order['after']['research_progress'] == 0
+    assert order['observation_arguments'] == [[18, 1]]
     return {'autosave_disabled': bool(options & 0x2000), 'spent_after_annual_update': before,
-            'turn_start_substitutes': substitutes, 'handoff': handoff}
+            'turn_start_substitutes': substitutes, 'handoff': handoff}, order
 
 
 def main():
@@ -183,8 +190,10 @@ def main():
     rules = parse_rules(str(home / prior['rules']['path']))
     prepared = {}
     city_region = None
+    next_order = None
 
     def at_city(original, viewer, city):
+        nonlocal next_order
         execute(original, viewer, city, rules, 7)
         move_opponent(original, viewer, (4, 5, 3), (4, 7), (11, 45), (9, 45),
                       ((7, -1), (-1, 4)))
@@ -198,7 +207,7 @@ def main():
         prepared['last_move'] = move_opponent(original, viewer, (33, 4, 3), (33,),
                                               (11, 41), (10, 42), ((-1, -1),))
         prepared['annual_update'] = annual_update(original, viewer)
-        prepared['fresh_human_input'] = fresh_human_input(original, viewer, city_region)
+        prepared['fresh_human_input'], next_order = fresh_human_input(original, viewer, city_region, key)
 
     def after_idle(original, viewer, regions):
         nonlocal city_region
@@ -206,10 +215,19 @@ def main():
         trace(original, viewer, regions, clear_preference_bit=False, skip_selected=True,
               at_city_entry=at_city)
 
-    witness(home, binary, prior['source']['path'], exhaust=False,
-            observation=True, after_idle=after_idle)
+    controls = {}
+    for name, key in [('skip', ord(' ')), ('move_northwest', NORTHWEST)]:
+        witness(home, binary, prior['source']['path'], exhaust=False,
+                observation=True, after_idle=after_idle)
+        controls[name] = next_order
+    assert controls['skip']['unit_byte_changes'] == [{'slot': 18, 'byte': 10, 'before': 0, 'after': 3}]
+    assert controls['skip']['explored_tiles'] == 59
+    move = controls['move_northwest']
+    assert move['explored_tiles'] == 60 and move['unit_position_after'] == (50, 8)
+    assert move['tile_byte_changes'] == [(2068, 0, 16), (2071, 0, 1), (2075, 240, 64), (2311, 1, 0)]
+    assert move['cache_byte_changes'] == [[4, 345, 0, 1], [4, 385, 1, 0]]
     report = {'schema': 1, **{key: prior[key] for key in ('binary_sha256', 'source', 'rules')},
-              **prepared, 'scope': __doc__.strip()}
+              **prepared, 'fresh_orders': controls, 'scope': __doc__.strip()}
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')
 

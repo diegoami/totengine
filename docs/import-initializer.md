@@ -344,7 +344,12 @@ and one empty-queue iteration. Native selection reaches slot 18 with 59
 tiles and no research choice. The engine retains the same projection
 through the checked human city pass, resets its matching private unit
 records at the per-civ movement reset, and accepts a Skip for slot 18
-with checkpoint replay. The inspector checks that slot 18 is ready.
+with checkpoint replay. An independent northwest move from the same
+handoff advances slot 18 to (50, 8) and adds one explored tile. The
+private snapshot records native expenditure and direction for the
+checked full-budget step. The engine matches the four raw tile changes,
+two remembered-improvement changes, and all five changed unit bytes.
+The inspector checks that slot 18 is ready and that both orders replay.
 Native automatic client selection remains open.
 
 Native opponent policy, the outer-loop UI, wider macro behavior and

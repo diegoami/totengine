@@ -513,7 +513,7 @@ pub(super) fn check_saved_opponent_combat(
         rules.clone(),
         resources,
         &before_close,
-        Some((&files.bytes, replay_events)),
+        Some((&files.bytes, replay_events.clone())),
     )?;
     if replay.advance(1) != 1 || replay.checkpoint(resources) != after_close {
         return Err("the checked round close did not replay".into());
@@ -553,6 +553,70 @@ pub(super) fn check_saved_opponent_combat(
             "the staged next human turn differs from the prepared view or research state".into(),
         );
     }
+    let actor = view
+        .units
+        .iter()
+        .find(|unit| unit.slot as u64 == active)
+        .copied()
+        .ok_or("the native fresh actor is missing from the staged view")?;
+    let controls = &round["fresh_orders"];
+    let to: (u16, u16) =
+        serde_json::from_value(controls["move_northwest"]["unit_position_after"].clone())
+            .map_err(|error| format!("invalid prepared fresh move destination: {error}"))?;
+    let ready_checkpoint = session.checkpoint(resources);
+    for (name, command, expected) in [
+        ("skip", Command::Skip { unit: actor }, OrderResult::Skipped),
+        (
+            "move_northwest",
+            Command::Move { unit: actor, to },
+            OrderResult::Moved,
+        ),
+    ] {
+        let native_order = &controls[name];
+        let mut control = HumanSession::restore_with(
+            rules.clone(),
+            resources,
+            &ready_checkpoint,
+            Some((&files.bytes, replay_events.clone())),
+        )?;
+        let revision = control.view().revision;
+        let result = control
+            .submit(Request {
+                civ: human,
+                id: revision + 1,
+                revision,
+                command,
+            })
+            .map_err(|error| format!("prepared fresh {name}: {error:?}"))?;
+        let view = control.view();
+        let unit = view
+            .observation
+            .units
+            .iter()
+            .find(|unit| unit.index == actor.slot)
+            .ok_or_else(|| format!("prepared fresh {name} lost its actor"))?;
+        if result.result != Some(expected)
+            || view.decision.is_some()
+            || unit.moves_left != 0
+            || json!([unit.x, unit.y]) != native_order["unit_position_after"]
+            || json!(view.observation.seen.iter().flatten().count())
+                != native_order["explored_tiles"]
+        {
+            return Err(format!(
+                "the staged fresh {name} differs from the prepared order"
+            ));
+        }
+        let after = control.checkpoint(resources);
+        let restored = HumanSession::restore_with(
+            rules.clone(),
+            resources,
+            &after,
+            Some((&files.bytes, replay_events.clone())),
+        )?;
+        if restored.view() != view || restored.checkpoint(resources) != after {
+            return Err(format!("the staged fresh {name} did not replay"));
+        }
+    }
     Ok(json!({
         "verified": true, "initializer_schema": 7,
         "profile": engine::human::ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE,
@@ -560,7 +624,8 @@ pub(super) fn check_saved_opponent_combat(
         "city_arrival_replays": true, "city_departure_replays": true,
         "partial_movement_replays": true, "singleton_movement_replays": true,
         "unconnected_road_replays": true, "round_close_replays": true,
-        "fresh_human_view_replays": true, "native_ready_slot": active, "checkpoint_replays": true,
+        "fresh_human_view_replays": true, "fresh_orders_replay": true,
+        "native_ready_slot": active, "checkpoint_replays": true,
     }))
 }
 

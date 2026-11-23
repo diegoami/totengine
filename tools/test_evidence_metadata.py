@@ -260,6 +260,20 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(first_poll['active_slot'], 18)
         self.assertEqual((first_poll['research_target'], first_poll['research_progress']), (-1, 0))
 
+    def test_fresh_human_orders_match_native_budget_and_view_deltas(self):
+        report = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
+        skip = report['fresh_orders']['skip']
+        self.assertEqual(skip['explored_tiles'], 59)
+        self.assertEqual(skip['tile_byte_changes'], [])
+        self.assertEqual(skip['cache_byte_changes'], [])
+        self.assertEqual(skip['unit_byte_changes'], [{'slot': 18, 'byte': 10, 'before': 0, 'after': 3}])
+        move = report['fresh_orders']['move_northwest']
+        self.assertEqual(move['observation_arguments'], [[18, 1]])
+        self.assertEqual(move['unit_position_after'], [50, 8])
+        self.assertEqual(move['explored_tiles'], 60)
+        self.assertEqual(move['tile_byte_changes'], [[2068, 0, 16], [2071, 0, 1], [2075, 240, 64], [2311, 1, 0]])
+        self.assertEqual(move['cache_byte_changes'], [[4, 345, 0, 1], [4, 385, 1, 0]])
+
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
         phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())

@@ -355,6 +355,8 @@ impl HumanSession {
             return Ok(None);
         };
         let refused = "the saved-view movement phase cannot resolve that order";
+        let keep_native_budget =
+            self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1;
         let mut world;
         let (observed, result) = match order {
             Order::Move { unit, to } => {
@@ -374,6 +376,7 @@ impl HumanSession {
                     &mut world,
                     unit,
                     to,
+                    keep_native_budget,
                 );
                 (step, OrderResult::Moved)
             }
@@ -384,6 +387,7 @@ impl HumanSession {
                     &self.game.rules,
                     &mut world,
                     unit,
+                    keep_native_budget,
                 );
                 (step, OrderResult::Skipped)
             }

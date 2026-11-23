@@ -75,7 +75,7 @@ impl CheckedSnapshot {
         let allowance =
             world.movement_allowance(rules, usize::from(unit.type_id()), player, unit.damage());
         world.units[slot].moves_left = allowance.saturating_sub(u32::from(unit.moves_spent()));
-        let mut observed = stage_saved_land_move(save, rules, &mut world, slot, to)?;
+        let mut observed = stage_saved_land_move(save, rules, &mut world, slot, to, false)?;
         let moved = &world.units[slot];
         let view = SavedMapKnowledge::read(&observed, player)?;
         Ok(SavedLandStep {
@@ -109,6 +109,7 @@ pub(crate) fn stage_saved_land_move(
     world: &mut crate::WorldState,
     slot: usize,
     to: (u16, u16),
+    keep_native_budget: bool,
 ) -> Result<SaveFile, String> {
     let player = save.player_civ;
     let unit = save
@@ -161,7 +162,20 @@ pub(crate) fn stage_saved_land_move(
     if world.map.hut_at(to.0, to.1) {
         return Err("saved land step cannot enter a hut".into());
     }
-    let moved = world.move_unit(rules, slot, to.0, to.1);
+    // The native first step can spend its full terrain cost even when it
+    // exceeds the unit's allowance. This context consumes no partial roll.
+    let first_step = keep_native_budget
+        && live.moves_left
+            == world.movement_allowance(rules, usize::from(live.type_id), player, live.damage);
+    let moved = if first_step {
+        let routes = crate::movement::MovementRoute {
+            road: world.map.road[from] && world.map.road[dest],
+            rail: world.map.rail[from] && world.map.rail[dest],
+        };
+        world.move_unit_with_routes(rules, slot, to.0, to.1, Some(routes), true)
+    } else {
+        world.move_unit(rules, slot, to.0, to.1)
+    };
     if !moved.moved || moved.zoc_ended || moved.battle.is_some() || moved.hut {
         return Err("saved land step did not resolve as ordinary movement".into());
     }
@@ -170,6 +184,33 @@ pub(crate) fn stage_saved_land_move(
     let mut changed = save.clone();
     changed.units[slot].raw[..2].copy_from_slice(&position.0.to_le_bytes());
     changed.units[slot].raw[2..4].copy_from_slice(&position.1.to_le_bytes());
+    if first_step {
+        // Native movement arguments are numbered NE, E, SE, S, SW, W, NW, N.
+        let offset = (
+            i32::from(to.0) - i32::from(unit.x()),
+            i32::from(to.1) - i32::from(unit.y()),
+        );
+        let direction = [
+            (1, -1),
+            (2, 0),
+            (1, 1),
+            (0, 2),
+            (-1, 1),
+            (-2, 0),
+            (-1, -1),
+            (0, -2),
+        ]
+        .iter()
+        .position(|&candidate| candidate == offset)
+        .ok_or("saved movement direction missing")?;
+        let raw = &mut changed.units[slot].raw;
+        raw[6] |= 0x40;
+        raw[10] = moved
+            .cost_thirds
+            .try_into()
+            .map_err(|_| "saved movement cost out of range")?;
+        raw[13] = direction as u8;
+    }
     let tile_bytes = &mut changed.maps[0].tile_fields;
     tile_bytes[6 * from + 1] &= !1;
     tile_bytes[6 * dest + 1] |= 1;
@@ -185,6 +226,7 @@ pub(crate) fn stage_saved_unit_skip(
     rules: &Rules,
     world: &mut crate::WorldState,
     slot: usize,
+    keep_native_budget: bool,
 ) -> Result<SaveFile, String> {
     let player = save.player_civ;
     let unit = world
@@ -205,6 +247,8 @@ pub(crate) fn stage_saved_unit_skip(
     {
         return Err("saved skip requires an unstacked land unit".into());
     }
+    let budget = keep_native_budget
+        .then(|| world.movement_allowance(rules, usize::from(unit.type_id), player, unit.damage));
     let result = world.apply_order(
         rules,
         None,
@@ -216,8 +260,15 @@ pub(crate) fn stage_saved_unit_skip(
     }
     // Space reaches unit observation through the no-relocation branch. The
     // moving-unit stack reset belongs to the relocation path.
-    let observed = unit_observation_after(save, rules, slot, true)
+    let mut observed = unit_observation_after(save, rules, slot, true)
         .map_err(|error| format!("saved skip observation: {error}"))?;
+    if let Some(budget) = budget {
+        let raw = &mut observed.units[slot].raw;
+        raw[10] = budget
+            .try_into()
+            .map_err(|_| "saved movement budget out of range")?;
+        raw[13] = 255;
+    }
     apply_saved_observation(world, &observed);
     Ok(observed)
 }

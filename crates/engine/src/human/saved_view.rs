@@ -496,7 +496,7 @@ impl HumanSession {
             return Ok(None);
         };
         let refused = "the saved-view movement phase cannot resolve that order";
-        let keep_native_budget =
+        let checked_replay =
             self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1;
         let mut world;
         let (observed, result) = match order {
@@ -517,7 +517,7 @@ impl HumanSession {
                     &mut world,
                     unit,
                     to,
-                    keep_native_budget,
+                    checked_replay,
                 );
                 (step, OrderResult::Moved)
             }
@@ -528,9 +528,29 @@ impl HumanSession {
                     &self.game.rules,
                     &mut world,
                     unit,
-                    keep_native_budget,
+                    checked_replay,
                 );
                 (step, OrderResult::Skipped)
+            }
+            Order::SetRates { science, tax } if checked_replay && self.decision.is_none() => {
+                let before = &self.game.world;
+                world = before.clone();
+                let result = world.apply_order(&self.game.rules, None, self.human, order);
+                if result != OrderResult::RatesSet
+                    || world.map != before.map
+                    || world.units != before.units
+                    || world.cities.len() != before.cities.len()
+                    || world.cities.iter().zip(&before.cities).any(|(city, old)| {
+                        (city.size, city.known_to, city.known_sizes)
+                            != (old.size, old.known_to, old.known_sizes)
+                    })
+                {
+                    return Ok(None);
+                }
+                let mut updated = saved.clone();
+                updated.science_rates[usize::from(self.human)] = science;
+                updated.tax_rates[usize::from(self.human)] = tax;
+                (Ok(updated), result)
             }
             _ => return Ok(None),
         };

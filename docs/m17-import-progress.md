@@ -268,6 +268,12 @@ preparation requires the pinned pending-choice check and rejects those
 modified captures. The shared inspection screen shows the pending-choice
 and event-initialization results, including reasons for failed checks.
 
+A [native rates commit probe](evidence/import-saved-rates.json)
+executes the commit and city-refresh fragment for three legal choices.
+The native path preserves the full tile array and remembered improvements.
+The checked replay now preserves the same saved view across a rate
+change. The inspector checks the rate pairs and restores each checkpoint.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

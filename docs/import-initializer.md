@@ -423,3 +423,17 @@ checkpoint.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_wait_check.py --out /tmp/import-wait.json
 cmp docs/evidence/import-wait.json /tmp/import-wait.json
 ```
+
+### Rate changes in a checked saved view
+
+The [native rate commit](evidence/import-saved-rates.json) runs the
+prepared dialog's commit fragment through city refresh for three legal
+rate pairs. All three retain 59 explored tiles and the same remembered
+improvements. The checked engine stages the rate order, verifies that
+map and observation inputs are stable, and preserves the saved view.
+The inspector verifies each case and restores the resulting checkpoint.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_saved_rates_check.py --out /tmp/import-saved-rates.json
+cmp docs/evidence/import-saved-rates.json /tmp/import-saved-rates.json
+```

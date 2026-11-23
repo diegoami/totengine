@@ -232,6 +232,17 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_rate_commit_preserves_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-saved-rates.json').read_text())
+        pinned = json.loads((ROOT / 'docs/evidence/import-pending-choice.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], pinned[key])
+        self.assertEqual((report['entry'], report['stop']), ('0040b4fa', '0040b6e3'))
+        self.assertEqual([(case['science'], case['tax'], case['refreshed_cities'])
+                          for case in report['cases']], [(6, 4, []), (4, 4, [5]), (4, 6, [5])])
+        self.assertTrue(all(case['explored_tiles'] == 59 and case['tile_bytes_changed'] == 0
+                            and case['remembered_bytes_changed'] == 0 for case in report['cases']))
+
     def test_pending_choice_controls_reach_input_without_a_new_project(self):
         report = json.loads((ROOT / 'docs/evidence/import-pending-choice.json').read_text())
         viewport = json.loads((ROOT / 'docs/evidence/import-saved-viewport.json').read_text())

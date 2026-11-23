@@ -470,6 +470,74 @@ pub(super) fn check_saved_viewport(
     }))
 }
 
+pub(super) fn check_saved_rates(
+    capture: &OriginalCapture,
+    human: u8,
+    trace: &Value,
+) -> Result<Value, String> {
+    let files = capture.files();
+    let rules = &capture.resources().rules;
+    let events = files.events.clone().map(EventEngine::new);
+    let identity = capture.identity();
+    let initial = HumanSession::scenario_initialized_saved_opponent_combat(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: rules.clone(),
+            events: events.clone(),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        identity,
+    )?;
+    let view = initial.view();
+    let first = initial.checkpoint(identity);
+    let restore = |text: &str| {
+        HumanSession::restore_with(
+            rules.clone(),
+            identity,
+            text,
+            Some((&files.bytes, events.clone())),
+        )
+    };
+    let cases = trace["cases"]
+        .as_array()
+        .filter(|cases| !cases.is_empty())
+        .ok_or("prepared rates evidence has no cases")?;
+    for native in cases {
+        let science: u8 = serde_json::from_value(native["science"].clone())
+            .map_err(|error| format!("invalid native science rate: {error}"))?;
+        let tax: u8 = serde_json::from_value(native["tax"].clone())
+            .map_err(|error| format!("invalid native tax rate: {error}"))?;
+        let mut session = restore(&first)?;
+        let response = session.submit(Request {
+            civ: human,
+            revision: view.revision,
+            id: view.revision + 1,
+            command: Command::Rates { science, tax },
+        })?;
+        let after = session.view();
+        if response.result != Some(OrderResult::RatesSet)
+            || after.observation.seen != view.observation.seen
+            || after.observation.units != view.observation.units
+            || json!(after.observation.seen.iter().flatten().count()) != native["explored_tiles"]
+            || !after
+                .rates
+                .as_ref()
+                .is_some_and(|rates| rates.science == science && rates.tax == tax)
+        {
+            return Err("the checked rate change differs from the prepared native view".into());
+        }
+        let checkpoint = session.checkpoint(identity);
+        let replay = restore(&checkpoint)?;
+        if replay.view() != after || replay.checkpoint(identity) != checkpoint {
+            return Err("the checked rate change did not replay".into());
+        }
+    }
+    Ok(json!({"verified": true, "cases": cases.len(), "checkpoint_replays": true}))
+}
+
 pub(super) fn check_saved_wait(
     capture: &OriginalCapture,
     human: u8,

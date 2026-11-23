@@ -548,3 +548,18 @@ restores their checkpoints.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_human_city_birth_check.py --orders --out /tmp/import-human-city-stack-orders.json
 cmp docs/evidence/import-human-city-stack-orders.json /tmp/import-human-city-stack-orders.json
 ```
+
+### Re-entry into the occupied human city
+
+The [native city return trace](evidence/import-human-city-stack-returns.json)
+moves each member northwest to (52, 8), resets its spent movement in the
+prepared input, and drives it southeast to (53, 9). The native arrival
+spends six thirds, links the returning Phalanx ahead of the resident,
+and removes the field unit marker from the saved map and memory. The
+view keeps 59 explored tiles. The budget reset is a controlled input.
+The checked engine's re-entry path remains open.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_human_city_birth_check.py --returns --out /tmp/import-human-city-stack-returns.json
+cmp docs/evidence/import-human-city-stack-returns.json /tmp/import-human-city-stack-returns.json
+```

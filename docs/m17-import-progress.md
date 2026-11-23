@@ -321,6 +321,13 @@ replay stages these orders for either member and matches the native
 map and memory deltas. The inspector checks the resulting views and
 reloads all six cases.
 
+The [prepared city re-entry witness](evidence/import-human-city-stack-returns.json)
+resets the departing actor's spent movement and drives it southeast
+into the occupied city. Both actors spend six thirds, become the head
+of the pair, and leave 59 explored tiles. Native clears the unit marker
+on the field tile in the map and remembered array. The next runtime
+work covers re-entry on a supported budget.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

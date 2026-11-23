@@ -26,6 +26,7 @@ from import_unit_setup_check import ACTIVE_SLOT, CALLS, UNIT_RECORDS
 CHARACTER_CALLBACK = 0x40F592
 KEY_CALLBACK = 0x40FBD4
 MOVE = 0x54C69B
+SOUTHEAST = 0xA3
 NORTHWEST = 0xA7
 HOST_CALLS = {0x5B0A50: 'XD_InFlushSendBuffer', 0x54F34F: 'GetAsyncKeyState',
               IDLE_FILTER_CALL: 'PeekMessageA'}
@@ -50,7 +51,7 @@ def changes(before, after):
 
 
 def execute(original, player, regions, key, *, return_address=RETURN):
-    move = key == NORTHWEST
+    move = key in (NORTHWEST, SOUTHEAST)
     entry = KEY_CALLBACK if move else CHARACTER_CALLBACK
     cpu = original.cpu
     for address, value in WINDOW_CONTEXT:

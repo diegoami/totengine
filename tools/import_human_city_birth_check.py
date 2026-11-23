@@ -16,7 +16,7 @@ from unicorn import UC_HOOK_CODE, UC_HOOK_MEM_WRITE
 from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EIP, UC_X86_REG_ESP
 
 from import_event_tail_check import digest
-from import_first_order_check import NORTHWEST, execute as first_order
+from import_first_order_check import NORTHWEST, SOUTHEAST, execute as first_order
 from import_phase_check import CIV, FRAME, STRIDE, frame, read
 from import_round_close_check import TILES, TURN_START, measure_handoff, prepare_round
 from totctl import parse_rules
@@ -31,6 +31,13 @@ ORDER_SCOPE = (
     "Select the head or tail of the new city stack explicitly, then execute "
     "Wait, Skip or northwest movement through the existing prepared input probe. "
     "Set each Skip actor's prior direction to the corresponding checked engine value."
+)
+
+
+RETURN_SCOPE = (
+    "Prepare the paid-production handoff for each actor. Execute its northwest "
+    "departure, explicitly restore its movement budget, then execute southeast "
+    "re-entry. The restored budget is a controlled input."
 )
 
 
@@ -157,6 +164,12 @@ def city_pass(original, viewer, city_region, worker, purchase, stored, command):
         if prior_direction is not None:
             original.write(UNIT_TABLE + actor * 40 + 13, prior_direction, '<B')
         regions = [(CIV, STRIDE * 8), (UNIT_TABLE, count * 40), city_region]
+        if key == SOUTHEAST:
+            departure = first_order(original, viewer, regions, NORTHWEST, return_address=0x100040)
+            assert departure['unit_position_after'] == (52, 8)
+            assert read(original, UNIT_TABLE + actor * 40 + 10, '<B') == 6
+            original.write(UNIT_TABLE + actor * 40 + 10, 0, '<B')
+            original.write(0x60764E, actor, '<h')
         return first_order(original, viewer, regions, key, return_address=0x100040)
 
     return {
@@ -213,10 +226,33 @@ def stack_orders(prepared_birth, paid):
     return cases
 
 
+def stack_returns(prepared_birth, paid):
+    cases = {}
+    for actor, resident in [(22, 26), (26, 22)]:
+        trace = prepared_birth(paid, (actor, SOUTHEAST, None))
+        assert trace['move_arguments'] == [[actor, 2, 3]]
+        assert trace['observation_arguments'] == [[actor, 1]]
+        assert trace['unit_position_before'] == (52, 8)
+        assert trace['unit_position_after'] == (53, 9)
+        assert trace['tile_byte_changes'] == [(2077, 1, 0)]
+        assert trace['cache_byte_changes'] == [[4, 346, 1, 0]]
+        assert trace['explored_tiles'] == 59
+        changes = trace['unit_byte_changes']
+        assert {'slot': actor, 'byte': 10, 'before': 0, 'after': 6} in changes
+        assert {'slot': actor, 'byte': 13, 'before': 6, 'after': 2} in changes
+        for slot, offset, target in [(actor, 28, resident), (resident, 26, actor)]:
+            assert all({'slot': slot, 'byte': offset + i, 'before': 255, 'after': value}
+                       in changes for i, value in enumerate((target, 0)))
+        cases[str(actor)] = trace | {'city_stack': [actor, resident]}
+    return cases
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
-    parser.add_argument('--orders', action='store_true', help='Record Wait, movement and Skip after production')
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument('--orders', action='store_true', help='Record Wait, movement and Skip after production')
+    modes.add_argument('--returns', action='store_true', help='Record prepared city re-entry after departure')
     args = parser.parse_args()
     evidence = Path(__file__).resolve().parent.parent / 'docs/evidence'
     purchase = json.loads((evidence / 'import-saved-purchase.json').read_text())
@@ -246,6 +282,8 @@ def main():
     report = {'schema': 1, **{key: purchase[key] for key in keys}}
     if args.orders:
         report.update(cases=stack_orders(prepared_birth, paid), scope=ORDER_SCOPE)
+    elif args.returns:
+        report.update(cases=stack_returns(prepared_birth, paid), scope=RETURN_SCOPE)
     else:
         report.update(
             human_city_birth=prepared_birth(paid),

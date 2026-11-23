@@ -232,6 +232,25 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_human_city_stack_returns_link_the_arriving_unit_first(self):
+        report = json.loads((ROOT / 'docs/evidence/import-human-city-stack-returns.json').read_text())
+        departure = json.loads((ROOT / 'docs/evidence/import-human-city-stack-orders.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], departure[key])
+        self.assertEqual(set(report['cases']), {'22', '26'})
+        for actor, resident in ((22, 26), (26, 22)):
+            case = report['cases'][str(actor)]
+            self.assertEqual(case['city_stack'], [actor, resident])
+            self.assertEqual(case['move_arguments'], [[actor, 2, 3]])
+            self.assertEqual(case['observation_arguments'], [[actor, 1]])
+            self.assertEqual(case['unit_position_before'], [52, 8])
+            self.assertEqual(case['unit_position_after'], [53, 9])
+            self.assertIn({'slot': actor, 'byte': 10, 'before': 0, 'after': 6},
+                          case['unit_byte_changes'])
+            self.assertEqual(case['tile_byte_changes'], [[2077, 1, 0]])
+            self.assertEqual(case['cache_byte_changes'], [[4, 346, 1, 0]])
+            self.assertEqual(case['explored_tiles'], 59)
+
     def test_native_human_city_stack_orders_have_measured_deltas(self):
         report = json.loads((ROOT / 'docs/evidence/import-human-city-stack-orders.json').read_text())
         city = json.loads((ROOT / 'docs/evidence/import-human-city-birth.json').read_text())

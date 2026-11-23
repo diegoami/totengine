@@ -206,10 +206,13 @@ advances to 44 with the same 59 explored tiles, remembered improvements,
 and two CRT draws as the guarded engine replay. The engine retains the
 view only when the round leaves observation inputs intact and applies no
 macro or barbarian arrival. The pinned engine replay retains the saved
-projection through the remaining opponent work. The next human city
-pass switches to the existing engine observation path and exposes
-60 tiles. Human city-phase continuation, wider combat and pending choices
-remain open.
+projection through the remaining opponent work and the quiet turn-44
+human city pass. The native probe reaches its first input poll with the
+same 59 tiles, an empty research project, and unit slot 18 selected.
+The engine synchronizes the four own units' movement budgets in its
+deferred per-civ pass and verifies the same view and a replayed Skip.
+Native client focus ordering, wider combat, and pending choices remain
+open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

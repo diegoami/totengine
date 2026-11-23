@@ -10,8 +10,9 @@ pub(super) struct StagedRound {
 
 impl HumanSession {
     pub(super) fn run_staged_city_pass(&mut self, civ: u8) {
-        let keep_view = civ != self.human
-            && self.saved_move_state.is_some()
+        let human = civ == self.human;
+        let keep_view = self.saved_move_state.is_some()
+            && (!human || self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1)
             && matches!(
                 self.knowledge_recipe,
                 ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
@@ -43,14 +44,22 @@ impl HumanSession {
             discovery = !summary.discoveries.is_empty();
             summary
         };
-        if civ == self.human {
-            self.record_turn_notices(false, pass);
-        } else {
-            let summary = pass(&mut self.game);
-            if let Some(before) = before {
-                if self.keep_city_pass_view(&before, civ, &summary).is_err() {
-                    self.finish_saved_movement();
+        let summary = if human {
+            let mut saved_summary = None;
+            self.record_turn_notices(false, |game| {
+                let summary = pass(game);
+                if keep_view {
+                    saved_summary = Some(summary.clone());
                 }
+                summary
+            });
+            saved_summary
+        } else {
+            Some(pass(&mut self.game))
+        };
+        if let (Some(before), Some(summary)) = (before, summary) {
+            if self.keep_city_pass_view(&before, civ, &summary).is_err() {
+                self.finish_saved_movement();
             }
         }
         let staged = self.staged_round.as_mut().unwrap();
@@ -968,7 +977,33 @@ staged-round-test
         }
         assert_eq!(game.phase(), Phase::Human);
         assert_eq!(game.game.world.turn, 44);
-        assert!(game.saved_move_state.is_none());
-        assert_eq!(game.view().observation.seen.iter().flatten().count(), 60);
+        let saved = game.saved_move_state.as_ref().unwrap();
+        assert_eq!(game.view().observation.seen, initial.observation.seen);
+        assert!(game.decision.is_none());
+        for slot in [6, 9, 18, 26] {
+            assert_eq!(saved.units[slot].raw[10], 0);
+            assert_eq!(game.game.world.units[slot].moves_left, 3);
+        }
+        let checkpoint = game.checkpoint(deps);
+        assert_eq!(restore(&checkpoint).view(), game.view());
+        let unit = *game
+            .view()
+            .units
+            .iter()
+            .find(|unit| unit.slot == 18)
+            .unwrap();
+        assert_eq!(
+            game.submit(Request {
+                civ: 4,
+                id: 200,
+                revision: game.view().revision,
+                command: Command::Skip { unit },
+            })
+            .unwrap()
+            .result,
+            Some(OrderResult::Skipped)
+        );
+        assert!(game.saved_move_state.is_some());
+        assert_eq!(restore(&game.checkpoint(deps)).view(), game.view());
     }
 }

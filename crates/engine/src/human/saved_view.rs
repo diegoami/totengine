@@ -133,6 +133,14 @@ impl HumanSession {
             .saved_move_state
             .as_ref()
             .ok_or("saved city view missing")?;
+        let human_pass = civ == self.human;
+        if human_pass
+            && (!summary.discoveries.is_empty()
+                || !summary.events.is_empty()
+                || world.free_research[usize::from(civ)] != 0)
+        {
+            return Err("saved city view requires a human pass without a pending choice".into());
+        }
         if world.map != before.map
             || world.diplomacy != before.diplomacy
             || world.wonders[25] != before.wonders[25]
@@ -196,6 +204,21 @@ impl HumanSession {
         }
 
         let mut observed = saved.clone();
+        if human_pass {
+            for (slot, unit) in world.units.iter().enumerate() {
+                if unit.id == 0 || unit.owner != civ {
+                    continue;
+                }
+                let record = observed
+                    .units
+                    .get_mut(slot)
+                    .ok_or("saved human unit missing")?;
+                if record.id() != unit.id || record.orders() != unit.orders {
+                    return Err("saved human unit context changed at turn start".into());
+                }
+                record.raw[10] = 0;
+            }
+        }
         let mut updated_world = world.clone();
         if matches!(
             self.knowledge_recipe,

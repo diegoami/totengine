@@ -337,7 +337,15 @@ directory failures. The staged engine round retains this saved view
 when map, unit, city, wonder and diplomacy state are stable and the
 round applies no events or barbarian arrivals. A synthetic round-start
 event exercises the fallback and fires once. The inspector restores
-and verifies the checkpoint across the checked annual update.
+and verifies the checkpoint across the checked annual update. The same
+probe then runs the turn-44 human turn start with optional autosave
+disabled, executes native observation, and reaches the first input poll
+and one empty-queue iteration. Native selection reaches slot 18 with 59
+tiles and no research choice. The engine retains the same projection
+through the checked human city pass, resets its matching private unit
+records at the per-civ movement reset, and accepts a Skip for slot 18
+with checkpoint replay. The inspector checks that slot 18 is ready.
+Native automatic client selection remains open.
 
 Native opponent policy, the outer-loop UI, wider macro behavior and
 broader combat contexts remain outside these controlled actions.

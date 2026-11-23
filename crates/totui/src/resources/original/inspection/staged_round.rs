@@ -518,13 +518,49 @@ pub(super) fn check_saved_opponent_combat(
     if replay.advance(1) != 1 || replay.checkpoint(resources) != after_close {
         return Err("the checked round close did not replay".into());
     }
+    for _ in 0..64 {
+        if session.view().phase != Phase::Opponents {
+            break;
+        }
+        if session.advance(1) != 1
+            || replay.advance(1) != 1
+            || replay.checkpoint(resources) != session.checkpoint(resources)
+        {
+            return Err("the checked next human turn did not replay".into());
+        }
+    }
+    let view = session.view();
+    let native_handoff = &round["fresh_human_input"]["handoff"];
+    let active = native_handoff["active_slot"]
+        .as_u64()
+        .ok_or("the native fresh handoff has no selected unit")?;
+    let selected_ready = view
+        .observation
+        .units
+        .iter()
+        .any(|unit| unit.index as u64 == active && unit.owner == human && unit.moves_left > 0);
+    if view.phase != Phase::Human
+        || view.observation.turn != initial.observation.turn + 1
+        || view.observation.seen != initial.observation.seen
+        || json!(view.observation.seen.iter().flatten().count())
+            != native_handoff["explored_tiles_after"]
+        || view.decision.is_some()
+        || view.observation.research.target.is_some()
+        || json!(view.observation.research.progress) != native_handoff["research_progress"]
+        || !selected_ready
+    {
+        return Err(
+            "the staged next human turn differs from the prepared view or research state".into(),
+        );
+    }
     Ok(json!({
         "verified": true, "initializer_schema": 7,
         "profile": engine::human::ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE,
         "explored_tiles": explored, "combat_rng_matches": true, "field_stack_replays": true,
         "city_arrival_replays": true, "city_departure_replays": true,
         "partial_movement_replays": true, "singleton_movement_replays": true,
-        "unconnected_road_replays": true, "round_close_replays": true, "checkpoint_replays": true,
+        "unconnected_road_replays": true, "round_close_replays": true,
+        "fresh_human_view_replays": true, "native_ready_slot": active, "checkpoint_replays": true,
     }))
 }
 

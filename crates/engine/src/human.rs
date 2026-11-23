@@ -1201,6 +1201,9 @@ impl HumanSession {
             .world
             .resolve_anarchy(&self.game.rules, self.human)
         {
+            if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1 {
+                self.finish_saved_movement();
+            }
             let eligible = self
                 .game
                 .world

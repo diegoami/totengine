@@ -117,6 +117,13 @@ def idle_iteration(original, regions):
 
 def witness(home, binary, path, *, exhaust, observation, after_idle=None):
     original, player, _, regions, _ = prepare(home, binary, path, exhaust=exhaust)
+    result = measure_handoff(original, player, regions, observation=observation)
+    if after_idle is not None:
+        after_idle(original, player, regions)
+    return result
+
+
+def measure_handoff(original, player, regions, *, observation, entry=ENTRY, extra_calls=()):
     width, height = (read(original, addr, '<h') for addr in (0x6705A0, 0x6705A2))
     area = width * height // 2
     original.write(0x6705A4, area, '<h')
@@ -158,7 +165,7 @@ def witness(home, binary, path, *, exhaust, observation, after_idle=None):
     paths = (OBSERVATION_HELPERS if observation else
              (OBSERVE, 0x473127, 0x4734B9, 0x472864, INPUT_PREPARATION))
     try:
-        run(original, ENTRY, {stop}, calls=CALLS + DISPLAY_HELPERS + paths)
+        run(original, entry, {stop}, calls=CALLS + DISPLAY_HELPERS + paths + extra_calls)
     finally:
         original.cpu.hook_del(hook)
     after_tiles = bytes(original.cpu.mem_read(0x700000, 6 * area))
@@ -190,7 +197,7 @@ def witness(home, binary, path, *, exhaust, observation, after_idle=None):
         earlier = len(callbacks)
         try:
             run(original, AFTER_OBSERVATION, {INPUT_PREPARATION},
-                calls=CALLS + DISPLAY_HELPERS + OBSERVATION_HELPERS + extra)
+                calls=CALLS + DISPLAY_HELPERS + OBSERVATION_HELPERS + extra + extra_calls)
         finally:
             original.cpu.hook_del(hook)
         result['substituted_calls'] = callbacks[:earlier]
@@ -203,8 +210,6 @@ def witness(home, binary, path, *, exhaust, observation, after_idle=None):
         assert bytes(original.cpu.mem_read(viewer_cache, area)) == after_cache
         assert entity_knowledge() == (after_units, after_cities)
     result['observation_calls'] = observation_calls
-    if after_idle is not None:
-        after_idle(original, player, regions)
     return result
 
 

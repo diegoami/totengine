@@ -247,6 +247,19 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(step['observation_calls'], [])
         self.assertFalse(step['viewer_memory_changed'])
 
+    def test_fresh_human_input_keeps_saved_knowledge_and_ready_units(self):
+        report = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
+        fresh = report['fresh_human_input']
+        self.assertTrue(fresh['autosave_disabled'])
+        self.assertEqual(fresh['spent_after_annual_update'], dict.fromkeys(('6', '9', '18', '26'), 0))
+        handoff = fresh['handoff']
+        self.assertEqual(handoff['explored_tiles_after'], 59)
+        self.assertEqual(handoff['human_memory_bytes_changed'], 0)
+        self.assertEqual(handoff['observation_calls'], [[18, 1], [18, 1]])
+        first_poll = handoff['observation_to_input']['first_poll']
+        self.assertEqual(first_poll['active_slot'], 18)
+        self.assertEqual((first_poll['research_target'], first_poll['research_progress']), (-1, 0))
+
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
         phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())

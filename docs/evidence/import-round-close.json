@@ -74,5 +74,88 @@
       "SetEnvironmentVariableA": 2
     }
   },
+  "fresh_human_input": {
+    "autosave_disabled": true,
+    "spent_after_annual_update": {
+      "6": 0,
+      "9": 0,
+      "18": 0,
+      "26": 0
+    },
+    "turn_start_substitutes": [
+      "00467c89"
+    ],
+    "handoff": {
+      "stop": "004205a7",
+      "active_slot": 18,
+      "display_mode": 1,
+      "research_target": -1,
+      "research_progress": 0,
+      "explored_tiles_before": 59,
+      "explored_tiles_after": 59,
+      "tile_bytes_changed": 0,
+      "human_memory_bytes_changed": 0,
+      "unit_masks_changed": 0,
+      "city_knowledge_records_changed": 0,
+      "substituted_calls": [
+        "0040d510",
+        "005346be",
+        "0040d7e7",
+        "004bf9b6"
+      ],
+      "observation_to_input": {
+        "substituted_calls": [
+          "00467c89",
+          "0041af00",
+          "004bf9b6",
+          "005346be",
+          "0040d7e7",
+          "004bf9b6",
+          "00467c89",
+          "0041af00"
+        ],
+        "first_poll": {
+          "stop_at_call": "00576ee4",
+          "import": "PeekMessageA",
+          "window_filter": 0,
+          "message_filter": [
+            0,
+            0
+          ],
+          "remove": 1,
+          "active_slot": 18,
+          "unit_orders_byte": 255,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "idle_iteration": {
+          "initial_queue_result": "empty",
+          "filtered_polls": [
+            {
+              "call": "00577011",
+              "message_filter": [
+                957,
+                957
+              ]
+            }
+          ],
+          "next_general_poll": "00576ee4",
+          "active_slot": 18,
+          "display_mode": 1,
+          "civ_unit_city_records_unchanged": true
+        }
+      },
+      "observation_calls": [
+        [
+          18,
+          1
+        ],
+        [
+          18,
+          1
+        ]
+      ]
+    }
+  },
   "scope": "Measure saved human knowledge across a prepared native annual update.\n\nAdvance the pinned save through the checked opponent moves, then run the\nunpatched annual update called by the single-player outer loop. Windows\nrectangle and directory calls operate on emulator memory. The supplied\nend-of-round position and host directory failures are controlled inputs."
 }

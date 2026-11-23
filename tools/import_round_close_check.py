@@ -17,12 +17,12 @@ from unicorn import UC_HOOK_CODE
 from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EIP, UC_X86_REG_ESP
 
 from import_city_view_check import TILES, move_opponent
-from import_input_handoff_check import witness
+from import_input_handoff_check import measure_handoff, witness
 from import_opponent_combat_view_check import (
     CRT, execute, partial_movement, singleton_movement, unconnected_road,
 )
-from import_phase_check import read
-from import_round_handoff_check import trace
+from import_phase_check import CIV, FRAME, STRIDE, frame, read
+from import_round_handoff_check import TURN_START, trace
 from totctl import parse_rules
 
 ENTRY = 0x4702FC
@@ -115,6 +115,59 @@ def annual_update(original, viewer):
             'crt_draws': len(draws), 'host_calls': dict(Counter(hosts))}
 
 
+def fresh_human_input(original, viewer, city_region):
+    cpu = original.cpu
+    area = read(original, 0x6705A4, '<h')
+    pointer = read(original, 0x5DEAD0 + 4 * viewer, '<I')
+
+    def knowledge():
+        tiles = cpu.mem_read(TILES, 6 * area)
+        return (tuple(bool(mask & (1 << viewer)) for mask in tiles[4::6]),
+                bytes(cpu.mem_read(pointer, area)))
+
+    def budgets():
+        return {str(slot): read(original, 0x607C58 + 40 * slot + 10, '<B')
+                for slot in (6, 9, 18, 26)}
+
+    initial = knowledge()
+    before = budgets()
+    options = read(original, 0x60763A, '<I')
+    original.write(0x60763A, options & ~0x2000, '<I')  # disable per-civ autosave in this control
+    substitutes = []
+
+    def redraw(cpu, address, _size, _data):
+        if address != 0x467C89:
+            return
+        sp = cpu.reg_read(UC_X86_REG_ESP)
+        substitutes.append(f'{address:08x}')
+        cpu.reg_write(UC_X86_REG_EAX, 0)
+        cpu.reg_write(UC_X86_REG_ESP, sp + 4)
+        cpu.reg_write(UC_X86_REG_EIP, read(original, sp, '<I'))
+
+    hook = cpu.hook_add(UC_HOOK_CODE, redraw)
+    try:
+        original.call(TURN_START, viewer)
+    finally:
+        cpu.hook_del(hook)
+    assert cpu.reg_read(UC_X86_REG_EIP) == 0x100000
+    assert substitutes == ['00467c89']
+    assert before == budgets() == {'6': 0, '9': 0, '18': 0, '26': 0}
+    assert initial == knowledge()
+
+    frame(original)
+    original.write(FRAME - 0x6AC, viewer, '<I')
+    count = read(original, 0x607666, '<h')
+    regions = [(CIV, STRIDE * 8), (0x607C58, count * 40), city_region]
+    handoff = measure_handoff(original, viewer, regions, observation=True,
+                              entry=0x474BC8, extra_calls=(0x570169,))
+    assert initial == knowledge()
+    assert handoff['active_slot'] == 18
+    assert handoff['observation_to_input']['first_poll']['active_slot'] == 18
+    assert handoff['research_target'] == -1 and handoff['research_progress'] == 0
+    return {'autosave_disabled': bool(options & 0x2000), 'spent_after_annual_update': before,
+            'turn_start_substitutes': substitutes, 'handoff': handoff}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', required=True, type=Path)
@@ -129,6 +182,7 @@ def main():
         assert hashlib.sha256((home / item['path']).read_bytes()).hexdigest() == item['sha256']
     rules = parse_rules(str(home / prior['rules']['path']))
     prepared = {}
+    city_region = None
 
     def at_city(original, viewer, city):
         execute(original, viewer, city, rules, 7)
@@ -144,8 +198,11 @@ def main():
         prepared['last_move'] = move_opponent(original, viewer, (33, 4, 3), (33,),
                                               (11, 41), (10, 42), ((-1, -1),))
         prepared['annual_update'] = annual_update(original, viewer)
+        prepared['fresh_human_input'] = fresh_human_input(original, viewer, city_region)
 
     def after_idle(original, viewer, regions):
+        nonlocal city_region
+        city_region = regions[2]
         trace(original, viewer, regions, clear_preference_bit=False, skip_selected=True,
               at_city_entry=at_city)
 

@@ -165,6 +165,9 @@ unseen unit, with the human's 59 tiles and remembered knowledge intact.
 The inspector exercises the guarded engine pass and restores its
 checkpoint. The first engine production order retains that view.
 Opponent moves and other unverified orders switch to engine observation.
+The same probe now measures the first engine spatial order as a direct
+native move into the unseen stack at (43, 37). Native human knowledge
+stays at 59 tiles. The current engine fallback reaches 60 on that order.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

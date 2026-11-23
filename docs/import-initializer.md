@@ -223,7 +223,11 @@ same human view across the first city work item and replays at its
 checkpoint. The native trace stops inside that city phase, while the
 engine check completes its atomic pass and the first engine production
 order. Pending native decisions and changes during spatial opponent
-orders need separate verification.
+orders need separate verification. A prepared native movement control
+supplies the first engine spatial order after the city probe. It moves
+slot 2 into the unseen city, links it after slots 34 and 19, and
+retains 59 explored tiles and all remembered improvements. This isolates
+one move without running the native production selector or opponent policy.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_city_view_check.py --out /tmp/city-view.json

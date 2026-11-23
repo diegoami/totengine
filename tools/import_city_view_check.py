@@ -4,7 +4,9 @@
 Starting with the same saved turn as the round-handoff witness, run four
 native Skip orders. Continue from the first opponent city-phase entry to
 the call into the production selector. The probe supplies host messages
-and substitutes presentation. It stops before running that selector.
+and substitutes presentation. From the selector boundary, a separate
+controlled native move uses the first spatial engine order as input.
+The selector and native opponent policy are outside the trace.
 """
 import argparse
 import hashlib
@@ -15,7 +17,7 @@ from pathlib import Path
 from unicorn import UC_HOOK_CODE
 from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EIP, UC_X86_REG_ESP
 
-from import_input_handoff_check import witness
+from import_input_handoff_check import IDLE_FILTER_CALL, witness
 from import_phase_check import read
 from import_round_handoff_check import CITY_PHASE, trace
 
@@ -84,6 +86,63 @@ def measure(original, viewer, city):
             'created_units': created, 'presentation_substitutes': substitutes}
 
 
+
+def move_into_unseen_city(original, viewer):
+    """Supply the engine's first spatial order to native movement."""
+    cpu = original.cpu
+    area = read(original, 0x6705A4, '<h')
+    cache = read(original, 0x5DEAD0 + 4 * viewer, '<I')
+
+    def knowledge():
+        raw = cpu.mem_read(TILES, area * 6)
+        return [bool(b & (1 << viewer)) for b in raw[4::6]], bytes(cpu.mem_read(cache, area))
+
+    def unit(slot):
+        address = UNITS + 40 * slot
+        return {
+            'slot': slot,
+            'position': [read(original, address + off, '<h') for off in (0, 2)],
+            'owner': read(original, address + 9, '<B'),
+            'spent': read(original, address + 10, '<B'),
+            'previous': read(original, address + 26, '<h'),
+            'next': read(original, address + 28, '<h'),
+        }
+
+    slots = (2, 19, 34)
+    before = [unit(slot) for slot in slots]
+    saved = knowledge()
+    substitutes = []
+
+    def boundary(emu, at, _size, _data):
+        if at not in (IDLE_FILTER_CALL, 0x467D19):
+            return
+        substitutes.append(f'{at:08x}')
+        sp = emu.reg_read(UC_X86_REG_ESP)
+        emu.reg_write(UC_X86_REG_EAX, 0)
+        if at == IDLE_FILTER_CALL:
+            assert [read(original, sp + off) for off in (4, 8, 12, 16)] == [0, 0x3BD, 0x3BD, 1]
+            emu.reg_write(UC_X86_REG_ESP, sp + 20)
+            emu.reg_write(UC_X86_REG_EIP, at + 6)
+        else:
+            emu.reg_write(UC_X86_REG_ESP, sp + 4)
+            emu.reg_write(UC_X86_REG_EIP, read(original, sp, '<I'))
+
+    hook = cpu.hook_add(UC_HOOK_CODE, boundary)
+    try:
+        result = original.call(0x54C69B, 2, 1, 3)
+    finally:
+        cpu.hook_del(hook)
+    after = [unit(slot) for slot in slots]
+    assert saved == knowledge()
+    assert result == 1 and before[0]['position'] == [41, 37] and after[0]['position'] == [43, 37]
+    assert [record['next'] for record in after] == [-1, 2, 19]
+    assert [record['previous'] for record in after] == [19, 34, -1]
+    return {
+        'entry': '0054c69b', 'arguments': [2, 1, 3], 'return': result,
+        'explored_tiles': sum(saved[0]), 'viewer_memory_changed': False,
+        'before': before, 'after': after, 'substitutes': substitutes,
+    }
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', required=True, type=Path)
@@ -100,6 +159,7 @@ def main():
 
     def entry(original, player, city):
         observed.update(measure(original, player, city))
+        observed['prepared_opponent_move'] = move_into_unseen_city(original, player)
 
     def continue_round(original, player, regions):
         trace(original, player, regions, clear_preference_bit=False, skip_selected=True,

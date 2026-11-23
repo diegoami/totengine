@@ -30,7 +30,92 @@
     "presentation_substitutes": [
       "00467c89",
       "00467d19"
-    ]
+    ],
+    "prepared_opponent_move": {
+      "entry": "0054c69b",
+      "arguments": [
+        2,
+        1,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 2,
+          "position": [
+            41,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": -1,
+          "next": -1
+        },
+        {
+          "slot": 19,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": 34,
+          "next": -1
+        },
+        {
+          "slot": 34,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": -1,
+          "next": 19
+        }
+      ],
+      "after": [
+        {
+          "slot": 2,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 3,
+          "previous": 19,
+          "next": -1
+        },
+        {
+          "slot": 19,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": 34,
+          "next": 2
+        },
+        {
+          "slot": 34,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": -1,
+          "next": 19
+        }
+      ],
+      "substitutes": [
+        "00577011",
+        "00467d19"
+      ]
+    }
   },
-  "scope": "Compare human map knowledge before civ 5's city work and at production selection.\n\nStarting with the same saved turn as the round-handoff witness, run four\nnative Skip orders. Continue from the first opponent city-phase entry to\nthe call into the production selector. The probe supplies host messages\nand substitutes presentation. It stops before running that selector."
+  "scope": "Compare human map knowledge before civ 5's city work and at production selection.\n\nStarting with the same saved turn as the round-handoff witness, run four\nnative Skip orders. Continue from the first opponent city-phase entry to\nthe call into the production selector. The probe supplies host messages\nand substitutes presentation. From the selector boundary, a separate\ncontrolled native move uses the first spatial engine order as input.\nThe selector and native opponent policy are outside the trace."
 }

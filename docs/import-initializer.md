@@ -448,3 +448,19 @@ keep the 59-tile saved view and its remembered improvements. The
 checked replay uses the validated quote and retains the same view. The
 inspector compares the selected item and shields and restores each
 checkpoint.
+
+### Worker editing in a checked saved view
+
+The [prepared native worker editor](evidence/import-saved-citizens.json)
+uses the city-radius tile and current-city accessor, then runs the native
+edit and city totals before redraw. Removing and restoring the worker on
+tile 4 and resetting allocation from the center all keep 59 explored
+tiles and the complete remembered-improvement array. The checked replay
+retains that view and synchronizes the private worked-tile and packed
+specialist fields. The inspector compares all three transitions and
+restores the checkpoints.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_saved_citizens_check.py --out /tmp/import-saved-citizens.json
+cmp docs/evidence/import-saved-citizens.json /tmp/import-saved-citizens.json
+```

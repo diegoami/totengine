@@ -232,6 +232,20 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_worker_edits_preserve_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-saved-citizens.json').read_text())
+        production = json.loads((ROOT / 'docs/evidence/import-saved-production.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], production[key])
+        self.assertEqual((report['entry'], report['stop']), ('004dddc6', '004dd04b'))
+        self.assertEqual([case['tile'] for case in report['cases']], [4, 4, 20])
+        self.assertEqual([case['after'] for case in report['cases']], [
+            {'worked': 68157568, 'specialists': 1}, {'worked': 1048720, 'specialists': 0},
+            {'worked': 1048720, 'specialists': 0},
+        ])
+        self.assertTrue(all(case['explored_tiles'] == 59 and case['tile_bytes_changed'] == 0
+                            and case['remembered_bytes_changed'] == 0 for case in report['cases']))
+
     def test_native_production_commit_preserves_saved_knowledge(self):
         report = json.loads((ROOT / 'docs/evidence/import-saved-production.json').read_text())
         rates = json.loads((ROOT / 'docs/evidence/import-saved-rates.json').read_text())

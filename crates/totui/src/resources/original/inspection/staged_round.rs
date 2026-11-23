@@ -538,6 +538,98 @@ pub(super) fn check_saved_rates(
     Ok(json!({"verified": true, "cases": cases.len(), "checkpoint_replays": true}))
 }
 
+pub(super) fn check_saved_citizens(
+    capture: &OriginalCapture,
+    human: u8,
+    trace: &Value,
+) -> Result<Value, String> {
+    use engine::human::HumanView;
+
+    let files = capture.files();
+    let rules = &capture.resources().rules;
+    let events = files.events.clone().map(EventEngine::new);
+    let identity = capture.identity();
+    let mut session = HumanSession::scenario_initialized_saved_opponent_combat(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: rules.clone(),
+            events: events.clone(),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        identity,
+    )?;
+    let initial = session.view();
+    let cases = trace["cases"]
+        .as_array()
+        .filter(|cases| !cases.is_empty())
+        .ok_or("prepared worker evidence has no cases")?;
+    let packed_city = |view: &HumanView, index| {
+        let city = view
+            .city_citizens
+            .iter()
+            .find(|city| city.index == index)
+            .ok_or("prepared worker city has no filtered citizen view")?;
+        let worked = city.radius.iter().enumerate().fold(
+            (city.specialists.len() as u32) << 26,
+            |bits, (slot, tile)| bits | (u32::from(tile.worked) << slot),
+        );
+        let specialists = city
+            .specialists
+            .iter()
+            .take(16)
+            .enumerate()
+            .fold(0u32, |bits, (slot, role)| {
+                bits | (u32::from(*role) << (2 * slot))
+            });
+        Ok::<_, String>(json!({"worked": worked, "specialists": specialists}))
+    };
+    for native in cases {
+        let slot = native["city"]
+            .as_u64()
+            .ok_or("prepared worker city missing")?;
+        let city = *initial
+            .cities
+            .iter()
+            .find(|city| city.slot as u64 == slot)
+            .ok_or("prepared worker city is absent")?;
+        let tile: u8 = serde_json::from_value(native["tile"].clone())
+            .map_err(|error| format!("invalid prepared worker radius: {error}"))?;
+        let before = session.view();
+        if packed_city(&before, city.slot)? != native["before"] {
+            return Err("the worker edit starts from different citizen records".into());
+        }
+        let response = session.submit(Request {
+            civ: human,
+            revision: before.revision,
+            id: before.revision + 1,
+            command: Command::Worker { city, tile },
+        })?;
+        let after = session.view();
+        if response.result != Some(OrderResult::CitizensSet)
+            || after.observation.seen != initial.observation.seen
+            || after.observation.units != initial.observation.units
+            || json!(after.observation.seen.iter().flatten().count()) != native["explored_tiles"]
+            || packed_city(&after, city.slot)? != native["after"]
+        {
+            return Err("the checked worker edit differs from the prepared native view".into());
+        }
+        let checkpoint = session.checkpoint(identity);
+        let replay = HumanSession::restore_with(
+            rules.clone(),
+            identity,
+            &checkpoint,
+            Some((&files.bytes, events.clone())),
+        )?;
+        if replay.view() != after || replay.checkpoint(identity) != checkpoint {
+            return Err("the checked worker edit did not replay".into());
+        }
+    }
+    Ok(json!({"verified": true, "cases": cases.len(), "checkpoint_replays": true}))
+}
+
 pub(super) fn check_saved_production(
     capture: &OriginalCapture,
     human: u8,

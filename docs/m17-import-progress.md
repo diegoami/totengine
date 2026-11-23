@@ -277,7 +277,12 @@ The [native production commit](evidence/import-saved-production.json)
 also retains the map and remembered improvements for a no-op and a
 switch from item 3 to item -42. The latter keeps six of twelve shields.
 The checked quoted-production order preserves that view and replays
-with the same build item and shield box.
+with the same build item and shield box. The [native city worker
+editor](evidence/import-saved-citizens.json) removes a worker, returns it
+to the tile, then reallocates from the center tile. The native city
+totals refresh preserves the saved map and remembered improvements.
+The checked replay follows the three edits and restores each resulting
+checkpoint.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

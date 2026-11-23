@@ -532,7 +532,9 @@ impl HumanSession {
                 );
                 (step, OrderResult::Skipped)
             }
-            Order::SetRates { .. } | Order::QuotedProduction { .. }
+            Order::SetRates { .. }
+            | Order::QuotedProduction { .. }
+            | Order::ToggleWorker { .. }
                 if checked_replay && self.decision.is_none() =>
             {
                 let before = &self.game.world;
@@ -542,6 +544,7 @@ impl HumanSession {
                     (order, &result),
                     (Order::SetRates { .. }, OrderResult::RatesSet)
                         | (Order::QuotedProduction { .. }, OrderResult::ProductionSet)
+                        | (Order::ToggleWorker { .. }, OrderResult::CitizensSet)
                 ) || world.map != before.map
                     || world.units != before.units
                     || world.cities.len() != before.cities.len()
@@ -566,6 +569,15 @@ impl HumanSession {
                         }
                         record.raw[30..32].copy_from_slice(&world_city.shield_box.to_le_bytes());
                         record.raw[59] = world_city.building as u8;
+                    }
+                    Order::ToggleWorker { city, .. } => {
+                        let world_city = &world.cities[city];
+                        let record = updated.cities.get_mut(city).ok_or(refused)?;
+                        if record.city_id() != world_city.city_id {
+                            return Err(refused);
+                        }
+                        record.raw[24..28].copy_from_slice(&world_city.specialists.to_le_bytes());
+                        record.raw[50..54].copy_from_slice(&world_city.worked.to_le_bytes());
                     }
                     _ => unreachable!(),
                 }

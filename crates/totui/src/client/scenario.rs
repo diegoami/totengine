@@ -244,7 +244,7 @@ impl Client {
     }
 
     /// Restore the replacement before committing assets or selection. The
-    /// optional focus applies only to an untouched checked reference session.
+    /// optional focus comes from a checked viewport or a replayed Wait.
     pub(super) fn restore_scenario(
         &mut self,
         origin: &engine::human::ScenarioOrigin,
@@ -274,7 +274,10 @@ impl Client {
                 restore_loaded(resources, files, identity, text)
             });
         let (loaded, focus) = match legacy {
-            Ok(loaded) => (loaded, None),
+            Ok(loaded) => {
+                let focus = loaded.session.saved_wait_focus();
+                (loaded, focus)
+            }
             Err(_) if reference_recipe => {
                 let capture = OriginalCapture::capture_checkpoint(&home, &origin.path, snapshot)?;
                 let viewport = capture.checkpoint_viewport()?;
@@ -283,7 +286,7 @@ impl Client {
                 let focus = if loaded.session.view().revision == 0 {
                     viewport.and_then(|anchor| loaded.session.saved_initial_focus(anchor))
                 } else {
-                    None
+                    loaded.session.saved_wait_focus()
                 };
                 (loaded, focus)
             }

@@ -26,6 +26,7 @@ impl OriginalCapture {
         let report = self.inspect_save()?;
         if report["saved_viewport_check"]["verified"] != true
             || report["saved_opponent_combat_check"]["verified"] != true
+            || report["saved_wait_check"]["verified"] != true
             || report["victory_event"]["matches"] != true
         {
             return Err("The captured save did not pass the checked Original replay checks".into());
@@ -104,6 +105,12 @@ impl OriginalCapture {
         } else {
             Value::Null
         };
+        let wait = if viewport["verified"] == true {
+            staged_round::check_saved_wait(self, human, &trace["saved_wait"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
         let land_step = if trace["matches_fixture"] == true {
             compare_land_step(
                 &snapshot,
@@ -159,6 +166,7 @@ impl OriginalCapture {
             "native_resume_trace": trace,
             "saved_land_step": land_step,
             "saved_viewport_check": viewport,
+            "saved_wait_check": wait,
             "staged_round_check": staged,
             "saved_movement_check": movement,
             "saved_city_view_check": city_view,

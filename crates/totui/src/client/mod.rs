@@ -933,6 +933,13 @@ impl Client {
             Command::Move { unit, .. } | Command::Occupy { unit, .. } => {
                 self.schedule_unit(Some(unit), false);
             }
+            Command::Wait { unit } => {
+                self.active = self
+                    .loaded
+                    .as_ref()
+                    .and_then(|loaded| loaded.session.saved_wait_focus());
+                self.schedule_unit(Some(unit), false);
+            }
             Command::Skip { unit } => {
                 let anchor = v
                     .observation
@@ -1900,8 +1907,16 @@ impl Client {
             }
             Action::Wait => {
                 let after = self.active;
-                self.active = None;
-                self.schedule_unit(after, false);
+                if let Some(unit) = after.filter(|&actor| {
+                    self.loaded
+                        .as_ref()
+                        .is_some_and(|loaded| loaded.session.can_wait_in_saved_view(actor))
+                }) {
+                    self.order(Command::Wait { unit })?;
+                } else {
+                    self.active = None;
+                    self.schedule_unit(after, false);
+                }
             }
             Action::Skip => {
                 self.order(Command::Skip {

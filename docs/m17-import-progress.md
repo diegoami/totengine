@@ -227,8 +227,13 @@ sealed reference resources and starts a pristine checkpoint at the saved
 viewport. At the next human turn it uses the last inspected tile as the
 anchor for the guarded selector. The checked Skip path follows the native
 sequence 9, 6, 26, 18 from the saved viewport and returns to slot 18 on
-turn 44. Wider unit cycling contexts, faithful client admission, wider
-combat and pending choices remain open.
+turn 44. The [native Wait witness](evidence/import-wait.json) now checks
+the deferred flag through Wait cycling, a unit-table write and read, and
+the mixed Skip sequence. The checked engine records Wait in its
+checkpoint journal and restores the next focus without spending
+movement. The shared client uses this for the experimental replay.
+Wider unit cycling contexts, faithful client admission, wider combat and
+pending choices remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

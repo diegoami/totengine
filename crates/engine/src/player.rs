@@ -139,6 +139,8 @@ pub enum OrderResult {
     Moved,
     /// A staged move spent the remaining movement without changing tiles.
     MovementExhausted,
+    /// Defer a human unit without spending any movement.
+    Waited,
     /// The move was an attack; `won` = the attacker won.
     Attacked {
         won: bool,
@@ -217,6 +219,7 @@ impl fmt::Display for OrderResult {
             OrderResult::Founded(c) => write!(f, "founded {c}"),
             OrderResult::TurnEnded => write!(f, "ended"),
             OrderResult::Skipped => write!(f, "skipped"),
+            OrderResult::Waited => write!(f, "waited"),
             OrderResult::CitizensSet => write!(f, "citizens-set"),
             OrderResult::Rejected(why) => write!(f, "rejected {}", why.replace(' ', "_")),
         }

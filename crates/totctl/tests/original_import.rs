@@ -217,6 +217,12 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "verified": true, "anchor": [61, 5], "selected_slot": 9, "zero_anchor_slot": 6,
         })
     );
+    assert_eq!(
+        report["saved_wait_check"],
+        json!({
+            "verified": true, "waits": 6, "selected_slot": 6, "checkpoint_replays": true,
+        })
+    );
     assert_eq!(report["playable_import"], false);
     assert_eq!(
         report["saved_opponent_combat_check"],

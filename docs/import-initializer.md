@@ -398,3 +398,25 @@ sequence is 9, 6, 26, 18 and enters the first opponent city phase with
 anchor (51, 9). Engine inspection replays that sequence. A later
 checkpoint load uses the ordinary client selection policy. This load path is experimental. Faithful
 SAV entry remains open under #198.
+
+### Checked Wait
+
+In the checked saved-view context, **W** defers an awake unstacked own land
+unit without spending movement. The native selector first searches for
+another ready unit that has yet to wait. If every remaining candidate has
+already waited, the selector clears those flags and searches again. A
+solitary ready unit stays selected. The native annual update clears
+deferrals at round close.
+
+The private checkpoint journals Wait, seals the outstanding deferrals and
+restores the selected unit when Wait is the last action. The shared client
+uses the ordinary presentation behavior outside the checked context.
+The inspector replays six native Wait commands and checks the unchanged
+movement and view. The witness also executes the native writer and
+reader boundaries with a virtual unit table and tests the mixed path
+through Skip.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_wait_check.py --out /tmp/import-wait.json
+cmp docs/evidence/import-wait.json /tmp/import-wait.json
+```

@@ -232,6 +232,21 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_wait_records_deferral_without_spending_movement(self):
+        report = json.loads((ROOT / 'docs/evidence/import-wait.json').read_text())
+        viewport = json.loads((ROOT / 'docs/evidence/import-saved-viewport.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], viewport[key])
+        self.assertEqual(report['anchor'], [61, 5])
+        self.assertEqual([step['selected'] for step in report['waits']], [6, 26, 18, 26, 9, 6])
+        self.assertEqual(report['waits'][3]['deferred'], [18])
+        self.assertFalse(report['waits'][3]['foreign_deferred'])
+        self.assertTrue(all(step['spent'] == [0, 0, 0, 0] for step in report['waits']))
+        self.assertTrue(all(step['selected'] == 9 and not step['deferred'] for step in report['one_ready']))
+        self.assertEqual(report['writer_unit_bytes'], 1520)
+        self.assertEqual([case['selected'] for case in report['reload'].values()], [6, 9])
+        self.assertEqual(report['skip_with_slot_9_deferred'], [6, 26, 18, 9])
+
     def test_native_annual_update_retains_the_saved_projection(self):
         close = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
         combat = json.loads((ROOT / 'docs/evidence/import-opponent-combat-view.json').read_text())
@@ -243,6 +258,7 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(step['before']['crt'], combat['cases']['7']['following_unconnected_road']['crt_after'])
         self.assertEqual(step['before']['turn'], 43)
         self.assertEqual(step['after'], {'turn': 44, 'crt': 0xd766ce46, 'explored': 59})
+        self.assertTrue(step['cleared_wait_flag'])
         self.assertEqual(step['crt_draws'], 2)
         self.assertEqual(step['observation_calls'], [])
         self.assertFalse(step['viewer_memory_changed'])

@@ -5248,6 +5248,46 @@ fn installed_checked_checkpoint_uses_saved_viewport_and_next_turn_anchor() {
     assert_eq!(c.inspect, Some((61, 5)));
     assert!(c.moving);
 
+    for next in [6, 26, 18, 26] {
+        key(&mut c, "w");
+        assert_eq!(c.active.map(|actor| actor.slot), Some(next));
+        assert!(c
+            .view()
+            .unwrap()
+            .observation
+            .units
+            .iter()
+            .all(|unit| unit.moves_left == 3));
+        assert_eq!(
+            c.view().unwrap().observation.seen.iter().flatten().count(),
+            59
+        );
+    }
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "waiting");
+    key(&mut c, "Enter");
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "waiting");
+    key(&mut c, "Enter");
+    assert_eq!(c.active.map(|actor| actor.slot), Some(26));
+    assert_eq!(
+        c.status,
+        "Experimental scenario checkpoint restored (Original/Ph_Auto2.SAV)."
+    );
+
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "checked-turn");
+    key(&mut c, "Enter");
+    key(&mut c, "w");
+    for slot in [6, 26, 18, 9] {
+        assert_eq!(c.active.map(|actor| actor.slot), Some(slot));
+        key(&mut c, " ");
+    }
+    assert_eq!(c.inspect, Some((61, 5)));
+
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "checked-turn");
+    key(&mut c, "Enter");
     for slot in [9, 6, 26, 18] {
         assert_eq!(c.active.map(|actor| actor.slot), Some(slot));
         key(&mut c, " ");

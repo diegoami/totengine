@@ -72,7 +72,8 @@
       "SetCurrentDirectoryA": 6,
       "GetLastError": 4,
       "SetEnvironmentVariableA": 2
-    }
+    },
+    "cleared_wait_flag": true
   },
   "fresh_human_input": {
     "autosave_disabled": true,

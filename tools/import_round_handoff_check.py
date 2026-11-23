@@ -47,7 +47,8 @@ WINDOW_CONTEXT = (
 )
 
 
-def trace(original, player, regions, *, clear_preference_bit, skip_selected, at_city_entry=None):
+def trace(original, player, regions, *, clear_preference_bit, skip_selected, at_city_entry=None,
+          clear_deferred=False):
     cpu = original.cpu
     for address, value in WINDOW_CONTEXT:
         original.write(address, value, '<i')
@@ -164,6 +165,8 @@ def trace(original, player, regions, *, clear_preference_bit, skip_selected, at_
         expected = bytearray(units[unit_record])
         if skip_selected:
             expected[10], expected[13] = 3, 255
+        if clear_deferred:
+            expected[7] &= ~64
         assert final[1][unit_record] == expected
     if city is None:
         assert final == baseline

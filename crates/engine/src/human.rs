@@ -158,6 +158,10 @@ pub enum Command {
     Skip {
         unit: Entity,
     },
+    /// Defer a ready unit in the checked saved-view selection context.
+    Wait {
+        unit: Entity,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1126,6 +1130,21 @@ impl HumanSession {
                 " saved-land-movement-finished"
             });
         }
+        if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1 {
+            if let Some(saved) = &self.saved_move_state {
+                let deferred: Vec<_> = saved
+                    .units
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(slot, unit)| {
+                        (unit.id() != 0 && unit.attr() & 0x4000 != 0).then_some(slot)
+                    })
+                    .collect();
+                if !deferred.is_empty() {
+                    data.push_str(&format!(" saved-wait {deferred:?}"));
+                }
+            }
+        }
         data.bytes().fold(0xcbf2_9ce4_8422_2325, |h, b| {
             (h ^ u64::from(b)).wrapping_mul(0x100_0000_01b3)
         })
@@ -1267,6 +1286,7 @@ impl HumanSession {
         let mut talks = None;
         let mut new_rates_review = false;
         let mut new_goal = None;
+        let mut waited = false;
         let order = match (&self.decision, request.command) {
             (None, Command::BeginTalks { other }) => {
                 self.check_peace_contact(other)?;
@@ -1355,6 +1375,11 @@ impl HumanSession {
                     unit: unit.slot,
                     to,
                 })
+            }
+            (None, Command::Wait { unit }) => {
+                self.stage_saved_wait(unit)?;
+                waited = true;
+                None
             }
             (None, Command::Skip { unit }) => {
                 self.unit(unit)?;
@@ -1447,9 +1472,12 @@ impl HumanSession {
             .map(|o| self.try_saved_view_order(o))
             .transpose()?
             .flatten();
-        let kept_saved_view = saved_move.is_some()
+        let kept_saved_view = waited
+            || saved_move.is_some()
             || (self.saved_move_state.is_some() && order == Some(Order::EndTurn));
-        let result = if saved_move.is_some() {
+        let result = if waited {
+            Some(OrderResult::Waited)
+        } else if saved_move.is_some() {
             saved_move
         } else {
             order
@@ -1618,7 +1646,9 @@ impl HumanSession {
                 game.close_turn()
             }
         });
-        if !kept_view {
+        if kept_view {
+            self.reset_saved_deferrals();
+        } else {
             self.finish_saved_movement();
         }
     }

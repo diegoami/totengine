@@ -233,7 +233,11 @@ def main():
         unconnected_road(original, viewer)
         prepared['last_move'] = move_opponent(original, viewer, (33, 4, 3), (33,),
                                               (11, 41), (10, 42), ((-1, -1),))
+        wait_status = 0x607C58 + 40 * 9 + 7
+        original.write(wait_status, read(original, wait_status, '<B') | 64, '<B')
         prepared['annual_update'] = annual_update(original, viewer)
+        assert not read(original, wait_status, '<B') & 64
+        prepared['annual_update']['cleared_wait_flag'] = True
         prepared['fresh_human_input'], next_order = fresh_human_input(original, viewer, city_region, key)
 
     def after_idle(original, viewer, regions):

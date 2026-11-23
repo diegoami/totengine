@@ -18,10 +18,26 @@ struct PreparedView {
     cities: BTreeMap<usize, (u32, crate::player::CityView)>,
 }
 
+const DEFERRED: u16 = 0x4000;
+
+struct SavedFocusCandidate {
+    unit: Entity,
+    distance: i32,
+    deferred: bool,
+}
+
 impl HumanSession {
-    /// Select an initial focus from a supplied map anchor in the checked
-    /// surface context. The caller owns viewport and subsequent cycling.
+    /// Select a ready unit from a supplied map anchor in the checked
+    /// surface context. Deferred units stay available for direct orders.
     pub fn saved_initial_focus(&self, anchor: (u16, u16)) -> Option<Entity> {
+        self.saved_focus_candidates(anchor)?
+            .into_iter()
+            .filter(|candidate| !candidate.deferred)
+            .min_by_key(|candidate| candidate.distance)
+            .map(|candidate| candidate.unit)
+    }
+
+    fn saved_focus_candidates(&self, anchor: (u16, u16)) -> Option<Vec<SavedFocusCandidate>> {
         let saved = self.saved_move_state.as_ref()?;
         if self.knowledge_recipe != ScenarioKnowledgeRecipe::SavedOpponentCombatV1
             || self.phase() != Phase::Human
@@ -34,8 +50,7 @@ impl HumanSession {
         world.map.stored_index(anchor.0, anchor.1)?;
         let width = 2 * world.map.stored_w as i32;
         let flat = world.game_flags & 0x8000 != 0;
-        let mut nearest = None;
-        let mut distance = i32::MAX;
+        let mut candidates = Vec::new();
         for (slot, unit) in world.units.iter().enumerate() {
             if unit.id == 0 || unit.owner != self.human || unit.moves_left == 0 {
                 continue;
@@ -43,8 +58,8 @@ impl HumanSession {
             let raw = saved.units.get(slot)?;
             if raw.id() != unit.id
                 || (raw.owner(), raw.x(), raw.y()) != (unit.owner, unit.x, unit.y)
+                || raw.type_id() != unit.type_id
                 || raw.map_id() != 0
-                || raw.attr() & 0x4000 != 0
                 || raw.stack_prev() != -1
                 || raw.stack_next() != -1
                 || raw.orders() != 255
@@ -54,20 +69,85 @@ impl HumanSession {
             {
                 return None;
             }
-            let score = crate::placement::diamond_distance(
-                width,
-                flat,
-                i32::from(anchor.0),
-                i32::from(anchor.1),
-                i32::from(unit.x),
-                i32::from(unit.y),
-            );
-            if score < distance {
-                distance = score;
-                nearest = Some(Entity { slot, id: unit.id });
+            candidates.push(SavedFocusCandidate {
+                unit: Entity { slot, id: unit.id },
+                distance: crate::placement::diamond_distance(
+                    width,
+                    flat,
+                    i32::from(anchor.0),
+                    i32::from(anchor.1),
+                    i32::from(unit.x),
+                    i32::from(unit.y),
+                ),
+                deferred: raw.attr() & DEFERRED != 0,
+            });
+        }
+        Some(candidates)
+    }
+
+    fn saved_wait_candidates(&self, actor: Entity) -> Option<Vec<SavedFocusCandidate>> {
+        let unit = self.game.world.units.get(actor.slot)?;
+        if unit.id == 0 || unit.id != actor.id || unit.owner != self.human || unit.moves_left == 0 {
+            return None;
+        }
+        self.saved_focus_candidates((unit.x, unit.y))
+    }
+
+    pub fn can_wait_in_saved_view(&self, actor: Entity) -> bool {
+        self.saved_wait_candidates(actor).is_some()
+    }
+
+    /// Recover the view focus after replaying a checkpoint ending in Wait.
+    pub fn saved_wait_focus(&self) -> Option<Entity> {
+        let Some(Operation::Input(Request {
+            command: Command::Wait { unit },
+            ..
+        })) = self.journal.last()
+        else {
+            return None;
+        };
+        let at = self.game.world.units.get(unit.slot)?;
+        self.saved_initial_focus((at.x, at.y))
+    }
+
+    pub(super) fn stage_saved_wait(&mut self, actor: Entity) -> Result<(), &'static str> {
+        let candidates = self
+            .saved_wait_candidates(actor)
+            .ok_or("saved wait requires a ready own unit in the checked surface context")?;
+        let saved = self
+            .saved_move_state
+            .as_mut()
+            .ok_or("saved wait requires captured unit state")?;
+        saved.units[actor.slot].raw[7] |= 0x40;
+        if !candidates
+            .iter()
+            .any(|candidate| candidate.unit != actor && !candidate.deferred)
+        {
+            // The native selector clears deferred flags and searches again
+            // when it runs out of candidates. Retain the previous unit's
+            // flag on the first retry if another ready unit can take focus.
+            let previous = (candidates.len() > 1).then_some(actor.slot);
+            clear_saved_deferrals(saved, previous);
+        }
+        Ok(())
+    }
+
+    pub(super) fn reset_saved_deferrals(&mut self) {
+        if let Some(saved) = &mut self.saved_move_state {
+            clear_saved_deferrals(saved, None);
+        }
+    }
+
+    fn reset_deferred_focus_after_skip(&mut self, slot: usize) {
+        let unit = &self.game.world.units[slot];
+        if let Some(candidates) = self.saved_focus_candidates((unit.x, unit.y)) {
+            if candidates.iter().all(|unit| unit.deferred) {
+                let previous = (!candidates.is_empty()).then_some(slot);
+                if let Some(saved) = &mut self.saved_move_state {
+                    clear_saved_deferrals(saved, previous);
+                }
             }
         }
-        nearest
     }
 
     pub(super) fn install_saved_view(
@@ -452,7 +532,18 @@ impl HumanSession {
             .commit_saved_view_order(world, self.human, order, result);
         self.set_saved_view(view);
         self.saved_move_state = Some(observed);
+        if let Order::SkipUnit { unit } = order {
+            self.reset_deferred_focus_after_skip(unit);
+        }
         Ok(Some(result))
+    }
+}
+
+fn clear_saved_deferrals(saved: &mut tot_kit::SaveFile, except: Option<usize>) {
+    for (slot, unit) in saved.units.iter_mut().enumerate() {
+        if unit.id() != 0 && Some(slot) != except {
+            unit.raw[7] &= !0x40;
+        }
     }
 }
 

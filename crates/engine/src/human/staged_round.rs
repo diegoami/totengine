@@ -90,6 +90,120 @@ mod tests {
     }
 
     #[test]
+    fn installed_wait_preserves_movement_and_replays_deferrals() {
+        let Some((snapshot, rules, events)) = installed_original() else {
+            return;
+        };
+        let deps = "totengine-scenario-dependencies 1\nwait-test\n";
+        let create = |bytes: &[u8]| {
+            HumanSession::scenario_initialized_saved_opponent_combat(
+                ScenarioInput {
+                    path: "Original/Ph_Auto2.SAV",
+                    snapshot: bytes,
+                    rules: rules.clone(),
+                    events: Some(events.clone()),
+                },
+                4,
+                AiPolicy::BuiltIn1,
+                7,
+                deps,
+            )
+            .unwrap()
+        };
+        let mut session = create(&snapshot);
+        let initial = session.checkpoint(deps);
+        let mut deferred_save = snapshot.clone();
+        let units = tot_kit::parse_sav(&snapshot).unwrap().unit_region.0;
+        deferred_save[units + 40 * 9 + 7] |= 0x40;
+        assert_eq!(
+            create(&deferred_save)
+                .saved_initial_focus((61, 5))
+                .unwrap()
+                .slot,
+            6
+        );
+        let before = session.view();
+        let world = session.game.world.checksum();
+        let log = session.game.log().to_owned();
+        let restore = |text: &str| {
+            HumanSession::restore_with(
+                rules.clone(),
+                deps,
+                text,
+                Some((&snapshot, Some(events.clone()))),
+            )
+            .unwrap()
+        };
+        let mut actor = session.saved_initial_focus((61, 5)).unwrap();
+        assert_eq!(actor.slot, 9);
+        for (next, held) in [
+            (6, &[9][..]),
+            (26, &[6, 9]),
+            (18, &[6, 9, 26]),
+            (26, &[18]),
+            (9, &[18, 26]),
+            (6, &[9, 18, 26]),
+        ] {
+            let revision = session.view().revision;
+            let request = Request {
+                civ: 4,
+                revision,
+                id: revision + 1,
+                command: Command::Wait { unit: actor },
+            };
+            let response = session.submit(request).unwrap();
+            assert_eq!(response.result, Some(OrderResult::Waited));
+            assert_eq!(session.submit(request).unwrap(), response);
+            let saved = session.saved_move_state.as_ref().unwrap();
+            let flags: Vec<_> = [6, 9, 18, 26]
+                .into_iter()
+                .filter(|&slot| saved.units[slot].attr() & 0x4000 != 0)
+                .collect();
+            assert_eq!(flags, held);
+            assert_eq!(session.game.world.checksum(), world);
+            assert_eq!(session.game.log(), log);
+            assert_eq!(session.view().observation.units, before.observation.units);
+            assert_eq!(session.view().observation.seen, before.observation.seen);
+            actor = session.saved_wait_focus().unwrap();
+            assert_eq!(actor.slot, next);
+            let checkpoint = session.checkpoint(deps);
+            let replay = restore(&checkpoint);
+            assert_eq!(replay.saved_wait_focus(), Some(actor));
+            assert_eq!(replay.checkpoint(deps), checkpoint);
+        }
+        let mut solitary = restore(&initial);
+        for slot in [6, 18, 26] {
+            let view = solitary.view();
+            let unit = *view.units.iter().find(|unit| unit.slot == slot).unwrap();
+            solitary
+                .submit(Request {
+                    civ: 4,
+                    revision: view.revision,
+                    id: view.revision + 1,
+                    command: Command::Skip { unit },
+                })
+                .unwrap();
+        }
+        let actor = solitary.saved_initial_focus((61, 5)).unwrap();
+        assert_eq!(actor.slot, 9);
+        let view = solitary.view();
+        solitary
+            .submit(Request {
+                civ: 4,
+                revision: view.revision,
+                id: view.revision + 1,
+                command: Command::Wait { unit: actor },
+            })
+            .unwrap();
+        assert_eq!(solitary.saved_wait_focus(), Some(actor));
+        assert_eq!(
+            solitary.saved_move_state.as_ref().unwrap().units[9].attr() & 0x4000,
+            0
+        );
+        assert_eq!(solitary.game.world.units[9].moves_left, 3);
+    }
+
+    #[test]
     fn installed_original_replays_across_staged_city_and_order_boundaries() {
         let Some((snapshot, rules, events)) = installed_original() else {
             return;
@@ -953,6 +1067,14 @@ staged-round-test
         let mut restored = restore(&before_round);
         assert_eq!(restored.advance(1), 1);
         assert_eq!(restored.checkpoint(deps), closed);
+        let mut deferred = restore(&before_round);
+        deferred.saved_move_state.as_mut().unwrap().units[9].raw[7] |= 0x40;
+        assert_eq!(deferred.advance(1), 1);
+        assert_eq!(
+            deferred.saved_move_state.as_ref().unwrap().units[9].attr() & 0x4000,
+            0
+        );
+        assert_eq!(deferred.checkpoint(deps), closed);
         let mut eventful = restore(&before_round);
         eventful.game.events = Some(crate::events::EventEngine::new(
             tot_kit::parse_events(

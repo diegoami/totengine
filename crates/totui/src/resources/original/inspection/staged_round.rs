@@ -420,6 +420,76 @@ pub(super) fn check_saved_viewport(
     }))
 }
 
+pub(super) fn check_saved_wait(
+    capture: &OriginalCapture,
+    human: u8,
+    trace: &Value,
+) -> Result<Value, String> {
+    let files = capture.files();
+    let rules = &capture.resources().rules;
+    let events = files.events.clone().map(EventEngine::new);
+    let identity = capture.identity();
+    let mut session = HumanSession::scenario_initialized_saved_opponent_combat(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: rules.clone(),
+            events: events.clone(),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        identity,
+    )?;
+    let before = session.view();
+    let anchor: (u16, u16) = serde_json::from_value(trace["anchor"].clone())
+        .map_err(|error| format!("invalid native Wait viewport: {error}"))?;
+    let mut actor = session
+        .saved_initial_focus(anchor)
+        .ok_or("saved Wait has no initial unit")?;
+    let steps = trace["waits"]
+        .as_array()
+        .filter(|steps| !steps.is_empty())
+        .ok_or("native Wait evidence has no orders")?;
+    for step in steps {
+        if json!(actor.slot) != step["actor"] {
+            return Err("saved Wait actor differs from native focus".into());
+        }
+        let revision = session.view().revision;
+        let response = session.submit(Request {
+            civ: human,
+            id: revision + 1,
+            revision,
+            command: Command::Wait { unit: actor },
+        })?;
+        let view = session.view();
+        actor = session
+            .saved_wait_focus()
+            .ok_or("saved Wait did not select a ready unit")?;
+        if json!(actor.slot) != step["selected"]
+            || response.result != Some(OrderResult::Waited)
+            || view.observation.units != before.observation.units
+            || view.observation.seen != before.observation.seen
+            || view.decision.is_some()
+        {
+            return Err("saved Wait differs from the prepared native transition".into());
+        }
+    }
+    let checkpoint = session.checkpoint(identity);
+    let replay = HumanSession::restore_with(
+        rules.clone(),
+        identity,
+        &checkpoint,
+        Some((&files.bytes, events)),
+    )?;
+    if replay.checkpoint(identity) != checkpoint || replay.saved_wait_focus() != Some(actor) {
+        return Err("saved Wait did not restore its focus".into());
+    }
+    Ok(
+        json!({"verified": true, "waits": steps.len(), "selected_slot": actor.slot, "checkpoint_replays": true}),
+    )
+}
+
 pub(super) fn check_saved_opponent_combat(
     capture: &OriginalCapture,
     human: u8,

@@ -129,6 +129,18 @@ reaches selection or the adviser, according to the advice preference. This
 supports keeping the clean prepared entry free of a forced research prompt;
 later round and modal timing remain open.
 
+The [round handoff trace](evidence/import-round-handoff.json) feeds one
+synthetic Enter into the prepared viewing control after exhausting the
+player's four units. The saved options leave civ 4 at the next poll.
+With preference bit `0x40` clear, native execution clears the resume civ
+and reaches civ 5's first city phase on the same turn. The selected-unit
+trace reaches the same boundary under the saved preferences by issuing
+four Space orders against the saved movement budgets. This makes the
+scheduling difference explicit: native turn-start city work precedes a
+subsequent civ's orders, while the current engine policy batches the
+cities at round close. The single-civ engine city pass is reusable for a
+future admitted scheduler.
+
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe
 traces the prefix reads from the city table to the event marker and verifies

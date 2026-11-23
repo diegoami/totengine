@@ -100,6 +100,29 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual([row['stop'] for row in cases.values()],
                          ['00100000', '004a1436', '00477030'])
 
+    def test_round_handoff_preserves_the_pinned_human_context(self):
+        report = json.loads((ROOT / 'docs/evidence/import-round-handoff.json').read_text())
+        handoff = json.loads((ROOT / 'docs/evidence/import-input-handoff.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(report[key], handoff[key])
+        saved = report['saved_options']
+        advanced = report['cleared_preference_bit_0x40']
+        self.assertEqual(int(saved['options'], 16) ^ int(advanced['options'], 16), 0x40)
+        self.assertEqual(saved['before'], saved['after'])
+        self.assertEqual(saved['after'], advanced['before'])
+        self.assertEqual(advanced['after']['turn'], advanced['before']['turn'])
+        self.assertEqual((advanced['after']['active_civ'], advanced['after']['resume_civ']), (5, 0))
+        self.assertEqual(advanced['after']['research_target'], -1)
+        self.assertEqual(advanced['city_slot'], 6)
+        selected = report['spend_saved_movement']
+        self.assertEqual(selected['options'], saved['options'])
+        self.assertEqual(selected['after'], advanced['after'])
+        self.assertEqual(selected['city_slot'], advanced['city_slot'])
+        self.assertEqual([(m['character'], m['active_slot']) for m in selected['dispatched']],
+                         [(32, 6), (32, 9), (32, 26), (32, 18)])
+        for case in (saved, advanced, selected):
+            self.assertTrue(case['viewer_civilization_and_map_knowledge_unchanged'])
+
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
         phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())

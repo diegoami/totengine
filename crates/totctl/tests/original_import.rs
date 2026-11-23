@@ -75,6 +75,39 @@ fn installed_save_reports_checked_records_phase_and_view() {
         assert_eq!(actual.boundary, boundary);
         assert_eq!(evidence["after"]["progress"], actual.progress);
     }
+    let handoff: Value = serde_json::from_str(include_str!(
+        "../../../docs/evidence/import-round-handoff.json"
+    ))
+    .unwrap();
+    let handoff_check = &trace["round_handoff"];
+    assert_eq!(handoff_check["saved_options"], handoff["saved_options"]);
+    let advanced = &handoff["cleared_preference_bit_0x40"];
+    assert_eq!(handoff_check["cleared_preference_bit_0x40"], *advanced);
+    let civ = advanced["after"]["active_civ"].as_u64().unwrap() as u16;
+    let first_city = save
+        .cities
+        .iter()
+        .rposition(|city| city.city_id() != 0 && city.owner() == civ)
+        .unwrap();
+    assert_eq!(advanced["city_slot"], first_city);
+    assert_eq!(advanced["before"]["turn"], advanced["after"]["turn"]);
+    assert_eq!(advanced["after"]["resume_civ"], 0);
+    let spent = &handoff["spend_saved_movement"];
+    assert_eq!(handoff_check["spend_saved_movement"], *spent);
+    assert_eq!(spent["after"], advanced["after"]);
+    assert_eq!(spent["city_slot"], first_city);
+    assert_eq!(
+        spent["dispatched"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|input| (
+                input["character"].as_u64().unwrap(),
+                input["active_slot"].as_u64().unwrap()
+            ))
+            .collect::<Vec<_>>(),
+        [(32, 6), (32, 9), (32, 26), (32, 18)]
+    );
     let loader: serde_json::Value = serde_json::from_str(include_str!(
         "../../../docs/evidence/import-loader-exit.json"
     ))

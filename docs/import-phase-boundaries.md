@@ -207,3 +207,38 @@ alter it.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_city_science_entry_check.py --out /tmp/city-science-entry.json
 cmp docs/evidence/import-city-science-entry.json /tmp/city-science-entry.json
 ```
+
+
+### Handoff from viewing mode
+
+The [round handoff probe](evidence/import-round-handoff.json) supplies
+characters through a host message-dispatch substitute. The original
+character handler and civ scheduler execute in the same prepared stack.
+Two controls exhaust the player's units before reaching the viewing-mode
+poll, then dispatch one Enter with a closed city window.
+
+With the saved options word `0x01cd3258`, the original handler takes the
+city-window command path and returns to the next input poll for civ 4.
+Clearing the process preference bit `0x40` produces `0x01cd3218`. That
+control leaves viewing mode, clears the resume civ and reaches civ 5's
+native turn-start routine `0x4725c8`. Execution stops on entry to city
+slot 6's phase at `0x4cb01d`, on the same numbered turn. The player's
+civ and unit records, the cities, the tile bytes and all seven memory
+arrays stay intact through that boundary.
+
+The selected-unit route keeps the saved preference word and movement
+budgets. Four Space orders spend the full allowance of slots 6, 9, 26 and
+18, in that order. The fourth order hands off automatically to the same
+civ and city phase. Each unit's direction byte becomes 255 and the viewer's
+saved map knowledge stays intact. This route supplies no Enter command.
+
+The shared engine now has a per-civ city-phase call used by its existing
+round-close loop. Playable classic continuation still has to schedule it
+before each subsequent civ's orders and persist that scheduling.
+This trace establishes the entry boundary in the prepared context. It
+does not run the next city, an AI order or a full live round.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_round_handoff_check.py --out /tmp/round-handoff.json
+cmp docs/evidence/import-round-handoff.json /tmp/round-handoff.json
+```

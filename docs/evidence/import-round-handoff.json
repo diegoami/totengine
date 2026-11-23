@@ -1,0 +1,276 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "message_kind": "WM_CHAR",
+  "prepared_window_globals": {
+    "005ced04": 1,
+    "005ceb1c": -1,
+    "005ceb20": -1,
+    "00659248": -1,
+    "005e6b2c": -1
+  },
+  "saved_options": {
+    "options": "01cd3258",
+    "before": {
+      "turn": 43,
+      "active_civ": 4,
+      "loop_civ": 4,
+      "resume_civ": 4,
+      "human_mask": 16,
+      "active_slot": -1,
+      "display_mode": 0,
+      "viewing_loop_running": 1,
+      "research_target": -1,
+      "research_progress": 0
+    },
+    "after": {
+      "turn": 43,
+      "active_civ": 4,
+      "loop_civ": 4,
+      "resume_civ": 4,
+      "human_mask": 16,
+      "active_slot": -1,
+      "display_mode": 0,
+      "viewing_loop_running": 1,
+      "research_target": -1,
+      "research_progress": 0
+    },
+    "own_unit_slots": [
+      6,
+      9,
+      18,
+      26
+    ],
+    "dispatched": [
+      {
+        "character": 13,
+        "active_slot": -1,
+        "display_mode": 0
+      }
+    ],
+    "empty_filtered_polls": 0,
+    "boundary": "next-general-poll",
+    "stop": "00576ee4",
+    "city_slot": null,
+    "turn_starts": [],
+    "viewer_civilization_and_map_knowledge_unchanged": true,
+    "own_unit_record_change": "none",
+    "presentation_substitutes": [],
+    "host_substitutes": [
+      "PeekMessageA",
+      "TranslateMessageA",
+      "DispatchMessageA"
+    ]
+  },
+  "cleared_preference_bit_0x40": {
+    "options": "01cd3218",
+    "before": {
+      "turn": 43,
+      "active_civ": 4,
+      "loop_civ": 4,
+      "resume_civ": 4,
+      "human_mask": 16,
+      "active_slot": -1,
+      "display_mode": 0,
+      "viewing_loop_running": 1,
+      "research_target": -1,
+      "research_progress": 0
+    },
+    "after": {
+      "turn": 43,
+      "active_civ": 5,
+      "loop_civ": 5,
+      "resume_civ": 0,
+      "human_mask": 16,
+      "active_slot": -1,
+      "display_mode": 0,
+      "viewing_loop_running": 0,
+      "research_target": -1,
+      "research_progress": 0
+    },
+    "own_unit_slots": [
+      6,
+      9,
+      18,
+      26
+    ],
+    "dispatched": [
+      {
+        "character": 13,
+        "active_slot": -1,
+        "display_mode": 0
+      }
+    ],
+    "empty_filtered_polls": 0,
+    "boundary": "city-phase-entry",
+    "stop": "004cb01d",
+    "city_slot": 6,
+    "turn_starts": [
+      {
+        "argument": 5,
+        "phase": {
+          "turn": 43,
+          "active_civ": 5,
+          "loop_civ": 5,
+          "resume_civ": 0,
+          "human_mask": 16,
+          "active_slot": -1,
+          "display_mode": 0,
+          "viewing_loop_running": 0,
+          "research_target": -1,
+          "research_progress": 0
+        }
+      }
+    ],
+    "viewer_civilization_and_map_knowledge_unchanged": true,
+    "own_unit_record_change": "none",
+    "presentation_substitutes": [
+      "0040d510",
+      "004413d0",
+      "00442570",
+      "0046d7ed",
+      "0041af00"
+    ],
+    "host_substitutes": [
+      "PeekMessageA",
+      "TranslateMessageA",
+      "DispatchMessageA"
+    ]
+  },
+  "spend_saved_movement": {
+    "options": "01cd3258",
+    "before": {
+      "turn": 43,
+      "active_civ": 4,
+      "loop_civ": 4,
+      "resume_civ": 4,
+      "human_mask": 16,
+      "active_slot": 6,
+      "display_mode": 1,
+      "viewing_loop_running": 1,
+      "research_target": -1,
+      "research_progress": 0
+    },
+    "after": {
+      "turn": 43,
+      "active_civ": 5,
+      "loop_civ": 5,
+      "resume_civ": 0,
+      "human_mask": 16,
+      "active_slot": -1,
+      "display_mode": 0,
+      "viewing_loop_running": 0,
+      "research_target": -1,
+      "research_progress": 0
+    },
+    "own_unit_slots": [
+      6,
+      9,
+      18,
+      26
+    ],
+    "dispatched": [
+      {
+        "character": 32,
+        "active_slot": 6,
+        "display_mode": 1
+      },
+      {
+        "character": 32,
+        "active_slot": 9,
+        "display_mode": 1
+      },
+      {
+        "character": 32,
+        "active_slot": 26,
+        "display_mode": 1
+      },
+      {
+        "character": 32,
+        "active_slot": 18,
+        "display_mode": 1
+      }
+    ],
+    "empty_filtered_polls": 4,
+    "boundary": "city-phase-entry",
+    "stop": "004cb01d",
+    "city_slot": 6,
+    "turn_starts": [
+      {
+        "argument": 5,
+        "phase": {
+          "turn": 43,
+          "active_civ": 5,
+          "loop_civ": 5,
+          "resume_civ": 0,
+          "human_mask": 16,
+          "active_slot": -1,
+          "display_mode": 0,
+          "viewing_loop_running": 0,
+          "research_target": -1,
+          "research_progress": 0
+        }
+      }
+    ],
+    "viewer_civilization_and_map_knowledge_unchanged": true,
+    "own_unit_record_change": "spent movement and last direction",
+    "presentation_substitutes": [
+      "00467c89",
+      "0040d510",
+      "005346be",
+      "0040d7e7",
+      "004bf9b6",
+      "00467c89",
+      "0041af00",
+      "00467c89",
+      "0040d510",
+      "005346be",
+      "0040d7e7",
+      "004bf9b6",
+      "00467c89",
+      "0041af00",
+      "00467c89",
+      "0040d510",
+      "005346be",
+      "0040d7e7",
+      "004bf9b6",
+      "00467c89",
+      "0041af00",
+      "00467c89",
+      "0040d510",
+      "005346be",
+      "0040d510",
+      "004bf9b6",
+      "005346be",
+      "0040d510",
+      "004bf9b6",
+      "004413d0",
+      "00442570",
+      "0046d7ed",
+      "0041af00"
+    ],
+    "host_substitutes": [
+      "PeekMessageA",
+      "TranslateMessageA",
+      "DispatchMessageA",
+      "PeekMessageA",
+      "TranslateMessageA",
+      "DispatchMessageA",
+      "PeekMessageA",
+      "TranslateMessageA",
+      "DispatchMessageA",
+      "PeekMessageA",
+      "TranslateMessageA",
+      "DispatchMessageA"
+    ]
+  },
+  "scope": "Trace the pinned resumed turn into the next living civilization's city phase.\n\nSupply already translated characters at the native general poll and forward\nthem to the original character callback. The exhausted viewing control\ncompares one Enter under two process preferences. The selected-unit trace\nstarts with saved movement and spends it with four Space orders. The stop\nprecedes opponent city processing. Windows dispatch and the rest of the\nround remain outside the trace."
+}

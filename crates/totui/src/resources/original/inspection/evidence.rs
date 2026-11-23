@@ -9,6 +9,9 @@ const LOADER_EXIT: &str = include_str!("../../../../../../docs/evidence/import-l
 const CITY_SCIENCE: &str =
     include_str!("../../../../../../docs/evidence/import-city-science-entry.json");
 
+const ROUND_HANDOFF: &str =
+    include_str!("../../../../../../docs/evidence/import-round-handoff.json");
+
 fn same_input_trace(text: &str, report: &Value, name: &str) -> Result<Value, String> {
     let trace: Value = serde_json::from_str(text).map_err(|error| format!("{name}: {error}"))?;
     for key in ["source", "rules", "binary_sha256"] {
@@ -40,6 +43,7 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
     }
     let orders = same_input_trace(FIRST_ORDERS, &report, "first-order evidence")?;
     let science = same_input_trace(CITY_SCIENCE, &report, "city science evidence")?;
+    let round = same_input_trace(ROUND_HANDOFF, &report, "round handoff evidence")?;
     Ok(json!({
         "matches_fixture": true,
         "scope": "prepared native resume with display and empty-queue substitutes",
@@ -57,6 +61,13 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
             "report": "docs/evidence/import-city-science-entry.json",
             "scope": science["scope"],
             "cases": science["cases"],
+        },
+        "round_handoff": {
+            "report": "docs/evidence/import-round-handoff.json",
+            "scope": round["scope"],
+            "saved_options": round["saved_options"],
+            "cleared_preference_bit_0x40": round["cleared_preference_bit_0x40"],
+            "spend_saved_movement": round["spend_saved_movement"],
         },
         "loader_regions": {
             "report": "docs/evidence/import-loader-exit.json",

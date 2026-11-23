@@ -47,38 +47,9 @@ impl WorldState {
         self.production_context = None;
         let mut sum = TurnSummary::default();
         let mut food_routes = crate::city_phase::FoodRouteState::default();
-        // 0x470aa5..0x470b69: descending city slots within each civ/map.
-        // The headless round uses civ order 0..7 and the retained surface.
+        // Preserve the existing headless scheduler's all-cities round close.
         for civ in 0..8 {
-            for k in (0..self.cities.len()).rev() {
-                if self.cities[k].owner & 15 != civ {
-                    continue;
-                }
-                let Some(city) = self.run_city_phase(rules, k, &mut food_routes) else {
-                    continue;
-                };
-                if city.grew {
-                    sum.grew.push(k);
-                }
-                if city.famined {
-                    sum.famined.push(k);
-                }
-                if city.destroyed {
-                    sum.destroyed_cities.push(k);
-                    continue;
-                }
-                if let Some(built) = city.built {
-                    sum.built.push((k, built));
-                }
-                if let Some(discovery) = city.discovery {
-                    sum.discoveries.push(discovery);
-                }
-                sum.disbanded_units.extend(city.disbanded);
-                if city.revolution {
-                    sum.revolutions.push(civ as u8);
-                }
-                sum.city_accounts.push((k, city.account));
-            }
+            self.run_civ_city_phases(rules, civ, &mut food_routes, &mut sum);
         }
 
         self.refresh_city_statistics();
@@ -114,6 +85,47 @@ impl WorldState {
         }
         sum.turn = self.turn;
         sum
+    }
+
+    /// City processing for one civ in descending slot order (0x470aa5..0x470b69).
+    /// The caller owns the scheduling boundary and carries food-route state
+    /// across calls when they belong to the same pass.
+    pub(crate) fn run_civ_city_phases(
+        &mut self,
+        rules: &Rules,
+        civ: u8,
+        food_routes: &mut crate::city_phase::FoodRouteState,
+        sum: &mut TurnSummary,
+    ) {
+        for k in (0..self.cities.len()).rev() {
+            if self.cities[k].owner & 15 != u16::from(civ) {
+                continue;
+            }
+            let Some(city) = self.run_city_phase(rules, k, food_routes) else {
+                continue;
+            };
+            if city.grew {
+                sum.grew.push(k);
+            }
+            if city.famined {
+                sum.famined.push(k);
+            }
+            if city.destroyed {
+                sum.destroyed_cities.push(k);
+                continue;
+            }
+            if let Some(built) = city.built {
+                sum.built.push((k, built));
+            }
+            if let Some(discovery) = city.discovery {
+                sum.discoveries.push(discovery);
+            }
+            sum.disbanded_units.extend(city.disbanded);
+            if city.revolution {
+                sum.revolutions.push(civ);
+            }
+            sum.city_accounts.push((k, city.account));
+        }
     }
 }
 

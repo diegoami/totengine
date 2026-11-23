@@ -1142,23 +1142,38 @@ impl Game {
 
     pub(crate) fn close_turn(&mut self) -> crate::turn::TurnSummary {
         let summary = self.world.run_turn(&self.rules, self.events.as_mut());
-        self.record_round_end();
+        self.record_round_end(None);
         summary
     }
 
-    pub(crate) fn close_staged_turn(&mut self) -> crate::turn::TurnSummary {
+    pub(crate) fn close_staged_turn(
+        &mut self,
+        saved_viewer: Option<u8>,
+    ) -> (crate::turn::TurnSummary, bool) {
+        let before = saved_viewer.map(|_| self.world.clone());
         let summary = self.world.finish_round(
             &self.rules,
             self.events.as_mut(),
             crate::turn::TurnSummary::default(),
             false,
         );
-        self.record_round_end();
-        summary
+        // Only retain the saved projection for the checked quiet round.
+        let keep_view = before.is_some_and(|before| {
+            summary.events.is_empty()
+                && summary.barbarian_arrivals.is_empty()
+                && self.world.game_over.is_none()
+                && self.world.map == before.map
+                && self.world.units == before.units
+                && self.world.cities == before.cities
+                && self.world.wonders == before.wonders
+                && self.world.diplomacy == before.diplomacy
+        });
+        self.record_round_end(saved_viewer.filter(|_| keep_view));
+        (summary, keep_view)
     }
 
-    fn record_round_end(&mut self) {
-        for c in 1..8 {
+    fn record_round_end(&mut self, saved_viewer: Option<u8>) {
+        for c in (1..8).filter(|&c| Some(c) != saved_viewer) {
             self.world.reveal(c);
         }
         self.log.push_str(&format!(

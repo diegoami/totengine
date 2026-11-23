@@ -17,6 +17,8 @@ const ROUND_HANDOFF: &str =
 const OPPONENT_COMBAT: &str =
     include_str!("../../../../../../docs/evidence/import-opponent-combat-view.json");
 
+const ROUND_CLOSE: &str = include_str!("../../../../../../docs/evidence/import-round-close.json");
+
 fn same_input_trace(text: &str, report: &Value, name: &str) -> Result<Value, String> {
     let trace: Value = serde_json::from_str(text).map_err(|error| format!("{name}: {error}"))?;
     for key in ["source", "rules", "binary_sha256"] {
@@ -51,6 +53,7 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
     let round = same_input_trace(ROUND_HANDOFF, &report, "round handoff evidence")?;
     let city_view = same_input_trace(CITY_VIEW, &report, "first opponent city-view evidence")?;
     let combat = same_input_trace(OPPONENT_COMBAT, &report, "opponent combat view evidence")?;
+    let close = same_input_trace(ROUND_CLOSE, &report, "round close evidence")?;
     Ok(json!({
         "matches_fixture": true,
         "scope": "prepared native resume with display and empty-queue substitutes",
@@ -86,6 +89,7 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
             "scope": combat["scope"],
             "cases": combat["cases"],
         },
+        "round_close": close,
         "loader_regions": {
             "report": "docs/evidence/import-loader-exit.json",
             "after_event_read": loader["after_event_read"],

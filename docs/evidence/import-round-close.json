@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "last_move": {
+    "entry": "0054c69b",
+    "arguments": [
+      33,
+      4,
+      3
+    ],
+    "return": 1,
+    "explored_tiles": 59,
+    "viewer_memory_changed": false,
+    "before": [
+      {
+        "slot": 33,
+        "position": [
+          11,
+          41
+        ],
+        "owner": 7,
+        "spent": 0,
+        "previous": -1,
+        "next": -1
+      }
+    ],
+    "after": [
+      {
+        "slot": 33,
+        "position": [
+          10,
+          42
+        ],
+        "owner": 7,
+        "spent": 6,
+        "previous": -1,
+        "next": -1
+      }
+    ],
+    "substitutes": [
+      "00577011",
+      "00467d19"
+    ]
+  },
+  "annual_update": {
+    "entry": "004702fc",
+    "argument": -1,
+    "before": {
+      "turn": 43,
+      "crt": 1864858732,
+      "explored": 59
+    },
+    "after": {
+      "turn": 44,
+      "crt": 3613838918,
+      "explored": 59
+    },
+    "viewer_memory_changed": false,
+    "observation_calls": [],
+    "crt_draws": 2,
+    "host_calls": {
+      "SetRect": 81,
+      "GetCurrentDirectoryA": 4,
+      "SetCurrentDirectoryA": 6,
+      "GetLastError": 4,
+      "SetEnvironmentVariableA": 2
+    }
+  },
+  "scope": "Measure saved human knowledge across a prepared native annual update.\n\nAdvance the pinned save through the checked opponent moves, then run the\nunpatched annual update called by the single-player outer loop. Windows\nrectangle and directory calls operate on emulator memory. The supplied\nend-of-round position and host directory failures are controlled inputs."
+}

@@ -1600,15 +1600,24 @@ impl HumanSession {
     }
 
     fn close_round(&mut self) {
-        self.finish_saved_movement();
-        self.record_turn_notices(
-            true,
-            if self.staged_round.is_some() {
-                Game::close_staged_turn
+        let staged = self.staged_round.is_some();
+        let saved_viewer = (self.knowledge_recipe
+            == ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+            && self.saved_move_state.is_some())
+        .then_some(self.human);
+        let mut kept_view = false;
+        self.record_turn_notices(true, |game| {
+            if staged {
+                let (summary, kept) = game.close_staged_turn(saved_viewer);
+                kept_view = kept;
+                summary
             } else {
-                Game::close_turn
-            },
-        );
+                game.close_turn()
+            }
+        });
+        if !kept_view {
+            self.finish_saved_movement();
+        }
     }
 
     fn record_turn_notices(

@@ -929,5 +929,46 @@ staged-round-test
             assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
         }
         assert_eq!(game.cursor, 8);
+        let before_round = game.checkpoint(deps);
+        assert_eq!(game.game.world.turn, 43);
+        let draws = game.game.world.combat_rng.draws();
+        assert_eq!(game.advance(1), 1);
+        assert_eq!(game.game.world.turn, 44);
+        assert_eq!(game.game.world.combat_rng.state(), 0xd766ce46);
+        assert_eq!(game.game.world.combat_rng.draws(), draws + 2);
+        assert!(game.saved_move_state.is_some());
+        assert_eq!(game.view().observation.seen, initial.observation.seen);
+        assert_eq!(replay.advance(1), 1);
+        let closed = game.checkpoint(deps);
+        assert_eq!(replay.checkpoint(deps), closed);
+        let mut restored = restore(&before_round);
+        assert_eq!(restored.advance(1), 1);
+        assert_eq!(restored.checkpoint(deps), closed);
+        let mut eventful = restore(&before_round);
+        eventful.game.events = Some(crate::events::EventEngine::new(
+            tot_kit::parse_events(
+                "@IF\nTURN\nturn=44\n@THEN\nTEXT\nRound starts.\nENDTEXT\n@ENDIF",
+            )
+            .unwrap(),
+        ));
+        assert_eq!(eventful.advance(1), 1);
+        assert!(eventful.saved_move_state.is_none());
+        assert_eq!(eventful.game.events.as_ref().unwrap().log.len(), 1);
+        assert_eq!(eventful.game.world.turn, 44);
+
+        for _ in 0..32 {
+            if game.phase() == Phase::Human {
+                break;
+            }
+            assert!(game.saved_move_state.is_some());
+            assert_eq!(game.view().observation.seen, initial.observation.seen);
+            assert_eq!(game.advance(1), 1);
+            assert_eq!(replay.advance(1), 1);
+            assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
+        }
+        assert_eq!(game.phase(), Phase::Human);
+        assert_eq!(game.game.world.turn, 44);
+        assert!(game.saved_move_state.is_none());
+        assert_eq!(game.view().observation.seen.iter().flatten().count(), 60);
     }
 }

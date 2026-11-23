@@ -328,10 +328,26 @@ movement thirds, with no CRT draw, and the original refuses its next
 attempt. The staged recipe uses the checked unstacked land movement
 when a road is present at exactly one end of the step.
 
-Native opponent policy, macro dispatch and broader combat contexts remain
-outside these controlled actions.
+The [prepared annual update](evidence/import-round-close.json) runs
+the native update at `0x4702fc` after the last checked move. It advances
+from round 43 to 44, consumes two CRT draws, and leaves the selected
+human's explored bits and remembered improvements byte-identical.
+Rectangle and directory calls run in the emulator with controlled
+directory failures. The staged engine round retains this saved view
+when map, unit, city, wonder and diplomacy state are stable and the
+round applies no events or barbarian arrivals. A synthetic round-start
+event exercises the fallback and fires once. The inspector restores
+and verifies the checkpoint across the checked annual update.
+
+Native opponent policy, the outer-loop UI, wider macro behavior and
+broader combat contexts remain outside these controlled actions.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_combat_view_check.py --out /tmp/opponent-combat-view.json
 cmp docs/evidence/import-opponent-combat-view.json /tmp/opponent-combat-view.json
+```
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_round_close_check.py --out /tmp/import-round-close.json
+cmp docs/evidence/import-round-close.json /tmp/import-round-close.json
 ```

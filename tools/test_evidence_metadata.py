@@ -232,6 +232,21 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_annual_update_retains_the_saved_projection(self):
+        close = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
+        combat = json.loads((ROOT / 'docs/evidence/import-opponent-combat-view.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(close[key], combat[key])
+        self.assertEqual(close['last_move']['after'][0]['position'], [10, 42])
+        self.assertEqual(close['last_move']['explored_tiles'], 59)
+        step = close['annual_update']
+        self.assertEqual(step['before']['crt'], combat['cases']['7']['following_unconnected_road']['crt_after'])
+        self.assertEqual(step['before']['turn'], 43)
+        self.assertEqual(step['after'], {'turn': 44, 'crt': 0xd766ce46, 'explored': 59})
+        self.assertEqual(step['crt_draws'], 2)
+        self.assertEqual(step['observation_calls'], [])
+        self.assertFalse(step['viewer_memory_changed'])
+
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
         phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())

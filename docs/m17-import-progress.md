@@ -201,8 +201,14 @@ alone. That attempt uses the same checkpointed CRT and retains the 59-tile
 view. The Phalanx follows onto a road from a tile without one and
 exhausts its movement at the normal terrain cost. The engine replay
 now preserves the saved projection through the final opponent order
-in round 43. At round close it begins the existing engine observation
-path. Round-boundary knowledge, broader combat and pending choices
+in round 43. The [prepared annual update](evidence/import-round-close.json)
+advances to 44 with the same 59 explored tiles, remembered improvements,
+and two CRT draws as the guarded engine replay. The engine retains the
+view only when the round leaves observation inputs intact and applies no
+macro or barbarian arrival. The pinned engine replay retains the saved
+projection through the remaining opponent work. The next human city
+pass switches to the existing engine observation path and exposes
+60 tiles. Human city-phase continuation, wider combat and pending choices
 remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final

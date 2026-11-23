@@ -422,15 +422,16 @@ pub(super) fn check_saved_opponent_combat(
     if replay.advance(1) != 1 || replay.checkpoint(resources) != after {
         return Err("the checked combat did not replay".into());
     }
-    for (label, key) in [
-        ("field stack", "following_field_stack"),
-        ("city arrival", "following_city_arrival"),
-        ("city departure", "following_city_departure"),
-        ("partial move", "following_partial_move"),
-        ("singleton move", "following_singleton_move"),
-        ("unconnected road", "following_unconnected_road"),
+    let round = &trace["round_close"];
+    for (label, step) in [
+        ("field stack", &native["following_field_stack"]),
+        ("city arrival", &native["following_city_arrival"]),
+        ("city departure", &native["following_city_departure"]),
+        ("partial move", &native["following_partial_move"]),
+        ("singleton move", &native["following_singleton_move"]),
+        ("unconnected road", &native["following_unconnected_road"]),
+        ("last round move", &round["last_move"]),
     ] {
-        let step = &native[key];
         let mover = step["after"]
             .as_array()
             .and_then(|units| units.first())
@@ -478,13 +479,52 @@ pub(super) fn check_saved_opponent_combat(
             return Err(format!("the checked {label} did not replay"));
         }
     }
+    let civ = round["last_move"]["after"][0]["owner"]
+        .as_u64()
+        .ok_or("prepared round close owner missing")?;
+    let order = format!("T {} C {civ} end = ended\n", initial.observation.turn);
+    let (_, before_close) = reach_opponent_order(&mut session, resources, &order)?;
+    let native_close = &round["annual_update"];
+    if json!(session.view().observation.turn) != native_close["before"]["turn"]
+        || session.advance(1) != 1
+        || json!(session.view().observation.turn) != native_close["after"]["turn"]
+        || session.view().observation.seen != initial.observation.seen
+        || json!(session.view().observation.seen.iter().flatten().count())
+            != native_close["after"]["explored"]
+    {
+        return Err("the staged round boundary changed the saved player view".into());
+    }
+    let after_close = session.checkpoint(resources);
+    for (checkpoint, phase) in [(&before_close, "before"), (&after_close, "after")] {
+        let crt = native_close[phase]["crt"]
+            .as_u64()
+            .ok_or("prepared round CRT state missing")?;
+        if checkpoint_line(checkpoint, "rng ")?
+            .split_whitespace()
+            .nth(3)
+            != Some(format!("{crt:08x}").as_str())
+        {
+            return Err(format!(
+                "the staged round boundary diverged from the prepared CRT state {phase} close"
+            ));
+        }
+    }
+    let mut replay = HumanSession::restore_with(
+        rules.clone(),
+        resources,
+        &before_close,
+        Some((&files.bytes, replay_events)),
+    )?;
+    if replay.advance(1) != 1 || replay.checkpoint(resources) != after_close {
+        return Err("the checked round close did not replay".into());
+    }
     Ok(json!({
         "verified": true, "initializer_schema": 7,
         "profile": engine::human::ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE,
         "explored_tiles": explored, "combat_rng_matches": true, "field_stack_replays": true,
         "city_arrival_replays": true, "city_departure_replays": true,
         "partial_movement_replays": true, "singleton_movement_replays": true,
-        "unconnected_road_replays": true, "checkpoint_replays": true,
+        "unconnected_road_replays": true, "round_close_replays": true, "checkpoint_replays": true,
     }))
 }
 

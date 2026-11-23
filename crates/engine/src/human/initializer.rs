@@ -25,6 +25,7 @@ pub enum ScenarioKnowledgeRecipe {
     SavedInitialThenEngineV1,
     SavedInitialStagedRoundV1,
     SavedMovementStagedRoundV1,
+    SavedCityViewStagedRoundV1,
 }
 
 /// Captured before any human request or opponent work. All original bytes
@@ -63,12 +64,15 @@ impl ScenarioInitializer {
 
     pub const SAVED_MOVEMENT_PROFILE: &'static str = "experimental-saved-movement-v1";
 
+    pub const SAVED_CITY_VIEW_PROFILE: &'static str = "experimental-saved-city-view-v1";
+
     pub fn schema(&self) -> u8 {
         match self.knowledge_recipe {
             ScenarioKnowledgeRecipe::EngineSightV1 => 1,
             ScenarioKnowledgeRecipe::SavedInitialThenEngineV1 => 2,
             ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1 => 3,
             ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 => 4,
+            ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1 => 5,
         }
     }
     pub fn profile(&self) -> &'static str {
@@ -77,6 +81,7 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedInitialThenEngineV1 => Self::SAVED_VIEW_PROFILE,
             ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1 => Self::STAGED_ROUND_PROFILE,
             ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 => Self::SAVED_MOVEMENT_PROFILE,
+            ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1 => Self::SAVED_CITY_VIEW_PROFILE,
         }
     }
 
@@ -151,6 +156,11 @@ impl ScenarioInitializer {
                 Self::SAVED_MOVEMENT_PROFILE,
                 "saved-land-movement-then-engine-v1",
             ),
+            ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1 => (
+                5,
+                Self::SAVED_CITY_VIEW_PROFILE,
+                "saved-land-and-city-view-then-engine-v1",
+            ),
         };
         format!(
             "initializer {schema} profile {profile} source {} {} {:016x} mode {mode} saved {} {} {} {} human {} phase {:?} cursor {} policy {} seed {} movement {movement} knowledge {knowledge} world {:016x} memory {:016x} choice {:016x} events {:016x} {:016x} rng {:08x} {} {:08x} {} dependencies {} {:016x} {}",
@@ -184,6 +194,11 @@ impl ScenarioInitializer {
             Self::SAVED_MOVEMENT_PROFILE
         )) {
             Ok(ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1)
+        } else if line.starts_with(&format!(
+            "initializer 5 profile {} ",
+            Self::SAVED_CITY_VIEW_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1)
         } else {
             Err("unsupported scenario initializer version or profile".into())
         }

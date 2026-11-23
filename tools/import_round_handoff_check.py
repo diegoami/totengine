@@ -47,7 +47,7 @@ WINDOW_CONTEXT = (
 )
 
 
-def trace(original, player, regions, *, clear_preference_bit, skip_selected):
+def trace(original, player, regions, *, clear_preference_bit, skip_selected, at_city_entry=None):
     cpu = original.cpu
     for address, value in WINDOW_CONTEXT:
         original.write(address, value, '<i')
@@ -167,6 +167,8 @@ def trace(original, player, regions, *, clear_preference_bit, skip_selected):
         assert final[1][unit_record] == expected
     if city is None:
         assert final == baseline
+    if city is not None and at_city_entry is not None:
+        at_city_entry(original, player, city)
     return {
         'options': f'{options:08x}', 'before': before, 'after': after,
         'own_unit_slots': owned,

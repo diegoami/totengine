@@ -158,6 +158,14 @@ four Skip orders without a map reveal, and the explicit End Turn handoff.
 The saved projection lasts through the handoff until the first engine city
 pass or round close.
 
+The [city-view recipe](import-initializer.md#experimental-saved-view-during-city-work)
+preserves the human projection through the tested opponent city work item.
+The native trace reaches production selection after civ 5 creates an
+unseen unit, with the human's 59 tiles and remembered knowledge intact.
+The inspector exercises the guarded engine pass and restores its
+checkpoint. The first engine production order retains that view.
+Opponent moves and other unverified orders switch to engine observation.
+
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe
 traces the prefix reads from the city table to the event marker and verifies

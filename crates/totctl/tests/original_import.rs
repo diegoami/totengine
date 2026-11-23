@@ -161,6 +161,18 @@ fn installed_save_reports_checked_records_phase_and_view() {
     );
     assert_eq!(report["playable_import"], false);
     assert_eq!(
+        report["saved_city_view_check"],
+        json!({
+            "verified": true,
+            "initializer_schema": 5,
+            "profile": "experimental-saved-city-view-v1",
+            "explored_tiles": 59,
+            "unit_knowledge_unchanged": true,
+            "first_opponent_order_preserved_view": true,
+            "checkpoint_replays": true,
+        })
+    );
+    assert_eq!(
         report["saved_movement_check"],
         json!({
             "verified": true,

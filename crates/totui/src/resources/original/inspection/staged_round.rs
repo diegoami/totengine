@@ -162,6 +162,115 @@ pub(super) fn check_saved_movement(
     }))
 }
 
+pub(super) fn check_saved_city_view(
+    capture: &OriginalCapture,
+    human: u8,
+    trace: &Value,
+) -> Result<Value, String> {
+    let files = capture.files();
+    let rules = &capture.resources().rules;
+    let events = files.events.clone().map(EventEngine::new);
+    let resources = capture.identity();
+    let mut session = HumanSession::scenario_initialized_saved_city_view(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: rules.clone(),
+            events: events.clone(),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        resources,
+    )?;
+    let skips = trace["round_handoff"]["spend_saved_movement"]["dispatched"]
+        .as_array()
+        .filter(|messages| messages.len() == 4)
+        .ok_or("native city-view evidence is missing its skips")?;
+    for input in skips {
+        if input["character"] != 32 {
+            return Err("native city-view evidence contains a different order".into());
+        }
+        let raw_slot = input["active_slot"]
+            .as_u64()
+            .ok_or("native Skip slot missing")?;
+        let view = session.view();
+        let unit = *view
+            .units
+            .iter()
+            .find(|unit| unit.slot as u64 == raw_slot)
+            .ok_or("saved city-view Skip unit missing")?;
+        session.submit(Request {
+            civ: human,
+            id: view.revision + 1,
+            revision: view.revision,
+            command: Command::Skip { unit },
+        })?;
+    }
+    let before_end = session.view();
+    session.submit(Request {
+        civ: human,
+        id: before_end.revision + 1,
+        revision: before_end.revision,
+        command: Command::EndTurn,
+    })?;
+    let before = session.view();
+    let before_pass = session.checkpoint(resources);
+    let report = &trace["city_view"]["observed"];
+    if session.advance(1) != 1 {
+        return Err("saved city-view work item did not advance".into());
+    }
+    let after = session.view();
+    let explored = after.observation.seen.iter().flatten().count();
+    if after.observation.seen != before.observation.seen
+        || after.observation.units != before.observation.units
+        || json!(explored) != report["viewer_explored_tiles"]
+    {
+        return Err("city work did not preserve the measured view".into());
+    }
+    let checkpoint = session.checkpoint(resources);
+    if before.observation.turn != after.observation.turn
+        || checkpoint_line(&before_pass, "log ")? != checkpoint_line(&checkpoint, "log ")?
+        || checkpoint_line(&before_pass, "world ")? == checkpoint_line(&checkpoint, "world ")?
+    {
+        return Err("saved city-view check did not reach same-turn city work before orders".into());
+    }
+    let restore = |text: &str| {
+        HumanSession::restore_with(
+            rules.clone(),
+            resources,
+            text,
+            Some((&files.bytes, events.clone())),
+        )
+    };
+    let mut replay = restore(&checkpoint)?;
+    if replay.view() != after || replay.checkpoint(resources) != checkpoint {
+        return Err("saved city work did not replay".into());
+    }
+    if session.advance(1) != 1
+        || replay.advance(1) != 1
+        || session.view().observation.seen != after.observation.seen
+        || session.view().observation.units != after.observation.units
+    {
+        return Err("first opponent order did not preserve the saved view".into());
+    }
+    let next = session.checkpoint(resources);
+    if next != replay.checkpoint(resources)
+        || checkpoint_line(&checkpoint, "log ")? == checkpoint_line(&next, "log ")?
+    {
+        return Err("first opponent order did not extend the replayable order log".into());
+    }
+    let initializer = session
+        .initializer()
+        .ok_or("saved city-view initializer missing")?;
+    Ok(json!({
+        "verified": true, "initializer_schema": initializer.schema(),
+        "profile": initializer.profile(), "explored_tiles": explored,
+        "unit_knowledge_unchanged": true, "first_opponent_order_preserved_view": true,
+        "checkpoint_replays": true,
+    }))
+}
+
 fn checkpoint_line<'a>(checkpoint: &'a str, prefix: &str) -> Result<&'a str, String> {
     checkpoint
         .lines()

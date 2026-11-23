@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "observed": {
+    "city_slot": 6,
+    "stop": "00434d81",
+    "viewer_explored_tiles": 59,
+    "viewer_memory_changed": false,
+    "previous_unit_knowledge_changed": false,
+    "created_units": [
+      {
+        "slot": 34,
+        "position": [
+          43,
+          37
+        ],
+        "owner": 5,
+        "tile_known": false,
+        "viewer_mask": false
+      }
+    ],
+    "presentation_substitutes": [
+      "00467c89",
+      "00467d19"
+    ]
+  },
+  "scope": "Compare human map knowledge before civ 5's city work and at production selection.\n\nStarting with the same saved turn as the round-handoff witness, run four\nnative Skip orders. Continue from the first opponent city-phase entry to\nthe call into the production selector. The probe supplies host messages\nand substitutes presentation. It stops before running that selector."
+}

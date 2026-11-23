@@ -523,6 +523,25 @@ impl HumanSession {
         )
     }
 
+    /// Opt into the saved-view movement recipe with guarded city work
+    /// and nonspatial opponent orders. Other orders use engine observation.
+    pub fn scenario_initialized_saved_city_view(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1,
+        )
+    }
+
     fn scenario_initialized_recipe(
         input: ScenarioInput<'_>,
         human: u8,
@@ -558,6 +577,7 @@ impl HumanSession {
             recipe,
             ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1
                 | ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
         ) {
             crate::scenario::phase::saved_human_entry(&saved, &input.rules, human)?;
             crate::scenario::snapshot::CheckedSnapshot::read(input.snapshot, &input.rules)?;
@@ -587,7 +607,11 @@ impl HumanSession {
         };
         let mut session =
             Self::scenario_with_knowledge(input, human, policy, seed, projection, recipe)?;
-        if recipe == ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 {
+        if matches!(
+            recipe,
+            ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
+        ) {
             session.saved_move_state = Some(saved.clone());
         }
         session.initializer = Some(ScenarioInitializer::capture(
@@ -669,6 +693,7 @@ impl HumanSession {
                 knowledge_recipe,
                 ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1
                     | ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1
+                    | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
             )
             .then(StagedRound::default),
             game,
@@ -1046,7 +1071,11 @@ impl HumanSession {
                 self.saved_initial, self.cursor, staged
             ));
         }
-        if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 {
+        if matches!(
+            self.knowledge_recipe,
+            ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
+        ) {
             data.push_str(if self.saved_move_state.is_some() {
                 " saved-land-movement-active"
             } else {
@@ -1484,6 +1513,9 @@ impl HumanSession {
                         .world
                         .observe(&self.game.rules, self.cursor, self.last_ai.take());
                 let order = player.act(&obs);
+                if !self.keeps_city_view_for_opponent_order(self.cursor, order) {
+                    self.finish_saved_movement();
+                }
                 self.last_ai = Some(self.game.submit(self.cursor, order));
                 self.game.players[self.cursor as usize] = Some(player);
                 self.actions += 1;

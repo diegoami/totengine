@@ -123,6 +123,20 @@ class GoldenMetadata(unittest.TestCase):
         for case in (saved, advanced, selected):
             self.assertTrue(case['viewer_civilization_and_map_knowledge_unchanged'])
 
+    def test_native_city_work_preserves_view_despite_an_unseen_birth(self):
+        city = json.loads((ROOT / 'docs/evidence/import-city-view.json').read_text())
+        handoff = json.loads((ROOT / 'docs/evidence/import-round-handoff.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(city[key], handoff[key])
+        observed = city['observed']
+        self.assertEqual(observed['city_slot'], handoff['spend_saved_movement']['city_slot'])
+        self.assertEqual(observed['viewer_explored_tiles'], 59)
+        self.assertFalse(observed['viewer_memory_changed'])
+        self.assertFalse(observed['previous_unit_knowledge_changed'])
+        self.assertEqual(observed['created_units'],
+                         [{'slot': 34, 'position': [43, 37], 'owner': 5,
+                           'tile_known': False, 'viewer_mask': False}])
+
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
         phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())

@@ -199,3 +199,33 @@ handoff before the first opponent city work item. This recipe exercises
 ordinary land movement. General action knowledge, opponent and city
 knowledge through the round, and native pending decisions remain separate
 admission work.
+
+
+## Experimental saved view during city work
+
+Schema 5, `experimental-saved-city-view-v1`, adds a guarded handoff to
+the saved-movement recipe. It retains the projection during an opponent
+city pass when the map, treaty inputs and existing observed identities
+stay stable. It permits a new unit in an unseen city processed by that
+pass. Surviving cities' remembered sizes refresh using the native-derived
+city-memory kernel. A changed map or entity context, such as a birth at a
+known destination, hands observation back to the staged engine. The
+saved view continues through opponent production selection, Skip, End Turn,
+and research without a free advance. Other opponent orders switch to
+engine observation.
+
+The pinned [native probe](evidence/import-city-view.json) follows four
+Skip orders to civ 5's first city. It stops at entry to production
+selection after a unit has appeared in an unseen city. The human view
+contains 59 tiles throughout, and its remembered improvements and
+previous unit knowledge stay intact. The engine recipe preserves the
+same human view across the first city work item and replays at its
+checkpoint. The native trace stops inside that city phase, while the
+engine check completes its atomic pass and the first engine production
+order. Pending native decisions and changes during spatial opponent
+orders need separate verification.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_city_view_check.py --out /tmp/city-view.json
+cmp docs/evidence/import-city-view.json /tmp/city-view.json
+```

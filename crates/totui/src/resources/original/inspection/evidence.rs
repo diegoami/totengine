@@ -9,6 +9,8 @@ const LOADER_EXIT: &str = include_str!("../../../../../../docs/evidence/import-l
 const CITY_SCIENCE: &str =
     include_str!("../../../../../../docs/evidence/import-city-science-entry.json");
 
+const CITY_VIEW: &str = include_str!("../../../../../../docs/evidence/import-city-view.json");
+
 const ROUND_HANDOFF: &str =
     include_str!("../../../../../../docs/evidence/import-round-handoff.json");
 
@@ -44,6 +46,7 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
     let orders = same_input_trace(FIRST_ORDERS, &report, "first-order evidence")?;
     let science = same_input_trace(CITY_SCIENCE, &report, "city science evidence")?;
     let round = same_input_trace(ROUND_HANDOFF, &report, "round handoff evidence")?;
+    let city_view = same_input_trace(CITY_VIEW, &report, "first opponent city-view evidence")?;
     Ok(json!({
         "matches_fixture": true,
         "scope": "prepared native resume with display and empty-queue substitutes",
@@ -68,6 +71,11 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
             "saved_options": round["saved_options"],
             "cleared_preference_bit_0x40": round["cleared_preference_bit_0x40"],
             "spend_saved_movement": round["spend_saved_movement"],
+        },
+        "city_view": {
+            "report": "docs/evidence/import-city-view.json",
+            "scope": city_view["scope"],
+            "observed": city_view["observed"],
         },
         "loader_regions": {
             "report": "docs/evidence/import-loader-exit.json",

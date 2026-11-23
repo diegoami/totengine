@@ -10,7 +10,13 @@ pub(super) struct StagedRound {
 
 impl HumanSession {
     pub(super) fn run_staged_city_pass(&mut self, civ: u8) {
-        self.finish_saved_movement();
+        let keep_view = civ != self.human
+            && self.saved_move_state.is_some()
+            && self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1;
+        let before = keep_view.then(|| self.game.world.clone());
+        if !keep_view {
+            self.finish_saved_movement();
+        }
         let mut food_routes = self.staged_round.as_ref().unwrap().food_routes;
         let mut discovery = false;
         let mut pass = |game: &mut Game| {
@@ -35,7 +41,12 @@ impl HumanSession {
         if civ == self.human {
             self.record_turn_notices(false, pass);
         } else {
-            pass(&mut self.game);
+            let summary = pass(&mut self.game);
+            if let Some(before) = before {
+                if self.keep_city_pass_view(&before, civ, &summary).is_err() {
+                    self.finish_saved_movement();
+                }
+            }
         }
         let staged = self.staged_round.as_mut().unwrap();
         staged.food_routes = food_routes;
@@ -315,5 +326,110 @@ staged-round-test
         assert!(game.saved_move_state.is_none());
         assert!(game.saved_initial.is_none());
         assert_eq!(game.checkpoint(deps), resumed.checkpoint(deps));
+    }
+
+    #[test]
+    fn installed_city_pass_and_production_order_preserve_the_saved_view() {
+        let Some((snapshot, rules, events)) = installed_original() else {
+            return;
+        };
+        let deps = "totengine-scenario-dependencies 1\nsaved-city-view-test\n";
+        let mut game = HumanSession::scenario_initialized_saved_city_view(
+            ScenarioInput {
+                path: "Original/Ph_Auto2.SAV",
+                snapshot: &snapshot,
+                rules: rules.clone(),
+                events: Some(events.clone()),
+            },
+            4,
+            AiPolicy::BuiltIn1,
+            7,
+            deps,
+        )
+        .unwrap();
+        assert_eq!(game.initializer().unwrap().schema(), 5);
+        for slot in [6, 9, 26, 18] {
+            let view = game.view();
+            let unit = *view.units.iter().find(|unit| unit.slot == slot).unwrap();
+            assert_eq!(
+                game.submit(Request {
+                    civ: 4,
+                    revision: view.revision,
+                    id: view.revision + 1,
+                    command: Command::Skip { unit },
+                })
+                .unwrap()
+                .result,
+                Some(OrderResult::Skipped)
+            );
+        }
+        let view = game.view();
+        game.submit(Request {
+            civ: 4,
+            revision: view.revision,
+            id: view.revision + 1,
+            command: Command::EndTurn,
+        })
+        .unwrap();
+        let before = game.view();
+        let before_player_cache = game.game.world.map.known_improvements[3].clone();
+        assert_eq!(before.observation.seen.iter().flatten().count(), 59);
+        assert_eq!(game.game.world.units[34].id, 0);
+        let restore = |text: &str| {
+            HumanSession::restore_with(
+                rules.clone(),
+                deps,
+                text,
+                Some((&snapshot, Some(events.clone()))),
+            )
+            .unwrap()
+        };
+        let handoff = game.checkpoint(deps);
+        let mut visible_birth = restore(&handoff);
+        let tile = visible_birth.game.world.map.stored_index(43, 37).unwrap();
+        // Make this destination known in a control. Keeping the old unit
+        // projection here would hide a birth at a known tile.
+        visible_birth.known_tiles[tile] = before.observation.seen.iter().copied().flatten().next();
+        assert_eq!(visible_birth.advance(1), 1);
+        assert!(visible_birth.saved_move_state.is_none());
+        let mut replay = restore(&handoff);
+        assert_eq!(game.advance(1), 1);
+        assert_eq!(replay.advance(1), 1);
+        assert!(game.saved_move_state.is_some());
+        let created = &game.game.world.units[34];
+        assert_ne!(created.id, 0);
+        assert_eq!((created.owner, created.x, created.y), (5, 43, 37));
+        let after = game.view();
+        assert_eq!(before.observation.seen, after.observation.seen);
+        assert_eq!(before.observation.units, after.observation.units);
+        assert_eq!(
+            game.game.world.map.known_improvements[3],
+            before_player_cache
+        );
+        let checkpoint = game.checkpoint(deps);
+        assert_eq!(replay.checkpoint(deps), checkpoint);
+        let mut replay = restore(&checkpoint);
+        assert_eq!(replay.view(), after);
+        assert_eq!(game.advance(1), 1);
+        assert_eq!(replay.advance(1), 1);
+        assert!(game
+            .game
+            .log()
+            .lines()
+            .last()
+            .unwrap()
+            .contains(" C 5 prod "));
+        assert!(game.saved_move_state.is_some());
+        assert_eq!(game.view().observation.seen, after.observation.seen);
+        assert_eq!(game.checkpoint(deps), replay.checkpoint(deps));
+        for _ in 0..64 {
+            if game.saved_move_state.is_none() {
+                break;
+            }
+            assert_eq!(game.advance(1), 1);
+            assert_eq!(replay.advance(1), 1);
+        }
+        assert!(game.saved_move_state.is_none());
+        assert_eq!(game.checkpoint(deps), replay.checkpoint(deps));
     }
 }

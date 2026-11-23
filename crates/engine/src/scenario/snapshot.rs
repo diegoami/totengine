@@ -265,6 +265,7 @@ pub(crate) fn stage_saved_unit_skip(
     world: &mut crate::WorldState,
     slot: usize,
     keep_native_budget: bool,
+    city_mate: Option<usize>,
 ) -> Result<SaveFile, String> {
     let player = save.player_civ;
     let unit = world
@@ -279,14 +280,22 @@ pub(crate) fn stage_saved_unit_skip(
         .get(slot)
         .filter(|record| (record.id(), record.x(), record.y()) == (unit.id, unit.x, unit.y))
         .ok_or("saved skip world differs from saved unit context")?;
-    if record.stack_prev() != -1
-        || record.stack_next() != -1
+    if (city_mate.is_none() && (record.stack_prev(), record.stack_next()) != (-1, -1))
         || rules.unit_domain(usize::from(record.type_id())) != Some(0)
     {
-        return Err("saved skip requires an unstacked land unit".into());
+        return Err("saved skip requires an awake land unit in a checked stack context".into());
     }
     let budget = keep_native_budget
         .then(|| world.movement_allowance(rules, usize::from(unit.type_id), player, unit.damage));
+    if city_mate.is_some_and(|mate| {
+        budget != Some(3)
+            || unit.moves_left != 3
+            || record.moves_spent() != 0
+            || save.units[mate].type_id() != record.type_id()
+            || save.units[mate].orders() != 255
+    }) {
+        return Err("saved city-stack skip requires the checked three-third budget".into());
+    }
     let result = world.apply_order(
         rules,
         None,
@@ -300,6 +309,9 @@ pub(crate) fn stage_saved_unit_skip(
     // moving-unit stack reset belongs to the relocation path.
     let mut observed = unit_observation_after(save, rules, slot, true)
         .map_err(|error| format!("saved skip observation: {error}"))?;
+    if city_mate.is_some() && observed != *save {
+        return Err("saved city-stack skip changed captured observation".into());
+    }
     if let Some(budget) = budget {
         let raw = &mut observed.units[slot].raw;
         raw[10] = budget

@@ -644,6 +644,7 @@ impl HumanSession {
                     &mut world,
                     unit,
                     checked_replay,
+                    self.saved_city_mate(saved, unit),
                 );
                 (step, OrderResult::Skipped)
             }

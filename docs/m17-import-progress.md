@@ -315,9 +315,11 @@ restarts from the prepared production handoff for each input. Wait
 on either member defers it and activates the other with the same view.
 Northwest movement of either member spends six thirds, detaches it
 from the city pair and leaves 59 explored tiles. It changes the
-destination's remembered improvements. Checked replay stages both
-orders for either member and matches the native map and memory deltas.
-The inspector checks the resulting views and reloads all four cases.
+destination's remembered improvements. Native Skip exhausts either
+actor while leaving the stack linked and knowledge intact. Checked
+replay stages these orders for either member and matches the native
+map and memory deltas. The inspector checks the resulting views and
+reloads all six cases.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

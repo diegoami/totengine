@@ -254,6 +254,14 @@ class GoldenMetadata(unittest.TestCase):
             self.assertEqual(move['tile_byte_changes'], [[2077, 0, 1], [2081, 240, 64]])
             self.assertEqual(move['cache_byte_changes'], [[4, 346, 0, 1]])
             self.assertEqual((wait['explored_tiles'], move['explored_tiles']), (59, 59))
+            skip = case['skip']
+            self.assertEqual(skip['observation_arguments'], [[actor, 1]])
+            self.assertEqual(skip['unit_byte_changes'],
+                             [{'slot': actor, 'byte': 10, 'before': 0, 'after': 3},
+                              {'slot': actor, 'byte': 13, 'before': 0 if actor == head else 5,
+                               'after': 255}])
+            self.assertEqual((skip['tile_byte_changes'], skip['cache_byte_changes'],
+                              skip['explored_tiles']), ([], [], 59))
 
     def test_native_human_city_birth_reaches_input_with_saved_knowledge(self):
         report = json.loads((ROOT / 'docs/evidence/import-human-city-birth.json').read_text())

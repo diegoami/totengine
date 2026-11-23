@@ -328,7 +328,7 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "explored_tiles": 59,
             "engine_unit_slot": 38,
             "focus_cases": 5,
-            "stack_order_cases": 4,
+            "stack_order_cases": 6,
             "native_unit_slot": 22,
             "engine_shields": 0,
             "native_shields": 0,

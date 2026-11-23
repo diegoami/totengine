@@ -522,21 +522,27 @@ cmp docs/evidence/import-human-city-birth.json /tmp/import-human-city-birth.json
 ### Orders from the new human city stack
 
 The [native input probe](evidence/import-human-city-stack-orders.json)
-restarts the paid-production handoff for each of four cases. Wait on
+restarts the paid-production handoff for each of six cases. Wait on
 either member sets its deferred bit and selects the other. Unit
 observation runs with the active-contact argument and leaves map
 knowledge intact. A northwest order on either member detaches it
 for (52, 8), spends six thirds from a full three-third allowance,
 and leaves the other unit in the city. The move keeps 59 explored
-tiles and changes the destination's remembered improvements.
+tiles and changes the destination's remembered improvements. Skip
+spends the actor's full three-third allowance without changing the
+pair's links, positions, or saved map knowledge. The controls supply
+each actor's prior direction from the checked engine state and
+confirm that Skip resets it to 255.
 
-Checked schema-8 replay now accepts both orders in the measured
+Checked schema-8 replay accepts these orders in the measured
 two-unit surface city context. Wait requires a ready partner and
 unchanged staged observation. The northwest step requires a full
 three-third budget, an empty known destination, and a six-third
 movement cost. It leaves the partner in the city and applies saved
-observation after unlinking the pair. The inspector checks both
-orders for both actors and restores their checkpoints.
+observation after unlinking the pair. Skip keeps the pair linked and
+verifies that the staged observation is unchanged before committing
+the actor's spent movement. The inspector checks all six cases and
+restores their checkpoints.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_human_city_birth_check.py --orders --out /tmp/import-human-city-stack-orders.json

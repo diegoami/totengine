@@ -895,6 +895,31 @@ staged-round-test
                 assert_eq!(reloaded.checkpoint(deps), deferred);
                 assert_eq!(reloaded.view(), wait.view());
 
+                let mut skip = restore(&checkpoint);
+                assert_eq!(
+                    submit(&mut skip, Command::Skip { unit: actor }).result,
+                    Some(OrderResult::Skipped)
+                );
+                assert_eq!(skip.saved_order_focus(), Some(mate));
+                assert_eq!(skip.view().observation.seen, after.observation.seen);
+                let saved = skip.saved_move_state.as_ref().unwrap();
+                let original = session.saved_move_state.as_ref().unwrap();
+                assert_eq!(&saved.maps[0], map);
+                assert_eq!(saved.units[mate.slot], original.units[mate.slot]);
+                assert_eq!(
+                    differences(
+                        &original.units[actor.slot].raw,
+                        &saved.units[actor.slot].raw
+                    ),
+                    [(10, 0, 3), (13, if actor.slot == 26 { 5 } else { 0 }, 255)]
+                );
+                assert_eq!(skip.game.world.units[actor.slot].moves_left, 0);
+                let skipped = skip.checkpoint(deps);
+                let reloaded = restore(&skipped);
+                assert_eq!(reloaded.saved_order_focus(), Some(mate));
+                assert_eq!(reloaded.checkpoint(deps), skipped);
+                assert_eq!(reloaded.view(), skip.view());
+
                 let mut moved = restore(&checkpoint);
                 assert!(moved
                     .submit(Request {

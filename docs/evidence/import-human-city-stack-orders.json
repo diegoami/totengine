@@ -208,6 +208,72 @@
             "result": 0
           }
         ]
+      },
+      "skip": {
+        "entry": "0040f592",
+        "input_code": 32,
+        "handlers": [
+          "00547530"
+        ],
+        "move_arguments": [],
+        "observation_arguments": [
+          [
+            22,
+            1
+          ]
+        ],
+        "before": {
+          "active_slot": 22,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "active_slot": 22,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "unit_position_before": [
+          53,
+          9
+        ],
+        "unit_position_after": [
+          53,
+          9
+        ],
+        "active_unit_type_allowance": 3,
+        "unit_byte_changes": [
+          {
+            "slot": 22,
+            "byte": 10,
+            "before": 0,
+            "after": 3
+          },
+          {
+            "slot": 22,
+            "byte": 13,
+            "before": 0,
+            "after": 255
+          }
+        ],
+        "civ_city_bytes_unchanged": true,
+        "tile_byte_changes": [],
+        "cache_byte_changes": [],
+        "explored_tiles": 59,
+        "presentation_substitutes": [
+          "00467c89"
+        ],
+        "host_substitutes": [
+          {
+            "import": "PeekMessageA",
+            "filter": [
+              957,
+              957
+            ],
+            "result": 0
+          }
+        ]
       }
     },
     "26": {
@@ -408,8 +474,74 @@
             "result": 0
           }
         ]
+      },
+      "skip": {
+        "entry": "0040f592",
+        "input_code": 32,
+        "handlers": [
+          "00547530"
+        ],
+        "move_arguments": [],
+        "observation_arguments": [
+          [
+            26,
+            1
+          ]
+        ],
+        "before": {
+          "active_slot": 26,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "active_slot": 26,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "unit_position_before": [
+          53,
+          9
+        ],
+        "unit_position_after": [
+          53,
+          9
+        ],
+        "active_unit_type_allowance": 3,
+        "unit_byte_changes": [
+          {
+            "slot": 26,
+            "byte": 10,
+            "before": 0,
+            "after": 3
+          },
+          {
+            "slot": 26,
+            "byte": 13,
+            "before": 5,
+            "after": 255
+          }
+        ],
+        "civ_city_bytes_unchanged": true,
+        "tile_byte_changes": [],
+        "cache_byte_changes": [],
+        "explored_tiles": 59,
+        "presentation_substitutes": [
+          "00467c89"
+        ],
+        "host_substitutes": [
+          {
+            "import": "PeekMessageA",
+            "filter": [
+              957,
+              957
+            ],
+            "result": 0
+          }
+        ]
       }
     }
   },
-  "scope": "Prepare the paid human city production and reach the first input poll. Select the head or tail of the new city stack explicitly, then execute Wait or northwest movement through the existing prepared input probe."
+  "scope": "Prepare the paid human city production and reach the first input poll. Select the head or tail of the new city stack explicitly, then execute Wait, Skip or northwest movement through the existing prepared input probe. Set each Skip actor's prior direction to the corresponding checked engine value."
 }

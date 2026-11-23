@@ -801,6 +801,7 @@ fn check_human_stack_orders(
         let case = &cases[native.to_string()];
         let wait = &case["wait"];
         let movement = &case["move_northwest"];
+        let skip = &case["skip"];
         let to: (u16, u16) = serde_json::from_value(movement["unit_position_after"].clone())
             .map_err(|error| format!("invalid prepared stack move destination: {error}"))?;
         if json!(native_mate) != wait["after"]["active_slot"] {
@@ -808,6 +809,7 @@ fn check_human_stack_orders(
         }
         for (command, result, trace) in [
             (Command::Wait { unit: actor }, OrderResult::Waited, wait),
+            (Command::Skip { unit: actor }, OrderResult::Skipped, skip),
             (
                 Command::Move { unit: actor, to },
                 OrderResult::Moved,
@@ -833,6 +835,17 @@ fn check_human_stack_orders(
                     session.saved_order_focus().is_some_and(|e| e.slot == mate)
                         && after.observation.seen == before.observation.seen
                         && after.observation.units == before.observation.units
+                }
+                Command::Skip { .. } => {
+                    let mut units = before.observation.units.clone();
+                    units
+                        .iter_mut()
+                        .find(|u| u.index == slot)
+                        .ok_or("the ready city-stack unit is absent")?
+                        .moves_left = 0;
+                    session.saved_order_focus().is_some_and(|e| e.slot == mate)
+                        && after.observation.seen == before.observation.seen
+                        && after.observation.units == units
                 }
                 _ => {
                     (actor_view.x, actor_view.y, actor_view.moves_left) == (to.0, to.1, 0)

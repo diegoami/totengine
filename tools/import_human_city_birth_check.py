@@ -29,7 +29,8 @@ REDRAW = 0x467C89
 ORDER_SCOPE = (
     "Prepare the paid human city production and reach the first input poll. "
     "Select the head or tail of the new city stack explicitly, then execute "
-    "Wait or northwest movement through the existing prepared input probe."
+    "Wait, Skip or northwest movement through the existing prepared input probe. "
+    "Set each Skip actor's prior direction to the corresponding checked engine value."
 )
 
 
@@ -150,9 +151,11 @@ def city_pass(original, viewer, city_region, worker, purchase, stored, command):
     assert known_before == known_poll and memory_before == memory_poll
     assert handoff['active_slot'] == 18 and sum(known_poll) == 59
     if command is not None:
-        actor, key = command
+        actor, key, prior_direction = command
         assert actor in focus['original_stack']
         original.write(0x60764E, actor, '<h')
+        if prior_direction is not None:
+            original.write(UNIT_TABLE + actor * 40 + 13, prior_direction, '<B')
         regions = [(CIV, STRIDE * 8), (UNIT_TABLE, count * 40), city_region]
         return first_order(original, viewer, regions, key, return_address=0x100040)
 
@@ -174,7 +177,7 @@ def city_pass(original, viewer, city_region, worker, purchase, stored, command):
 def stack_orders(prepared_birth, paid):
     cases = {}
     for actor, other in [(22, 26), (26, 22)]:
-        wait = prepared_birth(paid, (actor, ord('w')))
+        wait = prepared_birth(paid, (actor, ord('w'), None))
         assert wait['before']['active_slot'] == actor and wait['after']['active_slot'] == other
         assert wait['observation_arguments'] == [[other, 1]]
         assert wait['unit_position_after'] == wait['unit_position_before'] == (53, 9)
@@ -183,7 +186,7 @@ def stack_orders(prepared_birth, paid):
         assert change['slot'] == actor and change['byte'] == 7
         assert change['after'] == change['before'] | 64
 
-        move = prepared_birth(paid, (actor, NORTHWEST))
+        move = prepared_birth(paid, (actor, NORTHWEST, None))
         assert move['before']['active_slot'] == actor
         assert move['move_arguments'] == [[actor, 6, 3]]
         assert move['observation_arguments'] == [[actor, 1]]
@@ -195,15 +198,25 @@ def stack_orders(prepared_birth, paid):
             assert all({'slot': slot, 'byte': offset + i, 'before': value, 'after': 255}
                        in move['unit_byte_changes']
                        for i, value in enumerate((26 if slot == 22 else 22, 0)))
-        assert wait['explored_tiles'] == move['explored_tiles'] == 59
-        cases[str(actor)] = {'wait': wait, 'move_northwest': move}
+        direction = 0 if actor == 22 else 5
+        skip = prepared_birth(paid, (actor, ord(' '), direction))
+        assert skip['before']['active_slot'] == actor
+        assert skip['unit_position_before'] == skip['unit_position_after'] == (53, 9)
+        assert skip['observation_arguments'] == [[actor, 1]]
+        assert skip['tile_byte_changes'] == skip['cache_byte_changes'] == []
+        assert skip['unit_byte_changes'] == [
+            {'slot': actor, 'byte': 10, 'before': 0, 'after': 3},
+            {'slot': actor, 'byte': 13, 'before': direction, 'after': 255},
+        ]
+        assert wait['explored_tiles'] == move['explored_tiles'] == skip['explored_tiles'] == 59
+        cases[str(actor)] = {'wait': wait, 'move_northwest': move, 'skip': skip}
     return cases
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
-    parser.add_argument('--orders', action='store_true', help='Record Wait and movement after production')
+    parser.add_argument('--orders', action='store_true', help='Record Wait, movement and Skip after production')
     args = parser.parse_args()
     evidence = Path(__file__).resolve().parent.parent / 'docs/evidence'
     purchase = json.loads((evidence / 'import-saved-purchase.json').read_text())

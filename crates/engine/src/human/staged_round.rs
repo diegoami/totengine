@@ -792,5 +792,54 @@ staged-round-test
         assert_eq!(game.game.world.units[24].moves_left, 2);
         assert_eq!(game.view().observation.seen, initial.observation.seen);
         assert_eq!(game.checkpoint(deps), replay.checkpoint(deps));
+        let before_partial_move = game.checkpoint(deps);
+        let order = Order::Move {
+            unit: 24,
+            to: (10, 44),
+        };
+        for (seed, crt_after, outcome, position, spent) in [
+            (0, 0x00269ec3, OrderResult::MovementExhausted, (9, 45), 3),
+            (1, 0x0029e2c0, OrderResult::MovementExhausted, (9, 45), 3),
+            (3, 0x00306aba, OrderResult::Moved, (10, 44), 7),
+            (7, 0x003d7aae, OrderResult::Moved, (10, 44), 7),
+        ] {
+            let mut control = restore(&before_partial_move);
+            control.game.world.combat_rng = crate::combat::CrtRand::new(seed);
+            assert_eq!(control.try_saved_opponent_move(7, order), Some(outcome));
+            assert_eq!(control.game.world.combat_rng.state(), crt_after);
+            assert_eq!(control.game.world.combat_rng.draws(), 1);
+            let unit = &control.game.world.units[24];
+            assert_eq!((unit.x, unit.y), position);
+            assert_eq!(unit.moves_left, 0);
+            let saved = control.saved_move_state.as_ref().unwrap();
+            assert_eq!(saved.units[24].raw[10], spent);
+            assert_eq!(
+                saved.units[24].stack_next(),
+                if position == (9, 45) { 4 } else { -1 }
+            );
+            assert_eq!(control.view().observation.seen, initial.observation.seen);
+        }
+
+        let draws = game.game.world.combat_rng.draws();
+        assert_eq!(game.advance(1), 1);
+        assert!(game
+            .game
+            .log()
+            .lines()
+            .last()
+            .unwrap()
+            .contains(" C 7 move 24 10 44 = movement exhausted"));
+        assert_eq!(game.game.world.combat_rng.state(), 0x23e1f21d);
+        assert_eq!(game.game.world.combat_rng.draws(), draws + 1);
+        assert_eq!(game.game.world.units[24].moves_left, 0);
+        let saved = game.saved_move_state.as_ref().unwrap();
+        assert_eq!((saved.units[24].x(), saved.units[24].y()), (9, 45));
+        assert_eq!(saved.units[24].stack_next(), 4);
+        assert_eq!(saved.units[24].raw[10], 3);
+        assert_eq!(game.view().observation.seen, initial.observation.seen);
+        let after_partial_move = game.checkpoint(deps);
+        assert_eq!(replay.advance(1), 1);
+        assert_eq!(replay.checkpoint(deps), after_partial_move);
+        assert_eq!(restore(&after_partial_move).view(), game.view());
     }
 }

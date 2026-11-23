@@ -116,6 +116,23 @@ def execute(original, viewer, city, rules, seed):
     }
 
 
+def partial_movement(original, viewer, seed):
+    if seed is not None:
+        original.write(CRT, seed, '<I')
+    before = read(original, CRT, '<I')
+    after = (214013 * before + 2531011) & 0xffffffff
+    roll = ((after >> 16) & 0x7fff) % 6
+    moved = roll < 2
+    position = (10, 44) if moved else (9, 45)
+    links = ((-1, -1), (-1, -1)) if moved else ((-1, 4), (24, -1))
+    step = move_opponent(original, viewer, (24, 0, 3), (24, 4), (9, 45), position, links)
+    assert read(original, CRT, '<I') == after and step['explored_tiles'] == 59
+    assert step['before'][0]['spent'] == 1
+    assert step['after'][0]['spent'] == (7 if moved else 3)
+    return {**step, 'destination': [10, 44], 'moved': moved, 'roll': roll,
+            'crt_before': before, 'crt_after': after}
+
+
 def set_route(original, x, y, flags):
     width = read(original, 0x6705A0, '<h') // 2
     address = TILES + 6 * (y * width + x // 2) + 1
@@ -136,7 +153,7 @@ def main():
         assert hashlib.sha256((home / source['path']).read_bytes()).hexdigest() == source['sha256']
     rules = parse_rules(str(home / evidence['rules']['path']))
 
-    def run_case(seed, field_routes=None, city_control=None, departure_control=None):
+    def run_case(seed, field_routes=None, city_control=None, departure_control=None, partial_seed=None):
         def entry(original, player, city):
             nonlocal result
             result = execute(original, player, city, rules, seed)
@@ -176,6 +193,8 @@ def main():
                 result['following_city_departure'] = move_opponent(
                     original, player, (24, 0, 3), (24, 7, 4), (8, 46), (9, 45), links,
                 )
+                if departure_control is None:
+                    result['following_partial_move'] = partial_movement(original, player, partial_seed)
 
         def prepared(original, player, regions):
             trace(original, player, regions, clear_preference_bit=False, skip_selected=True,
@@ -215,9 +234,13 @@ def main():
         assert mover['spent'] == spent and departure['explored_tiles'] == 59
         departures.append({'attack': attack, 'destination_flags': flags, 'spent': spent,
                            'mover_previous': mover['previous'], 'mover_next': mover['next']})
+    assert cases['7']['following_partial_move']['roll'] == 5
+    partial_controls = {str(seed): run_case(7, partial_seed=seed)['following_partial_move']
+                        for seed in (0, 1, 3, 7)}
+    assert [case['roll'] for case in partial_controls.values()] == [2, 5, 0, 1]
     report = {'schema': 1, **{key: evidence[key] for key in ('binary_sha256', 'source', 'rules')},
               'cases': cases, 'route_controls': controls, 'city_arrival_controls': city_controls,
-              'city_departure_controls': departures, 'scope': __doc__.strip()}
+              'city_departure_controls': departures, 'partial_movement_controls': partial_controls, 'scope': __doc__.strip()}
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')
 

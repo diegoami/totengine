@@ -178,6 +178,18 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(arrival['explored_tiles'], 59)
         self.assertEqual(arrival['after'][0]['spent'], 1)
         self.assertEqual([unit['next'] for unit in arrival['after']], [24, -1, -1])
+        partial = report['cases']['7']['following_partial_move']
+        self.assertEqual(partial['crt_before'], 0x0a14e6e2)
+        self.assertEqual(partial['crt_after'], 0x23e1f21d)
+        self.assertEqual(partial['roll'], 5)
+        self.assertFalse(partial['moved'])
+        self.assertEqual(partial['after'][0]['position'], [9, 45])
+        self.assertEqual(partial['after'][0]['spent'], 3)
+        self.assertEqual(
+            [(case['roll'], case['moved'], case['after'][0]['spent'])
+             for case in report['partial_movement_controls'].values()],
+            [(2, False, 3), (5, False, 3), (0, True, 7), (1, True, 7)],
+        )
         departure = report['cases']['7']['following_city_departure']
         self.assertEqual(departure['explored_tiles'], 59)
         self.assertEqual(departure['after'][0]['spent'], 1)

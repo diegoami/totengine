@@ -137,6 +137,8 @@ pub enum Order {
 pub enum OrderResult {
     CitizensSet,
     Moved,
+    /// A staged move spent the remaining movement without changing tiles.
+    MovementExhausted,
     /// The move was an attack; `won` = the attacker won.
     Attacked {
         won: bool,
@@ -197,6 +199,7 @@ impl fmt::Display for OrderResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             OrderResult::Moved => write!(f, "moved"),
+            OrderResult::MovementExhausted => write!(f, "movement exhausted"),
             OrderResult::Attacked { won } => {
                 write!(f, "attack {}", if *won { "won" } else { "lost" })
             }

@@ -288,7 +288,7 @@ impl HumanSession {
             .ok()?;
             (observed, OrderResult::Attacked { won: true })
         } else {
-            let observed = crate::scenario::opponent_stack::stage(
+            crate::scenario::opponent_stack::stage(
                 saved,
                 &self.game.rules,
                 &mut world,
@@ -297,8 +297,7 @@ impl HumanSession {
                 to,
                 self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1,
             )
-            .ok()?;
-            (observed, OrderResult::Moved)
+            .ok()?
         };
         let after = SavedMapKnowledge::read(&observed, self.human).ok()?;
         let area = saved.map_header.surface();

@@ -306,6 +306,17 @@ the city and back to the field stack. It spends one third, leaves slot 7
 alone in the city, and inserts slot 24 before slot 4. Three controls
 verify terrain, road and rail costs and the ordering of an unarmed mover
 on departure. This step also preserves the 59-tile view and replays.
+
+With two thirds left, slot 24 then attempts to move from the field
+stack into an empty forest costing six thirds. In this checked context,
+a unit that has spent movement rolls the native CRT against the cost
+when the cost exceeds the remaining allowance. A roll below two moves
+the unit and the native record adds all six thirds. A roll of two or
+more exhausts the unit in place. The pinned sequence draws five,
+leaves the stack links intact, and replays the updated combat CRT state.
+Four prepared seeds also exercise the cutoff and the two possible
+positions without changing the saved view. The engine uses its
+checkpointed CRT for this guarded operation.
 Native opponent policy, macro dispatch and broader combat contexts remain
 outside these controlled actions.
 

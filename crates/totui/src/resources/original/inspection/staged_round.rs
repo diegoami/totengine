@@ -426,13 +426,15 @@ pub(super) fn check_saved_opponent_combat(
         ("field stack", "following_field_stack"),
         ("city arrival", "following_city_arrival"),
         ("city departure", "following_city_departure"),
+        ("partial move", "following_partial_move"),
     ] {
         let step = &native[key];
         let mover = step["after"]
             .as_array()
             .and_then(|units| units.first())
             .ok_or_else(|| format!("prepared {label} mover missing"))?;
-        let (x, y): (u16, u16) = serde_json::from_value(mover["position"].clone())
+        let destination = step.get("destination").unwrap_or(&mover["position"]);
+        let (x, y): (u16, u16) = serde_json::from_value(destination.clone())
             .map_err(|error| format!("invalid prepared {label} position: {error}"))?;
         let slot = mover["slot"]
             .as_u64()
@@ -440,11 +442,24 @@ pub(super) fn check_saved_opponent_combat(
         let civ = mover["owner"]
             .as_u64()
             .ok_or_else(|| format!("prepared {label} owner missing"))?;
+        let outcome = if step["moved"] == false {
+            "movement exhausted"
+        } else {
+            "moved"
+        };
         let order = format!(
-            "T {} C {civ} move {slot} {x} {y} = moved\n",
+            "T {} C {civ} move {slot} {x} {y} = {outcome}\n",
             initial.observation.turn
         );
         let (prior, after) = reach_opponent_order(&mut session, resources, &order)?;
+        if let Some(crt) = step["crt_after"].as_u64() {
+            let recorded = checkpoint_line(&after, "rng ")?.split_whitespace().nth(3);
+            if recorded != Some(format!("{crt:08x}").as_str()) {
+                return Err(format!(
+                    "the checked {label} diverged from the prepared CRT state"
+                ));
+            }
+        }
         let view = session.view();
         if view.observation.seen != initial.observation.seen
             || json!(view.observation.seen.iter().flatten().count()) != step["explored_tiles"]
@@ -465,7 +480,8 @@ pub(super) fn check_saved_opponent_combat(
         "verified": true, "initializer_schema": 7,
         "profile": engine::human::ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE,
         "explored_tiles": explored, "combat_rng_matches": true, "field_stack_replays": true,
-        "city_arrival_replays": true, "city_departure_replays": true, "checkpoint_replays": true,
+        "city_arrival_replays": true, "city_departure_replays": true,
+        "partial_movement_replays": true, "checkpoint_replays": true,
     }))
 }
 

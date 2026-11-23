@@ -403,6 +403,76 @@
           "00577011",
           "00467d19"
         ]
+      },
+      "following_partial_move": {
+        "entry": "0054c69b",
+        "arguments": [
+          24,
+          0,
+          3
+        ],
+        "return": 1,
+        "explored_tiles": 59,
+        "viewer_memory_changed": false,
+        "before": [
+          {
+            "slot": 24,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 1,
+            "previous": -1,
+            "next": 4
+          },
+          {
+            "slot": 4,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 6,
+            "previous": 24,
+            "next": -1
+          }
+        ],
+        "after": [
+          {
+            "slot": 24,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 3,
+            "previous": -1,
+            "next": 4
+          },
+          {
+            "slot": 4,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 6,
+            "previous": 24,
+            "next": -1
+          }
+        ],
+        "substitutes": [
+          "00577011"
+        ],
+        "destination": [
+          10,
+          44
+        ],
+        "moved": false,
+        "roll": 5,
+        "crt_before": 169141986,
+        "crt_after": 602010141
       }
     },
     "1": {
@@ -618,5 +688,289 @@
       "mover_next": 4
     }
   ],
+  "partial_movement_controls": {
+    "0": {
+      "entry": "0054c69b",
+      "arguments": [
+        24,
+        0,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 24,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 1,
+          "previous": -1,
+          "next": 4
+        },
+        {
+          "slot": 4,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 6,
+          "previous": 24,
+          "next": -1
+        }
+      ],
+      "after": [
+        {
+          "slot": 24,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 3,
+          "previous": -1,
+          "next": 4
+        },
+        {
+          "slot": 4,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 6,
+          "previous": 24,
+          "next": -1
+        }
+      ],
+      "substitutes": [
+        "00577011"
+      ],
+      "destination": [
+        10,
+        44
+      ],
+      "moved": false,
+      "roll": 2,
+      "crt_before": 0,
+      "crt_after": 2531011
+    },
+    "1": {
+      "entry": "0054c69b",
+      "arguments": [
+        24,
+        0,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 24,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 1,
+          "previous": -1,
+          "next": 4
+        },
+        {
+          "slot": 4,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 6,
+          "previous": 24,
+          "next": -1
+        }
+      ],
+      "after": [
+        {
+          "slot": 24,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 3,
+          "previous": -1,
+          "next": 4
+        },
+        {
+          "slot": 4,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 6,
+          "previous": 24,
+          "next": -1
+        }
+      ],
+      "substitutes": [
+        "00577011"
+      ],
+      "destination": [
+        10,
+        44
+      ],
+      "moved": false,
+      "roll": 5,
+      "crt_before": 1,
+      "crt_after": 2745024
+    },
+    "3": {
+      "entry": "0054c69b",
+      "arguments": [
+        24,
+        0,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 24,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 1,
+          "previous": -1,
+          "next": 4
+        },
+        {
+          "slot": 4,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 6,
+          "previous": 24,
+          "next": -1
+        }
+      ],
+      "after": [
+        {
+          "slot": 24,
+          "position": [
+            10,
+            44
+          ],
+          "owner": 7,
+          "spent": 7,
+          "previous": -1,
+          "next": -1
+        },
+        {
+          "slot": 4,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 6,
+          "previous": -1,
+          "next": -1
+        }
+      ],
+      "substitutes": [
+        "00577011",
+        "00467d19"
+      ],
+      "destination": [
+        10,
+        44
+      ],
+      "moved": true,
+      "roll": 0,
+      "crt_before": 3,
+      "crt_after": 3173050
+    },
+    "7": {
+      "entry": "0054c69b",
+      "arguments": [
+        24,
+        0,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 24,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 1,
+          "previous": -1,
+          "next": 4
+        },
+        {
+          "slot": 4,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 6,
+          "previous": 24,
+          "next": -1
+        }
+      ],
+      "after": [
+        {
+          "slot": 24,
+          "position": [
+            10,
+            44
+          ],
+          "owner": 7,
+          "spent": 7,
+          "previous": -1,
+          "next": -1
+        },
+        {
+          "slot": 4,
+          "position": [
+            9,
+            45
+          ],
+          "owner": 7,
+          "spent": 6,
+          "previous": -1,
+          "next": -1
+        }
+      ],
+      "substitutes": [
+        "00577011",
+        "00467d19"
+      ],
+      "destination": [
+        10,
+        44
+      ],
+      "moved": true,
+      "roll": 1,
+      "crt_before": 7,
+      "crt_after": 4029102
+    }
+  },
   "scope": "Execute a controlled native battle after the three unseen opponent moves.\n\nThe native Rules refresh loads the combat tables before the battle. Each\ncontrol supplies an explicit CRT seed and the engine's spatial order.\nThe seed-7 control then crosses between a field stack and a friendly city.\nWindows timing and presentation are substituted. Native opponent policy,\nlive input, and macro dispatch are outside this witness."
 }

@@ -192,7 +192,11 @@ ahead of slot 24, and retains the 59-tile human view in both native and
 engine replay. Controls vary the Warrior's attack and the two route
 flags. The next Warrior leaves the city for the field stack and leads
 its stack there. The replay matches the one-third cost and keeps 59
-tiles. Broader combat and pending choices remain open.
+tiles. The Warrior's following attempt to enter a forest rolls against
+the two movement thirds left. The pinned sequence exhausts the Warrior
+in place, preserves the field stack and view, and replays its CRT state.
+Controlled native and engine seeds check both outcomes. Broader combat
+and pending choices remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

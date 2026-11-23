@@ -1,5 +1,6 @@
 //! Scoped opponent movement between unseen land and friendly city stacks.
 use crate::movement::MovementRoute;
+use crate::player::OrderResult;
 use crate::saved_knowledge::{clear_unit_stack_visibility, unit_observation_after};
 use crate::WorldState;
 use std::collections::BTreeSet;
@@ -96,7 +97,7 @@ pub(crate) fn stage(
     slot: usize,
     to: (u16, u16),
     field_stack: bool,
-) -> Result<SaveFile, String> {
+) -> Result<(SaveFile, OrderResult), String> {
     let unit = world
         .units
         .get(slot)
@@ -143,9 +144,14 @@ pub(crate) fn stage(
         && members.len() == 1
         && (origin_city.is_none() && friendly_city(city)
             || friendly_city(origin_city) && city.is_none());
+    let field_departure = field_stack
+        && source.len() == 2
+        && members.is_empty()
+        && origin_city.is_none()
+        && city.is_none();
     let city_to_empty = friendly_city(origin_city) && members.is_empty();
     if source.len() > 1
-        && (!(city_transfer || city_to_empty)
+        && (!(city_transfer || city_to_empty || field_departure)
             || source.iter().any(|&s| {
                 world.units[s].owner != civ
                     || saved.units.get(s).is_none_or(|u| u.visibility() != 0)
@@ -167,7 +173,6 @@ pub(crate) fn stage(
     if world.map.hut_at(to.0, to.1) {
         return Err("saved stack move cannot enter a hut".into());
     }
-    let mut updated = clear_unit_stack_visibility(saved, slot)?;
     let field_to_field =
         field_stack && !members.is_empty() && city.is_none() && origin_city.is_none();
     let attack = rules.unit_attack(usize::from(unit.type_id));
@@ -182,14 +187,34 @@ pub(crate) fn stage(
             rail: world.map.rail[field],
         })
     } else {
-        field_to_field.then(|| MovementRoute {
+        (field_to_field || field_departure).then(|| MovementRoute {
             road: world.map.road[from] && world.map.road[dest],
             rail: world.map.rail[from] && world.map.rail[dest],
         })
     };
-    let result = world.move_unit_with_routes(rules, slot, to.0, to.1, route);
-    if !result.moved || result.battle.is_some() || result.hut || result.zoc_ended {
+    let spent = field_departure.then(|| {
+        world
+            .movement_allowance(rules, usize::from(unit.type_id), civ, unit.damage)
+            .saturating_sub(unit.moves_left)
+    });
+    let result = world.move_unit_with_routes(rules, slot, to.0, to.1, route, field_departure);
+    if result.battle.is_some() || result.hut || result.zoc_ended {
         return Err("saved stack move did not resolve as ordinary movement".into());
+    }
+    let mut updated = if result.moved {
+        clear_unit_stack_visibility(saved, slot)?
+    } else if field_departure && result.cost_thirds > 0 {
+        saved.clone()
+    } else {
+        return Err("saved stack move was refused".into());
+    };
+    if let Some(spent) = spent {
+        updated.units[slot].raw[10] = (spent + result.cost_thirds)
+            .try_into()
+            .map_err(|_| "saved movement expenditure out of range")?;
+    }
+    if !result.moved {
+        return Ok((updated, OrderResult::MovementExhausted));
     }
     if city_transfer && attack.is_some_and(|value| value != 0) {
         members.insert(0, slot);
@@ -220,5 +245,5 @@ pub(crate) fn stage(
     let observed = unit_observation_after(&updated, rules, slot, true)
         .map_err(|error| format!("saved opponent stack observation: {error}"))?;
     super::snapshot::apply_saved_observation(world, &observed);
-    Ok(observed)
+    Ok((observed, OrderResult::Moved))
 }

@@ -318,6 +318,91 @@
           "00577011",
           "00467d19"
         ]
+      },
+      "following_city_departure": {
+        "entry": "0054c69b",
+        "arguments": [
+          24,
+          0,
+          3
+        ],
+        "return": 1,
+        "explored_tiles": 59,
+        "viewer_memory_changed": false,
+        "before": [
+          {
+            "slot": 24,
+            "position": [
+              8,
+              46
+            ],
+            "owner": 7,
+            "spent": 0,
+            "previous": 7,
+            "next": -1
+          },
+          {
+            "slot": 7,
+            "position": [
+              8,
+              46
+            ],
+            "owner": 7,
+            "spent": 1,
+            "previous": -1,
+            "next": 24
+          },
+          {
+            "slot": 4,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 6,
+            "previous": -1,
+            "next": -1
+          }
+        ],
+        "after": [
+          {
+            "slot": 24,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 1,
+            "previous": -1,
+            "next": 4
+          },
+          {
+            "slot": 7,
+            "position": [
+              8,
+              46
+            ],
+            "owner": 7,
+            "spent": 1,
+            "previous": -1,
+            "next": -1
+          },
+          {
+            "slot": 4,
+            "position": [
+              9,
+              45
+            ],
+            "owner": 7,
+            "spent": 6,
+            "previous": 24,
+            "next": -1
+          }
+        ],
+        "substitutes": [
+          "00577011",
+          "00467d19"
+        ]
       }
     },
     "1": {
@@ -510,5 +595,28 @@
       "mover_next": 24
     }
   ],
-  "scope": "Execute a controlled native battle after the three unseen opponent moves.\n\nThe native Rules refresh loads the combat tables before the battle. Each\ncontrol supplies an explicit CRT seed and the engine's spatial order.\nThe seed-7 control then continues through a field stack and a city arrival.\nWindows timing and presentation are substituted. Native opponent policy,\nlive input, and macro dispatch are outside this witness."
+  "city_departure_controls": [
+    {
+      "attack": 0,
+      "destination_flags": 16,
+      "spent": 1,
+      "mover_previous": 4,
+      "mover_next": -1
+    },
+    {
+      "attack": 1,
+      "destination_flags": 0,
+      "spent": 6,
+      "mover_previous": -1,
+      "mover_next": 4
+    },
+    {
+      "attack": 1,
+      "destination_flags": 48,
+      "spent": 0,
+      "mover_previous": -1,
+      "mover_next": 4
+    }
+  ],
+  "scope": "Execute a controlled native battle after the three unseen opponent moves.\n\nThe native Rules refresh loads the combat tables before the battle. Each\ncontrol supplies an explicit CRT seed and the engine's spatial order.\nThe seed-7 control then crosses between a field stack and a friendly city.\nWindows timing and presentation are substituted. Native opponent policy,\nlive input, and macro dispatch are outside this witness."
 }

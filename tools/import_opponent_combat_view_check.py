@@ -3,7 +3,7 @@
 
 The native Rules refresh loads the combat tables before the battle. Each
 control supplies an explicit CRT seed and the engine's spatial order.
-The seed-7 control then continues through a field stack and a city arrival.
+The seed-7 control then crosses between a field stack and a friendly city.
 Windows timing and presentation are substituted. Native opponent policy,
 live input, and macro dispatch are outside this witness.
 """
@@ -136,7 +136,7 @@ def main():
         assert hashlib.sha256((home / source['path']).read_bytes()).hexdigest() == source['sha256']
     rules = parse_rules(str(home / evidence['rules']['path']))
 
-    def run_case(seed, field_routes=None, city_control=None):
+    def run_case(seed, field_routes=None, city_control=None, departure_control=None):
         def entry(original, player, city):
             nonlocal result
             result = execute(original, player, city, rules, seed)
@@ -148,7 +148,7 @@ def main():
             stack = move_opponent(original, player, (4, 5, 3), (4, 7), (11, 45), (9, 45),
                                   ((7, -1), (-1, 4)))
             result['following_field_stack'] = stack
-            if field_routes is None and city_control is None:
+            if field_routes is None and city_control is None and departure_control is None:
                 refused = move_opponent(original, player, (4, 3, 3), (4, 7), (9, 45), (9, 45),
                                         ((7, -1), (-1, 4)), expected_return=0)
                 assert refused['after'] == stack['after'] and refused['after'][0]['spent'] == 6
@@ -164,6 +164,17 @@ def main():
                 links = ((-1, 24), (-1, -1), (7, -1)) if attack else ((24, -1), (-1, -1), (-1, 7))
                 result['following_city_arrival'] = move_opponent(
                     original, player, (7, 4, 3), (7, 4, 24), (9, 45), (8, 46), links,
+                )
+            if field_routes is None and city_control is None:
+                if departure_control is None:
+                    attack = 1
+                else:
+                    attack, flags = departure_control
+                    set_route(original, 9, 45, flags)
+                    original.write(0x5F470C + 40 * 2, attack, '<B')  # Warrior attack
+                links = ((-1, 4), (-1, -1), (24, -1)) if attack else ((4, -1), (-1, -1), (-1, 24))
+                result['following_city_departure'] = move_opponent(
+                    original, player, (24, 0, 3), (24, 7, 4), (8, 46), (9, 45), links,
                 )
 
         def prepared(original, player, regions):
@@ -196,9 +207,17 @@ def main():
         assert mover['spent'] == spent and arrival['explored_tiles'] == 59
         city_controls.append({'attack': attack, 'origin_flags': origin, 'destination_flags': destination,
                               'spent': spent, 'mover_previous': mover['previous'], 'mover_next': mover['next']})
+    assert cases['7']['following_city_departure']['after'][0]['spent'] == 1
+    departures = []
+    for attack, flags, spent in [(0, 16, 1), (1, 0, 6), (1, 48, 0)]:
+        departure = run_case(7, departure_control=(attack, flags))['following_city_departure']
+        mover = departure['after'][0]
+        assert mover['spent'] == spent and departure['explored_tiles'] == 59
+        departures.append({'attack': attack, 'destination_flags': flags, 'spent': spent,
+                           'mover_previous': mover['previous'], 'mover_next': mover['next']})
     report = {'schema': 1, **{key: evidence[key] for key in ('binary_sha256', 'source', 'rules')},
               'cases': cases, 'route_controls': controls, 'city_arrival_controls': city_controls,
-              'scope': __doc__.strip()}
+              'city_departure_controls': departures, 'scope': __doc__.strip()}
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')
 

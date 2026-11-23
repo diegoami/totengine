@@ -425,6 +425,7 @@ pub(super) fn check_saved_opponent_combat(
     for (label, key) in [
         ("field stack", "following_field_stack"),
         ("city arrival", "following_city_arrival"),
+        ("city departure", "following_city_departure"),
     ] {
         let step = &native[key];
         let mover = step["after"]
@@ -464,7 +465,7 @@ pub(super) fn check_saved_opponent_combat(
         "verified": true, "initializer_schema": 7,
         "profile": engine::human::ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE,
         "explored_tiles": explored, "combat_rng_matches": true, "field_stack_replays": true,
-        "city_arrival_replays": true, "checkpoint_replays": true,
+        "city_arrival_replays": true, "city_departure_replays": true, "checkpoint_replays": true,
     }))
 }
 

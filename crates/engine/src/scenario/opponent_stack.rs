@@ -138,14 +138,14 @@ pub(crate) fn stage(
         return Err("saved opponent step needs empty land or a friendly city stack".into());
     }
     let origin_city = city_at(origin);
-    let field_to_city = field_stack
-        && origin_city.is_none()
+    let city_transfer = field_stack
         && source.len() == 2
         && members.len() == 1
-        && friendly_city(city);
+        && (origin_city.is_none() && friendly_city(city)
+            || friendly_city(origin_city) && city.is_none());
     let city_to_empty = friendly_city(origin_city) && members.is_empty();
     if source.len() > 1
-        && (!(field_to_city || city_to_empty)
+        && (!(city_transfer || city_to_empty)
             || source.iter().any(|&s| {
                 world.units[s].owner != civ
                     || saved.units.get(s).is_none_or(|u| u.visibility() != 0)
@@ -171,19 +171,27 @@ pub(crate) fn stage(
     let field_to_field =
         field_stack && !members.is_empty() && city.is_none() && origin_city.is_none();
     let attack = rules.unit_attack(usize::from(unit.type_id));
-    if field_to_field && attack != Some(0) || field_to_city && attack.is_none() {
+    if field_to_field && attack != Some(0) || city_transfer && attack.is_none() {
         return Err("saved field-stack arrival has an unchecked mover attack value".into());
     }
-    // The checked city entry connects to a road or railroad at the origin.
-    let route = (field_to_field || field_to_city).then(|| MovementRoute {
-        road: world.map.road[from] && (field_to_city || world.map.road[dest]),
-        rail: world.map.rail[from] && (field_to_city || world.map.rail[dest]),
-    });
+    // In a checked city transfer the city connects to the route on the field tile.
+    let route = if city_transfer {
+        let field = if origin_city.is_none() { from } else { dest };
+        Some(MovementRoute {
+            road: world.map.road[field],
+            rail: world.map.rail[field],
+        })
+    } else {
+        field_to_field.then(|| MovementRoute {
+            road: world.map.road[from] && world.map.road[dest],
+            rail: world.map.rail[from] && world.map.rail[dest],
+        })
+    };
     let result = world.move_unit_with_routes(rules, slot, to.0, to.1, route);
     if !result.moved || result.battle.is_some() || result.hut || result.zoc_ended {
         return Err("saved stack move did not resolve as ordinary movement".into());
     }
-    if field_to_city && attack.is_some_and(|value| value != 0) {
+    if city_transfer && attack.is_some_and(|value| value != 0) {
         members.insert(0, slot);
     } else {
         members.push(slot);

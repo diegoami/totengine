@@ -178,6 +178,16 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(arrival['explored_tiles'], 59)
         self.assertEqual(arrival['after'][0]['spent'], 1)
         self.assertEqual([unit['next'] for unit in arrival['after']], [24, -1, -1])
+        departure = report['cases']['7']['following_city_departure']
+        self.assertEqual(departure['explored_tiles'], 59)
+        self.assertEqual(departure['after'][0]['spent'], 1)
+        self.assertEqual([unit['next'] for unit in departure['after']], [4, -1, -1])
+        self.assertEqual(
+            [tuple(case[key] for key in ('attack', 'destination_flags', 'spent',
+                                         'mover_previous', 'mover_next'))
+             for case in report['city_departure_controls']],
+            [(0, 16, 1, 4, -1), (1, 0, 6, -1, 4), (1, 48, 0, -1, 4)],
+        )
         self.assertEqual(
             [tuple(case[key] for key in ('attack', 'origin_flags', 'destination_flags',
                                          'spent', 'mover_previous', 'mover_next'))

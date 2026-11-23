@@ -301,8 +301,13 @@ city with one resident unit. Slot 7 spends one third and links ahead of
 slot 24. An attack-zero control places the mover behind the resident.
 The entry controls confirm that the city connects to the route on the
 origin tile. The staged recipe mirrors this arrival, keeps all 59 tiles
-and restores the checkpoint. Native opponent policy, macro dispatch and
-broader combat contexts remain outside these controlled actions.
+and restores the checkpoint. The subsequent move takes slot 24 out of
+the city and back to the field stack. It spends one third, leaves slot 7
+alone in the city, and inserts slot 24 before slot 4. Three controls
+verify terrain, road and rail costs and the ordering of an unarmed mover
+on departure. This step also preserves the 59-tile view and replays.
+Native opponent policy, macro dispatch and broader combat contexts remain
+outside these controlled actions.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_combat_view_check.py --out /tmp/opponent-combat-view.json

@@ -190,7 +190,9 @@ step, matching the native refusal of its next move. The checked move into
 the friendly city at (8, 46) spends one third from the road, links slot 7
 ahead of slot 24, and retains the 59-tile human view in both native and
 engine replay. Controls vary the Warrior's attack and the two route
-flags. Broader combat and pending choices remain open.
+flags. The next Warrior leaves the city for the field stack and leads
+its stack there. The replay matches the one-third cost and keeps 59
+tiles. Broader combat and pending choices remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

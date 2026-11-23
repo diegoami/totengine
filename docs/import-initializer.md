@@ -528,8 +528,15 @@ observation runs with the active-contact argument and leaves map
 knowledge intact. A northwest order on either member detaches it
 for (52, 8), spends six thirds from a full three-third allowance,
 and leaves the other unit in the city. The move keeps 59 explored
-tiles and changes the destination's remembered improvements. Runtime
-support for these specific stack orders remains open.
+tiles and changes the destination's remembered improvements.
+
+Checked schema-8 replay now accepts both orders in the measured
+two-unit surface city context. Wait requires a ready partner and
+unchanged staged observation. The northwest step requires a full
+three-third budget, an empty known destination, and a six-third
+movement cost. It leaves the partner in the city and applies saved
+observation after unlinking the pair. The inspector checks both
+orders for both actors and restores their checkpoints.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_human_city_birth_check.py --orders --out /tmp/import-human-city-stack-orders.json

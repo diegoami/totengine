@@ -75,7 +75,7 @@ impl CheckedSnapshot {
         let allowance =
             world.movement_allowance(rules, usize::from(unit.type_id()), player, unit.damage());
         world.units[slot].moves_left = allowance.saturating_sub(u32::from(unit.moves_spent()));
-        let mut observed = stage_saved_land_move(save, rules, &mut world, slot, to, false)?;
+        let mut observed = stage_saved_land_move(save, rules, &mut world, slot, to, false, None)?;
         let moved = &world.units[slot];
         let view = SavedMapKnowledge::read(&observed, player)?;
         Ok(SavedLandStep {
@@ -110,6 +110,7 @@ pub(crate) fn stage_saved_land_move(
     slot: usize,
     to: (u16, u16),
     keep_native_budget: bool,
+    city_mate: Option<usize>,
 ) -> Result<SaveFile, String> {
     let player = save.player_civ;
     let unit = save
@@ -118,12 +119,13 @@ pub(crate) fn stage_saved_land_move(
         .filter(|u| u.id() != 0)
         .ok_or("saved land step requires a live unit")?;
     if unit.owner() != player
-        || unit.stack_prev() != -1
-        || unit.stack_next() != -1
+        || (city_mate.is_none() && (unit.stack_prev(), unit.stack_next()) != (-1, -1))
         || unit.orders() != 255
         || rules.unit_domain(usize::from(unit.type_id())) != Some(0)
     {
-        return Err("saved land step requires the player's awake unstacked land unit".into());
+        return Err(
+            "saved land step requires an awake owned land unit in a checked stack context".into(),
+        );
     }
     let index = |(x, y)| {
         save.map_header
@@ -155,8 +157,14 @@ pub(crate) fn stage_saved_land_move(
     let from = index((unit.x(), unit.y()))?;
     let dest = index(to)?;
     let map = &save.maps[0];
-    if map.has_city(from) || map.has_city(dest) || map.has_unit(dest) || map.terrain(dest) == 10 {
-        return Err("saved land step requires an empty land destination outside a city".into());
+    if map.has_city(from) != city_mate.is_some()
+        || map.has_city(dest)
+        || map.has_unit(dest)
+        || map.terrain(dest) == 10
+    {
+        return Err(
+            "saved land step requires a checked origin and an empty land destination".into(),
+        );
     }
 
     if world.map.hut_at(to.0, to.1) {
@@ -167,10 +175,23 @@ pub(crate) fn stage_saved_land_move(
     let first_step = keep_native_budget
         && live.moves_left
             == world.movement_allowance(rules, usize::from(live.type_id), player, live.damage);
+    if city_mate.is_some_and(|mate| {
+        !first_step
+            || live.moves_left != 3
+            || unit.moves_spent() != 0
+            || save.units[mate].orders() != 255
+            || save.units[mate].type_id() != unit.type_id()
+            || unit.x().checked_sub(1) != Some(to.0)
+            || unit.y().checked_sub(1) != Some(to.1)
+    }) {
+        return Err(
+            "saved city-stack departure requires the checked full-budget northwest step".into(),
+        );
+    }
     let moved = if first_step {
         let routes = crate::movement::MovementRoute {
-            road: world.map.road[from] && world.map.road[dest],
-            rail: world.map.rail[from] && world.map.rail[dest],
+            road: (city_mate.is_some() || world.map.road[from]) && world.map.road[dest],
+            rail: (city_mate.is_some() || world.map.rail[from]) && world.map.rail[dest],
         };
         world.move_unit_with_routes(rules, slot, to.0, to.1, Some(routes), true)
     } else {
@@ -179,9 +200,16 @@ pub(crate) fn stage_saved_land_move(
     if !moved.moved || moved.zoc_ended || moved.battle.is_some() || moved.hut {
         return Err("saved land step did not resolve as ordinary movement".into());
     }
+    if city_mate.is_some() && moved.cost_thirds != 6 {
+        return Err("saved city-stack departure has an unchecked movement cost".into());
+    }
     let moved_unit = &world.units[slot];
     let position = (moved_unit.x, moved_unit.y);
-    let mut changed = save.clone();
+    let mut changed = if city_mate.is_some() {
+        crate::saved_knowledge::clear_unit_stack_visibility(save, slot)?
+    } else {
+        save.clone()
+    };
     changed.units[slot].raw[..2].copy_from_slice(&position.0.to_le_bytes());
     changed.units[slot].raw[2..4].copy_from_slice(&position.1.to_le_bytes());
     if first_step {
@@ -212,11 +240,21 @@ pub(crate) fn stage_saved_land_move(
         raw[13] = direction as u8;
     }
     let tile_bytes = &mut changed.maps[0].tile_fields;
-    tile_bytes[6 * from + 1] &= !1;
+    if city_mate.is_none() {
+        tile_bytes[6 * from + 1] &= !1;
+    }
     tile_bytes[6 * dest + 1] |= 1;
     tile_bytes[6 * dest + 5] = (tile_bytes[6 * dest + 5] & 15) | (world.map.owner[dest] << 4);
-    let observed = unit_observation_after_reset(&changed, rules, slot, true)
-        .map_err(|error| format!("saved land step observation: {error}"))?;
+    let observed = if let Some(mate) = city_mate {
+        changed.units[slot].raw[26..30].fill(255);
+        changed.units[mate].raw[26..30].fill(255);
+        world.units[slot].stack_pos = 0;
+        world.units[mate].stack_pos = 0;
+        unit_observation_after(&changed, rules, slot, true)
+    } else {
+        unit_observation_after_reset(&changed, rules, slot, true)
+    }
+    .map_err(|error| format!("saved land step observation: {error}"))?;
     apply_saved_observation(world, &observed);
     Ok(observed)
 }

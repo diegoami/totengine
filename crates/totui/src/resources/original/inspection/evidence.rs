@@ -35,6 +35,9 @@ const SAVED_PRODUCTION: &str =
 const SAVED_CITIZENS: &str =
     include_str!("../../../../../../docs/evidence/import-saved-citizens.json");
 
+const HUMAN_STACK_ORDERS: &str =
+    include_str!("../../../../../../docs/evidence/import-human-city-stack-orders.json");
+
 const HUMAN_PRODUCTION: &str =
     include_str!("../../../../../../docs/evidence/import-human-city-birth.json");
 const SAVED_PURCHASE: &str =
@@ -87,6 +90,8 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
     let production = same_input_trace(SAVED_PRODUCTION, &report, "saved production evidence")?;
     let citizens = same_input_trace(SAVED_CITIZENS, &report, "saved citizens evidence")?;
     let purchase = same_input_trace(SAVED_PURCHASE, &report, "saved purchase evidence")?;
+    let human_stack_orders =
+        same_input_trace(HUMAN_STACK_ORDERS, &report, "human stack orders evidence")?;
     let human_production =
         same_input_trace(HUMAN_PRODUCTION, &report, "human production evidence")?;
     Ok(json!({
@@ -133,6 +138,7 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
         "saved_citizens": citizens,
         "saved_purchase": purchase,
         "saved_human_production": human_production,
+        "saved_human_stack_orders": human_stack_orders,
         "loader_regions": {
             "report": "docs/evidence/import-loader-exit.json",
             "after_event_read": loader["after_event_read"],

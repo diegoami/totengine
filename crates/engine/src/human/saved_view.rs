@@ -65,10 +65,7 @@ impl HumanSession {
                 || raw.type_id() != unit.type_id
                 || raw.map_id() != 0
                 || ((raw.stack_prev(), raw.stack_next()) != (-1, -1)
-                    && !(allow_city_stack
-                        && self.knowledge_recipe
-                            == ScenarioKnowledgeRecipe::SavedHumanProductionV1
-                        && self.saved_focus_city_pair(saved, slot)))
+                    && !(allow_city_stack && self.saved_city_mate(saved, slot).is_some()))
                 || raw.orders() != 255
                 || unit.orders != 255
                 || unit.is_leader
@@ -92,23 +89,28 @@ impl HumanSession {
         Some(candidates)
     }
 
-    fn saved_focus_city_pair(&self, saved: &tot_kit::SaveFile, slot: usize) -> bool {
-        let unit = &saved.units[slot];
+    fn saved_city_mate(&self, saved: &tot_kit::SaveFile, slot: usize) -> Option<usize> {
+        if self.knowledge_recipe != ScenarioKnowledgeRecipe::SavedHumanProductionV1 {
+            return None;
+        }
+        let unit = saved.units.get(slot)?;
         let (neighbor, head) = match (unit.stack_prev(), unit.stack_next()) {
             (-1, next) if next >= 0 => (next as usize, true),
             (prev, -1) if prev >= 0 => (prev as usize, false),
-            _ => return false,
+            _ => return None,
         };
         let world = &self.game.world;
-        let Some(other) = saved.units.get(neighbor) else {
-            return false;
-        };
+        let live = world.units.get(slot)?;
+        let other = saved.units.get(neighbor)?;
         let expected = if head {
             (slot as i16, -1)
         } else {
             (-1, slot as i16)
         };
-        other.id() != 0
+        (unit.id() != 0
+            && (live.id, live.owner, live.x, live.y) == (unit.id(), self.human, unit.x(), unit.y())
+            && unit.owner() == self.human
+            && other.id() != 0
             && (other.owner(), other.x(), other.y(), other.map_id())
                 == (unit.owner(), unit.x(), unit.y(), 0)
             && (other.stack_prev(), other.stack_next()) == expected
@@ -127,7 +129,8 @@ impl HumanSession {
                 city.city_id != 0
                     && city.map_id == 0
                     && (city.owner, city.x, city.y) == (u16::from(unit.owner()), unit.x(), unit.y())
-            })
+            }))
+        .then_some(neighbor)
     }
 
     fn saved_wait_candidates(&self, actor: Entity) -> Option<Vec<SavedFocusCandidate>> {
@@ -135,7 +138,17 @@ impl HumanSession {
         if unit.id == 0 || unit.id != actor.id || unit.owner != self.human || unit.moves_left == 0 {
             return None;
         }
-        self.saved_focus_candidates((unit.x, unit.y), false)
+        let saved = self.saved_move_state.as_ref()?;
+        let mate = self.saved_city_mate(saved, actor.slot);
+        let candidates = self.saved_focus_candidates((unit.x, unit.y), mate.is_some())?;
+        if mate.is_some_and(|slot| {
+            !candidates
+                .iter()
+                .any(|candidate| candidate.unit.slot == slot && !candidate.deferred)
+        }) {
+            return None;
+        }
+        Some(candidates)
     }
 
     pub fn can_wait_in_saved_view(&self, actor: Entity) -> bool {
@@ -168,8 +181,25 @@ impl HumanSession {
             .ok_or("saved wait requires a ready own unit in the checked surface context")?;
         let saved = self
             .saved_move_state
-            .as_mut()
+            .as_ref()
             .ok_or("saved wait requires captured unit state")?;
+        if let Some(mate) = self.saved_city_mate(saved, actor.slot) {
+            let mut staged = saved.clone();
+            staged.units[actor.slot].raw[7] |= 0x40;
+            let observed = crate::saved_knowledge::unit_observation_after(
+                &staged,
+                &self.game.rules,
+                mate,
+                true,
+            )
+            .map_err(|_| "saved city-stack wait cannot observe the next unit")?;
+            if observed != staged {
+                return Err("saved city-stack wait changed captured observation");
+            }
+            self.saved_move_state = Some(staged);
+            return Ok(());
+        }
+        let saved = self.saved_move_state.as_mut().unwrap();
         saved.units[actor.slot].raw[7] |= 0x40;
         if !candidates
             .iter()
@@ -602,6 +632,7 @@ impl HumanSession {
                     unit,
                     to,
                     checked_replay,
+                    self.saved_city_mate(saved, unit),
                 );
                 (step, OrderResult::Moved)
             }

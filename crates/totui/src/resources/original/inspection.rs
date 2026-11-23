@@ -180,6 +180,7 @@ impl OriginalCapture {
                 self,
                 human,
                 &trace["saved_human_production"],
+                &trace["saved_human_stack_orders"],
             )
             .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
         } else {

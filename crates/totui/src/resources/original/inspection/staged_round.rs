@@ -3,7 +3,7 @@ use super::OriginalCapture;
 use engine::{
     campaign::AiPolicy,
     events::EventEngine,
-    human::{Command, HumanSession, Phase, Request, ScenarioInput},
+    human::{Command, HumanSession, HumanView, Phase, Request, ScenarioInput},
     player::OrderResult,
 };
 use serde_json::{json, Value};
@@ -634,6 +634,7 @@ pub(super) fn check_saved_human_production(
     capture: &OriginalCapture,
     human: u8,
     trace: &Value,
+    orders: &Value,
 ) -> Result<Value, String> {
     let native = &trace["human_city_birth"];
     let files = capture.files();
@@ -736,12 +737,15 @@ pub(super) fn check_saved_human_production(
         return Err("the checked city stack focus differs from the native selection rule".into());
     }
     let checkpoint = session.checkpoint(identity);
-    let replay = HumanSession::restore_with(
-        rules.clone(),
-        identity,
-        &checkpoint,
-        Some((&files.bytes, events)),
-    )?;
+    let restore = |text: &str| {
+        HumanSession::restore_with(
+            rules.clone(),
+            identity,
+            text,
+            Some((&files.bytes, events.clone())),
+        )
+    };
+    let replay = restore(&checkpoint)?;
     if replay.view() != after || replay.checkpoint(identity) != checkpoint || !verify_focus(&replay)
     {
         return Err("the checked human production did not replay".into());
@@ -756,16 +760,105 @@ pub(super) fn check_saved_human_production(
     if json!(shields) != native["shields_after"] {
         return Err("the human production shield box differs from the native completion".into());
     }
+    let order_cases = check_human_stack_orders(
+        &after,
+        &checkpoint,
+        restore,
+        [(stack[0], unit.index), (stack[1], stack[1])],
+        &orders["cases"],
+        human,
+        identity,
+    )?;
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
         "engine_unit_slot": unit.index,
         "focus_cases": anchors.len(),
+        "stack_order_cases": order_cases,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],
         "checkpoint_replays": true,
     }))
+}
+
+fn check_human_stack_orders(
+    before: &HumanView,
+    checkpoint: &str,
+    restore: impl Fn(&str) -> Result<HumanSession, String>,
+    slots: [(usize, usize); 2],
+    cases: &Value,
+    human: u8,
+    identity: &str,
+) -> Result<usize, String> {
+    let mut checked = 0;
+    for [(native, slot), (native_mate, mate)] in [slots, [slots[1], slots[0]]] {
+        let actor = *before
+            .units
+            .iter()
+            .find(|u| u.slot == slot)
+            .ok_or("the checked city-stack actor is absent")?;
+        let case = &cases[native.to_string()];
+        let wait = &case["wait"];
+        let movement = &case["move_northwest"];
+        let to: (u16, u16) = serde_json::from_value(movement["unit_position_after"].clone())
+            .map_err(|error| format!("invalid prepared stack move destination: {error}"))?;
+        if json!(native_mate) != wait["after"]["active_slot"] {
+            return Err("the native stack Wait witness specifies a different partner".into());
+        }
+        for (command, result, trace) in [
+            (Command::Wait { unit: actor }, OrderResult::Waited, wait),
+            (
+                Command::Move { unit: actor, to },
+                OrderResult::Moved,
+                movement,
+            ),
+        ] {
+            let mut session = restore(checkpoint)?;
+            let response = session.submit(Request {
+                civ: human,
+                revision: before.revision,
+                id: before.revision + 1,
+                command,
+            })?;
+            let after = session.view();
+            let actor_view = after
+                .observation
+                .units
+                .iter()
+                .find(|u| u.index == slot)
+                .ok_or("the ordered city-stack unit is absent")?;
+            let observations_match = match command {
+                Command::Wait { .. } => {
+                    session.saved_order_focus().is_some_and(|e| e.slot == mate)
+                        && after.observation.seen == before.observation.seen
+                        && after.observation.units == before.observation.units
+                }
+                _ => {
+                    (actor_view.x, actor_view.y, actor_view.moves_left) == (to.0, to.1, 0)
+                        && after.observation.units.iter().any(|u| {
+                            u.index == mate && json!([u.x, u.y]) == movement["unit_position_before"]
+                        })
+                }
+            };
+            if response.result != Some(result)
+                || !observations_match
+                || json!(after.observation.seen.iter().flatten().count()) != trace["explored_tiles"]
+            {
+                return Err("the checked city-stack order differs from the native witness".into());
+            }
+            let text = session.checkpoint(identity);
+            let replay = restore(&text)?;
+            if replay.view() != after
+                || replay.checkpoint(identity) != text
+                || replay.saved_order_focus() != session.saved_order_focus()
+            {
+                return Err("the checked city-stack order did not replay".into());
+            }
+            checked += 1;
+        }
+    }
+    Ok(checked)
 }
 
 pub(super) fn check_saved_purchase(

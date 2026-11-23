@@ -847,6 +847,103 @@ staged-round-test
             .unwrap();
             assert_eq!(replay.checkpoint(deps), checkpoint);
             assert_eq!(replay.view(), after);
+            if recipe != ScenarioKnowledgeRecipe::SavedHumanProductionV1 {
+                continue;
+            }
+            let restore = |text: &str| {
+                HumanSession::restore_with(
+                    rules.clone(),
+                    deps,
+                    text,
+                    Some((&snapshot, Some(events.clone()))),
+                )
+                .unwrap()
+            };
+            let unit = |slot| {
+                *after
+                    .units
+                    .iter()
+                    .find(|entity| entity.slot == slot)
+                    .unwrap()
+            };
+            let city_stack = [unit(26), unit(new_unit.index)];
+            let map = &session.saved_move_state.as_ref().unwrap().maps[0];
+            let differences = |before: &[u8], after: &[u8]| {
+                before
+                    .iter()
+                    .zip(after)
+                    .enumerate()
+                    .filter_map(|(i, (&a, &b))| (a != b).then_some((i, a, b)))
+                    .collect::<Vec<_>>()
+            };
+            for [actor, mate] in [city_stack, [city_stack[1], city_stack[0]]] {
+                let mut wait = restore(&checkpoint);
+                assert!(wait.can_wait_in_saved_view(actor));
+                assert_eq!(
+                    submit(&mut wait, Command::Wait { unit: actor }).result,
+                    Some(OrderResult::Waited)
+                );
+                assert_eq!(wait.saved_order_focus(), Some(mate));
+                assert_eq!(wait.view().observation.seen, after.observation.seen);
+                let saved = wait.saved_move_state.as_ref().unwrap();
+                assert_eq!(&saved.maps[0], map);
+                assert_eq!(saved.units[actor.slot].attr() & 0x4000, 0x4000);
+                assert_eq!(saved.units[actor.slot].moves_spent(), 0);
+                let deferred = wait.checkpoint(deps);
+                let reloaded = restore(&deferred);
+                assert_eq!(reloaded.saved_order_focus(), Some(mate));
+                assert_eq!(reloaded.checkpoint(deps), deferred);
+                assert_eq!(reloaded.view(), wait.view());
+
+                let mut moved = restore(&checkpoint);
+                assert!(moved
+                    .submit(Request {
+                        civ: 4,
+                        revision: after.revision,
+                        id: after.revision + 1,
+                        command: Command::Move {
+                            unit: actor,
+                            to: (54, 8)
+                        },
+                    })
+                    .is_err());
+                assert_eq!(moved.checkpoint(deps), checkpoint);
+                let result = submit(
+                    &mut moved,
+                    Command::Move {
+                        unit: actor,
+                        to: (52, 8),
+                    },
+                );
+                assert_eq!(result.result, Some(OrderResult::Moved));
+                let saved = moved.saved_move_state.as_ref().unwrap();
+                let record = &saved.units[actor.slot];
+                assert_eq!((record.x(), record.y(), record.moves_spent()), (52, 8, 6));
+                for entity in [actor, mate] {
+                    let record = &saved.units[entity.slot];
+                    assert_eq!((record.stack_prev(), record.stack_next()), (-1, -1));
+                    assert_eq!(moved.game.world.units[entity.slot].stack_pos, 0);
+                }
+                assert_eq!(
+                    (saved.units[mate.slot].x(), saved.units[mate.slot].y()),
+                    (53, 9)
+                );
+                assert_eq!(
+                    differences(&map.tile_fields, &saved.maps[0].tile_fields),
+                    [(2077, 0, 1), (2081, 240, 64)]
+                );
+                let area = saved.map_header.surface();
+                assert_eq!(
+                    differences(&map.visibility, &saved.maps[0].visibility),
+                    [(3 * area + 346, 0, 1)]
+                );
+                assert_eq!(moved.view().observation.seen.iter().flatten().count(), 59);
+                assert_eq!(moved.game.world.combat_rng, session.game.world.combat_rng);
+                let destination = moved.checkpoint(deps);
+                let reloaded = restore(&destination);
+                assert_eq!(reloaded.checkpoint(deps), destination);
+                assert_eq!(reloaded.view(), moved.view());
+            }
         }
     }
 

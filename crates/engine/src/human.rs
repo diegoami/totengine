@@ -242,6 +242,7 @@ pub struct HumanSession {
     initializer: Option<ScenarioInitializer>,
     knowledge_recipe: ScenarioKnowledgeRecipe,
     saved_initial: Option<SavedInitialView>,
+    saved_move_state: Option<tot_kit::SaveFile>,
     staged_round: Option<StagedRound>,
     game: Game,
     human: u8,
@@ -502,6 +503,26 @@ impl HumanSession {
         )
     }
 
+    /// Opt into saved-view movement for ordinary land steps and skips before other
+    /// accepted gameplay changes the saved context. City and opponent work
+    /// follows the staged engine scheduler.
+    pub fn scenario_initialized_saved_movement(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1,
+        )
+    }
+
     fn scenario_initialized_recipe(
         input: ScenarioInput<'_>,
         human: u8,
@@ -533,7 +554,11 @@ impl HumanSession {
             .as_ref()
             .map_or(0, crate::events::EventEngine::initializer_fingerprint);
         let saved = tot_kit::parse_sav(input.snapshot).map_err(|e| e.to_string())?;
-        if recipe == ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1 {
+        if matches!(
+            recipe,
+            ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1
+        ) {
             crate::scenario::phase::saved_human_entry(&saved, &input.rules, human)?;
             crate::scenario::snapshot::CheckedSnapshot::read(input.snapshot, &input.rules)?;
             let research = saved.research[usize::from(human)];
@@ -562,6 +587,9 @@ impl HumanSession {
         };
         let mut session =
             Self::scenario_with_knowledge(input, human, policy, seed, projection, recipe)?;
+        if recipe == ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 {
+            session.saved_move_state = Some(saved.clone());
+        }
         session.initializer = Some(ScenarioInitializer::capture(
             &session,
             &saved,
@@ -636,8 +664,13 @@ impl HumanSession {
             initializer: None,
             knowledge_recipe,
             saved_initial: None,
-            staged_round: (knowledge_recipe == ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1)
-                .then(StagedRound::default),
+            saved_move_state: None,
+            staged_round: matches!(
+                knowledge_recipe,
+                ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1
+                    | ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1
+            )
+            .then(StagedRound::default),
             game,
             human,
             policy,
@@ -1013,6 +1046,13 @@ impl HumanSession {
                 self.saved_initial, self.cursor, staged
             ));
         }
+        if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 {
+            data.push_str(if self.saved_move_state.is_some() {
+                " saved-land-movement-active"
+            } else {
+                " saved-land-movement-finished"
+            });
+        }
         data.bytes().fold(0xcbf2_9ce4_8422_2325, |h, b| {
             (h ^ u64::from(b)).wrapping_mul(0x100_0000_01b3)
         })
@@ -1327,9 +1367,19 @@ impl HumanSession {
             (None, Command::EndTurn) => Some(Order::EndTurn),
             (None, _) => return Err("no matching decision"),
         };
-        let result = order
-            .map(|o| self.game.submit_checked(self.human, o))
-            .transpose()?;
+        let saved_move = order
+            .map(|o| self.try_saved_view_order(o))
+            .transpose()?
+            .flatten();
+        let kept_saved_view = saved_move.is_some()
+            || (self.saved_move_state.is_some() && order == Some(Order::EndTurn));
+        let result = if saved_move.is_some() {
+            saved_move
+        } else {
+            order
+                .map(|o| self.game.submit_checked(self.human, o))
+                .transpose()?
+        };
         if !matches!(
             request.command,
             Command::CloseProduction { .. } | Command::Goal { .. }
@@ -1364,9 +1414,12 @@ impl HumanSession {
             self.last_human = Some(result.clone());
         }
         if talks.is_some_and(|(_, stage)| stage == TalksStage::Accepted)
-            || (result.is_some() && !matches!(request.command, Command::CloseProduction { .. }))
+            || (!kept_saved_view
+                && result.is_some()
+                && !matches!(request.command, Command::CloseProduction { .. }))
         {
             self.saved_initial = None;
+            self.saved_move_state = None;
         }
         if order == Some(Order::EndTurn) {
             // Boxes already shown during this turn are not repeated next turn.
@@ -1465,6 +1518,7 @@ impl HumanSession {
     }
 
     fn close_round(&mut self) {
+        self.finish_saved_movement();
         self.record_turn_notices(
             true,
             if self.staged_round.is_some() {

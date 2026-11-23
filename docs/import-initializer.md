@@ -168,3 +168,34 @@ the operation journal. Tests restore before and after civ 5's city pass
 and continue both runs to the next human turn. Full classic admission
 still requires verified continuing knowledge, native pending decisions and
 the complete round contract.
+
+
+## Experimental saved movement
+
+Schema 4, `experimental-saved-movement-v1`, adds an explicit saved-view
+movement phase to the staged scheduler. An ordinary awake unstacked land
+unit can skip its remaining movement or move to a known empty surface tile
+outside a city. The engine
+stages the movement and validates the native-derived observation before
+committing the order. A refused move leaves the world, journal, receipts
+and saved view intact.
+
+The phase carries the saved tile visibility, remembered improvements and
+entity knowledge into the next supported move. The movement budget still
+comes from the authoritative engine unit. An explicit End Turn retains the
+projection until the scheduler starts its first city pass or closes the
+round. Other accepted gameplay orders and peace agreements end the
+saved-view phase and use staged engine continuation. The checkpoint identifies which recipe reconstructs the
+movement and rebuilds its private map state from the captured save and
+the order journal.
+
+The pinned move from (63, 5) to (62, 4) has zero remaining movement and
+reveals exactly the native tile at (62, 2). The existing Original inspector
+verifies the move through the human command and checkpoint restore routes.
+An install-backed test continues with another supported move and confirms
+that an occupied destination fails atomically. It also replays all four
+native Skip slots with unchanged map knowledge, and restores the saved-view
+handoff before the first opponent city work item. This recipe exercises
+ordinary land movement. General action knowledge, opponent and city
+knowledge through the round, and native pending decisions remain separate
+admission work.

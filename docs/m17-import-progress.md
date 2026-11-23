@@ -149,6 +149,15 @@ been processed and the empty project still has zero science. The recipe
 keeps engine observation and atomic city passes. Native dialog timing and
 ongoing saved knowledge remain open.
 
+The [saved-movement recipe](import-initializer.md#experimental-saved-movement)
+runs the checked land step as a replayable human order. The pinned move
+shows one new tile and preserves the hidden tile near Madrid. The inspector
+reports this separately from the read-only raw-map comparison and the staged
+round check. Checkpoint replay also covers a second supported move, the
+four Skip orders without a map reveal, and the explicit End Turn handoff.
+The saved projection lasts through the handoff until the first engine city
+pass or round close.
+
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe
 traces the prefix reads from the city table to the event marker and verifies

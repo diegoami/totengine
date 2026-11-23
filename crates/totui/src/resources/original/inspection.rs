@@ -64,6 +64,16 @@ impl OriginalCapture {
         } else {
             Value::Null
         };
+        let movement = if land_step["matches"] == true {
+            staged_round::check_saved_movement(
+                self,
+                human,
+                &trace["first_orders"]["cases"]["move_northwest"],
+            )
+            .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
         Ok(json!({
             "schema": 2,
             "source": {
@@ -76,6 +86,7 @@ impl OriginalCapture {
             "native_resume_trace": trace,
             "saved_land_step": land_step,
             "staged_round_check": staged,
+            "saved_movement_check": movement,
             "records": {
                 "unit_slots": save.units.len(),
                 "live_units": snapshot.stack_positions().iter().flatten().count(),

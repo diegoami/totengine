@@ -10,6 +10,7 @@ pub(super) struct StagedRound {
 
 impl HumanSession {
     pub(super) fn run_staged_city_pass(&mut self, civ: u8) {
+        self.finish_saved_movement();
         let mut food_routes = self.staged_round.as_ref().unwrap().food_routes;
         let mut discovery = false;
         let mut pass = |game: &mut Game| {
@@ -47,11 +48,8 @@ mod tests {
     use super::*;
     use crate::campaign::AiPolicy;
 
-    #[test]
-    fn installed_original_replays_across_staged_city_and_order_boundaries() {
-        let Some(home) = std::env::var_os("CIVTOT_HOME") else {
-            return;
-        };
+    fn installed_original() -> Option<(Vec<u8>, Rules, crate::events::EventEngine)> {
+        let home = std::env::var_os("CIVTOT_HOME")?;
         let folder = std::path::Path::new(&home).join("Original");
         let snapshot = std::fs::read(folder.join("Ph_Auto2.SAV")).unwrap();
         let rules = tot_kit::parse_rules(&tot_kit::latin1(
@@ -63,6 +61,14 @@ mod tests {
             ))
             .unwrap(),
         );
+        Some((snapshot, rules, events))
+    }
+
+    #[test]
+    fn installed_original_replays_across_staged_city_and_order_boundaries() {
+        let Some((snapshot, rules, events)) = installed_original() else {
+            return;
+        };
         let input = || ScenarioInput {
             path: "Original/Ph_Auto2.SAV",
             snapshot: &snapshot,
@@ -170,5 +176,144 @@ staged-round-test
         stepwise.game.world.research[4].progress = 1;
         stepwise.require_research();
         assert!(matches!(stepwise.decision, Some(Decision::Research { .. })));
+    }
+
+    #[test]
+    fn installed_saved_view_moves_replay_without_revealing_the_legacy_tile() {
+        let Some((snapshot, rules, events)) = installed_original() else {
+            return;
+        };
+        let deps = "totengine-scenario-dependencies 1\nsaved-movement-test\n";
+        let mut game = HumanSession::scenario_initialized_saved_movement(
+            ScenarioInput {
+                path: "Original/Ph_Auto2.SAV",
+                snapshot: &snapshot,
+                rules: rules.clone(),
+                events: Some(events.clone()),
+            },
+            4,
+            AiPolicy::BuiltIn1,
+            7,
+            deps,
+        )
+        .unwrap();
+        assert_eq!(game.initializer().unwrap().schema(), 4);
+        let restore = |checkpoint: &str| {
+            HumanSession::restore_with(
+                rules.clone(),
+                deps,
+                checkpoint,
+                Some((&snapshot, Some(events.clone()))),
+            )
+            .unwrap()
+        };
+        let order = |game: &HumanSession, slot: usize, to| {
+            let view = game.view();
+            Request {
+                civ: 4,
+                revision: view.revision,
+                id: view.revision + 1,
+                command: Command::Move {
+                    unit: *view.units.iter().find(|unit| unit.slot == slot).unwrap(),
+                    to,
+                },
+            }
+        };
+        let before = game.view();
+        let origin = game.checkpoint(deps);
+        let blocked = order(&game, 6, (61, 5));
+        assert!(game.submit(blocked).is_err());
+        assert_eq!(game.checkpoint(deps), origin);
+        let movement = order(&game, 6, (62, 4));
+        let response = game.submit(movement).unwrap();
+        assert_eq!(response.result, Some(OrderResult::Moved));
+        let after = game.view();
+        let map = &game.game.world.map;
+        let revealed: Vec<_> = before
+            .observation
+            .seen
+            .iter()
+            .zip(&after.observation.seen)
+            .enumerate()
+            .filter_map(|(i, (old, new))| (old.is_none() && new.is_some()).then_some(i))
+            .collect();
+        assert_eq!(revealed, [map.stored_index(62, 2).unwrap()]);
+        assert!(after.observation.seen[12 * map.stored_w + 27].is_none());
+        let unit = after
+            .observation
+            .units
+            .iter()
+            .find(|unit| unit.index == 6)
+            .unwrap();
+        assert_eq!((unit.x, unit.y, unit.moves_left), (62, 4, 0));
+        let checkpoint = game.checkpoint(deps);
+        assert_eq!(game.submit(movement).unwrap(), response);
+        assert_eq!(game.checkpoint(deps), checkpoint);
+        let mut replay = restore(&checkpoint);
+        assert_eq!(replay.view(), after);
+        assert_eq!(replay.game.world.map, game.game.world.map);
+        let occupied = order(&game, 9, (62, 4));
+        assert!(game.submit(occupied).is_err());
+        assert_eq!(game.checkpoint(deps), checkpoint);
+        let follow_up = order(&game, 9, (62, 6));
+        assert_eq!(
+            game.submit(follow_up).unwrap().result,
+            Some(OrderResult::Moved)
+        );
+        assert_eq!(
+            replay.submit(follow_up).unwrap().result,
+            Some(OrderResult::Moved)
+        );
+        assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
+        let mut skips = restore(&origin);
+        let initial_view = skips.view();
+        let initial_map = skips.game.world.map.clone();
+        for slot in [6, 9, 26, 18] {
+            let view = skips.view();
+            let unit = *view.units.iter().find(|u| u.slot == slot).unwrap();
+            let request = Request {
+                civ: 4,
+                revision: view.revision,
+                id: view.revision + 1,
+                command: Command::Skip { unit },
+            };
+            assert_eq!(
+                skips.submit(request).unwrap().result,
+                Some(OrderResult::Skipped)
+            );
+        }
+        let skipped = skips.view();
+        assert_eq!(skipped.observation.seen, initial_view.observation.seen);
+        assert_eq!(skips.game.world.map, initial_map);
+        assert!(skipped
+            .observation
+            .units
+            .iter()
+            .filter(|u| u.owner == 4)
+            .all(|u| u.moves_left == 0));
+        assert_eq!(restore(&skips.checkpoint(deps)).view(), skipped);
+        assert!(skips.saved_move_state.is_some());
+
+        let end_turn = Request {
+            civ: 4,
+            revision: 2,
+            id: 3,
+            command: Command::EndTurn,
+        };
+        let before_handoff = game.view();
+        game.submit(end_turn).unwrap();
+        assert_eq!(game.phase(), Phase::Opponents);
+        assert_eq!(
+            game.view().observation.seen,
+            before_handoff.observation.seen
+        );
+        assert!(game.saved_move_state.is_some());
+        let mut resumed = restore(&game.checkpoint(deps));
+        assert_eq!(resumed.view(), game.view());
+        assert_eq!(resumed.advance(1), 1);
+        assert_eq!(game.advance(1), 1);
+        assert!(game.saved_move_state.is_none());
+        assert!(game.saved_initial.is_none());
+        assert_eq!(game.checkpoint(deps), resumed.checkpoint(deps));
     }
 }

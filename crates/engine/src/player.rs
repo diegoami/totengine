@@ -1093,10 +1093,26 @@ impl Game {
         let result = self
             .world
             .apply_order(&self.rules, self.events.as_mut(), civ, order);
+        self.record_order(civ, order, &result);
+        result
+    }
+
+    fn record_order(&mut self, civ: u8, order: Order, result: &OrderResult) {
         self.log.push_str(&format!(
             "T {} C {civ} {order} = {result}\n",
             self.world.turn
         ));
+    }
+
+    pub(crate) fn commit_saved_view_order(
+        &mut self,
+        world: WorldState,
+        civ: u8,
+        order: Order,
+        result: OrderResult,
+    ) -> OrderResult {
+        self.world = world;
+        self.record_order(civ, order, &result);
         result
     }
 

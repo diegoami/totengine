@@ -1,6 +1,7 @@
 //! Read-only record preparation for the first classic profile (#197).
 //! Passing this check is not admission: phase/pending state, dependencies
 //! and knowledge continuation still have independent gates.
+use crate::saved_knowledge::unit_observation_after;
 use crate::saved_knowledge::{unit_observation_after_reset, SavedMapKnowledge};
 use std::collections::{BTreeMap, BTreeSet};
 use tot_kit::{MapBlock, Rules, SaveFile};
@@ -70,56 +71,18 @@ impl CheckedSnapshot {
             .get(slot)
             .filter(|u| u.id() != 0)
             .ok_or("saved land step requires a live unit")?;
-        if unit.owner() != player
-            || unit.stack_prev() != -1
-            || unit.stack_next() != -1
-            || unit.orders() != 255
-            || rules.unit_domain(usize::from(unit.type_id())) != Some(0)
-        {
-            return Err("saved land step requires the player's awake unstacked land unit".into());
-        }
-        let index = |(x, y)| {
-            save.map_header
-                .stored_index(usize::from(x), usize::from(y))
-                .filter(|_| (u32::from(x) + u32::from(y)) % 2 == 0)
-                .ok_or("saved land step requires valid surface coordinates")
-        };
-        let from = index((unit.x(), unit.y()))?;
-        let dest = index(to)?;
-        let map = &save.maps[0];
-        if map.has_city(from) || map.has_city(dest) || map.has_unit(dest) || map.terrain(dest) == 10
-        {
-            return Err("saved land step requires an empty land destination outside a city".into());
-        }
-
         let mut world = crate::boot(save, 0);
-        if world.map.hut_at(to.0, to.1) {
-            return Err("saved land step cannot enter a hut".into());
-        }
         let allowance =
             world.movement_allowance(rules, usize::from(unit.type_id()), player, unit.damage());
         world.units[slot].moves_left = allowance.saturating_sub(u32::from(unit.moves_spent()));
-        let moved = world.move_unit(rules, slot, to.0, to.1);
-        if !moved.moved || moved.zoc_ended || moved.battle.is_some() || moved.hut {
-            return Err("saved land step did not resolve as ordinary movement".into());
-        }
-        let moved_unit = &world.units[slot];
-        let position = (moved_unit.x, moved_unit.y);
-        let mut changed = save.clone();
-        changed.units[slot].raw[..2].copy_from_slice(&position.0.to_le_bytes());
-        changed.units[slot].raw[2..4].copy_from_slice(&position.1.to_le_bytes());
-        let tile_bytes = &mut changed.maps[0].tile_fields;
-        tile_bytes[6 * from + 1] &= !1;
-        tile_bytes[6 * dest + 1] |= 1;
-        tile_bytes[6 * dest + 5] = (tile_bytes[6 * dest + 5] & 15) | (world.map.owner[dest] << 4);
-        let mut observed = unit_observation_after_reset(&changed, rules, slot, true)
-            .map_err(|error| format!("saved land step observation: {error}"))?;
+        let mut observed = stage_saved_land_move(save, rules, &mut world, slot, to)?;
+        let moved = &world.units[slot];
         let view = SavedMapKnowledge::read(&observed, player)?;
         Ok(SavedLandStep {
             map: observed.maps.remove(0),
             view,
-            position,
-            moves_left: moved_unit.moves_left,
+            position: (moved.x, moved.y),
+            moves_left: moved.moves_left,
         })
     }
 
@@ -136,6 +99,143 @@ impl CheckedSnapshot {
             save,
             stack_positions,
         })
+    }
+}
+
+/// Stage a checked relocation and its saved observation on a temporary world.
+pub(crate) fn stage_saved_land_move(
+    save: &SaveFile,
+    rules: &Rules,
+    world: &mut crate::WorldState,
+    slot: usize,
+    to: (u16, u16),
+) -> Result<SaveFile, String> {
+    let player = save.player_civ;
+    let unit = save
+        .units
+        .get(slot)
+        .filter(|u| u.id() != 0)
+        .ok_or("saved land step requires a live unit")?;
+    if unit.owner() != player
+        || unit.stack_prev() != -1
+        || unit.stack_next() != -1
+        || unit.orders() != 255
+        || rules.unit_domain(usize::from(unit.type_id())) != Some(0)
+    {
+        return Err("saved land step requires the player's awake unstacked land unit".into());
+    }
+    let index = |(x, y)| {
+        save.map_header
+            .stored_index(usize::from(x), usize::from(y))
+            .filter(|_| (u32::from(x) + u32::from(y)) % 2 == 0)
+            .ok_or("saved land step requires valid surface coordinates")
+    };
+    let live = world
+        .units
+        .get(slot)
+        .ok_or("saved land step world is missing its unit")?;
+    if (
+        live.id,
+        live.owner,
+        live.type_id,
+        live.x,
+        live.y,
+        live.orders,
+    ) != (
+        unit.id(),
+        unit.owner(),
+        unit.type_id(),
+        unit.x(),
+        unit.y(),
+        unit.orders(),
+    ) {
+        return Err("saved land step world differs from saved unit context".into());
+    }
+    let from = index((unit.x(), unit.y()))?;
+    let dest = index(to)?;
+    let map = &save.maps[0];
+    if map.has_city(from) || map.has_city(dest) || map.has_unit(dest) || map.terrain(dest) == 10 {
+        return Err("saved land step requires an empty land destination outside a city".into());
+    }
+
+    if world.map.hut_at(to.0, to.1) {
+        return Err("saved land step cannot enter a hut".into());
+    }
+    let moved = world.move_unit(rules, slot, to.0, to.1);
+    if !moved.moved || moved.zoc_ended || moved.battle.is_some() || moved.hut {
+        return Err("saved land step did not resolve as ordinary movement".into());
+    }
+    let moved_unit = &world.units[slot];
+    let position = (moved_unit.x, moved_unit.y);
+    let mut changed = save.clone();
+    changed.units[slot].raw[..2].copy_from_slice(&position.0.to_le_bytes());
+    changed.units[slot].raw[2..4].copy_from_slice(&position.1.to_le_bytes());
+    let tile_bytes = &mut changed.maps[0].tile_fields;
+    tile_bytes[6 * from + 1] &= !1;
+    tile_bytes[6 * dest + 1] |= 1;
+    tile_bytes[6 * dest + 5] = (tile_bytes[6 * dest + 5] & 15) | (world.map.owner[dest] << 4);
+    let observed = unit_observation_after_reset(&changed, rules, slot, true)
+        .map_err(|error| format!("saved land step observation: {error}"))?;
+    apply_saved_observation(world, &observed);
+    Ok(observed)
+}
+
+pub(crate) fn stage_saved_unit_skip(
+    save: &SaveFile,
+    rules: &Rules,
+    world: &mut crate::WorldState,
+    slot: usize,
+) -> Result<SaveFile, String> {
+    let player = save.player_civ;
+    let unit = world
+        .units
+        .get(slot)
+        .filter(|unit| {
+            unit.id != 0 && unit.owner == player && unit.moves_left > 0 && unit.orders == 255
+        })
+        .ok_or("saved skip requires a ready own unit")?;
+    let record = save
+        .units
+        .get(slot)
+        .filter(|record| (record.id(), record.x(), record.y()) == (unit.id, unit.x, unit.y))
+        .ok_or("saved skip world differs from saved unit context")?;
+    if record.stack_prev() != -1
+        || record.stack_next() != -1
+        || rules.unit_domain(usize::from(record.type_id())) != Some(0)
+    {
+        return Err("saved skip requires an unstacked land unit".into());
+    }
+    let result = world.apply_order(
+        rules,
+        None,
+        player,
+        crate::player::Order::SkipUnit { unit: slot },
+    );
+    if result != crate::player::OrderResult::Skipped {
+        return Err("saved skip rejected".into());
+    }
+    // Space reaches unit observation through the no-relocation branch. The
+    // moving-unit stack reset belongs to the relocation path.
+    let observed = unit_observation_after(save, rules, slot, true)
+        .map_err(|error| format!("saved skip observation: {error}"))?;
+    apply_saved_observation(world, &observed);
+    Ok(observed)
+}
+
+fn apply_saved_observation(world: &mut crate::WorldState, observed: &SaveFile) {
+    let map = &observed.maps[0];
+    for (tile, bytes) in map.tile_fields.as_chunks::<6>().0.iter().enumerate() {
+        world.map.improvements[tile] = bytes[1];
+        world.map.visible[tile] = bytes[4];
+    }
+    let area = observed.map_header.surface();
+    for (civ, cache) in world.map.known_improvements.iter_mut().enumerate() {
+        cache.copy_from_slice(&map.visibility[civ * area..(civ + 1) * area]);
+    }
+    for (record, unit) in observed.units.iter().zip(&mut world.units) {
+        if unit.id != 0 {
+            unit.orders = record.orders();
+        }
     }
 }
 

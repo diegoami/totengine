@@ -4,6 +4,7 @@ use engine::{
     campaign::AiPolicy,
     events::EventEngine,
     human::{Command, HumanSession, Phase, Request, ScenarioInput},
+    player::OrderResult,
 };
 use serde_json::{json, Value};
 
@@ -81,6 +82,83 @@ pub(super) fn check(capture: &OriginalCapture, human: u8) -> Result<Value, Strin
         "first_work_item": "city-pass",
         "second_work_item": "opponent-order",
         "checkpoints_replay": true,
+    }))
+}
+
+pub(super) fn check_saved_movement(
+    capture: &OriginalCapture,
+    human: u8,
+    native: &Value,
+) -> Result<Value, String> {
+    let files = capture.files();
+    let rules = &capture.resources().rules;
+    let events = files.events.clone().map(EventEngine::new);
+    let resources = capture.identity();
+    let mut session = HumanSession::scenario_initialized_saved_movement(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: rules.clone(),
+            events: events.clone(),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        resources,
+    )?;
+    let slot = native["before"]["active_slot"]
+        .as_u64()
+        .and_then(|slot| usize::try_from(slot).ok())
+        .ok_or("native saved movement evidence has no unit slot")?;
+    let to: (u16, u16) = serde_json::from_value(native["unit_position_after"].clone())
+        .map_err(|error| format!("native saved movement evidence: {error}"))?;
+    let entry = session.view();
+    let unit = *entry
+        .units
+        .iter()
+        .find(|unit| unit.slot == slot)
+        .ok_or("saved movement unit missing")?;
+    let result = session.submit(Request {
+        civ: human,
+        revision: entry.revision,
+        id: 1,
+        command: Command::Move { unit, to },
+    })?;
+    let after = session.view();
+    let checkpoint = session.checkpoint(resources);
+    let replay = HumanSession::restore_with(
+        rules.clone(),
+        resources,
+        &checkpoint,
+        Some((&files.bytes, events)),
+    )?;
+    let explored = after.observation.seen.iter().flatten().count();
+    let moved = after
+        .observation
+        .units
+        .iter()
+        .find(|unit| unit.index == slot)
+        .ok_or("saved movement unit missing after accepted step")?;
+    if result.result != Some(OrderResult::Moved)
+        || (moved.x, moved.y) != to
+        || json!(explored) != native["explored_tiles"]
+        || replay.view() != after
+        || replay.checkpoint(resources) != checkpoint
+    {
+        return Err("saved movement differs from the native view or checkpoint replay".into());
+    }
+    let initializer = session
+        .initializer()
+        .ok_or("saved movement initializer missing")?;
+    Ok(json!({
+        "verified": true,
+        "initializer_schema": initializer.schema(),
+        "profile": initializer.profile(),
+        "unit_slot": slot,
+        "position": to,
+        "moves_left": moved.moves_left,
+        "explored_tiles": explored,
+        "checkpoint_replays": true,
     }))
 }
 

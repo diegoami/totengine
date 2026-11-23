@@ -161,6 +161,19 @@ fn installed_save_reports_checked_records_phase_and_view() {
     );
     assert_eq!(report["playable_import"], false);
     assert_eq!(
+        report["saved_movement_check"],
+        json!({
+            "verified": true,
+            "initializer_schema": 4,
+            "profile": "experimental-saved-movement-v1",
+            "unit_slot": 6,
+            "position": [62, 4],
+            "moves_left": 0,
+            "explored_tiles": 60,
+            "checkpoint_replays": true,
+        })
+    );
+    assert_eq!(
         report["staged_round_check"],
         json!({
             "verified": true,

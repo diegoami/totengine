@@ -232,6 +232,20 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_production_purchase_preserves_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-saved-purchase.json').read_text())
+        production = json.loads((ROOT / 'docs/evidence/import-saved-production.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], production[key])
+        fields = ('city', 'item', 'price', 'admitted', 'treasury_before', 'treasury_after',
+                  'shields_before', 'shields_after', 'explored_tiles', 'tile_bytes_changed',
+                  'remembered_bytes_changed')
+        self.assertEqual(tuple(report['pinned'][key] for key in fields),
+                         (5, 3, 19, True, 25, 6, 12, 20, 59, 0, 0))
+        self.assertEqual(report['pinned']['rebased_shields'], 20)
+        self.assertEqual(tuple(report['short_treasury'][key] for key in fields),
+                         (5, 3, 19, False, 18, 18, 12, 12, 59, 0, 0))
+
     def test_native_worker_edits_preserve_saved_knowledge(self):
         report = json.loads((ROOT / 'docs/evidence/import-saved-citizens.json').read_text())
         production = json.loads((ROOT / 'docs/evidence/import-saved-production.json').read_text())

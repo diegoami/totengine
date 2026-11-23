@@ -284,6 +284,14 @@ totals refresh preserves the saved map and remembered improvements.
 The checked replay follows the three edits and restores each resulting
 checkpoint.
 
+The [native production purchase](evidence/import-saved-purchase.json)
+costs 19 gold for city 5's current item, lowers the treasury from 25
+to 6, raises the shield box from 12 to 20, and rebases the switch
+budget. A treasury of 18 gold leaves the build and treasury unchanged.
+Both native controls preserve the saved map and remembered improvements.
+The checked replay verifies the purchase and restores its resulting
+checkpoint.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

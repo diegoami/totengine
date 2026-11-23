@@ -35,6 +35,9 @@ const SAVED_PRODUCTION: &str =
 const SAVED_CITIZENS: &str =
     include_str!("../../../../../../docs/evidence/import-saved-citizens.json");
 
+const SAVED_PURCHASE: &str =
+    include_str!("../../../../../../docs/evidence/import-saved-purchase.json");
+
 pub(super) fn saved_viewport_matches_save(sha: &str) -> bool {
     serde_json::from_str::<Value>(SAVED_VIEWPORT)
         .is_ok_and(|trace| trace["source"]["sha256"] == sha)
@@ -81,6 +84,7 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
     let rates = same_input_trace(SAVED_RATES, &report, "saved rates evidence")?;
     let production = same_input_trace(SAVED_PRODUCTION, &report, "saved production evidence")?;
     let citizens = same_input_trace(SAVED_CITIZENS, &report, "saved citizens evidence")?;
+    let purchase = same_input_trace(SAVED_PURCHASE, &report, "saved purchase evidence")?;
     Ok(json!({
         "matches_fixture": true,
         "scope": "prepared native resume with display and empty-queue substitutes",
@@ -123,6 +127,7 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
         "saved_rates": rates,
         "saved_production": production,
         "saved_citizens": citizens,
+        "saved_purchase": purchase,
         "loader_regions": {
             "report": "docs/evidence/import-loader-exit.json",
             "after_event_read": loader["after_event_read"],

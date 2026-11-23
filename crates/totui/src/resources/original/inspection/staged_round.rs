@@ -630,6 +630,89 @@ pub(super) fn check_saved_citizens(
     Ok(json!({"verified": true, "cases": cases.len(), "checkpoint_replays": true}))
 }
 
+pub(super) fn check_saved_purchase(
+    capture: &OriginalCapture,
+    human: u8,
+    trace: &Value,
+) -> Result<Value, String> {
+    let files = capture.files();
+    let rules = &capture.resources().rules;
+    let events = files.events.clone().map(EventEngine::new);
+    let identity = capture.identity();
+    let mut session = HumanSession::scenario_initialized_saved_opponent_combat(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: rules.clone(),
+            events: events.clone(),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        identity,
+    )?;
+    let initial = session.view();
+    let native = &trace["pinned"];
+    let slot = native["city"]
+        .as_u64()
+        .ok_or("prepared purchase city missing")?;
+    let city = *initial
+        .cities
+        .iter()
+        .find(|city| city.slot as u64 == slot)
+        .ok_or("prepared purchase city is absent")?;
+    let quote = initial
+        .city_production
+        .iter()
+        .find(|p| p.index == city.slot)
+        .ok_or("prepared purchase city has no production view")?
+        .hurry?;
+    if native["admitted"] != true
+        || json!(quote.item) != native["item"]
+        || json!(quote.price) != native["price"]
+        || json!(quote.stored) != native["shields_before"]
+        || json!(quote.treasury) != native["treasury_before"]
+        || json!(quote.required) != native["shields_after"]
+    {
+        return Err("the checked purchase quote differs from the native price".into());
+    }
+    let response = session.submit(Request {
+        civ: human,
+        revision: initial.revision,
+        id: initial.revision + 1,
+        command: Command::Buy { city, quote },
+    })?;
+    let after = session.view();
+    let changed = after
+        .observation
+        .cities
+        .iter()
+        .find(|c| c.index == city.slot)
+        .ok_or("the funded city is absent from the view")?;
+    let rebased = session.preview_production(city, quote.item)?;
+    if response.result != Some(OrderResult::ProductionBought)
+        || after.observation.seen != initial.observation.seen
+        || after.observation.units != initial.observation.units
+        || json!(after.observation.seen.iter().flatten().count()) != native["explored_tiles"]
+        || json!(after.observation.treasury) != native["treasury_after"]
+        || json!(changed.shield_box) != native["shields_after"]
+        || json!(rebased.initial_shields) != native["rebased_shields"]
+    {
+        return Err("the checked purchase differs from the prepared native commit".into());
+    }
+    let checkpoint = session.checkpoint(identity);
+    let replay = HumanSession::restore_with(
+        rules.clone(),
+        identity,
+        &checkpoint,
+        Some((&files.bytes, events)),
+    )?;
+    if replay.view() != after || replay.checkpoint(identity) != checkpoint {
+        return Err("the checked purchase did not replay".into());
+    }
+    Ok(json!({"verified": true, "price": quote.price, "checkpoint_replays": true}))
+}
+
 pub(super) fn check_saved_production(
     capture: &OriginalCapture,
     human: u8,

@@ -464,3 +464,20 @@ restores the checkpoints.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_saved_citizens_check.py --out /tmp/import-saved-citizens.json
 cmp docs/evidence/import-saved-citizens.json /tmp/import-saved-citizens.json
 ```
+
+### Production purchases in a checked saved view
+
+The [prepared native purchase](evidence/import-saved-purchase.json)
+runs pricing, affordability and the successful purchase before redraw.
+City 5's current item costs 19 gold. The purchase leaves 6 gold in the
+treasury and fills the shield box from 12 to 20. A second control starts
+with 18 gold and leaves the treasury and shield box unchanged. Both
+retain the complete saved map and remembered improvements. The checked
+engine accepts the quoted purchase, preserves the saved view, and
+rebases the switch budget at 20 shields. The inspector verifies these
+values and restores the resulting checkpoint.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_saved_purchase_check.py --out /tmp/import-saved-purchase.json
+cmp docs/evidence/import-saved-purchase.json /tmp/import-saved-purchase.json
+```

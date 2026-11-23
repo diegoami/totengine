@@ -310,6 +310,12 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "verified": true, "cases": 3, "checkpoint_replays": true,
         })
     );
+    assert_eq!(
+        report["saved_purchase_check"],
+        json!({
+            "verified": true, "price": 19, "checkpoint_replays": true,
+        })
+    );
     assert_eq!(report["playable_import"], false);
     assert_eq!(
         report["saved_opponent_combat_check"],

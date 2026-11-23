@@ -535,6 +535,7 @@ impl HumanSession {
             Order::SetRates { .. }
             | Order::QuotedProduction { .. }
             | Order::ToggleWorker { .. }
+            | Order::BuyProduction { .. }
                 if checked_replay && self.decision.is_none() =>
             {
                 let before = &self.game.world;
@@ -545,6 +546,7 @@ impl HumanSession {
                     (Order::SetRates { .. }, OrderResult::RatesSet)
                         | (Order::QuotedProduction { .. }, OrderResult::ProductionSet)
                         | (Order::ToggleWorker { .. }, OrderResult::CitizensSet)
+                        | (Order::BuyProduction { .. }, OrderResult::ProductionBought)
                 ) || world.map != before.map
                     || world.units != before.units
                     || world.cities.len() != before.cities.len()
@@ -561,7 +563,7 @@ impl HumanSession {
                         updated.science_rates[usize::from(self.human)] = science;
                         updated.tax_rates[usize::from(self.human)] = tax;
                     }
-                    Order::QuotedProduction { city, .. } => {
+                    Order::QuotedProduction { city, .. } | Order::BuyProduction { city, .. } => {
                         let world_city = &world.cities[city];
                         let record = updated.cities.get_mut(city).ok_or(refused)?;
                         if record.city_id() != world_city.city_id {
@@ -569,6 +571,10 @@ impl HumanSession {
                         }
                         record.raw[30..32].copy_from_slice(&world_city.shield_box.to_le_bytes());
                         record.raw[59] = world_city.building as u8;
+                        if matches!(order, Order::BuyProduction { .. }) {
+                            updated.treasury[usize::from(self.human)] =
+                                world.treasury[usize::from(self.human)];
+                        }
                     }
                     Order::ToggleWorker { city, .. } => {
                         let world_city = &world.cities[city];

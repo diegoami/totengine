@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "pinned": {
+    "city": 5,
+    "item": 3,
+    "price": 19,
+    "admitted": true,
+    "treasury_before": 25,
+    "treasury_after": 6,
+    "shields_before": 12,
+    "shields_after": 20,
+    "explored_tiles": 59,
+    "tile_bytes_changed": 0,
+    "remembered_bytes_changed": 0,
+    "rebased_shields": 20
+  },
+  "short_treasury": {
+    "city": 5,
+    "item": 3,
+    "price": 19,
+    "admitted": false,
+    "treasury_before": 18,
+    "treasury_after": 18,
+    "shields_before": 12,
+    "shields_after": 12,
+    "explored_tiles": 59,
+    "tile_bytes_changed": 0,
+    "remembered_bytes_changed": 0
+  },
+  "scope": "Measure map knowledge through the native purchase price and commit.\n\nThe prepared city accessor and name formatting substitute presentation.\nExecute native affordability, treasury, shield and switch-budget logic,\nstopping before redraw. A second control has one gold less than the price."
+}

@@ -16,11 +16,11 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
-use engine::campaign::{AiPolicy, Campaign, MAX_ROUNDS};
+use engine::campaign::{AiPolicy, Campaign, Outcome, MAX_ROUNDS};
 use engine::newgame::NewGameConfig;
 use serde::Deserialize;
 use serde_json::{json, Value};
-use tot_record::{Bundle, Kind, StopReason};
+use tot_record::{Bundle, Journal, Kind, StopReason, MAX_BYTES};
 
 pub(crate) const FORMAT: &str = "totengine-experiment 1";
 pub(crate) const SUMMARY_FORMAT: &str = "totengine-experiment-summary 1";
@@ -347,7 +347,13 @@ impl Plan {
     /// Create an independent output directory, optionally using verified
     /// recordings from a prior attempt. The identity is written first so
     /// recovery can work even when the summary has not been written yet.
-    fn run(&self, out_dir: &Path, limit: u32, prior: Option<&Path>) -> Result<String, String> {
+    fn run(
+        &self,
+        out_dir: &Path,
+        limit: u32,
+        prior: Option<&Path>,
+        every: Option<u32>,
+    ) -> Result<String, String> {
         if !(1..=self.rounds).contains(&limit) {
             return Err(format!("round limit must be 1..={}", self.rounds));
         }
@@ -372,7 +378,7 @@ impl Plan {
         tot_record::write_new(&out_dir.join("batch.identity"), &identity)?;
         let mut results = Vec::new();
         for run in &self.runs {
-            results.push(match self.execute(run, out_dir, limit, prior) {
+            results.push(match self.execute(run, out_dir, limit, prior, every) {
                 Ok(result) => result,
                 Err(error) => json!({"id": run.id, "variant": run.variant, "seed": run.seed,
                                      "status": "failed", "error": error}),
@@ -400,21 +406,46 @@ impl Plan {
         out_dir: &Path,
         limit: u32,
         prior: Option<&Path>,
+        every: Option<u32>,
     ) -> Result<Value, String> {
         let file = format!("{}.totrec", run.id);
+        let journal_name = format!("{}.totjournal", run.id);
         let producer = self.producer(run);
         let mut campaign = match prior
-            .map(|dir| read_batch_file(&dir.join(&file)))
+            .map(|dir| self.resume_run(run, dir, &file, &journal_name))
             .transpose()?
             .flatten()
         {
-            Some(text) => self.restore_run(run, &text)?,
+            Some(campaign) => campaign,
             None => Campaign::with_policy(run.config, self.rules.clone(), run.policy)?,
         };
-        campaign.advance(limit - campaign.rounds())?;
+        let journal_path = out_dir.join(journal_name);
+        let journal_written = if let Some(every) =
+            every.filter(|_| campaign.rounds() < limit && campaign.outcome() == Outcome::TurnLimit)
+        {
+            let manifest =
+                Bundle::campaign(&campaign, StopReason::Interrupted, &producer, None).manifest;
+            let mut journal = Journal::create(&journal_path, &manifest)?;
+            record_progress(&mut journal, &journal_path, &campaign)?;
+            while campaign.rounds() < limit {
+                let outcome = campaign.advance(every.min(limit - campaign.rounds()))?;
+                if outcome != Outcome::TurnLimit || campaign.rounds() == limit {
+                    break;
+                }
+                record_progress(&mut journal, &journal_path, &campaign)?;
+            }
+            true
+        } else {
+            campaign.advance(limit - campaign.rounds())?;
+            false
+        };
         let stop = self.stop(&campaign);
         let text = Bundle::campaign(&campaign, stop, &producer, None).encode()?;
         tot_record::write_new(&out_dir.join(&file), &text)?;
+        if journal_written {
+            fs::remove_file(&journal_path)
+                .map_err(|error| format!("remove published run's journal: {error}"))?;
+        }
         let world = &campaign.game.world;
         Ok(json!({
             "id": run.id,
@@ -439,8 +470,26 @@ impl Plan {
         format!("totctl experiment {}: run {}", self.name, run.id)
     }
 
-    fn restore_run(&self, run: &Run, text: &str) -> Result<Campaign, String> {
-        let bundle = Bundle::decode(text)?;
+    fn resume_run(
+        &self,
+        run: &Run,
+        dir: &Path,
+        file: &str,
+        journal: &str,
+    ) -> Result<Option<Campaign>, String> {
+        if let Some(text) = read_batch_file(&dir.join(file))? {
+            return self
+                .restore_run(run, Bundle::decode(&text)?, false)
+                .map(Some);
+        }
+        if let Some(text) = read_batch_file(&dir.join(journal))? {
+            let recovered = tot_record::recover(&text)?;
+            return self.restore_run(run, recovered.bundle, true).map(Some);
+        }
+        Ok(None)
+    }
+
+    fn restore_run(&self, run: &Run, bundle: Bundle, recovered: bool) -> Result<Campaign, String> {
         let saved = &bundle.manifest;
         let producer = self.producer(run);
         if saved.kind != Kind::Campaign
@@ -449,7 +498,7 @@ impl Plan {
             || saved.setup != run.config.descriptor()
             || saved.policy != run.policy.id()
             || saved.producer != producer
-            || !(1..=self.rounds).contains(&saved.progress)
+            || !(u32::from(!recovered)..=self.rounds).contains(&saved.progress)
         {
             return Err("recording does not match this batch run".into());
         }
@@ -458,7 +507,11 @@ impl Plan {
             .as_deref()
             .ok_or("batch recording has no checkpoint")?;
         let campaign = Campaign::restore(self.rules.clone(), checkpoint)?;
-        let stop = self.stop(&campaign);
+        let stop = if recovered {
+            StopReason::Interrupted
+        } else {
+            self.stop(&campaign)
+        };
         if Bundle::campaign(&campaign, stop, &producer, None) != bundle {
             return Err("recording metadata differs from the verified batch checkpoint".into());
         }
@@ -474,7 +527,7 @@ impl Plan {
             .ok_or_else(|| format!("{} does not name a run in the manifest", path.display()))?;
         let text = read_batch_file(path)?
             .ok_or_else(|| format!("recording missing: {}", path.display()))?;
-        self.restore_run(run, &text)
+        self.restore_run(run, Bundle::decode(&text)?, false)
             .map_err(|e| format!("{}: {e}", path.display()))
     }
 
@@ -513,6 +566,22 @@ impl Plan {
             outcome
         }
     }
+}
+
+fn record_progress(journal: &mut Journal, path: &Path, campaign: &Campaign) -> Result<(), String> {
+    let checkpoint = campaign.checkpoint();
+    let size = fs::metadata(path)
+        .map_err(|error| format!("read journal metadata: {error}"))?
+        .len();
+    // The journal line adds the round, payload length, checksum and delimiters.
+    // Keep each published prefix within the reader's recovery budget.
+    if size + checkpoint.len() as u64 + 128 > MAX_BYTES as u64 {
+        return Err(
+            "experiment journal exceeds its recovery budget; use a larger checkpoint interval"
+                .into(),
+        );
+    }
+    journal.record(campaign.rounds(), &checkpoint)
 }
 
 // A missing run is started from scratch. Unreadable or non-regular files
@@ -579,29 +648,49 @@ fn summary_text(summary: &Value) -> String {
     out
 }
 
+fn batch_options(args: &[String], staged: bool) -> Result<(Option<u32>, Option<u32>), String> {
+    let mut limit = None;
+    let mut every = None;
+    for option in args.chunks(2) {
+        let [flag, value] = option else {
+            return Err(format!("missing value for {}", option[0]));
+        };
+        let target = match flag.as_str() {
+            "--round-limit" if staged => &mut limit,
+            "--checkpoint-every" => &mut every,
+            _ => return Err(format!("unknown batch option {flag}")),
+        };
+        if target.is_some() {
+            return Err(format!("duplicate batch option {flag}"));
+        }
+        let value = value
+            .parse::<u32>()
+            .ok()
+            .filter(|&n| n > 0)
+            .ok_or_else(|| format!("{flag} requires a positive integer"))?;
+        *target = Some(value);
+    }
+    Ok((limit, every))
+}
+
 /// `totctl experiment check|run|resume|compare`.
 pub(crate) fn cmd_experiment(args: &[String]) -> std::process::ExitCode {
-    let usage = "usage: totctl experiment check <manifest.json>\n       totctl experiment run <manifest.json> --out <new-folder> [--round-limit N]\n       totctl experiment resume <manifest.json> --from <prior-folder> --out <new-folder>\n       totctl experiment compare <manifest.json> <left.totrec> <right.totrec>";
+    let usage = "usage: totctl experiment check <manifest.json>\n       totctl experiment run <manifest.json> --out <new-folder> [--round-limit N] [--checkpoint-every N]\n       totctl experiment resume <manifest.json> --from <prior-folder> --out <new-folder> [--checkpoint-every N]\n       totctl experiment compare <manifest.json> <left.totrec> <right.totrec>";
     let result = match args {
         [cmd, manifest] if cmd == "check" => plan(Path::new(manifest)).map(|p| p.describe()),
-        [cmd, manifest, flag, out] if cmd == "run" && flag == "--out" => {
-            plan(Path::new(manifest)).and_then(|p| p.run(Path::new(out), p.rounds, None))
+        [cmd, manifest, flag, out, options @ ..] if cmd == "run" && flag == "--out" => {
+            batch_options(options, true).and_then(|(limit, every)| {
+                plan(Path::new(manifest))
+                    .and_then(|p| p.run(Path::new(out), limit.unwrap_or(p.rounds), None, every))
+            })
         }
-        [cmd, manifest, flag, out, round_limit, limit]
-            if cmd == "run" && flag == "--out" && round_limit == "--round-limit" =>
-        {
-            limit
-                .parse()
-                .map_err(|_| "round limit must be an integer".into())
-                .and_then(|limit| {
-                    plan(Path::new(manifest)).and_then(|p| p.run(Path::new(out), limit, None))
-                })
-        }
-        [cmd, manifest, from_flag, from, out_flag, out]
+        [cmd, manifest, from_flag, from, out_flag, out, options @ ..]
             if cmd == "resume" && from_flag == "--from" && out_flag == "--out" =>
         {
-            plan(Path::new(manifest))
-                .and_then(|p| p.run(Path::new(out), p.rounds, Some(Path::new(from))))
+            batch_options(options, false).and_then(|(_, every)| {
+                plan(Path::new(manifest))
+                    .and_then(|p| p.run(Path::new(out), p.rounds, Some(Path::new(from)), every))
+            })
         }
         [cmd, manifest, left, right] if cmd == "compare" => {
             plan(Path::new(manifest)).and_then(|p| p.compare(Path::new(left), Path::new(right)))

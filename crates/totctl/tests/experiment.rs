@@ -1,6 +1,8 @@
 //! Generated-world experiments (#203/#204).
+use std::io::Write;
 use std::path::Path;
 use std::process::{Command, Output};
+use tot_record::{Bundle, Journal};
 
 fn totctl(args: &[&str], dir: &Path) -> Output {
     Command::new(env!("CARGO_BIN_EXE_totctl"))
@@ -132,7 +134,15 @@ fn manifests_validate_expand_run_reproducibly_and_never_overwrite() {
 
     // The same manifest reproduces byte-identical outputs.
     ok(&totctl(
-        &["experiment", "run", "m.json", "--out", "out2"],
+        &[
+            "experiment",
+            "run",
+            "m.json",
+            "--out",
+            "out2",
+            "--checkpoint-every",
+            "2",
+        ],
         &dir,
     ));
     for file in [
@@ -181,6 +191,29 @@ fn manifests_validate_expand_run_reproducibly_and_never_overwrite() {
     );
     assert!(policy.contains("\nright: T "), "{policy}");
 
+    // Recover the last synced checkpoint if the in-progress journal ends
+    // with an incomplete record and there is no finished recording.
+    let archived_path = dir.join("partial/easy-legacy-s3.totrec");
+    let archived = Bundle::decode(&std::fs::read_to_string(&archived_path).unwrap()).unwrap();
+    let journal_path = dir.join("partial/easy-legacy-s3.totjournal");
+    {
+        let mut journal = Journal::create(&journal_path, &archived.manifest).unwrap();
+        journal
+            .record(
+                archived.manifest.progress,
+                archived.gameplay.as_deref().unwrap(),
+            )
+            .unwrap();
+    }
+    std::fs::OpenOptions::new()
+        .append(true)
+        .open(&journal_path)
+        .unwrap()
+        .write_all(b"record 4 100 deadbeef\ntorn")
+        .unwrap();
+    let old_journal = std::fs::read(&journal_path).unwrap();
+    std::fs::remove_file(archived_path).unwrap();
+
     std::fs::remove_file(dir.join("partial/summary.json")).unwrap();
     std::fs::remove_file(dir.join("partial/hard-s5.totrec")).unwrap();
     std::fs::copy(
@@ -213,6 +246,16 @@ fn manifests_validate_expand_run_reproducibly_and_never_overwrite() {
         std::fs::read(dir.join("partial/easy-s3.totrec")).unwrap(),
         before_resume
     );
+    assert_eq!(std::fs::read(journal_path).unwrap(), old_journal);
+    for folder in ["out2", "resumed"] {
+        assert!(std::fs::read_dir(dir.join(folder))
+            .unwrap()
+            .all(|entry| entry
+                .unwrap()
+                .path()
+                .extension()
+                .is_none_or(|ext| ext != "totjournal")));
+    }
     assert!(compare("out1/easy-s3.totrec", "resumed/easy-s3.totrec")
         .contains("Identical gameplay logs through 6 rounds"));
 
@@ -274,6 +317,21 @@ fn manifests_validate_expand_run_reproducibly_and_never_overwrite() {
         std::fs::read(dir.join("out1/summary.json")).unwrap(),
         before
     );
+
+    let invalid_checkpoint = err(&totctl(
+        &[
+            "experiment",
+            "run",
+            "m.json",
+            "--out",
+            "bad-checkpoint",
+            "--checkpoint-every",
+            "0",
+        ],
+        &dir,
+    ));
+    assert!(invalid_checkpoint.contains("positive integer"));
+    assert!(!dir.join("bad-checkpoint").exists());
 
     // Invalid manifests are rejected before anything runs.
     let with = |patch: serde_json::Value| {

@@ -66,7 +66,7 @@ and round limit produce byte-identical output.
 
 ```sh
 totctl experiment check difficulty.json             # validate and list the runs
-totctl experiment run difficulty.json --out results # execute into a new folder
+totctl experiment run difficulty.json --out results --checkpoint-every 10
 totctl record verify results/hard-s3.totrec Rules.txt
 totctl experiment run difficulty.json --out pause --round-limit 40
 totctl experiment resume difficulty.json --from pause --out resumed
@@ -110,7 +110,14 @@ It replays each checkpoint to verify its orders, progress, policy and
 outcome, then continues to the original target. An interrupted command
 may leave only `batch.identity` and some completed recordings. Resume can
 use these without a summary, and starts any missing run from round zero.
-A damaged recording marks its run failed while other runs continue.
+`--checkpoint-every N` on either `run` or `resume` also syncs a recoverable
+journal at the start and every N rounds. A finished recording takes precedence.
+When the recording is missing, `resume` verifies the journal's last complete
+checkpoint and discards any torn suffix in memory. It retains source files
+and removes its own journal after publishing the new recording. A damaged
+recording or unverifiable journal marks its run failed while other runs
+continue. If a journal approaches the recording reader's 64 MiB budget, use
+a longer checkpoint interval for subsequent output.
 Artifacts written before this feature require a fresh batch because they
 lack `batch.identity`. The finished output is byte-identical to an
 uninterrupted run when all recordings verify.
@@ -128,8 +135,7 @@ results and round fingerprints.
 - Scenario starts (#197).
 - Per-civilization policies: they need a campaign format with one policy per
   civ.
-- Scenario event and objective outcome reports (#204). An abrupt stop can
-  only recover recordings already published at run boundaries.
+- Scenario event and objective outcome reports (#204).
 - An MCP tool for experiments. The server never writes, so it would return
   summaries inline.
 - Agent (#256) seats in experiments.

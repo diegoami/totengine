@@ -481,3 +481,25 @@ values and restores the resulting checkpoint.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_saved_purchase_check.py --out /tmp/import-saved-purchase.json
 cmp docs/evidence/import-saved-purchase.json /tmp/import-saved-purchase.json
 ```
+
+### Turn-44 human production after the worker edit and purchase
+
+The [prepared native turn-44 witness](evidence/import-human-city-birth.json)
+uses the same opponent and annual setup as the quiet handoff. It supplies
+the measured worker edit, treasury and paid shield box before executing
+native human city work and input preparation. The new Phalanx occupies
+slot 22 at (53, 9), with zero movement spent and zero shields left in the
+city box. The map and remembered improvements remain intact through the
+first input poll, with 59 explored tiles and slot 18 active.
+
+The checked engine's same worker edit and purchase replay identically on
+Chromium and Linux SDL, including saving and reloading before ending the
+turn. At turn 44 the engine places the Phalanx in slot 38, leaves two
+shields, and uses engine observation with 60 explored tiles. Native
+production allocation, shield timing and saved-view continuation need
+further checks at this boundary.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_human_city_birth_check.py --out /tmp/import-human-city-birth.json
+cmp docs/evidence/import-human-city-birth.json /tmp/import-human-city-birth.json
+```

@@ -232,6 +232,24 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_human_city_birth_reaches_input_with_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-human-city-birth.json').read_text())
+        purchase = json.loads((ROOT / 'docs/evidence/import-saved-purchase.json').read_text())
+        workers = json.loads((ROOT / 'docs/evidence/import-saved-citizens.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], purchase[key])
+            self.assertEqual(report[key], workers[key])
+        birth = report['human_city_birth']
+        self.assertEqual(birth['applied_worker'], workers['cases'][0]['after'])
+        self.assertEqual(birth['shields_before'], purchase['pinned']['shields_after'])
+        self.assertEqual(birth['shields_after'], 0)
+        self.assertEqual([birth[key] for key in ('explored_before', 'explored_after',
+                                                 'explored_at_poll')], [59, 59, 59])
+        self.assertEqual((birth['tile_byte_changes'], birth['remembered_bytes_changed']), ([], 0))
+        self.assertEqual(birth['unit'],
+                         {'slot': 22, 'type': 3, 'owner': 4, 'position': [53, 9], 'spent': 0})
+        self.assertEqual(birth['first_poll']['active_slot'], 18)
+
     def test_native_production_purchase_preserves_saved_knowledge(self):
         report = json.loads((ROOT / 'docs/evidence/import-saved-purchase.json').read_text())
         production = json.loads((ROOT / 'docs/evidence/import-saved-production.json').read_text())

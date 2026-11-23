@@ -292,6 +292,17 @@ Both native controls preserve the saved map and remembered improvements.
 The checked replay verifies the purchase and restores its resulting
 checkpoint.
 
+The [prepared native human production case](evidence/import-human-city-birth.json)
+applies the measured worker removal and paid production state to the
+witnessed turn-44 boundary. Native city work produces a Phalanx in
+slot 22, consumes the shield box, and keeps the map and remembered
+improvements through the first input poll. Chromium and Linux SDL
+produce identical checked engine checkpoints after the same worker
+edit and purchase, after reload, and after advancing to turn 44. The
+engine enters that turn with a Phalanx in slot 38, two shields in
+the city box, and 60 explored tiles. The unedited control keeps 59.
+Visible-city production and its ensuing human view remain open.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

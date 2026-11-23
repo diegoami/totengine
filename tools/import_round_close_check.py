@@ -202,25 +202,13 @@ def fresh_human_input(original, viewer, city_region, key):
             'turn_start_substitutes': substitutes, 'focus': focus, 'handoff': handoff}, order
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--out', required=True, type=Path)
-    args = parser.parse_args()
-    root = Path(__file__).resolve().parent.parent
-    prior = json.loads((root / 'docs/evidence/import-opponent-combat-view.json').read_text())
-    home = Path(os.environ['CIVTOT_HOME'])
-    binary = (home / 'civ2.bak').read_bytes()
-    assert hashlib.sha256(binary).hexdigest() == prior['binary_sha256']
-    for key in ('source', 'rules'):
-        item = prior[key]
-        assert hashlib.sha256((home / item['path']).read_bytes()).hexdigest() == item['sha256']
-    rules = parse_rules(str(home / prior['rules']['path']))
+def prepare_round(home, binary, path, rules, after_annual):
     prepared = {}
     city_region = None
-    next_order = None
+    result = None
 
     def at_city(original, viewer, city):
-        nonlocal next_order
+        nonlocal result
         execute(original, viewer, city, rules, 7)
         move_opponent(original, viewer, (4, 5, 3), (4, 7), (11, 45), (9, 45),
                       ((7, -1), (-1, 4)))
@@ -238,7 +226,7 @@ def main():
         prepared['annual_update'] = annual_update(original, viewer)
         assert not read(original, wait_status, '<B') & 64
         prepared['annual_update']['cleared_wait_flag'] = True
-        prepared['fresh_human_input'], next_order = fresh_human_input(original, viewer, city_region, key)
+        result = after_annual(original, viewer, city_region)
 
     def after_idle(original, viewer, regions):
         nonlocal city_region
@@ -246,11 +234,30 @@ def main():
         trace(original, viewer, regions, clear_preference_bit=False, skip_selected=True,
               at_city_entry=at_city)
 
+    witness(home, binary, path, exhaust=False, observation=True, after_idle=after_idle)
+    return prepared, result
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--out', required=True, type=Path)
+    args = parser.parse_args()
+    root = Path(__file__).resolve().parent.parent
+    prior = json.loads((root / 'docs/evidence/import-opponent-combat-view.json').read_text())
+    home = Path(os.environ['CIVTOT_HOME'])
+    binary = (home / 'civ2.bak').read_bytes()
+    assert hashlib.sha256(binary).hexdigest() == prior['binary_sha256']
+    for key in ('source', 'rules'):
+        item = prior[key]
+        assert hashlib.sha256((home / item['path']).read_bytes()).hexdigest() == item['sha256']
+    rules = parse_rules(str(home / prior['rules']['path']))
     controls = {}
     for name, key in [('skip', ord(' ')), ('move_northwest', NORTHWEST)]:
-        witness(home, binary, prior['source']['path'], exhaust=False,
-                observation=True, after_idle=after_idle)
-        controls[name] = next_order
+        prepared, (handoff, controls[name]) = prepare_round(
+            home, binary, prior['source']['path'], rules,
+            lambda original, viewer, city_region: fresh_human_input(original, viewer, city_region, key),
+        )
+        prepared['fresh_human_input'] = handoff
     assert controls['skip']['unit_byte_changes'] == [{'slot': 18, 'byte': 10, 'before': 0, 'after': 3}]
     assert controls['skip']['explored_tiles'] == 59
     move = controls['move_northwest']

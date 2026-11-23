@@ -12,6 +12,7 @@ use serde_json::{json, Value};
 
 mod event_tail;
 mod evidence;
+mod staged_round;
 
 impl OriginalCapture {
     /// Check the captured save and report the supported inspection results.
@@ -57,6 +58,12 @@ impl OriginalCapture {
         } else {
             Value::Null
         };
+        let staged = if trace["matches_fixture"] == true {
+            staged_round::check(self, human)
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
         Ok(json!({
             "schema": 2,
             "source": {
@@ -68,6 +75,7 @@ impl OriginalCapture {
             "dependency_set": OriginalCapture::SET,
             "native_resume_trace": trace,
             "saved_land_step": land_step,
+            "staged_round_check": staged,
             "records": {
                 "unit_slots": save.units.len(),
                 "live_units": snapshot.stack_positions().iter().flatten().count(),

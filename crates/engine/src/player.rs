@@ -1123,6 +1123,22 @@ impl Game {
 
     pub(crate) fn close_turn(&mut self) -> crate::turn::TurnSummary {
         let summary = self.world.run_turn(&self.rules, self.events.as_mut());
+        self.record_round_end();
+        summary
+    }
+
+    pub(crate) fn close_staged_turn(&mut self) -> crate::turn::TurnSummary {
+        let summary = self.world.finish_round(
+            &self.rules,
+            self.events.as_mut(),
+            crate::turn::TurnSummary::default(),
+            false,
+        );
+        self.record_round_end();
+        summary
+    }
+
+    fn record_round_end(&mut self) {
         for c in 1..8 {
             self.world.reveal(c);
         }
@@ -1131,7 +1147,6 @@ impl Game {
             self.world.turn,
             self.world.checksum()
         ));
-        summary
     }
 
     /// One full turn: every living civ with a player acts until it ends its

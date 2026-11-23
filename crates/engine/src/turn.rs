@@ -52,6 +52,17 @@ impl WorldState {
             self.run_civ_city_phases(rules, civ, &mut food_routes, &mut sum);
         }
 
+        self.finish_round(rules, events, sum, true)
+    }
+
+    /// Shared round-close mechanics after the scheduled city passes.
+    pub(crate) fn finish_round(
+        &mut self,
+        rules: &Rules,
+        events: Option<&mut EventEngine>,
+        mut sum: TurnSummary,
+        reset_movement: bool,
+    ) -> TurnSummary {
         self.refresh_city_statistics();
         self.refresh_landmass_flags(rules);
         sum.barbarian_arrivals = self.barbarian_arrivals(rules);
@@ -80,7 +91,7 @@ impl WorldState {
             let applied = self.apply_effects(rules, &effects);
             sum.events = effects.into_iter().zip(applied).collect();
         }
-        if self.game_over.is_none() {
+        if reset_movement && self.game_over.is_none() {
             self.start_turn(rules);
         }
         sum.turn = self.turn;

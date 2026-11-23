@@ -242,6 +242,7 @@ pub struct HumanSession {
     initializer: Option<ScenarioInitializer>,
     knowledge_recipe: ScenarioKnowledgeRecipe,
     saved_initial: Option<SavedInitialView>,
+    staged_round: Option<StagedRound>,
     game: Game,
     human: u8,
     /// The opponents' policy (#261); recorded in checkpoints.
@@ -385,6 +386,7 @@ impl HumanSession {
             policy,
             seed,
             None,
+            ScenarioKnowledgeRecipe::EngineSightV1,
         )
     }
 
@@ -394,6 +396,7 @@ impl HumanSession {
         policy: crate::campaign::AiPolicy,
         seed: u64,
         projection: Option<crate::saved_knowledge::SavedMapKnowledge>,
+        recipe: ScenarioKnowledgeRecipe,
     ) -> Result<Self, String> {
         let ScenarioInput {
             path,
@@ -422,7 +425,7 @@ impl HumanSession {
             seed,
         });
         let initial = match projection {
-            Some(p) => InitialKnowledge::Saved(p),
+            Some(p) => InitialKnowledge::Saved(p, recipe),
             None => InitialKnowledge::Engine { resumed },
         };
         Self::with_game(game, origin, human, policy, seed, 1..=7, initial)
@@ -478,6 +481,27 @@ impl HumanSession {
         Self::scenario_initialized_recipe(input, human, policy, seed, dependencies, recipe)
     }
 
+    /// Explicit opt-in for inspecting a saved round with per-civilization
+    /// city work before orders. The normal scenario entry continues to use
+    /// its existing recipes. Subsequent visibility and city mechanics use
+    /// the engine model, with city passes executed as indivisible work items.
+    pub fn scenario_initialized_staged_round(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1,
+        )
+    }
+
     fn scenario_initialized_recipe(
         input: ScenarioInput<'_>,
         human: u8,
@@ -509,7 +533,17 @@ impl HumanSession {
             .as_ref()
             .map_or(0, crate::events::EventEngine::initializer_fingerprint);
         let saved = tot_kit::parse_sav(input.snapshot).map_err(|e| e.to_string())?;
-        let projection = if recipe == ScenarioKnowledgeRecipe::SavedInitialThenEngineV1 {
+        if recipe == ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1 {
+            crate::scenario::phase::saved_human_entry(&saved, &input.rules, human)?;
+            crate::scenario::snapshot::CheckedSnapshot::read(input.snapshot, &input.rules)?;
+            let research = saved.research[usize::from(human)];
+            if research.target < 0 && research.progress != 0 {
+                return Err(
+                    "staged round cannot reconstruct an empty project with saved science".into(),
+                );
+            }
+        }
+        let projection = if recipe != ScenarioKnowledgeRecipe::EngineSightV1 {
             if let Some(reason) = crate::scenario::saved_view_blocker(
                 &saved,
                 &input.rules,
@@ -526,7 +560,8 @@ impl HumanSession {
         } else {
             None
         };
-        let mut session = Self::scenario_with_knowledge(input, human, policy, seed, projection)?;
+        let mut session =
+            Self::scenario_with_knowledge(input, human, policy, seed, projection, recipe)?;
         session.initializer = Some(ScenarioInitializer::capture(
             &session,
             &saved,
@@ -551,12 +586,11 @@ impl HumanSession {
     ) -> Result<Self, String> {
         let resumed = match &initial {
             InitialKnowledge::Engine { resumed } => *resumed,
-            InitialKnowledge::Saved(_) => true,
+            InitialKnowledge::Saved(..) => true,
         };
-        let knowledge_recipe = if matches!(&initial, InitialKnowledge::Saved(_)) {
-            ScenarioKnowledgeRecipe::SavedInitialThenEngineV1
-        } else {
-            ScenarioKnowledgeRecipe::EngineSightV1
+        let knowledge_recipe = match &initial {
+            InitialKnowledge::Saved(_, recipe) => *recipe,
+            _ => ScenarioKnowledgeRecipe::EngineSightV1,
         };
         for civ in opponents {
             if civ != human {
@@ -602,6 +636,8 @@ impl HumanSession {
             initializer: None,
             knowledge_recipe,
             saved_initial: None,
+            staged_round: (knowledge_recipe == ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1)
+                .then(StagedRound::default),
             game,
             human,
             policy,
@@ -623,7 +659,7 @@ impl HumanSession {
             journal: Vec::new(),
         };
         match initial {
-            InitialKnowledge::Saved(projection) => session.install_saved_view(projection)?,
+            InitialKnowledge::Saved(projection, _) => session.install_saved_view(projection)?,
             InitialKnowledge::Engine { .. } => session.remember(),
         }
         if !resumed {
@@ -971,6 +1007,12 @@ impl HumanSession {
                 self.saved_initial
             ));
         }
+        if let Some(staged) = &self.staged_round {
+            data.push_str(&format!(
+                " staged-round-v1 {:?} {} {:?}",
+                self.saved_initial, self.cursor, staged
+            ));
+        }
         data.bytes().fold(0xcbf2_9ce4_8422_2325, |h, b| {
             (h ^ u64::from(b)).wrapping_mul(0x100_0000_01b3)
         })
@@ -998,7 +1040,15 @@ impl HumanSession {
             .game
             .world
             .human_research_candidates(&self.game.rules, self.human);
-        if (research.target.is_none() || research.free_advances > 0) && !available.is_empty() {
+        let needs_project = research.target.is_none()
+            && self
+                .staged_round
+                .as_ref()
+                .is_none_or(|state| research.progress != 0 || state.research_due);
+        if (needs_project || research.free_advances > 0) && !available.is_empty() {
+            if let Some(state) = &mut self.staged_round {
+                state.research_due = false;
+            }
             let id = self.allocate_decision();
             let default = self.goal.and_then(|goal| {
                 available
@@ -1342,6 +1392,9 @@ impl HumanSession {
         self.cursor += 1;
         self.actions = 0;
         self.last_ai = None;
+        if let Some(staged) = &mut self.staged_round {
+            staged.pending_city_pass = true;
+        }
     }
 
     /// Each work item is one AI order, skipped civilization, or atomic round.
@@ -1354,8 +1407,24 @@ impl HumanSession {
                 self.close_round();
                 self.cursor = 1;
                 self.last_human = None;
+                if let Some(staged) = &mut self.staged_round {
+                    *staged = StagedRound {
+                        pending_city_pass: true,
+                        ..StagedRound::default()
+                    };
+                    if self.game.world.game_over.is_none() && self.game.world.turn < 30_001 {
+                        self.run_staged_city_pass(0);
+                    }
+                }
             } else if !self.game.world.living_civs().contains(&self.cursor) {
                 self.next_civ();
+            } else if self
+                .staged_round
+                .as_ref()
+                .is_some_and(|stage| stage.pending_city_pass)
+            {
+                self.run_staged_city_pass(self.cursor);
+                self.staged_round.as_mut().unwrap().pending_city_pass = false;
             } else if let Some(mut player) = self.game.players[self.cursor as usize].take() {
                 let obs =
                     self.game
@@ -1370,6 +1439,16 @@ impl HumanSession {
                 }
             } else {
                 self.next_civ();
+            }
+            if self.cursor == self.human
+                && self
+                    .staged_round
+                    .as_ref()
+                    .is_some_and(|stage| stage.pending_city_pass)
+                && self.phase() == Phase::Human
+            {
+                self.run_staged_city_pass(self.human);
+                self.staged_round.as_mut().unwrap().pending_city_pass = false;
             }
             self.remember();
             steps += 1;
@@ -1386,6 +1465,21 @@ impl HumanSession {
     }
 
     fn close_round(&mut self) {
+        self.record_turn_notices(
+            true,
+            if self.staged_round.is_some() {
+                Game::close_staged_turn
+            } else {
+                Game::close_turn
+            },
+        );
+    }
+
+    fn record_turn_notices(
+        &mut self,
+        replace: bool,
+        step: impl FnOnce(&mut Game) -> crate::turn::TurnSummary,
+    ) {
         let cities: Vec<bool> = self
             .game
             .world
@@ -1400,9 +1494,11 @@ impl HumanSession {
             .iter()
             .map(|u| u.id != 0 && u.owner == self.human)
             .collect();
-        let summary = self.game.close_turn();
+        let summary = step(&mut self.game);
         let own = |k: &usize| cities.get(*k).copied().unwrap_or(false);
-        self.notices.clear();
+        if replace {
+            self.notices.clear();
+        }
         self.notices
             .extend(summary.grew.into_iter().filter(own).map(Notice::Grew));
         self.notices
@@ -1448,6 +1544,9 @@ impl HumanSession {
         }
     }
 }
+
+mod staged_round;
+use staged_round::StagedRound;
 
 mod checkpoint;
 

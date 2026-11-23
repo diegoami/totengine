@@ -140,3 +140,31 @@ setup on the pinned source without a research-selector call in that prefix.
 An empty saved target is not proof of a saved pending prompt. Existing recipes
 retain their engine-derived Research choice; future admission must bind a
 measured phase/choice recipe without silently changing historical checkpoints.
+
+
+## Experimental staged round
+
+Schema 3, `experimental-staged-round-v1`, is an explicit engine recipe
+for checking the measured handoff. The installed Original inspector
+exercises it with the captured dependencies and engine opponent policy.
+Normal client setup continues selecting schema 1 or 2.
+
+The resumed player's saved turn already has its city pass. After End Turn,
+the staged recipe runs each subsequent living civilization's city pass and
+movement allocation before its first order. The city pass is one replayable
+work item. Round close runs the existing engine round effects once and
+passes scheduling to the next round. The human's next city pass runs
+before the next human order phase. Subsequent observation uses the engine
+model.
+
+An empty project with zero saved science enters the human order phase. The
+recipe uses the existing chooser when there is banked science, an eligible
+post-discovery choice, or a free advance. City passes are atomic, so this
+recipe does not interrupt a pass at an individual native dialog.
+
+The checkpoint descriptor binds the scheduling recipe. Replay reconstructs
+the pending city pass, food-route accumulator and research bookkeeping from
+the operation journal. Tests restore before and after civ 5's city pass
+and continue both runs to the next human turn. Full classic admission
+still requires verified continuing knowledge, native pending decisions and
+the complete round contract.

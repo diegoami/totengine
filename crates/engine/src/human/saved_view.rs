@@ -4,7 +4,7 @@ use crate::saved_knowledge::SavedMapKnowledge;
 
 pub(super) enum InitialKnowledge {
     Engine { resumed: bool },
-    Saved(SavedMapKnowledge),
+    Saved(SavedMapKnowledge, ScenarioKnowledgeRecipe),
 }
 
 #[derive(Debug, Clone)]

@@ -161,6 +161,18 @@ fn installed_save_reports_checked_records_phase_and_view() {
     );
     assert_eq!(report["playable_import"], false);
     assert_eq!(
+        report["staged_round_check"],
+        json!({
+            "verified": true,
+            "initializer_schema": 3,
+            "profile": "experimental-staged-round-v1",
+            "same_turn": true,
+            "first_work_item": "city-pass",
+            "second_work_item": "opponent-order",
+            "checkpoints_replay": true,
+        })
+    );
+    assert_eq!(
         report["saved_land_step"],
         json!({
             "matches": true,

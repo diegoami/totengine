@@ -141,6 +141,14 @@ subsequent civ's orders, while the current engine policy batches the
 cities at round close. The single-civ engine city pass is reusable for a
 future admitted scheduler.
 
+The explicit [staged engine recipe](import-initializer.md#experimental-staged-round)
+now runs civ 5's city pass before its first AI order from the pinned save.
+The inspector verifies replay on both sides of that boundary. A separate
+install-backed test continues to the next human turn, where the city has
+been processed and the empty project still has zero science. The recipe
+keeps engine observation and atomic city passes. Native dialog timing and
+ongoing saved knowledge remain open.
+
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe
 traces the prefix reads from the city table to the event marker and verifies

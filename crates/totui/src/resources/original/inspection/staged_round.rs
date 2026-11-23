@@ -451,6 +451,7 @@ pub(super) fn check_saved_wait(
         .as_array()
         .filter(|steps| !steps.is_empty())
         .ok_or("native Wait evidence has no orders")?;
+    let mut first_wait = None;
     for step in steps {
         if json!(actor.slot) != step["actor"] {
             return Err("saved Wait actor differs from native focus".into());
@@ -464,7 +465,7 @@ pub(super) fn check_saved_wait(
         })?;
         let view = session.view();
         actor = session
-            .saved_wait_focus()
+            .saved_order_focus()
             .ok_or("saved Wait did not select a ready unit")?;
         if json!(actor.slot) != step["selected"]
             || response.result != Some(OrderResult::Waited)
@@ -474,19 +475,63 @@ pub(super) fn check_saved_wait(
         {
             return Err("saved Wait differs from the prepared native transition".into());
         }
+        if first_wait.is_none() {
+            first_wait = Some(session.checkpoint(identity));
+        }
     }
     let checkpoint = session.checkpoint(identity);
-    let replay = HumanSession::restore_with(
-        rules.clone(),
-        identity,
-        &checkpoint,
-        Some((&files.bytes, events)),
-    )?;
-    if replay.checkpoint(identity) != checkpoint || replay.saved_wait_focus() != Some(actor) {
+    let restore = |checkpoint: &str| {
+        HumanSession::restore_with(
+            rules.clone(),
+            identity,
+            checkpoint,
+            Some((&files.bytes, events.clone())),
+        )
+    };
+    let replay = restore(&checkpoint)?;
+    if replay.checkpoint(identity) != checkpoint || replay.saved_order_focus() != Some(actor) {
         return Err("saved Wait did not restore its focus".into());
     }
+    let mut moving = restore(&first_wait.ok_or("saved Wait has no first checkpoint")?)?;
+    let mover = moving
+        .saved_order_focus()
+        .ok_or("the checked move has no ready actor")?;
+    let native = &trace["move_after_wait"];
+    let to: (u16, u16) = serde_json::from_value(native["position"].clone())
+        .map_err(|error| format!("invalid saved Wait move destination: {error}"))?;
+    let revision = moving.view().revision;
+    let result = moving.submit(Request {
+        civ: human,
+        revision,
+        id: revision + 1,
+        command: Command::Move { unit: mover, to },
+    })?;
+    let view = moving.view();
+    let focus = moving
+        .saved_order_focus()
+        .ok_or("exhausted movement did not select another unit")?;
+    if json!(mover.slot) != native["actor"]
+        || json!(focus.slot) != native["selected"]
+        || result.result != Some(OrderResult::Moved)
+        || json!(view.observation.seen.iter().flatten().count()) != native["explored_tiles"]
+        || !view
+            .observation
+            .units
+            .iter()
+            .any(|unit| unit.index == mover.slot && unit.moves_left == 0 && (unit.x, unit.y) == to)
+    {
+        return Err(
+            "the checked move after Wait differs from the prepared native transition".into(),
+        );
+    }
+    let moved = moving.checkpoint(identity);
+    let replay = restore(&moved)?;
+    if replay.checkpoint(identity) != moved || replay.saved_order_focus() != Some(focus) {
+        return Err("the checked move after Wait did not restore its focus".into());
+    }
     Ok(
-        json!({"verified": true, "waits": steps.len(), "selected_slot": actor.slot, "checkpoint_replays": true}),
+        json!({"verified": true, "waits": steps.len(), "selected_slot": actor.slot,
+             "move_after_wait_slot": focus.slot, "checkpoint_replays": true}),
     )
 }
 

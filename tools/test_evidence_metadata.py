@@ -246,6 +246,9 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(report['writer_unit_bytes'], 1520)
         self.assertEqual([case['selected'] for case in report['reload'].values()], [6, 9])
         self.assertEqual(report['skip_with_slot_9_deferred'], [6, 26, 18, 9])
+        self.assertEqual(report['move_after_wait'], {
+            'actor': 6, 'selected': 26, 'deferred': [9], 'explored_tiles': 60, 'position': [62, 4],
+        })
 
     def test_native_annual_update_retains_the_saved_projection(self):
         close = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())

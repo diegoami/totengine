@@ -930,25 +930,17 @@ impl Client {
         }
         self.refresh();
         match command {
-            Command::Move { unit, .. } | Command::Occupy { unit, .. } => {
-                self.schedule_unit(Some(unit), false);
-            }
-            Command::Wait { unit } => {
-                self.active = self
+            Command::Move { unit, .. } | Command::Wait { unit } | Command::Skip { unit } => {
+                if let Some(focus) = self
                     .loaded
                     .as_ref()
-                    .and_then(|loaded| loaded.session.saved_wait_focus());
+                    .and_then(|loaded| loaded.session.saved_order_focus())
+                {
+                    self.active = Some(focus);
+                }
                 self.schedule_unit(Some(unit), false);
             }
-            Command::Skip { unit } => {
-                let anchor = v
-                    .observation
-                    .units
-                    .iter()
-                    .find(|actor| actor.index == unit.slot)
-                    .map(|actor| (actor.x, actor.y));
-                self.schedule_after_skip(unit, anchor);
-            }
+            Command::Occupy { unit, .. } => self.schedule_unit(Some(unit), false),
             Command::Research { .. } | Command::NameCity { .. } | Command::CancelFound { .. } => {
                 self.schedule_unit(None, true);
             }

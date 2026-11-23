@@ -26,11 +26,6 @@ impl Client {
         self.schedule_unit(None, !focused);
     }
 
-    pub(super) fn schedule_after_skip(&mut self, unit: Entity, anchor: Option<(u16, u16)>) {
-        self.select_saved_focus(anchor);
-        self.schedule_unit(Some(unit), false);
-    }
-
     /// Keep a ready actor, otherwise advance after its slot. Explicit end-turn
     /// remains the owner's default; selection itself never submits an order.
     pub(super) fn schedule_unit(&mut self, after: Option<Entity>, new_turn: bool) {

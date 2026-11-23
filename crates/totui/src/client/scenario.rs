@@ -244,7 +244,7 @@ impl Client {
     }
 
     /// Restore the replacement before committing assets or selection. The
-    /// optional focus comes from a checked viewport or a replayed Wait.
+    /// optional focus comes from a checked viewport or a replayed order.
     pub(super) fn restore_scenario(
         &mut self,
         origin: &engine::human::ScenarioOrigin,
@@ -275,7 +275,7 @@ impl Client {
             });
         let (loaded, focus) = match legacy {
             Ok(loaded) => {
-                let focus = loaded.session.saved_wait_focus();
+                let focus = loaded.session.saved_order_focus();
                 (loaded, focus)
             }
             Err(_) if reference_recipe => {
@@ -286,7 +286,7 @@ impl Client {
                 let focus = if loaded.session.view().revision == 0 {
                     viewport.and_then(|anchor| loaded.session.saved_initial_focus(anchor))
                 } else {
-                    loaded.session.saved_wait_focus()
+                    loaded.session.saved_order_focus()
                 };
                 (loaded, focus)
             }

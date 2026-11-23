@@ -4,6 +4,7 @@
 Run the native Wait action in the prepared input context. Repeat the
 unit-table writer boundary and reader with virtual file buffers, then
 compare the first selected actor with and without the deferred bit.
+The mixed controls use Skip and the native selector after a move.
 """
 import argparse
 import hashlib
@@ -15,7 +16,7 @@ import struct
 from unicorn import UC_HOOK_CODE
 from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EIP, UC_X86_REG_ESP
 
-from import_first_order_check import execute
+from import_first_order_check import NORTHWEST, execute
 from import_input_handoff_check import measure_handoff
 from import_phase_check import FRAME, frame, read, run
 from import_round_handoff_check import trace
@@ -150,10 +151,21 @@ def main():
     assert skip_order == [6, 26, 18, 9]
     assert not any(deferred(original, slot) for slot in OWN)
 
+    original, player, regions = fresh()
+    first = wait_series(original, player, regions, 1)[0]
+    move = execute(original, player, regions, NORTHWEST, return_address=0x100050)
+    actor = move['before']['active_slot']
+    assert first['selected'] == actor == 6
+    assert move['unit_position_after'] == (62, 4) and move['explored_tiles'] == 60
+    selected = original.call(0x56CB3D, actor, 1)
+    assert selected == 26 and deferred(original, 9)
+    move_focus = {'actor': actor, 'selected': selected, 'deferred': [9],
+                  'explored_tiles': move['explored_tiles'], 'position': move['unit_position_after']}
+
     report = {'schema': 1, **{key: prior[key] for key in ('binary_sha256', 'source', 'rules')},
               'anchor': ANCHOR, 'waits': sequence, 'one_ready': solitary,
               'writer_unit_bytes': len(units), 'reload': reload,
-              'skip_with_slot_9_deferred': skip_order, 'scope': __doc__.strip()}
+              'skip_with_slot_9_deferred': skip_order, 'move_after_wait': move_focus, 'scope': __doc__.strip()}
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')
 

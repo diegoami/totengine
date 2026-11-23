@@ -166,5 +166,17 @@
     18,
     9
   ],
-  "scope": "Trace Wait and deferred unit records in the checked Original resume.\n\nRun the native Wait action in the prepared input context. Repeat the\nunit-table writer boundary and reader with virtual file buffers, then\ncompare the first selected actor with and without the deferred bit."
+  "move_after_wait": {
+    "actor": 6,
+    "selected": 26,
+    "deferred": [
+      9
+    ],
+    "explored_tiles": 60,
+    "position": [
+      62,
+      4
+    ]
+  },
+  "scope": "Trace Wait and deferred unit records in the checked Original resume.\n\nRun the native Wait action in the prepared input context. Repeat the\nunit-table writer boundary and reader with virtual file buffers, then\ncompare the first selected actor with and without the deferred bit.\nThe mixed controls use Skip and the native selector after a move."
 }

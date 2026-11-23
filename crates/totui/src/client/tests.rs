@@ -5279,6 +5279,24 @@ fn installed_checked_checkpoint_uses_saved_viewport_and_next_turn_anchor() {
     edit(&mut c, "checked-turn");
     key(&mut c, "Enter");
     key(&mut c, "w");
+    key(&mut c, "7");
+    assert_eq!(c.active.map(|actor| actor.slot), Some(26));
+    assert_eq!(
+        c.view().unwrap().observation.seen.iter().flatten().count(),
+        60
+    );
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "moved-after-wait");
+    key(&mut c, "Enter");
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "moved-after-wait");
+    key(&mut c, "Enter");
+    assert_eq!(c.active.map(|actor| actor.slot), Some(26));
+
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "checked-turn");
+    key(&mut c, "Enter");
+    key(&mut c, "w");
     for slot in [6, 26, 18, 9] {
         assert_eq!(c.active.map(|actor| actor.slot), Some(slot));
         key(&mut c, " ");

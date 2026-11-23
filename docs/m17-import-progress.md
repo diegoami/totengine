@@ -232,8 +232,10 @@ the deferred flag through Wait cycling, a unit-table write and read, and
 the mixed Skip sequence. The checked engine records Wait in its
 checkpoint journal and restores the next focus without spending
 movement. The shared client uses this for the experimental replay.
-Wider unit cycling contexts, faithful client admission, wider combat and
-pending choices remain open.
+A Wait followed by an exhausted northwest Move keeps slot 9 deferred
+and selects slot 26, matching the native selector and restoring the
+same focus from the checkpoint. Wider unit cycling contexts, faithful
+client admission, wider combat and pending choices remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

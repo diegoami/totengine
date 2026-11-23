@@ -164,13 +164,48 @@ mod tests {
             assert_eq!(session.game.log(), log);
             assert_eq!(session.view().observation.units, before.observation.units);
             assert_eq!(session.view().observation.seen, before.observation.seen);
-            actor = session.saved_wait_focus().unwrap();
+            actor = session.saved_order_focus().unwrap();
             assert_eq!(actor.slot, next);
             let checkpoint = session.checkpoint(deps);
             let replay = restore(&checkpoint);
-            assert_eq!(replay.saved_wait_focus(), Some(actor));
+            assert_eq!(replay.saved_order_focus(), Some(actor));
             assert_eq!(replay.checkpoint(deps), checkpoint);
         }
+        let mut moving = restore(&initial);
+        let waiter = moving.saved_initial_focus((61, 5)).unwrap();
+        moving
+            .submit(Request {
+                civ: 4,
+                revision: 0,
+                id: 1,
+                command: Command::Wait { unit: waiter },
+            })
+            .unwrap();
+        let mover = moving.saved_order_focus().unwrap();
+        assert_eq!(mover.slot, 6);
+        moving
+            .submit(Request {
+                civ: 4,
+                revision: 1,
+                id: 2,
+                command: Command::Move {
+                    unit: mover,
+                    to: (62, 4),
+                },
+            })
+            .unwrap();
+        assert_eq!(
+            moving.saved_move_state.as_ref().unwrap().units[9].attr() & 0x4000,
+            0x4000
+        );
+        assert_eq!(moving.game.world.units[6].moves_left, 0);
+        assert_eq!(moving.saved_order_focus().unwrap().slot, 26);
+        let checkpoint = moving.checkpoint(deps);
+        assert_eq!(
+            restore(&checkpoint).saved_order_focus(),
+            moving.saved_order_focus()
+        );
+
         let mut solitary = restore(&initial);
         for slot in [6, 18, 26] {
             let view = solitary.view();
@@ -195,7 +230,7 @@ mod tests {
                 command: Command::Wait { unit: actor },
             })
             .unwrap();
-        assert_eq!(solitary.saved_wait_focus(), Some(actor));
+        assert_eq!(solitary.saved_order_focus(), Some(actor));
         assert_eq!(
             solitary.saved_move_state.as_ref().unwrap().units[9].attr() & 0x4000,
             0

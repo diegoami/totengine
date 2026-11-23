@@ -408,13 +408,16 @@ already waited, the selector clears those flags and searches again. A
 solitary ready unit stays selected. The native annual update clears
 deferrals at round close.
 
-The private checkpoint journals Wait, seals the outstanding deferrals and
-restores the selected unit when Wait is the last action. The shared client
-uses the ordinary presentation behavior outside the checked context.
-The inspector replays six native Wait commands and checks the unchanged
-movement and view. The witness also executes the native writer and
-reader boundaries with a virtual unit table and tests the mixed path
-through Skip.
+The private checkpoint journals Wait, seals outstanding deferrals and
+restores focus after Wait or a checked exhausted Skip or Move. The
+shared client uses the ordinary presentation behavior outside the checked
+context. The inspector replays six native Wait commands and checks the
+unchanged movement and view. The witness executes the native writer and
+reader boundaries with a virtual unit table and tests a mixed Skip
+sequence. In a separate control, slot 9 waits, slot 6 exhausts its
+movement going northwest, and the native selector picks slot 26.
+The inspector verifies the same move and restores slot 26 from the
+checkpoint.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_wait_check.py --out /tmp/import-wait.json

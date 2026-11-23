@@ -220,7 +220,7 @@ fn installed_save_reports_checked_records_phase_and_view() {
     assert_eq!(
         report["saved_wait_check"],
         json!({
-            "verified": true, "waits": 6, "selected_slot": 6, "checkpoint_replays": true,
+             "verified": true, "waits": 6, "selected_slot": 6, "move_after_wait_slot": 26, "checkpoint_replays": true,
         })
     );
     assert_eq!(report["playable_import"], false);

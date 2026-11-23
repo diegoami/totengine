@@ -97,17 +97,24 @@ impl HumanSession {
         self.saved_wait_candidates(actor).is_some()
     }
 
-    /// Recover the view focus after replaying a checkpoint ending in Wait.
-    pub fn saved_wait_focus(&self) -> Option<Entity> {
-        let Some(Operation::Input(Request {
-            command: Command::Wait { unit },
-            ..
-        })) = self.journal.last()
-        else {
+    /// Recover the checked focus after replaying the last selection-changing
+    /// order. A Move with movement left keeps its active actor in the client.
+    pub fn saved_order_focus(&self) -> Option<Entity> {
+        let Some(Operation::Input(request)) = self.journal.last() else {
             return None;
         };
-        let at = self.game.world.units.get(unit.slot)?;
-        self.saved_initial_focus((at.x, at.y))
+        let actor = match request.command {
+            Command::Wait { unit } | Command::Move { unit, .. } | Command::Skip { unit } => unit,
+            _ => return None,
+        };
+        let unit = self.game.world.units.get(actor.slot)?;
+        if unit.id != actor.id
+            || unit.owner != self.human
+            || (!matches!(request.command, Command::Wait { .. }) && unit.moves_left != 0)
+        {
+            return None;
+        }
+        self.saved_initial_focus((unit.x, unit.y))
     }
 
     pub(super) fn stage_saved_wait(&mut self, actor: Entity) -> Result<(), &'static str> {
@@ -138,8 +145,11 @@ impl HumanSession {
         }
     }
 
-    fn reset_deferred_focus_after_skip(&mut self, slot: usize) {
+    fn reset_deferred_focus_after_exhaustion(&mut self, slot: usize) {
         let unit = &self.game.world.units[slot];
+        if unit.moves_left != 0 {
+            return;
+        }
         if let Some(candidates) = self.saved_focus_candidates((unit.x, unit.y)) {
             if candidates.iter().all(|unit| unit.deferred) {
                 let previous = (!candidates.is_empty()).then_some(slot);
@@ -532,8 +542,8 @@ impl HumanSession {
             .commit_saved_view_order(world, self.human, order, result);
         self.set_saved_view(view);
         self.saved_move_state = Some(observed);
-        if let Order::SkipUnit { unit } = order {
-            self.reset_deferred_focus_after_skip(unit);
+        if let Order::SkipUnit { unit } | Order::Move { unit, .. } = order {
+            self.reset_deferred_focus_after_exhaustion(unit);
         }
         Ok(Some(result))
     }

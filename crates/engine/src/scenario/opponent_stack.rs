@@ -1,4 +1,5 @@
 //! Scoped opponent movement between unseen land and friendly city stacks.
+use crate::movement::MovementRoute;
 use crate::saved_knowledge::{clear_unit_stack_visibility, unit_observation_after};
 use crate::WorldState;
 use std::collections::BTreeSet;
@@ -85,7 +86,8 @@ pub(crate) fn record_city_births(
 }
 
 /// Execute ordinary land movement and update the affected stack links.
-/// A departing stack is relinked and an arrival appends to the destination. The supplied world is temporary and can be discarded on error.
+/// Relink both stacks in the checked order. The caller can discard the
+/// temporary world on error.
 pub(crate) fn stage(
     saved: &SaveFile,
     rules: &Rules,
@@ -113,7 +115,7 @@ pub(crate) fn stage(
     }
     let origin = (unit.x, unit.y);
     let source = stack(world, origin)?;
-    let members = stack(world, to)?;
+    let mut members = stack(world, to)?;
     let city_at = |at| {
         world
             .cities
@@ -135,16 +137,22 @@ pub(crate) fn stage(
     {
         return Err("saved opponent step needs empty land or a friendly city stack".into());
     }
+    let origin_city = city_at(origin);
+    let field_to_city = field_stack
+        && origin_city.is_none()
+        && source.len() == 2
+        && members.len() == 1
+        && friendly_city(city);
+    let city_to_empty = friendly_city(origin_city) && members.is_empty();
     if source.len() > 1
-        && (!members.is_empty()
-            || !friendly_city(city_at(origin))
+        && (!(field_to_city || city_to_empty)
             || source.iter().any(|&s| {
                 world.units[s].owner != civ
                     || saved.units.get(s).is_none_or(|u| u.visibility() != 0)
             }))
     {
         return Err(
-            "saved opponent departure needs an unseen friendly city stack and empty land".into(),
+            "saved opponent departure is outside the checked friendly stack contexts".into(),
         );
     }
 
@@ -160,13 +168,29 @@ pub(crate) fn stage(
         return Err("saved stack move cannot enter a hut".into());
     }
     let mut updated = clear_unit_stack_visibility(saved, slot)?;
-    let connected_routes =
-        field_stack && !members.is_empty() && city.is_none() && city_at(origin).is_none();
-    let result = world.move_unit_with_routes(rules, slot, to.0, to.1, connected_routes);
+    let field_to_field =
+        field_stack && !members.is_empty() && city.is_none() && origin_city.is_none();
+    let attack = rules.unit_attack(usize::from(unit.type_id));
+    if field_to_field && attack != Some(0) || field_to_city && attack.is_none() {
+        return Err("saved field-stack arrival has an unchecked mover attack value".into());
+    }
+    // The checked city entry connects to a road or railroad at the origin.
+    let route = (field_to_field || field_to_city).then(|| MovementRoute {
+        road: world.map.road[from] && (field_to_city || world.map.road[dest]),
+        rail: world.map.rail[from] && (field_to_city || world.map.rail[dest]),
+    });
+    let result = world.move_unit_with_routes(rules, slot, to.0, to.1, route);
     if !result.moved || result.battle.is_some() || result.hut || result.zoc_ended {
         return Err("saved stack move did not resolve as ordinary movement".into());
     }
-    world.units[slot].stack_pos = members.len() as u16;
+    if field_to_city && attack.is_some_and(|value| value != 0) {
+        members.insert(0, slot);
+    } else {
+        members.push(slot);
+    }
+    for (position, &member) in members.iter().enumerate() {
+        world.units[member].stack_pos = position as u16;
+    }
     let moved = &mut updated.units[slot].raw;
     moved[..2].copy_from_slice(&to.0.to_le_bytes());
     moved[2..4].copy_from_slice(&to.1.to_le_bytes());
@@ -184,7 +208,7 @@ pub(crate) fn stage(
     }
     tile_bytes[6 * dest + 1] |= 1;
     tile_bytes[6 * dest + 5] = (tile_bytes[6 * dest + 5] & 15) | (civ << 4);
-    link_stack(&mut updated, world, &stack(world, to)?)?;
+    link_stack(&mut updated, world, &members)?;
     let observed = unit_observation_after(&updated, rules, slot, true)
         .map_err(|error| format!("saved opponent stack observation: {error}"))?;
     super::snapshot::apply_saved_observation(world, &observed);

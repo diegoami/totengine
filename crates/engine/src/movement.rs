@@ -19,6 +19,11 @@ use tot_kit::Rules;
 
 use crate::WorldState;
 
+pub(crate) struct MovementRoute {
+    pub road: bool,
+    pub rail: bool,
+}
+
 /// Outcome of a single [`WorldState::move_unit`] attempt.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MoveOutcome {
@@ -127,17 +132,17 @@ impl WorldState {
     /// unit stays put when the move is illegal (domain, impassable
     /// destination, or no movement left).
     pub fn move_unit(&mut self, rules: &Rules, unit_idx: usize, x: u16, y: u16) -> MoveOutcome {
-        self.move_unit_with_routes(rules, unit_idx, x, y, false)
+        self.move_unit_with_routes(rules, unit_idx, x, y, None)
     }
 
-    /// The checked saved field-stack context requires a route on both tiles.
+    /// Use a checked route connection when the caller supplies one.
     pub(crate) fn move_unit_with_routes(
         &mut self,
         rules: &Rules,
         unit_idx: usize,
         x: u16,
         y: u16,
-        connected_routes: bool,
+        route: Option<MovementRoute>,
     ) -> MoveOutcome {
         let none = MoveOutcome {
             moved: false,
@@ -187,14 +192,13 @@ impl WorldState {
             .unwrap_or(1)
             .max(1);
         let mut cost = base_cost * 3; // thirds
-        let origin_idx = self.map.stored_index(unit.x, unit.y);
-        let rail = self.map.rail[dest_idx]
-            && (!connected_routes || origin_idx.is_some_and(|idx| self.map.rail[idx]));
-        let road = self.map.road[dest_idx]
-            && (!connected_routes || origin_idx.is_some_and(|idx| self.map.road[idx]));
-        if rail {
+        let route = route.unwrap_or_else(|| MovementRoute {
+            road: self.map.road[dest_idx],
+            rail: self.map.rail[dest_idx],
+        });
+        if route.rail {
             cost = 0;
-        } else if road {
+        } else if route.road {
             // road multiplier: M road tiles per movement point
             let mult = rules.road_multiplier().unwrap_or(3).max(1);
             cost = (3 / mult).max(1);

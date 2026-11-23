@@ -169,6 +169,7 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "explored_tiles": 59,
             "combat_rng_matches": true,
             "field_stack_replays": true,
+            "city_arrival_replays": true,
             "checkpoint_replays": true,
         })
     );

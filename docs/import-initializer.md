@@ -280,8 +280,8 @@ intact so the prior path can apply them once. This recipe also permits a
 checked unseen move into a friendly stack outside a city.
 
 The [prepared combat trace](evidence/import-opponent-combat-view.json)
-continues the three measured opponent moves. A native Rules refresh
-supplies the combat tables before directing slot 20 against slot 22.
+runs a native Rules refresh before repeating the three measured opponent
+moves and directing slot 20 against slot 22.
 The seed-7 control wins in place, removes the defender and keeps all
 59 explored tiles and remembered improvements. Seed 1 also wins and
 leaves the attacker with five damage. The inspector and install-backed
@@ -296,12 +296,13 @@ and charges zero when both have rail. The actual forest destination only
 has a road on the arrival tile. The native move spends six thirds against
 an allowance of three and refuses the next step. The staged field-stack
 recipe uses the tested route rule and exhausts the Settler's movement.
-The next checked native move leaves that field stack for a friendly city.
-Slot 7 spends one third and links ahead of slot 24, with the human view
-still at 59 tiles. The engine recipe stops before this city arrival while
-its placement and route rules are investigated. Native opponent policy,
-macro dispatch and broader combat contexts remain outside these
-controlled actions.
+The next checked move leaves that two-unit field stack for a friendly
+city with one resident unit. Slot 7 spends one third and links ahead of
+slot 24. An attack-zero control places the mover behind the resident.
+The entry controls confirm that the city connects to the route on the
+origin tile. The staged recipe mirrors this arrival, keeps all 59 tiles
+and restores the checkpoint. Native opponent policy, macro dispatch and
+broader combat contexts remain outside these controlled actions.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_combat_view_check.py --out /tmp/opponent-combat-view.json

@@ -753,5 +753,25 @@ staged-round-test
         assert_eq!(saved.units[7].stack_next(), 4);
         assert_eq!(game.view().observation.seen, initial.observation.seen);
         assert_eq!(game.checkpoint(deps), replay.checkpoint(deps));
+
+        assert_eq!(game.advance(1), 1);
+        assert_eq!(replay.advance(1), 1);
+        assert!(game
+            .game
+            .log()
+            .lines()
+            .last()
+            .unwrap()
+            .contains(" C 7 move 7 8 46 = moved"));
+        let saved = game
+            .saved_move_state
+            .as_ref()
+            .expect("city arrival keeps the saved view");
+        assert_eq!(saved.units[7].stack_next(), 24);
+        assert_eq!(saved.units[24].stack_prev(), 7);
+        assert_eq!(saved.units[4].stack_prev(), -1);
+        assert_eq!(game.game.world.units[7].moves_left, 2);
+        assert_eq!(game.view().observation.seen, initial.observation.seen);
+        assert_eq!(game.checkpoint(deps), replay.checkpoint(deps));
     }
 }

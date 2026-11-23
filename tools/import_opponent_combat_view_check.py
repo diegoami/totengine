@@ -34,15 +34,14 @@ IMPORTS = {
 
 def execute(original, viewer, city, rules, seed):
     measure(original, viewer, city)
-    move_into_unseen_city(original, viewer)
-    move_opponent(original, viewer, (10, 7, 3), (10,), (41, 39), (41, 37), ((-1, -1),))
-    move_opponent(original, viewer, (19, 6, 3), (19, 34, 2), (43, 37), (42, 36),
-                  ((-1, -1), (-1, 2), (34, -1)))
-
     frame(original)
     original.write(FRAME - 0x1990, 1, '<I')  # successful virtual save close
     original.write(FRAME - 0xe9c, 0, '<I')
     loaded = rules_refresh(original, rules)
+    move_into_unseen_city(original, viewer)
+    move_opponent(original, viewer, (10, 7, 3), (10,), (41, 39), (41, 37), ((-1, -1),))
+    move_opponent(original, viewer, (19, 6, 3), (19, 34, 2), (43, 37), (42, 36),
+                  ((-1, -1), (-1, 2), (34, -1)))
 
     cpu = original.cpu
     area = read(original, 0x6705A4, '<h')
@@ -117,6 +116,12 @@ def execute(original, viewer, city, rules, seed):
     }
 
 
+def set_route(original, x, y, flags):
+    width = read(original, 0x6705A0, '<h') // 2
+    address = TILES + 6 * (y * width + x // 2) + 1
+    original.write(address, (read(original, address, '<B') & ~0x30) | flags, '<B')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
@@ -130,29 +135,36 @@ def main():
         source = evidence[role]
         assert hashlib.sha256((home / source['path']).read_bytes()).hexdigest() == source['sha256']
     rules = parse_rules(str(home / evidence['rules']['path']))
-    def run_case(seed, routes=None):
+
+    def run_case(seed, field_routes=None, city_control=None):
         def entry(original, player, city):
             nonlocal result
             result = execute(original, player, city, rules, seed)
             if seed != 7:
                 return
-            if routes is not None:
-                width = read(original, 0x6705A0, '<h') // 2
-                for x, flags in zip((11, 9), routes):
-                    address = TILES + 6 * (45 * width + x // 2) + 1
-                    original.write(address, (read(original, address, '<B') & ~0x30) | flags, '<B')
+            if field_routes is not None:
+                for x, flags in zip((11, 9), field_routes):
+                    set_route(original, x, 45, flags)
             stack = move_opponent(original, player, (4, 5, 3), (4, 7), (11, 45), (9, 45),
                                   ((7, -1), (-1, 4)))
             result['following_field_stack'] = stack
-            if routes is None:
+            if field_routes is None and city_control is None:
                 refused = move_opponent(original, player, (4, 3, 3), (4, 7), (9, 45), (9, 45),
                                         ((7, -1), (-1, 4)), expected_return=0)
                 assert refused['after'] == stack['after'] and refused['after'][0]['spent'] == 6
                 result['refused_departure'] = refused
-                arrival = move_opponent(original, player, (7, 4, 3), (7, 4, 24),
-                                        (9, 45), (8, 46), ((-1, 24), (-1, -1), (7, -1)))
-                assert arrival['after'][0]['spent'] == 1
-                result['following_city_arrival'] = arrival
+            if field_routes is None:
+                if city_control is None:
+                    attack = 1
+                else:
+                    attack, origin, destination = city_control
+                    set_route(original, 9, 45, origin)
+                    set_route(original, 8, 46, destination)
+                    original.write(0x5F470C + 40 * 2, attack, '<B')  # Warrior attack
+                links = ((-1, 24), (-1, -1), (7, -1)) if attack else ((24, -1), (-1, -1), (-1, 7))
+                result['following_city_arrival'] = move_opponent(
+                    original, player, (7, 4, 3), (7, 4, 24), (9, 45), (8, 46), links,
+                )
 
         def prepared(original, player, regions):
             trace(original, player, regions, clear_preference_bit=False, skip_selected=True,
@@ -175,8 +187,18 @@ def main():
             controls.append({'origin_flags': origin, 'destination_flags': destination,
                              'spent': stack['after'][0]['spent']})
     assert [case['spent'] for case in controls] == [6, 6, 6, 6, 1, 1, 6, 1, 0]
+    assert cases['7']['following_city_arrival']['after'][0]['spent'] == 1
+    city_controls = []
+    for attack, origin, destination, spent in [(0, 16, 0, 1), (1, 0, 0, 3), (1, 48, 0, 0),
+                                               (1, 48, 48, 0), (1, 0, 48, 3)]:
+        arrival = run_case(7, city_control=(attack, origin, destination))['following_city_arrival']
+        mover = arrival['after'][0]
+        assert mover['spent'] == spent and arrival['explored_tiles'] == 59
+        city_controls.append({'attack': attack, 'origin_flags': origin, 'destination_flags': destination,
+                              'spent': spent, 'mover_previous': mover['previous'], 'mover_next': mover['next']})
     report = {'schema': 1, **{key: evidence[key] for key in ('binary_sha256', 'source', 'rules')},
-              'cases': cases, 'route_controls': controls, 'scope': __doc__.strip()}
+              'cases': cases, 'route_controls': controls, 'city_arrival_controls': city_controls,
+              'scope': __doc__.strip()}
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')
 

@@ -142,3 +142,45 @@ handlers remain open.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_input_handoff_check.py --out /tmp/input-handoff.json
 cmp docs/evidence/import-input-handoff.json /tmp/input-handoff.json
 ```
+
+
+### First orders after the prepared input loop
+
+[The first-order probe](evidence/import-first-order.json) re-executes the
+pinned observation and idle prefix, then calls the original game callbacks
+with three independent inputs. It prepares the running-window guards,
+supplies an empty filtered queue and substitutes the listed display, audio,
+network and key-state calls. The keyboard move uses an internal direction
+code and returns after the native movement and observation logic. The probe
+does not drive a live Windows queue or show modal timing.
+
+- **W** selects slot 9 and sets attribute bit `0x4000` on slot 6. Sprite
+  selection in the current clients is an engine presentation choice without
+  that native record write.
+- **Space** spends slot 6's full movement allowance, 3 in the saved units, and
+  writes 255 to its last-direction byte. Slot 6 remains active at the return of
+  the character callback.
+- **Northwest** moves slot 6 from (63, 5) to (62, 4). The native terrain cost
+  records 6 spent against an allowance of 3. Occupancy and destination
+  ownership change, and the player's saved knowledge grows from 59 to 60 tiles.
+  The other six remembered-improvement arrays and the civ and city records
+  stay intact.
+
+Research remains target -1 with progress 0 after all three accepted inputs.
+This proves that an empty research target need not prevent initial unit
+commands in the prepared context. It supplies no assertion about when a live
+session opens the research chooser later in the round.
+
+The install-backed CLI test applies the measured occupancy and ownership
+changes before running the saved-knowledge observation kernel. Its tile and
+cache deltas exactly match the native move. A separate check executes the
+current engine movement order and reaches the same position with zero moves
+remaining. Its generic reveal includes an extra tile near Madrid. The two
+knowledge models therefore still diverge after a real first order, which
+prevents the current runtime path from satisfying the continuation predicate.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_first_order_check.py --out /tmp/first-orders.json
+cmp docs/evidence/import-first-order.json /tmp/first-orders.json
+CIVTOT_HOME=... cargo test -p totctl --test original_import
+```

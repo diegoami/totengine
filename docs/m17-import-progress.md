@@ -106,6 +106,14 @@ inputs update occupancy and ownership before executing the observation loop.
 This isolates observation from movement and stops before notification
 processing with active contacts disabled.
 
+The [first accepted orders](evidence/import-first-order.json) extend the
+prepared input witness through native W, Space and a northwest move. Research
+stays empty throughout the callbacks. The move reaches (62, 4), spending 6
+against an allowance of 3 and observing one new tile. The saved-knowledge
+kernel reproduces its raw deltas after matching occupancy and ownership;
+the current engine move still exposes one extra tile near Madrid. The pinned
+comparison is available from `inspect-original-save` by input identity.
+
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe
 traces the prefix reads from the city table to the event marker and verifies

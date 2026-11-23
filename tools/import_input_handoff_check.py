@@ -115,7 +115,7 @@ def idle_iteration(original, regions):
     }
 
 
-def witness(home, binary, path, *, exhaust, observation):
+def witness(home, binary, path, *, exhaust, observation, after_idle=None):
     original, player, _, regions, _ = prepare(home, binary, path, exhaust=exhaust)
     width, height = (read(original, addr, '<h') for addr in (0x6705A0, 0x6705A2))
     area = width * height // 2
@@ -203,6 +203,8 @@ def witness(home, binary, path, *, exhaust, observation):
         assert bytes(original.cpu.mem_read(viewer_cache, area)) == after_cache
         assert entity_knowledge() == (after_units, after_cities)
     result['observation_calls'] = observation_calls
+    if after_idle is not None:
+        after_idle(original, player, regions)
     return result
 
 

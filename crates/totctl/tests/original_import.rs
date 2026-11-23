@@ -1,4 +1,8 @@
+use engine::player::{Order, OrderResult};
+use serde_json::{json, Value};
 use std::{path::Path, process::Command};
+
+const FIRST_ORDERS: &str = include_str!("../../../docs/evidence/import-first-order.json");
 
 #[test]
 fn unsupported_path_is_rejected_without_a_success_report() {
@@ -43,6 +47,9 @@ fn installed_save_reports_checked_records_phase_and_view() {
     let witnessed = &native["cases"]["native_observation"]["observation_to_input"];
     assert_eq!(trace["first_poll"], witnessed["first_poll"]);
     assert_eq!(trace["idle_iteration"], witnessed["idle_iteration"]);
+    let orders: Value = serde_json::from_str(FIRST_ORDERS).unwrap();
+    assert_eq!(trace["first_orders"]["cases"], orders["cases"]);
+    assert_eq!(trace["first_orders"]["scope"], orders["scope"]);
     let loader: serde_json::Value = serde_json::from_str(include_str!(
         "../../../docs/evidence/import-loader-exit.json"
     ))
@@ -99,4 +106,112 @@ fn installed_save_reports_checked_records_phase_and_view() {
         std::fs::read(Path::new(&home).join(source)).unwrap(),
         before
     );
+}
+
+#[test]
+fn installed_native_first_move_matches_saved_knowledge_kernel() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let install = Path::new(&home).join("Original");
+    let save = tot_kit::parse_sav_file(&install.join("Ph_Auto2.SAV")).unwrap();
+    let rules = tot_kit::parse_rules(&tot_kit::latin1(
+        &std::fs::read(install.join("Rules.txt")).unwrap(),
+    ));
+    let native: Value = serde_json::from_str(FIRST_ORDERS).unwrap();
+    let moved = &native["cases"]["move_northwest"];
+    assert_eq!(moved["observation_arguments"], json!([[6, 1]]));
+    let slot = moved["before"]["active_slot"].as_u64().unwrap() as usize;
+    let coordinate = |position: &Value| {
+        (
+            position[0].as_u64().unwrap() as u16,
+            position[1].as_u64().unwrap() as u16,
+        )
+    };
+    let old = coordinate(&moved["unit_position_before"]);
+    let destination = coordinate(&moved["unit_position_after"]);
+    let index = |(x, y)| {
+        save.map_header
+            .stored_index(x as usize, y as usize)
+            .unwrap()
+    };
+    assert_eq!((save.units[slot].x(), save.units[slot].y()), old);
+
+    let mut prepared = save.clone();
+    prepared.maps[0].tile_fields[index(old) * 6 + 1] &= !1;
+    prepared.maps[0].tile_fields[index(destination) * 6 + 1] |= 1;
+    let owner = &mut prepared.maps[0].tile_fields[index(destination) * 6 + 5];
+    *owner = (*owner & 15) | save.player_civ << 4;
+    prepared.units[slot].raw[..2].copy_from_slice(&destination.0.to_le_bytes());
+    prepared.units[slot].raw[2..4].copy_from_slice(&destination.1.to_le_bytes());
+    let measured =
+        engine::saved_knowledge::unit_observation_after(&prepared, &rules, slot, true).unwrap();
+    let delta = |before: &[u8], after: &[u8]| {
+        before
+            .iter()
+            .zip(after)
+            .enumerate()
+            .filter_map(|(i, (old, new))| (old != new).then_some((i, *old, *new)))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        json!(delta(
+            &save.maps[0].tile_fields,
+            &measured.maps[0].tile_fields
+        )),
+        moved["tile_byte_changes"]
+    );
+    let area = save.maps[0].tile_fields.len() / 6;
+    let cache_delta = delta(&save.maps[0].visibility, &measured.maps[0].visibility)
+        .into_iter()
+        .map(|(i, old, new)| (i / area + 1, i % area, old, new))
+        .collect::<Vec<_>>();
+    assert_eq!(json!(cache_delta), moved["cache_byte_changes"]);
+
+    let mut world = engine::boot(&save, 7);
+    world.start_turn(&rules);
+    let owner = save.player_civ;
+    assert_eq!(world.units[slot].moves_left, 3);
+    assert_eq!(
+        world.apply_order(
+            &rules,
+            None,
+            owner,
+            Order::Move {
+                unit: slot,
+                to: destination
+            }
+        ),
+        OrderResult::Moved
+    );
+    assert_eq!((world.units[slot].x, world.units[slot].y), destination);
+    assert_eq!(world.units[slot].moves_left, 0);
+    let visible = |bytes: Vec<u8>| {
+        bytes
+            .into_iter()
+            .map(|byte| byte & (1 << owner) != 0)
+            .collect::<Vec<_>>()
+    };
+    let native_visible = visible(
+        measured.maps[0]
+            .tile_fields
+            .iter()
+            .skip(4)
+            .step_by(6)
+            .copied()
+            .collect(),
+    );
+    let engine_visible = visible(world.map.visible);
+    let excess = native_visible
+        .iter()
+        .zip(engine_visible.iter())
+        .enumerate()
+        .filter_map(|(i, (original, current))| (original != current).then_some(i))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        excess,
+        [12 * world.map.stored_w + 27],
+        "legacy observation divergence"
+    );
+    assert!(engine_visible[excess[0]]);
 }

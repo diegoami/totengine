@@ -64,6 +64,26 @@ class GoldenMetadata(unittest.TestCase):
             self.assertEqual(idle['active_slot'], path['first_poll']['active_slot'])
             self.assertTrue(idle['civ_unit_city_records_unchanged'])
 
+    def test_first_orders_extend_the_prepared_input_witness(self):
+        first = json.loads((ROOT / 'docs/evidence/import-first-order.json').read_text())
+        handoff = json.loads((ROOT / 'docs/evidence/import-input-handoff.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(first[key], handoff[key])
+        poll = handoff['cases']['native_observation']['observation_to_input']['first_poll']
+        wait, skip, move = (first['cases'][name] for name in ('wait', 'skip', 'move_northwest'))
+        for case in (wait, skip, move):
+            for key in ('active_slot', 'research_target', 'research_progress'):
+                self.assertEqual(case['before'][key], poll[key])
+            self.assertEqual(case['after']['research_target'], poll['research_target'])
+            self.assertEqual(case['after']['research_progress'], poll['research_progress'])
+            self.assertTrue(case['civ_city_bytes_unchanged'])
+        self.assertEqual(wait['after']['active_slot'], 9)
+        self.assertEqual(skip['unit_byte_changes'][0],
+                         {'slot': 6, 'byte': 10, 'before': 0, 'after': 3})
+        self.assertEqual([case['explored_tiles'] for case in (wait, skip, move)], [59, 59, 60])
+        self.assertEqual(move['move_arguments'], [[6, 6, 3]])
+        self.assertEqual(move['unit_position_after'], [62, 4])
+
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
         phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())

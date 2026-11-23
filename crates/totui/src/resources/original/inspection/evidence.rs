@@ -3,6 +3,7 @@
 use serde_json::{json, Value};
 
 const HANDOFF: &str = include_str!("../../../../../../docs/evidence/import-input-handoff.json");
+const FIRST_ORDERS: &str = include_str!("../../../../../../docs/evidence/import-first-order.json");
 const LOADER_EXIT: &str = include_str!("../../../../../../docs/evidence/import-loader-exit.json");
 
 pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Value, String> {
@@ -24,6 +25,14 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
     {
         return Err("retained loader and input traces refer to different inputs".into());
     }
+    let orders: Value = serde_json::from_str(FIRST_ORDERS)
+        .map_err(|error| format!("first-order evidence: {error}"))?;
+    if orders["source"] != report["source"]
+        || orders["rules"] != report["rules"]
+        || orders["binary_sha256"] != report["binary_sha256"]
+    {
+        return Err("retained first-order and input traces refer to different inputs".into());
+    }
     Ok(json!({
         "matches_fixture": true,
         "scope": "prepared native resume with display and empty-queue substitutes",
@@ -32,6 +41,11 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
         "explored_tiles_at_observation_boundary": observed["explored_tiles_after"],
         "first_poll": resumed["first_poll"],
         "idle_iteration": resumed["idle_iteration"],
+        "first_orders": {
+            "report": "docs/evidence/import-first-order.json",
+            "scope": orders["scope"],
+            "cases": orders["cases"],
+        },
         "loader_regions": {
             "report": "docs/evidence/import-loader-exit.json",
             "after_event_read": loader["after_event_read"],

@@ -67,6 +67,42 @@ fn installed_prepare_original_replay_writes_loadable_private_checkpoint() {
         storage::load(&destination, "checked-turn").unwrap(),
         checkpoint
     );
+    // A native progress control reached input in the probe. The
+    // checked exporter still requires the exact pinned source bytes.
+    let changed_install = destination.join("changed-install");
+    let changed_original = changed_install.join("Original");
+    std::fs::create_dir_all(&changed_original).unwrap();
+    for input in capture.resources().sources.values() {
+        std::fs::copy(
+            Path::new(&home).join(&input.relative),
+            changed_install.join(&input.relative),
+        )
+        .unwrap();
+    }
+    for (name, role) in [("Labels.txt", "labels"), ("Describe.txt", "describe")] {
+        std::fs::write(
+            changed_original.join(name),
+            capture.captured_bytes(role).unwrap(),
+        )
+        .unwrap();
+    }
+    let mut changed = capture.files().bytes.clone();
+    let progress = 2944 + 4 * 3348 + 16;
+    assert_eq!(&changed[progress..progress + 2], &0i16.to_le_bytes());
+    changed[progress..progress + 2].copy_from_slice(&1i16.to_le_bytes());
+    std::fs::write(changed_install.join(source), changed).unwrap();
+    let rejected = destination.join("rejected");
+    let output = Command::new(env!("CARGO_BIN_EXE_totctl"))
+        .arg("prepare-original-replay")
+        .arg(&changed_install)
+        .arg(source)
+        .arg(&rejected)
+        .arg("changed")
+        .output()
+        .unwrap();
+    assert_eq!(output.status.code(), Some(1), "{output:?}");
+    assert!(String::from_utf8_lossy(&output.stderr).contains("no verified pending-choice boundary"));
+    assert!(!rejected.exists());
     std::fs::remove_dir_all(destination).unwrap();
 }
 
@@ -221,6 +257,14 @@ fn installed_save_reports_checked_records_phase_and_view() {
         report["saved_wait_check"],
         json!({
              "verified": true, "waits": 6, "selected_slot": 6, "move_after_wait_slot": 26, "checkpoint_replays": true,
+        })
+    );
+    assert_eq!(
+        report["saved_pending_choice_check"],
+        json!({
+            "verified": true, "boundary": "prepared-resume-input",
+            "research_target": -1, "research_progress": 0, "government": 1,
+            "pending_decision": false,
         })
     );
     assert_eq!(report["playable_import"], false);

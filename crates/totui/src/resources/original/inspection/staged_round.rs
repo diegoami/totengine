@@ -370,6 +370,56 @@ pub(super) fn check_saved_opponent_stack(
     }))
 }
 
+pub(super) fn check_pending_choice(
+    capture: &OriginalCapture,
+    human: u8,
+    trace: &Value,
+) -> Result<Value, String> {
+    let native = &trace["cases"]["pinned"];
+    let poll = &native["input"];
+    let guard = &native["round_start_controls"][0];
+    if guard != &json!({"resume_civ": human, "restart": 0, "dispatches": false})
+        || poll["stop_at_call"] != "00576ee4"
+        || native["idle"]["next_general_poll"] != poll["stop_at_call"]
+        || native["idle"]["civ_unit_city_records_unchanged"] != true
+        || native["caller"]["human_advice_gate"] != "00473e6b"
+    {
+        return Err("prepared resume did not reach quiet human input".into());
+    }
+    let files = capture.files();
+    let session = HumanSession::scenario_initialized_saved_opponent_combat(
+        ScenarioInput {
+            path: &files.path,
+            snapshot: &files.bytes,
+            rules: capture.resources().rules.clone(),
+            events: files.events.clone().map(EventEngine::new),
+        },
+        human,
+        AiPolicy::BuiltIn1,
+        7,
+        capture.identity(),
+    )?;
+    let view = session.view();
+    if view.phase != Phase::Human
+        || view.decision.is_some()
+        || view.observation.research.target.is_some()
+        || view.observation.research.free_advances != 0
+        || poll["research_target"] != -1
+        || json!(view.observation.research.progress) != poll["research_progress"]
+        || json!(view.observation.government) != native["government_at_poll"]
+    {
+        return Err("engine entry decision differs from the prepared native input boundary".into());
+    }
+    Ok(json!({
+        "verified": true,
+        "boundary": "prepared-resume-input",
+        "research_target": poll["research_target"],
+        "research_progress": poll["research_progress"],
+        "government": native["government_at_poll"],
+        "pending_decision": false,
+    }))
+}
+
 pub(super) fn check_saved_viewport(
     capture: &OriginalCapture,
     human: u8,

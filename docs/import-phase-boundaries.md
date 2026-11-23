@@ -242,3 +242,25 @@ does not run the next city, an AI order or a full live round.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_round_handoff_check.py --out /tmp/round-handoff.json
 cmp docs/evidence/import-round-handoff.json /tmp/round-handoff.json
 ```
+
+## Checked resume decisions
+
+The [composed probe](evidence/import-pending-choice.json) carries one
+prepared memory image through the event reader, stock Rules refresh,
+caller preference overlay, and first human input poll at the saved
+viewport. Its resumed-civ control skips round-start dispatch. Forced
+restart and fresh-round controls cross into dispatch. The probe supplies
+display context and host queue operations.
+
+The pinned seat reaches input with government 1, an empty research
+project, and zero science progress. Separate controls leave input
+available with a stored progress of one or with Anarchy. Those controls
+establish the resume boundary. Fresh-turn science and government
+resolution remain distinct. The inspector compares the exact pinned
+capture and the engine's initial decision state. An experimental
+checkpoint preparation requires that comparison to pass.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_pending_choice_check.py --out /tmp/import-pending-choice.json
+cmp docs/evidence/import-pending-choice.json /tmp/import-pending-choice.json
+```

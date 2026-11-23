@@ -232,6 +232,21 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_pending_choice_controls_reach_input_without_a_new_project(self):
+        report = json.loads((ROOT / 'docs/evidence/import-pending-choice.json').read_text())
+        viewport = json.loads((ROOT / 'docs/evidence/import-saved-viewport.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], viewport[key])
+        self.assertEqual(report['anchor'], [61, 5])
+        for name, government, progress in [('pinned', 1, 0), ('stored_progress', 1, 1), ('anarchy', 0, 0)]:
+            case = report['cases'][name]
+            self.assertEqual(case['government_at_poll'], government)
+            self.assertEqual(case['input']['research_target'], -1)
+            self.assertEqual(case['input']['research_progress'], progress)
+            self.assertEqual(case['input']['active_slot'], 9)
+            self.assertEqual(case['input']['stop_at_call'], case['idle']['next_general_poll'])
+            self.assertEqual([branch['dispatches'] for branch in case['round_start_controls']], [False, True, True])
+
     def test_native_wait_records_deferral_without_spending_movement(self):
         report = json.loads((ROOT / 'docs/evidence/import-wait.json').read_text())
         viewport = json.loads((ROOT / 'docs/evidence/import-saved-viewport.json').read_text())

@@ -1,0 +1,217 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "anchor": [
+    61,
+    5
+  ],
+  "cases": {
+    "pinned": {
+      "round_start_controls": [
+        {
+          "resume_civ": 4,
+          "restart": 0,
+          "dispatches": false
+        },
+        {
+          "resume_civ": 4,
+          "restart": 1,
+          "dispatches": true
+        },
+        {
+          "resume_civ": 0,
+          "restart": 0,
+          "dispatches": true
+        }
+      ],
+      "loader_phase": {
+        "multiplayer_mode": 0,
+        "human_mask": 16,
+        "resume_civ": 4,
+        "round_start_flag": 1,
+        "research_target": -1,
+        "research_progress": 0
+      },
+      "caller": {
+        "saved": "01cd3258",
+        "configured": "01cd3258",
+        "merged": "01cd3258",
+        "stop": "00463f54",
+        "return_status": 0,
+        "human_advice_gate": "00473e6b"
+      },
+      "government_at_poll": 1,
+      "input": {
+        "stop_at_call": "00576ee4",
+        "import": "PeekMessageA",
+        "window_filter": 0,
+        "message_filter": [
+          0,
+          0
+        ],
+        "remove": 1,
+        "active_slot": 9,
+        "unit_orders_byte": 255,
+        "research_target": -1,
+        "research_progress": 0
+      },
+      "idle": {
+        "initial_queue_result": "empty",
+        "filtered_polls": [
+          {
+            "call": "00577011",
+            "message_filter": [
+              957,
+              957
+            ]
+          }
+        ],
+        "next_general_poll": "00576ee4",
+        "active_slot": 9,
+        "display_mode": 1,
+        "civ_unit_city_records_unchanged": true
+      }
+    },
+    "stored_progress": {
+      "round_start_controls": [
+        {
+          "resume_civ": 4,
+          "restart": 0,
+          "dispatches": false
+        },
+        {
+          "resume_civ": 4,
+          "restart": 1,
+          "dispatches": true
+        },
+        {
+          "resume_civ": 0,
+          "restart": 0,
+          "dispatches": true
+        }
+      ],
+      "loader_phase": {
+        "multiplayer_mode": 0,
+        "human_mask": 16,
+        "resume_civ": 4,
+        "round_start_flag": 1,
+        "research_target": -1,
+        "research_progress": 1
+      },
+      "caller": {
+        "saved": "01cd3258",
+        "configured": "01cd3258",
+        "merged": "01cd3258",
+        "stop": "00463f54",
+        "return_status": 0,
+        "human_advice_gate": "00473e6b"
+      },
+      "government_at_poll": 1,
+      "input": {
+        "stop_at_call": "00576ee4",
+        "import": "PeekMessageA",
+        "window_filter": 0,
+        "message_filter": [
+          0,
+          0
+        ],
+        "remove": 1,
+        "active_slot": 9,
+        "unit_orders_byte": 255,
+        "research_target": -1,
+        "research_progress": 1
+      },
+      "idle": {
+        "initial_queue_result": "empty",
+        "filtered_polls": [
+          {
+            "call": "00577011",
+            "message_filter": [
+              957,
+              957
+            ]
+          }
+        ],
+        "next_general_poll": "00576ee4",
+        "active_slot": 9,
+        "display_mode": 1,
+        "civ_unit_city_records_unchanged": true
+      }
+    },
+    "anarchy": {
+      "round_start_controls": [
+        {
+          "resume_civ": 4,
+          "restart": 0,
+          "dispatches": false
+        },
+        {
+          "resume_civ": 4,
+          "restart": 1,
+          "dispatches": true
+        },
+        {
+          "resume_civ": 0,
+          "restart": 0,
+          "dispatches": true
+        }
+      ],
+      "loader_phase": {
+        "multiplayer_mode": 0,
+        "human_mask": 16,
+        "resume_civ": 4,
+        "round_start_flag": 1,
+        "research_target": -1,
+        "research_progress": 0
+      },
+      "caller": {
+        "saved": "01cd3258",
+        "configured": "01cd3258",
+        "merged": "01cd3258",
+        "stop": "00463f54",
+        "return_status": 0,
+        "human_advice_gate": "00473e6b"
+      },
+      "government_at_poll": 0,
+      "input": {
+        "stop_at_call": "00576ee4",
+        "import": "PeekMessageA",
+        "window_filter": 0,
+        "message_filter": [
+          0,
+          0
+        ],
+        "remove": 1,
+        "active_slot": 9,
+        "unit_orders_byte": 255,
+        "research_target": -1,
+        "research_progress": 0
+      },
+      "idle": {
+        "initial_queue_result": "empty",
+        "filtered_polls": [
+          {
+            "call": "00577011",
+            "message_filter": [
+              957,
+              957
+            ]
+          }
+        ],
+        "next_general_poll": "00576ee4",
+        "active_slot": 9,
+        "display_mode": 1,
+        "civ_unit_city_records_unchanged": true
+      }
+    }
+  },
+  "scope": "Compose the prepared native loader and human-input boundaries.\n\nUse the pinned event trailer, supply stock Rules rows and process preferences,\nand carry the same prepared memory into resumed input. Two controls vary only\nthe player's research progress or government. The probe substitutes display and\nhost queue operations and stops at the first input poll and an idle iteration."
+}

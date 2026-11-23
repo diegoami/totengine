@@ -254,6 +254,15 @@ active marks for these non-Continuous records when starting a fresh round.
 Intervening loader behavior, engine restoration, and pending choices remain
 to be verified.
 
+The [pending-choice probe](evidence/import-pending-choice.json) carries
+the prepared event-loaded state through the stock Rules refresh and
+caller preferences into the first input poll. The inspector verifies
+that the exact pinned capture and the checked engine session both have
+no pending choice at that boundary. Controls with stored research
+progress or Anarchy still reach native input. Experimental checkpoint
+preparation requires the pinned pending-choice check and rejects those
+modified captures.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

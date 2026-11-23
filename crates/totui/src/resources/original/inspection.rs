@@ -24,6 +24,11 @@ impl OriginalCapture {
             human::{HumanSession, ScenarioInput},
         };
         let report = self.inspect_save()?;
+        if report["saved_pending_choice_check"]["verified"] != true {
+            return Err(
+                "The captured save has no verified pending-choice boundary for this replay".into(),
+            );
+        }
         if report["saved_viewport_check"]["verified"] != true
             || report["saved_opponent_combat_check"]["verified"] != true
             || report["saved_wait_check"]["verified"] != true
@@ -99,6 +104,12 @@ impl OriginalCapture {
             Err(reason) => json!({"matches": false, "reason": reason}),
         };
         let trace = evidence::resume_trace(&source_sha256, &rules_sha256)?;
+        let pending = if trace["matches_fixture"] == true {
+            staged_round::check_pending_choice(self, human, &trace["pending_choice"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            json!({"verified": false, "reason": trace["reason"]})
+        };
         let viewport = if trace["matches_fixture"] == true {
             staged_round::check_saved_viewport(self, human, tail.viewport, &trace["saved_viewport"])
                 .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
@@ -166,6 +177,7 @@ impl OriginalCapture {
             "native_resume_trace": trace,
             "saved_land_step": land_step,
             "saved_viewport_check": viewport,
+            "saved_pending_choice_check": pending,
             "saved_wait_check": wait,
             "staged_round_check": staged,
             "saved_movement_check": movement,

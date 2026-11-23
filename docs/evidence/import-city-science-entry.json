@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "city_phase": "004cb01d",
+  "accumulation": "004a1ebf",
+  "cases": {
+    "pinned": {
+      "city_slot": 5,
+      "computed_science": 0,
+      "supplied_science": null,
+      "advice": false,
+      "accumulation": {
+        "civ": 4,
+        "points": 0
+      },
+      "before": {
+        "target": -1,
+        "progress": 0,
+        "acquired": 1
+      },
+      "after": {
+        "target": -1,
+        "progress": 0,
+        "acquired": 1
+      },
+      "stop": "00100000",
+      "boundary": "city-return",
+      "substitutes": [
+        "00411c50",
+        "00467c89",
+        "00467c89"
+      ]
+    },
+    "one_science": {
+      "city_slot": 5,
+      "computed_science": 0,
+      "supplied_science": 1,
+      "advice": false,
+      "accumulation": {
+        "civ": 4,
+        "points": 1
+      },
+      "before": {
+        "target": -1,
+        "progress": 0,
+        "acquired": 1
+      },
+      "after": {
+        "target": -1,
+        "progress": 1,
+        "acquired": 1
+      },
+      "stop": "004a1436",
+      "boundary": "choose-project",
+      "substitutes": [
+        "00411c50",
+        "00467c89",
+        "00467c89"
+      ]
+    },
+    "one_science_with_advice": {
+      "city_slot": 5,
+      "computed_science": 0,
+      "supplied_science": 1,
+      "advice": true,
+      "accumulation": {
+        "civ": 4,
+        "points": 1
+      },
+      "before": {
+        "target": -1,
+        "progress": 0,
+        "acquired": 1
+      },
+      "after": {
+        "target": -1,
+        "progress": 1,
+        "acquired": 1
+      },
+      "stop": "00477030",
+      "boundary": "advice-before-choice",
+      "substitutes": [
+        "00411c50",
+        "00467c89",
+        "00467c89"
+      ]
+    }
+  },
+  "scope": "Trace the pinned player's city phase through its native science boundary.\n\nExecute the original city phase on the prepared resume image, without playing\nopponents or the rest of the round. The no-city-window query and redraw are\nsubstituted. Positive controls replace only the science total at the call\nfrom city processing into accumulation. Stops precede the selector/adviser."
+}

@@ -184,3 +184,26 @@ CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_first_ord
 cmp docs/evidence/import-first-order.json /tmp/first-orders.json
 CIVTOT_HOME=... cargo test -p totctl --test original_import
 ```
+
+
+### City science and the empty research project
+
+The [native city science probe](evidence/import-city-science-entry.json) runs
+the pinned player's city slot 5 from the same prepared resume image. It
+executes the city-phase routine `0x4cb01d` through actual science computation
+and accumulation. The computed value is zero, the routine returns, and the
+player still has target -1 and progress 0. The only substitutions are the
+city-window query returning -1 and the observation redraw callback.
+
+Separate controls supply one point at the call from city processing into the
+science stage. With the pinned advice setting the accumulator reaches
+`0x4a1436`. With advice enabled it instead reaches `0x477030` first. Both
+controls increment progress to 1 and stop before executing the chooser or
+adviser. The Rust phase checker reproduces the three boundaries. This traces
+the saved city in isolation, before opponents or the rest of a round can
+alter it.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_city_science_entry_check.py --out /tmp/city-science-entry.json
+cmp docs/evidence/import-city-science-entry.json /tmp/city-science-entry.json
+```

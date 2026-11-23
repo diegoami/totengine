@@ -84,6 +84,22 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(move['move_arguments'], [[6, 6, 3]])
         self.assertEqual(move['unit_position_after'], [62, 4])
 
+    def test_city_science_witness_uses_the_same_pinned_state(self):
+        science = json.loads((ROOT / 'docs/evidence/import-city-science-entry.json').read_text())
+        handoff = json.loads((ROOT / 'docs/evidence/import-input-handoff.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(science[key], handoff[key])
+        cases = science['cases']
+        for name, proposed in [('pinned', 0), ('one_science', 1), ('one_science_with_advice', 1)]:
+            row = cases[name]
+            self.assertEqual(row['city_slot'], 5)
+            self.assertEqual(row['computed_science'], 0)
+            self.assertEqual(row['accumulation'], {'civ': 4, 'points': proposed})
+            self.assertEqual(row['after']['progress'], proposed)
+            self.assertEqual(row['after']['target'], -1)
+        self.assertEqual([row['stop'] for row in cases.values()],
+                         ['00100000', '004a1436', '00477030'])
+
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
         phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())

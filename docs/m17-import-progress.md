@@ -114,6 +114,13 @@ kernel reproduces its raw deltas after matching occupancy and ownership;
 the current engine move still exposes one extra tile near Madrid. The pinned
 comparison is available from `inspect-original-save` by input identity.
 
+The [native city science trace](evidence/import-city-science-entry.json) runs
+the saved player's only city in isolation. It computes zero science and
+returns with the empty project. Supplying one point at the same call boundary
+reaches selection or the adviser, according to the advice preference. This
+supports keeping the clean prepared entry free of a forced research prompt;
+later round and modal timing remain open.
+
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe
 traces the prefix reads from the city table to the event marker and verifies

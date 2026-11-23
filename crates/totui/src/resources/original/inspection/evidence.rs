@@ -6,6 +6,19 @@ const HANDOFF: &str = include_str!("../../../../../../docs/evidence/import-input
 const FIRST_ORDERS: &str = include_str!("../../../../../../docs/evidence/import-first-order.json");
 const LOADER_EXIT: &str = include_str!("../../../../../../docs/evidence/import-loader-exit.json");
 
+const CITY_SCIENCE: &str =
+    include_str!("../../../../../../docs/evidence/import-city-science-entry.json");
+
+fn same_input_trace(text: &str, report: &Value, name: &str) -> Result<Value, String> {
+    let trace: Value = serde_json::from_str(text).map_err(|error| format!("{name}: {error}"))?;
+    for key in ["source", "rules", "binary_sha256"] {
+        if trace[key] != report[key] {
+            return Err(format!("{name} and input trace refer to different inputs"));
+        }
+    }
+    Ok(trace)
+}
+
 pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Value, String> {
     let report: Value =
         serde_json::from_str(HANDOFF).map_err(|error| format!("native evidence: {error}"))?;
@@ -25,14 +38,8 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
     {
         return Err("retained loader and input traces refer to different inputs".into());
     }
-    let orders: Value = serde_json::from_str(FIRST_ORDERS)
-        .map_err(|error| format!("first-order evidence: {error}"))?;
-    if orders["source"] != report["source"]
-        || orders["rules"] != report["rules"]
-        || orders["binary_sha256"] != report["binary_sha256"]
-    {
-        return Err("retained first-order and input traces refer to different inputs".into());
-    }
+    let orders = same_input_trace(FIRST_ORDERS, &report, "first-order evidence")?;
+    let science = same_input_trace(CITY_SCIENCE, &report, "city science evidence")?;
     Ok(json!({
         "matches_fixture": true,
         "scope": "prepared native resume with display and empty-queue substitutes",
@@ -45,6 +52,11 @@ pub(super) fn resume_trace(save_sha256: &str, rules_sha256: &str) -> Result<Valu
             "report": "docs/evidence/import-first-order.json",
             "scope": orders["scope"],
             "cases": orders["cases"],
+        },
+        "city_science": {
+            "report": "docs/evidence/import-city-science-entry.json",
+            "scope": science["scope"],
+            "cases": science["cases"],
         },
         "loader_regions": {
             "report": "docs/evidence/import-loader-exit.json",

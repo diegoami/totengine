@@ -50,6 +50,31 @@ fn installed_save_reports_checked_records_phase_and_view() {
     let orders: Value = serde_json::from_str(FIRST_ORDERS).unwrap();
     assert_eq!(trace["first_orders"]["cases"], orders["cases"]);
     assert_eq!(trace["first_orders"]["scope"], orders["scope"]);
+    let science: Value = serde_json::from_str(include_str!(
+        "../../../docs/evidence/import-city-science-entry.json"
+    ))
+    .unwrap();
+    assert_eq!(trace["city_science"]["cases"], science["cases"]);
+    use engine::scenario::phase::{science_entry, ScienceBoundary};
+    let save = tot_kit::parse_sav(&before).unwrap();
+    for (case, boundary) in [
+        ("pinned", ScienceBoundary::Return),
+        ("one_science", ScienceBoundary::ChooseProject),
+        (
+            "one_science_with_advice",
+            ScienceBoundary::AdvisorBeforeChoice,
+        ),
+    ] {
+        let evidence = &science["cases"][case];
+        let actual = science_entry(
+            save.research[usize::from(save.player_civ)],
+            evidence["accumulation"]["points"].as_i64().unwrap() as i32,
+            true,
+            evidence["advice"].as_bool().unwrap(),
+        );
+        assert_eq!(actual.boundary, boundary);
+        assert_eq!(evidence["after"]["progress"], actual.progress);
+    }
     let loader: serde_json::Value = serde_json::from_str(include_str!(
         "../../../docs/evidence/import-loader-exit.json"
     ))

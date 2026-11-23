@@ -16,6 +16,7 @@ from unicorn import UC_HOOK_CODE, UC_HOOK_MEM_WRITE
 from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EIP, UC_X86_REG_ESP
 
 from import_event_tail_check import digest
+from import_first_order_check import NORTHWEST, execute as first_order
 from import_phase_check import CIV, FRAME, STRIDE, frame, read
 from import_round_close_check import TILES, TURN_START, measure_handoff, prepare_round
 from totctl import parse_rules
@@ -25,6 +26,11 @@ UNIT_COUNT = 0x607666
 UNIT_TABLE = 0x607C58
 OBSERVE = 0x41F704
 REDRAW = 0x467C89
+ORDER_SCOPE = (
+    "Prepare the paid human city production and reach the first input poll. "
+    "Select the head or tail of the new city stack explicitly, then execute "
+    "Wait or northwest movement through the existing prepared input probe."
+)
 
 
 def city_stack_focus(original, newborn, units):
@@ -64,7 +70,7 @@ def city_stack_focus(original, newborn, units):
             'original_stack': [newborn, stacked]}
 
 
-def city_pass(original, viewer, city_region, worker, purchase, stored):
+def city_pass(original, viewer, city_region, worker, purchase, stored, command):
     cpu = original.cpu
     city = city_region[0] + CITY_SLOT * 92
     area = read(original, 0x6705A4, '<h')
@@ -143,6 +149,13 @@ def city_pass(original, viewer, city_region, worker, purchase, stored):
     _, known_poll, memory_poll, _ = capture()
     assert known_before == known_poll and memory_before == memory_poll
     assert handoff['active_slot'] == 18 and sum(known_poll) == 59
+    if command is not None:
+        actor, key = command
+        assert actor in focus['original_stack']
+        original.write(0x60764E, actor, '<h')
+        regions = [(CIV, STRIDE * 8), (UNIT_TABLE, count * 40), city_region]
+        return first_order(original, viewer, regions, key, return_address=0x100040)
+
     return {
         'turn': read(original, 0x607648, '<h'), 'city': CITY_SLOT,
         'applied_worker': worker, 'shields_before': stored, 'shield_writes': shield_writes,
@@ -158,9 +171,39 @@ def city_pass(original, viewer, city_region, worker, purchase, stored):
     }
 
 
+def stack_orders(prepared_birth, paid):
+    cases = {}
+    for actor, other in [(22, 26), (26, 22)]:
+        wait = prepared_birth(paid, (actor, ord('w')))
+        assert wait['before']['active_slot'] == actor and wait['after']['active_slot'] == other
+        assert wait['observation_arguments'] == [[other, 1]]
+        assert wait['unit_position_after'] == wait['unit_position_before'] == (53, 9)
+        assert wait['tile_byte_changes'] == wait['cache_byte_changes'] == []
+        change, = wait['unit_byte_changes']
+        assert change['slot'] == actor and change['byte'] == 7
+        assert change['after'] == change['before'] | 64
+
+        move = prepared_birth(paid, (actor, NORTHWEST))
+        assert move['before']['active_slot'] == actor
+        assert move['move_arguments'] == [[actor, 6, 3]]
+        assert move['observation_arguments'] == [[actor, 1]]
+        assert move['unit_position_before'] == (53, 9) and move['unit_position_after'] == (52, 8)
+        assert move['tile_byte_changes'] == [(2077, 0, 1), (2081, 240, 64)]
+        assert move['cache_byte_changes'] == [[4, 346, 0, 1]]
+        assert {'slot': actor, 'byte': 10, 'before': 0, 'after': 6} in move['unit_byte_changes']
+        for slot, offset in [(22, 28), (26, 26)]:
+            assert all({'slot': slot, 'byte': offset + i, 'before': value, 'after': 255}
+                       in move['unit_byte_changes']
+                       for i, value in enumerate((26 if slot == 22 else 22, 0)))
+        assert wait['explored_tiles'] == move['explored_tiles'] == 59
+        cases[str(actor)] = {'wait': wait, 'move_northwest': move}
+    return cases
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
+    parser.add_argument('--orders', action='store_true', help='Record Wait and movement after production')
     args = parser.parse_args()
     evidence = Path(__file__).resolve().parent.parent / 'docs/evidence'
     purchase = json.loads((evidence / 'import-saved-purchase.json').read_text())
@@ -175,21 +218,26 @@ def main():
         item = purchase[key]
         assert digest((home / item['path']).read_bytes()) == item['sha256']
     rules = parse_rules(home / purchase['rules']['path'])
-    def prepared_birth(stored):
+    def prepared_birth(stored, command=None):
         annual, birth = prepare_round(
             home, binary, purchase['source']['path'], rules,
             lambda original, viewer, city_region: city_pass(
                 original, viewer, city_region, workers['cases'][0]['after'],
-                purchase['pinned'], stored,
+                purchase['pinned'], stored, command,
             ),
         )
         assert annual['annual_update'] == round_close['annual_update']
         return birth
 
     paid = purchase['pinned']['shields_after']
-    report = {'schema': 1, **{key: purchase[key] for key in keys},
-              'human_city_birth': prepared_birth(paid),
-              'surplus_control': prepared_birth(paid + 5), 'scope': __doc__.strip()}
+    report = {'schema': 1, **{key: purchase[key] for key in keys}}
+    if args.orders:
+        report.update(cases=stack_orders(prepared_birth, paid), scope=ORDER_SCOPE)
+    else:
+        report.update(
+            human_city_birth=prepared_birth(paid),
+            surplus_control=prepared_birth(paid + 5), scope=__doc__.strip(),
+        )
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')
 

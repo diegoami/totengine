@@ -518,3 +518,20 @@ Faithful import admission remains open.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_human_city_birth_check.py --out /tmp/import-human-city-birth.json
 cmp docs/evidence/import-human-city-birth.json /tmp/import-human-city-birth.json
 ```
+
+### Orders from the new human city stack
+
+The [native input probe](evidence/import-human-city-stack-orders.json)
+restarts the paid-production handoff for each of four cases. Wait on
+either member sets its deferred bit and selects the other. Unit
+observation runs with the active-contact argument and leaves map
+knowledge intact. A northwest order on either member detaches it
+for (52, 8), spends six thirds from a full three-third allowance,
+and leaves the other unit in the city. The move keeps 59 explored
+tiles and changes the destination's remembered improvements. Runtime
+support for these specific stack orders remains open.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_human_city_birth_check.py --orders --out /tmp/import-human-city-stack-orders.json
+cmp docs/evidence/import-human-city-stack-orders.json /tmp/import-human-city-stack-orders.json
+```

@@ -310,6 +310,14 @@ two-unit city stack is reversed. The checked turn handoff selects among
 coherent own city pairs and uses the native distance and slot ordering.
 The inspector verifies five anchors before and after replay.
 
+The [native city-stack order witness](evidence/import-human-city-stack-orders.json)
+restarts from the prepared production handoff for each input. Wait
+on either member defers it and activates the other with the same view.
+Northwest movement of either member spends six thirds, detaches it
+from the city pair and leaves 59 explored tiles. It changes the
+destination's remembered improvements. The checked engine still needs
+these stacked order transitions.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

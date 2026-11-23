@@ -4,9 +4,9 @@
 Starting with the same saved turn as the round-handoff witness, run four
 native Skip orders. Continue from the first opponent city-phase entry to
 the call into the production selector. The probe supplies host messages
-and substitutes presentation. From the selector boundary, a separate
-controlled native move uses the first spatial engine order as input.
-The selector and native opponent policy are outside the trace.
+and substitutes presentation. From the selector boundary, two controlled
+native moves use the first spatial engine orders as inputs. The selector
+and native opponent policy are outside the trace.
 """
 import argparse
 import hashlib
@@ -91,7 +91,11 @@ def measure(original, viewer, city):
 
 
 def move_into_unseen_city(original, viewer):
-    """Supply the engine's first spatial order to native movement."""
+    return move_opponent(original, viewer, (2, 1, 3), (2, 19, 34), (41, 37), (43, 37))
+
+
+def move_opponent(original, viewer, arguments, slots, origin, destination):
+    """Supply an engine spatial order to native movement."""
     cpu = original.cpu
     area = read(original, 0x6705A4, '<h')
     cache = read(original, 0x5DEAD0 + 4 * viewer, '<I')
@@ -111,7 +115,6 @@ def move_into_unseen_city(original, viewer):
             'next': read(original, address + 28, '<h'),
         }
 
-    slots = (2, 19, 34)
     before = [unit(slot) for slot in slots]
     saved = knowledge()
     substitutes = []
@@ -132,16 +135,19 @@ def move_into_unseen_city(original, viewer):
 
     hook = cpu.hook_add(UC_HOOK_CODE, boundary)
     try:
-        result = original.call(0x54C69B, 2, 1, 3)
+        result = original.call(0x54C69B, *arguments)
     finally:
         cpu.hook_del(hook)
     after = [unit(slot) for slot in slots]
     assert saved == knowledge()
-    assert result == 1 and before[0]['position'] == [41, 37] and after[0]['position'] == [43, 37]
-    assert [record['next'] for record in after] == [-1, 2, 19]
-    assert [record['previous'] for record in after] == [19, 34, -1]
+    assert result == 1 and before[0]['position'] == list(origin) and after[0]['position'] == list(destination)
+    if len(slots) == 1:
+        assert after[0]['previous'] == after[0]['next'] == -1
+    else:
+        assert [record['next'] for record in after] == [-1, 2, 19]
+        assert [record['previous'] for record in after] == [19, 34, -1]
     return {
-        'entry': '0054c69b', 'arguments': [2, 1, 3], 'return': result,
+        'entry': '0054c69b', 'arguments': list(arguments), 'return': result,
         'explored_tiles': sum(saved[0]), 'viewer_memory_changed': False,
         'before': before, 'after': after, 'substitutes': substitutes,
     }
@@ -163,6 +169,9 @@ def main():
     def entry(original, player, city):
         observed.update(measure(original, player, city))
         observed['prepared_opponent_move'] = move_into_unseen_city(original, player)
+        observed['prepared_opponent_empty_move'] = move_opponent(
+            original, player, (10, 7, 3), (10,), (41, 39), (41, 37)
+        )
 
     def continue_round(original, player, regions):
         trace(original, player, regions, clear_preference_bit=False, skip_selected=True,

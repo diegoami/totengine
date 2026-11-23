@@ -168,6 +168,7 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "profile": "experimental-saved-opponent-stack-v1",
             "explored_tiles": 59,
             "checkpoint_replays": true,
+            "moves_checked": 2,
         })
     );
     assert_eq!(

@@ -142,6 +142,11 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(move['explored_tiles'], 59)
         self.assertFalse(move['viewer_memory_changed'])
         self.assertEqual([unit['next'] for unit in move['after']], [-1, 2, 19])
+        empty = observed['prepared_opponent_empty_move']
+        self.assertEqual(empty['arguments'], [10, 7, 3])
+        self.assertEqual(empty['explored_tiles'], 59)
+        self.assertFalse(empty['viewer_memory_changed'])
+        self.assertEqual(empty['after'][0]['position'], [41, 37])
 
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())

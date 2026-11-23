@@ -545,5 +545,28 @@ staged-round-test
         assert_eq!(replay.advance(1), 1);
         assert_eq!(replay.checkpoint(deps), checkpoint);
         assert_eq!(restore(&checkpoint).view(), after);
+        let mut replay = restore(&checkpoint);
+        let mut reached = false;
+        for _ in 0..32 {
+            assert_eq!(game.advance(1), 1);
+            assert_eq!(replay.advance(1), 1);
+            if game
+                .game
+                .log()
+                .lines()
+                .last()
+                .unwrap()
+                .contains(" C 5 move 10 41 37 = moved")
+            {
+                reached = true;
+                break;
+            }
+        }
+        assert!(reached, "did not reach the checked move to empty land");
+        assert!(game.saved_move_state.is_some());
+        assert_eq!(game.view().observation.seen, original_view.observation.seen);
+        let unit = &game.game.world.units[10];
+        assert_eq!((unit.x, unit.y, unit.stack_pos), (41, 37, 0));
+        assert_eq!(replay.checkpoint(deps), game.checkpoint(deps));
     }
 }

@@ -117,7 +117,48 @@
         "00577011",
         "00467d19"
       ]
+    },
+    "prepared_opponent_empty_move": {
+      "entry": "0054c69b",
+      "arguments": [
+        10,
+        7,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 10,
+          "position": [
+            41,
+            39
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": -1,
+          "next": -1
+        }
+      ],
+      "after": [
+        {
+          "slot": 10,
+          "position": [
+            41,
+            37
+          ],
+          "owner": 5,
+          "spent": 9,
+          "previous": -1,
+          "next": -1
+        }
+      ],
+      "substitutes": [
+        "00577011",
+        "00467d19"
+      ]
     }
   },
-  "scope": "Compare human map knowledge before civ 5's city work and at production selection.\n\nStarting with the same saved turn as the round-handoff witness, run four\nnative Skip orders. Continue from the first opponent city-phase entry to\nthe call into the production selector. The probe supplies host messages\nand substitutes presentation. From the selector boundary, a separate\ncontrolled native move uses the first spatial engine order as input.\nThe selector and native opponent policy are outside the trace."
+  "scope": "Compare human map knowledge before civ 5's city work and at production selection.\n\nStarting with the same saved turn as the round-handoff witness, run four\nnative Skip orders. Continue from the first opponent city-phase entry to\nthe call into the production selector. The probe supplies host messages\nand substitutes presentation. From the selector boundary, two controlled\nnative moves use the first spatial engine orders as inputs. The selector\nand native opponent policy are outside the trace."
 }

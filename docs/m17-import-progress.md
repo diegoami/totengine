@@ -170,7 +170,8 @@ native move into the unseen stack at (43, 37). Native human knowledge
 stays at 59 tiles. The earlier engine fallback reached 60 on that order.
 The new [opponent-stack recipe](import-initializer.md#experimental-opponent-stack-movement)
 keeps 59 tiles on the same command, appends the mover in native stack order
-and replays the result. A move that changes the measured human projection
+and replays the result. The next move to empty land at (41, 37) also
+retains the saved view in native and engine checks. A move that changes the measured human projection
 or lies outside the supported stack context uses staged engine observation.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final

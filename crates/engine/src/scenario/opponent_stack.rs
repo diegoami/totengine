@@ -1,4 +1,4 @@
-//! Scoped opponent movement from an unstacked tile into an unseen own city.
+//! Scoped opponent movement from an unseen unstacked tile.
 use crate::saved_knowledge::{clear_unit_stack_visibility, unit_observation_after};
 use crate::WorldState;
 use std::collections::BTreeSet;
@@ -84,8 +84,8 @@ pub(crate) fn record_city_births(
     Ok(())
 }
 
-/// Execute ordinary land movement and append the mover to a same-owner
-/// city stack. The supplied world is temporary and can be discarded on error.
+/// Execute ordinary land movement to empty land or a same-owner city
+/// stack, appending the mover when a stack is present. The supplied world is temporary and can be discarded on error.
 pub(crate) fn stage(
     saved: &SaveFile,
     rules: &Rules,
@@ -115,13 +115,20 @@ pub(crate) fn stage(
         return Err("saved stack move requires a singleton at origin".into());
     }
     let members = stack(world, to)?;
-    if members.is_empty()
-        || members.iter().any(|&s| world.units[s].owner != civ)
-        || !world.cities.iter().any(|c| {
-            c.city_id != 0 && c.map_id == 0 && c.owner == u16::from(civ) && (c.x, c.y) == to
-        })
+    let city = world
+        .cities
+        .iter()
+        .find(|c| c.city_id != 0 && (c.x, c.y) == to);
+    if members.is_empty() {
+        if city.is_some() {
+            return Err(
+                "saved opponent step into an empty city is outside the checked context".into(),
+            );
+        }
+    } else if members.iter().any(|&s| world.units[s].owner != civ)
+        || !city.is_some_and(|c| c.map_id == 0 && c.owner == u16::from(civ))
     {
-        return Err("saved stack move needs a friendly city stack".into());
+        return Err("saved opponent step needs empty land or a friendly city stack".into());
     }
 
     let from = world
@@ -146,6 +153,7 @@ pub(crate) fn stage(
     moved[2..4].copy_from_slice(&to.1.to_le_bytes());
     let tile_bytes = &mut updated.maps[0].tile_fields;
     tile_bytes[6 * from + 1] &= !1;
+    tile_bytes[6 * dest + 1] |= 1;
     tile_bytes[6 * dest + 5] = (tile_bytes[6 * dest + 5] & 15) | (civ << 4);
     link_stack(&mut updated, world, &stack(world, to)?)?;
     let observed = unit_observation_after(&updated, rules, slot, true)

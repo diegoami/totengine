@@ -19,6 +19,58 @@ fn unsupported_path_is_rejected_without_a_success_report() {
 }
 
 #[test]
+fn installed_prepare_original_replay_writes_loadable_private_checkpoint() {
+    use engine::human::HumanSession;
+    use totui::{client::storage, resources::original::OriginalCapture};
+
+    let Some(home) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let source = "Original/Ph_Auto2.SAV";
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let destination = std::env::temp_dir().join(format!(
+        "totengine-checked-replay-{}-{stamp}",
+        std::process::id()
+    ));
+    let prepare = || {
+        Command::new(env!("CARGO_BIN_EXE_totctl"))
+            .arg("prepare-original-replay")
+            .arg(&home)
+            .arg(source)
+            .arg(&destination)
+            .arg("checked-turn")
+            .output()
+            .unwrap()
+    };
+    let output = prepare();
+    assert!(output.status.success(), "{output:?}");
+    let checkpoint = storage::load(&destination, "checked-turn").unwrap();
+    let capture = OriginalCapture::capture(Path::new(&home), source).unwrap();
+    assert_eq!(
+        HumanSession::checkpoint_scenario(&checkpoint).unwrap().path,
+        source
+    );
+    let private = destination.join(".scenario-inputs");
+    let entries: Vec<_> = std::fs::read_dir(private)
+        .unwrap()
+        .collect::<Result<_, _>>()
+        .unwrap();
+    assert_eq!(entries.len(), 1);
+    let bytes = std::fs::read(entries[0].path()).unwrap();
+    assert_eq!(&bytes[32..], capture.files().bytes.as_slice());
+
+    assert!(!prepare().status.success());
+    assert_eq!(
+        storage::load(&destination, "checked-turn").unwrap(),
+        checkpoint
+    );
+    std::fs::remove_dir_all(destination).unwrap();
+}
+
+#[test]
 fn installed_save_reports_checked_records_phase_and_view() {
     let Some(home) = std::env::var_os("CIVTOT_HOME") else {
         return;

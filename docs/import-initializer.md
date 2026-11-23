@@ -377,3 +377,21 @@ cmp docs/evidence/import-round-close.json /tmp/import-round-close.json
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_saved_viewport_check.py --out /tmp/import-saved-viewport.json
 cmp docs/evidence/import-saved-viewport.json /tmp/import-saved-viewport.json
 ```
+
+## Load a checked experimental replay
+
+Create a named checkpoint in the save directory used by either client.
+
+```sh
+totctl prepare-original-replay "$CIVTOT_HOME" Original/Ph_Auto2.SAV "$TOTENGINE_SAVES" checked-original
+```
+
+Use **Load engine checkpoint** and select `checked-original`. The command
+verifies the pinned save and reference dependencies, uses Built-in AI with
+seed 7, and preserves a private copy of the SAV beside the checkpoint.
+The original install supplies its reference resources at restore. A
+pristine checkpoint selects slot 9 at the saved viewport. During play the
+shared client uses the last inspected tile when the checked saved-view
+session reaches the next human turn. A later checkpoint load uses the
+ordinary client selection policy. This load path is experimental. Faithful
+SAV entry remains open under #198.

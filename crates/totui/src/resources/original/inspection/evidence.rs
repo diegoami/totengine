@@ -22,6 +22,11 @@ const ROUND_CLOSE: &str = include_str!("../../../../../../docs/evidence/import-r
 const SAVED_VIEWPORT: &str =
     include_str!("../../../../../../docs/evidence/import-saved-viewport.json");
 
+pub(super) fn saved_viewport_matches_save(sha: &str) -> bool {
+    serde_json::from_str::<Value>(SAVED_VIEWPORT)
+        .is_ok_and(|trace| trace["source"]["sha256"] == sha)
+}
+
 fn same_input_trace(text: &str, report: &Value, name: &str) -> Result<Value, String> {
     let trace: Value = serde_json::from_str(text).map_err(|error| format!("{name}: {error}"))?;
     for key in ["source", "rules", "binary_sha256"] {

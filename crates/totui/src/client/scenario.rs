@@ -31,6 +31,31 @@ pub(super) struct ScenarioChoice {
     pub date: Option<String>,
 }
 
+fn restore_loaded(
+    resources: Resources,
+    files: crate::resources::ScenarioFiles,
+    identity: String,
+    text: &str,
+) -> Result<Loaded, String> {
+    let session = HumanSession::restore_with(
+        resources.rules.clone(),
+        &identity,
+        text,
+        Some((
+            &files.bytes,
+            files.events.map(engine::events::EventEngine::new),
+        )),
+    )?;
+    let atlas = Atlas::load(&resources)?;
+    Ok(Loaded {
+        resources,
+        atlas,
+        identity,
+        session,
+        scenario_snapshot: Some(files.bytes),
+    })
+}
+
 impl Client {
     fn scenario_home(&self) -> Result<&Path, String> {
         if self.home.trim().is_empty() {
@@ -218,44 +243,57 @@ impl Client {
         Ok(())
     }
 
-    /// Loads resources and the scenario file a scenario checkpoint names, and
-    /// restores it; the running game is untouched on failure.
+    /// Restore the replacement before committing assets or selection. The
+    /// optional focus applies only to an untouched checked reference session.
     pub(super) fn restore_scenario(
         &mut self,
         origin: &engine::human::ScenarioOrigin,
         text: &str,
-    ) -> Result<(), String> {
+    ) -> Result<Option<Entity>, String> {
         let home = self.scenario_home()?.to_path_buf();
-        let snapshot = storage::scenario_snapshot(&self.saves, text)?;
-        let (resources, files) =
-            crate::resources::Resources::load_scenario_inputs(&home, &origin.path, snapshot)
-                .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))?;
-        let atlas = Atlas::load(&resources)?;
-        let identity = if text.starts_with("totengine-human 3\n") {
-            resources.scenario_identity()
+        let mut snapshot = storage::scenario_snapshot(&self.saves, text)?;
+        let reference_recipe = text.starts_with("totengine-human 3\n")
+            && text.lines().nth(5).is_some_and(|line| {
+                line.strip_prefix("initializer 7 profile ")
+                    .and_then(|profile| profile.split_whitespace().next())
+                    == Some(engine::human::ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE)
+            });
+        let legacy_snapshot = if reference_recipe {
+            snapshot.clone()
         } else {
-            resources.identity()
+            snapshot.take()
         };
-        let session = HumanSession::restore_with(
-            resources.rules.clone(),
-            &identity,
-            text,
-            Some((
-                &files.bytes,
-                files.events.map(engine::events::EventEngine::new),
-            )),
-        )?;
+        let legacy = Resources::load_scenario_inputs(&home, &origin.path, legacy_snapshot)
+            .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))
+            .and_then(|(resources, files)| {
+                let identity = if text.starts_with("totengine-human 3\n") {
+                    resources.scenario_identity()
+                } else {
+                    resources.identity()
+                };
+                restore_loaded(resources, files, identity, text)
+            });
+        let (loaded, focus) = match legacy {
+            Ok(loaded) => (loaded, None),
+            Err(_) if reference_recipe => {
+                let capture = OriginalCapture::capture_checkpoint(&home, &origin.path, snapshot)?;
+                let viewport = capture.checkpoint_viewport()?;
+                let (resources, files, identity) = capture.into_checkpoint_inputs();
+                let loaded = restore_loaded(resources, files, identity, text)?;
+                let focus = if loaded.session.view().revision == 0 {
+                    viewport.and_then(|anchor| loaded.session.saved_initial_focus(anchor))
+                } else {
+                    None
+                };
+                (loaded, focus)
+            }
+            Err(error) => return Err(error),
+        };
         let assets = storage::nonce()?;
         self.reset_notices();
-        self.loaded = Some(Loaded {
-            resources,
-            atlas,
-            identity,
-            session,
-            scenario_snapshot: Some(files.bytes),
-        });
+        self.loaded = Some(loaded);
         self.assets = assets;
-        Ok(())
+        Ok(focus)
     }
 
     pub(super) fn scenario_buttons(&self, modal: &Modal) -> Vec<Button> {

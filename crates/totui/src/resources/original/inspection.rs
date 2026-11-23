@@ -15,6 +15,55 @@ mod evidence;
 mod staged_round;
 
 impl OriginalCapture {
+    /// Create an experimental engine checkpoint from the checked reference
+    /// save. The caller can preserve the captured input with the checkpoint.
+    pub fn prepare_replay_checkpoint(&self) -> Result<String, String> {
+        use engine::{
+            campaign::AiPolicy,
+            events::EventEngine,
+            human::{HumanSession, ScenarioInput},
+        };
+        let report = self.inspect_save()?;
+        if report["saved_viewport_check"]["verified"] != true
+            || report["saved_opponent_combat_check"]["verified"] != true
+            || report["victory_event"]["matches"] != true
+        {
+            return Err("The captured save did not pass the checked Original replay checks".into());
+        }
+        let human = report["saved_phase"]["human_civ"]
+            .as_u64()
+            .and_then(|value| u8::try_from(value).ok())
+            .ok_or("checked save has no human seat")?;
+        let files = self.files();
+        let session = HumanSession::scenario_initialized_saved_opponent_combat(
+            ScenarioInput {
+                path: &files.path,
+                snapshot: &files.bytes,
+                rules: self.resources().rules.clone(),
+                events: files.events.clone().map(EventEngine::new),
+            },
+            human,
+            AiPolicy::BuiltIn1,
+            7,
+            self.identity(),
+        )?;
+        Ok(session.checkpoint(self.identity()))
+    }
+
+    /// Viewport supported by the native resume witness for this exact save.
+    pub(crate) fn checkpoint_viewport(&self) -> Result<Option<(u16, u16)>, String> {
+        let files = self.files();
+        if !evidence::saved_viewport_matches_save(&sha256(&files.bytes)) {
+            return Ok(None);
+        }
+        let snapshot = CheckedSnapshot::read(&files.bytes, &self.resources().rules)?;
+        let tail_start = files.bytes.len() - snapshot.trailing_bytes();
+        let viewport = event_tail::inspect(&files.bytes[tail_start..])?.viewport;
+        let x = u16::try_from(viewport.0).map_err(|_| "saved viewport x is negative")?;
+        let y = u16::try_from(viewport.1).map_err(|_| "saved viewport y is negative")?;
+        Ok(Some((x, y)))
+    }
+
     /// Check the captured save and report the supported inspection results.
     pub fn inspect_save(&self) -> Result<Value, String> {
         let files = self.files();

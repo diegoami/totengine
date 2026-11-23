@@ -5203,6 +5203,85 @@ fn installed_saved_view_uses_schema_two_and_failed_restore_is_atomic() {
 }
 
 #[test]
+fn installed_checked_checkpoint_uses_saved_viewport_and_next_turn_anchor() {
+    use crate::resources::original::OriginalCapture;
+
+    let Some(installation) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let installation = Path::new(&installation);
+    let home = tempfile::tempdir().unwrap();
+    fs::create_dir(home.path().join("Original")).unwrap();
+    let path = "Original/Ph_Auto2.SAV";
+    let installed = OriginalCapture::capture(installation, path).unwrap();
+    for source in installed.resources().sources.values() {
+        fs::copy(
+            installation.join(&source.relative),
+            home.path().join(&source.relative),
+        )
+        .unwrap();
+    }
+    for (name, role) in [("Labels.txt", "labels"), ("Describe.txt", "describe")] {
+        fs::write(
+            home.path().join("Original").join(name),
+            installed.captured_bytes(role).unwrap(),
+        )
+        .unwrap();
+    }
+    let reference = OriginalCapture::capture(home.path(), path).unwrap();
+    let files = reference.files();
+    let checkpoint = reference.prepare_replay_checkpoint().unwrap();
+    let saves = home.path().join("saves");
+    storage::save_scenario(&saves, "checked-turn", &checkpoint, &files.bytes).unwrap();
+    fs::remove_file(home.path().join(path)).unwrap();
+    let mut c = Client::new(home.path().to_str().unwrap().to_owned(), saves);
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "checked-turn");
+    key(&mut c, "Enter");
+    assert_eq!(
+        c.checkpoint().as_deref(),
+        Some(checkpoint.as_str()),
+        "{}",
+        c.status
+    );
+    assert_eq!(c.active.map(|actor| actor.slot), Some(9));
+    assert_eq!(c.inspect, Some((61, 5)));
+    assert!(c.moving);
+
+    for slot in [9, 6, 26, 18] {
+        let view = c.view().unwrap();
+        let actor = *view.units.iter().find(|actor| actor.slot == slot).unwrap();
+        c.active = Some(actor);
+        c.inspect = c.active_position();
+        c.order(Command::Skip { unit: actor }).unwrap();
+    }
+    assert_eq!(c.inspect, Some((51, 9)));
+    c.order(Command::EndTurn).unwrap();
+    for _ in 0..32 {
+        if c.view().unwrap().phase == Phase::Human {
+            break;
+        }
+        input(&mut c, Input::Tick);
+    }
+    assert_eq!(c.view().unwrap().observation.turn, 44);
+    assert_eq!(c.active.map(|actor| actor.slot), Some(18));
+    assert_eq!(c.inspect, Some((51, 9)));
+    assert!(c.moving);
+
+    let before = c.checkpoint().unwrap();
+    let assets = c.assets.clone();
+    let active = c.active;
+    let pan = c.pan;
+    fs::write(home.path().join("Original/Rules.txt"), b"changed").unwrap();
+    let origin = HumanSession::checkpoint_scenario(&checkpoint).unwrap();
+    assert!(c.restore_scenario(&origin, &checkpoint).is_err());
+    assert_eq!(c.checkpoint().as_deref(), Some(before.as_str()));
+    assert_eq!(c.assets, assets);
+    assert_eq!(c.active, active);
+    assert_eq!(c.pan, pan);
+}
+
+#[test]
 fn scenario_picker_suspends_opponents_until_cancel() {
     let f = Fixture::new();
     let path = "Original/Test.sav";

@@ -32,6 +32,7 @@ fn main() -> ExitCode {
         Some("record") => cmd_record(&args[2..]),
         Some("experiment") => experiment::cmd_experiment(&args[2..]),
         Some("inspect-original-save") => original_import::run(&args[2..]),
+        Some("prepare-original-replay") => original_import::prepare_replay(&args[2..]),
         Some("--version") | Some("-V") => {
             println!("totctl {}", env!("CARGO_PKG_VERSION"));
             ExitCode::SUCCESS
@@ -47,6 +48,7 @@ fn main() -> ExitCode {
                         {prog} mp <file.mp>   — decode an .MP map header and tiles\n\
                         {prog} rules <Rules.txt>   — summarize Rules.txt sections\n\
                         {prog} inspect-original-save <install> <Original/file.sav> — report import checks as JSON\n\
+                        {prog} prepare-original-replay <install> <Original/file.sav> <save-directory> <name> — save a checked experimental engine checkpoint\n\
                         {prog} play <file.sav|scn> [--turns N] [--seed S] [--log OUT] [--ai | --ai-v1 | --builtin]\n\
                         \x20                        — random players, AI v0 (--ai), AI v1 (--ai-v1), or built-in AI (--builtin)\n\
                         {prog} replay <file.sav|scn> <order.log>\n\

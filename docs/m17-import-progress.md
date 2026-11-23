@@ -219,8 +219,15 @@ selection at all 2,000 prepared map anchors, including slot 18 at
 binds the resume anchor to signed words at post-city offsets 63 and 65.
 The saved (61, 5) anchor selects slot 9 and preserves all 59 tiles.
 The zero-anchor preparation used by earlier controls selects slot 6.
-The inspector compares both cases against one captured session. Client
-anchor handoff, wider combat and pending choices remain open.
+The inspector compares both cases against one captured session.
+`totctl prepare-original-replay` writes an experimental engine checkpoint
+and an adjacent private input snapshot only after the captured save passes
+the checked replay. The shared desktop and browser Load path restores the
+sealed reference resources and starts a pristine checkpoint at the saved
+viewport. At the next human turn it uses the last inspected tile as the
+anchor for the guarded selector. The existing cycling policy still applies
+to individual orders. Faithful client admission, wider combat and pending
+choices remain open.
 
 The [event trailer trace](evidence/import-event-tail.json) locates the final
 1,276 bytes of the pinned save after 1,853 bytes of earlier reads. The probe

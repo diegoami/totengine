@@ -5451,6 +5451,13 @@ fn installed_original_inspection_reports_the_saved_human_view() {
         "{lines:?}"
     );
     assert!(lines.iter().any(|l| l.contains("retained native resume")));
+    assert!(lines.iter().any(|l| l.contains("no pending choice")));
+    assert!(lines
+        .iter()
+        .any(|l| l.contains("initialize a clean event state")));
+    assert!(lines
+        .iter()
+        .any(|l| l.contains("still requires verified saved-round continuation")));
     assert!(c.checkpoint().is_none());
     assert!(!scratch.path().join("saves").exists());
     key(&mut c, "Escape");

@@ -265,7 +265,8 @@ that the exact pinned capture and the checked engine session both have
 no pending choice at that boundary. Controls with stored research
 progress or Anarchy still reach native input. Experimental checkpoint
 preparation requires the pinned pending-choice check and rejects those
-modified captures.
+modified captures. The shared inspection screen shows the pending-choice
+and event-initialization results, including reasons for failed checks.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

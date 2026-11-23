@@ -97,8 +97,8 @@ impl Client {
             Ok(report) => {
                 let phase = &report["saved_phase"];
                 let view = &report["saved_view"];
-                let trace = &report["native_resume_trace"];
-                let event = &report["victory_event"];
+                let pending = &report["saved_pending_choice_check"];
+                let event = &report["saved_event_initialization"];
                 vec![
                     "Matched the reference Original dependencies.".into(),
                     format!(
@@ -109,21 +109,27 @@ impl Client {
                         "Saved human view · {} explored tiles, {} units, {} cities",
                         view["explored_tiles"], view["units"], view["cities"]
                     ),
-                    if trace["matches_fixture"] == true {
-                        "The save matches the retained native resume measurements.".into()
-                    } else {
-                        "The save differs from the native resume fixture.".into()
-                    },
-                    if event["matches"] == true {
-                        "The checked embedded victory fields match Original/Events.txt.".into()
+                    if pending["verified"] == true {
+                        "The retained native resume reaches input with no pending choice.".into()
                     } else {
                         format!(
-                            "Victory event differs. {}",
-                            event["reason"].as_str().unwrap_or_default()
+                            "Pending choices are unverified ({}).",
+                            pending["reason"]
+                                .as_str()
+                                .unwrap_or("no matching native evidence")
                         )
                     },
-                    "Faithful play requires verified pending decisions and ongoing map knowledge."
-                        .into(),
+                    if event["verified"] == true {
+                        "The stock victory records can initialize a clean event state.".into()
+                    } else {
+                        format!(
+                            "Event initialization is unverified ({}).",
+                            event["reason"]
+                                .as_str()
+                                .unwrap_or("no matching native evidence")
+                        )
+                    },
+                    "Faithful entry still requires verified saved-round continuation.".into(),
                 ]
             }
             Err(reason) => vec![

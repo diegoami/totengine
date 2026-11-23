@@ -18,7 +18,7 @@
     "crates/totui/src/resources.rs": "9209415b886285d8b330d2601c3d6f5a76a2456d487ad7e09f067b907b14c3f4",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "f30e01c9ea6679190e8819bda2323788e31a07d7666456e78441061d9280d7b0",
-    "crates/totui/src/client/scenario.rs": "89f301d149e4e386c1a3fbe3d910ed86a58ac5ebd696fec01145584a85b62de8",
+    "crates/totui/src/client/scenario.rs": "82e8e544f351bea9743ebe29cf829d84df310accd5dc412929e42b89a594a50e",
     "crates/engine/src/saved_knowledge.rs": "f900ea415abc50293bfba28b1006a0f1b9a994c25ed01ad6d745eeb973b0a17c",
     "crates/engine/src/saved_knowledge/update.rs": "78443f5b0890f4dae87cbd9013761e84d9f87f6b35052b694fb15eb6efb0f5e3",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",

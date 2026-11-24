@@ -472,19 +472,20 @@ allowance draws nothing). All measured moves live in
 `docs/evidence/import-opponent-trade-contact.json`.
 
 The route now plays through civ 2's, civ 5's, civ 6's, and civ 7's whole
-turn-49 passes with all 59 human tiles retained. The next fallback is
-the **turn-50 round-end checksum replay**: the recorded `R 50
-e75c98cd70d6a71c` from the live initial session and the recomputed
-checked-replay checksum diverge, so the replay stops there and the human
-view refreshes 59→60. Both sides run the same staged contexts, so the
-mismatch is a live-versus-replay self-consistency difference in one of
-the new contexts (candidates: the road arrival's skipped member
-mutation, the overspent join's patched observation, or a
-`checked_replay` branch that behaves differently between the live and
-replayed paths). Diagnose by comparing the checksummed world fields
-between the live turn-50 state and the replayed turn-50 state before
-trusting the route past turn 50; until then the extension is
-harness-validated through the turn-49 close only.
+turn-49 passes with all 59 human tiles retained. At the turn-50 round
+close the saved knowledge is dropped by the designed `keep_view`
+boundary, not by a divergence: the turn-50 annual processes the human's
+own city pass (cities and units change, so the staged snapshot cannot
+represent them), and the refresh legitimately includes one newly
+visible ocean tile (flat seen index 58, terrain 10) that the human's
+new build now sees. The earlier read of a round-end checksum mismatch
+was wrong — the fallback's order line is simply the freshly appended
+round record.
+
+Extending the staged knowledge through a turn-50 annual (own-city
+knowledge normalization across the researched turn) is a design step
+beyond the checked range and stays open; the turn-49 journey itself is
+complete end to end.
 
 This is an engine diagnostic. The `m17-turn49-boundary` worktree at
 `/home/diego/review-tmp/totengine-m17-turn49-boundary` contains

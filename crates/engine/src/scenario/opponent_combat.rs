@@ -140,7 +140,13 @@ pub(crate) fn stage(
         updated.cities[city].raw[86..90].fill(0);
         updated.cities.truncate(world.cities.len());
         let map = &mut updated.maps[0];
-        for (index, bytes) in map.tile_fields.chunks_exact_mut(6).enumerate() {
+        for (index, bytes) in map
+            .tile_fields
+            .as_chunks_mut::<6>()
+            .0
+            .iter_mut()
+            .enumerate()
+        {
             bytes[1] = world.map.improvements[index];
             bytes[2] = (bytes[2] & 0x1f) | (world.map.site_bits[index] << 5);
             bytes[5] = (bytes[5] & 0xf0) | world.map.fertility[index];

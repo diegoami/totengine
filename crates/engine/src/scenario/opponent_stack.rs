@@ -144,8 +144,59 @@ pub(crate) fn stage(
         city.is_some_and(|c| c.map_id == 0 && c.owner == u16::from(civ))
     };
     let city = city_at(to);
+    let origin_city = city_at(origin);
+    let from = world
+        .map
+        .stored_index(origin.0, origin.1)
+        .ok_or("saved stack origin missing")?;
+    let dest = world
+        .map
+        .stored_index(to.0, to.1)
+        .ok_or("saved stack destination missing")?;
+    // The measured turn-48 approach: one member of a two-unit field pair
+    // enters the civ's own size-one city while the settler stays behind
+    // (docs/evidence/import-opponent-empty-city.json).
+    let own_empty_city_entry = mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (48, 6, 1, (27, 15), (27, 17), 0x29e9892a)
+        && world.human_mask == 16
+        && source == [slot, 14]
+        && members.is_empty()
+        && friendly_city(city)
+        && origin_city.is_none()
+        && world.city_at(to.0, to.1) == Some(10)
+        && city.is_some_and(|city| city.size == 1)
+        && (
+            unit.type_id,
+            unit.moves_left,
+            unit.orders,
+            record.moves_spent(),
+        ) == (15, 6, 28, 0)
+        && record.raw[6] == 0x40
+        && record.raw[13] == 5
+        && record.visibility() == 0
+        && world.movement_allowance(rules, usize::from(unit.type_id), civ, unit.damage) == 6
+        && world.units.get(14).is_some_and(|resident| {
+            (
+                resident.owner,
+                resident.type_id,
+                (resident.x, resident.y),
+                resident.orders,
+            ) == (6, 0, (27, 15), 255)
+        })
+        && saved.units.get(14).is_some_and(|resident| {
+            resident.raw[6] == 192
+                && resident.raw[7] == 10
+                && resident.raw[10] == 0
+                && resident.raw[11] == 0
+                && resident.raw[13] == 1
+                && resident.raw[16] == 0
+                && resident.raw[26..30] == [1, 0, 255, 255]
+        })
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [9, 1, 192, 2, 64, 96]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [2, 2, 192, 2, 64, 99];
     if members.is_empty() {
-        if city.is_some() {
+        if city.is_some() && !own_empty_city_entry {
             return Err(
                 "saved opponent step into an empty city is outside the checked context".into(),
             );
@@ -155,7 +206,6 @@ pub(crate) fn stage(
     {
         return Err("saved opponent step needs empty land or a friendly city stack".into());
     }
-    let origin_city = city_at(origin);
     let city_transfer = field_stack
         && source.len() == 2
         && members.len() == 1
@@ -168,6 +218,7 @@ pub(crate) fn stage(
         && city.is_none();
     let city_to_empty = friendly_city(origin_city) && members.is_empty();
     if source.len() > 1
+        && !own_empty_city_entry
         && (!(city_transfer || city_to_empty || field_departure)
             || source.iter().any(|&s| {
                 world.units[s].owner != civ
@@ -179,14 +230,6 @@ pub(crate) fn stage(
         );
     }
 
-    let from = world
-        .map
-        .stored_index(origin.0, origin.1)
-        .ok_or("saved stack origin missing")?;
-    let dest = world
-        .map
-        .stored_index(to.0, to.1)
-        .ok_or("saved stack destination missing")?;
     let zone_case = match (world.turn, civ, slot, origin, to, world.combat_rng.state()) {
         (46, 5, 10, (39, 35), (38, 34), 0xd9f16a1a) => Some(((2, 3, 5), (3, 2, 16, 39, 33))),
         (47, 2, 3, (39, 33), (38, 34), 0x3b0ca297) => Some(((16, 6, 9), (10, 5, 2, 39, 35))),
@@ -339,7 +382,8 @@ pub(crate) fn stage(
         || unstacked_road_boundary
         || witnessed_hut
         || armed_cost == Some(6)
-        || eastward_settler;
+        || eastward_settler
+        || own_empty_city_entry;
     if field_to_field && attack != Some(0) && !witnessed_armed || city_transfer && attack.is_none()
     {
         return Err("saved field-stack arrival has an unchecked mover attack value".into());
@@ -443,6 +487,18 @@ pub(crate) fn stage(
         }
         updated.units[slot].raw[6] |= 0x40;
         updated.units[slot].raw[13] = 1;
+    }
+    if own_empty_city_entry {
+        // Native charges one move point for the southward step, keeps the
+        // resident settler as the new origin head, sets the unit bit on the
+        // occupied city tile and writes the mover's southward direction. It
+        // leaves the city record, the other civs' knowledge and the CRT
+        // untouched; the scout's own explored bits come from the observation
+        // kernel below.
+        if result.cost_thirds != 3 || world.combat_rng.state() != crt {
+            return Err("saved own-city entry differed from the witness".into());
+        }
+        updated.units[slot].raw[13] = 3;
     }
     let observed = if matches!(
         mode,

@@ -405,25 +405,38 @@ records. Checked allocation retains the 59-tile map through turn 48,
 and the required research project can be chosen and reloaded without
 refreshing the saved view.
 
+The alternate route now extends through the researched turn-48 close into
+the turn-49 human round. Civ 6 moves unit slot 1 (type 15) south from
+(27, 15) into its own empty size-one city in slot 10 at (27, 17) while a
+settler stays behind on the origin tile. The [native empty-city
+witness](evidence/import-opponent-empty-city.json) reuses the measured
+second founding to create the city, then measures the movement callback
+through return: the mover becomes the city stack head at a cost of three
+thirds with a southward direction byte, the resident settler becomes the
+origin head, the destination occupancy byte gains the unit bit, the
+scout's own explored bits cover the four arrival neighbours, civ 6's
+runtime memory marks both tiles, and the human viewer's explored tiles
+and memory are untouched. The checked engine stages this context in
+`crates/engine/src/scenario/opponent_stack.rs`; the human enters turn 49
+with all 59 tiles, and the next fallback is the contact below.
+
 ### Next continuation case
 
-On the alternate End Turn route, choose the first offered research project on
-turn 48 and end the turn again. The first saved-view fallback is civ 6 moving
-unit slot 1 (type 15) south from (27, 15) into its own empty city in slot 10
-at (27, 17). At the attempted move the unit has six thirds left, order 28,
-and CRT state `0x29e9892a`. The current stage in
-`crates/engine/src/scenario/opponent_stack.rs` rejects entry into an empty city.
-The engine accepts the move through its normal path and the human reaches
-turn 49 with 60 explored tiles instead of the 59 at the end of turn 48.
-
-This is an engine diagnostic. Measure the native callback and its occupancy,
-stack, and human-map writes before changing the saved-view stage. The local
-working trace is `/tmp/totengine-m17-turn49-empty-city.log`. The
-`m17-turn49-boundary` worktree at
-`/home/diego/review-tmp/totengine-m17-turn49-boundary` contains uncommitted
-diagnostic logging in `human/saved_view.rs` and `human/staged_round.rs`.
-Leave those diagnostics out of production commits. If the temporary log is
-gone, reproduce the route described above using the checked Original export.
+On the same route, the turn-49 close falls back when civ 2 moves unit
+slot 3 (type 16) east from (39, 35) to (41, 35), adjacent to the civ 5
+unit in slot 10 at (42, 36). At the attempted move the unit has six
+thirds left, order 255, visibility byte 0x20, and CRT state `0x366e70f4`;
+both treaty words are `0x405`. The turn arithmetic `(49 + 2 + 5) % 4 == 0`
+marks a trade turn, so the known-contact encounter can reach an advance
+grant like the measured turn-44 exchange. This is an engine diagnostic:
+measure the native callback and its treaty, grant, stack, and human-map
+writes before changing the saved-view stage. The local working trace is
+`/tmp/totengine-m17-turn49-empty-city.log`. The `m17-turn49-boundary`
+worktree at `/home/diego/review-tmp/totengine-m17-turn49-boundary`
+contains uncommitted diagnostic logging in `human/saved_view.rs` and
+`human/staged_round.rs`; leave those diagnostics out of production
+commits. If the temporary log is gone, reproduce the route described
+above using the checked Original export.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

@@ -575,3 +575,94 @@ fn apply_stock_contact(
     }
     Some(())
 }
+
+/// Record the witnessed Turn-48 sea arrival while keeping the saved human fog.
+pub(crate) fn stage_naval_arrival(
+    saved: &SaveFile,
+    before: &WorldState,
+    world: &mut WorldState,
+    viewer: u8,
+    arrivals: &[usize],
+) -> Option<SaveFile> {
+    let location = (0, 40);
+    if (before.turn, world.turn, viewer) != (47, 48, 4)
+        || (before.combat_rng.state(), world.combat_rng.state()) != (0x3b0ca297, 0x29e9892a)
+        || arrivals != [2, 36, 37]
+        || before.units.len() != world.units.len()
+        || saved.units.len() != world.units.len()
+        || before
+            .units
+            .iter()
+            .zip(&world.units)
+            .enumerate()
+            .any(|(slot, (old, new))| {
+                if arrivals.contains(&slot) {
+                    old.id != 0
+                } else {
+                    old != new
+                }
+            })
+    {
+        return None;
+    }
+    let knowledge = crate::saved_knowledge::SavedMapKnowledge::read(saved, viewer).ok()?;
+    let tile = world.map.stored_index(location.0, location.1)?;
+    if knowledge.tiles.get(tile)?.is_some()
+        || saved.maps[0].tile_fields.get(tile * 6 + 1).copied() != Some(0)
+        || saved.maps[0].tile_fields.get(tile * 6 + 5).copied() != Some(240)
+        || world.map.terrain[tile] != 10
+    {
+        return None;
+    }
+    let mut observed = saved.clone();
+    let order = [37, 36, 2];
+    for (stack_pos, (&slot, (kind, orders, veteran))) in order
+        .iter()
+        .zip([(32, 255, true), (4, 3, false), (46, 3, false)])
+        .enumerate()
+    {
+        let unit = &world.units[slot];
+        if observed.units[slot].id() != 0
+            || unit.id == 0
+            || (unit.x, unit.y) != location
+            || (unit.type_id, unit.orders, unit.veteran) != (kind, orders, veteran)
+            || (unit.owner, unit.home, unit.damage, unit.is_leader) != (0, 255, 0, false)
+            || usize::from(unit.stack_pos) != stack_pos
+        {
+            return None;
+        }
+        let raw = &mut observed.units[slot].raw;
+        *raw = [0; 40];
+        raw[0..2].copy_from_slice(&unit.x.to_le_bytes());
+        raw[2..4].copy_from_slice(&unit.y.to_le_bytes());
+        raw[6..8].copy_from_slice(&(u16::from(veteran) << 13).to_le_bytes());
+        raw[8] = kind;
+        raw[17] = orders;
+        raw[18] = unit.home;
+        raw[30..34].copy_from_slice(&unit.id.to_le_bytes());
+    }
+    link_stack(&mut observed, world, &order).ok()?;
+    let map = &mut observed.maps[0].tile_fields;
+    map[6 * tile + 1] = 1;
+    map[6 * tile + 5] = 0;
+    for (x, y) in [
+        (0, 38),
+        (1, 39),
+        (79, 39),
+        (0, 40),
+        (2, 40),
+        (78, 40),
+        (1, 41),
+        (79, 41),
+        (0, 42),
+    ] {
+        let at = world.map.stored_index(x, y)?;
+        map[6 * at + 4] |= 1;
+    }
+    if crate::saved_knowledge::SavedMapKnowledge::read(&observed, viewer).ok()? != knowledge {
+        return None;
+    }
+    world.map.owner[tile] = 0;
+    super::snapshot::apply_saved_observation(world, &observed);
+    Some(observed)
+}

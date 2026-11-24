@@ -760,3 +760,25 @@ Schema 16 mirrors the movement refresh for civ 7's checked turn-47 city
 pass, then stages the arrival and replays across it. Earlier schemas
 retain their existing behavior. The saved view still hands off to engine
 sight at the next annual update in this route.
+
+### Hidden naval arrival at the turn-48 boundary
+
+The [prepared native arrival](evidence/import-naval-arrival.json) executes
+barbarian allocation and orders with the saved landmass table restored.
+A veteran ship with two units arrives at (0, 40). Native records the stack
+and changes the arrival tile's occupancy and owner. The surrounding
+visibility changes affect only the barbarian bit. The human keeps all 59
+explored tiles and all remembered improvements.
+
+The engine arrival uses the same twelve CRT draws, then the engine's macro
+poll draws once. Schema 17 adds the witnessed hidden stack to its private
+snapshot at round close. The slots follow the engine's free table and the
+stack order follows the native measurement. The native probe uses different
+slots in its prepared table. This establishes the annual handoff and
+checkpoint replay. The saved view still falls back during civ 2's request
+to move to (64, 36) before the human input poll.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_naval_arrival_check.py --out /tmp/import-naval-arrival.json
+cmp docs/evidence/import-naval-arrival.json /tmp/import-naval-arrival.json
+```

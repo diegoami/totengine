@@ -388,6 +388,12 @@ The native callback puts the warrior at the head and charges six thirds.
 The checked human map still has 59 explored tiles at that checkpoint.
 The next annual update remains outside the saved-view route.
 
+Schema 17 adds the [hidden naval arrival](evidence/import-naval-arrival.json)
+at the turn-48 annual boundary. It retains 59 explored tiles and replays
+the engine-allocated stack with the measured tile occupancy and barbarian
+visibility writes. Civ 2's subsequent move to (64, 36) still falls back
+before the human input poll.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

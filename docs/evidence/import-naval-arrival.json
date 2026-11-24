@@ -1,0 +1,136 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "arrival": {
+    "viewer": 4,
+    "turn": 47,
+    "units": [
+      {
+        "slot": 22,
+        "position": [
+          0,
+          40
+        ],
+        "type": 46,
+        "owner": 0,
+        "orders": 3,
+        "veteran": false,
+        "previous": 38,
+        "next": -1
+      },
+      {
+        "slot": 38,
+        "position": [
+          0,
+          40
+        ],
+        "type": 4,
+        "owner": 0,
+        "orders": 3,
+        "veteran": false,
+        "previous": 39,
+        "next": 22
+      },
+      {
+        "slot": 39,
+        "position": [
+          0,
+          40
+        ],
+        "type": 32,
+        "owner": 0,
+        "orders": 255,
+        "veteran": true,
+        "previous": -1,
+        "next": 38
+      }
+    ],
+    "tile_changes": [
+      [
+        1520,
+        4,
+        0,
+        1
+      ],
+      [
+        1560,
+        4,
+        0,
+        1
+      ],
+      [
+        1599,
+        4,
+        0,
+        1
+      ],
+      [
+        1600,
+        1,
+        0,
+        1
+      ],
+      [
+        1600,
+        4,
+        0,
+        1
+      ],
+      [
+        1600,
+        5,
+        240,
+        0
+      ],
+      [
+        1601,
+        4,
+        0,
+        1
+      ],
+      [
+        1639,
+        4,
+        0,
+        1
+      ],
+      [
+        1640,
+        4,
+        0,
+        1
+      ],
+      [
+        1679,
+        4,
+        0,
+        1
+      ],
+      [
+        1680,
+        4,
+        0,
+        1
+      ]
+    ],
+    "explored_tiles": 59,
+    "viewer_memory_unchanged": true,
+    "crt_before": 990683799,
+    "crt_after_arrival": 2174389043,
+    "substitutes": [
+      "0x467d19",
+      "0x467d19",
+      "0x467d19",
+      "0x569c88"
+    ]
+  },
+  "scope": "Measure the stock barbarian sea arrival at the close of turn 47.\n\nRun the native arrival routine in the prepared stock round context with\nthe checked turn and CRT. Restore the saved landmass table. Presentation\nand network calls are suppressed. Allocation and orders execute natively."
+}

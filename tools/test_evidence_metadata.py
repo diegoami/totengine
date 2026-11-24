@@ -316,6 +316,26 @@ class GoldenMetadata(unittest.TestCase):
         ])
 
 
+    def test_native_turn_close_naval_arrival_leaves_player_fog_intact(self):
+        data = json.loads((ROOT / 'docs/evidence/import-naval-arrival.json').read_text())
+        found = json.loads((ROOT / 'docs/evidence/import-opponent-founding.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(data[key], found[key])
+        arrival = data['arrival']
+        self.assertEqual((arrival['turn'], arrival['viewer'], arrival['explored_tiles']), (47, 4, 59))
+        self.assertTrue(arrival['viewer_memory_unchanged'])
+        self.assertEqual(arrival['crt_after_arrival'], 0x819a8b33)
+        units = arrival['units']
+        self.assertEqual([u['position'] for u in units], [[0, 40]] * 3)
+        self.assertEqual([u['owner'] for u in units], [0, 0, 0])
+        self.assertEqual(
+            [(u['type'], u['orders'], u['veteran'], u['previous'], u['next']) for u in units],
+            [(46, 3, False, 38, -1), (4, 3, False, 39, 22), (32, 255, True, -1, 38)],
+        )
+        self.assertIn([1600, 1, 0, 1], arrival['tile_changes'])
+        self.assertIn([1600, 5, 240, 0], arrival['tile_changes'])
+        self.assertEqual(len([x for x in arrival['tile_changes'] if x[1] == 4]), 9)
+
     def test_native_westward_arrival_requires_refreshed_movement(self):
         report = json.loads((ROOT / 'docs/evidence/import-opponent-armed-stack.json').read_text())
         west = report['turn_47_arrival']

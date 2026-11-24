@@ -641,7 +641,7 @@ pub(super) fn check_saved_human_production(
     let rules = &capture.resources().rules;
     let events = files.events.clone().map(EventEngine::new);
     let identity = capture.identity();
-    let mut session = HumanSession::scenario_initialized_saved_opponent_westward(
+    let mut session = HumanSession::scenario_initialized_saved_naval_arrival(
         ScenarioInput {
             path: &files.path,
             snapshot: &files.bytes,
@@ -966,6 +966,20 @@ pub(super) fn check_saved_human_production(
             "checked turn-47 westward arrival did not retain the human view on replay".into(),
         );
     }
+    if contact.advance(3) != 3 {
+        return Err("the checked turn-48 naval arrival did not advance".into());
+    }
+    let arrived = contact.view();
+    let arrival_checkpoint = contact.checkpoint(identity);
+    let replay = restore(&arrival_checkpoint)?;
+    if arrived.observation.turn != 48
+        || arrived.observation.seen != post_return.observation.seen
+        || arrived.observation.cities != post_return.observation.cities
+        || replay.view() != arrived
+        || replay.checkpoint(identity) != arrival_checkpoint
+    {
+        return Err("the checked naval arrival did not retain the human view on replay".into());
+    }
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
@@ -980,6 +994,7 @@ pub(super) fn check_saved_human_production(
         "turn_47_city_return_replays": true,
         "turn_47_hidden_founding_replays": 2,
         "turn_47_opponent_stack_replays": true,
+        "turn_48_naval_arrival_replays": true,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],

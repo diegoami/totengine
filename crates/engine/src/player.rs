@@ -1152,6 +1152,7 @@ impl Game {
     pub(crate) fn close_staged_turn(
         &mut self,
         saved_viewer: Option<u8>,
+        stage_arrivals: impl FnOnce(&WorldState, &mut WorldState, &[usize]) -> bool,
     ) -> (crate::turn::TurnSummary, bool) {
         let before = saved_viewer.map(|_| self.world.clone());
         let summary = self.world.finish_round(
@@ -1160,16 +1161,19 @@ impl Game {
             crate::turn::TurnSummary::default(),
             false,
         );
-        // Only retain the saved projection for the checked quiet round.
+        // Preserve the projection for a quiet round or a checked hidden arrival.
         let keep_view = before.is_some_and(|before| {
             summary.events.is_empty()
-                && summary.barbarian_arrivals.is_empty()
                 && self.world.game_over.is_none()
                 && self.world.map == before.map
-                && self.world.units == before.units
                 && self.world.cities == before.cities
                 && self.world.wonders == before.wonders
                 && self.world.diplomacy == before.diplomacy
+                && (if summary.barbarian_arrivals.is_empty() {
+                    self.world.units == before.units
+                } else {
+                    stage_arrivals(&before, &mut self.world, &summary.barbarian_arrivals)
+                })
         });
         self.record_round_end(saved_viewer.filter(|_| keep_view));
         (summary, keep_view)

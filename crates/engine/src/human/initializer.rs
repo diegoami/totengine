@@ -37,6 +37,7 @@ pub enum ScenarioKnowledgeRecipe {
     SavedOpponentZoneV1,
     SavedOpponentFoundingV1,
     SavedOpponentWestwardV1,
+    SavedNavalArrivalV1,
 }
 
 impl ScenarioKnowledgeRecipe {
@@ -53,6 +54,7 @@ impl ScenarioKnowledgeRecipe {
                 | Self::SavedOpponentZoneV1
                 | Self::SavedOpponentFoundingV1
                 | Self::SavedOpponentWestwardV1
+                | Self::SavedNavalArrivalV1
         )
     }
 }
@@ -116,6 +118,7 @@ impl ScenarioInitializer {
     pub const SAVED_OPPONENT_ARMED_STACK_V2_PROFILE: &'static str =
         "experimental-saved-opponent-armed-stack-v2";
 
+    pub const SAVED_NAVAL_ARRIVAL_PROFILE: &'static str = "experimental-saved-naval-arrival-v1";
     pub const SAVED_OPPONENT_WESTWARD_PROFILE: &'static str =
         "experimental-saved-opponent-westward-v1";
     pub const SAVED_OPPONENT_FOUNDING_PROFILE: &'static str =
@@ -140,6 +143,7 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedOpponentZoneV1 => 14,
             ScenarioKnowledgeRecipe::SavedOpponentFoundingV1 => 15,
             ScenarioKnowledgeRecipe::SavedOpponentWestwardV1 => 16,
+            ScenarioKnowledgeRecipe::SavedNavalArrivalV1 => 17,
         }
     }
     pub fn profile(&self) -> &'static str {
@@ -170,6 +174,7 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedOpponentWestwardV1 => {
                 Self::SAVED_OPPONENT_WESTWARD_PROFILE
             }
+            ScenarioKnowledgeRecipe::SavedNavalArrivalV1 => Self::SAVED_NAVAL_ARRIVAL_PROFILE,
         }
     }
 
@@ -304,6 +309,11 @@ impl ScenarioInitializer {
                 Self::SAVED_OPPONENT_WESTWARD_PROFILE,
                 "saved-opponent-westward-then-engine-v1",
             ),
+            ScenarioKnowledgeRecipe::SavedNavalArrivalV1 => (
+                17,
+                Self::SAVED_NAVAL_ARRIVAL_PROFILE,
+                "saved-naval-arrival-then-engine-v1",
+            ),
         };
         format!(
             "initializer {schema} profile {profile} source {} {} {:016x} mode {mode} saved {} {} {} {} human {} phase {:?} cursor {} policy {} seed {} movement {movement} knowledge {knowledge} world {:016x} memory {:016x} choice {:016x} events {:016x} {:016x} rng {:08x} {} {:08x} {} dependencies {} {:016x} {}",
@@ -397,6 +407,11 @@ impl ScenarioInitializer {
             Self::SAVED_OPPONENT_WESTWARD_PROFILE
         )) {
             Ok(ScenarioKnowledgeRecipe::SavedOpponentWestwardV1)
+        } else if line.starts_with(&format!(
+            "initializer 17 profile {} ",
+            Self::SAVED_NAVAL_ARRIVAL_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedNavalArrivalV1)
         } else {
             Err("unsupported scenario initializer version or profile".into())
         }

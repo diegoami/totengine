@@ -744,6 +744,24 @@ impl HumanSession {
         )
     }
 
+    /// Retain saved observation through the hidden naval arrival at turn close.
+    pub fn scenario_initialized_saved_naval_arrival(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedNavalArrivalV1,
+        )
+    }
+
     fn scenario_initialized_recipe(
         input: ScenarioInput<'_>,
         human: u8,
@@ -791,6 +809,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentZoneV1
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
+                | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
         ) {
             crate::scenario::phase::saved_human_entry(&saved, &input.rules, human)?;
             crate::scenario::snapshot::CheckedSnapshot::read(input.snapshot, &input.rules)?;
@@ -835,6 +854,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentZoneV1
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
+                | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
         ) {
             session.saved_move_state = Some(saved.clone());
         }
@@ -929,6 +949,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentZoneV1
                     | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
+                    | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
             )
             .then(StagedRound::default),
             game,
@@ -1321,6 +1342,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentZoneV1
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
+                | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
         ) {
             data.push_str(if self.saved_move_state.is_some() {
                 " saved-land-movement-active"
@@ -1834,9 +1856,22 @@ impl HumanSession {
             && self.saved_move_state.is_some())
         .then_some(self.human);
         let mut kept_view = false;
+        let mut observed_arrival = None;
+        let watched = self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+            && self.game.world.turn == 47;
+        let saved = watched.then(|| self.saved_move_state.clone()).flatten();
+        let human = self.human;
         self.record_turn_notices(true, |game| {
             if staged {
-                let (summary, kept) = game.close_staged_turn(saved_viewer);
+                let (summary, kept) =
+                    game.close_staged_turn(saved_viewer, |before, world, arrivals| {
+                        observed_arrival = saved.as_ref().and_then(|save| {
+                            crate::scenario::opponent_stack::stage_naval_arrival(
+                                save, before, world, human, arrivals,
+                            )
+                        });
+                        observed_arrival.is_some()
+                    });
                 kept_view = kept;
                 summary
             } else {
@@ -1844,6 +1879,9 @@ impl HumanSession {
             }
         });
         if kept_view {
+            if let Some(saved) = observed_arrival {
+                self.saved_move_state = Some(saved);
+            }
             self.reset_saved_deferrals();
         } else {
             self.finish_saved_movement();

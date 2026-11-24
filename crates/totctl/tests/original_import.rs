@@ -52,7 +52,7 @@ fn installed_prepare_original_replay_writes_loadable_private_checkpoint() {
         .lines()
         .nth(5)
         .unwrap()
-        .starts_with("initializer 8 profile "));
+        .starts_with("initializer 9 profile "));
     let capture = OriginalCapture::capture(Path::new(&home), source).unwrap();
     assert_eq!(
         HumanSession::checkpoint_scenario(&checkpoint).unwrap().path,
@@ -329,6 +329,7 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "engine_unit_slot": 38,
             "focus_cases": 5,
             "stack_order_cases": 6,
+            "contact_checkpoint_replays": true,
             "native_unit_slot": 22,
             "engine_shields": 0,
             "native_shields": 0,

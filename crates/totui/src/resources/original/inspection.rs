@@ -52,7 +52,7 @@ impl OriginalCapture {
             .and_then(|value| u8::try_from(value).ok())
             .ok_or("checked save has no human seat")?;
         let files = self.files();
-        let session = HumanSession::scenario_initialized_saved_human_production(
+        let session = HumanSession::scenario_initialized_saved_opponent_contact(
             ScenarioInput {
                 path: &files.path,
                 snapshot: &files.bytes,

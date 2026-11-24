@@ -19,6 +19,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentStackV1
                     | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
                     | ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentContactV1
             );
         let before = keep_view.then(|| self.game.world.clone());
         if !keep_view {
@@ -760,6 +761,7 @@ staged-round-test
         for (recipe, explored, shields) in [
             (ScenarioKnowledgeRecipe::SavedOpponentCombatV1, 60, 2),
             (ScenarioKnowledgeRecipe::SavedHumanProductionV1, 59, 0),
+            (ScenarioKnowledgeRecipe::SavedOpponentContactV1, 59, 0),
         ] {
             let mut session = HumanSession::scenario_initialized_recipe(
                 ScenarioInput {
@@ -821,7 +823,7 @@ staged-round-test
                 .find(|c| c.index == city.slot)
                 .unwrap();
             assert_eq!(city_after.shield_box, Some(shields));
-            if recipe == ScenarioKnowledgeRecipe::SavedHumanProductionV1 {
+            if recipe != ScenarioKnowledgeRecipe::SavedOpponentCombatV1 {
                 assert_eq!(after.observation.seen, initial.observation.seen);
                 assert!(session.saved_move_state.is_some());
                 for (anchor, expected) in [
@@ -847,7 +849,7 @@ staged-round-test
             .unwrap();
             assert_eq!(replay.checkpoint(deps), checkpoint);
             assert_eq!(replay.view(), after);
-            if recipe != ScenarioKnowledgeRecipe::SavedHumanProductionV1 {
+            if recipe == ScenarioKnowledgeRecipe::SavedOpponentCombatV1 {
                 continue;
             }
             let restore = |text: &str| {
@@ -994,7 +996,7 @@ staged-round-test
                 5,
                 35,
                 (46, 28),
-                true,
+                crate::scenario::opponent_stack::StackMovement::Extended,
             )
             .unwrap_err();
             assert_eq!(rejected, "saved opponent stack observation: native contact required: civ 5 with 6 at (48,28) on map 0");
@@ -1018,6 +1020,25 @@ staged-round-test
             ] {
                 let values = if civ == 5 { &values5 } else { &values6 };
                 assert_eq!(values[advance].value, native);
+            }
+            if recipe == ScenarioKnowledgeRecipe::SavedOpponentContactV1 {
+                let before = contact.view();
+                let draws = contact.game.world.combat_rng.draws();
+                assert_eq!(contact.advance(1), 1);
+                assert_eq!(contact.game.world.diplomacy[5][6], 0x4405);
+                assert_eq!(contact.game.world.diplomacy[6][5], 0x4405);
+                assert_eq!(contact.game.world.combat_rng.draws(), draws + 9);
+                assert_eq!(contact.game.world.research[5].acquired, 8);
+                assert_eq!(contact.game.world.research[6].acquired, 7);
+                assert_ne!(contact.game.world.techs[5][39 / 8] & (1 << (39 % 8)), 0);
+                assert_ne!(contact.game.world.techs[6][46 / 8] & (1 << (46 % 8)), 0);
+                assert_eq!(contact.game.world.combat_rng.state(), 0x87dd2a59);
+                assert_eq!(contact.view().observation.seen, before.observation.seen);
+                assert!(contact.saved_move_state.is_some());
+                let reached = contact.checkpoint(deps);
+                let replay = restore(&reached);
+                assert_eq!(replay.checkpoint(deps), reached);
+                assert_eq!(replay.view(), contact.view());
             }
         }
     }

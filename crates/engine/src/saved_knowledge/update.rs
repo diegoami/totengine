@@ -33,7 +33,7 @@ pub fn unit_knowledge_after(
     rules: &Rules,
     scout_slot: usize,
 ) -> Result<SaveFile, String> {
-    observe(save, rules, scout_slot, true, false).map_err(|e| e.to_string())
+    observe(save, rules, scout_slot, true, false, |_, error| Err(error)).map_err(|e| e.to_string())
 }
 
 /// A native contact-call boundary, before any conversation is executed.
@@ -93,7 +93,14 @@ pub fn unit_observation_after(
     scout_slot: usize,
     active_contacts: bool,
 ) -> Result<SaveFile, UnitObservationError> {
-    observe(save, rules, scout_slot, false, active_contacts)
+    observe(
+        save,
+        rules,
+        scout_slot,
+        false,
+        active_contacts,
+        |_, error| Err(error),
+    )
 }
 
 /// Compose the native stack reset and observation kernels atomically. The
@@ -109,12 +116,22 @@ pub fn unit_observation_after_reset(
     unit_observation_after(&reset, rules, scout_slot, active_contacts)
 }
 
+pub(crate) fn unit_observation_with_contacts(
+    save: &SaveFile,
+    rules: &Rules,
+    scout_slot: usize,
+    contact: impl FnMut(&mut SaveFile, UnitObservationError) -> Result<(), UnitObservationError>,
+) -> Result<SaveFile, UnitObservationError> {
+    observe(save, rules, scout_slot, false, true, contact)
+}
+
 fn observe(
     save: &SaveFile,
     rules: &Rules,
     scout_slot: usize,
     strict: bool,
     active_contacts: bool,
+    mut encounter: impl FnMut(&mut SaveFile, UnitObservationError) -> Result<(), UnitObservationError>,
 ) -> Result<SaveFile, UnitObservationError> {
     let map = surface(save)?;
     if save.multiplayer != 0 {
@@ -273,7 +290,7 @@ fn observe(
                         reveal_stack(&mut out, &stacks[&origin], other);
                     }
                     if !strict {
-                        if save.diplomacy[other as usize][owner as usize] & 8 == 0 {
+                        if out.diplomacy[other as usize][owner as usize] & 8 == 0 {
                             wake_sentries(&mut out, stack, &sights, ocean);
                         }
                         let other_human = save.human_mask & (1 << other) != 0;
@@ -337,17 +354,21 @@ fn observe(
                     && (sights[stack[0]].unwrap().domain != 1 || city.is_some())
                     && scout.type_id() != 9
             } else {
-                city.is_some() && save.diplomacy[owner as usize][other as usize] & 1 == 0
+                city.is_some() && out.diplomacy[owner as usize][other as usize] & 1 == 0
             };
             if contact {
-                return Err(UnitObservationError::ContactRequired {
-                    observer: owner,
-                    other,
-                    x: (i % save.map_header.stored_w() * 2 + (i / save.map_header.stored_w()) % 2)
-                        as u16,
-                    y: (i / save.map_header.stored_w()) as u16,
-                    map: 0,
-                });
+                encounter(
+                    &mut out,
+                    UnitObservationError::ContactRequired {
+                        observer: owner,
+                        other,
+                        x: (i % save.map_header.stored_w() * 2
+                            + (i / save.map_header.stored_w()) % 2)
+                            as u16,
+                        y: (i / save.map_header.stored_w()) as u16,
+                        map: 0,
+                    },
+                )?;
             }
         }
     }

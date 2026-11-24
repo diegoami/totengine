@@ -1,7 +1,10 @@
 //! Scoped opponent movement between unseen land and friendly city stacks.
 use crate::movement::MovementRoute;
 use crate::player::OrderResult;
-use crate::saved_knowledge::{clear_unit_stack_visibility, unit_observation_after};
+use crate::saved_knowledge::{
+    clear_unit_stack_visibility, unit_observation_after, unit_observation_with_contacts,
+    UnitObservationError,
+};
 use crate::WorldState;
 use std::collections::BTreeSet;
 use tot_kit::{Rules, SaveFile, UnitRecord};
@@ -86,6 +89,13 @@ pub(crate) fn record_city_births(
     Ok(())
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum StackMovement {
+    City,
+    Extended,
+    StockContact,
+}
+
 /// Execute ordinary land movement and update the affected stack links.
 /// Relink both stacks in the checked order. The caller can discard the
 /// temporary world on error.
@@ -96,8 +106,9 @@ pub(crate) fn stage(
     civ: u8,
     slot: usize,
     to: (u16, u16),
-    field_stack: bool,
+    mode: StackMovement,
 ) -> Result<(SaveFile, OrderResult), String> {
+    let field_stack = mode != StackMovement::City;
     let unit = world
         .units
         .get(slot)
@@ -251,8 +262,108 @@ pub(crate) fn stage(
     tile_bytes[6 * dest + 1] |= 1;
     tile_bytes[6 * dest + 5] = (tile_bytes[6 * dest + 5] & 15) | (civ << 4);
     link_stack(&mut updated, world, &members)?;
-    let observed = unit_observation_after(&updated, rules, slot, true)
-        .map_err(|error| format!("saved opponent stack observation: {error}"))?;
+    let observed = if mode == StackMovement::StockContact {
+        unit_observation_with_contacts(&updated, rules, slot, |observed, error| {
+            apply_stock_contact(observed, rules, world, &error).ok_or(error)
+        })
+    } else {
+        unit_observation_after(&updated, rules, slot, true)
+    }
+    .map_err(|error| format!("saved opponent stack observation: {error}"))?;
     super::snapshot::apply_saved_observation(world, &observed);
     Ok((observed, OrderResult::Moved))
+}
+
+// The prepared Original encounter is the only measured first-contact
+// resolution. Its treaty and grant effects are checked before commit.
+fn apply_stock_contact(
+    observed: &mut SaveFile,
+    rules: &Rules,
+    world: &mut WorldState,
+    error: &UnitObservationError,
+) -> Option<()> {
+    if *error
+        != (UnitObservationError::ContactRequired {
+            observer: 5,
+            other: 6,
+            x: 48,
+            y: 28,
+            map: 0,
+        })
+        || world.turn != 44
+        || world.human_mask != 16
+        || world.research_settings.flags & 0x80 != 0
+        || (world.research[5].acquired, world.research[6].acquired) != (7, 6)
+        || world.combat_rng.state() != 0xd766ce46
+        || (world.diplomacy[5][6], world.diplomacy[6][5]) != (0, 0)
+        || (observed.diplomacy[5][6], observed.diplomacy[6][5]) != (0, 0)
+    {
+        return None;
+    }
+    use crate::ai_research::{value, ValueContext, ValueRules};
+    let tables = ValueRules::from_rules(rules).ok()?;
+    world.treaty_set(5, 6, 0x4401);
+    let contexts = [
+        ValueContext::from_world(world, rules, 5).ok()?,
+        ValueContext::from_world(world, rules, 6).ok()?,
+    ];
+    let mut scored = Vec::new();
+    let mut best = [None; 2];
+    for (advance, tech) in tables.advances.iter().enumerate() {
+        if tech.prerequisites == [-2, -2]
+            || world.tech_group_flag(rules, 5, advance) == 2
+            || world.tech_group_flag(rules, 6, advance) == 2
+        {
+            continue;
+        }
+        let bit = 1 << (advance % 8);
+        let knows = |civ: usize| world.techs[civ][advance / 8] & bit != 0;
+        let index = match (knows(5), knows(6)) {
+            (false, true) => 0,
+            (true, false) => 1,
+            _ => continue,
+        };
+        let base = value(&tables, &contexts[index], advance)?;
+        scored.push((index, advance, base));
+        let score = base + (world.combat_rng.rand() % 3) as i32;
+        if best[index].is_none_or(|(previous, _)| score > previous) {
+            best[index] = Some((score, advance));
+        }
+    }
+    if scored
+        != [
+            (1, 1, 5),
+            (1, 12, 4),
+            (1, 36, 7),
+            (0, 39, 6),
+            (1, 46, 8),
+            (1, 47, 4),
+            (0, 56, 6),
+            (0, 86, 5),
+            (1, 88, 3),
+        ]
+        || best.map(|item| item.map(|(_, advance)| advance)) != [Some(39), Some(46)]
+    {
+        return None;
+    }
+    let units = world.units.clone();
+    let cities = world.cities.clone();
+    let mut expected_techs = world.techs;
+    expected_techs[5][39 / 8] |= 1 << (39 % 8);
+    expected_techs[6][46 / 8] |= 1 << (46 % 8);
+    if !world.grant_advance_with_rules(rules, 5, 39)
+        || !world.grant_advance_with_rules(rules, 6, 46)
+        || world.techs != expected_techs
+        || units != world.units
+        || cities != world.cities
+    {
+        return None;
+    }
+    world.treaty_set(5, 6, 4);
+    observed.diplomacy = world.diplomacy;
+    for civ in [5, 6] {
+        observed.techs[civ] = world.techs[civ];
+        observed.research[civ] = world.research[civ];
+    }
+    Some(())
 }

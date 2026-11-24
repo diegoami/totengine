@@ -594,3 +594,19 @@ these encounter effects during continued play remains open.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_contact_check.py --out /tmp/import-opponent-contact.json
 cmp docs/evidence/import-opponent-contact.json /tmp/import-opponent-contact.json
 ```
+
+
+### Checked opponent encounter replay
+
+Initializer schema 9 stages the measured turn-44 encounter between
+opponents 5 and 6. It checks the contact site, treaty inputs, stock
+context, CRT state, and all nine candidate values before committing.
+The staged movement runs the encounter inside observation. It applies
+the two checked technology grants, uses nine CRT draws, and records the
+reciprocal treaty. The human map projection must survive the whole
+movement unchanged. The inspector verifies the encounter and restores
+its resulting checkpoint. Schema 8 preserves its original replay.
+
+This path covers the witnessed stock encounter. The next action on the
+checked route attacks an occupied city and still triggers engine sight.
+Full turn-45 saved observation and faithful entry remain open.

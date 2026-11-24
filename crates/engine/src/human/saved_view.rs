@@ -90,7 +90,11 @@ impl HumanSession {
     }
 
     fn saved_city_mate(&self, saved: &tot_kit::SaveFile, slot: usize) -> Option<usize> {
-        if self.knowledge_recipe != ScenarioKnowledgeRecipe::SavedHumanProductionV1 {
+        if !matches!(
+            self.knowledge_recipe,
+            ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+        ) {
             return None;
         }
         let unit = saved.units.get(slot)?;
@@ -378,8 +382,12 @@ impl HumanSession {
         {
             return Err("city pass changed a city identity or discovery mask".into());
         }
-        let checked_human_birth =
-            human_pass && self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedHumanProductionV1;
+        let checked_human_birth = human_pass
+            && matches!(
+                self.knowledge_recipe,
+                ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+            );
         let mut births = Vec::new();
         for (slot, unit) in world.units.iter().enumerate() {
             if let Some(old) = before.units.get(slot).filter(|unit| unit.id != 0) {
@@ -457,6 +465,7 @@ impl HumanSession {
             ScenarioKnowledgeRecipe::SavedOpponentStackV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
                 | ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                | ScenarioKnowledgeRecipe::SavedOpponentContactV1
         ) {
             crate::scenario::opponent_stack::record_city_births(
                 &mut observed,
@@ -513,6 +522,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentStackV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
                 | ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                | ScenarioKnowledgeRecipe::SavedOpponentContactV1
         ) || self.saved_move_state.is_none()
         {
             return false;
@@ -532,6 +542,7 @@ impl HumanSession {
             ScenarioKnowledgeRecipe::SavedOpponentStackV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
                 | ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                | ScenarioKnowledgeRecipe::SavedOpponentContactV1
         ) {
             return None;
         }
@@ -574,7 +585,13 @@ impl HumanSession {
                 civ,
                 unit,
                 to,
-                self.knowledge_recipe.checked_replay(),
+                if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentContactV1 {
+                    crate::scenario::opponent_stack::StackMovement::StockContact
+                } else if self.knowledge_recipe.checked_replay() {
+                    crate::scenario::opponent_stack::StackMovement::Extended
+                } else {
+                    crate::scenario::opponent_stack::StackMovement::City
+                },
             )
             .ok()?
         };

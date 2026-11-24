@@ -274,6 +274,11 @@ impl Client {
                         Some("8"),
                         Some("profile"),
                         Some(ScenarioInitializer::SAVED_HUMAN_PRODUCTION_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("9"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_CONTACT_PROFILE)
                     )
                 )
             });

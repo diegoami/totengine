@@ -29,13 +29,16 @@ pub enum ScenarioKnowledgeRecipe {
     SavedOpponentStackV1,
     SavedOpponentCombatV1,
     SavedHumanProductionV1,
+    SavedOpponentContactV1,
 }
 
 impl ScenarioKnowledgeRecipe {
     pub(super) fn checked_replay(self) -> bool {
         matches!(
             self,
-            Self::SavedOpponentCombatV1 | Self::SavedHumanProductionV1
+            Self::SavedOpponentCombatV1
+                | Self::SavedHumanProductionV1
+                | Self::SavedOpponentContactV1
         )
     }
 }
@@ -85,6 +88,9 @@ impl ScenarioInitializer {
     pub const SAVED_HUMAN_PRODUCTION_PROFILE: &'static str =
         "experimental-saved-human-production-v1";
 
+    pub const SAVED_OPPONENT_CONTACT_PROFILE: &'static str =
+        "experimental-saved-opponent-contact-v1";
+
     pub fn schema(&self) -> u8 {
         match self.knowledge_recipe {
             ScenarioKnowledgeRecipe::EngineSightV1 => 1,
@@ -95,6 +101,7 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedOpponentStackV1 => 6,
             ScenarioKnowledgeRecipe::SavedOpponentCombatV1 => 7,
             ScenarioKnowledgeRecipe::SavedHumanProductionV1 => 8,
+            ScenarioKnowledgeRecipe::SavedOpponentContactV1 => 9,
         }
     }
     pub fn profile(&self) -> &'static str {
@@ -107,6 +114,7 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedOpponentStackV1 => Self::SAVED_OPPONENT_STACK_PROFILE,
             ScenarioKnowledgeRecipe::SavedOpponentCombatV1 => Self::SAVED_OPPONENT_COMBAT_PROFILE,
             ScenarioKnowledgeRecipe::SavedHumanProductionV1 => Self::SAVED_HUMAN_PRODUCTION_PROFILE,
+            ScenarioKnowledgeRecipe::SavedOpponentContactV1 => Self::SAVED_OPPONENT_CONTACT_PROFILE,
         }
     }
 
@@ -201,6 +209,11 @@ impl ScenarioInitializer {
                 Self::SAVED_HUMAN_PRODUCTION_PROFILE,
                 "saved-human-production-then-engine-v1",
             ),
+            ScenarioKnowledgeRecipe::SavedOpponentContactV1 => (
+                9,
+                Self::SAVED_OPPONENT_CONTACT_PROFILE,
+                "saved-opponent-contact-then-engine-v1",
+            ),
         };
         format!(
             "initializer {schema} profile {profile} source {} {} {:016x} mode {mode} saved {} {} {} {} human {} phase {:?} cursor {} policy {} seed {} movement {movement} knowledge {knowledge} world {:016x} memory {:016x} choice {:016x} events {:016x} {:016x} rng {:08x} {} {:08x} {} dependencies {} {:016x} {}",
@@ -254,6 +267,11 @@ impl ScenarioInitializer {
             Self::SAVED_HUMAN_PRODUCTION_PROFILE
         )) {
             Ok(ScenarioKnowledgeRecipe::SavedHumanProductionV1)
+        } else if line.starts_with(&format!(
+            "initializer 9 profile {} ",
+            Self::SAVED_OPPONENT_CONTACT_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentContactV1)
         } else {
             Err("unsupported scenario initializer version or profile".into())
         }

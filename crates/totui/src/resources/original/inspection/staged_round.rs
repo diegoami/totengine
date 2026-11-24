@@ -641,7 +641,7 @@ pub(super) fn check_saved_human_production(
     let rules = &capture.resources().rules;
     let events = files.events.clone().map(EventEngine::new);
     let identity = capture.identity();
-    let mut session = HumanSession::scenario_initialized_saved_human_production(
+    let mut session = HumanSession::scenario_initialized_saved_opponent_contact(
         ScenarioInput {
             path: &files.path,
             snapshot: &files.bytes,
@@ -763,18 +763,54 @@ pub(super) fn check_saved_human_production(
     let order_cases = check_human_stack_orders(
         &after,
         &checkpoint,
-        restore,
+        &restore,
         [(stack[0], unit.index), (stack[1], stack[1])],
         &orders["cases"],
         human,
         identity,
     )?;
+    let mut contact = restore(&checkpoint)?;
+    let entity = |slot| {
+        after
+            .units
+            .iter()
+            .find(|u| u.slot == slot)
+            .copied()
+            .ok_or("prepared contact actor is absent")
+    };
+    submit(
+        &mut contact,
+        Command::Wait {
+            unit: entity(stack[1])?,
+        },
+    )?;
+    submit(
+        &mut contact,
+        Command::Move {
+            unit: entity(unit.index)?,
+            to: (52, 8),
+        },
+    )?;
+    submit(&mut contact, Command::EndTurn)?;
+    if contact.advance(8) != 8 {
+        return Err("saved contact approach did not reach the prepared boundary".into());
+    }
+    let before = contact.view();
+    if contact.advance(1) != 1 || before.observation.seen != contact.view().observation.seen {
+        return Err("saved opponent contact changed the human view".into());
+    }
+    let contact_checkpoint = contact.checkpoint(identity);
+    let reloaded = restore(&contact_checkpoint)?;
+    if reloaded.view() != contact.view() || reloaded.checkpoint(identity) != contact_checkpoint {
+        return Err("saved opponent contact did not replay".into());
+    }
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
         "engine_unit_slot": unit.index,
         "focus_cases": anchors.len(),
         "stack_order_cases": order_cases,
+        "contact_checkpoint_replays": true,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],
@@ -785,7 +821,7 @@ pub(super) fn check_saved_human_production(
 fn check_human_stack_orders(
     before: &HumanView,
     checkpoint: &str,
-    restore: impl Fn(&str) -> Result<HumanSession, String>,
+    restore: &impl Fn(&str) -> Result<HumanSession, String>,
     slots: [(usize, usize); 2],
     cases: &Value,
     human: u8,

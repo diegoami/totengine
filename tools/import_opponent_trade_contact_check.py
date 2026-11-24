@@ -310,6 +310,65 @@ def entry(original, viewer, city_region, rules, city_lines):
     assert cache_changes5 == [(5, 1622, 0, 1)], cache_changes5
     visible5 = bytes(b & (1 << viewer) for b in tiles5_after[4::6])
     assert sum(bool(b) for b in visible5) == 59
+
+    # The engine re-orders the fortified unit after the join; measure the
+    # refusal trajectory through the attempt-20 byte reset.
+    raw19b5 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 19, 40))
+    tiles6_before = bytes(cpu.mem_read(TILES, area * 6))
+    crt_before6 = read(original, CRT, '<I')
+    result6, _hosts6, _display6, observations6 = run_attack(original, (19, 3, 3), memory_rects=True)
+    raw19a5 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 19, 40))
+    tiles6_after = bytes(cpu.mem_read(TILES, area * 6))
+    assert result6 == 0 and observations6 == []
+    assert differences(raw19b5, raw19a5) == [[16, 1, 2]]
+    assert tiles6_before == tiles6_after
+    assert read(original, CRT, '<I') == crt_before6 == 0xECCF1DF8
+    trajectory = []
+    for attempt in range(3, 23):
+        before16 = read(original, UNIT_RECORDS + 40 * 19 + 16, '<B')
+        before_crt = read(original, CRT, '<I')
+        result_a, _ha, _da, _oa = run_attack(original, (19, 3, 3), memory_rects=True)
+        after16 = read(original, UNIT_RECORDS + 40 * 19 + 16, '<B')
+        after10 = read(original, UNIT_RECORDS + 40 * 19 + 10, '<B')
+        trajectory.append([attempt, before16, after16, after10, result_a])
+        assert read(original, CRT, '<I') == before_crt
+    assert trajectory == (
+        [[a, a - 1, a, 3, 0] for a in range(3, 20)]
+        + [[20, 19, 0, 3, 0], [21, 0, 1, 3, 0], [22, 1, 2, 3, 0]]
+    ), trajectory
+
+    # Civ 7's new city build (slot 42) steps northeast onto the road tile
+    # at (14, 42) where slot 33 stands: the pair stays self-linked, the
+    # spent byte takes the one-third road cost and the CRT is untouched.
+    MOVER42 = bytes([13, 0, 43, 0, 0, 0, 0, 0, 15, 7, 0, 0, 0, 0, 0, 0, 0, 255,
+                     2, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 60, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0])
+    original.write(0x607655, 7, '<B')
+    cpu.mem_write(UNIT_RECORDS + 40 * 42, MOVER42)
+    raw42_before = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 42, 40))
+    raw33_before = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 33, 40))
+    tiles7_before = bytes(cpu.mem_read(TILES, area * 6))
+    caches7_before = [bytes(cpu.mem_read(c, area)) for c in caches]
+    crt_before7 = read(original, CRT, '<I')
+    result7, _hosts7, _display7, observations7 = run_attack(original, (42, 0, 3), memory_rects=True)
+    raw42_after = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 42, 40))
+    raw33_after = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 33, 40))
+    tiles7_after = bytes(cpu.mem_read(TILES, area * 6))
+    assert result7 == 1 and observations7 == [[42, 1]]
+    assert differences(raw42_before, raw42_after) == [
+        [0, 13, 14], [2, 43, 42], [6, 0, 64], [10, 0, 1]]
+    assert differences(raw33_before, raw33_after) == []
+    tile7 = differences(tiles7_before, tiles7_after)
+    assert tile7 == [[10123, 20, 21], [10357, 21, 20]], tile7
+    cache_changes7 = [(seat, *change)
+                      for seat, (old, new) in enumerate(zip(caches7_before,
+                                                            [bytes(cpu.mem_read(c, area)) for c in caches],
+                                                            strict=True), 1)
+                      for change in differences(old, new)]
+    assert cache_changes7 == [(7, 1687, 20, 21), (7, 1726, 21, 20)], cache_changes7
+    assert read(original, CRT, '<I') == crt_before7 == 0xECCF1DF8
+    visible7 = bytes(b & (1 << viewer) for b in tiles7_after[4::6])
+    assert sum(bool(b) for b in visible7) == 59
     return {
         'arguments': [3, 1, 3], 'return': result, 'crt_state': CRT_STATE,
         'crt_after_exchange': CRT_AFTER,
@@ -338,6 +397,16 @@ def entry(original, viewer, city_region, rules, city_lines):
             'crt_unchanged': True, 'explored_tiles': 59,
             'observation_calls': observations4, 'city_slot': 9,
         },
+        'fortified_retry': {
+            'arguments': [19, 3, 3], 'return': result6,
+            'mover_raw_changes': [[16, 1, 2]], 'tile_changes': [],
+            'crt_state': 0xECCF1DF8, 'crt_unchanged': True,
+            'explored_tiles': 59, 'observation_calls': observations6,
+            'trajectory': trajectory,
+            'trajectory_scope': ('attempts 3-22 after the measured second '
+                                 'refusal; attempt 20 resets the private byte '
+                                 'without exhausting the fortified unit'),
+        },
         'overspent_stack_join': {
             'arguments': [41, 1, 3], 'return': result5,
             'mover_raw_changes': [
@@ -348,6 +417,15 @@ def entry(original, viewer, city_region, rules, city_lines):
             'partial_movement_roll': True, 'stack_head': 41,
             'cache_changes': [[5, 1622, 0, 1]], 'explored_tiles': 59,
             'observation_calls': observations5,
+        },
+        'road_stack_arrival': {
+            'arguments': [42, 0, 3], 'return': result7,
+            'mover_raw_changes': [[0, 13, 14], [2, 43, 42], [6, 0, 64], [10, 0, 1]],
+            'resident_raw_changes': [],
+            'tile_changes': tile7, 'cache_changes': cache_changes7,
+            'crt_state': 0xECCF1DF8, 'crt_unchanged': True,
+            'self_linked_pair': True, 'road_cost_thirds': 1,
+            'explored_tiles': 59, 'observation_calls': observations7,
         },
     }
 

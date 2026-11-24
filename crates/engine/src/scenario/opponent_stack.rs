@@ -235,6 +235,52 @@ pub(crate) fn stage(
         refused.units[slot].raw[16] += 1;
         return Ok((refused, OrderResult::Rejected("fortified opponent move")));
     }
+    // The measured turn-49 retry of the same fortified order after the
+    // overspent join: the mover is now the tail of the two-member stack at
+    // the origin (slot 41 head) and the refusal byte accumulates with the
+    // engine's repeated orders (measured at two; bounded below twenty like
+    // the zone guard until a later attempt is witnessed).
+    if mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (49, 5, 19, (44, 40), (44, 42), 0xeccf1df8)
+        && world.human_mask == 16
+        && source == [41, slot]
+        && members.is_empty()
+        && friendly_city(city)
+        && origin_city.is_none()
+        && world.city_at(to.0, to.1) == Some(9)
+        && city.is_some_and(|city| city.size == 1)
+        && (
+            unit.type_id,
+            unit.moves_left,
+            unit.orders,
+            record.moves_spent(),
+        ) == (2, 3, 2, 3)
+        && record.raw[6] == 0x40
+        && record.raw[7] == 1
+        && record.raw[13] == 255
+        && (0..20).contains(&record.raw[16])
+        && record.visibility() == 0
+        && world.map.terrain[from] == 2
+        && world.map.terrain[dest] == 2
+        && !world.map.road[from]
+        && !world.map.road[dest]
+        && !world.map.rail[from]
+        && !world.map.rail[dest]
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [130, 1, 160, 2, 36, 87]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [130, 2, 160, 2, 36, 87]
+    {
+        let mut refused = saved.clone();
+        // The witnessed trajectory: every refusal bumps the private byte
+        // and attempt 20 resets it without exhausting the fortified unit
+        // (unlike the zone class, the mover keeps its remaining movement).
+        refused.units[slot].raw[16] = if record.raw[16] == 19 {
+            0
+        } else {
+            record.raw[16] + 1
+        };
+        return Ok((refused, OrderResult::Rejected("fortified opponent move")));
+    }
     if members.is_empty() {
         if city.is_some() && !own_empty_city_entry {
             return Err(
@@ -425,29 +471,6 @@ pub(crate) fn stage(
     let overspent_stack_join = mode == StackMovement::StockRemoteNaval
         && (world.turn, civ, slot, origin, to, world.combat_rng.state())
             == (49, 5, 41, (42, 40), (44, 40), 0x135a6199)
-        && {
-            let resident = saved.units.get(19);
-            eprintln!(
-                "OSJ turn{} civ{} slot{} origin{:?} to{:?} crt{:x} mask{} src{:?} mem{:?} f2f{} city{} oc{} unit({},{},{},{}) r6{} r13{} r16{} vis{} allow{} attack{:?} r19ok{} t{} {} road{}{}{}{} tiles{}{}",
-                world.turn, civ, slot, origin, to, world.combat_rng.state(),
-                world.human_mask, source, members, field_to_field,
-                city.is_none(), origin_city.is_none(),
-                unit.type_id, unit.moves_left, unit.orders, record.moves_spent(),
-                record.raw[6], record.raw[13], record.raw[16], record.visibility(),
-                world.movement_allowance(rules, usize::from(unit.type_id), civ, unit.damage),
-                attack,
-                resident.is_some_and(|r| r.raw[6] == 64 && r.raw[10] == 3 && r.raw[11] == 0 && r.raw[13] == 255 && r.raw[16] == 1 && r.raw[26..30] == [255, 255, 255, 255]),
-                world.map.terrain[from],
-                world.map.terrain[dest],
-                world.map.road[from],
-                world.map.road[dest],
-                world.map.rail[from],
-                world.map.rail[dest],
-                saved.maps[0].tile_fields[6 * from..6 * from + 6] == [130, 1, 160, 2, 36, 87],
-                saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [130, 2, 160, 2, 36, 87]
-            );
-            true
-        }
         && source == [slot]
         && members == [19]
         && field_to_field
@@ -481,6 +504,57 @@ pub(crate) fn stage(
         && !world.map.rail[dest]
         && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [130, 1, 160, 2, 36, 87]
         && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [130, 1, 160, 2, 36, 87];
+    // The measured turn-49 exchange approach: civ 2's eastward step toward
+    // the civ 5 unit writes the spent and direction bytes with the move.
+    let trade_contact_move = mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (49, 2, 3, (39, 35), (41, 35), 0x366e70f4)
+        && source == [slot]
+        && members.is_empty()
+        && city.is_none()
+        && origin_city.is_none()
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [5, 1, 0, 2, 36, 32]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [2, 0, 160, 2, 36, 85];
+    // Civ 7's road stack arrival: the newcomer and the resident stay
+    // self-linked in the saved records (no link writes), the spent byte
+    // takes the one-third road cost, and the CRT is untouched.
+    let road_stack_arrival = mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (49, 7, 42, (13, 43), (14, 42), 0xeccf1df8)
+        && world.human_mask == 16
+        && source == [slot]
+        && members == [33]
+        && field_to_field
+        && city.is_none()
+        && origin_city.is_none()
+        && (
+            unit.type_id,
+            unit.moves_left,
+            unit.orders,
+            record.moves_spent(),
+        ) == (15, 5, 255, 0)
+        && record.raw[6] == 0
+        && record.raw[13] == 0
+        && record.raw[16] == 0
+        && record.visibility() == 0
+        && attack.is_some_and(|value| value != 0)
+        && world.movement_allowance(rules, usize::from(unit.type_id), civ, unit.damage) == 6
+        && saved.units.get(33).is_some_and(|resident| {
+            resident.raw[6] == 64
+                && resident.raw[10] == 3
+                && resident.raw[13] == 5
+                && resident.raw[16] == 0
+                && resident.raw[17] == 28
+                && resident.raw[26..30] == [255, 255, 255, 255]
+        })
+        && world.map.terrain[from] == 1
+        && world.map.terrain[dest] == 2
+        && world.map.road[from]
+        && world.map.road[dest]
+        && !world.map.rail[from]
+        && !world.map.rail[dest]
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [1, 21, 224, 2, 128, 118]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [2, 21, 224, 2, 128, 116];
     let witnessed_armed = armed_cost.is_some();
     let partial_movement = field_departure
         || unstacked_road_boundary
@@ -488,8 +562,13 @@ pub(crate) fn stage(
         || armed_cost == Some(6)
         || eastward_settler
         || own_empty_city_entry
+        || trade_contact_move
         || overspent_stack_join;
-    if field_to_field && attack != Some(0) && !witnessed_armed && !overspent_stack_join
+    if field_to_field
+        && attack != Some(0)
+        && !witnessed_armed
+        && !overspent_stack_join
+        && !road_stack_arrival
         || city_transfer && attack.is_none()
     {
         return Err("saved field-stack arrival has an unchecked mover attack value".into());
@@ -550,8 +629,14 @@ pub(crate) fn stage(
     if !result.moved {
         return Ok((updated, OrderResult::MovementExhausted));
     }
+    // The road arrival's declared normalization: native leaves the pair
+    // self-linked at the measured callback return, and the knowledge
+    // kernel requires one coherent chain per tile, so the staged
+    // checkpoint links the pair with the newcomer as head (consistent
+    // with the overspent join class).
     if witnessed_armed
         || overspent_stack_join
+        || road_stack_arrival
         || city_transfer && attack.is_some_and(|value| value != 0)
     {
         members.insert(0, slot);
@@ -623,17 +708,31 @@ pub(crate) fn stage(
         updated.units[slot].raw[6] |= 0x40;
         updated.units[slot].raw[13] = 1;
     }
+    if trade_contact_move {
+        if !result.moved || result.cost_thirds != 3 || world.combat_rng.state() != crt {
+            return Err("saved exchange approach differed from the witness".into());
+        }
+        updated.units[slot].raw[13] = 3;
+    }
+    if road_stack_arrival {
+        if !result.moved || result.cost_thirds != 1 || world.combat_rng.state() != crt {
+            return Err("saved road stack arrival differed from the witness".into());
+        }
+        updated.units[slot].raw[6] |= 0x40;
+        updated.units[slot].raw[10] = record.moves_spent() + 1;
+    }
     // The measured overspent join leaves the vacated origin occupancy
-    // marked while the knowledge kernel validates coherence; feed the
-    // kernel a coherent intermediate and restore native's marked byte in
-    // the observed save.
+    // marked in the live game; the knowledge kernel validates whole-map
+    // coherence and native clears the transient bit at its next refresh,
+    // so the staged observed save carries the cleared bit (the coherent
+    // state) rather than the transient mark.
     let overspent_patch = overspent_stack_join.then(|| {
         let mut patched = updated.clone();
         patched.maps[0].tile_fields[6 * from + 1] &= !1;
         patched
     });
     let observation_input = overspent_patch.as_ref().unwrap_or(&updated);
-    let mut observed = if matches!(
+    let observed = if matches!(
         mode,
         StackMovement::StockContact
             | StackMovement::StockHut
@@ -671,9 +770,6 @@ pub(crate) fn stage(
         unit_observation_after(observation_input, rules, slot, true)
     }
     .map_err(|error| format!("saved opponent stack observation: {error}"))?;
-    if overspent_stack_join {
-        observed.maps[0].tile_fields[6 * from + 1] |= 1;
-    }
     super::snapshot::apply_saved_observation(world, &observed);
     Ok((observed, OrderResult::Moved))
 }

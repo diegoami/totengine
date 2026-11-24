@@ -441,32 +441,44 @@ movement. Two findings came out of the measurement:
   turn-49 tuple; the destination terrain moved into each case's witness
   tuple (the turn-49 square is terrain 5).
 
-Civ 5's pass then staged three measured contexts: the same empty-city
-approach its fortified unit made — slot 19 (type 2, alone, spent 3,
-orders 2, CRT `0x135a6199`) stepping south from (44, 40) into its own
-size-one city 9 at (44, 42) is **refused natively** (the mover keeps
-position and movement, gains the done marker `raw6` 0→64 and one refusal
-byte, tiles/CRT/human view untouched); the refusal retries after the
-next order with the accumulated bytes and the post-join CRT, accepted by
-the same pin since the refusal draws nothing; and civ 5's new city-9
+Civ 5's pass then staged its fortified unit's empty-city approach —
+slot 19 (type 2, alone, spent 3, orders 2, CRT `0x135a6199`) stepping
+south from (44, 40) into its own size-one city 9 at (44, 42) is
+**refused natively** (the mover keeps position and movement, gains the
+done marker `raw6` 0→64 and one refusal byte, tiles/CRT/human view
+untouched). The engine's re-orders replay the refusal, and the measured
+trajectory runs to attempt 20, which **resets the private byte without
+exhausting the fortified unit** (unlike the zone class, the mover keeps
+its remaining movement); the cycle then restarts. Civ 5's new city-9
 build **slot 41** (type 15, id 59, alone, moves_left 1, spent 5, CRT
 `0x135a6199`) joins the fortified unit at (44, 40) through the
 partial-movement chance roll: the witnessed draw admits the overspent
 move at the full three-thirds cost (spent 5→8), the newcomer becomes
-stack head (next 19, resident prev 41), the vacated origin keeps its
-occupancy mark — the knowledge kernel validates a coherent intermediate
-and the observed save restores native's marked byte — and the CRT
-advances to `0xeccf1df8` (one MSVC step, verified). All four measured
-moves live in `docs/evidence/import-opponent-trade-contact.json`.
+stack head (next 19, resident prev 41), the vacated origin keeps a
+transient occupancy mark in the live game — the knowledge kernel
+validates whole-map coherence, so the staged save carries the cleared
+bit (native clears the transient at its next refresh) — and the CRT
+advances to `0xeccf1df8` (one MSVC step, verified). Civ 7's new build
+**slot 42** (type 15, id 60, alone, moves_left 5, CRT `0xeccf1df8`)
+steps northeast onto the road tile at (14, 42) holding slot 33: the pair
+stays **self-linked** in the native records (no link writes at all), the
+spent byte takes the one-third road cost, and the CRT is untouched. The
+staged checkpoint links that pair with the newcomer as head — a declared
+normalization, because the knowledge kernel requires one coherent chain
+per tile while native's own observation tolerates the independent
+heads. The exchange approach also gained its previously missed
+spent/direction writes through the partial-movement path (remaining ==
+allowance draws nothing). All measured moves live in
+`docs/evidence/import-opponent-trade-contact.json`.
 
-The next fallback is civ 5's re-order of fortified slot 19 into city 9
-after the join: a two-member origin (slot 41 head, slot 19 fortified
-tail, `raw16` 1, CRT `0xeccf1df8`) whose mover would leave the head
-behind — a context the native probe has not measured (its first refusal
-had the mover alone). Measure it (scratch probe extension, supplies as
-for the join plus `run_attack(original, (19, 3, 3))` at CRT
-`0xeccf1df8`) before staging; the engine falls back with the human view
-refreshing 59→60 at the turn-49→50 boundary until then.
+The route now plays through civ 2's, civ 5's, civ 6's, and civ 7's whole
+turn-49 passes with all 59 human tiles retained. The next fallback is
+the **turn-50 research choice**: staging the decision reveals one new
+tile to the human (flat seen index 58, terrain 10, ocean) — the
+decision's knowledge update refreshes a far ocean square that turn 48's
+choice did not. Measure the native decision callback's map effect
+(scratch probe extension) before staging; until then the human view
+refreshes 59→60 at that boundary.
 
 This is an engine diagnostic. The `m17-turn49-boundary` worktree at
 `/home/diego/review-tmp/totengine-m17-turn49-boundary` contains

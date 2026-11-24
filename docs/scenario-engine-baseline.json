@@ -27,7 +27,7 @@
     "crates/totui/src/resources/original.rs": "0f443050b8d3394e04d1504270010ace3383a89194d53d47caea632cd09d0611",
     "crates/engine/src/scenario/phase.rs": "f919b6adeab6b2beed51bca5bf57de45387d65351bb779938595d68ce5bde9c9",
     "crates/engine/src/scenario/snapshot.rs": "97d646d6bc448115a98dd8cc4d9085288356a701c4053ffa041ee26c211629f1",
-    "crates/engine/src/scenario/opponent_stack.rs": "c542fec0c0c93b0f17fdc90fb93e87f69f65cdb4f89cff81cbf5befc234fd8cc",
+    "crates/engine/src/scenario/opponent_stack.rs": "d0fcfb893ced6cfa270ef64682ae3892730666b9c0d77eacee3e94c24710ad7c",
     "crates/engine/src/scenario/opponent_combat.rs": "aaa482abf6f7106277370c79cd62e11cac2e42cc95bbb1a3f265cd6d18c5d1da",
     "crates/engine/src/scenario.rs": "718287b3c8621f06ea058e4759c87d8f9500d1ca9f21c9167c490277a8e12f32",
     "crates/totui/src/client/storage.rs": "8f180173ba52a23ea533e6b61b886e8db70cc23f57d379a98c43fc6a4b4cf97d",

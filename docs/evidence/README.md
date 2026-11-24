@@ -5664,3 +5664,31 @@ save offset `o` in the game block maps to RAM `0x6073ac + o`: turn @668 is
   never saw that tile. The original's reveal rules are not decoded.
 - **Unit test.** `resumed_save_keeps_remembered_improvements_out_of_sight`
   covers the remembered-improvement path on the synthetic save.
+
+## Live leader-trait presentation vs the engine's research valuation (#turn-50 follow-up)
+
+The built-in research selection derives its leader modifier from Rules
+(`LEADERS` column 9); the standalone native comparisons matched on that
+basis because the harness wrote the modifier into `0x606f4a + leader*60`.
+The live original zeroes the same table during play — recorded for the
+trade-turn valuation (`import-opponent-trade-contact.json`,
+`leader_modifiers_live_zero`). This check completes the research-side
+half: `tools/research_trait_live_check.py` and
+`docs/evidence/import-research-trait-live.json`.
+
+- **The slot matters.** On the proven standalone harness, zeroing the
+  trait byte shifts 56-75 of 100 advance scores per context, and scoring
+  with the Rules modifier instead of the context trait shifts 72-76.
+  The research valuation's leader trait is not cosmetic.
+- **The live game presents zeros.** On the pinned save (turn 43), the
+  21-entry table is all zeros at the idle, at the city entry, and after
+  the turn-44 annual, while the save's leader ids are
+  `[0, 0, 1, 2, 17, 18, 19, 20]` and Rules carry modifier +1 for leaders
+  0-2 (civs 1-3), -1/0/-1 for 18-20 (civs 5-7).
+- **Consequence.** The engine's Rules-derived research valuation diverges
+  from live original behavior for every civ whose leader has a nonzero
+  Rules modifier: 70-76 of 100 advance scores differ on the measured
+  contexts. The engine reproduces the standalone-callee basis, not the
+  loaded-game basis. Which basis the built-in AI should adopt is a
+  faithfulness decision for the owner (original-AI program #117 stays
+  gated); no engine change is implied by this evidence.

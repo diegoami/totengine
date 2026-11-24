@@ -1,0 +1,162 @@
+{
+ "source": "civ2.bak research valuation 0x49c95d; trait slot 0x606f4a + leader*60",
+ "standalone": [
+  {
+   "case": 0,
+   "civ": 1,
+   "leader": 0,
+   "trait": 1,
+   "rules_modifier": "1",
+   "zeroed_score_differences": 56
+  },
+  {
+   "case": 1,
+   "civ": 2,
+   "leader": 1,
+   "trait": -1,
+   "rules_modifier": "1",
+   "zeroed_score_differences": 70,
+   "rules_score_differences": 72
+  },
+  {
+   "case": 2,
+   "civ": 3,
+   "leader": 2,
+   "trait": -1,
+   "rules_modifier": "1",
+   "zeroed_score_differences": 75,
+   "rules_score_differences": 76
+  }
+ ],
+ "live": {
+  "turn": 43,
+  "leaders": [
+   0,
+   0,
+   1,
+   2,
+   17,
+   18,
+   19,
+   20
+  ],
+  "traits_at_idle": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "traits_at_city_entry": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "annual": {
+   "entry": "004702fc",
+   "argument": -1,
+   "before": {
+    "turn": 43,
+    "crt": 1864858732,
+    "explored": 59
+   },
+   "after": {
+    "turn": 44,
+    "crt": 3613838918,
+    "explored": 59
+   },
+   "viewer_memory_changed": false,
+   "observation_calls": [],
+   "crt_draws": 2,
+   "host_calls": {
+    "SetRect": 81,
+    "GetCurrentDirectoryA": 4,
+    "SetCurrentDirectoryA": 6,
+    "GetLastError": 4,
+    "SetEnvironmentVariableA": 2
+   }
+  },
+  "traits_after_annual": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "rules_leaders_col9": [
+  "1",
+  "1",
+  "1",
+  "1",
+  "1",
+  "-1",
+  "0",
+  "-1",
+  "0",
+  "1",
+  "1",
+  "1",
+  "0",
+  "-1",
+  "0",
+  "-1",
+  "0",
+  "-1",
+  "0",
+  "-1",
+  "0",
+  "4",
+  null
+ ]
+}

@@ -435,8 +435,16 @@ movement. Two findings came out of the measurement:
   the engine's Rules-derived modifier (leader 1 = 1) was the whole
   base-value swap for advances 39/47. The staged contact therefore
   evaluates its two `ValueContext`s with modifier zero. The engine's own
-  AI research selection still derives modifiers from Rules, which may
-  deserve its own check against live runtime state.
+  AI research selection still derives modifiers from Rules — the
+  follow-up check now ran
+  (`tools/research_trait_live_check.py`,
+  `docs/evidence/import-research-trait-live.json`, evidence README §Live
+  leader-trait presentation): the trait slot moves 56-76 of 100 advance
+  scores, and the pinned save's live table is zero at the idle, the city
+  entry and after the annual, so the engine's Rules-derived valuation
+  diverges from live behavior for civs 1-3 (leaders 0-2, Rules +1).
+  Which basis the built-in AI adopts is an owner decision (program #117
+  stays gated); no engine change is implied by the evidence.
 - The zone refusal extends the pinned `zone_case` table with the
   turn-49 tuple; the destination terrain moved into each case's witness
   tuple (the turn-49 square is terrain 5).

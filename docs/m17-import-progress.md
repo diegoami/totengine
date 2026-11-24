@@ -422,50 +422,44 @@ with all 59 tiles, and the next fallback is the contact below.
 
 ### Next continuation case
 
-On the same route, the turn-49 close falls back when civ 2 moves unit
-slot 3 (type 16) east from (39, 35) to (41, 35), adjacent to the civ 5
-unit in slot 10 at (42, 36). At the attempted move the unit has six
-thirds left, order 255, visibility byte 0x20, and CRT state `0x366e70f4`;
-both treaty words are `0x405`, and `(49 + 2 + 5) % 4 == 0` marks a trade
-turn, so the known-contact encounter reaches an exchange.
+On the same route, the turn-49 close now stages through civ 2's whole
+pass: the eastward exchange approach, the trade-turn contact, and the
+following zone-of-control refusal, all with the human's 59 tiles
+retained (docs/evidence/import-opponent-trade-contact.json). The
+exchange grants `[2←39, 5←20]` over three CRT draws
+(`0x366e70f4 → 0x135a6199`) with the treaty words unchanged at `0x405`,
+and the refusal bumps the mover's private byte to one without spending
+movement. Two findings came out of the measurement:
 
-The exchange has now been measured natively with the checked engine's
-boundary supplies (scratch probe
-`/home/diego/review-tmp/opencode/probe_contact.py` under the pinned
-round-close context, reusing the two founding measurements for cities 9
-and 10): one trade call, grants `[2, 39, 5]` and `[5, 20, 2]`, three CRT
-draws ending at `0x135a6199`, treaty words unchanged at `0x405`, mover
-cost three thirds east with direction byte 1, the resident's visibility
-byte gaining the civ 2 bit, destination occupancy plus the civ 2
-ownership nibble, origin occupancy cleared, one new civ 2 explored tile
-at (42, 34), civ 2 runtime cache marks, and the human viewer untouched at
-59 tiles. The candidate scores were `[5, 20, 5, 5], [2, 39, 6, 7],
-[2, 47, 5, 6]` — base 5 for advance 20 (civ 5), 6 for advance 39 and 5
-for advance 47 (civ 2).
+- The live runtime keeps the leader-modifier table zeroed during play;
+  the engine's Rules-derived modifier (leader 1 = 1) was the whole
+  base-value swap for advances 39/47. The staged contact therefore
+  evaluates its two `ValueContext`s with modifier zero. The engine's own
+  AI research selection still derives modifiers from Rules, which may
+  deserve its own check against live runtime state.
+- The zone refusal extends the pinned `zone_case` table with the
+  turn-49 tuple; the destination terrain moved into each case's witness
+  tuple (the turn-49 square is terrain 5).
 
-The staging draft is blocked by one open divergence: the engine's
-`ValueContext` valuation computes bases `20→5, 39→5, 47→6` while the
-native measurement gives `20→5, 39→6, 47→5` — advances 39 and 47 swap.
-Every documented valuation input has been matched in the probe: all eight
-civs' tech rows and acquired counts, the treaty words, the derived
-ownership mask table, research progress and targets, zero sea-unit
-counts, the refreshed city-landmass caches, the four annual-round city
-size changes, reputations, leaders, human mask and flags, CRT and turn.
-The next step is to bisect that input — for example by running the native
-value routine standalone through the adapter harness for advances 39 and
-47 with controlled inputs and comparing against the engine's `value()` —
-before staging the exchange. Do not relax the scored-list pin to accept
-either base ordering.
+The next fallback is the same empty-city context again, now for civ 5:
+slot 19 (type 2, alone, spent 3, orders 2, home 6, raw6 0, raw13 255,
+CRT `0x135a6199`) steps south from (44, 40) into its own size-one city 9
+at (44, 42); both tiles terrain 2 without road or rail, tiles
+`[130, 1, ...]` and `[130, 2, ...]`, city 9 raw `[44, 0, 42, 0, ..., 5,
+1, 5, ..., 11, 0, 0, 0]` (city id 11, city table index 9). The native
+witness for the civ-6 entry applies unchanged; the staging needs its own
+pinned tuple with these values. Beyond it the route continues into the
+rest of the turn-49 close.
 
 This is an engine diagnostic. The `m17-turn49-boundary` worktree at
 `/home/diego/review-tmp/totengine-m17-turn49-boundary` contains
 uncommitted diagnostic logging in `human/saved_view.rs` and
-`human/staged_round.rs` (CONTACT2 dumps for units, tiles, diplomacy,
-tech rows, research, caches and cities); leave those diagnostics out of
-production commits. The local working trace is
-`/tmp/totengine-m17-turn49-empty-city.log`. If the temporary log or the
-scratch probe is gone, reproduce the route described above using the
-checked Original export.
+`human/staged_round.rs` (CONTACT2 and CITY9 dumps); leave those
+diagnostics out of production commits. The local working trace is
+`/tmp/totengine-m17-turn49-empty-city.log`; the scratch probes are
+`/home/diego/review-tmp/opencode/probe_contact.py` and
+`/home/diego/review-tmp/opencode/bisect_value.py`. If those are gone,
+reproduce the route described above using the checked Original export.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

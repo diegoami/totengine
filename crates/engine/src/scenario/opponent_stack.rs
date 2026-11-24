@@ -231,8 +231,9 @@ pub(crate) fn stage(
     }
 
     let zone_case = match (world.turn, civ, slot, origin, to, world.combat_rng.state()) {
-        (46, 5, 10, (39, 35), (38, 34), 0xd9f16a1a) => Some(((2, 3, 5), (3, 2, 16, 39, 33))),
-        (47, 2, 3, (39, 33), (38, 34), 0x3b0ca297) => Some(((16, 6, 9), (10, 5, 2, 39, 35))),
+        (46, 5, 10, (39, 35), (38, 34), 0xd9f16a1a) => Some(((2, 3, 5, 4), (3, 2, 16, 39, 33))),
+        (47, 2, 3, (39, 33), (38, 34), 0x3b0ca297) => Some(((16, 6, 9, 4), (10, 5, 2, 39, 35))),
+        (49, 2, 3, (41, 35), (41, 37), 0x135a6199) => Some(((16, 3, 2, 5), (10, 5, 2, 42, 36))),
         _ => None,
     };
     if matches!(
@@ -246,12 +247,16 @@ pub(crate) fn stage(
         && members.is_empty()
         && city.is_none()
         && origin_city.is_none()
-        && world.map.terrain[dest] == 4
         && ![from, dest]
             .into_iter()
             .any(|i| world.map.road[i] || world.map.rail[i])
         && zone_case.is_some_and(|(mover, (rival, owner, kind, x, y))| {
-            (unit.type_id, unit.moves_left, world.map.terrain[from]) == mover
+            (
+                unit.type_id,
+                unit.moves_left,
+                world.map.terrain[from],
+                world.map.terrain[dest],
+            ) == mover
                 && world.units.get(rival).is_some_and(|u| {
                     u.id != 0 && (u.owner, u.type_id, u.x, u.y) == (owner, kind, x, y)
                 })
@@ -526,6 +531,11 @@ pub(crate) fn stage(
                 {
                     return Ok(());
                 }
+                if mode == StackMovement::StockRemoteNaval
+                    && apply_trade_turn_contact(observed, rules, world, &error)
+                {
+                    return Ok(());
+                }
                 apply_stock_contact(observed, rules, world, &error).ok_or(error)
             },
         )
@@ -669,6 +679,116 @@ fn apply_stock_contact(
         observed.research[civ] = world.research[civ];
     }
     Some(())
+}
+
+/// The witnessed Turn-49 trade-turn exchange between the known contacts
+/// civs 2 and 5 (docs/evidence/import-opponent-trade-contact.json). Native
+/// rescores each side's exclusive advances from the arriving CRT state,
+/// grants both best offers, and leaves the treaty words unchanged because
+/// they already carry every bit the exchange sets. The live runtime keeps
+/// its leader-modifier table zeroed during play, so the staged contexts
+/// evaluate with modifier zero rather than the Rules constants.
+fn apply_trade_turn_contact(
+    observed: &mut SaveFile,
+    rules: &Rules,
+    world: &mut WorldState,
+    error: &UnitObservationError,
+) -> bool {
+    if *error
+        != (UnitObservationError::ContactRequired {
+            observer: 2,
+            other: 5,
+            x: 42,
+            y: 36,
+            map: 0,
+        })
+        || world.turn != 49
+        || world.human_mask != 16
+        || world.research_settings.flags & 0x80 != 0
+        || world.combat_rng.state() != 0x366e70f4
+        || (world.diplomacy[2][5], world.diplomacy[5][2]) != (0x405, 0x405)
+        || (observed.diplomacy[2][5], observed.diplomacy[5][2]) != (0x405, 0x405)
+        || (
+            world.research[2].progress,
+            world.research[2].target,
+            world.research[2].acquired,
+        ) != (18, 54, 7)
+        || (
+            world.research[5].progress,
+            world.research[5].target,
+            world.research[5].acquired,
+        ) != (37, 65, 8)
+    {
+        return false;
+    }
+    use crate::ai_research::{value, ValueContext, ValueRules};
+    let Ok(tables) = ValueRules::from_rules(rules) else {
+        return false;
+    };
+    let contexts = [
+        ValueContext::from_world(world, rules, 2),
+        ValueContext::from_world(world, rules, 5),
+    ]
+    .into_iter()
+    .collect::<Result<Vec<_>, _>>();
+    let Ok(mut contexts) = contexts else {
+        return false;
+    };
+    for context in &mut contexts {
+        context.leader_modifier = 0;
+    }
+    let mut scored = Vec::new();
+    let mut best = [None; 2];
+    for (advance, tech) in tables.advances.iter().enumerate() {
+        if tech.prerequisites == [-2, -2]
+            || world.tech_group_flag(rules, 2, advance) == 2
+            || world.tech_group_flag(rules, 5, advance) == 2
+        {
+            continue;
+        }
+        let bit = 1 << (advance % 8);
+        let knows = |civ: usize| world.techs[civ][advance / 8] & bit != 0;
+        let index = match (knows(2), knows(5)) {
+            (false, true) => 0,
+            (true, false) => 1,
+            _ => continue,
+        };
+        let Some(base) = value(&tables, &contexts[index], advance) else {
+            return false;
+        };
+        scored.push((index, advance, base));
+        let score = base + (world.combat_rng.rand() % 3) as i32;
+        if best[index].is_none_or(|(previous, _)| score > previous) {
+            best[index] = Some((score, advance));
+        }
+    }
+    if scored != [(1, 20, 5), (0, 39, 6), (0, 47, 5)]
+        || best.map(|item| item.map(|(_, advance)| advance)) != [Some(39), Some(20)]
+    {
+        return false;
+    }
+    let units = world.units.clone();
+    let cities = world.cities.clone();
+    let mut expected_techs = world.techs;
+    expected_techs[2][39 / 8] |= 1 << (39 % 8);
+    expected_techs[5][20 / 8] |= 1 << (20 % 8);
+    let granted2 = world.grant_advance_with_rules(rules, 2, 39);
+    let granted5 = granted2 && world.grant_advance_with_rules(rules, 5, 20);
+    if !granted5
+        || world.techs != expected_techs
+        || units != world.units
+        || cities != world.cities
+        || world.combat_rng.state() != 0x135a6199
+    {
+        return false;
+    }
+    world.treaty_set(2, 5, 4);
+    observed.diplomacy = world.diplomacy;
+    for civ in [2, 5] {
+        observed.techs[civ] = world.techs[civ];
+        observed.research[civ] = world.research[civ];
+    }
+    true
 }
 
 /// Record the witnessed Turn-48 sea arrival while keeping the saved human fog.

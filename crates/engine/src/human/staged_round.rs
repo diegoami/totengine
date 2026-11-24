@@ -1369,17 +1369,9 @@ staged-round-test
                                         2
                                     );
 
-                                    for step in 40..296 {
-                                        let cursor = contact.cursor;
-                                        let held = contact.saved_move_state.is_some();
+                                    for _ in 40..296 {
                                         if contact.advance(1) == 0 {
                                             break;
-                                        }
-                                        if held && contact.saved_move_state.is_none() {
-                                            eprintln!(
-                                                "fallback after rollover {step} civ {cursor} {:?}",
-                                                contact.game.log().lines().last()
-                                            );
                                         }
                                     }
                                     let fresh = contact.view();
@@ -1568,6 +1560,145 @@ staged-round-test
                 }
             }
         }
+    }
+
+    /// The end-turn-only alternate route from the canonical entry replays
+    /// civ 2's witnessed turn-49 exchange approach and its zone refusal with
+    /// the human's saved view intact, and stops at the designed turn-50
+    /// keep_view boundary. Mirrors the recorded native witness for slot 3:
+    /// the eastward approach writes spent 3 and direction 1, the refusal
+    /// changes only the refusal byte.
+    #[test]
+    fn installed_turn49_exchange_approach_writes_the_witnessed_direction() {
+        let Some((snapshot, rules, events)) = installed_original() else {
+            return;
+        };
+        let deps = "totengine-scenario-dependencies 1\nturn49-approach-test\n";
+        let mut session = HumanSession::scenario_initialized_recipe(
+            ScenarioInput {
+                path: "Original/Ph_Auto2.SAV",
+                snapshot: &snapshot,
+                rules: rules.clone(),
+                events: Some(events.clone()),
+            },
+            4,
+            AiPolicy::BuiltIn1,
+            7,
+            deps,
+            ScenarioKnowledgeRecipe::SavedNavalAllocationV1,
+        )
+        .unwrap();
+        let submit = |session: &mut HumanSession, command| {
+            let view = session.view();
+            session
+                .submit(Request {
+                    civ: view.observation.civ,
+                    revision: view.revision,
+                    id: view.revision + 1,
+                    command,
+                })
+                .unwrap()
+        };
+        let tiles =
+            |session: &HumanSession| session.view().observation.seen.iter().flatten().count();
+        assert_eq!(tiles(&session), 59);
+        // EndTurn-only to the pending turn-48 research choice.
+        let mut choice = None;
+        for _ in 0..8 {
+            let view = session.view();
+            if view.phase != Phase::Human || view.decision.is_some() {
+                choice = view.decision;
+                break;
+            }
+            let before = tiles(&session);
+            submit(&mut session, Command::EndTurn);
+            for _ in 0..16 {
+                if session.view().phase == Phase::Human {
+                    break;
+                }
+                session.advance(256);
+            }
+            let after = session.view();
+            assert_eq!(after.phase, Phase::Human);
+            assert_eq!(tiles(&session), before);
+            choice = after.decision;
+        }
+        let Some(Decision::Research {
+            id, ref available, ..
+        }) = choice
+        else {
+            panic!("the end-turn-only route must reach the turn-48 research choice");
+        };
+        submit(
+            &mut session,
+            Command::Research {
+                decision: id,
+                advance: available[0],
+            },
+        );
+        assert_eq!(tiles(&session), 59);
+        assert!(session.saved_move_state.is_some());
+        // The turn-48 close replays the opponents' turn-49 passes; civ 2's
+        // witnessed exchange approach and its following zone refusal run
+        // inside it, so the per-step watch rides that close.
+        submit(&mut session, Command::EndTurn);
+        let mut approach = false;
+        let mut refusal = false;
+        for _ in 0..2000 {
+            if session.view().phase == Phase::Human {
+                break;
+            }
+            if session.advance(1) == 0 {
+                break;
+            }
+            let Some(saved) = session.saved_move_state.as_ref() else {
+                break;
+            };
+            let mover = &saved.units[3];
+            if !approach && (mover.x(), mover.y()) == (41, 35) && mover.moves_spent() == 3 {
+                assert_eq!(mover.raw[13], 1);
+                assert_eq!(mover.raw[16], 0);
+                approach = true;
+            }
+            if approach && mover.raw[16] == 1 {
+                assert_eq!((mover.x(), mover.y()), (41, 35));
+                assert_eq!(mover.moves_spent(), 3);
+                assert_eq!(mover.raw[13], 1);
+                refusal = true;
+            }
+        }
+        assert!(approach && refusal);
+        let turn49 = session.view();
+        assert_eq!(turn49.phase, Phase::Human);
+        assert_eq!(turn49.observation.turn, 49);
+        assert_eq!(tiles(&session), 59);
+        assert!(session.saved_move_state.is_some());
+        let refused = session.checkpoint(deps);
+        let replay = HumanSession::restore_with(
+            rules.clone(),
+            deps,
+            &refused,
+            Some((&snapshot, Some(events.clone()))),
+        )
+        .unwrap();
+        assert_eq!(replay.checkpoint(deps), refused);
+        assert_eq!(replay.view(), session.view());
+        // The human's turn-49 end replays civs 5-7 and stops at the designed
+        // turn-50 keep_view boundary: the annual processes the human's own
+        // city pass, the staged knowledge drops and the refresh adds the one
+        // ocean tile the human's new build now sees.
+        submit(&mut session, Command::EndTurn);
+        for _ in 0..16 {
+            if session.view().phase == Phase::Human {
+                break;
+            }
+            session.advance(256);
+        }
+        let boundary = session.view();
+        assert_eq!(boundary.phase, Phase::Human);
+        assert_eq!(boundary.observation.turn, 50);
+        assert_eq!(tiles(&session), 60);
+        assert!(session.saved_move_state.is_none());
     }
 
     #[test]

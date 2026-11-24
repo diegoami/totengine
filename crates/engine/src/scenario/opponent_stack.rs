@@ -712,7 +712,10 @@ pub(crate) fn stage(
         if !result.moved || result.cost_thirds != 3 || world.combat_rng.state() != crt {
             return Err("saved exchange approach differed from the witness".into());
         }
-        updated.units[slot].raw[13] = 3;
+        // The witnessed mover delta is raw[13] 0 -> 1: the eastward step
+        // writes direction 1 (east); the spent byte 3 comes from the
+        // partial-movement expenditure above.
+        updated.units[slot].raw[13] = 1;
     }
     if road_stack_arrival {
         if !result.moved || result.cost_thirds != 1 || world.combat_rng.state() != crt {

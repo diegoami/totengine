@@ -257,6 +257,42 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual(control['after']['position'], [38, 34])
         self.assertEqual(control['after']['spent'], 6)
 
+    def test_native_opponent_founding_consumes_unit_and_keeps_fog(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-founding.json').read_text())
+        zone = json.loads((ROOT / 'docs/evidence/import-opponent-zone.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], zone[key])
+        found = report['founding']
+        self.assertEqual(
+            (found['turn'], found['founder'], found['city_slot'], found['city_owner'], found['city_size']),
+            (47, 2, 9, 5, 1),
+        )
+        self.assertEqual(found['founder_deleted_coordinates'], [-600, -600])
+        self.assertEqual(found['crt_state'], zone['cases']['reverse_approach']['crt_state'])
+        self.assertEqual(found['memory_changes'], [[civ, 1702, 0, 2] for civ in range(1, 8)])
+        self.assertEqual(found['explored_tiles'], 59)
+        self.assertEqual(found['name_rows_read'], 1)
+        self.assertRegex(found['name_sha256'], r'^[0-9a-f]{64}$')
+        changes = found['map_changes']
+        self.assertEqual(len(changes), 22)
+        self.assertEqual(sum(offset % 6 == 2 and (old, new) == (0, 160)
+                             for offset, old, new in changes), 17)
+        self.assertEqual(sum(offset % 6 == 5 and old ^ new == 8
+                             for offset, old, new in changes), 4)
+        self.assertIn([10213, 1, 2], changes)
+
+        second = report['second_founding']
+        self.assertEqual(
+            (second['founder'], second['city_slot'], second['city_owner'], second['city_size']),
+            (37, 10, 6, 1),
+        )
+        self.assertEqual(second['founder_deleted_coordinates'], [-700, -700])
+        self.assertEqual(second['unit_extent'], [39, 39])
+        self.assertEqual(second['explored_tiles'], 59)
+        self.assertEqual(second['memory_changes'],
+                         [[civ, 693, int(civ == 6), 2] for civ in range(1, 8)])
+        self.assertEqual(len(second['map_changes']), 28)
+
     def test_native_armed_arrival_is_a_head_insertion(self):
         report = json.loads((ROOT / 'docs/evidence/import-opponent-armed-stack.json').read_text())
         hut = json.loads((ROOT / 'docs/evidence/import-opponent-hut.json').read_text())

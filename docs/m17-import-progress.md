@@ -376,6 +376,12 @@ retains that behavior and advances to turn 47 with all 59 tiles. The
 inspector checks the city return and another restore. Faithful entry
 and broader continuation remain open.
 
+Schema 15 adds the [turn-47 hidden founding witness](evidence/import-opponent-founding.json).
+The checked opponents consume their settlers and create cities in slots 9
+and 10. Measured occupancy, site and fertility changes preserve the 59-tile
+human view. The hidden cities use engine policy for labels, identities,
+workers and production. The inspector replays both founding boundaries.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

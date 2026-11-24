@@ -641,7 +641,7 @@ pub(super) fn check_saved_human_production(
     let rules = &capture.resources().rules;
     let events = files.events.clone().map(EventEngine::new);
     let identity = capture.identity();
-    let mut session = HumanSession::scenario_initialized_saved_opponent_zone(
+    let mut session = HumanSession::scenario_initialized_saved_opponent_founding(
         ScenarioInput {
             path: &files.path,
             snapshot: &files.bytes,
@@ -930,6 +930,27 @@ pub(super) fn check_saved_human_production(
     if restored.view() != post_return || restored.checkpoint(identity) != return_checkpoint {
         return Err("checked turn-47 city return did not replay".into());
     }
+    submit(&mut contact, Command::EndTurn)?;
+    if contact.advance(2) != 2 {
+        return Err("checked turn-47 opponent founding did not advance".into());
+    }
+    for steps in [0, 16] {
+        if steps != 0 && contact.advance(steps) != steps {
+            return Err("the second checked turn-47 founding did not advance".into());
+        }
+        let founded = contact.view();
+        let founding_checkpoint = contact.checkpoint(identity);
+        let replay = restore(&founding_checkpoint)?;
+        if founded.observation.seen != post_return.observation.seen
+            || founded.observation.cities != post_return.observation.cities
+            || replay.view() != founded
+            || replay.checkpoint(identity) != founding_checkpoint
+        {
+            return Err(
+                "checked turn-47 opponent founding did not retain the human view on replay".into(),
+            );
+        }
+    }
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
@@ -942,6 +963,7 @@ pub(super) fn check_saved_human_production(
         "turn_45_city_return_replays": true,
         "turn_46_city_departure_replays": true,
         "turn_47_city_return_replays": true,
+        "turn_47_hidden_founding_replays": 2,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],

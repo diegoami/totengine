@@ -722,3 +722,27 @@ fallback. Faithful direct entry remains open.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_zone_check.py --out /tmp/import-opponent-zone.json
 cmp docs/evidence/import-opponent-zone.json /tmp/import-opponent-zone.json
 ```
+
+### Hidden opponent founding on turn 47
+
+The [prepared founding witness](evidence/import-opponent-founding.json)
+executes two prepared calls to the native founding callback through
+return. The harness supplies host directory and
+rectangle operations and reads the city-name row from the installed
+Original pack. Civ 5 consumes unit 2 and reuses city slot 9. Civ 6
+consumes unit 37 and appends city slot 10. Both cities start at size one
+and the new occupancy byte reaches all seven civilizations. The human keeps all 59 explored tiles. The report records
+the installed city-name file and the selected name by hash.
+
+Schema 15 stages both foundings in the checked replay. It applies measured
+site, fertility and occupancy changes and keeps the human city list and
+map intact. The hidden cities use the engine's generated labels, identities,
+workers and initial production. Native private civ counter writes and
+the prepared loader's transient city identity remain outside this recipe.
+Schemas through 14 retain their prior behavior. Faithful direct entry
+remains open.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_founding_check.py --out /tmp/import-opponent-founding.json
+cmp docs/evidence/import-opponent-founding.json /tmp/import-opponent-founding.json
+```

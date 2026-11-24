@@ -473,12 +473,18 @@ allowance draws nothing). All measured moves live in
 
 The route now plays through civ 2's, civ 5's, civ 6's, and civ 7's whole
 turn-49 passes with all 59 human tiles retained. The next fallback is
-the **turn-50 research choice**: staging the decision reveals one new
-tile to the human (flat seen index 58, terrain 10, ocean) — the
-decision's knowledge update refreshes a far ocean square that turn 48's
-choice did not. Measure the native decision callback's map effect
-(scratch probe extension) before staging; until then the human view
-refreshes 59→60 at that boundary.
+the **turn-50 round-end checksum replay**: the recorded `R 50
+e75c98cd70d6a71c` from the live initial session and the recomputed
+checked-replay checksum diverge, so the replay stops there and the human
+view refreshes 59→60. Both sides run the same staged contexts, so the
+mismatch is a live-versus-replay self-consistency difference in one of
+the new contexts (candidates: the road arrival's skipped member
+mutation, the overspent join's patched observation, or a
+`checked_replay` branch that behaves differently between the live and
+replayed paths). Diagnose by comparing the checksummed world fields
+between the live turn-50 state and the replayed turn-50 state before
+trusting the route past turn 50; until then the extension is
+harness-validated through the turn-49 close only.
 
 This is an engine diagnostic. The `m17-turn49-boundary` worktree at
 `/home/diego/review-tmp/totengine-m17-turn49-boundary` contains

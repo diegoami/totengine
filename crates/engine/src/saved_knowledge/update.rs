@@ -120,6 +120,16 @@ pub fn unit_observation_after_reset(
     unit_observation_after(&reset, rules, scout_slot, active_contacts)
 }
 
+pub(crate) fn unit_observation_with_remote_barbarians(
+    save: &SaveFile,
+    rules: &Rules,
+    scout_slot: usize,
+) -> Result<SaveFile, UnitObservationError> {
+    observe(save, rules, scout_slot, false, true, true, |_, error| {
+        Err(error)
+    })
+}
+
 pub(crate) fn unit_observation_with_contacts(
     save: &SaveFile,
     rules: &Rules,

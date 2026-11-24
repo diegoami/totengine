@@ -75,7 +75,15 @@ impl CheckedSnapshot {
         let allowance =
             world.movement_allowance(rules, usize::from(unit.type_id()), player, unit.damage());
         world.units[slot].moves_left = allowance.saturating_sub(u32::from(unit.moves_spent()));
-        let mut observed = stage_saved_land_move(save, rules, &mut world, slot, to, false, None)?;
+        let mut observed = stage_saved_land_move(
+            save,
+            rules,
+            &mut world,
+            slot,
+            to,
+            LandMoveObservation::Legacy,
+            None,
+        )?;
         let moved = &world.units[slot];
         let view = SavedMapKnowledge::read(&observed, player)?;
         Ok(SavedLandStep {
@@ -108,6 +116,13 @@ pub(crate) enum CityStackMove {
     Arrival { resident: usize },
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(crate) enum LandMoveObservation {
+    Legacy,
+    Checked,
+    RemoteNaval,
+}
+
 /// Stage a checked relocation and its saved observation on a temporary world.
 pub(crate) fn stage_saved_land_move(
     save: &SaveFile,
@@ -115,7 +130,7 @@ pub(crate) fn stage_saved_land_move(
     world: &mut crate::WorldState,
     slot: usize,
     to: (u16, u16),
-    keep_native_budget: bool,
+    observation: LandMoveObservation,
     city_stack: Option<CityStackMove>,
 ) -> Result<SaveFile, String> {
     let leaving_city = matches!(city_stack, Some(CityStackMove::Departure { .. }));
@@ -178,7 +193,7 @@ pub(crate) fn stage_saved_land_move(
     }
     // The native first step can spend its full terrain cost even when it
     // exceeds the unit's allowance. This context consumes no partial roll.
-    let first_step = keep_native_budget
+    let first_step = observation != LandMoveObservation::Legacy
         && live.moves_left
             == world.movement_allowance(rules, usize::from(live.type_id), player, live.damage);
     if let Some(stack) = city_stack {
@@ -257,13 +272,20 @@ pub(crate) fn stage_saved_land_move(
     }
     tile_bytes[6 * dest + 1] |= 1;
     tile_bytes[6 * dest + 5] = (tile_bytes[6 * dest + 5] & 15) | (world.map.owner[dest] << 4);
+    let observe = |changed: &SaveFile| {
+        if observation == LandMoveObservation::RemoteNaval {
+            crate::saved_knowledge::unit_observation_with_remote_barbarians(changed, rules, slot)
+        } else {
+            unit_observation_after(changed, rules, slot, true)
+        }
+    };
     let observed = match city_stack {
         Some(CityStackMove::Departure { mate }) => {
             changed.units[slot].raw[26..30].fill(255);
             changed.units[mate].raw[26..30].fill(255);
             world.units[slot].stack_pos = 0;
             world.units[mate].stack_pos = 0;
-            unit_observation_after(&changed, rules, slot, true)
+            observe(&changed)
         }
         Some(CityStackMove::Arrival { resident }) => {
             let new_head = &mut changed.units[slot].raw;
@@ -271,7 +293,11 @@ pub(crate) fn stage_saved_land_move(
             changed.units[resident].raw[26..28].copy_from_slice(&(slot as i16).to_le_bytes());
             world.units[slot].stack_pos = 0;
             world.units[resident].stack_pos = 1;
-            unit_observation_after(&changed, rules, slot, true)
+            observe(&changed)
+        }
+        None if observation == LandMoveObservation::RemoteNaval => {
+            let reset = crate::saved_knowledge::clear_unit_stack_visibility(&changed, slot)?;
+            observe(&reset)
         }
         None => unit_observation_after_reset(&changed, rules, slot, true),
     }

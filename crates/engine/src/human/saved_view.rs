@@ -865,13 +865,22 @@ impl HumanSession {
                     return Err(refused);
                 }
                 world = self.game.world.clone();
+                use crate::scenario::snapshot::LandMoveObservation;
+                let observation =
+                    if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 {
+                        LandMoveObservation::RemoteNaval
+                    } else if checked_replay {
+                        LandMoveObservation::Checked
+                    } else {
+                        LandMoveObservation::Legacy
+                    };
                 let step = crate::scenario::snapshot::stage_saved_land_move(
                     saved,
                     &self.game.rules,
                     &mut world,
                     unit,
                     to,
-                    checked_replay,
+                    observation,
                     self.saved_city_stack_move(saved, unit, to, index),
                 );
                 (step, OrderResult::Moved)

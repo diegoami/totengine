@@ -635,3 +635,24 @@ Earlier initializers keep their original combat behavior.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_city_combat_check.py --out /tmp/import-opponent-city-combat.json
 cmp docs/evidence/import-opponent-city-combat.json /tmp/import-opponent-city-combat.json
 ```
+
+
+### Checked opponent hut replay
+
+The [prepared native hut entry](evidence/import-opponent-hut.json)
+executes the southwest move from (28, 12) into (27, 13) through native
+return. The move spends nine thirds, grants advance 1 to civ 6, clears
+the project target, and leaves its accumulated science at 12. It keeps
+all 59 human explored tiles and remembered improvements.
+
+Initializer schema 11 stages this move and reward when the unit,
+research and CRT inputs agree with the witness. It checks the outcome
+before committing the update. The inspector checks and restores the
+post-hut checkpoint. Earlier recipes keep their fallback behavior.
+The next fallback in this route is an armed arrival into a friendly
+field stack.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_hut_check.py --out /tmp/import-opponent-hut.json
+cmp docs/evidence/import-opponent-hut.json /tmp/import-opponent-hut.json
+```

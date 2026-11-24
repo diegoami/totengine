@@ -95,6 +95,7 @@ impl HumanSession {
             ScenarioKnowledgeRecipe::SavedHumanProductionV1
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                | ScenarioKnowledgeRecipe::SavedOpponentHutV1
         ) {
             return None;
         }
@@ -389,6 +390,7 @@ impl HumanSession {
                 ScenarioKnowledgeRecipe::SavedHumanProductionV1
                     | ScenarioKnowledgeRecipe::SavedOpponentContactV1
                     | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentHutV1
             );
         let mut births = Vec::new();
         for (slot, unit) in world.units.iter().enumerate() {
@@ -469,6 +471,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedHumanProductionV1
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                | ScenarioKnowledgeRecipe::SavedOpponentHutV1
         ) {
             crate::scenario::opponent_stack::record_city_births(
                 &mut observed,
@@ -527,6 +530,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedHumanProductionV1
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                | ScenarioKnowledgeRecipe::SavedOpponentHutV1
         ) || self.saved_move_state.is_none()
         {
             return false;
@@ -548,6 +552,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedHumanProductionV1
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                | ScenarioKnowledgeRecipe::SavedOpponentHutV1
         ) {
             return None;
         }
@@ -569,8 +574,11 @@ impl HumanSession {
                 .iter()
                 .any(|u| u.id != 0 && u.owner != civ && (u.x, u.y) == to);
         let mut events = None;
-        let city_recipe =
-            self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1;
+        let city_recipe = matches!(
+            self.knowledge_recipe,
+            ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                | ScenarioKnowledgeRecipe::SavedOpponentHutV1
+        );
         let city_before = world.city_at(to.0, to.1);
         let (observed, result) = if is_combat {
             events = self.game.events.clone();
@@ -593,7 +601,9 @@ impl HumanSession {
                 civ,
                 unit,
                 to,
-                if city_recipe
+                if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentHutV1 {
+                    crate::scenario::opponent_stack::StackMovement::StockHut
+                } else if city_recipe
                     || self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentContactV1
                 {
                     crate::scenario::opponent_stack::StackMovement::StockContact

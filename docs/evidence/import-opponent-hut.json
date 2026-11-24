@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "hut": {
+    "arguments": [
+      37,
+      4,
+      3
+    ],
+    "before": {
+      "position": [
+        28,
+        12
+      ],
+      "spent": 0,
+      "direction": 4,
+      "advance_byte": 0,
+      "acquired": 7,
+      "research_progress": 12,
+      "research_target": 1,
+      "explored_tiles": 59
+    },
+    "after": {
+      "position": [
+        27,
+        13
+      ],
+      "spent": 9,
+      "direction": 4,
+      "advance_byte": 2,
+      "acquired": 8,
+      "research_progress": 12,
+      "research_target": -1,
+      "explored_tiles": 59
+    },
+    "crt_before": 605269276,
+    "crt_after": 1153172598,
+    "return": 1,
+    "grant_arguments": [
+      [
+        6,
+        1,
+        6,
+        0,
+        0
+      ]
+    ],
+    "observation_calls": [
+      [
+        37,
+        1
+      ]
+    ],
+    "viewer_map_and_memory_unchanged": true,
+    "host_substitutes": {
+      "PeekMessageA": 1,
+      "SetRect": 81
+    },
+    "display_substitutes": [
+      "00467d19"
+    ]
+  },
+  "scope": "Run the prepared opponent hut entry after the witnessed city attack.\n\nSupply the prior exchange, destroyed city and approach position in the\npinned Original save. Execute the stock movement and hut callback with\nthe witnessed outgoing CRT. Virtualize Windows rectangle writes and\nthe same closed-panel display and timing calls as the combat witness."
+}

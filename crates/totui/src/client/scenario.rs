@@ -284,6 +284,11 @@ impl Client {
                         Some("10"),
                         Some("profile"),
                         Some(ScenarioInitializer::SAVED_OPPONENT_CITY_COMBAT_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("11"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_HUT_PROFILE)
                     )
                 )
             });

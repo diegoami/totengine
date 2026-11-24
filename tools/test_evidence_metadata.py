@@ -232,6 +232,24 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_opponent_hut_retains_view_and_grants_the_current_project(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-hut.json').read_text())
+        attack = json.loads((ROOT / 'docs/evidence/import-opponent-city-combat.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], attack[key])
+        hut = report['hut']
+        self.assertEqual(hut['crt_before'], attack['closed_panel_attack']['crt_after'])
+        self.assertEqual(hut['crt_after'], 0x44bc0476)
+        self.assertEqual(hut['grant_arguments'], [[6, 1, 6, 0, 0]])
+        self.assertEqual(hut['observation_calls'], [[37, 1]])
+        self.assertTrue(hut['viewer_map_and_memory_unchanged'])
+        self.assertEqual(hut['before']['position'], [28, 12])
+        self.assertEqual(hut['after'], {
+            'position': [27, 13], 'spent': 9, 'direction': 4, 'advance_byte': 2,
+            'acquired': 8, 'research_progress': 12, 'research_target': -1,
+            'explored_tiles': 59,
+        })
+
     def test_native_opponent_city_attack_clears_remembered_occupancy_at_return(self):
         report = json.loads((ROOT / 'docs/evidence/import-opponent-city-combat.json').read_text())
         contact = json.loads((ROOT / 'docs/evidence/import-opponent-contact.json').read_text())

@@ -33,7 +33,7 @@ IMPORTS = {
 }
 
 
-def run_attack(original, arguments, *, city_panel_boundary=False):
+def run_attack(original, arguments, *, city_panel_boundary=False, memory_rects=False, grant_trace=None):
     cpu = original.cpu
     tick = 0
     hosts = []
@@ -43,12 +43,14 @@ def run_attack(original, arguments, *, city_panel_boundary=False):
     def boundary(emu, at, size, _data):
         nonlocal tick
         sp = emu.reg_read(UC_X86_REG_ESP)
+        if at == 0x49DEDF and grant_trace is not None:
+            grant_trace.append([read(original, sp + off, '<i') for off in (4, 8, 12, 16, 20)])
         if at == 0x41F704:
             observes.append([read(original, sp + off) for off in (4, 8)])
         instruction = bytes(emu.mem_read(at, size))
         if city_panel_boundary and instruction == b'\xff\x15\xd8\x16\x69\x00':
             emu.emu_stop()
-        elif city_panel_boundary and instruction == b'\xff\x15\x84\x1a\x69\x00':
+        elif (city_panel_boundary or memory_rects) and instruction == b'\xff\x15\x84\x1a\x69\x00':
             hosts.append('SetRect')
             emu.mem_write(read(original, sp), bytes(emu.mem_read(sp + 4, 16)))
             emu.reg_write(UC_X86_REG_EAX, 1)

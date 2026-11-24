@@ -641,7 +641,7 @@ pub(super) fn check_saved_human_production(
     let rules = &capture.resources().rules;
     let events = files.events.clone().map(EventEngine::new);
     let identity = capture.identity();
-    let mut session = HumanSession::scenario_initialized_saved_opponent_city_combat(
+    let mut session = HumanSession::scenario_initialized_saved_opponent_hut(
         ScenarioInput {
             path: &files.path,
             snapshot: &files.bytes,
@@ -812,6 +812,18 @@ pub(super) fn check_saved_human_production(
     if reloaded.view() != contact.view() || reloaded.checkpoint(identity) != attack_checkpoint {
         return Err("saved occupied-city attack did not replay".into());
     }
+    if contact.advance(8) != 8 {
+        return Err("saved hut approach did not reach the prepared boundary".into());
+    }
+    let before = contact.view();
+    if contact.advance(1) != 1 || before.observation.seen != contact.view().observation.seen {
+        return Err("saved opponent hut entry changed the human view".into());
+    }
+    let hut_checkpoint = contact.checkpoint(identity);
+    let reloaded = restore(&hut_checkpoint)?;
+    if reloaded.view() != contact.view() || reloaded.checkpoint(identity) != hut_checkpoint {
+        return Err("saved opponent hut entry did not replay".into());
+    }
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
@@ -820,6 +832,7 @@ pub(super) fn check_saved_human_production(
         "stack_order_cases": order_cases,
         "contact_checkpoint_replays": true,
         "city_attack_checkpoint_replays": true,
+        "hut_checkpoint_replays": true,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],

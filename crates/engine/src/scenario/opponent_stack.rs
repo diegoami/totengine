@@ -94,6 +94,7 @@ pub(crate) enum StackMovement {
     City,
     Extended,
     StockContact,
+    StockHut,
 }
 
 /// Execute ordinary land movement and update the affected stack links.
@@ -189,9 +190,24 @@ pub(crate) fn stage(
         && world.map.road[from] != world.map.road[dest]
         && !world.map.rail[from]
         && !world.map.rail[dest];
-    let partial_movement = field_departure || unstacked_road_boundary;
-    if world.map.hut_at(to.0, to.1) {
-        return Err("saved stack move cannot enter a hut".into());
+    let hut = world.map.hut_at(to.0, to.1);
+    let witnessed_hut = hut
+        && mode == StackMovement::StockHut
+        && (world.turn, civ, slot, origin, to) == (44, 6, 37, (28, 12), (27, 13))
+        && world.human_mask == 16
+        && world.combat_rng.state() == 0x2413ad1c
+        && (unit.type_id, unit.moves_left, unit.orders) == (0, 3, 12)
+        && world.movement_allowance(rules, 0, civ, unit.damage) == 3
+        && (
+            world.research[6].progress,
+            world.research[6].target,
+            world.research[6].acquired,
+        ) == (12, 1, 7)
+        && source.len() == 1
+        && members.is_empty();
+    let partial_movement = field_departure || unstacked_road_boundary || witnessed_hut;
+    if hut && !witnessed_hut {
+        return Err("saved stack move cannot enter an unwitnessed hut".into());
     }
     let field_to_field =
         field_stack && !members.is_empty() && city.is_none() && origin_city.is_none();
@@ -218,8 +234,21 @@ pub(crate) fn stage(
             .saturating_sub(unit.moves_left)
     });
     let result = world.move_unit_with_routes(rules, slot, to.0, to.1, route, partial_movement);
-    if result.battle.is_some() || result.hut || result.zoc_ended {
+    if result.battle.is_some() || (result.hut && !witnessed_hut) || result.zoc_ended {
         return Err("saved stack move did not resolve as ordinary movement".into());
+    }
+    if witnessed_hut
+        && (!result.moved
+            || result.cost_thirds != 9
+            || result.hut_outcome != Some(crate::huts::HutOutcome::Advance(1))
+            || world.combat_rng.state() != 0x44bc0476
+            || (
+                world.research[6].progress,
+                world.research[6].target,
+                world.research[6].acquired,
+            ) != (12, -1, 8))
+    {
+        return Err("saved hut reward differed from the witnessed advance".into());
     }
     let mut updated = if result.moved {
         clear_unit_stack_visibility(saved, slot)?
@@ -262,7 +291,13 @@ pub(crate) fn stage(
     tile_bytes[6 * dest + 1] |= 1;
     tile_bytes[6 * dest + 5] = (tile_bytes[6 * dest + 5] & 15) | (civ << 4);
     link_stack(&mut updated, world, &members)?;
-    let observed = if mode == StackMovement::StockContact {
+    if witnessed_hut {
+        updated.techs[6] = world.techs[6];
+        updated.research[6] = world.research[6];
+        updated.units[slot].raw[6] |= 0x40;
+        updated.units[slot].raw[13] = 4;
+    }
+    let observed = if matches!(mode, StackMovement::StockContact | StackMovement::StockHut) {
         unit_observation_with_contacts(&updated, rules, slot, |observed, error| {
             apply_stock_contact(observed, rules, world, &error).ok_or(error)
         })

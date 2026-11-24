@@ -21,6 +21,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedHumanProductionV1
                     | ScenarioKnowledgeRecipe::SavedOpponentContactV1
                     | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentHutV1
             );
         let before = keep_view.then(|| self.game.world.clone());
         if !keep_view {
@@ -764,6 +765,7 @@ staged-round-test
             (ScenarioKnowledgeRecipe::SavedHumanProductionV1, 59, 0),
             (ScenarioKnowledgeRecipe::SavedOpponentContactV1, 59, 0),
             (ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1, 59, 0),
+            (ScenarioKnowledgeRecipe::SavedOpponentHutV1, 59, 0),
         ] {
             let mut session = HumanSession::scenario_initialized_recipe(
                 ScenarioInput {
@@ -1027,6 +1029,7 @@ staged-round-test
                 recipe,
                 ScenarioKnowledgeRecipe::SavedOpponentContactV1
                     | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentHutV1
             ) {
                 let before = contact.view();
                 let draws = contact.game.world.combat_rng.draws();
@@ -1045,7 +1048,11 @@ staged-round-test
                 let replay = restore(&reached);
                 assert_eq!(replay.checkpoint(deps), reached);
                 assert_eq!(replay.view(), contact.view());
-                if recipe == ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1 {
+                if matches!(
+                    recipe,
+                    ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                        | ScenarioKnowledgeRecipe::SavedOpponentHutV1
+                ) {
                     let prior = contact.saved_move_state.as_ref().unwrap().clone();
                     assert_eq!(contact.advance(1), 1);
                     assert_eq!(contact.game.world.combat_rng.state(), 0x2413ad1c);
@@ -1065,6 +1072,23 @@ staged-round-test
                     assert_eq!(contact.view().observation.seen, before.observation.seen);
                     let fought = contact.checkpoint(deps);
                     assert_eq!(restore(&fought).checkpoint(deps), fought);
+                    if recipe == ScenarioKnowledgeRecipe::SavedOpponentHutV1 {
+                        assert_eq!(contact.advance(8), 8);
+                        let prior = contact.view();
+                        assert_eq!(contact.advance(1), 1);
+                        assert_eq!(contact.game.world.combat_rng.state(), 0x44bc0476);
+                        assert_ne!(contact.game.world.techs[6][0] & 2, 0);
+                        let saved = contact.saved_move_state.as_ref().unwrap();
+                        assert_eq!(saved.units[37].moves_spent(), 9);
+                        assert_eq!(contact.view().observation.seen, prior.observation.seen);
+                        let reward = contact.checkpoint(deps);
+                        assert_eq!(restore(&reward).checkpoint(deps), reward);
+                    } else {
+                        assert_eq!(contact.advance(9), 9);
+                        assert!(contact.saved_move_state.is_none());
+                        let old = contact.checkpoint(deps);
+                        assert_eq!(restore(&old).checkpoint(deps), old);
+                    }
                 } else {
                     assert_eq!(contact.advance(1), 1);
                     assert!(contact.saved_move_state.is_none());

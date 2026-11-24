@@ -353,7 +353,11 @@ explored tiles and clears the destroyed city's occupancy bit at
 viewer-memory index 1144. The first city-panel font boundary precedes
 that memory write. Checked schema 10 now traverses the attack and
 restores its resulting checkpoint. The next saved-view fallback on the
-same route is civ 6 moving into (27, 13).
+same route was civ 6 moving into (27, 13). The [native hut
+witness](evidence/import-opponent-hut.json) confirms that this move
+grants advance 1 and retains the saved map. Checked schema 11 now
+stages that reward. The next fallback is the civ-7 armed arrival
+from (9, 45) into the friendly field stack at (9, 47).
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

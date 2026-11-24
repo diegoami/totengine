@@ -405,6 +405,98 @@ records. Checked allocation retains the 59-tile map through turn 48,
 and the required research project can be chosen and reloaded without
 refreshing the saved view.
 
+The alternate route now extends through the researched turn-48 close into
+the turn-49 human round. Civ 6 moves unit slot 1 (type 15) south from
+(27, 15) into its own empty size-one city in slot 10 at (27, 17) while a
+settler stays behind on the origin tile. The [native empty-city
+witness](evidence/import-opponent-empty-city.json) reuses the measured
+second founding to create the city, then measures the movement callback
+through return: the mover becomes the city stack head at a cost of three
+thirds with a southward direction byte, the resident settler becomes the
+origin head, the destination occupancy byte gains the unit bit, the
+scout's own explored bits cover the four arrival neighbours, civ 6's
+runtime memory marks both tiles, and the human viewer's explored tiles
+and memory are untouched. The checked engine stages this context in
+`crates/engine/src/scenario/opponent_stack.rs`; the human enters turn 49
+with all 59 tiles, and the next fallback is the contact below.
+
+### Next continuation case
+
+On the same route, the turn-49 close now stages through civ 2's whole
+pass: the eastward exchange approach, the trade-turn contact, and the
+following zone-of-control refusal, all with the human's 59 tiles
+retained (docs/evidence/import-opponent-trade-contact.json). The
+exchange grants `[2←39, 5←20]` over three CRT draws
+(`0x366e70f4 → 0x135a6199`) with the treaty words unchanged at `0x405`,
+and the refusal bumps the mover's private byte to one without spending
+movement. Two findings came out of the measurement:
+
+- The live runtime keeps the leader-modifier table zeroed during play;
+  the engine's Rules-derived modifier (leader 1 = 1) was the whole
+  base-value swap for advances 39/47. The staged contact therefore
+  evaluates its two `ValueContext`s with modifier zero. The engine's own
+  AI research selection still derives modifiers from Rules, which may
+  deserve its own check against live runtime state.
+- The zone refusal extends the pinned `zone_case` table with the
+  turn-49 tuple; the destination terrain moved into each case's witness
+  tuple (the turn-49 square is terrain 5).
+
+Civ 5's pass then staged its fortified unit's empty-city approach —
+slot 19 (type 2, alone, spent 3, orders 2, CRT `0x135a6199`) stepping
+south from (44, 40) into its own size-one city 9 at (44, 42) is
+**refused natively** (the mover keeps position and movement, gains the
+done marker `raw6` 0→64 and one refusal byte, tiles/CRT/human view
+untouched). The engine's re-orders replay the refusal, and the measured
+trajectory runs to attempt 20, which **resets the private byte without
+exhausting the fortified unit** (unlike the zone class, the mover keeps
+its remaining movement); the cycle then restarts. Civ 5's new city-9
+build **slot 41** (type 15, id 59, alone, moves_left 1, spent 5, CRT
+`0x135a6199`) joins the fortified unit at (44, 40) through the
+partial-movement chance roll: the witnessed draw admits the overspent
+move at the full three-thirds cost (spent 5→8), the newcomer becomes
+stack head (next 19, resident prev 41), the vacated origin keeps a
+transient occupancy mark in the live game — the knowledge kernel
+validates whole-map coherence, so the staged save carries the cleared
+bit (native clears the transient at its next refresh) — and the CRT
+advances to `0xeccf1df8` (one MSVC step, verified). Civ 7's new build
+**slot 42** (type 15, id 60, alone, moves_left 5, CRT `0xeccf1df8`)
+steps northeast onto the road tile at (14, 42) holding slot 33: the pair
+stays **self-linked** in the native records (no link writes at all), the
+spent byte takes the one-third road cost, and the CRT is untouched. The
+staged checkpoint links that pair with the newcomer as head — a declared
+normalization, because the knowledge kernel requires one coherent chain
+per tile while native's own observation tolerates the independent
+heads. The exchange approach also gained its previously missed
+spent/direction writes through the partial-movement path (remaining ==
+allowance draws nothing). All measured moves live in
+`docs/evidence/import-opponent-trade-contact.json`.
+
+The route now plays through civ 2's, civ 5's, civ 6's, and civ 7's whole
+turn-49 passes with all 59 human tiles retained. At the turn-50 round
+close the saved knowledge is dropped by the designed `keep_view`
+boundary, not by a divergence: the turn-50 annual processes the human's
+own city pass (cities and units change, so the staged snapshot cannot
+represent them), and the refresh legitimately includes one newly
+visible ocean tile (flat seen index 58, terrain 10) that the human's
+new build now sees. The earlier read of a round-end checksum mismatch
+was wrong — the fallback's order line is simply the freshly appended
+round record.
+
+Extending the staged knowledge through a turn-50 annual (own-city
+knowledge normalization across the researched turn) is a design step
+beyond the checked range and stays open; the turn-49 journey itself is
+complete end to end.
+
+This is an engine diagnostic. The `m17-turn49-boundary` worktree at
+`/home/diego/review-tmp/totengine-m17-turn49-boundary` contains
+uncommitted diagnostic logging in `human/saved_view.rs` and
+`human/staged_round.rs` (CONTACT2, CITY9 and SLOT41 dumps); leave those
+diagnostics out of production commits. The local working trace is
+`/tmp/totengine-m17-turn49-empty-city.log`; the scratch probes are
+`/home/diego/review-tmp/opencode/probe_contact.py` and
+`/home/diego/review-tmp/opencode/bisect_value.py`. If those are gone,
+reproduce the route described above using the checked Original export.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

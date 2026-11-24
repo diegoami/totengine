@@ -144,8 +144,145 @@ pub(crate) fn stage(
         city.is_some_and(|c| c.map_id == 0 && c.owner == u16::from(civ))
     };
     let city = city_at(to);
+    let origin_city = city_at(origin);
+    let from = world
+        .map
+        .stored_index(origin.0, origin.1)
+        .ok_or("saved stack origin missing")?;
+    let dest = world
+        .map
+        .stored_index(to.0, to.1)
+        .ok_or("saved stack destination missing")?;
+    // The measured turn-48 approach: one member of a two-unit field pair
+    // enters the civ's own size-one city while the settler stays behind
+    // (docs/evidence/import-opponent-empty-city.json).
+    let own_empty_city_entry = mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (48, 6, 1, (27, 15), (27, 17), 0x29e9892a)
+        && world.human_mask == 16
+        && source == [slot, 14]
+        && members.is_empty()
+        && friendly_city(city)
+        && origin_city.is_none()
+        && world.city_at(to.0, to.1) == Some(10)
+        && city.is_some_and(|city| city.size == 1)
+        && (
+            unit.type_id,
+            unit.moves_left,
+            unit.orders,
+            record.moves_spent(),
+        ) == (15, 6, 28, 0)
+        && record.raw[6] == 0x40
+        && record.raw[13] == 5
+        && record.visibility() == 0
+        && world.movement_allowance(rules, usize::from(unit.type_id), civ, unit.damage) == 6
+        && world.units.get(14).is_some_and(|resident| {
+            (
+                resident.owner,
+                resident.type_id,
+                (resident.x, resident.y),
+                resident.orders,
+            ) == (6, 0, (27, 15), 255)
+        })
+        && saved.units.get(14).is_some_and(|resident| {
+            resident.raw[6] == 192
+                && resident.raw[7] == 10
+                && resident.raw[10] == 0
+                && resident.raw[11] == 0
+                && resident.raw[13] == 1
+                && resident.raw[16] == 0
+                && resident.raw[26..30] == [1, 0, 255, 255]
+        })
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [9, 1, 192, 2, 64, 96]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [2, 2, 192, 2, 64, 99];
+    // The measured turn-49 refusal of civ 5's fortified unit ordered into
+    // its own empty city 9: native marks the unit done and records the
+    // attempt without spending movement or touching the tile.
+    // (docs/evidence/import-opponent-trade-contact.json)
+    if mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (49, 5, 19, (44, 40), (44, 42), 0x135a6199)
+        && matches!(world.combat_rng.state(), 0x135a6199 | 0xeccf1df8)
+        && world.human_mask == 16
+        && source == [slot]
+        && members.is_empty()
+        && friendly_city(city)
+        && origin_city.is_none()
+        && world.city_at(to.0, to.1) == Some(9)
+        && city.is_some_and(|city| city.size == 1)
+        && (
+            unit.type_id,
+            unit.moves_left,
+            unit.orders,
+            record.moves_spent(),
+        ) == (2, 3, 2, 3)
+        && (record.raw[6] == 0 || record.raw[6] == 0x40)
+        && record.raw[7] == 1
+        && record.raw[13] == 255
+        && record.raw[16] < 20
+        && record.visibility() == 0
+        && world.map.terrain[from] == 2
+        && world.map.terrain[dest] == 2
+        && !world.map.road[from]
+        && !world.map.road[dest]
+        && !world.map.rail[from]
+        && !world.map.rail[dest]
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [130, 1, 160, 2, 36, 87]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [130, 2, 160, 2, 36, 87]
+    {
+        let mut refused = saved.clone();
+        refused.units[slot].raw[6] |= 0x40;
+        refused.units[slot].raw[16] += 1;
+        return Ok((refused, OrderResult::Rejected("fortified opponent move")));
+    }
+    // The measured turn-49 retry of the same fortified order after the
+    // overspent join: the mover is now the tail of the two-member stack at
+    // the origin (slot 41 head) and the refusal byte accumulates with the
+    // engine's repeated orders (measured at two; bounded below twenty like
+    // the zone guard until a later attempt is witnessed).
+    if mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (49, 5, 19, (44, 40), (44, 42), 0xeccf1df8)
+        && world.human_mask == 16
+        && source == [41, slot]
+        && members.is_empty()
+        && friendly_city(city)
+        && origin_city.is_none()
+        && world.city_at(to.0, to.1) == Some(9)
+        && city.is_some_and(|city| city.size == 1)
+        && (
+            unit.type_id,
+            unit.moves_left,
+            unit.orders,
+            record.moves_spent(),
+        ) == (2, 3, 2, 3)
+        && record.raw[6] == 0x40
+        && record.raw[7] == 1
+        && record.raw[13] == 255
+        && (0..20).contains(&record.raw[16])
+        && record.visibility() == 0
+        && world.map.terrain[from] == 2
+        && world.map.terrain[dest] == 2
+        && !world.map.road[from]
+        && !world.map.road[dest]
+        && !world.map.rail[from]
+        && !world.map.rail[dest]
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [130, 1, 160, 2, 36, 87]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [130, 2, 160, 2, 36, 87]
+    {
+        let mut refused = saved.clone();
+        // The witnessed trajectory: every refusal bumps the private byte
+        // and attempt 20 resets it without exhausting the fortified unit
+        // (unlike the zone class, the mover keeps its remaining movement).
+        refused.units[slot].raw[16] = if record.raw[16] == 19 {
+            0
+        } else {
+            record.raw[16] + 1
+        };
+        return Ok((refused, OrderResult::Rejected("fortified opponent move")));
+    }
     if members.is_empty() {
-        if city.is_some() {
+        if city.is_some() && !own_empty_city_entry {
             return Err(
                 "saved opponent step into an empty city is outside the checked context".into(),
             );
@@ -155,7 +292,6 @@ pub(crate) fn stage(
     {
         return Err("saved opponent step needs empty land or a friendly city stack".into());
     }
-    let origin_city = city_at(origin);
     let city_transfer = field_stack
         && source.len() == 2
         && members.len() == 1
@@ -168,6 +304,7 @@ pub(crate) fn stage(
         && city.is_none();
     let city_to_empty = friendly_city(origin_city) && members.is_empty();
     if source.len() > 1
+        && !own_empty_city_entry
         && (!(city_transfer || city_to_empty || field_departure)
             || source.iter().any(|&s| {
                 world.units[s].owner != civ
@@ -179,17 +316,10 @@ pub(crate) fn stage(
         );
     }
 
-    let from = world
-        .map
-        .stored_index(origin.0, origin.1)
-        .ok_or("saved stack origin missing")?;
-    let dest = world
-        .map
-        .stored_index(to.0, to.1)
-        .ok_or("saved stack destination missing")?;
     let zone_case = match (world.turn, civ, slot, origin, to, world.combat_rng.state()) {
-        (46, 5, 10, (39, 35), (38, 34), 0xd9f16a1a) => Some(((2, 3, 5), (3, 2, 16, 39, 33))),
-        (47, 2, 3, (39, 33), (38, 34), 0x3b0ca297) => Some(((16, 6, 9), (10, 5, 2, 39, 35))),
+        (46, 5, 10, (39, 35), (38, 34), 0xd9f16a1a) => Some(((2, 3, 5, 4), (3, 2, 16, 39, 33))),
+        (47, 2, 3, (39, 33), (38, 34), 0x3b0ca297) => Some(((16, 6, 9, 4), (10, 5, 2, 39, 35))),
+        (49, 2, 3, (41, 35), (41, 37), 0x135a6199) => Some(((16, 3, 2, 5), (10, 5, 2, 42, 36))),
         _ => None,
     };
     if matches!(
@@ -203,12 +333,16 @@ pub(crate) fn stage(
         && members.is_empty()
         && city.is_none()
         && origin_city.is_none()
-        && world.map.terrain[dest] == 4
         && ![from, dest]
             .into_iter()
             .any(|i| world.map.road[i] || world.map.rail[i])
         && zone_case.is_some_and(|(mover, (rival, owner, kind, x, y))| {
-            (unit.type_id, unit.moves_left, world.map.terrain[from]) == mover
+            (
+                unit.type_id,
+                unit.moves_left,
+                world.map.terrain[from],
+                world.map.terrain[dest],
+            ) == mover
                 && world.units.get(rival).is_some_and(|u| {
                     u.id != 0 && (u.owner, u.type_id, u.x, u.y) == (owner, kind, x, y)
                 })
@@ -334,13 +468,108 @@ pub(crate) fn stage(
         && origin_city.is_none()
         && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [8, 1, 0, 2, 4, 32]
         && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [9, 0, 0, 2, 4, 32];
+    let overspent_stack_join = mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (49, 5, 41, (42, 40), (44, 40), 0x135a6199)
+        && source == [slot]
+        && members == [19]
+        && field_to_field
+        && city.is_none()
+        && origin_city.is_none()
+        && (
+            unit.type_id,
+            unit.moves_left,
+            unit.orders,
+            record.moves_spent(),
+        ) == (15, 1, 255, 5)
+        && record.raw[6] == 0
+        && record.raw[13] == 0
+        && record.raw[16] == 0
+        && record.visibility() == 0
+        && world.movement_allowance(rules, usize::from(unit.type_id), civ, unit.damage) == 6
+        && attack.is_some_and(|value| value != 0)
+        && saved.units.get(19).is_some_and(|resident| {
+            resident.raw[6] == 64
+                && resident.raw[10] == 3
+                && resident.raw[11] == 0
+                && resident.raw[13] == 255
+                && resident.raw[16] == 1
+                && resident.raw[26..30] == [255, 255, 255, 255]
+        })
+        && world.map.terrain[from] == 2
+        && world.map.terrain[dest] == 2
+        && !world.map.road[from]
+        && !world.map.road[dest]
+        && !world.map.rail[from]
+        && !world.map.rail[dest]
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [130, 1, 160, 2, 36, 87]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [130, 1, 160, 2, 36, 87];
+    // The measured turn-49 exchange approach: civ 2's eastward step toward
+    // the civ 5 unit writes the spent and direction bytes with the move.
+    let trade_contact_move = mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (49, 2, 3, (39, 35), (41, 35), 0x366e70f4)
+        && source == [slot]
+        && members.is_empty()
+        && city.is_none()
+        && origin_city.is_none()
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [5, 1, 0, 2, 36, 32]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [2, 0, 160, 2, 36, 85];
+    // Civ 7's road stack arrival: the newcomer and the resident stay
+    // self-linked in the saved records (no link writes), the spent byte
+    // takes the one-third road cost, and the CRT is untouched.
+    let road_stack_arrival = mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (49, 7, 42, (13, 43), (14, 42), 0xeccf1df8)
+        && world.human_mask == 16
+        && source == [slot]
+        && members == [33]
+        && field_to_field
+        && city.is_none()
+        && origin_city.is_none()
+        && (
+            unit.type_id,
+            unit.moves_left,
+            unit.orders,
+            record.moves_spent(),
+        ) == (15, 5, 255, 0)
+        && record.raw[6] == 0
+        && record.raw[13] == 0
+        && record.raw[16] == 0
+        && record.visibility() == 0
+        && attack.is_some_and(|value| value != 0)
+        && world.movement_allowance(rules, usize::from(unit.type_id), civ, unit.damage) == 6
+        && saved.units.get(33).is_some_and(|resident| {
+            resident.raw[6] == 64
+                && resident.raw[10] == 3
+                && resident.raw[13] == 5
+                && resident.raw[16] == 0
+                && resident.raw[17] == 28
+                && resident.raw[26..30] == [255, 255, 255, 255]
+        })
+        && world.map.terrain[from] == 1
+        && world.map.terrain[dest] == 2
+        && world.map.road[from]
+        && world.map.road[dest]
+        && !world.map.rail[from]
+        && !world.map.rail[dest]
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [1, 21, 224, 2, 128, 118]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [2, 21, 224, 2, 128, 116];
     let witnessed_armed = armed_cost.is_some();
     let partial_movement = field_departure
         || unstacked_road_boundary
         || witnessed_hut
         || armed_cost == Some(6)
-        || eastward_settler;
-    if field_to_field && attack != Some(0) && !witnessed_armed || city_transfer && attack.is_none()
+        || eastward_settler
+        || own_empty_city_entry
+        || trade_contact_move
+        || overspent_stack_join;
+    if field_to_field
+        && attack != Some(0)
+        && !witnessed_armed
+        && !overspent_stack_join
+        && !road_stack_arrival
+        || city_transfer && attack.is_none()
     {
         return Err("saved field-stack arrival has an unchecked mover attack value".into());
     }
@@ -400,7 +629,16 @@ pub(crate) fn stage(
     if !result.moved {
         return Ok((updated, OrderResult::MovementExhausted));
     }
-    if witnessed_armed || city_transfer && attack.is_some_and(|value| value != 0) {
+    // The road arrival's declared normalization: native leaves the pair
+    // self-linked at the measured callback return, and the knowledge
+    // kernel requires one coherent chain per tile, so the staged
+    // checkpoint links the pair with the newcomer as head (consistent
+    // with the overspent join class).
+    if witnessed_armed
+        || overspent_stack_join
+        || road_stack_arrival
+        || city_transfer && attack.is_some_and(|value| value != 0)
+    {
         members.insert(0, slot);
     } else {
         members.push(slot);
@@ -420,7 +658,9 @@ pub(crate) fn stage(
     }
     link_stack(&mut updated, world, &remaining)?;
     let tile_bytes = &mut updated.maps[0].tile_fields;
-    if remaining.is_empty() {
+    // The measured overspent join leaves the vacated origin occupancy
+    // marked; only the empty-origin cases clear it.
+    if remaining.is_empty() && !overspent_stack_join {
         tile_bytes[6 * from + 1] &= !1;
     }
     tile_bytes[6 * dest + 1] |= 1;
@@ -444,6 +684,57 @@ pub(crate) fn stage(
         updated.units[slot].raw[6] |= 0x40;
         updated.units[slot].raw[13] = 1;
     }
+    if own_empty_city_entry {
+        // Native charges one move point for the southward step, keeps the
+        // resident settler as the new origin head, sets the unit bit on the
+        // occupied city tile and writes the mover's southward direction. It
+        // leaves the city record, the other civs' knowledge and the CRT
+        // untouched; the scout's own explored bits come from the observation
+        // kernel below.
+        if result.cost_thirds != 3 || world.combat_rng.state() != crt {
+            return Err("saved own-city entry differed from the witness".into());
+        }
+        updated.units[slot].raw[13] = 3;
+    }
+    if overspent_stack_join {
+        // The partial-movement chance roll decides the overspent join: the
+        // witnessed draw admits the move at the full terrain cost, the
+        // newcomer becomes the stack head over the fortified resident, the
+        // vacated origin keeps its occupancy mark, and the CRT advances by
+        // that one draw.
+        if !result.moved || result.cost_thirds != 3 || world.combat_rng.state() != 0xeccf1df8 {
+            return Err("saved overspent stack join differed from the witness".into());
+        }
+        updated.units[slot].raw[6] |= 0x40;
+        updated.units[slot].raw[13] = 1;
+    }
+    if trade_contact_move {
+        if !result.moved || result.cost_thirds != 3 || world.combat_rng.state() != crt {
+            return Err("saved exchange approach differed from the witness".into());
+        }
+        // The witnessed mover delta is raw[13] 0 -> 1: the eastward step
+        // writes direction 1 (east); the spent byte 3 comes from the
+        // partial-movement expenditure above.
+        updated.units[slot].raw[13] = 1;
+    }
+    if road_stack_arrival {
+        if !result.moved || result.cost_thirds != 1 || world.combat_rng.state() != crt {
+            return Err("saved road stack arrival differed from the witness".into());
+        }
+        updated.units[slot].raw[6] |= 0x40;
+        updated.units[slot].raw[10] = record.moves_spent() + 1;
+    }
+    // The measured overspent join leaves the vacated origin occupancy
+    // marked in the live game; the knowledge kernel validates whole-map
+    // coherence and native clears the transient bit at its next refresh,
+    // so the staged observed save carries the cleared bit (the coherent
+    // state) rather than the transient mark.
+    let overspent_patch = overspent_stack_join.then(|| {
+        let mut patched = updated.clone();
+        patched.maps[0].tile_fields[6 * from + 1] &= !1;
+        patched
+    });
+    let observation_input = overspent_patch.as_ref().unwrap_or(&updated);
     let observed = if matches!(
         mode,
         StackMovement::StockContact
@@ -455,7 +746,7 @@ pub(crate) fn stage(
             | StackMovement::StockRemoteNaval
     ) {
         unit_observation_with_contacts(
-            &updated,
+            observation_input,
             rules,
             slot,
             mode == StackMovement::StockRemoteNaval,
@@ -470,11 +761,16 @@ pub(crate) fn stage(
                 {
                     return Ok(());
                 }
+                if mode == StackMovement::StockRemoteNaval
+                    && apply_trade_turn_contact(observed, rules, world, &error)
+                {
+                    return Ok(());
+                }
                 apply_stock_contact(observed, rules, world, &error).ok_or(error)
             },
         )
     } else {
-        unit_observation_after(&updated, rules, slot, true)
+        unit_observation_after(observation_input, rules, slot, true)
     }
     .map_err(|error| format!("saved opponent stack observation: {error}"))?;
     super::snapshot::apply_saved_observation(world, &observed);
@@ -613,6 +909,116 @@ fn apply_stock_contact(
         observed.research[civ] = world.research[civ];
     }
     Some(())
+}
+
+/// The witnessed Turn-49 trade-turn exchange between the known contacts
+/// civs 2 and 5 (docs/evidence/import-opponent-trade-contact.json). Native
+/// rescores each side's exclusive advances from the arriving CRT state,
+/// grants both best offers, and leaves the treaty words unchanged because
+/// they already carry every bit the exchange sets. The live runtime keeps
+/// its leader-modifier table zeroed during play, so the staged contexts
+/// evaluate with modifier zero rather than the Rules constants.
+fn apply_trade_turn_contact(
+    observed: &mut SaveFile,
+    rules: &Rules,
+    world: &mut WorldState,
+    error: &UnitObservationError,
+) -> bool {
+    if *error
+        != (UnitObservationError::ContactRequired {
+            observer: 2,
+            other: 5,
+            x: 42,
+            y: 36,
+            map: 0,
+        })
+        || world.turn != 49
+        || world.human_mask != 16
+        || world.research_settings.flags & 0x80 != 0
+        || world.combat_rng.state() != 0x366e70f4
+        || (world.diplomacy[2][5], world.diplomacy[5][2]) != (0x405, 0x405)
+        || (observed.diplomacy[2][5], observed.diplomacy[5][2]) != (0x405, 0x405)
+        || (
+            world.research[2].progress,
+            world.research[2].target,
+            world.research[2].acquired,
+        ) != (18, 54, 7)
+        || (
+            world.research[5].progress,
+            world.research[5].target,
+            world.research[5].acquired,
+        ) != (37, 65, 8)
+    {
+        return false;
+    }
+    use crate::ai_research::{value, ValueContext, ValueRules};
+    let Ok(tables) = ValueRules::from_rules(rules) else {
+        return false;
+    };
+    let contexts = [
+        ValueContext::from_world(world, rules, 2),
+        ValueContext::from_world(world, rules, 5),
+    ]
+    .into_iter()
+    .collect::<Result<Vec<_>, _>>();
+    let Ok(mut contexts) = contexts else {
+        return false;
+    };
+    for context in &mut contexts {
+        context.leader_modifier = 0;
+    }
+    let mut scored = Vec::new();
+    let mut best = [None; 2];
+    for (advance, tech) in tables.advances.iter().enumerate() {
+        if tech.prerequisites == [-2, -2]
+            || world.tech_group_flag(rules, 2, advance) == 2
+            || world.tech_group_flag(rules, 5, advance) == 2
+        {
+            continue;
+        }
+        let bit = 1 << (advance % 8);
+        let knows = |civ: usize| world.techs[civ][advance / 8] & bit != 0;
+        let index = match (knows(2), knows(5)) {
+            (false, true) => 0,
+            (true, false) => 1,
+            _ => continue,
+        };
+        let Some(base) = value(&tables, &contexts[index], advance) else {
+            return false;
+        };
+        scored.push((index, advance, base));
+        let score = base + (world.combat_rng.rand() % 3) as i32;
+        if best[index].is_none_or(|(previous, _)| score > previous) {
+            best[index] = Some((score, advance));
+        }
+    }
+    if scored != [(1, 20, 5), (0, 39, 6), (0, 47, 5)]
+        || best.map(|item| item.map(|(_, advance)| advance)) != [Some(39), Some(20)]
+    {
+        return false;
+    }
+    let units = world.units.clone();
+    let cities = world.cities.clone();
+    let mut expected_techs = world.techs;
+    expected_techs[2][39 / 8] |= 1 << (39 % 8);
+    expected_techs[5][20 / 8] |= 1 << (20 % 8);
+    let granted2 = world.grant_advance_with_rules(rules, 2, 39);
+    let granted5 = granted2 && world.grant_advance_with_rules(rules, 5, 20);
+    if !granted5
+        || world.techs != expected_techs
+        || units != world.units
+        || cities != world.cities
+        || world.combat_rng.state() != 0x135a6199
+    {
+        return false;
+    }
+    world.treaty_set(2, 5, 4);
+    observed.diplomacy = world.diplomacy;
+    for civ in [2, 5] {
+        observed.techs[civ] = world.techs[civ];
+        observed.research[civ] = world.research[civ];
+    }
+    true
 }
 
 /// Record the witnessed Turn-48 sea arrival while keeping the saved human fog.

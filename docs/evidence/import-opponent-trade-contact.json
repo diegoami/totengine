@@ -1,0 +1,842 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "founding_evidence": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "trade_contact": {
+    "arguments": [
+      3,
+      1,
+      3
+    ],
+    "return": 1,
+    "crt_state": 913207540,
+    "crt_after_exchange": 324690329,
+    "founding_setup": {
+      "city_slots": [
+        9,
+        10
+      ],
+      "explored_tiles": 59
+    },
+    "before": [
+      {
+        "slot": 3,
+        "position": [
+          39,
+          35
+        ],
+        "previous": -1,
+        "next": -1,
+        "spent": 0,
+        "direction": 0,
+        "visibility": 32
+      },
+      {
+        "slot": 10,
+        "position": [
+          42,
+          36
+        ],
+        "previous": -1,
+        "next": -1,
+        "spent": 9,
+        "direction": 5,
+        "visibility": 0
+      }
+    ],
+    "after": [
+      {
+        "slot": 3,
+        "position": [
+          41,
+          35
+        ],
+        "previous": -1,
+        "next": -1,
+        "spent": 3,
+        "direction": 1,
+        "visibility": 32
+      },
+      {
+        "slot": 10,
+        "position": [
+          42,
+          36
+        ],
+        "previous": -1,
+        "next": -1,
+        "spent": 9,
+        "direction": 5,
+        "visibility": 4
+      }
+    ],
+    "mover_raw_changes": [
+      [
+        0,
+        39,
+        41
+      ],
+      [
+        10,
+        0,
+        3
+      ],
+      [
+        13,
+        0,
+        1
+      ]
+    ],
+    "resident_raw_changes": [
+      [
+        11,
+        0,
+        4
+      ]
+    ],
+    "tile_changes": [
+      [
+        8290,
+        32,
+        36
+      ],
+      [
+        8515,
+        1,
+        0
+      ],
+      [
+        8521,
+        0,
+        1
+      ],
+      [
+        8525,
+        85,
+        37
+      ]
+    ],
+    "cache_changes": [
+      [
+        2,
+        1420,
+        0,
+        1
+      ],
+      [
+        2,
+        1461,
+        0,
+        1
+      ],
+      [
+        2,
+        1500,
+        0,
+        1
+      ]
+    ],
+    "civ_row_changes": {
+      "2": [
+        [
+          2,
+          24,
+          7,
+          8
+        ],
+        [
+          2,
+          100,
+          16,
+          144
+        ],
+        [
+          2,
+          163,
+          255,
+          5
+        ]
+      ],
+      "5": [
+        [
+          5,
+          24,
+          8,
+          9
+        ],
+        [
+          5,
+          98,
+          0,
+          16
+        ],
+        [
+          5,
+          144,
+          255,
+          2
+        ],
+        [
+          5,
+          2850,
+          23,
+          42
+        ],
+        [
+          5,
+          2852,
+          47,
+          36
+        ],
+        [
+          5,
+          2857,
+          254,
+          2
+        ],
+        [
+          5,
+          2858,
+          41,
+          23
+        ],
+        [
+          5,
+          2860,
+          37,
+          47
+        ],
+        [
+          5,
+          2864,
+          21,
+          1
+        ],
+        [
+          5,
+          2865,
+          255,
+          254
+        ],
+        [
+          5,
+          2866,
+          42,
+          41
+        ],
+        [
+          5,
+          2868,
+          38,
+          37
+        ],
+        [
+          5,
+          2874,
+          41,
+          42
+        ],
+        [
+          5,
+          2876,
+          37,
+          38
+        ],
+        [
+          5,
+          2880,
+          255,
+          21
+        ]
+      ]
+    },
+    "mask_table_changes": [
+      [
+        20,
+        4,
+        36
+      ],
+      [
+        39,
+        96,
+        100
+      ]
+    ],
+    "trade_calls": 1,
+    "grants": [
+      [
+        2,
+        39,
+        5,
+        0,
+        0
+      ],
+      [
+        5,
+        20,
+        2,
+        0,
+        0
+      ]
+    ],
+    "crt_draws": 3,
+    "draw_values": [
+      913207540,
+      95951847,
+      706520846
+    ],
+    "candidate_scores": [
+      [
+        5,
+        20,
+        5,
+        5
+      ],
+      [
+        2,
+        39,
+        6,
+        7
+      ],
+      [
+        2,
+        47,
+        5,
+        6
+      ]
+    ],
+    "leader_modifiers_live_zero": true,
+    "explored_tiles": 59,
+    "viewer_memory_unchanged": true,
+    "observation_calls": [
+      [
+        3,
+        1
+      ]
+    ],
+    "host_substitutes": [
+      "PeekMessageA",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect",
+      "SetRect"
+    ],
+    "display_substitutes": [
+      "00467d19"
+    ],
+    "zone_refusal": {
+      "arguments": [
+        3,
+        3,
+        3
+      ],
+      "return": 0,
+      "mover_raw_changes": [
+        [
+          16,
+          0,
+          1
+        ]
+      ],
+      "tile_changes": [],
+      "crt_unchanged": true,
+      "explored_tiles": 59,
+      "observation_calls": []
+    },
+    "fortified_refusal": {
+      "arguments": [
+        19,
+        3,
+        3
+      ],
+      "return": 0,
+      "mover_raw_changes": [
+        [
+          6,
+          0,
+          64
+        ],
+        [
+          16,
+          0,
+          1
+        ]
+      ],
+      "tile_changes": [],
+      "crt_unchanged": true,
+      "explored_tiles": 59,
+      "observation_calls": [],
+      "city_slot": 9
+    },
+    "fortified_retry": {
+      "arguments": [
+        19,
+        3,
+        3
+      ],
+      "return": 0,
+      "mover_raw_changes": [
+        [
+          16,
+          1,
+          2
+        ]
+      ],
+      "tile_changes": [],
+      "crt_state": 3972996600,
+      "crt_unchanged": true,
+      "explored_tiles": 59,
+      "observation_calls": [],
+      "trajectory": [
+        [
+          3,
+          2,
+          3,
+          3,
+          0
+        ],
+        [
+          4,
+          3,
+          4,
+          3,
+          0
+        ],
+        [
+          5,
+          4,
+          5,
+          3,
+          0
+        ],
+        [
+          6,
+          5,
+          6,
+          3,
+          0
+        ],
+        [
+          7,
+          6,
+          7,
+          3,
+          0
+        ],
+        [
+          8,
+          7,
+          8,
+          3,
+          0
+        ],
+        [
+          9,
+          8,
+          9,
+          3,
+          0
+        ],
+        [
+          10,
+          9,
+          10,
+          3,
+          0
+        ],
+        [
+          11,
+          10,
+          11,
+          3,
+          0
+        ],
+        [
+          12,
+          11,
+          12,
+          3,
+          0
+        ],
+        [
+          13,
+          12,
+          13,
+          3,
+          0
+        ],
+        [
+          14,
+          13,
+          14,
+          3,
+          0
+        ],
+        [
+          15,
+          14,
+          15,
+          3,
+          0
+        ],
+        [
+          16,
+          15,
+          16,
+          3,
+          0
+        ],
+        [
+          17,
+          16,
+          17,
+          3,
+          0
+        ],
+        [
+          18,
+          17,
+          18,
+          3,
+          0
+        ],
+        [
+          19,
+          18,
+          19,
+          3,
+          0
+        ],
+        [
+          20,
+          19,
+          0,
+          3,
+          0
+        ],
+        [
+          21,
+          0,
+          1,
+          3,
+          0
+        ],
+        [
+          22,
+          1,
+          2,
+          3,
+          0
+        ]
+      ],
+      "trajectory_scope": "attempts 3-22 after the measured second refusal; attempt 20 resets the private byte without exhausting the fortified unit"
+    },
+    "overspent_stack_join": {
+      "arguments": [
+        41,
+        1,
+        3
+      ],
+      "return": 1,
+      "mover_raw_changes": [
+        [
+          0,
+          42,
+          44
+        ],
+        [
+          6,
+          0,
+          64
+        ],
+        [
+          10,
+          5,
+          8
+        ],
+        [
+          13,
+          0,
+          1
+        ],
+        [
+          28,
+          255,
+          19
+        ],
+        [
+          29,
+          255,
+          0
+        ]
+      ],
+      "resident_raw_changes": [
+        [
+          26,
+          255,
+          41
+        ],
+        [
+          27,
+          255,
+          0
+        ]
+      ],
+      "tile_changes": [],
+      "crt_state": 324690329,
+      "crt_after": 3972996600,
+      "partial_movement_roll": true,
+      "stack_head": 41,
+      "cache_changes": [
+        [
+          5,
+          1622,
+          0,
+          1
+        ]
+      ],
+      "explored_tiles": 59,
+      "observation_calls": [
+        [
+          41,
+          1
+        ]
+      ]
+    },
+    "road_stack_arrival": {
+      "arguments": [
+        42,
+        0,
+        3
+      ],
+      "return": 1,
+      "mover_raw_changes": [
+        [
+          0,
+          13,
+          14
+        ],
+        [
+          2,
+          43,
+          42
+        ],
+        [
+          6,
+          0,
+          64
+        ],
+        [
+          10,
+          0,
+          1
+        ]
+      ],
+      "resident_raw_changes": [],
+      "tile_changes": [
+        [
+          10123,
+          20,
+          21
+        ],
+        [
+          10357,
+          21,
+          20
+        ]
+      ],
+      "cache_changes": [
+        [
+          7,
+          1687,
+          20,
+          21
+        ],
+        [
+          7,
+          1726,
+          21,
+          20
+        ]
+      ],
+      "crt_state": 3972996600,
+      "crt_unchanged": true,
+      "self_linked_pair": true,
+      "road_cost_thirds": 1,
+      "explored_tiles": 59,
+      "observation_calls": [
+        [
+          42,
+          1
+        ]
+      ]
+    }
+  },
+  "scope": "Measure the Turn-49 trade-turn exchange and the following zone refusal.\n\nReuse both measured foundings so the valuation context matches the\nchecked engine's city list, then supply the engine's knowledge rows,\ntreaties, mask table, research rows, caches and CRT for civ 2's eastward\napproach to the civ 5 unit at (42, 36). Native movement runs through\nreturn with the closed-panel substitutions; the trade-turn exchange\ngrants both sides and the mover's next southward order is refused by the\nzone of control without spending movement."
+}

@@ -299,6 +299,11 @@ impl Client {
                         Some("13"),
                         Some("profile"),
                         Some(ScenarioInitializer::SAVED_OPPONENT_ARMED_STACK_V2_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("14"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_ZONE_PROFILE)
                     )
                 )
             });

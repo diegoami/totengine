@@ -698,3 +698,27 @@ checked replay reaches turn 46 with all 59 tiles, and the player's
 Phalanx can leave its city again on the refreshed budget. The inspector
 replays the resulting checkpoint. Schema 12 preserves its earlier
 fallback and checkpoint behavior.
+
+
+### Saved observation through turn 47
+
+The [prepared zone-of-control controls](evidence/import-opponent-zone.json)
+cover two opposing approaches to (38, 34). The native callback refuses
+both while the rival occupies the adjacent square. Moving that rival
+away allows the first movement and charges six thirds. At refusal
+native increments opaque byte 16 of the moving unit record. The first
+19 attempts leave the movement budget intact. Attempt 20 resets the
+byte and spends the six remaining thirds. The unit stays on its
+original square, and the CRT, map and human knowledge stay intact.
+
+Initializer schema 14 reproduces the witnessed refusals, mirrors the
+private byte, and feeds the rejection into the checked opponent policy.
+The witnessed route reaches turn 47 with the original 59 tiles. The
+player can re-enter the occupied city on the refreshed budget and
+restore the resulting checkpoint. Schema 13 retains the earlier
+fallback. Faithful direct entry remains open.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_zone_check.py --out /tmp/import-opponent-zone.json
+cmp docs/evidence/import-opponent-zone.json /tmp/import-opponent-zone.json
+```

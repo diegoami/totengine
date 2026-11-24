@@ -232,6 +232,31 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_opponent_zone_refusal_leaves_fog_and_only_increments_private_byte(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-zone.json').read_text())
+        contact = json.loads((ROOT / 'docs/evidence/import-opponent-contact.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], contact[key])
+        cases = report['cases']
+        for name, slot in (('adjacent_rival', 10), ('reverse_approach', 3)):
+            case = cases[name]
+            self.assertEqual(case['return'], 0)
+            self.assertEqual(case['after'], case['before'])
+            self.assertEqual(case['unit_record_changes'], [[slot, 16, 0, 1]])
+            self.assertTrue(case['other_captured_regions_unchanged'])
+            self.assertTrue(case['viewer_memory_unchanged'])
+            self.assertEqual(case['explored_tiles'], 59)
+        reverse = cases['reverse_approach']
+        self.assertEqual(reverse['crt_state'], 0x3b0ca297)
+        self.assertEqual(reverse['repeat']['additional_refusals'], 19)
+        self.assertEqual(reverse['repeat']['last_unit_byte'], 0)
+        self.assertEqual(reverse['repeat']['spent_after'], 6)
+        self.assertTrue(reverse['repeat']['other_captured_regions_unchanged'])
+        control = cases['distant_rival']
+        self.assertEqual(control['return'], 1)
+        self.assertEqual(control['after']['position'], [38, 34])
+        self.assertEqual(control['after']['spent'], 6)
+
     def test_native_armed_arrival_is_a_head_insertion(self):
         report = json.loads((ROOT / 'docs/evidence/import-opponent-armed-stack.json').read_text())
         hut = json.loads((ROOT / 'docs/evidence/import-opponent-hut.json').read_text())

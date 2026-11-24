@@ -368,7 +368,13 @@ Schema 13 retains the saved view through the next armed arrival
 at (9, 49) and the native between-trade-turn encounter between civs
 2 and 5. The checked route reaches turn 46 with 59 explored tiles.
 The inspector exercises another city departure and restores that
-checkpoint. Faithful entry and broader continuation remain open.
+checkpoint. The [prepared native refusal controls](evidence/import-opponent-zone.json)
+then establish the two witnessed approaches to the same field square as
+refused movement. The reverse-approach control exhausts the mover
+and resets its private refusal byte on attempt 20. Checked schema 14
+retains that behavior and advances to turn 47 with all 59 tiles. The
+inspector checks the city return and another restore. Faithful entry
+and broader continuation remain open.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

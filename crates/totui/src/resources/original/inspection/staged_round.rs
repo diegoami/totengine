@@ -641,7 +641,7 @@ pub(super) fn check_saved_human_production(
     let rules = &capture.resources().rules;
     let events = files.events.clone().map(EventEngine::new);
     let identity = capture.identity();
-    let mut session = HumanSession::scenario_initialized_saved_opponent_armed_stack_v2(
+    let mut session = HumanSession::scenario_initialized_saved_opponent_zone(
         ScenarioInput {
             path: &files.path,
             snapshot: &files.bytes,
@@ -898,6 +898,38 @@ pub(super) fn check_saved_human_production(
     if replay.view() != post_departure || replay.checkpoint(identity) != departure_checkpoint {
         return Err("checked turn-46 city departure did not replay".into());
     }
+    submit(&mut contact, Command::EndTurn)?;
+    contact.advance(256);
+    let fresh = contact.view();
+    if fresh.phase != Phase::Human
+        || fresh.observation.turn != 47
+        || fresh.observation.seen != post_departure.observation.seen
+    {
+        return Err("checked continuation did not retain saved observation into turn 47".into());
+    }
+    let returned = submit(
+        &mut contact,
+        Command::Move {
+            unit: actor,
+            to: (53, 9),
+        },
+    )?;
+    let post_return = contact.view();
+    if returned.result != Some(OrderResult::Moved)
+        || post_return.observation.seen != fresh.observation.seen
+        || !post_return
+            .observation
+            .units
+            .iter()
+            .any(|u| u.index == actor.slot && (u.x, u.y, u.moves_left) == (53, 9, 0))
+    {
+        return Err("checked turn-47 city return differs from the saved movement".into());
+    }
+    let return_checkpoint = contact.checkpoint(identity);
+    let restored = restore(&return_checkpoint)?;
+    if restored.view() != post_return || restored.checkpoint(identity) != return_checkpoint {
+        return Err("checked turn-47 city return did not replay".into());
+    }
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
@@ -909,6 +941,7 @@ pub(super) fn check_saved_human_production(
         "hut_checkpoint_replays": true,
         "turn_45_city_return_replays": true,
         "turn_46_city_departure_replays": true,
+        "turn_47_city_return_replays": true,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],

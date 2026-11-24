@@ -97,6 +97,7 @@ pub(crate) enum StackMovement {
     StockHut,
     StockArmed,
     StockArmedTurn46,
+    StockZone,
 }
 
 /// Execute ordinary land movement and update the affected stack links.
@@ -184,6 +185,43 @@ pub(crate) fn stage(
         .map
         .stored_index(to.0, to.1)
         .ok_or("saved stack destination missing")?;
+    let zone_case = match (world.turn, civ, slot, origin, to, world.combat_rng.state()) {
+        (46, 5, 10, (39, 35), (38, 34), 0xd9f16a1a) => Some(((2, 3, 5), (3, 2, 16, 39, 33))),
+        (47, 2, 3, (39, 33), (38, 34), 0x3b0ca297) => Some(((16, 6, 9), (10, 5, 2, 39, 35))),
+        _ => None,
+    };
+    if mode == StackMovement::StockZone
+        && world.human_mask == 16
+        && (world.diplomacy[5][2], world.diplomacy[2][5]) == (0x405, 0x405)
+        && unit.orders == 255
+        && (record.raw[16] == 0 || civ == 2 && record.raw[16] < 20)
+        && source == [slot]
+        && members.is_empty()
+        && city.is_none()
+        && origin_city.is_none()
+        && world.map.terrain[dest] == 4
+        && ![from, dest]
+            .into_iter()
+            .any(|i| world.map.road[i] || world.map.rail[i])
+        && zone_case.is_some_and(|(mover, (rival, owner, kind, x, y))| {
+            (unit.type_id, unit.moves_left, world.map.terrain[from]) == mover
+                && world.units.get(rival).is_some_and(|u| {
+                    u.id != 0 && (u.owner, u.type_id, u.x, u.y) == (owner, kind, x, y)
+                })
+        })
+    {
+        let mut refused = saved.clone();
+        let raw = &mut refused.units[slot].raw;
+        // The twentieth native refusal resets this byte and exhausts the mover.
+        if raw[16] == 19 {
+            raw[16] = 0;
+            raw[10] = 6;
+            world.units[slot].moves_left = 0;
+            return Ok((refused, OrderResult::MovementExhausted));
+        }
+        raw[16] += 1;
+        return Ok((refused, OrderResult::Rejected("zone of control")));
+    }
     let unstacked_road_boundary = field_stack
         && source.len() == 1
         && members.is_empty()
@@ -196,7 +234,10 @@ pub(crate) fn stage(
     let witnessed_hut =
         hut && matches!(
             mode,
-            StackMovement::StockHut | StackMovement::StockArmed | StackMovement::StockArmedTurn46
+            StackMovement::StockHut
+                | StackMovement::StockArmed
+                | StackMovement::StockArmedTurn46
+                | StackMovement::StockZone
         ) && (world.turn, civ, slot, origin, to) == (44, 6, 37, (28, 12), (27, 13))
             && world.human_mask == 16
             && world.combat_rng.state() == 0x2413ad1c
@@ -218,7 +259,7 @@ pub(crate) fn stage(
     let attack = rules.unit_attack(usize::from(unit.type_id));
     let armed_rules = matches!(
         mode,
-        StackMovement::StockArmed | StackMovement::StockArmedTurn46
+        StackMovement::StockArmed | StackMovement::StockArmedTurn46 | StackMovement::StockZone
     ) && field_to_field
         && (civ, slot) == (7, 24)
         && source == [24]
@@ -230,8 +271,10 @@ pub(crate) fn stage(
         match (world.turn, origin, to, world.combat_rng.state()) {
             (44, (9, 45), (9, 47), 0x44bc0476) => Some(3),
             (45, (9, 47), (9, 49), 0x34bba6a0)
-                if mode == StackMovement::StockArmedTurn46
-                    && world.movement_allowance(rules, 2, civ, unit.damage) == 3 =>
+                if matches!(
+                    mode,
+                    StackMovement::StockArmedTurn46 | StackMovement::StockZone
+                ) && world.movement_allowance(rules, 2, civ, unit.damage) == 3 =>
             {
                 Some(6)
             }
@@ -346,10 +389,13 @@ pub(crate) fn stage(
             | StackMovement::StockHut
             | StackMovement::StockArmed
             | StackMovement::StockArmedTurn46
+            | StackMovement::StockZone
     ) {
         unit_observation_with_contacts(&updated, rules, slot, |observed, error| {
-            if mode == StackMovement::StockArmedTurn46
-                && apply_known_opponent_contact(observed, world, &error)
+            if matches!(
+                mode,
+                StackMovement::StockArmedTurn46 | StackMovement::StockZone
+            ) && apply_known_opponent_contact(observed, world, &error)
             {
                 return Ok(());
             }

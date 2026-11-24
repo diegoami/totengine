@@ -492,5 +492,31 @@
       "SetRect": 162
     }
   },
+  "known_turn_46": {
+    "turn": 46,
+    "prior_treaty_words": [
+      1029,
+      1029
+    ],
+    "treaty_words": [
+      1029,
+      1029
+    ],
+    "trade_calls": 0,
+    "first_grant_arguments": null,
+    "stopped_at": "00100000",
+    "explored_tiles": 59,
+    "unit_city_map_and_viewer_memory_unchanged": true,
+    "pair": [
+      2,
+      5
+    ],
+    "contact": [
+      39,
+      35,
+      0
+    ],
+    "crt_state": 3656477210
+  },
   "scope": "Measure the native contact prefix for the prepared turn-44 opponent pair.\n\nLoad the pinned snapshot and stock Rules and valuation tables, then set the engine\npair, treaty words, turn, and single-player viewer. The scenario gate\nis clear. Native callees run until return or the first advance grant.\nThe full control supplies a minimal exception-chain page and handles\nSetRect as a memory write. Full controls include the CRT state from\nthe checked engine checkpoint immediately before the encounter."
 }

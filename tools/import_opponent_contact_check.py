@@ -34,7 +34,7 @@ CRT = 0x5E2590
 ENGINE_CONTACT_CRT = 0xD766CE46
 
 
-def encounter(home, binary, path, rules, turn, known, *, complete=False, crt_seed=None):
+def encounter(home, binary, path, rules, turn, known, *, complete=False, crt_seed=None, pair=PAIR, location=CONTACT):
     original, viewer, _, regions, _ = prepare(home, binary, path, exhaust=False)
     frame(original)
     original.write(FRAME - 0x1990, 1, '<I')
@@ -52,7 +52,7 @@ def encounter(home, binary, path, rules, turn, known, *, complete=False, crt_see
     original.write(0x67A6E0, viewer, '<I')
     if crt_seed is not None:
         original.write(CRT, crt_seed, '<I')
-    offsets = [a * STRIDE + 40 + 4 * b for a, b in (PAIR, PAIR[::-1])]
+    offsets = [a * STRIDE + 40 + 4 * b for a, b in (pair, pair[::-1])]
     for offset in offsets:
         original.write(CIV + offset, known, '<I')
     width = read(original, 0x6705A0, '<h')
@@ -60,7 +60,7 @@ def encounter(home, binary, path, rules, turn, known, *, complete=False, crt_see
     area = width * height // 2
     memory = read(original, 0x5DEAD0 + 4 * viewer, '<I')
     regions.extend([(0x700000, 6 * area), (memory, area)])
-    original.cpu.mem_write(0x108000, struct.pack('<6i', RETURN, *PAIR, *CONTACT))
+    original.cpu.mem_write(0x108000, struct.pack('<6i', RETURN, *pair, *location))
     original.cpu.reg_write(original.sp, 0x108000)
     before = [bytes(original.cpu.mem_read(address, length)) for address, length in regions]
     trade_calls = 0
@@ -69,7 +69,7 @@ def encounter(home, binary, path, rules, turn, known, *, complete=False, crt_see
     tech_masks_before = bytes(original.cpu.mem_read(0x6076D2, 100))
     crt_before = read(original, CRT, '<I')
     crt_draws = []
-    masked_techs = [list(before[0][seat * STRIDE + 96:seat * STRIDE + 109]) for seat in PAIR]
+    masked_techs = [list(before[0][seat * STRIDE + 96:seat * STRIDE + 109]) for seat in pair]
     scores = []
     base_value = None
 
@@ -81,7 +81,7 @@ def encounter(home, binary, path, rules, turn, known, *, complete=False, crt_see
             base_value = cpu.reg_read(UC_X86_REG_EAX)
         if at in (0x5265B9, 0x526638):
             ebp = cpu.reg_read(UC_X86_REG_EBP)
-            recipient = PAIR[int(at == 0x526638)]
+            recipient = pair[int(at == 0x526638)]
             scores.append([recipient, read(original, ebp - 0x18),
                            base_value, cpu.reg_read(UC_X86_REG_EBX)])
         if at == TRADE:
@@ -112,7 +112,7 @@ def encounter(home, binary, path, rules, turn, known, *, complete=False, crt_see
     after = [bytes(original.cpu.mem_read(address, length)) for address, length in regions]
     assert after[1:] == before[1:]
     expected = bytearray(before[0])
-    treaty = 0x4405 if complete else (0x4401 if not known else 0x401)
+    treaty = 0x4405 if complete else (0x4401 if not known else known | 0x401)
     for offset in offsets:
         struct.pack_into('<I', expected, offset, treaty)
     result = {
@@ -126,7 +126,7 @@ def encounter(home, binary, path, rules, turn, known, *, complete=False, crt_see
         assert stop == RETURN
         regions_changed = [(i // STRIDE, i % STRIDE, a, b)
                            for i, (a, b) in enumerate(zip(before[0], after[0], strict=True)) if a != b]
-        assert {seat for seat, _, _, _ in regions_changed} == set(PAIR)
+        assert {seat for seat, _, _, _ in regions_changed} == set(pair)
         assert [read(original, CIV + offset) for offset in offsets] == [treaty, treaty]
         assert len(grants) == 2
         tech_masks_after = bytes(original.cpu.mem_read(0x6076D2, 100))
@@ -141,6 +141,8 @@ def encounter(home, binary, path, rules, turn, known, *, complete=False, crt_see
         )
     else:
         assert after[0] == expected
+        if stop == RETURN:
+            assert read(original, CRT, '<I') == crt_before and not crt_draws
     return result
 
 
@@ -169,9 +171,15 @@ def main():
     complete = encounter(*context, 44, 0, complete=True)
     seeded = encounter(*context, 44, 0, complete=True, crt_seed=ENGINE_CONTACT_CRT)
     assert complete['grant_arguments'] == seeded['grant_arguments'] == [[5, 39, 6, 0, 0], [6, 46, 5, 0, 0]]
+    known_turn_46 = encounter(
+        *context, 46, 0x405, crt_seed=0xd9f16a1a, pair=(2, 5), location=(39, 35, 0),
+    )
+    assert known_turn_46['stopped_at'] == '00100000'
+    assert known_turn_46['trade_calls'] == 0
+    known_turn_46.update(pair=[2, 5], contact=[39, 35, 0], crt_state=0xd9f16a1a)
     report = {'schema': 1, **{key: reference[key] for key in ('source', 'rules', 'binary_sha256')},
               'pair': PAIR, 'contact': CONTACT, 'cases': cases, 'complete': complete,
-              'engine_seed_control': seeded, 'scope': __doc__.strip()}
+              'engine_seed_control': seeded, 'known_turn_46': known_turn_46, 'scope': __doc__.strip()}
     with args.out.open('x') as output:
         output.write(json.dumps(report, indent=2) + '\n')
 

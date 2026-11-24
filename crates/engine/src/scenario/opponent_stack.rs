@@ -96,6 +96,7 @@ pub(crate) enum StackMovement {
     StockContact,
     StockHut,
     StockArmed,
+    StockArmedTurn46,
 }
 
 /// Execute ordinary land movement and update the affected stack links.
@@ -192,36 +193,56 @@ pub(crate) fn stage(
         && !world.map.rail[from]
         && !world.map.rail[dest];
     let hut = world.map.hut_at(to.0, to.1);
-    let witnessed_hut = hut
-        && matches!(mode, StackMovement::StockHut | StackMovement::StockArmed)
-        && (world.turn, civ, slot, origin, to) == (44, 6, 37, (28, 12), (27, 13))
-        && world.human_mask == 16
-        && world.combat_rng.state() == 0x2413ad1c
-        && (unit.type_id, unit.moves_left, unit.orders) == (0, 3, 12)
-        && world.movement_allowance(rules, 0, civ, unit.damage) == 3
-        && (
-            world.research[6].progress,
-            world.research[6].target,
-            world.research[6].acquired,
-        ) == (12, 1, 7)
-        && source.len() == 1
-        && members.is_empty();
-    let partial_movement = field_departure || unstacked_road_boundary || witnessed_hut;
+    let witnessed_hut =
+        hut && matches!(
+            mode,
+            StackMovement::StockHut | StackMovement::StockArmed | StackMovement::StockArmedTurn46
+        ) && (world.turn, civ, slot, origin, to) == (44, 6, 37, (28, 12), (27, 13))
+            && world.human_mask == 16
+            && world.combat_rng.state() == 0x2413ad1c
+            && (unit.type_id, unit.moves_left, unit.orders) == (0, 3, 12)
+            && world.movement_allowance(rules, 0, civ, unit.damage) == 3
+            && (
+                world.research[6].progress,
+                world.research[6].target,
+                world.research[6].acquired,
+            ) == (12, 1, 7)
+            && source.len() == 1
+            && members.is_empty();
+
     if hut && !witnessed_hut {
         return Err("saved stack move cannot enter an unwitnessed hut".into());
     }
     let field_to_field =
         field_stack && !members.is_empty() && city.is_none() && origin_city.is_none();
     let attack = rules.unit_attack(usize::from(unit.type_id));
-    let witnessed_armed = mode == StackMovement::StockArmed
-        && field_to_field
-        && (world.turn, civ, slot, origin, to) == (44, 7, 24, (9, 45), (9, 47))
+    let armed_rules = matches!(
+        mode,
+        StackMovement::StockArmed | StackMovement::StockArmedTurn46
+    ) && field_to_field
+        && (civ, slot) == (7, 24)
         && source == [24]
         && members == [4]
         && (unit.type_id, unit.orders, unit.moves_left) == (2, 2, 3)
         && attack.is_some_and(|value| value != 0)
-        && world.units[4].type_id == 0
-        && world.combat_rng.state() == 0x44bc0476;
+        && world.units[4].type_id == 0;
+    let armed_cost = if armed_rules {
+        match (world.turn, origin, to, world.combat_rng.state()) {
+            (44, (9, 45), (9, 47), 0x44bc0476) => Some(3),
+            (45, (9, 47), (9, 49), 0x34bba6a0)
+                if mode == StackMovement::StockArmedTurn46
+                    && world.movement_allowance(rules, 2, civ, unit.damage) == 3 =>
+            {
+                Some(6)
+            }
+            _ => None,
+        }
+    } else {
+        None
+    };
+    let witnessed_armed = armed_cost.is_some();
+    let partial_movement =
+        field_departure || unstacked_road_boundary || witnessed_hut || armed_cost == Some(6);
     if field_to_field && attack != Some(0) && !witnessed_armed || city_transfer && attack.is_none()
     {
         return Err("saved field-stack arrival has an unchecked mover attack value".into());
@@ -244,13 +265,14 @@ pub(crate) fn stage(
             .movement_allowance(rules, usize::from(unit.type_id), civ, unit.damage)
             .saturating_sub(unit.moves_left)
     });
+    let crt = world.combat_rng.state();
     let result = world.move_unit_with_routes(rules, slot, to.0, to.1, route, partial_movement);
     if result.battle.is_some() || (result.hut && !witnessed_hut) || result.zoc_ended {
         return Err("saved stack move did not resolve as ordinary movement".into());
     }
-    if witnessed_armed
-        && (!result.moved || result.cost_thirds != 3 || world.combat_rng.state() != 0x44bc0476)
-    {
+    if armed_cost.is_some_and(|cost| {
+        !result.moved || result.cost_thirds != cost || world.combat_rng.state() != crt
+    }) {
         return Err("saved armed arrival differed from the witnessed movement".into());
     }
     if witnessed_hut
@@ -313,16 +335,24 @@ pub(crate) fn stage(
         updated.units[slot].raw[6] |= 0x40;
         updated.units[slot].raw[13] = 4;
     }
-    if witnessed_armed {
+    if let Some(cost) = armed_cost {
         updated.units[slot].raw[6] |= 0x40;
-        updated.units[slot].raw[10] = 3;
+        updated.units[slot].raw[10] = cost as u8;
         updated.units[slot].raw[13] = 3;
     }
     let observed = if matches!(
         mode,
-        StackMovement::StockContact | StackMovement::StockHut | StackMovement::StockArmed
+        StackMovement::StockContact
+            | StackMovement::StockHut
+            | StackMovement::StockArmed
+            | StackMovement::StockArmedTurn46
     ) {
         unit_observation_with_contacts(&updated, rules, slot, |observed, error| {
+            if mode == StackMovement::StockArmedTurn46
+                && apply_known_opponent_contact(observed, world, &error)
+            {
+                return Ok(());
+            }
             apply_stock_contact(observed, rules, world, &error).ok_or(error)
         })
     } else {
@@ -331,6 +361,46 @@ pub(crate) fn stage(
     .map_err(|error| format!("saved opponent stack observation: {error}"))?;
     super::snapshot::apply_saved_observation(world, &observed);
     Ok((observed, OrderResult::Moved))
+}
+
+// Between trade turns, native known opponent contact returns after
+// recording the reciprocal encounter bits. Human contacts and trade turns
+// still need their own resolved transaction.
+fn apply_known_opponent_contact(
+    observed: &mut SaveFile,
+    world: &mut WorldState,
+    error: &UnitObservationError,
+) -> bool {
+    let &UnitObservationError::ContactRequired {
+        observer,
+        other,
+        map: 0,
+        ..
+    } = error
+    else {
+        return false;
+    };
+    if !(1..8).contains(&observer)
+        || !(1..8).contains(&other)
+        || observed.multiplayer != 0
+        || observed.human_mask != world.human_mask
+        || world.human_mask & ((1 << observer) | (1 << other)) != 0
+        || world.research_settings.flags & 0x80 != 0
+        || world.turn <= 0
+        || (i32::from(world.turn) + i32::from(observer) + i32::from(other)) % 4 == 0
+    {
+        return false;
+    }
+    let (a, b) = (usize::from(observer), usize::from(other));
+    if [(a, b), (b, a)].into_iter().any(|(a, b)| {
+        world.diplomacy[a][b] & 1 == 0 || world.diplomacy[a][b] != observed.diplomacy[a][b]
+    }) {
+        return false;
+    }
+    world.treaty_set(observer, other, 0x401);
+    observed.diplomacy[a][b] = world.diplomacy[a][b];
+    observed.diplomacy[b][a] = world.diplomacy[b][a];
+    true
 }
 
 // The prepared Original encounter is the only measured first-contact

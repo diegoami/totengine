@@ -245,6 +245,15 @@ class GoldenMetadata(unittest.TestCase):
             {'slot': 24, 'position': [9, 47], 'previous': -1, 'next': 4, 'spent': 3, 'direction': 3},
             {'slot': 4, 'position': [9, 47], 'previous': 24, 'next': -1, 'spent': 3, 'direction': 5},
         ])
+        later = report['turn_45_arrival']
+        self.assertEqual(later['crt_state'], 0x34bba6a0)
+        self.assertTrue(later['viewer_memory_unchanged'])
+        self.assertEqual(later['explored_tiles'], 59)
+        self.assertEqual(later['after'], [
+            {'slot': 24, 'position': [9, 49], 'previous': -1, 'next': 4, 'spent': 6, 'direction': 3},
+            {'slot': 4, 'position': [9, 49], 'previous': 24, 'next': -1, 'spent': 6, 'direction': 5},
+        ])
+
 
     def test_native_opponent_hut_retains_view_and_grants_the_current_project(self):
         report = json.loads((ROOT / 'docs/evidence/import-opponent-hut.json').read_text())
@@ -310,6 +319,17 @@ class GoldenMetadata(unittest.TestCase):
         self.assertEqual((first['stopped_at'], repeat['stopped_at'], due['stopped_at']),
                          ('0049dedf', '00100000', '0049dedf'))
         self.assertEqual(repeat['treaty_words'], [0x401, 0x401])
+        later = report['known_turn_46']
+        self.assertEqual(later['pair'], [2, 5])
+        self.assertEqual(later['contact'], [39, 35, 0])
+        self.assertEqual(later['crt_state'], 0xd9f16a1a)
+        self.assertEqual(later['stopped_at'], '00100000')
+        self.assertEqual(later['prior_treaty_words'], [0x405, 0x405])
+        self.assertEqual(later['treaty_words'], [0x405, 0x405])
+        self.assertEqual(later['trade_calls'], 0)
+        self.assertIsNone(later['first_grant_arguments'])
+        self.assertTrue(later['unit_city_map_and_viewer_memory_unchanged'])
+
         self.assertEqual([row['trade_calls'] for row in (first, repeat, due)], [1, 0, 1])
         self.assertTrue(all(row['explored_tiles'] == 59 and
                             row['unit_city_map_and_viewer_memory_unchanged']

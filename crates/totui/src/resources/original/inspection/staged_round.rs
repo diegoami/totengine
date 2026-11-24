@@ -641,7 +641,7 @@ pub(super) fn check_saved_human_production(
     let rules = &capture.resources().rules;
     let events = files.events.clone().map(EventEngine::new);
     let identity = capture.identity();
-    let mut session = HumanSession::scenario_initialized_saved_opponent_armed_stack(
+    let mut session = HumanSession::scenario_initialized_saved_opponent_armed_stack_v2(
         ScenarioInput {
             path: &files.path,
             snapshot: &files.bytes,
@@ -863,6 +863,41 @@ pub(super) fn check_saved_human_production(
     if replay.view() != final_view || replay.checkpoint(identity) != arrival_checkpoint {
         return Err("checked turn-45 city return did not replay".into());
     }
+    submit(&mut contact, Command::EndTurn)?;
+    if contact.advance(23) != 23 || final_view.observation.seen != contact.view().observation.seen {
+        return Err("saved second armed arrival changed the human view".into());
+    }
+    contact.advance(128);
+    let fresh = contact.view();
+    if fresh.phase != Phase::Human
+        || fresh.observation.turn != 46
+        || fresh.observation.seen != final_view.observation.seen
+    {
+        return Err("checked continuation did not retain saved observation into turn 46".into());
+    }
+    let departed = submit(
+        &mut contact,
+        Command::Move {
+            unit: actor,
+            to: (52, 8),
+        },
+    )?;
+    let post_departure = contact.view();
+    if departed.result != Some(OrderResult::Moved)
+        || post_departure.observation.seen != fresh.observation.seen
+        || !post_departure
+            .observation
+            .units
+            .iter()
+            .any(|u| u.index == actor.slot && (u.x, u.y, u.moves_left) == (52, 8, 0))
+    {
+        return Err("checked turn-46 city departure differs from the saved movement".into());
+    }
+    let departure_checkpoint = contact.checkpoint(identity);
+    let replay = restore(&departure_checkpoint)?;
+    if replay.view() != post_departure || replay.checkpoint(identity) != departure_checkpoint {
+        return Err("checked turn-46 city departure did not replay".into());
+    }
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
@@ -873,6 +908,7 @@ pub(super) fn check_saved_human_production(
         "city_attack_checkpoint_replays": true,
         "hut_checkpoint_replays": true,
         "turn_45_city_return_replays": true,
+        "turn_46_city_departure_replays": true,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],

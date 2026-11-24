@@ -364,6 +364,12 @@ The checked route reaches turn 45 with all 59 tiles and supports
 the player's return into the occupied city on the refreshed budget.
 The inspector replays a checkpoint from after that return.
 
+Schema 13 retains the saved view through the next armed arrival
+at (9, 49) and the native between-trade-turn encounter between civs
+2 and 5. The checked route reaches turn 46 with 59 explored tiles.
+The inspector exercises another city departure and restores that
+checkpoint. Faithful entry and broader continuation remain open.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

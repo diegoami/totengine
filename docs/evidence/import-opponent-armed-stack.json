@@ -79,5 +79,75 @@
       "00467d19"
     ]
   },
+  "turn_45_arrival": {
+    "arguments": [
+      24,
+      3,
+      3
+    ],
+    "before": [
+      {
+        "slot": 24,
+        "position": [
+          9,
+          47
+        ],
+        "previous": -1,
+        "next": -1,
+        "spent": 0,
+        "direction": 0
+      },
+      {
+        "slot": 4,
+        "position": [
+          9,
+          49
+        ],
+        "previous": -1,
+        "next": -1,
+        "spent": 6,
+        "direction": 5
+      }
+    ],
+    "after": [
+      {
+        "slot": 24,
+        "position": [
+          9,
+          49
+        ],
+        "previous": -1,
+        "next": 4,
+        "spent": 6,
+        "direction": 3
+      },
+      {
+        "slot": 4,
+        "position": [
+          9,
+          49
+        ],
+        "previous": 24,
+        "next": -1,
+        "spent": 6,
+        "direction": 5
+      }
+    ],
+    "crt_state": 884713120,
+    "explored_tiles": 59,
+    "viewer_memory_unchanged": true,
+    "observation_calls": [
+      [
+        24,
+        1
+      ]
+    ],
+    "host_substitutes": [
+      "PeekMessageA"
+    ],
+    "display_substitutes": [
+      "00467d19"
+    ]
+  },
   "scope": "Measure the prepared armed arrival into a friendly field stack.\n\nUse the pinned round-close context, then supply the measured mover and\nresident records, map bytes and CRT from the checked engine approach.\nNative movement runs through return with the established closed-panel\npresentation substitutions."
 }

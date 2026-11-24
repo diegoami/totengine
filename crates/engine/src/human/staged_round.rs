@@ -23,6 +23,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                     | ScenarioKnowledgeRecipe::SavedOpponentHutV1
                     | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
             );
         let before = keep_view.then(|| self.game.world.clone());
         if !keep_view {
@@ -768,6 +769,7 @@ staged-round-test
             (ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1, 59, 0),
             (ScenarioKnowledgeRecipe::SavedOpponentHutV1, 59, 0),
             (ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1, 59, 0),
+            (ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2, 59, 0),
         ] {
             let mut session = HumanSession::scenario_initialized_recipe(
                 ScenarioInput {
@@ -1033,6 +1035,7 @@ staged-round-test
                     | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                     | ScenarioKnowledgeRecipe::SavedOpponentHutV1
                     | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
             ) {
                 let before = contact.view();
                 let draws = contact.game.world.combat_rng.draws();
@@ -1056,6 +1059,7 @@ staged-round-test
                     ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                         | ScenarioKnowledgeRecipe::SavedOpponentHutV1
                         | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                        | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
                 ) {
                     let prior = contact.saved_move_state.as_ref().unwrap().clone();
                     assert_eq!(contact.advance(1), 1);
@@ -1080,6 +1084,7 @@ staged-round-test
                         recipe,
                         ScenarioKnowledgeRecipe::SavedOpponentHutV1
                             | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                            | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
                     ) {
                         assert_eq!(contact.advance(8), 8);
                         let prior = contact.view();
@@ -1091,7 +1096,11 @@ staged-round-test
                         assert_eq!(contact.view().observation.seen, prior.observation.seen);
                         let reward = contact.checkpoint(deps);
                         assert_eq!(restore(&reward).checkpoint(deps), reward);
-                        if recipe == ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1 {
+                        if matches!(
+                            recipe,
+                            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
+                        ) {
                             assert_eq!(contact.advance(4), 4);
                             let prior = contact.view();
                             assert_eq!(contact.advance(1), 1);
@@ -1131,6 +1140,53 @@ staged-round-test
                             assert_eq!(contact.view().observation.seen, fresh.observation.seen);
                             let returned = contact.checkpoint(deps);
                             assert_eq!(restore(&returned).checkpoint(deps), returned);
+                            if recipe == ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2 {
+                                submit(&mut contact, Command::EndTurn);
+                                assert_eq!(contact.advance(22), 22);
+                                let prior = contact.view();
+                                assert_eq!(contact.advance(1), 1);
+                                let saved = contact.saved_move_state.as_ref().unwrap();
+                                assert_eq!(saved.units[24].moves_spent(), 6);
+                                assert_eq!(saved.units[24].stack_next(), 4);
+                                assert_eq!(saved.units[4].stack_prev(), 24);
+                                assert_eq!(contact.view().observation.seen, prior.observation.seen);
+                                let second = contact.checkpoint(deps);
+                                assert_eq!(restore(&second).checkpoint(deps), second);
+                                contact.advance(128);
+                                let fresh = contact.view();
+                                assert_eq!(
+                                    (fresh.observation.turn, fresh.phase),
+                                    (46, Phase::Human)
+                                );
+                                assert!(contact.saved_move_state.is_some());
+                                assert_eq!(fresh.observation.seen.iter().flatten().count(), 59);
+
+                                let result = submit(
+                                    &mut contact,
+                                    Command::Move {
+                                        unit: actor,
+                                        to: (52, 8),
+                                    },
+                                );
+                                assert_eq!(result.result, Some(OrderResult::Moved));
+                                let saved = contact.saved_move_state.as_ref().unwrap();
+                                assert_eq!(
+                                    (saved.units[actor.slot].x(), saved.units[actor.slot].y()),
+                                    (52, 8)
+                                );
+                                assert_eq!(saved.units[actor.slot].moves_spent(), 6);
+                                assert_eq!(contact.view().observation.seen, fresh.observation.seen);
+                                let departed = contact.checkpoint(deps);
+                                let replay = restore(&departed);
+                                assert_eq!(replay.checkpoint(deps), departed);
+                                assert_eq!(replay.view(), contact.view());
+                            } else {
+                                submit(&mut contact, Command::EndTurn);
+                                assert_eq!(contact.advance(23), 23);
+                                assert!(contact.saved_move_state.is_none());
+                                let older = contact.checkpoint(deps);
+                                assert_eq!(restore(&older).checkpoint(deps), older);
+                            }
                         } else {
                             assert_eq!(contact.advance(5), 5);
                             assert!(contact.saved_move_state.is_none());

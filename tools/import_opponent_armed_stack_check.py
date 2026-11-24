@@ -19,11 +19,13 @@ from import_unit_setup_check import UNIT_RECORDS
 from totctl import parse_rules
 
 
-def arrival(original, viewer, _city, seed):
+def arrival(original, viewer, _city, seed, *, later=False):
     width = read(original, 0x6705A0, '<h')
     area = read(original, 0x6705A4, '<h')
     original.write(CRT, seed, '<I')
     original.write(0x607655, 7, '<B')
+    if later:
+        original.write(0x607648, 45, '<h')
     original.write(0x5D156C, 0, '<B')
     cache = read(original, 0x5DEAD0 + 4 * viewer, '<I')
 
@@ -41,14 +43,18 @@ def arrival(original, viewer, _city, seed):
         return bytes(b & (1 << viewer) for b in tiles[4::6]), bytes(cpu.mem_read(cache, area))
 
     assert unit(24)['next'] == 4 and unit(4)['previous'] == 24
-    for slot, y, spent, orders in ((4, 47, 3, 6), (24, 45, 0, 2)):
+    origin, target, charge = (47, 49, 6) if later else (45, 47, 3)
+    for slot, y, spent, orders in ((4, target, charge, 6), (24, origin, 0, 2)):
         address = UNIT_RECORDS + 40 * slot
         original.write(address + 2, y, '<h')
         original.write(address + 26, -1, '<h')
         original.write(address + 28, -1, '<h')
         original.write(address + 10, spent, '<B')
         original.write(address + 17, orders, '<B')
-    for y, raw in ((45, [3, 17, 224, 2, 128, 112]), (47, [1, 1, 224, 2, 128, 115])):
+    tiles = ((47, [1, 1, 224, 2, 128, 115]), (49, [7, 1, 224, 2, 128, 112])) if later else (
+        (45, [3, 17, 224, 2, 128, 112]), (47, [1, 1, 224, 2, 128, 115]),
+    )
+    for y, raw in tiles:
         original.cpu.mem_write(TILES + 6 * (y * (width // 2) + 4), bytes(raw))
     before = [unit(24), unit(4)]
     visible, memory = knowledge()
@@ -56,8 +62,8 @@ def arrival(original, viewer, _city, seed):
     after = [unit(24), unit(4)]
     assert result == 1 and observations == [[24, 1]]
     assert after == [
-        {'slot': 24, 'position': [9, 47], 'previous': -1, 'next': 4, 'spent': 3, 'direction': 3},
-        {'slot': 4, 'position': [9, 47], 'previous': 24, 'next': -1, 'spent': 3, 'direction': 5},
+        {'slot': 24, 'position': [9, target], 'previous': -1, 'next': 4, 'spent': charge, 'direction': 3},
+        {'slot': 4, 'position': [9, target], 'previous': 24, 'next': -1, 'spent': charge, 'direction': 5},
     ]
     assert (visible, memory) == knowledge() and read(original, CRT, '<I') == seed
     return {
@@ -87,9 +93,15 @@ def main():
     )
     assert prepared['annual_update'] == annual['annual_update']
     assert result['explored_tiles'] == 59
+    prepared, later = prepare_round(
+        home, binary, hut['source']['path'], rules,
+        lambda original, viewer, city: arrival(original, viewer, city, 0x34bba6a0, later=True),
+    )
+    assert prepared['annual_update'] == annual['annual_update']
+    assert later['explored_tiles'] == 59
     with args.out.open('x') as output:
         out = {'schema': 1, **{key: hut[key] for key in ('source', 'rules', 'binary_sha256')},
-               'arrival': result, 'scope': __doc__.strip()}
+               'arrival': result, 'turn_45_arrival': later, 'scope': __doc__.strip()}
         output.write(json.dumps(out, indent=2) + '\n')
 
 

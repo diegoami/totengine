@@ -678,3 +678,23 @@ This remains an experimental replay profile.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_armed_stack_check.py --out /tmp/import-opponent-armed-stack.json
 cmp docs/evidence/import-opponent-armed-stack.json /tmp/import-opponent-armed-stack.json
 ```
+
+
+### Saved observation through turn 46
+
+The second [armed field arrival](evidence/import-opponent-armed-stack.json)
+uses the prepared turn-45 move into (9, 49). Native spends six thirds
+from a full three-third budget, puts unit 24 at the head, and preserves
+human memory and the CRT state. The [known encounter
+control](evidence/import-opponent-contact.json) reaches native return for
+civs 2 and 5 on turn 46 with treaty words `0x405` in both directions.
+It makes no trade call, advance grant, or CRT draw.
+
+Initializer schema 13 stages both boundaries. For known contacts between
+opponents in the checked single-player stock context, the between-trade
+turn path updates the reciprocal encounter bits. Human contacts, trade
+turns, and other first contacts retain their existing guards. The
+checked replay reaches turn 46 with all 59 tiles, and the player's
+Phalanx can leave its city again on the refreshed budget. The inspector
+replays the resulting checkpoint. Schema 12 preserves its earlier
+fallback and checkpoint behavior.

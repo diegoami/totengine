@@ -97,6 +97,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                 | ScenarioKnowledgeRecipe::SavedOpponentHutV1
                 | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
         ) {
             return None;
         }
@@ -151,8 +152,11 @@ impl HumanSession {
         if let Some(mate) = self.saved_city_mate(saved, slot) {
             return Some(CityStackMove::Departure { mate });
         }
-        if self.knowledge_recipe != ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
-            || !saved.maps[0].has_city(destination)
+        if !matches!(
+            self.knowledge_recipe,
+            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
+        ) || !saved.maps[0].has_city(destination)
         {
             return None;
         }
@@ -451,6 +455,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                     | ScenarioKnowledgeRecipe::SavedOpponentHutV1
                     | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
             );
         let mut births = Vec::new();
         for (slot, unit) in world.units.iter().enumerate() {
@@ -533,6 +538,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                 | ScenarioKnowledgeRecipe::SavedOpponentHutV1
                 | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
         ) {
             crate::scenario::opponent_stack::record_city_births(
                 &mut observed,
@@ -593,6 +599,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                 | ScenarioKnowledgeRecipe::SavedOpponentHutV1
                 | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
         ) || self.saved_move_state.is_none()
         {
             return false;
@@ -616,6 +623,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                 | ScenarioKnowledgeRecipe::SavedOpponentHutV1
                 | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
         ) {
             return None;
         }
@@ -642,6 +650,7 @@ impl HumanSession {
             ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                 | ScenarioKnowledgeRecipe::SavedOpponentHutV1
                 | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
         );
         let city_before = world.city_at(to.0, to.1);
         let (observed, result) = if is_combat {
@@ -665,7 +674,11 @@ impl HumanSession {
                 civ,
                 unit,
                 to,
-                if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1 {
+                if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2 {
+                    crate::scenario::opponent_stack::StackMovement::StockArmedTurn46
+                } else if self.knowledge_recipe
+                    == ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                {
                     crate::scenario::opponent_stack::StackMovement::StockArmed
                 } else if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentHutV1 {
                     crate::scenario::opponent_stack::StackMovement::StockHut

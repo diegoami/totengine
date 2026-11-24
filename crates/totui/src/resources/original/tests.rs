@@ -39,7 +39,12 @@ impl Fixture {
     }
 
     fn capture(&self) -> Result<OriginalCapture, String> {
-        OriginalCapture::capture_with_pins(self.root.path(), "Original/Authored.sav", &self.pins)
+        OriginalCapture::capture_with_pins(
+            self.root.path(),
+            "Original/Authored.sav",
+            &self.pins,
+            None,
+        )
     }
 
     fn path(&self, file: &str) -> PathBuf {
@@ -164,14 +169,17 @@ fn invalid_selection_nonregular_inputs_and_lua_reject() {
         "Original/x\ns.sav",
     ] {
         assert!(
-            OriginalCapture::capture_with_pins(f.root.path(), path, &f.pins).is_err(),
+            OriginalCapture::capture_with_pins(f.root.path(), path, &f.pins, None).is_err(),
             "{path}"
         );
     }
-    assert!(
-        OriginalCapture::capture_with_pins(f.root.path(), "original\\AUTHORED.SAV", &f.pins)
-            .is_ok()
-    );
+    assert!(OriginalCapture::capture_with_pins(
+        f.root.path(),
+        "original\\AUTHORED.SAV",
+        &f.pins,
+        None
+    )
+    .is_ok());
     for name in ["events.LuA", "other.luac", "LuA"] {
         fs::write(f.path(name), b"not executed").unwrap();
         assert!(f.capture().err().unwrap().contains("Lua"));

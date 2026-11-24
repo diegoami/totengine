@@ -12,8 +12,75 @@ use serde_json::{json, Value};
 
 mod event_tail;
 mod evidence;
+mod staged_round;
 
 impl OriginalCapture {
+    /// Create an experimental engine checkpoint from the checked reference
+    /// save. The caller can preserve the captured input with the checkpoint.
+    pub fn prepare_replay_checkpoint(&self) -> Result<String, String> {
+        use engine::{
+            campaign::AiPolicy,
+            events::EventEngine,
+            human::{HumanSession, ScenarioInput},
+        };
+        let report = self.inspect_save()?;
+        if report["saved_event_initialization"]["has_stored_marks"] == true {
+            return Err(
+                "The save has active or spent victory marks that the checked replay cannot restore"
+                    .into(),
+            );
+        }
+        if report["saved_pending_choice_check"]["verified"] != true {
+            return Err(
+                "The captured save has no verified pending-choice boundary for this replay".into(),
+            );
+        }
+        if report["saved_viewport_check"]["verified"] != true
+            || report["saved_opponent_combat_check"]["verified"] != true
+            || report["saved_wait_check"]["verified"] != true
+            || report["saved_rates_check"]["verified"] != true
+            || report["saved_production_check"]["verified"] != true
+            || report["saved_citizens_check"]["verified"] != true
+            || report["saved_purchase_check"]["verified"] != true
+            || report["saved_human_production_check"]["verified"] != true
+            || report["saved_event_initialization"]["verified"] != true
+        {
+            return Err("The captured save did not pass the checked Original replay checks".into());
+        }
+        let human = report["saved_phase"]["human_civ"]
+            .as_u64()
+            .and_then(|value| u8::try_from(value).ok())
+            .ok_or("checked save has no human seat")?;
+        let files = self.files();
+        let session = HumanSession::scenario_initialized_saved_naval_allocation(
+            ScenarioInput {
+                path: &files.path,
+                snapshot: &files.bytes,
+                rules: self.resources().rules.clone(),
+                events: files.events.clone().map(EventEngine::new),
+            },
+            human,
+            AiPolicy::BuiltIn1,
+            7,
+            self.identity(),
+        )?;
+        Ok(session.checkpoint(self.identity()))
+    }
+
+    /// Viewport supported by the native resume witness for this exact save.
+    pub(crate) fn checkpoint_viewport(&self) -> Result<Option<(u16, u16)>, String> {
+        let files = self.files();
+        if !evidence::saved_viewport_matches_save(&sha256(&files.bytes)) {
+            return Ok(None);
+        }
+        let snapshot = CheckedSnapshot::read(&files.bytes, &self.resources().rules)?;
+        let tail_start = files.bytes.len() - snapshot.trailing_bytes();
+        let viewport = event_tail::inspect(&files.bytes[tail_start..])?.viewport;
+        let x = u16::try_from(viewport.0).map_err(|_| "saved viewport x is negative")?;
+        let y = u16::try_from(viewport.1).map_err(|_| "saved viewport y is negative")?;
+        Ok(Some((x, y)))
+    }
+
     /// Check the captured save and report the supported inspection results.
     pub fn inspect_save(&self) -> Result<Value, String> {
         let files = self.files();
@@ -43,9 +110,124 @@ impl OriginalCapture {
             .ok_or("reference Events.txt was not parsed")
             .map_err(str::to_owned)
             .and_then(|events| tail.victory_state(events));
+        let trace = evidence::resume_trace(&source_sha256, &rules_sha256)?;
+        let event_initialization = match &victory {
+            Ok(state) if !state.is_pristine() => json!({
+                "verified": false, "has_stored_marks": true,
+                "reason": "the checked replay initializer needs pristine victory records",
+            }),
+            Ok(state)
+                if trace["matches_fixture"] == true
+                    && json!(state)
+                        == trace["pending_choice"]["cases"]["pinned"]["event_marks_at_poll"] =>
+            {
+                json!({"verified": true, "has_stored_marks": false, "policy": "pristine-event-engine"})
+            }
+            Ok(_) => json!({
+                "verified": false, "has_stored_marks": false,
+                "reason": "no matching native event state at the input boundary",
+            }),
+            Err(reason) => json!({"verified": false, "reason": reason}),
+        };
         let victory = match victory {
             Ok(state) => json!({"matches": true, "saved_state": state}),
             Err(reason) => json!({"matches": false, "reason": reason}),
+        };
+        let pending = if trace["matches_fixture"] == true {
+            staged_round::check_pending_choice(self, human, &trace["pending_choice"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            json!({"verified": false, "reason": trace["reason"]})
+        };
+        let viewport = if trace["matches_fixture"] == true {
+            staged_round::check_saved_viewport(self, human, tail.viewport, &trace["saved_viewport"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let wait = if viewport["verified"] == true {
+            staged_round::check_saved_wait(self, human, &trace["saved_wait"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let rates = if pending["verified"] == true {
+            staged_round::check_saved_rates(self, human, &trace["saved_rates"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let production = if pending["verified"] == true {
+            staged_round::check_saved_production(self, human, &trace["saved_production"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let citizens = if pending["verified"] == true {
+            staged_round::check_saved_citizens(self, human, &trace["saved_citizens"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let purchase = if pending["verified"] == true {
+            staged_round::check_saved_purchase(self, human, &trace["saved_purchase"])
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let human_production = if purchase["verified"] == true && citizens["verified"] == true {
+            staged_round::check_saved_human_production(
+                self,
+                human,
+                &trace["saved_human_production"],
+                &trace["saved_human_stack_orders"],
+            )
+            .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let land_step = if trace["matches_fixture"] == true {
+            compare_land_step(
+                &snapshot,
+                rules,
+                &trace["first_orders"]["cases"]["move_northwest"],
+            )?
+        } else {
+            Value::Null
+        };
+        let staged = if trace["matches_fixture"] == true {
+            staged_round::check(self, human)
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let movement = if land_step["matches"] == true {
+            staged_round::check_saved_movement(
+                self,
+                human,
+                &trace["first_orders"]["cases"]["move_northwest"],
+            )
+            .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let city_view = if trace["matches_fixture"] == true {
+            staged_round::check_saved_city_view(self, human, &trace)
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let opponent_stack = if city_view["verified"] == true {
+            staged_round::check_saved_opponent_stack(self, human, &trace)
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
+        };
+        let opponent_combat = if opponent_stack["verified"] == true {
+            staged_round::check_saved_opponent_combat(self, human, &trace)
+                .unwrap_or_else(|reason| json!({"verified": false, "reason": reason}))
+        } else {
+            Value::Null
         };
         Ok(json!({
             "schema": 2,
@@ -56,7 +238,21 @@ impl OriginalCapture {
                 "sha256": source_sha256
             },
             "dependency_set": OriginalCapture::SET,
-            "native_resume_trace": evidence::resume_trace(&source_sha256, &rules_sha256)?,
+            "native_resume_trace": trace,
+            "saved_land_step": land_step,
+            "saved_viewport_check": viewport,
+            "saved_pending_choice_check": pending,
+            "saved_wait_check": wait,
+            "saved_rates_check": rates,
+            "saved_production_check": production,
+            "saved_citizens_check": citizens,
+            "saved_purchase_check": purchase,
+            "saved_human_production_check": human_production,
+            "staged_round_check": staged,
+            "saved_movement_check": movement,
+            "saved_city_view_check": city_view,
+            "saved_opponent_stack_check": opponent_stack,
+            "saved_opponent_combat_check": opponent_combat,
             "records": {
                 "unit_slots": save.units.len(),
                 "live_units": snapshot.stack_positions().iter().flatten().count(),
@@ -65,6 +261,7 @@ impl OriginalCapture {
             },
             "event_trailer": tail,
             "victory_event": victory,
+            "saved_event_initialization": event_initialization,
             "saved_phase": {
                 "boundary": phase,
                 "human_civ": human,
@@ -78,4 +275,64 @@ impl OriginalCapture {
             "playable_import": false
         }))
     }
+}
+
+fn byte_changes<'a>(
+    before: &'a [u8],
+    after: &'a [u8],
+) -> impl Iterator<Item = (usize, u8, u8)> + 'a {
+    before
+        .iter()
+        .zip(after)
+        .enumerate()
+        .filter_map(|(index, (&old, &new))| (old != new).then_some((index, old, new)))
+}
+
+fn compare_land_step(
+    snapshot: &CheckedSnapshot,
+    rules: &tot_kit::Rules,
+    native: &Value,
+) -> Result<Value, String> {
+    let slot = native["before"]["active_slot"]
+        .as_u64()
+        .and_then(|slot| usize::try_from(slot).ok())
+        .ok_or("native land step evidence has no unit slot")?;
+    let to: (u16, u16) = serde_json::from_value(native["unit_position_after"].clone())
+        .map_err(|error| format!("native land step evidence: {error}"))?;
+    let step = match snapshot.project_land_step(rules, slot, to) {
+        Ok(step) => step,
+        Err(reason) => return Ok(json!({"matches": false, "reason": reason})),
+    };
+    let before = &snapshot.save().maps[0];
+    let tiles: Vec<_> = byte_changes(&before.tile_fields, &step.map.tile_fields).collect();
+    let area = snapshot.save().map_header.surface();
+    let cache: Vec<_> = byte_changes(&before.visibility, &step.map.visibility)
+        .map(|(index, old, new)| (index / area + 1, index % area, old, new))
+        .collect();
+    let explored_tiles = step.view.tiles.iter().flatten().count();
+    let tile_bytes_match = json!(tiles) == native["tile_byte_changes"];
+    let cache_bytes_match = json!(cache) == native["cache_byte_changes"];
+    let allowance = native["active_unit_type_allowance"]
+        .as_u64()
+        .ok_or("native land step evidence has no movement allowance")?;
+    let spent = native["unit_byte_changes"]
+        .as_array()
+        .and_then(|bytes| {
+            bytes
+                .iter()
+                .find(|row| row["byte"] == 10 && row["slot"] == slot)
+        })
+        .and_then(|row| row["after"].as_u64())
+        .ok_or("native land step evidence has no resulting movement cost")?;
+    Ok(json!({
+        "matches": tile_bytes_match && cache_bytes_match && step.position == to
+            && u64::from(step.moves_left) == allowance.saturating_sub(spent)
+            && json!(explored_tiles) == native["explored_tiles"],
+        "unit_slot": slot,
+        "position": step.position,
+        "moves_left": step.moves_left,
+        "explored_tiles": explored_tiles,
+        "tile_bytes_match": tile_bytes_match,
+        "cache_bytes_match": cache_bytes_match,
+    }))
 }

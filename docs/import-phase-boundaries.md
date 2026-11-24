@@ -142,3 +142,129 @@ handlers remain open.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_input_handoff_check.py --out /tmp/input-handoff.json
 cmp docs/evidence/import-input-handoff.json /tmp/input-handoff.json
 ```
+
+
+### First orders after the prepared input loop
+
+[The first-order probe](evidence/import-first-order.json) re-executes the
+pinned observation and idle prefix, then calls the original game callbacks
+with three independent inputs. It prepares the running-window guards,
+supplies an empty filtered queue and substitutes the listed display, audio,
+network and key-state calls. The keyboard move uses an internal direction
+code and returns after the native movement and observation logic. The probe
+does not drive a live Windows queue or show modal timing.
+
+- **W** selects slot 9 and sets attribute bit `0x4000` on slot 6. Sprite
+  selection in the current clients is an engine presentation choice without
+  that native record write.
+- **Space** spends slot 6's full movement allowance, 3 in the saved units, and
+  writes 255 to its last-direction byte. Slot 6 remains active at the return of
+  the character callback.
+- **Northwest** moves slot 6 from (63, 5) to (62, 4). The native terrain cost
+  records 6 spent against an allowance of 3. Occupancy and destination
+  ownership change, and the player's saved knowledge grows from 59 to 60 tiles.
+  The other six remembered-improvement arrays and the civ and city records
+  stay intact.
+
+Research remains target -1 with progress 0 after all three accepted inputs.
+This proves that an empty research target need not prevent initial unit
+commands in the prepared context. It supplies no assertion about when a live
+session opens the research chooser later in the round.
+
+The install-backed CLI test applies the measured occupancy and ownership
+changes before running the saved-knowledge observation kernel. Its tile and
+cache deltas exactly match the native move. A separate check executes the
+current engine movement order and reaches the same position with zero moves
+remaining. Its generic reveal includes an extra tile near Madrid. The two
+knowledge models therefore still diverge after a real first order, which
+prevents the current runtime path from satisfying the continuation predicate.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_first_order_check.py --out /tmp/first-orders.json
+cmp docs/evidence/import-first-order.json /tmp/first-orders.json
+CIVTOT_HOME=... cargo test -p totctl --test original_import
+```
+
+
+### City science and the empty research project
+
+The [native city science probe](evidence/import-city-science-entry.json) runs
+the pinned player's city slot 5 from the same prepared resume image. It
+executes the city-phase routine `0x4cb01d` through actual science computation
+and accumulation. The computed value is zero, the routine returns, and the
+player still has target -1 and progress 0. The only substitutions are the
+city-window query returning -1 and the observation redraw callback.
+
+Separate controls supply one point at the call from city processing into the
+science stage. With the pinned advice setting the accumulator reaches
+`0x4a1436`. With advice enabled it instead reaches `0x477030` first. Both
+controls increment progress to 1 and stop before executing the chooser or
+adviser. The Rust phase checker reproduces the three boundaries. This traces
+the saved city in isolation, before opponents or the rest of a round can
+alter it.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_city_science_entry_check.py --out /tmp/city-science-entry.json
+cmp docs/evidence/import-city-science-entry.json /tmp/city-science-entry.json
+```
+
+
+### Handoff from viewing mode
+
+The [round handoff probe](evidence/import-round-handoff.json) supplies
+characters through a host message-dispatch substitute. The original
+character handler and civ scheduler execute in the same prepared stack.
+Two controls exhaust the player's units before reaching the viewing-mode
+poll, then dispatch one Enter with a closed city window.
+
+With the saved options word `0x01cd3258`, the original handler takes the
+city-window command path and returns to the next input poll for civ 4.
+Clearing the process preference bit `0x40` produces `0x01cd3218`. That
+control leaves viewing mode, clears the resume civ and reaches civ 5's
+native turn-start routine `0x4725c8`. Execution stops on entry to city
+slot 6's phase at `0x4cb01d`, on the same numbered turn. The player's
+civ and unit records, the cities, the tile bytes and all seven memory
+arrays stay intact through that boundary.
+
+The selected-unit route keeps the saved preference word and movement
+budgets. Four Space orders spend the full allowance of slots 6, 9, 26 and
+18, in that order. The fourth order hands off automatically to the same
+civ and city phase. Each unit's direction byte becomes 255 and the viewer's
+saved map knowledge stays intact. This route supplies no Enter command.
+
+The shared engine now has a per-civ city-phase call used by its existing
+round-close loop. Playable classic continuation still has to schedule it
+before each subsequent civ's orders and persist that scheduling.
+This trace establishes the entry boundary in the prepared context. It
+does not run the next city, an AI order or a full live round.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_round_handoff_check.py --out /tmp/round-handoff.json
+cmp docs/evidence/import-round-handoff.json /tmp/round-handoff.json
+```
+
+## Checked resume decisions
+
+The [composed probe](evidence/import-pending-choice.json) carries one
+prepared memory image through the event reader, stock Rules refresh,
+caller preference overlay, and first human input poll at the saved
+viewport. Its resumed-civ control skips round-start dispatch. Forced
+restart and fresh-round controls cross into dispatch. The probe supplies
+display context and host queue operations.
+
+The pinned seat reaches input with government 1, an empty research
+project, and zero science progress. Separate controls leave input
+available with a stored progress of one or with Anarchy. Those controls
+establish the resume boundary. Fresh-turn science and government
+resolution remain distinct. The inspector compares the exact pinned
+capture and the engine's initial decision state. An experimental
+checkpoint preparation requires that comparison to pass. The same probe
+checks the two victory records. The pinned marks are clear. Controls that
+set an active or spent mark retain it at the first poll. Experimental
+checkpoint preparation accepts the pristine initial event state and
+rejects these marked controls.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_pending_choice_check.py --out /tmp/import-pending-choice.json
+cmp docs/evidence/import-pending-choice.json /tmp/import-pending-choice.json
+```

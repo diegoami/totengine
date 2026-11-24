@@ -930,9 +930,17 @@ impl Client {
         }
         self.refresh();
         match command {
-            Command::Move { unit, .. } | Command::Occupy { unit, .. } | Command::Skip { unit } => {
+            Command::Move { unit, .. } | Command::Wait { unit } | Command::Skip { unit } => {
+                if let Some(focus) = self
+                    .loaded
+                    .as_ref()
+                    .and_then(|loaded| loaded.session.saved_order_focus())
+                {
+                    self.active = Some(focus);
+                }
                 self.schedule_unit(Some(unit), false);
             }
+            Command::Occupy { unit, .. } => self.schedule_unit(Some(unit), false),
             Command::Research { .. } | Command::NameCity { .. } | Command::CancelFound { .. } => {
                 self.schedule_unit(None, true);
             }
@@ -1028,7 +1036,7 @@ impl Client {
                         self.refresh();
                         if self.view().is_some_and(|v| v.phase != Phase::Opponents) {
                             self.advancing = false;
-                            self.schedule_unit(None, true);
+                            self.schedule_turn_from_inspection();
                             self.status=match self.view().unwrap().phase {Phase::Human=>"Your turn. Choose actions or resolve the required choice.",Phase::Eliminated=>"Your civilization has no units or cities. Load a checkpoint or start a new game.",Phase::TurnLimit=>"Turn limit reached. Save a checkpoint to preserve this game.",Phase::GameOver=>"Game over: scenario event. You can save a checkpoint, load a game or start a new game.",Phase::Opponents=>"Opponents playing"}.into();
                             self.required();
                         }
@@ -1769,11 +1777,11 @@ impl Client {
                         self.status = format!("Engine checkpoint saved: {}", self.entry);
                     }
                     Modal::Load => {
-                        self.report_return = None;
                         let text = storage::load(&self.saves, &self.entry)?;
                         let scenario = HumanSession::checkpoint_scenario(&text);
+                        let mut focus = None;
                         if let Some(origin) = &scenario {
-                            self.restore_scenario(origin, &text)?;
+                            focus = self.restore_scenario(origin, &text)?;
                         } else if let Some(l) = self
                             .loaded
                             .as_mut()
@@ -1801,19 +1809,20 @@ impl Client {
                             });
                             self.assets = assets;
                         }
+                        self.report_return = None;
                         if !self.city_open {
                             self.city_panel = CityPanel::Info;
                             self.city_panel_page = 0;
                         }
                         self.advancing = false;
-                        self.active = None;
+                        self.active = focus;
                         self.city = None;
                         self.refresh();
                         if let Some(city) = self.view().and_then(|v| v.production_context_city) {
                             self.city = Some(city);
                             self.city_open = true;
                         }
-                        self.schedule_unit(None, true);
+                        self.schedule_unit(None, focus.is_none());
                         self.center();
                         self.status = match scenario {
                             Some(o) => format!("Experimental scenario checkpoint restored ({}).", o.path),
@@ -1890,8 +1899,16 @@ impl Client {
             }
             Action::Wait => {
                 let after = self.active;
-                self.active = None;
-                self.schedule_unit(after, false);
+                if let Some(unit) = after.filter(|&actor| {
+                    self.loaded
+                        .as_ref()
+                        .is_some_and(|loaded| loaded.session.can_wait_in_saved_view(actor))
+                }) {
+                    self.order(Command::Wait { unit })?;
+                } else {
+                    self.active = None;
+                    self.schedule_unit(after, false);
+                }
             }
             Action::Skip => {
                 self.order(Command::Skip {

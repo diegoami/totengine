@@ -20,3 +20,29 @@ pub fn run(args: &[String]) -> ExitCode {
         }
     }
 }
+
+pub fn prepare_replay(args: &[String]) -> ExitCode {
+    let [install, relative, saves, name] = args else {
+        eprintln!("usage: totctl prepare-original-replay <install> <Original/file.sav> <save-directory> <name>");
+        return ExitCode::from(2);
+    };
+    let result = OriginalCapture::capture(Path::new(install), relative).and_then(|capture| {
+        let checkpoint = capture.prepare_replay_checkpoint()?;
+        totui::client::storage::save_scenario(
+            Path::new(saves),
+            name,
+            &checkpoint,
+            &capture.files().bytes,
+        )
+    });
+    match result {
+        Ok(()) => {
+            println!("Experimental engine checkpoint saved as {name}. Open it with Load engine checkpoint.");
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("prepare-original-replay: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}

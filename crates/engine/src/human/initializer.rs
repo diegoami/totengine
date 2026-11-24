@@ -23,6 +23,44 @@ pub enum ScenarioStartMode {
 pub enum ScenarioKnowledgeRecipe {
     EngineSightV1,
     SavedInitialThenEngineV1,
+    SavedInitialStagedRoundV1,
+    SavedMovementStagedRoundV1,
+    SavedCityViewStagedRoundV1,
+    SavedOpponentStackV1,
+    SavedOpponentCombatV1,
+    SavedHumanProductionV1,
+    SavedOpponentContactV1,
+    SavedOpponentCityCombatV1,
+    SavedOpponentHutV1,
+    SavedOpponentArmedStackV1,
+    SavedOpponentArmedStackV2,
+    SavedOpponentZoneV1,
+    SavedOpponentFoundingV1,
+    SavedOpponentWestwardV1,
+    SavedNavalArrivalV1,
+    SavedRemoteNavalStackV1,
+    SavedNavalAllocationV1,
+}
+
+impl ScenarioKnowledgeRecipe {
+    pub(super) fn checked_replay(self) -> bool {
+        matches!(
+            self,
+            Self::SavedOpponentCombatV1
+                | Self::SavedHumanProductionV1
+                | Self::SavedOpponentContactV1
+                | Self::SavedOpponentCityCombatV1
+                | Self::SavedOpponentHutV1
+                | Self::SavedOpponentArmedStackV1
+                | Self::SavedOpponentArmedStackV2
+                | Self::SavedOpponentZoneV1
+                | Self::SavedOpponentFoundingV1
+                | Self::SavedOpponentWestwardV1
+                | Self::SavedNavalArrivalV1
+                | Self::SavedRemoteNavalStackV1
+                | Self::SavedNavalAllocationV1
+        )
+    }
 }
 
 /// Captured before any human request or opponent work. All original bytes
@@ -57,16 +95,100 @@ impl ScenarioInitializer {
     pub const PROFILE: &'static str = "experimental-scenario-v1";
     pub const SAVED_VIEW_PROFILE: &'static str = "experimental-saved-view-v1";
 
+    pub const STAGED_ROUND_PROFILE: &'static str = "experimental-staged-round-v1";
+
+    pub const SAVED_MOVEMENT_PROFILE: &'static str = "experimental-saved-movement-v1";
+
+    pub const SAVED_CITY_VIEW_PROFILE: &'static str = "experimental-saved-city-view-v1";
+
+    pub const SAVED_OPPONENT_STACK_PROFILE: &'static str = "experimental-saved-opponent-stack-v1";
+
+    pub const SAVED_OPPONENT_COMBAT_PROFILE: &'static str = "experimental-saved-opponent-combat-v1";
+
+    pub const SAVED_HUMAN_PRODUCTION_PROFILE: &'static str =
+        "experimental-saved-human-production-v1";
+
+    pub const SAVED_OPPONENT_CONTACT_PROFILE: &'static str =
+        "experimental-saved-opponent-contact-v1";
+
+    pub const SAVED_OPPONENT_CITY_COMBAT_PROFILE: &'static str =
+        "experimental-saved-opponent-city-combat-v1";
+
+    pub const SAVED_OPPONENT_HUT_PROFILE: &'static str = "experimental-saved-opponent-hut-v1";
+
+    pub const SAVED_OPPONENT_ARMED_STACK_PROFILE: &'static str =
+        "experimental-saved-opponent-armed-stack-v1";
+
+    pub const SAVED_OPPONENT_ARMED_STACK_V2_PROFILE: &'static str =
+        "experimental-saved-opponent-armed-stack-v2";
+
+    pub const SAVED_NAVAL_ALLOCATION_PROFILE: &'static str =
+        "experimental-saved-naval-allocation-v1";
+    pub const SAVED_REMOTE_NAVAL_STACK_PROFILE: &'static str =
+        "experimental-saved-remote-naval-stack-v1";
+    pub const SAVED_NAVAL_ARRIVAL_PROFILE: &'static str = "experimental-saved-naval-arrival-v1";
+    pub const SAVED_OPPONENT_WESTWARD_PROFILE: &'static str =
+        "experimental-saved-opponent-westward-v1";
+    pub const SAVED_OPPONENT_FOUNDING_PROFILE: &'static str =
+        "experimental-saved-opponent-founding-v1";
+    pub const SAVED_OPPONENT_ZONE_PROFILE: &'static str = "experimental-saved-opponent-zone-v1";
+
     pub fn schema(&self) -> u8 {
         match self.knowledge_recipe {
             ScenarioKnowledgeRecipe::EngineSightV1 => 1,
             ScenarioKnowledgeRecipe::SavedInitialThenEngineV1 => 2,
+            ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1 => 3,
+            ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 => 4,
+            ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1 => 5,
+            ScenarioKnowledgeRecipe::SavedOpponentStackV1 => 6,
+            ScenarioKnowledgeRecipe::SavedOpponentCombatV1 => 7,
+            ScenarioKnowledgeRecipe::SavedHumanProductionV1 => 8,
+            ScenarioKnowledgeRecipe::SavedOpponentContactV1 => 9,
+            ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1 => 10,
+            ScenarioKnowledgeRecipe::SavedOpponentHutV1 => 11,
+            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1 => 12,
+            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2 => 13,
+            ScenarioKnowledgeRecipe::SavedOpponentZoneV1 => 14,
+            ScenarioKnowledgeRecipe::SavedOpponentFoundingV1 => 15,
+            ScenarioKnowledgeRecipe::SavedOpponentWestwardV1 => 16,
+            ScenarioKnowledgeRecipe::SavedNavalArrivalV1 => 17,
+            ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 => 18,
+            ScenarioKnowledgeRecipe::SavedNavalAllocationV1 => 19,
         }
     }
     pub fn profile(&self) -> &'static str {
         match self.knowledge_recipe {
             ScenarioKnowledgeRecipe::EngineSightV1 => Self::PROFILE,
             ScenarioKnowledgeRecipe::SavedInitialThenEngineV1 => Self::SAVED_VIEW_PROFILE,
+            ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1 => Self::STAGED_ROUND_PROFILE,
+            ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 => Self::SAVED_MOVEMENT_PROFILE,
+            ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1 => Self::SAVED_CITY_VIEW_PROFILE,
+            ScenarioKnowledgeRecipe::SavedOpponentStackV1 => Self::SAVED_OPPONENT_STACK_PROFILE,
+            ScenarioKnowledgeRecipe::SavedOpponentCombatV1 => Self::SAVED_OPPONENT_COMBAT_PROFILE,
+            ScenarioKnowledgeRecipe::SavedHumanProductionV1 => Self::SAVED_HUMAN_PRODUCTION_PROFILE,
+            ScenarioKnowledgeRecipe::SavedOpponentContactV1 => Self::SAVED_OPPONENT_CONTACT_PROFILE,
+            ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1 => {
+                Self::SAVED_OPPONENT_CITY_COMBAT_PROFILE
+            }
+            ScenarioKnowledgeRecipe::SavedOpponentHutV1 => Self::SAVED_OPPONENT_HUT_PROFILE,
+            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1 => {
+                Self::SAVED_OPPONENT_ARMED_STACK_PROFILE
+            }
+            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2 => {
+                Self::SAVED_OPPONENT_ARMED_STACK_V2_PROFILE
+            }
+            ScenarioKnowledgeRecipe::SavedOpponentZoneV1 => Self::SAVED_OPPONENT_ZONE_PROFILE,
+            ScenarioKnowledgeRecipe::SavedOpponentFoundingV1 => {
+                Self::SAVED_OPPONENT_FOUNDING_PROFILE
+            }
+            ScenarioKnowledgeRecipe::SavedOpponentWestwardV1 => {
+                Self::SAVED_OPPONENT_WESTWARD_PROFILE
+            }
+            ScenarioKnowledgeRecipe::SavedNavalArrivalV1 => Self::SAVED_NAVAL_ARRIVAL_PROFILE,
+            ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 => {
+                Self::SAVED_REMOTE_NAVAL_STACK_PROFILE
+            }
+            ScenarioKnowledgeRecipe::SavedNavalAllocationV1 => Self::SAVED_NAVAL_ALLOCATION_PROFILE,
         }
     }
 
@@ -131,6 +253,91 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedInitialThenEngineV1 => {
                 (2, Self::SAVED_VIEW_PROFILE, "saved-initial-then-engine-v1")
             }
+            ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1 => (
+                3,
+                Self::STAGED_ROUND_PROFILE,
+                "saved-initial-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1 => (
+                4,
+                Self::SAVED_MOVEMENT_PROFILE,
+                "saved-land-movement-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1 => (
+                5,
+                Self::SAVED_CITY_VIEW_PROFILE,
+                "saved-land-and-city-view-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedOpponentStackV1 => (
+                6,
+                Self::SAVED_OPPONENT_STACK_PROFILE,
+                "saved-opponent-stack-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedOpponentCombatV1 => (
+                7,
+                Self::SAVED_OPPONENT_COMBAT_PROFILE,
+                "saved-opponent-combat-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedHumanProductionV1 => (
+                8,
+                Self::SAVED_HUMAN_PRODUCTION_PROFILE,
+                "saved-human-production-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedOpponentContactV1 => (
+                9,
+                Self::SAVED_OPPONENT_CONTACT_PROFILE,
+                "saved-opponent-contact-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1 => (
+                10,
+                Self::SAVED_OPPONENT_CITY_COMBAT_PROFILE,
+                "saved-opponent-city-combat-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedOpponentHutV1 => (
+                11,
+                Self::SAVED_OPPONENT_HUT_PROFILE,
+                "saved-opponent-hut-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1 => (
+                12,
+                Self::SAVED_OPPONENT_ARMED_STACK_PROFILE,
+                "saved-opponent-armed-stack-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2 => (
+                13,
+                Self::SAVED_OPPONENT_ARMED_STACK_V2_PROFILE,
+                "saved-opponent-armed-stack-then-engine-v2",
+            ),
+            ScenarioKnowledgeRecipe::SavedOpponentZoneV1 => (
+                14,
+                Self::SAVED_OPPONENT_ZONE_PROFILE,
+                "saved-opponent-zone-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedOpponentFoundingV1 => (
+                15,
+                Self::SAVED_OPPONENT_FOUNDING_PROFILE,
+                "saved-opponent-founding-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedOpponentWestwardV1 => (
+                16,
+                Self::SAVED_OPPONENT_WESTWARD_PROFILE,
+                "saved-opponent-westward-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedNavalArrivalV1 => (
+                17,
+                Self::SAVED_NAVAL_ARRIVAL_PROFILE,
+                "saved-naval-arrival-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 => (
+                18,
+                Self::SAVED_REMOTE_NAVAL_STACK_PROFILE,
+                "saved-remote-naval-stack-then-engine-v1",
+            ),
+            ScenarioKnowledgeRecipe::SavedNavalAllocationV1 => (
+                19,
+                Self::SAVED_NAVAL_ALLOCATION_PROFILE,
+                "saved-naval-allocation-then-engine-v1",
+            ),
         };
         format!(
             "initializer {schema} profile {profile} source {} {} {:016x} mode {mode} saved {} {} {} {} human {} phase {:?} cursor {} policy {} seed {} movement {movement} knowledge {knowledge} world {:016x} memory {:016x} choice {:016x} events {:016x} {:016x} rng {:08x} {} {:08x} {} dependencies {} {:016x} {}",
@@ -154,6 +361,91 @@ impl ScenarioInitializer {
             Self::SAVED_VIEW_PROFILE
         )) {
             Ok(ScenarioKnowledgeRecipe::SavedInitialThenEngineV1)
+        } else if line.starts_with(&format!(
+            "initializer 3 profile {} ",
+            Self::STAGED_ROUND_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1)
+        } else if line.starts_with(&format!(
+            "initializer 4 profile {} ",
+            Self::SAVED_MOVEMENT_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1)
+        } else if line.starts_with(&format!(
+            "initializer 5 profile {} ",
+            Self::SAVED_CITY_VIEW_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1)
+        } else if line.starts_with(&format!(
+            "initializer 6 profile {} ",
+            Self::SAVED_OPPONENT_STACK_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentStackV1)
+        } else if line.starts_with(&format!(
+            "initializer 7 profile {} ",
+            Self::SAVED_OPPONENT_COMBAT_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentCombatV1)
+        } else if line.starts_with(&format!(
+            "initializer 8 profile {} ",
+            Self::SAVED_HUMAN_PRODUCTION_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedHumanProductionV1)
+        } else if line.starts_with(&format!(
+            "initializer 9 profile {} ",
+            Self::SAVED_OPPONENT_CONTACT_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentContactV1)
+        } else if line.starts_with(&format!(
+            "initializer 10 profile {} ",
+            Self::SAVED_OPPONENT_CITY_COMBAT_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1)
+        } else if line.starts_with(&format!(
+            "initializer 11 profile {} ",
+            Self::SAVED_OPPONENT_HUT_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentHutV1)
+        } else if line.starts_with(&format!(
+            "initializer 12 profile {} ",
+            Self::SAVED_OPPONENT_ARMED_STACK_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1)
+        } else if line.starts_with(&format!(
+            "initializer 13 profile {} ",
+            Self::SAVED_OPPONENT_ARMED_STACK_V2_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2)
+        } else if line.starts_with(&format!(
+            "initializer 14 profile {} ",
+            Self::SAVED_OPPONENT_ZONE_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentZoneV1)
+        } else if line.starts_with(&format!(
+            "initializer 15 profile {} ",
+            Self::SAVED_OPPONENT_FOUNDING_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentFoundingV1)
+        } else if line.starts_with(&format!(
+            "initializer 16 profile {} ",
+            Self::SAVED_OPPONENT_WESTWARD_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentWestwardV1)
+        } else if line.starts_with(&format!(
+            "initializer 17 profile {} ",
+            Self::SAVED_NAVAL_ARRIVAL_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedNavalArrivalV1)
+        } else if line.starts_with(&format!(
+            "initializer 18 profile {} ",
+            Self::SAVED_REMOTE_NAVAL_STACK_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1)
+        } else if line.starts_with(&format!(
+            "initializer 19 profile {} ",
+            Self::SAVED_NAVAL_ALLOCATION_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedNavalAllocationV1)
         } else {
             Err("unsupported scenario initializer version or profile".into())
         }

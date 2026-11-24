@@ -1,0 +1,249 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "observed": {
+    "city_slot": 6,
+    "stop": "00434d81",
+    "viewer_explored_tiles": 59,
+    "viewer_memory_changed": false,
+    "previous_unit_knowledge_changed": false,
+    "created_units": [
+      {
+        "slot": 34,
+        "position": [
+          43,
+          37
+        ],
+        "owner": 5,
+        "tile_known": false,
+        "viewer_mask": false,
+        "visibility_byte": 0,
+        "orders": 255
+      }
+    ],
+    "presentation_substitutes": [
+      "00467c89",
+      "00467d19"
+    ],
+    "prepared_opponent_move": {
+      "entry": "0054c69b",
+      "arguments": [
+        2,
+        1,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 2,
+          "position": [
+            41,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": -1,
+          "next": -1
+        },
+        {
+          "slot": 19,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": 34,
+          "next": -1
+        },
+        {
+          "slot": 34,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": -1,
+          "next": 19
+        }
+      ],
+      "after": [
+        {
+          "slot": 2,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 3,
+          "previous": 19,
+          "next": -1
+        },
+        {
+          "slot": 19,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": 34,
+          "next": 2
+        },
+        {
+          "slot": 34,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": -1,
+          "next": 19
+        }
+      ],
+      "substitutes": [
+        "00577011",
+        "00467d19"
+      ]
+    },
+    "prepared_opponent_empty_move": {
+      "entry": "0054c69b",
+      "arguments": [
+        10,
+        7,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 10,
+          "position": [
+            41,
+            39
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": -1,
+          "next": -1
+        }
+      ],
+      "after": [
+        {
+          "slot": 10,
+          "position": [
+            41,
+            37
+          ],
+          "owner": 5,
+          "spent": 9,
+          "previous": -1,
+          "next": -1
+        }
+      ],
+      "substitutes": [
+        "00577011",
+        "00467d19"
+      ]
+    },
+    "prepared_opponent_departure": {
+      "entry": "0054c69b",
+      "arguments": [
+        19,
+        6,
+        3
+      ],
+      "return": 1,
+      "explored_tiles": 59,
+      "viewer_memory_changed": false,
+      "before": [
+        {
+          "slot": 19,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": 34,
+          "next": 2
+        },
+        {
+          "slot": 34,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": -1,
+          "next": 19
+        },
+        {
+          "slot": 2,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 3,
+          "previous": 19,
+          "next": -1
+        }
+      ],
+      "after": [
+        {
+          "slot": 19,
+          "position": [
+            42,
+            36
+          ],
+          "owner": 5,
+          "spent": 1,
+          "previous": -1,
+          "next": -1
+        },
+        {
+          "slot": 34,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 0,
+          "previous": -1,
+          "next": 2
+        },
+        {
+          "slot": 2,
+          "position": [
+            43,
+            37
+          ],
+          "owner": 5,
+          "spent": 3,
+          "previous": 34,
+          "next": -1
+        }
+      ],
+      "substitutes": [
+        "00577011",
+        "00467d19"
+      ]
+    }
+  },
+  "scope": "Compare human map knowledge before civ 5's city work and at production selection.\n\nStarting with the same saved turn as the round-handoff witness, run four\nnative Skip orders. Continue from the first opponent city-phase entry to\nthe call into the production selector. The probe supplies host messages\nand substitutes presentation. From the selector boundary, three controlled\nnative moves use the first spatial engine orders as inputs. The selector\nand native opponent policy are outside the trace."
+}

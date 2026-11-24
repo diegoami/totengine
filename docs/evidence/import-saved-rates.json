@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "entry": "0040b4fa",
+  "stop": "0040b6e3",
+  "cases": [
+    {
+      "before": [
+        6,
+        4
+      ],
+      "science": 6,
+      "tax": 4,
+      "refreshed_cities": [],
+      "explored_tiles": 59,
+      "tile_bytes_changed": 0,
+      "remembered_bytes_changed": 0
+    },
+    {
+      "before": [
+        6,
+        4
+      ],
+      "science": 4,
+      "tax": 4,
+      "refreshed_cities": [
+        5
+      ],
+      "explored_tiles": 59,
+      "tile_bytes_changed": 0,
+      "remembered_bytes_changed": 0
+    },
+    {
+      "before": [
+        6,
+        4
+      ],
+      "science": 4,
+      "tax": 6,
+      "refreshed_cities": [
+        5
+      ],
+      "explored_tiles": 59,
+      "tile_bytes_changed": 0,
+      "remembered_bytes_changed": 0
+    }
+  ],
+  "scope": "Measure the native rate commit against saved map knowledge.\n\nSupply the already chosen legal rates to the native dialog commit\nfragment. Native city refresh runs through its normal calls. Stop\nbefore window cleanup and keep display input outside this probe."
+}

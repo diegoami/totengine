@@ -158,6 +158,10 @@ pub enum Command {
     Skip {
         unit: Entity,
     },
+    /// Defer a ready unit in the checked saved-view selection context.
+    Wait {
+        unit: Entity,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -242,6 +246,8 @@ pub struct HumanSession {
     initializer: Option<ScenarioInitializer>,
     knowledge_recipe: ScenarioKnowledgeRecipe,
     saved_initial: Option<SavedInitialView>,
+    saved_move_state: Option<tot_kit::SaveFile>,
+    staged_round: Option<StagedRound>,
     game: Game,
     human: u8,
     /// The opponents' policy (#261); recorded in checkpoints.
@@ -385,6 +391,7 @@ impl HumanSession {
             policy,
             seed,
             None,
+            ScenarioKnowledgeRecipe::EngineSightV1,
         )
     }
 
@@ -394,6 +401,7 @@ impl HumanSession {
         policy: crate::campaign::AiPolicy,
         seed: u64,
         projection: Option<crate::saved_knowledge::SavedMapKnowledge>,
+        recipe: ScenarioKnowledgeRecipe,
     ) -> Result<Self, String> {
         let ScenarioInput {
             path,
@@ -422,7 +430,7 @@ impl HumanSession {
             seed,
         });
         let initial = match projection {
-            Some(p) => InitialKnowledge::Saved(p),
+            Some(p) => InitialKnowledge::Saved(p, recipe),
             None => InitialKnowledge::Engine { resumed },
         };
         Self::with_game(game, origin, human, policy, seed, 1..=7, initial)
@@ -478,6 +486,318 @@ impl HumanSession {
         Self::scenario_initialized_recipe(input, human, policy, seed, dependencies, recipe)
     }
 
+    /// Explicit opt-in for inspecting a saved round with per-civilization
+    /// city work before orders. The normal scenario entry continues to use
+    /// its existing recipes. Subsequent visibility and city mechanics use
+    /// the engine model, with city passes executed as indivisible work items.
+    pub fn scenario_initialized_staged_round(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1,
+        )
+    }
+
+    /// Opt into saved-view movement for ordinary land steps and skips before other
+    /// accepted gameplay changes the saved context. City and opponent work
+    /// follows the staged engine scheduler.
+    pub fn scenario_initialized_saved_movement(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1,
+        )
+    }
+
+    /// Opt into the saved-view movement recipe with guarded city work
+    /// and nonspatial opponent orders. Other orders use engine observation.
+    pub fn scenario_initialized_saved_city_view(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1,
+        )
+    }
+
+    /// Opt into guarded opponent moves between unseen land and friendly city stacks.
+    pub fn scenario_initialized_saved_opponent_stack(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentStackV1,
+        )
+    }
+
+    /// Opt into a guarded unseen opponent battle in the saved-view recipe.
+    pub fn scenario_initialized_saved_opponent_combat(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentCombatV1,
+        )
+    }
+
+    /// Keep the saved view through a checked human city unit birth.
+    pub fn scenario_initialized_saved_human_production(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedHumanProductionV1,
+        )
+    }
+
+    /// Retain the checked saved view through the witnessed opponent encounter.
+    pub fn scenario_initialized_saved_opponent_contact(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentContactV1,
+        )
+    }
+
+    /// Retain the checked saved view through the witnessed occupied-city attack.
+    pub fn scenario_initialized_saved_opponent_city_combat(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1,
+        )
+    }
+
+    /// Retain the checked saved view through the witnessed opponent hut entry.
+    pub fn scenario_initialized_saved_opponent_hut(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentHutV1,
+        )
+    }
+
+    /// Retain the checked saved view through the witnessed armed field arrival.
+    pub fn scenario_initialized_saved_opponent_armed_stack(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1,
+        )
+    }
+
+    /// Retain saved observation through the second witnessed armed field arrival.
+    pub fn scenario_initialized_saved_opponent_armed_stack_v2(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2,
+        )
+    }
+
+    /// Retain saved observation through the witnessed opponent refusal.
+    pub fn scenario_initialized_saved_opponent_zone(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentZoneV1,
+        )
+    }
+
+    /// Retain saved observation through the witnessed hidden opponent founding.
+    pub fn scenario_initialized_saved_opponent_founding(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentFoundingV1,
+        )
+    }
+
+    /// Retain saved observation through the checked turn-47 opponent arrival.
+    pub fn scenario_initialized_saved_opponent_westward(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentWestwardV1,
+        )
+    }
+
+    /// Retain saved observation through the hidden naval arrival at turn close.
+    pub fn scenario_initialized_saved_naval_arrival(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedNavalArrivalV1,
+        )
+    }
+
+    /// Retain saved observation during movement away from the hidden naval stack.
+    pub fn scenario_initialized_saved_remote_naval_stack(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1,
+        )
+    }
+
+    /// Retain saved observation through the checked naval arrival with alternate unit slots.
+    pub fn scenario_initialized_saved_naval_allocation(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedNavalAllocationV1,
+        )
+    }
+
     fn scenario_initialized_recipe(
         input: ScenarioInput<'_>,
         human: u8,
@@ -509,7 +829,36 @@ impl HumanSession {
             .as_ref()
             .map_or(0, crate::events::EventEngine::initializer_fingerprint);
         let saved = tot_kit::parse_sav(input.snapshot).map_err(|e| e.to_string())?;
-        let projection = if recipe == ScenarioKnowledgeRecipe::SavedInitialThenEngineV1 {
+        if matches!(
+            recipe,
+            ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedOpponentStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                | ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                | ScenarioKnowledgeRecipe::SavedOpponentHutV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
+                | ScenarioKnowledgeRecipe::SavedOpponentZoneV1
+                | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
+                | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
+                | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+        ) {
+            crate::scenario::phase::saved_human_entry(&saved, &input.rules, human)?;
+            crate::scenario::snapshot::CheckedSnapshot::read(input.snapshot, &input.rules)?;
+            let research = saved.research[usize::from(human)];
+            if research.target < 0 && research.progress != 0 {
+                return Err(
+                    "staged round cannot reconstruct an empty project with saved science".into(),
+                );
+            }
+        }
+        let projection = if recipe != ScenarioKnowledgeRecipe::EngineSightV1 {
             if let Some(reason) = crate::scenario::saved_view_blocker(
                 &saved,
                 &input.rules,
@@ -526,7 +875,29 @@ impl HumanSession {
         } else {
             None
         };
-        let mut session = Self::scenario_with_knowledge(input, human, policy, seed, projection)?;
+        let mut session =
+            Self::scenario_with_knowledge(input, human, policy, seed, projection, recipe)?;
+        if matches!(
+            recipe,
+            ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedOpponentStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                | ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                | ScenarioKnowledgeRecipe::SavedOpponentHutV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
+                | ScenarioKnowledgeRecipe::SavedOpponentZoneV1
+                | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
+                | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
+                | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+        ) {
+            session.saved_move_state = Some(saved.clone());
+        }
         session.initializer = Some(ScenarioInitializer::capture(
             &session,
             &saved,
@@ -551,12 +922,11 @@ impl HumanSession {
     ) -> Result<Self, String> {
         let resumed = match &initial {
             InitialKnowledge::Engine { resumed } => *resumed,
-            InitialKnowledge::Saved(_) => true,
+            InitialKnowledge::Saved(..) => true,
         };
-        let knowledge_recipe = if matches!(&initial, InitialKnowledge::Saved(_)) {
-            ScenarioKnowledgeRecipe::SavedInitialThenEngineV1
-        } else {
-            ScenarioKnowledgeRecipe::EngineSightV1
+        let knowledge_recipe = match &initial {
+            InitialKnowledge::Saved(_, recipe) => *recipe,
+            _ => ScenarioKnowledgeRecipe::EngineSightV1,
         };
         for civ in opponents {
             if civ != human {
@@ -602,6 +972,28 @@ impl HumanSession {
             initializer: None,
             knowledge_recipe,
             saved_initial: None,
+            saved_move_state: None,
+            staged_round: matches!(
+                knowledge_recipe,
+                ScenarioKnowledgeRecipe::SavedInitialStagedRoundV1
+                    | ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1
+                    | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentStackV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                    | ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentHutV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
+                    | ScenarioKnowledgeRecipe::SavedOpponentZoneV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
+                    | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                    | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                    | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+            )
+            .then(StagedRound::default),
             game,
             human,
             policy,
@@ -623,7 +1015,7 @@ impl HumanSession {
             journal: Vec::new(),
         };
         match initial {
-            InitialKnowledge::Saved(projection) => session.install_saved_view(projection)?,
+            InitialKnowledge::Saved(projection, _) => session.install_saved_view(projection)?,
             InitialKnowledge::Engine { .. } => session.remember(),
         }
         if !resumed {
@@ -971,6 +1363,52 @@ impl HumanSession {
                 self.saved_initial
             ));
         }
+        if let Some(staged) = &self.staged_round {
+            data.push_str(&format!(
+                " staged-round-v1 {:?} {} {:?}",
+                self.saved_initial, self.cursor, staged
+            ));
+        }
+        if matches!(
+            self.knowledge_recipe,
+            ScenarioKnowledgeRecipe::SavedMovementStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedCityViewStagedRoundV1
+                | ScenarioKnowledgeRecipe::SavedOpponentStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
+                | ScenarioKnowledgeRecipe::SavedHumanProductionV1
+                | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+                | ScenarioKnowledgeRecipe::SavedOpponentHutV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2
+                | ScenarioKnowledgeRecipe::SavedOpponentZoneV1
+                | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
+                | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
+                | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+        ) {
+            data.push_str(if self.saved_move_state.is_some() {
+                " saved-land-movement-active"
+            } else {
+                " saved-land-movement-finished"
+            });
+        }
+        if self.knowledge_recipe.checked_replay() {
+            if let Some(saved) = &self.saved_move_state {
+                let deferred: Vec<_> = saved
+                    .units
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(slot, unit)| {
+                        (unit.id() != 0 && unit.attr() & 0x4000 != 0).then_some(slot)
+                    })
+                    .collect();
+                if !deferred.is_empty() {
+                    data.push_str(&format!(" saved-wait {deferred:?}"));
+                }
+            }
+        }
         data.bytes().fold(0xcbf2_9ce4_8422_2325, |h, b| {
             (h ^ u64::from(b)).wrapping_mul(0x100_0000_01b3)
         })
@@ -998,7 +1436,15 @@ impl HumanSession {
             .game
             .world
             .human_research_candidates(&self.game.rules, self.human);
-        if (research.target.is_none() || research.free_advances > 0) && !available.is_empty() {
+        let needs_project = research.target.is_none()
+            && self
+                .staged_round
+                .as_ref()
+                .is_none_or(|state| research.progress != 0 || state.research_due);
+        if (needs_project || research.free_advances > 0) && !available.is_empty() {
+            if let Some(state) = &mut self.staged_round {
+                state.research_due = false;
+            }
             let id = self.allocate_decision();
             let default = self.goal.and_then(|goal| {
                 available
@@ -1038,6 +1484,9 @@ impl HumanSession {
             .world
             .resolve_anarchy(&self.game.rules, self.human)
         {
+            if self.knowledge_recipe.checked_replay() {
+                self.finish_saved_movement();
+            }
             let eligible = self
                 .game
                 .world
@@ -1101,6 +1550,7 @@ impl HumanSession {
         let mut talks = None;
         let mut new_rates_review = false;
         let mut new_goal = None;
+        let mut waited = false;
         let order = match (&self.decision, request.command) {
             (None, Command::BeginTalks { other }) => {
                 self.check_peace_contact(other)?;
@@ -1190,6 +1640,11 @@ impl HumanSession {
                     to,
                 })
             }
+            (None, Command::Wait { unit }) => {
+                self.stage_saved_wait(unit)?;
+                waited = true;
+                None
+            }
             (None, Command::Skip { unit }) => {
                 self.unit(unit)?;
                 Some(Order::SkipUnit { unit: unit.slot })
@@ -1277,9 +1732,22 @@ impl HumanSession {
             (None, Command::EndTurn) => Some(Order::EndTurn),
             (None, _) => return Err("no matching decision"),
         };
-        let result = order
-            .map(|o| self.game.submit_checked(self.human, o))
-            .transpose()?;
+        let saved_move = order
+            .map(|o| self.try_saved_view_order(o))
+            .transpose()?
+            .flatten();
+        let kept_saved_view = waited
+            || saved_move.is_some()
+            || (self.saved_move_state.is_some() && order == Some(Order::EndTurn));
+        let result = if waited {
+            Some(OrderResult::Waited)
+        } else if saved_move.is_some() {
+            saved_move
+        } else {
+            order
+                .map(|o| self.game.submit_checked(self.human, o))
+                .transpose()?
+        };
         if !matches!(
             request.command,
             Command::CloseProduction { .. } | Command::Goal { .. }
@@ -1314,9 +1782,12 @@ impl HumanSession {
             self.last_human = Some(result.clone());
         }
         if talks.is_some_and(|(_, stage)| stage == TalksStage::Accepted)
-            || (result.is_some() && !matches!(request.command, Command::CloseProduction { .. }))
+            || (!kept_saved_view
+                && result.is_some()
+                && !matches!(request.command, Command::CloseProduction { .. }))
         {
             self.saved_initial = None;
+            self.saved_move_state = None;
         }
         if order == Some(Order::EndTurn) {
             // Boxes already shown during this turn are not repeated next turn.
@@ -1342,6 +1813,9 @@ impl HumanSession {
         self.cursor += 1;
         self.actions = 0;
         self.last_ai = None;
+        if let Some(staged) = &mut self.staged_round {
+            staged.pending_city_pass = true;
+        }
     }
 
     /// Each work item is one AI order, skipped civilization, or atomic round.
@@ -1354,15 +1828,40 @@ impl HumanSession {
                 self.close_round();
                 self.cursor = 1;
                 self.last_human = None;
+                if let Some(staged) = &mut self.staged_round {
+                    *staged = StagedRound {
+                        pending_city_pass: true,
+                        ..StagedRound::default()
+                    };
+                    if self.game.world.game_over.is_none() && self.game.world.turn < 30_001 {
+                        self.run_staged_city_pass(0);
+                    }
+                }
             } else if !self.game.world.living_civs().contains(&self.cursor) {
                 self.next_civ();
+            } else if self
+                .staged_round
+                .as_ref()
+                .is_some_and(|stage| stage.pending_city_pass)
+            {
+                self.run_staged_city_pass(self.cursor);
+                self.staged_round.as_mut().unwrap().pending_city_pass = false;
             } else if let Some(mut player) = self.game.players[self.cursor as usize].take() {
                 let obs =
                     self.game
                         .world
                         .observe(&self.game.rules, self.cursor, self.last_ai.take());
                 let order = player.act(&obs);
-                self.last_ai = Some(self.game.submit(self.cursor, order));
+                let result = if let Some(result) = self.try_saved_opponent_order(self.cursor, order)
+                {
+                    result
+                } else {
+                    if !self.keeps_city_view_for_opponent_order(self.cursor, order) {
+                        self.finish_saved_movement();
+                    }
+                    self.game.submit(self.cursor, order)
+                };
+                self.last_ai = Some(result);
                 self.game.players[self.cursor as usize] = Some(player);
                 self.actions += 1;
                 if order == Order::EndTurn || self.actions >= ACTION_CAP {
@@ -1370,6 +1869,16 @@ impl HumanSession {
                 }
             } else {
                 self.next_civ();
+            }
+            if self.cursor == self.human
+                && self
+                    .staged_round
+                    .as_ref()
+                    .is_some_and(|stage| stage.pending_city_pass)
+                && self.phase() == Phase::Human
+            {
+                self.run_staged_city_pass(self.human);
+                self.staged_round.as_mut().unwrap().pending_city_pass = false;
             }
             self.remember();
             steps += 1;
@@ -1386,6 +1895,59 @@ impl HumanSession {
     }
 
     fn close_round(&mut self) {
+        let staged = self.staged_round.is_some();
+        let saved_viewer = (self.knowledge_recipe.checked_replay()
+            && self.saved_move_state.is_some())
+        .then_some(self.human);
+        let mut kept_view = false;
+        let mut observed_arrival = None;
+        let watched = matches!(
+            self.knowledge_recipe,
+            ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+        ) && self.game.world.turn == 47;
+        let saved = watched.then(|| self.saved_move_state.clone()).flatten();
+        let human = self.human;
+        let variable_slots =
+            self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedNavalAllocationV1;
+        self.record_turn_notices(true, |game| {
+            if staged {
+                let (summary, kept) =
+                    game.close_staged_turn(saved_viewer, |before, world, arrivals| {
+                        observed_arrival = saved.as_ref().and_then(|save| {
+                            crate::scenario::opponent_stack::stage_naval_arrival(
+                                save,
+                                before,
+                                world,
+                                human,
+                                arrivals,
+                                variable_slots,
+                            )
+                        });
+                        observed_arrival.is_some()
+                    });
+                kept_view = kept;
+                summary
+            } else {
+                game.close_turn()
+            }
+        });
+        if kept_view {
+            if let Some(saved) = observed_arrival {
+                self.saved_move_state = Some(saved);
+            }
+            self.reset_saved_deferrals();
+        } else {
+            self.finish_saved_movement();
+        }
+    }
+
+    fn record_turn_notices(
+        &mut self,
+        replace: bool,
+        step: impl FnOnce(&mut Game) -> crate::turn::TurnSummary,
+    ) {
         let cities: Vec<bool> = self
             .game
             .world
@@ -1400,9 +1962,11 @@ impl HumanSession {
             .iter()
             .map(|u| u.id != 0 && u.owner == self.human)
             .collect();
-        let summary = self.game.close_turn();
+        let summary = step(&mut self.game);
         let own = |k: &usize| cities.get(*k).copied().unwrap_or(false);
-        self.notices.clear();
+        if replace {
+            self.notices.clear();
+        }
         self.notices
             .extend(summary.grew.into_iter().filter(own).map(Notice::Grew));
         self.notices
@@ -1448,6 +2012,9 @@ impl HumanSession {
         }
     }
 }
+
+mod staged_round;
+use staged_round::StagedRound;
 
 mod checkpoint;
 

@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "entry": "004dddc6",
+  "stop": "004dd04b",
+  "cases": [
+    {
+      "city": 5,
+      "tile": 4,
+      "before": {
+        "worked": 1048720,
+        "specialists": 0
+      },
+      "after": {
+        "worked": 68157568,
+        "specialists": 1
+      },
+      "explored_tiles": 59,
+      "tile_bytes_changed": 0,
+      "remembered_bytes_changed": 0
+    },
+    {
+      "city": 5,
+      "tile": 4,
+      "before": {
+        "worked": 68157568,
+        "specialists": 1
+      },
+      "after": {
+        "worked": 1048720,
+        "specialists": 0
+      },
+      "explored_tiles": 59,
+      "tile_bytes_changed": 0,
+      "remembered_bytes_changed": 0
+    },
+    {
+      "city": 5,
+      "tile": 20,
+      "before": {
+        "worked": 1048720,
+        "specialists": 0
+      },
+      "after": {
+        "worked": 1048720,
+        "specialists": 0
+      },
+      "explored_tiles": 59,
+      "tile_bytes_changed": 0,
+      "remembered_bytes_changed": 0
+    }
+  ],
+  "scope": "Measure saved view through the prepared native city worker editor.\n\nSupply the current-city accessor and the selected radius tile. The native\npacked citizen edit and city totals run before the first redraw helper."
+}

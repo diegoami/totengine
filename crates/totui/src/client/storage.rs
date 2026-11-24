@@ -93,12 +93,7 @@ pub fn save(root: &Path, name: &str, text: &str) -> Result<(), String> {
 
 /// Publish the private input before its checkpoint. The checkpoint text is
 /// still portable and contains only the original relative path and identity.
-pub(super) fn save_scenario(
-    root: &Path,
-    name: &str,
-    text: &str,
-    snapshot: &[u8],
-) -> Result<(), String> {
+pub fn save_scenario(root: &Path, name: &str, text: &str, snapshot: &[u8]) -> Result<(), String> {
     let target = slot(root, name)?;
     if target.symlink_metadata().is_ok() {
         return Err("Checkpoint already exists; choose a new name".into());

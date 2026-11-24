@@ -1,0 +1,674 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "attack": {
+    "arguments": [
+      35,
+      1,
+      3
+    ],
+    "crt_before": 2279418457,
+    "crt_after": 605269276,
+    "before": {
+      "units": [
+        {
+          "slot": 35,
+          "live": true,
+          "position": [
+            46,
+            28
+          ],
+          "spent": 3,
+          "damage": 0
+        },
+        {
+          "slot": 36,
+          "live": true,
+          "position": [
+            48,
+            28
+          ],
+          "spent": 0,
+          "damage": 0
+        }
+      ],
+      "city": {
+        "slot": 9,
+        "size": 1,
+        "live": true,
+        "tile_flags": 3
+      },
+      "explored_tiles": 59
+    },
+    "after": {
+      "units": [
+        {
+          "slot": 35,
+          "live": true,
+          "position": [
+            46,
+            28
+          ],
+          "spent": 6,
+          "damage": 8
+        },
+        {
+          "slot": 36,
+          "live": false,
+          "position": [
+            -700,
+            -700
+          ],
+          "spent": 0,
+          "damage": 10
+        }
+      ],
+      "city": {
+        "slot": 9,
+        "size": 0,
+        "live": false,
+        "tile_flags": 0
+      },
+      "explored_tiles": 59
+    },
+    "viewer_exploration_unchanged": true,
+    "viewer_memory_changes": [],
+    "return": null,
+    "map_changes": [
+      [
+        6137,
+        240,
+        248
+      ],
+      [
+        6146,
+        192,
+        0
+      ],
+      [
+        6149,
+        240,
+        248
+      ],
+      [
+        6377,
+        240,
+        248
+      ],
+      [
+        6386,
+        192,
+        0
+      ],
+      [
+        6389,
+        99,
+        107
+      ],
+      [
+        6611,
+        96,
+        104
+      ],
+      [
+        6614,
+        192,
+        0
+      ],
+      [
+        6617,
+        240,
+        248
+      ],
+      [
+        6620,
+        192,
+        0
+      ],
+      [
+        6623,
+        244,
+        252
+      ],
+      [
+        6632,
+        192,
+        0
+      ],
+      [
+        6635,
+        244,
+        252
+      ],
+      [
+        6857,
+        96,
+        104
+      ],
+      [
+        6860,
+        192,
+        0
+      ],
+      [
+        6863,
+        99,
+        91
+      ],
+      [
+        6865,
+        3,
+        0
+      ],
+      [
+        6866,
+        192,
+        0
+      ],
+      [
+        6869,
+        101,
+        109
+      ],
+      [
+        6872,
+        192,
+        0
+      ],
+      [
+        6875,
+        96,
+        104
+      ],
+      [
+        7091,
+        32,
+        40
+      ],
+      [
+        7094,
+        192,
+        0
+      ],
+      [
+        7097,
+        96,
+        104
+      ],
+      [
+        7100,
+        192,
+        0
+      ],
+      [
+        7103,
+        96,
+        104
+      ],
+      [
+        7106,
+        192,
+        0
+      ],
+      [
+        7109,
+        245,
+        253
+      ],
+      [
+        7112,
+        192,
+        0
+      ],
+      [
+        7115,
+        100,
+        108
+      ],
+      [
+        7340,
+        192,
+        0
+      ],
+      [
+        7343,
+        96,
+        104
+      ],
+      [
+        7346,
+        192,
+        0
+      ],
+      [
+        7349,
+        240,
+        248
+      ],
+      [
+        7352,
+        192,
+        0
+      ],
+      [
+        7355,
+        240,
+        248
+      ],
+      [
+        7580,
+        192,
+        0
+      ],
+      [
+        7583,
+        240,
+        248
+      ],
+      [
+        7586,
+        192,
+        0
+      ],
+      [
+        7589,
+        240,
+        248
+      ],
+      [
+        7595,
+        240,
+        248
+      ],
+      [
+        7823,
+        80,
+        88
+      ],
+      [
+        8063,
+        80,
+        88
+      ]
+    ],
+    "all_memory_changes": [],
+    "stopped_at": "00584467",
+    "host_substitutes": [
+      "PeekMessageA",
+      "timeGetTime",
+      "PeekMessageA",
+      "timeGetTime",
+      "GetTickCount",
+      "OutputDebugStringA",
+      "OutputDebugStringA"
+    ],
+    "display_substitutes": [
+      "0040d510",
+      "00467c89"
+    ]
+  },
+  "closed_panel_attack": {
+    "arguments": [
+      35,
+      1,
+      3
+    ],
+    "crt_before": 2279418457,
+    "crt_after": 605269276,
+    "before": {
+      "units": [
+        {
+          "slot": 35,
+          "live": true,
+          "position": [
+            46,
+            28
+          ],
+          "spent": 3,
+          "damage": 0
+        },
+        {
+          "slot": 36,
+          "live": true,
+          "position": [
+            48,
+            28
+          ],
+          "spent": 0,
+          "damage": 0
+        }
+      ],
+      "city": {
+        "slot": 9,
+        "size": 1,
+        "live": true,
+        "tile_flags": 3
+      },
+      "explored_tiles": 59
+    },
+    "after": {
+      "units": [
+        {
+          "slot": 35,
+          "live": true,
+          "position": [
+            46,
+            28
+          ],
+          "spent": 6,
+          "damage": 8
+        },
+        {
+          "slot": 36,
+          "live": false,
+          "position": [
+            -700,
+            -700
+          ],
+          "spent": 0,
+          "damage": 10
+        }
+      ],
+      "city": {
+        "slot": 9,
+        "size": 0,
+        "live": false,
+        "tile_flags": 0
+      },
+      "explored_tiles": 59
+    },
+    "viewer_exploration_unchanged": true,
+    "viewer_memory_changes": [
+      [
+        1144,
+        2,
+        0
+      ]
+    ],
+    "return": 0,
+    "map_changes": [
+      [
+        6137,
+        240,
+        248
+      ],
+      [
+        6146,
+        192,
+        0
+      ],
+      [
+        6149,
+        240,
+        248
+      ],
+      [
+        6377,
+        240,
+        248
+      ],
+      [
+        6386,
+        192,
+        0
+      ],
+      [
+        6389,
+        99,
+        107
+      ],
+      [
+        6611,
+        96,
+        104
+      ],
+      [
+        6614,
+        192,
+        0
+      ],
+      [
+        6617,
+        240,
+        248
+      ],
+      [
+        6620,
+        192,
+        0
+      ],
+      [
+        6623,
+        244,
+        252
+      ],
+      [
+        6632,
+        192,
+        0
+      ],
+      [
+        6635,
+        244,
+        252
+      ],
+      [
+        6857,
+        96,
+        104
+      ],
+      [
+        6860,
+        192,
+        0
+      ],
+      [
+        6863,
+        99,
+        91
+      ],
+      [
+        6865,
+        3,
+        0
+      ],
+      [
+        6866,
+        192,
+        0
+      ],
+      [
+        6869,
+        101,
+        109
+      ],
+      [
+        6872,
+        192,
+        0
+      ],
+      [
+        6875,
+        96,
+        104
+      ],
+      [
+        7091,
+        32,
+        40
+      ],
+      [
+        7094,
+        192,
+        0
+      ],
+      [
+        7097,
+        96,
+        104
+      ],
+      [
+        7100,
+        192,
+        0
+      ],
+      [
+        7103,
+        96,
+        104
+      ],
+      [
+        7106,
+        192,
+        0
+      ],
+      [
+        7109,
+        245,
+        253
+      ],
+      [
+        7112,
+        192,
+        0
+      ],
+      [
+        7115,
+        100,
+        108
+      ],
+      [
+        7340,
+        192,
+        0
+      ],
+      [
+        7343,
+        96,
+        104
+      ],
+      [
+        7346,
+        192,
+        0
+      ],
+      [
+        7349,
+        240,
+        248
+      ],
+      [
+        7352,
+        192,
+        0
+      ],
+      [
+        7355,
+        240,
+        248
+      ],
+      [
+        7580,
+        192,
+        0
+      ],
+      [
+        7583,
+        240,
+        248
+      ],
+      [
+        7586,
+        192,
+        0
+      ],
+      [
+        7589,
+        240,
+        248
+      ],
+      [
+        7595,
+        240,
+        248
+      ],
+      [
+        7823,
+        80,
+        88
+      ],
+      [
+        8063,
+        80,
+        88
+      ]
+    ],
+    "all_memory_changes": [
+      [
+        1,
+        1144,
+        2,
+        0
+      ],
+      [
+        2,
+        1144,
+        2,
+        0
+      ],
+      [
+        3,
+        1144,
+        2,
+        0
+      ],
+      [
+        4,
+        1144,
+        2,
+        0
+      ],
+      [
+        5,
+        1144,
+        2,
+        0
+      ],
+      [
+        6,
+        1144,
+        3,
+        0
+      ],
+      [
+        7,
+        1144,
+        2,
+        0
+      ]
+    ],
+    "stopped_at": "00100000",
+    "host_substitutes": [
+      "PeekMessageA",
+      "timeGetTime",
+      "PeekMessageA",
+      "timeGetTime",
+      "GetTickCount",
+      "OutputDebugStringA",
+      "OutputDebugStringA"
+    ],
+    "display_substitutes": [
+      "0040d510",
+      "00467c89"
+    ]
+  },
+  "scope": "Measure the prepared post-contact attack on the occupied Original city.\n\nMove the opponent attacker into the witnessed approach square, supply\nits spent movement, the verified encounter treaty and its outgoing CRT\nstate, then execute the eastward attack. One trace stops at the first\ncity-panel font import. With the native redraw flag clear, a second\ncontrol follows the attack callback through return."
+}

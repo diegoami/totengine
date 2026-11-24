@@ -1,0 +1,231 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "human_city_birth": {
+    "turn": 44,
+    "city": 5,
+    "applied_worker": {
+      "worked": 68157568,
+      "specialists": 1
+    },
+    "shields_before": 20,
+    "shield_writes": [
+      [
+        "004c62e0",
+        20,
+        22
+      ],
+      [
+        "004c6607",
+        22,
+        2
+      ],
+      [
+        "004c748e",
+        2,
+        0
+      ]
+    ],
+    "shields_after": 0,
+    "unit": {
+      "slot": 22,
+      "type": 3,
+      "owner": 4,
+      "position": [
+        53,
+        9
+      ],
+      "spent": 0
+    },
+    "city_pass_calls": [
+      "00467c89",
+      "0041f704",
+      "00467c89"
+    ],
+    "observation_arguments": [
+      [
+        22,
+        1
+      ]
+    ],
+    "tile_byte_changes": [],
+    "explored_before": 59,
+    "explored_after": 59,
+    "explored_at_poll": 59,
+    "remembered_bytes_changed": 0,
+    "first_poll": {
+      "stop_at_call": "00576ee4",
+      "import": "PeekMessageA",
+      "window_filter": 0,
+      "message_filter": [
+        0,
+        0
+      ],
+      "remove": 1,
+      "active_slot": 18,
+      "unit_orders_byte": 255,
+      "research_target": -1,
+      "research_progress": 0
+    },
+    "focus": {
+      "anchors": [
+        [
+          51,
+          9
+        ],
+        [
+          53,
+          9
+        ],
+        [
+          54,
+          8
+        ],
+        [
+          61,
+          5
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "choices": [
+        18,
+        22,
+        22,
+        9,
+        6
+      ],
+      "reversed_head_choices": [
+        18,
+        22,
+        22,
+        9,
+        6
+      ],
+      "original_stack": [
+        22,
+        26
+      ]
+    }
+  },
+  "surplus_control": {
+    "turn": 44,
+    "city": 5,
+    "applied_worker": {
+      "worked": 68157568,
+      "specialists": 1
+    },
+    "shields_before": 25,
+    "shield_writes": [
+      [
+        "004c62e0",
+        25,
+        27
+      ],
+      [
+        "004c6607",
+        27,
+        7
+      ],
+      [
+        "004c748e",
+        7,
+        0
+      ]
+    ],
+    "shields_after": 0,
+    "unit": {
+      "slot": 22,
+      "type": 3,
+      "owner": 4,
+      "position": [
+        53,
+        9
+      ],
+      "spent": 0
+    },
+    "city_pass_calls": [
+      "00467c89",
+      "0041f704",
+      "00467c89"
+    ],
+    "observation_arguments": [
+      [
+        22,
+        1
+      ]
+    ],
+    "tile_byte_changes": [],
+    "explored_before": 59,
+    "explored_after": 59,
+    "explored_at_poll": 59,
+    "remembered_bytes_changed": 0,
+    "first_poll": {
+      "stop_at_call": "00576ee4",
+      "import": "PeekMessageA",
+      "window_filter": 0,
+      "message_filter": [
+        0,
+        0
+      ],
+      "remove": 1,
+      "active_slot": 18,
+      "unit_orders_byte": 255,
+      "research_target": -1,
+      "research_progress": 0
+    },
+    "focus": {
+      "anchors": [
+        [
+          51,
+          9
+        ],
+        [
+          53,
+          9
+        ],
+        [
+          54,
+          8
+        ],
+        [
+          61,
+          5
+        ],
+        [
+          0,
+          0
+        ]
+      ],
+      "choices": [
+        18,
+        22,
+        22,
+        9,
+        6
+      ],
+      "reversed_head_choices": [
+        18,
+        22,
+        22,
+        9,
+        6
+      ],
+      "original_stack": [
+        22,
+        26
+      ]
+    }
+  },
+  "scope": "Measure the first native human city pass after the pinned production purchase.\n\nPrepare round 44 from the established opponent and annual trace. Supply the\nmeasured city worker, specialist, shield and treasury results before the\nhuman city pass. Run the native turn start and input preparation. Disable\nautosave and substitute the redraw call, as in the quiet turn-44 control.\nThe surplus control starts with five more stored shields."
+}

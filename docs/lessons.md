@@ -7,6 +7,10 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
 
 ## Process discipline
 
+- **Keep going between steps.** The owner wants implementation, validation,
+  fixes, and draft PRs handled continuously across a milestone. Batch progress
+  and pause for a required review or an owner-only blocker.
+
 - **Never inline process-killing.** The pkill self-kill trap struck FIVE
   times across two strings: any command line containing a `pkill -f
   '[p]attern'` AND the literal string matching that pattern ANYWHERE else

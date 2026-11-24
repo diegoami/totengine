@@ -1,0 +1,547 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "cases": {
+    "22": {
+      "wait": {
+        "entry": "0040f592",
+        "input_code": 119,
+        "handlers": [
+          "005475d6"
+        ],
+        "move_arguments": [],
+        "observation_arguments": [
+          [
+            26,
+            1
+          ]
+        ],
+        "before": {
+          "active_slot": 22,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "active_slot": 26,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "unit_position_before": [
+          53,
+          9
+        ],
+        "unit_position_after": [
+          53,
+          9
+        ],
+        "active_unit_type_allowance": 3,
+        "unit_byte_changes": [
+          {
+            "slot": 22,
+            "byte": 7,
+            "before": 0,
+            "after": 64
+          }
+        ],
+        "civ_city_bytes_unchanged": true,
+        "tile_byte_changes": [],
+        "cache_byte_changes": [],
+        "explored_tiles": 59,
+        "presentation_substitutes": [
+          "0040d510",
+          "005346be",
+          "0040d7e7",
+          "004bf9b6",
+          "00467c89",
+          "0041af00"
+        ],
+        "host_substitutes": []
+      },
+      "move_northwest": {
+        "entry": "0040fbd4",
+        "input_code": 167,
+        "handlers": [],
+        "move_arguments": [
+          [
+            22,
+            6,
+            3
+          ]
+        ],
+        "observation_arguments": [
+          [
+            22,
+            1
+          ]
+        ],
+        "before": {
+          "active_slot": 22,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "active_slot": 22,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "unit_position_before": [
+          53,
+          9
+        ],
+        "unit_position_after": [
+          52,
+          8
+        ],
+        "active_unit_type_allowance": 3,
+        "unit_byte_changes": [
+          {
+            "slot": 22,
+            "byte": 0,
+            "before": 53,
+            "after": 52
+          },
+          {
+            "slot": 22,
+            "byte": 2,
+            "before": 9,
+            "after": 8
+          },
+          {
+            "slot": 22,
+            "byte": 6,
+            "before": 0,
+            "after": 64
+          },
+          {
+            "slot": 22,
+            "byte": 10,
+            "before": 0,
+            "after": 6
+          },
+          {
+            "slot": 22,
+            "byte": 13,
+            "before": 255,
+            "after": 6
+          },
+          {
+            "slot": 22,
+            "byte": 28,
+            "before": 26,
+            "after": 255
+          },
+          {
+            "slot": 22,
+            "byte": 29,
+            "before": 0,
+            "after": 255
+          },
+          {
+            "slot": 26,
+            "byte": 26,
+            "before": 22,
+            "after": 255
+          },
+          {
+            "slot": 26,
+            "byte": 27,
+            "before": 0,
+            "after": 255
+          }
+        ],
+        "civ_city_bytes_unchanged": true,
+        "tile_byte_changes": [
+          [
+            2077,
+            0,
+            1
+          ],
+          [
+            2081,
+            240,
+            64
+          ]
+        ],
+        "cache_byte_changes": [
+          [
+            4,
+            346,
+            0,
+            1
+          ]
+        ],
+        "explored_tiles": 59,
+        "presentation_substitutes": [
+          "0040d7e7",
+          "0045a4b0",
+          "005373eb",
+          "00467c89"
+        ],
+        "host_substitutes": [
+          {
+            "import": "XD_InFlushSendBuffer",
+            "result": 0
+          },
+          {
+            "import": "PeekMessageA",
+            "filter": [
+              957,
+              957
+            ],
+            "result": 0
+          },
+          {
+            "import": "GetAsyncKeyState",
+            "key": 16,
+            "result": 0
+          }
+        ]
+      },
+      "skip": {
+        "entry": "0040f592",
+        "input_code": 32,
+        "handlers": [
+          "00547530"
+        ],
+        "move_arguments": [],
+        "observation_arguments": [
+          [
+            22,
+            1
+          ]
+        ],
+        "before": {
+          "active_slot": 22,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "active_slot": 22,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "unit_position_before": [
+          53,
+          9
+        ],
+        "unit_position_after": [
+          53,
+          9
+        ],
+        "active_unit_type_allowance": 3,
+        "unit_byte_changes": [
+          {
+            "slot": 22,
+            "byte": 10,
+            "before": 0,
+            "after": 3
+          },
+          {
+            "slot": 22,
+            "byte": 13,
+            "before": 0,
+            "after": 255
+          }
+        ],
+        "civ_city_bytes_unchanged": true,
+        "tile_byte_changes": [],
+        "cache_byte_changes": [],
+        "explored_tiles": 59,
+        "presentation_substitutes": [
+          "00467c89"
+        ],
+        "host_substitutes": [
+          {
+            "import": "PeekMessageA",
+            "filter": [
+              957,
+              957
+            ],
+            "result": 0
+          }
+        ]
+      }
+    },
+    "26": {
+      "wait": {
+        "entry": "0040f592",
+        "input_code": 119,
+        "handlers": [
+          "005475d6"
+        ],
+        "move_arguments": [],
+        "observation_arguments": [
+          [
+            22,
+            1
+          ]
+        ],
+        "before": {
+          "active_slot": 26,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "active_slot": 22,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "unit_position_before": [
+          53,
+          9
+        ],
+        "unit_position_after": [
+          53,
+          9
+        ],
+        "active_unit_type_allowance": 3,
+        "unit_byte_changes": [
+          {
+            "slot": 26,
+            "byte": 7,
+            "before": 8,
+            "after": 72
+          }
+        ],
+        "civ_city_bytes_unchanged": true,
+        "tile_byte_changes": [],
+        "cache_byte_changes": [],
+        "explored_tiles": 59,
+        "presentation_substitutes": [
+          "0040d510",
+          "005346be",
+          "0040d7e7",
+          "004bf9b6",
+          "00467c89",
+          "0041af00"
+        ],
+        "host_substitutes": []
+      },
+      "move_northwest": {
+        "entry": "0040fbd4",
+        "input_code": 167,
+        "handlers": [],
+        "move_arguments": [
+          [
+            26,
+            6,
+            3
+          ]
+        ],
+        "observation_arguments": [
+          [
+            26,
+            1
+          ]
+        ],
+        "before": {
+          "active_slot": 26,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "active_slot": 26,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "unit_position_before": [
+          53,
+          9
+        ],
+        "unit_position_after": [
+          52,
+          8
+        ],
+        "active_unit_type_allowance": 3,
+        "unit_byte_changes": [
+          {
+            "slot": 22,
+            "byte": 28,
+            "before": 26,
+            "after": 255
+          },
+          {
+            "slot": 22,
+            "byte": 29,
+            "before": 0,
+            "after": 255
+          },
+          {
+            "slot": 26,
+            "byte": 0,
+            "before": 53,
+            "after": 52
+          },
+          {
+            "slot": 26,
+            "byte": 2,
+            "before": 9,
+            "after": 8
+          },
+          {
+            "slot": 26,
+            "byte": 6,
+            "before": 0,
+            "after": 64
+          },
+          {
+            "slot": 26,
+            "byte": 10,
+            "before": 0,
+            "after": 6
+          },
+          {
+            "slot": 26,
+            "byte": 13,
+            "before": 255,
+            "after": 6
+          },
+          {
+            "slot": 26,
+            "byte": 26,
+            "before": 22,
+            "after": 255
+          },
+          {
+            "slot": 26,
+            "byte": 27,
+            "before": 0,
+            "after": 255
+          }
+        ],
+        "civ_city_bytes_unchanged": true,
+        "tile_byte_changes": [
+          [
+            2077,
+            0,
+            1
+          ],
+          [
+            2081,
+            240,
+            64
+          ]
+        ],
+        "cache_byte_changes": [
+          [
+            4,
+            346,
+            0,
+            1
+          ]
+        ],
+        "explored_tiles": 59,
+        "presentation_substitutes": [
+          "0040d7e7",
+          "0045a4b0",
+          "005373eb",
+          "00467c89"
+        ],
+        "host_substitutes": [
+          {
+            "import": "XD_InFlushSendBuffer",
+            "result": 0
+          },
+          {
+            "import": "PeekMessageA",
+            "filter": [
+              957,
+              957
+            ],
+            "result": 0
+          },
+          {
+            "import": "GetAsyncKeyState",
+            "key": 16,
+            "result": 0
+          }
+        ]
+      },
+      "skip": {
+        "entry": "0040f592",
+        "input_code": 32,
+        "handlers": [
+          "00547530"
+        ],
+        "move_arguments": [],
+        "observation_arguments": [
+          [
+            26,
+            1
+          ]
+        ],
+        "before": {
+          "active_slot": 26,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "after": {
+          "active_slot": 26,
+          "display_mode": 1,
+          "research_target": -1,
+          "research_progress": 0
+        },
+        "unit_position_before": [
+          53,
+          9
+        ],
+        "unit_position_after": [
+          53,
+          9
+        ],
+        "active_unit_type_allowance": 3,
+        "unit_byte_changes": [
+          {
+            "slot": 26,
+            "byte": 10,
+            "before": 0,
+            "after": 3
+          },
+          {
+            "slot": 26,
+            "byte": 13,
+            "before": 5,
+            "after": 255
+          }
+        ],
+        "civ_city_bytes_unchanged": true,
+        "tile_byte_changes": [],
+        "cache_byte_changes": [],
+        "explored_tiles": 59,
+        "presentation_substitutes": [
+          "00467c89"
+        ],
+        "host_substitutes": [
+          {
+            "import": "PeekMessageA",
+            "filter": [
+              957,
+              957
+            ],
+            "result": 0
+          }
+        ]
+      }
+    }
+  },
+  "scope": "Prepare the paid human city production and reach the first input poll. Select the head or tail of the new city stack explicitly, then execute Wait, Skip or northwest movement through the existing prepared input probe. Set each Skip actor's prior direction to the corresponding checked engine value."
+}

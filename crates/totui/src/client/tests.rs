@@ -5203,6 +5203,173 @@ fn installed_saved_view_uses_schema_two_and_failed_restore_is_atomic() {
 }
 
 #[test]
+fn installed_checked_checkpoint_uses_saved_viewport_and_next_turn_anchor() {
+    use crate::resources::original::OriginalCapture;
+
+    let Some(installation) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let installation = Path::new(&installation);
+    let home = tempfile::tempdir().unwrap();
+    fs::create_dir(home.path().join("Original")).unwrap();
+    let path = "Original/Ph_Auto2.SAV";
+    let installed = OriginalCapture::capture(installation, path).unwrap();
+    for source in installed.resources().sources.values() {
+        fs::copy(
+            installation.join(&source.relative),
+            home.path().join(&source.relative),
+        )
+        .unwrap();
+    }
+    for (name, role) in [("Labels.txt", "labels"), ("Describe.txt", "describe")] {
+        fs::write(
+            home.path().join("Original").join(name),
+            installed.captured_bytes(role).unwrap(),
+        )
+        .unwrap();
+    }
+    let reference = OriginalCapture::capture(home.path(), path).unwrap();
+    let files = reference.files();
+    let checkpoint = reference.prepare_replay_checkpoint().unwrap();
+    let saves = home.path().join("saves");
+    storage::save_scenario(&saves, "checked-turn", &checkpoint, &files.bytes).unwrap();
+    fs::remove_file(home.path().join(path)).unwrap();
+    let mut c = Client::new(home.path().to_str().unwrap().to_owned(), saves);
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "checked-turn");
+    key(&mut c, "Enter");
+    assert_eq!(
+        c.checkpoint().as_deref(),
+        Some(checkpoint.as_str()),
+        "{}",
+        c.status
+    );
+    assert_eq!(c.active.map(|actor| actor.slot), Some(9));
+    assert_eq!(c.inspect, Some((61, 5)));
+    assert!(c.moving);
+
+    for next in [6, 26, 18, 26] {
+        key(&mut c, "w");
+        assert_eq!(c.active.map(|actor| actor.slot), Some(next));
+        assert!(c
+            .view()
+            .unwrap()
+            .observation
+            .units
+            .iter()
+            .all(|unit| unit.moves_left == 3));
+        assert_eq!(
+            c.view().unwrap().observation.seen.iter().flatten().count(),
+            59
+        );
+    }
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "waiting");
+    key(&mut c, "Enter");
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "waiting");
+    key(&mut c, "Enter");
+    assert_eq!(c.active.map(|actor| actor.slot), Some(26));
+    assert_eq!(
+        c.status,
+        "Experimental scenario checkpoint restored (Original/Ph_Auto2.SAV)."
+    );
+
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "checked-turn");
+    key(&mut c, "Enter");
+    key(&mut c, "w");
+    key(&mut c, "7");
+    assert_eq!(c.active.map(|actor| actor.slot), Some(26));
+    assert_eq!(
+        c.view().unwrap().observation.seen.iter().flatten().count(),
+        60
+    );
+    key(&mut c, "Ctrl+s");
+    edit(&mut c, "moved-after-wait");
+    key(&mut c, "Enter");
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "moved-after-wait");
+    key(&mut c, "Enter");
+    assert_eq!(c.active.map(|actor| actor.slot), Some(26));
+
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "checked-turn");
+    key(&mut c, "Enter");
+    key(&mut c, "w");
+    for slot in [6, 26, 18, 9] {
+        assert_eq!(c.active.map(|actor| actor.slot), Some(slot));
+        key(&mut c, " ");
+    }
+    assert_eq!(c.inspect, Some((61, 5)));
+
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "checked-turn");
+    key(&mut c, "Enter");
+    for slot in [9, 6, 26, 18] {
+        assert_eq!(c.active.map(|actor| actor.slot), Some(slot));
+        key(&mut c, " ");
+        assert_eq!(c.status, "skipped");
+    }
+    assert_eq!(c.inspect, Some((51, 9)));
+    c.order(Command::EndTurn).unwrap();
+    for _ in 0..32 {
+        if c.view().unwrap().phase == Phase::Human {
+            break;
+        }
+        input(&mut c, Input::Tick);
+    }
+    assert_eq!(c.view().unwrap().observation.turn, 44);
+    assert_eq!(c.active.map(|actor| actor.slot), Some(18));
+    assert_eq!(c.inspect, Some((51, 9)));
+    assert!(c.moving);
+
+    key(&mut c, "Ctrl+l");
+    edit(&mut c, "checked-turn");
+    key(&mut c, "Enter");
+    let initial = c.view().unwrap();
+    let city = *initial.cities.iter().find(|city| city.slot == 5).unwrap();
+    c.order(Command::Worker { city, tile: 4 }).unwrap();
+    let quote = c
+        .view()
+        .unwrap()
+        .city_production
+        .iter()
+        .find(|production| production.index == city.slot)
+        .unwrap()
+        .hurry
+        .unwrap();
+    c.order(Command::Buy { city, quote }).unwrap();
+    let anchor = *initial.units.iter().find(|actor| actor.slot == 18).unwrap();
+    c.action(Action::Unit(anchor)).unwrap();
+    assert_eq!(c.inspect, Some((51, 9)));
+    c.order(Command::EndTurn).unwrap();
+    for _ in 0..32 {
+        if c.view().unwrap().phase == Phase::Human {
+            break;
+        }
+        input(&mut c, Input::Tick);
+    }
+    let after = c.view().unwrap();
+    assert_eq!(after.observation.turn, 44);
+    assert_eq!(after.observation.seen, initial.observation.seen);
+    assert_eq!(c.active, Some(anchor));
+    assert!(c.moving);
+
+    let before = c.checkpoint().unwrap();
+    let assets = c.assets.clone();
+    let active = c.active;
+    let pan = c.pan;
+    fs::write(home.path().join("Original/Rules.txt"), b"changed").unwrap();
+    let origin = HumanSession::checkpoint_scenario(&checkpoint).unwrap();
+    assert!(c.restore_scenario(&origin, &checkpoint).is_err());
+    assert_eq!(c.checkpoint().as_deref(), Some(before.as_str()));
+    assert_eq!(c.assets, assets);
+    assert_eq!(c.active, active);
+    assert_eq!(c.pan, pan);
+}
+
+#[test]
 fn scenario_picker_suspends_opponents_until_cancel() {
     let f = Fixture::new();
     let path = "Original/Test.sav";
@@ -5316,6 +5483,13 @@ fn installed_original_inspection_reports_the_saved_human_view() {
         "{lines:?}"
     );
     assert!(lines.iter().any(|l| l.contains("retained native resume")));
+    assert!(lines.iter().any(|l| l.contains("no pending choice")));
+    assert!(lines
+        .iter()
+        .any(|l| l.contains("initialize a clean event state")));
+    assert!(lines
+        .iter()
+        .any(|l| l.contains("still requires verified saved-round continuation")));
     assert!(c.checkpoint().is_none());
     assert!(!scratch.path().join("saves").exists());
     key(&mut c, "Escape");

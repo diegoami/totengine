@@ -12,6 +12,7 @@ pub use update::{
     clear_unit_stack_visibility, unit_knowledge_after, unit_observation_after,
     unit_observation_after_reset, UnitObservationError,
 };
+pub(crate) use update::{unit_observation_with_contacts, unit_observation_with_remote_barbarians};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SavedTile {

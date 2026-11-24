@@ -31,6 +31,31 @@ pub(super) struct ScenarioChoice {
     pub date: Option<String>,
 }
 
+fn restore_loaded(
+    resources: Resources,
+    files: crate::resources::ScenarioFiles,
+    identity: String,
+    text: &str,
+) -> Result<Loaded, String> {
+    let session = HumanSession::restore_with(
+        resources.rules.clone(),
+        &identity,
+        text,
+        Some((
+            &files.bytes,
+            files.events.map(engine::events::EventEngine::new),
+        )),
+    )?;
+    let atlas = Atlas::load(&resources)?;
+    Ok(Loaded {
+        resources,
+        atlas,
+        identity,
+        session,
+        scenario_snapshot: Some(files.bytes),
+    })
+}
+
 impl Client {
     fn scenario_home(&self) -> Result<&Path, String> {
         if self.home.trim().is_empty() {
@@ -72,8 +97,8 @@ impl Client {
             Ok(report) => {
                 let phase = &report["saved_phase"];
                 let view = &report["saved_view"];
-                let trace = &report["native_resume_trace"];
-                let event = &report["victory_event"];
+                let pending = &report["saved_pending_choice_check"];
+                let event = &report["saved_event_initialization"];
                 vec![
                     "Matched the reference Original dependencies.".into(),
                     format!(
@@ -84,21 +109,27 @@ impl Client {
                         "Saved human view · {} explored tiles, {} units, {} cities",
                         view["explored_tiles"], view["units"], view["cities"]
                     ),
-                    if trace["matches_fixture"] == true {
-                        "The save matches the retained native resume measurements.".into()
-                    } else {
-                        "The save differs from the native resume fixture.".into()
-                    },
-                    if event["matches"] == true {
-                        "The checked embedded victory fields match Original/Events.txt.".into()
+                    if pending["verified"] == true {
+                        "The retained native resume reaches input with no pending choice.".into()
                     } else {
                         format!(
-                            "Victory event differs. {}",
-                            event["reason"].as_str().unwrap_or_default()
+                            "Pending choices are unverified ({}).",
+                            pending["reason"]
+                                .as_str()
+                                .unwrap_or("no matching native evidence")
                         )
                     },
-                    "Faithful play requires verified pending decisions and ongoing map knowledge."
-                        .into(),
+                    if event["verified"] == true {
+                        "The stock victory records can initialize a clean event state.".into()
+                    } else {
+                        format!(
+                            "Event initialization is unverified ({}).",
+                            event["reason"]
+                                .as_str()
+                                .unwrap_or("no matching native evidence")
+                        )
+                    },
+                    "Faithful entry still requires verified saved-round continuation.".into(),
                 ]
             }
             Err(reason) => vec![
@@ -218,44 +249,128 @@ impl Client {
         Ok(())
     }
 
-    /// Loads resources and the scenario file a scenario checkpoint names, and
-    /// restores it; the running game is untouched on failure.
+    /// Restore the replacement before committing assets or selection. The
+    /// optional focus comes from a checked viewport or a replayed order.
     pub(super) fn restore_scenario(
         &mut self,
         origin: &engine::human::ScenarioOrigin,
         text: &str,
-    ) -> Result<(), String> {
+    ) -> Result<Option<Entity>, String> {
         let home = self.scenario_home()?.to_path_buf();
-        let snapshot = storage::scenario_snapshot(&self.saves, text)?;
-        let (resources, files) =
-            crate::resources::Resources::load_scenario_inputs(&home, &origin.path, snapshot)
-                .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))?;
-        let atlas = Atlas::load(&resources)?;
-        let identity = if text.starts_with("totengine-human 3\n") {
-            resources.scenario_identity()
+        let mut snapshot = storage::scenario_snapshot(&self.saves, text)?;
+        let reference_recipe = text.starts_with("totengine-human 3\n")
+            && text.lines().nth(5).is_some_and(|line| {
+                use engine::human::ScenarioInitializer;
+                let mut fields = line.split_whitespace();
+                matches!(
+                    (fields.next(), fields.next(), fields.next(), fields.next()),
+                    (
+                        Some("initializer"),
+                        Some("7"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_COMBAT_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("8"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_HUMAN_PRODUCTION_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("9"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_CONTACT_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("10"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_CITY_COMBAT_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("11"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_HUT_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("12"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_ARMED_STACK_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("13"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_ARMED_STACK_V2_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("14"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_ZONE_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("15"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_FOUNDING_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("16"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_WESTWARD_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("17"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_NAVAL_ARRIVAL_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("18"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_REMOTE_NAVAL_STACK_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("19"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_NAVAL_ALLOCATION_PROFILE)
+                    )
+                )
+            });
+        let legacy_snapshot = if reference_recipe {
+            snapshot.clone()
         } else {
-            resources.identity()
+            snapshot.take()
         };
-        let session = HumanSession::restore_with(
-            resources.rules.clone(),
-            &identity,
-            text,
-            Some((
-                &files.bytes,
-                files.events.map(engine::events::EventEngine::new),
-            )),
-        )?;
+        let legacy = Resources::load_scenario_inputs(&home, &origin.path, legacy_snapshot)
+            .map_err(|e| format!("This checkpoint needs the scenario {}: {e}", origin.path))
+            .and_then(|(resources, files)| {
+                let identity = if text.starts_with("totengine-human 3\n") {
+                    resources.scenario_identity()
+                } else {
+                    resources.identity()
+                };
+                restore_loaded(resources, files, identity, text)
+            });
+        let (loaded, focus) = match legacy {
+            Ok(loaded) => {
+                let focus = loaded.session.saved_order_focus();
+                (loaded, focus)
+            }
+            Err(_) if reference_recipe => {
+                let capture = OriginalCapture::capture_checkpoint(&home, &origin.path, snapshot)?;
+                let viewport = capture.checkpoint_viewport()?;
+                let (resources, files, identity) = capture.into_checkpoint_inputs();
+                let loaded = restore_loaded(resources, files, identity, text)?;
+                let focus = if loaded.session.view().revision == 0 {
+                    viewport.and_then(|anchor| loaded.session.saved_initial_focus(anchor))
+                } else {
+                    loaded.session.saved_order_focus()
+                };
+                (loaded, focus)
+            }
+            Err(error) => return Err(error),
+        };
         let assets = storage::nonce()?;
         self.reset_notices();
-        self.loaded = Some(Loaded {
-            resources,
-            atlas,
-            identity,
-            session,
-            scenario_snapshot: Some(files.bytes),
-        });
+        self.loaded = Some(loaded);
         self.assets = assets;
-        Ok(())
+        Ok(focus)
     }
 
     pub(super) fn scenario_buttons(&self, modal: &Modal) -> Vec<Button> {

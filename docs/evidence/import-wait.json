@@ -1,0 +1,182 @@
+{
+  "schema": 1,
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "anchor": [
+    61,
+    5
+  ],
+  "waits": [
+    {
+      "actor": 9,
+      "selected": 6,
+      "deferred": [
+        9
+      ],
+      "spent": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "foreign_deferred": true
+    },
+    {
+      "actor": 6,
+      "selected": 26,
+      "deferred": [
+        6,
+        9
+      ],
+      "spent": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "foreign_deferred": true
+    },
+    {
+      "actor": 26,
+      "selected": 18,
+      "deferred": [
+        6,
+        9,
+        26
+      ],
+      "spent": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "foreign_deferred": true
+    },
+    {
+      "actor": 18,
+      "selected": 26,
+      "deferred": [
+        18
+      ],
+      "spent": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "foreign_deferred": false
+    },
+    {
+      "actor": 26,
+      "selected": 9,
+      "deferred": [
+        18,
+        26
+      ],
+      "spent": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "foreign_deferred": false
+    },
+    {
+      "actor": 9,
+      "selected": 6,
+      "deferred": [
+        9,
+        18,
+        26
+      ],
+      "spent": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "foreign_deferred": false
+    }
+  ],
+  "one_ready": [
+    {
+      "actor": 9,
+      "selected": 9,
+      "deferred": [],
+      "spent": [
+        3,
+        0,
+        3,
+        3
+      ],
+      "foreign_deferred": false
+    },
+    {
+      "actor": 9,
+      "selected": 9,
+      "deferred": [],
+      "spent": [
+        3,
+        0,
+        3,
+        3
+      ],
+      "foreign_deferred": false
+    }
+  ],
+  "writer_unit_bytes": 1520,
+  "reload": {
+    "retained": {
+      "selected": 6,
+      "reads": [
+        {
+          "site": "0045efde",
+          "bytes": 1520
+        },
+        {
+          "site": "0045f024",
+          "bytes": 920
+        }
+      ]
+    },
+    "cleared": {
+      "selected": 9,
+      "reads": [
+        {
+          "site": "0045efde",
+          "bytes": 1520
+        },
+        {
+          "site": "0045f024",
+          "bytes": 920
+        }
+      ]
+    }
+  },
+  "skip_with_slot_9_deferred": [
+    6,
+    26,
+    18,
+    9
+  ],
+  "move_after_wait": {
+    "actor": 6,
+    "selected": 26,
+    "deferred": [
+      9
+    ],
+    "explored_tiles": 60,
+    "position": [
+      62,
+      4
+    ]
+  },
+  "scope": "Trace Wait and deferred unit records in the checked Original resume.\n\nRun the native Wait action in the prepared input context. Repeat the\nunit-table writer boundary and reader with virtual file buffers, then\ncompare the first selected actor with and without the deferred bit.\nThe mixed controls use Skip and the native selector after a move."
+}

@@ -137,6 +137,10 @@ pub enum Order {
 pub enum OrderResult {
     CitizensSet,
     Moved,
+    /// A staged move spent the remaining movement without changing tiles.
+    MovementExhausted,
+    /// Defer a human unit without spending any movement.
+    Waited,
     /// The move was an attack; `won` = the attacker won.
     Attacked {
         won: bool,
@@ -197,6 +201,7 @@ impl fmt::Display for OrderResult {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             OrderResult::Moved => write!(f, "moved"),
+            OrderResult::MovementExhausted => write!(f, "movement exhausted"),
             OrderResult::Attacked { won } => {
                 write!(f, "attack {}", if *won { "won" } else { "lost" })
             }
@@ -214,6 +219,7 @@ impl fmt::Display for OrderResult {
             OrderResult::Founded(c) => write!(f, "founded {c}"),
             OrderResult::TurnEnded => write!(f, "ended"),
             OrderResult::Skipped => write!(f, "skipped"),
+            OrderResult::Waited => write!(f, "waited"),
             OrderResult::CitizensSet => write!(f, "citizens-set"),
             OrderResult::Rejected(why) => write!(f, "rejected {}", why.replace(' ', "_")),
         }
@@ -1093,10 +1099,26 @@ impl Game {
         let result = self
             .world
             .apply_order(&self.rules, self.events.as_mut(), civ, order);
+        self.record_order(civ, order, &result);
+        result
+    }
+
+    fn record_order(&mut self, civ: u8, order: Order, result: &OrderResult) {
         self.log.push_str(&format!(
             "T {} C {civ} {order} = {result}\n",
             self.world.turn
         ));
+    }
+
+    pub(crate) fn commit_saved_view_order(
+        &mut self,
+        world: WorldState,
+        civ: u8,
+        order: Order,
+        result: OrderResult,
+    ) -> OrderResult {
+        self.world = world;
+        self.record_order(civ, order, &result);
         result
     }
 
@@ -1123,7 +1145,42 @@ impl Game {
 
     pub(crate) fn close_turn(&mut self) -> crate::turn::TurnSummary {
         let summary = self.world.run_turn(&self.rules, self.events.as_mut());
-        for c in 1..8 {
+        self.record_round_end(None);
+        summary
+    }
+
+    pub(crate) fn close_staged_turn(
+        &mut self,
+        saved_viewer: Option<u8>,
+        stage_arrivals: impl FnOnce(&WorldState, &mut WorldState, &[usize]) -> bool,
+    ) -> (crate::turn::TurnSummary, bool) {
+        let before = saved_viewer.map(|_| self.world.clone());
+        let summary = self.world.finish_round(
+            &self.rules,
+            self.events.as_mut(),
+            crate::turn::TurnSummary::default(),
+            false,
+        );
+        // Preserve the projection for a quiet round or a checked hidden arrival.
+        let keep_view = before.is_some_and(|before| {
+            summary.events.is_empty()
+                && self.world.game_over.is_none()
+                && self.world.map == before.map
+                && self.world.cities == before.cities
+                && self.world.wonders == before.wonders
+                && self.world.diplomacy == before.diplomacy
+                && (if summary.barbarian_arrivals.is_empty() {
+                    self.world.units == before.units
+                } else {
+                    stage_arrivals(&before, &mut self.world, &summary.barbarian_arrivals)
+                })
+        });
+        self.record_round_end(saved_viewer.filter(|_| keep_view));
+        (summary, keep_view)
+    }
+
+    fn record_round_end(&mut self, saved_viewer: Option<u8>) {
+        for c in (1..8).filter(|&c| Some(c) != saved_viewer) {
             self.world.reveal(c);
         }
         self.log.push_str(&format!(
@@ -1131,7 +1188,6 @@ impl Game {
             self.world.turn,
             self.world.checksum()
         ));
-        summary
     }
 
     /// One full turn: every living civ with a player acts until it ends its

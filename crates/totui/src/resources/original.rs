@@ -1,5 +1,5 @@
 //! Closed reference dependency set for future classic admission (#197).
-//! This adapter captures inputs; it does not construct or admit a session.
+//! Captures immutable inputs for inspection and experimental checkpoint replay.
 use super::*;
 use sha2::{Digest, Sha256};
 use std::borrow::Cow;
@@ -106,7 +106,19 @@ impl OriginalCapture {
     pub const PRESENTATION: &'static str = "terminal-text-no-avi-or-ending-screens-v1";
 
     pub fn capture(home: &Path, relative: &str) -> Result<Self, String> {
-        Self::capture_with_pins(home, relative, &PINS)
+        Self::capture_with_pins(home, relative, &PINS, None)
+    }
+
+    pub(crate) fn capture_checkpoint(
+        home: &Path,
+        relative: &str,
+        snapshot: Option<Vec<u8>>,
+    ) -> Result<Self, String> {
+        Self::capture_with_pins(home, relative, &PINS, snapshot)
+    }
+
+    pub(crate) fn into_checkpoint_inputs(self) -> (Resources, ScenarioFiles, String) {
+        (self.resources, self.files, self.identity)
     }
 
     pub fn resources(&self) -> &Resources {
@@ -134,14 +146,19 @@ impl OriginalCapture {
     }
 
     fn revalidate_with_pins(&self, home: &Path, pins: &[Pin]) -> Result<(), String> {
-        let current = Self::capture_with_pins(home, &self.selected, pins)?;
+        let current = Self::capture_with_pins(home, &self.selected, pins, None)?;
         if current.identity != self.identity || current.bytes != self.bytes {
             return Err("Original inputs changed since capture; select the save again".into());
         }
         Ok(())
     }
 
-    fn capture_with_pins(home: &Path, relative: &str, pins: &[Pin]) -> Result<Self, String> {
+    fn capture_with_pins(
+        home: &Path,
+        relative: &str,
+        pins: &[Pin],
+        snapshot: Option<Vec<u8>>,
+    ) -> Result<Self, String> {
         let selected = relative.replace('\\', "/");
         let parts: Vec<_> = selected.split('/').collect();
         if parts.len() != 2
@@ -163,42 +180,51 @@ impl OriginalCapture {
         let mut buffers = BTreeMap::new();
         let mut sources = BTreeMap::new();
         let mut text_sources = BTreeMap::new();
-        let mut load = |role: &str, file: &str| -> Result<Vec<u8>, String> {
-            let path = contained(
-                &root,
-                child(&folder, file)?
-                    .ok_or_else(|| format!("Original/{file}: required dependency missing"))?,
-            )?;
-            if !path.starts_with(&folder) {
-                return Err(format!(
-                    "Original/{file}: dependency leaves the selected profile"
-                ));
-            }
-            let data = read(&path).map_err(|e| format!("Original/{file}: {e}"))?;
-            let relative = path
-                .strip_prefix(&root)
-                .unwrap()
-                .to_string_lossy()
-                .replace('\\', "/");
-            if !relative.is_ascii() || relative.chars().any(|c| c.is_control()) {
-                return Err(format!("Original/{file}: unsupported resolved path"));
-            }
-            let source = Source {
-                relative,
-                bytes: data.len(),
-                fingerprint: fingerprint(&data),
+        let mut load =
+            |role: &str, file: &str, snapshot: Option<Vec<u8>>| -> Result<Vec<u8>, String> {
+                let (path, data) = if let Some(data) = snapshot {
+                    // The origin supplies a normalized path that replay seals
+                    // together with these private bytes. The live SAV may be gone.
+                    (folder.join(file), data)
+                } else {
+                    let path = contained(
+                        &root,
+                        child(&folder, file)?.ok_or_else(|| {
+                            format!("Original/{file}: required dependency missing")
+                        })?,
+                    )?;
+                    if !path.starts_with(&folder) {
+                        return Err(format!(
+                            "Original/{file}: dependency leaves the selected profile"
+                        ));
+                    }
+                    let data = read(&path).map_err(|e| format!("Original/{file}: {e}"))?;
+                    (path, data)
+                };
+                let relative = path
+                    .strip_prefix(&root)
+                    .unwrap()
+                    .to_string_lossy()
+                    .replace('\\', "/");
+                if !relative.is_ascii() || relative.chars().any(|c| c.is_control()) {
+                    return Err(format!("Original/{file}: unsupported resolved path"));
+                }
+                let source = Source {
+                    relative,
+                    bytes: data.len(),
+                    fingerprint: fingerprint(&data),
+                };
+                if ["labels", "describe"].contains(&role) {
+                    text_sources.insert(role.to_owned(), source);
+                } else {
+                    sources.insert(role.to_owned(), source);
+                }
+                buffers.insert(role.to_owned(), data.clone());
+                Ok(data)
             };
-            if ["labels", "describe"].contains(&role) {
-                text_sources.insert(role.to_owned(), source);
-            } else {
-                sources.insert(role.to_owned(), source);
-            }
-            buffers.insert(role.to_owned(), data.clone());
-            Ok(data)
-        };
-        let snapshot = load("scenario", parts[1])?;
+        let snapshot = load("scenario", parts[1], snapshot)?;
         for pin in pins {
-            let data = load(pin.role, pin.file)?;
+            let data = load(pin.role, pin.file, None)?;
             if data.len() != pin.bytes || sha256(&data) != pin.sha256 {
                 return Err(format!(
                     "Original/{}: differs from the supported reference dependency set",

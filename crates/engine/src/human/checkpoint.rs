@@ -264,6 +264,7 @@ impl Command {
                 format!("specialist {} {} {}", city.slot, city.id, slot)
             }
             Self::Skip { unit } => format!("skip {} {}", unit.slot, unit.id),
+            Self::Wait { unit } => format!("wait {} {}", unit.slot, unit.id),
             Self::Move { unit, to } => format!("move {} {} {} {}", unit.slot, unit.id, to.0, to.1),
             Self::Occupy { unit, city } => {
                 format!("occupy {} {} {} {}", unit.slot, unit.id, city.slot, city.id)
@@ -326,6 +327,12 @@ impl Command {
                 reply: TalksReply::from_token(reply)?,
             }),
             ["skip", slot, id] => Some(Self::Skip {
+                unit: Entity {
+                    slot: slot.parse().ok()?,
+                    id: id.parse().ok()?,
+                },
+            }),
+            ["wait", slot, id] => Some(Self::Wait {
                 unit: Entity {
                     slot: slot.parse().ok()?,
                     id: id.parse().ok()?,

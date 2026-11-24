@@ -56,6 +56,9 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
   against real data.
 - The oracle's absolute paths stay in tools behind `CIVTOT_HOME`, never in
   library code.
+- Continue autonomously through implementation, validation, fixes, and draft PRs
+  for the active milestone. Batch progress across steps. Pause for an actual
+  review gate or a blocker that requires the owner.
 - Releases are tags gated by independent review: read
   `docs/milestone-review.md` before proposing a version. **The main session
   never launches the milestone review** — the owner does. At a milestone,

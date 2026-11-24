@@ -1,0 +1,193 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "cases": {
+    "adjacent_rival": {
+      "arguments": [
+        10,
+        6,
+        3
+      ],
+      "rival_position": [
+        39,
+        33
+      ],
+      "before": {
+        "position": [
+          39,
+          35
+        ],
+        "spent": 0,
+        "direction": 7,
+        "orders": 255
+      },
+      "after": {
+        "position": [
+          39,
+          35
+        ],
+        "spent": 0,
+        "direction": 7,
+        "orders": 255
+      },
+      "return": 0,
+      "observation_calls": [],
+      "crt_state": 3656477210,
+      "explored_tiles": 59,
+      "viewer_memory_unchanged": true,
+      "unit_record_changes": [
+        [
+          10,
+          16,
+          0,
+          1
+        ]
+      ],
+      "other_captured_regions_unchanged": true,
+      "host_substitutes": [
+        "PeekMessageA"
+      ],
+      "display_substitutes": [],
+      "repeat": null
+    },
+    "distant_rival": {
+      "arguments": [
+        10,
+        6,
+        3
+      ],
+      "rival_position": [
+        43,
+        29
+      ],
+      "before": {
+        "position": [
+          39,
+          35
+        ],
+        "spent": 0,
+        "direction": 7,
+        "orders": 255
+      },
+      "after": {
+        "position": [
+          38,
+          34
+        ],
+        "spent": 6,
+        "direction": 6,
+        "orders": 255
+      },
+      "return": 1,
+      "observation_calls": [
+        [
+          10,
+          1
+        ]
+      ],
+      "crt_state": 3656477210,
+      "explored_tiles": 59,
+      "viewer_memory_unchanged": true,
+      "unit_record_changes": [
+        [
+          10,
+          0,
+          39,
+          38
+        ],
+        [
+          10,
+          2,
+          35,
+          34
+        ],
+        [
+          10,
+          10,
+          0,
+          6
+        ],
+        [
+          10,
+          13,
+          7,
+          6
+        ]
+      ],
+      "other_captured_regions_unchanged": false,
+      "host_substitutes": [
+        "PeekMessageA"
+      ],
+      "display_substitutes": [
+        "00467d19"
+      ],
+      "repeat": null
+    },
+    "reverse_approach": {
+      "arguments": [
+        3,
+        4,
+        3
+      ],
+      "rival_position": [
+        39,
+        35
+      ],
+      "before": {
+        "position": [
+          39,
+          33
+        ],
+        "spent": 0,
+        "direction": 0,
+        "orders": 255
+      },
+      "after": {
+        "position": [
+          39,
+          33
+        ],
+        "spent": 0,
+        "direction": 0,
+        "orders": 255
+      },
+      "return": 0,
+      "observation_calls": [],
+      "crt_state": 990683799,
+      "explored_tiles": 59,
+      "viewer_memory_unchanged": true,
+      "unit_record_changes": [
+        [
+          3,
+          16,
+          0,
+          1
+        ]
+      ],
+      "other_captured_regions_unchanged": true,
+      "host_substitutes": [
+        "PeekMessageA"
+      ],
+      "display_substitutes": [],
+      "repeat": {
+        "additional_refusals": 19,
+        "last_unit_byte": 0,
+        "spent_after": 6,
+        "other_captured_regions_unchanged": true,
+        "host_substitutes": [
+          "PeekMessageA"
+        ],
+        "display_substitutes": []
+      }
+    }
+  },
+  "scope": "Measure the prepared opponent move near a known rival.\n\nStart from the pinned round-close control. Place the three measured units\non their checked approach squares, supply the observed map bytes and CRT,\nand execute native movement. Repeat with the rival away from both squares."
+}

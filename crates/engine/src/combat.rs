@@ -461,7 +461,7 @@ impl crate::WorldState {
                 .is_some_and(|c| c.city_id != 0 && (c.owner & 0x0f) as u8 == civ)
     }
 
-    fn city_at(&self, x: u16, y: u16) -> Option<usize> {
+    pub(crate) fn city_at(&self, x: u16, y: u16) -> Option<usize> {
         self.cities
             .iter()
             .position(|c| c.city_id != 0 && c.map_id == 0 && (c.x, c.y) == (x, y))

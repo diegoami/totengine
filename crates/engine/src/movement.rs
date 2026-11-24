@@ -19,11 +19,17 @@ use tot_kit::Rules;
 
 use crate::WorldState;
 
+pub(crate) struct MovementRoute {
+    pub road: bool,
+    pub rail: bool,
+}
+
 /// Outcome of a single [`WorldState::move_unit`] attempt.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MoveOutcome {
     pub moved: bool,
-    /// Cost charged, in thirds of a movement point.
+    /// Cost charged, in thirds of a movement point. A checked native
+    /// step can spend more than the unit's remaining allowance.
     pub cost_thirds: u32,
     /// Movement was terminated by zone of control.
     pub zoc_ended: bool,
@@ -127,6 +133,20 @@ impl WorldState {
     /// unit stays put when the move is illegal (domain, impassable
     /// destination, or no movement left).
     pub fn move_unit(&mut self, rules: &Rules, unit_idx: usize, x: u16, y: u16) -> MoveOutcome {
+        self.move_unit_with_routes(rules, unit_idx, x, y, None, false)
+    }
+
+    /// Use a checked route connection when the caller supplies one. The
+    /// original field-departure rule can spend movement without moving.
+    pub(crate) fn move_unit_with_routes(
+        &mut self,
+        rules: &Rules,
+        unit_idx: usize,
+        x: u16,
+        y: u16,
+        route: Option<MovementRoute>,
+        partial_movement_roll: bool,
+    ) -> MoveOutcome {
         let none = MoveOutcome {
             moved: false,
             cost_thirds: 0,
@@ -175,20 +195,43 @@ impl WorldState {
             .unwrap_or(1)
             .max(1);
         let mut cost = base_cost * 3; // thirds
-        if self.map.rail[dest_idx] {
+        let route = route.unwrap_or_else(|| MovementRoute {
+            road: self.map.road[dest_idx],
+            rail: self.map.rail[dest_idx],
+        });
+        if route.rail {
             cost = 0;
-        } else if self.map.road[dest_idx] {
+        } else if route.road {
             // road multiplier: M road tiles per movement point
             let mult = rules.road_multiplier().unwrap_or(3).max(1);
             cost = (3 / mult).max(1);
         }
-        // classic rule: any movement left ⇒ at least one tile
-        let charge = cost.min(unit.moves_left);
         // ZOC: leaving an enemy-adjacent tile into another enemy-adjacent
         // tile consumes all remaining movement (classic Civ2).
         let origin_zoc = self.is_zoc(rules, unit.owner, unit.x, unit.y);
         let dest_zoc = self.is_zoc(rules, unit.owner, x, y);
         let zoc_ended = origin_zoc && dest_zoc;
+        let remaining = unit.moves_left;
+        if partial_movement_roll {
+            let allowance =
+                self.movement_allowance(rules, usize::from(unit.type_id), owner, unit.damage);
+            if !zoc_ended
+                && remaining < allowance
+                && remaining < cost
+                && self.combat_rng.rand() % cost >= remaining
+            {
+                self.units[unit_idx].moves_left = 0;
+                return MoveOutcome {
+                    cost_thirds: remaining,
+                    ..none
+                };
+            }
+        }
+        let charge = if partial_movement_roll {
+            cost
+        } else {
+            cost.min(remaining)
+        };
         let Some(unit) = self.units.get_mut(unit_idx) else {
             return none;
         };

@@ -13,6 +13,19 @@ impl Client {
             .map(|u| (u.x, u.y))
     }
 
+    fn select_saved_focus(&mut self, anchor: Option<(u16, u16)>) -> bool {
+        let selected = anchor.and_then(|at| self.loaded.as_ref()?.session.saved_initial_focus(at));
+        if let Some(unit) = selected {
+            self.active = Some(unit);
+        }
+        selected.is_some()
+    }
+
+    pub(super) fn schedule_turn_from_inspection(&mut self) {
+        let focused = self.select_saved_focus(self.inspect);
+        self.schedule_unit(None, !focused);
+    }
+
     /// Keep a ready actor, otherwise advance after its slot. Explicit end-turn
     /// remains the owner's default; selection itself never submits an order.
     pub(super) fn schedule_unit(&mut self, after: Option<Entity>, new_turn: bool) {

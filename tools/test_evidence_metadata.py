@@ -64,6 +64,657 @@ class GoldenMetadata(unittest.TestCase):
             self.assertEqual(idle['active_slot'], path['first_poll']['active_slot'])
             self.assertTrue(idle['civ_unit_city_records_unchanged'])
 
+    def test_first_orders_extend_the_prepared_input_witness(self):
+        first = json.loads((ROOT / 'docs/evidence/import-first-order.json').read_text())
+        handoff = json.loads((ROOT / 'docs/evidence/import-input-handoff.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(first[key], handoff[key])
+        poll = handoff['cases']['native_observation']['observation_to_input']['first_poll']
+        wait, skip, move = (first['cases'][name] for name in ('wait', 'skip', 'move_northwest'))
+        for case in (wait, skip, move):
+            for key in ('active_slot', 'research_target', 'research_progress'):
+                self.assertEqual(case['before'][key], poll[key])
+            self.assertEqual(case['after']['research_target'], poll['research_target'])
+            self.assertEqual(case['after']['research_progress'], poll['research_progress'])
+            self.assertTrue(case['civ_city_bytes_unchanged'])
+        self.assertEqual(wait['after']['active_slot'], 9)
+        self.assertEqual(skip['unit_byte_changes'][0],
+                         {'slot': 6, 'byte': 10, 'before': 0, 'after': 3})
+        self.assertEqual([case['explored_tiles'] for case in (wait, skip, move)], [59, 59, 60])
+        self.assertEqual(move['move_arguments'], [[6, 6, 3]])
+        self.assertEqual(move['unit_position_after'], [62, 4])
+
+    def test_city_science_witness_uses_the_same_pinned_state(self):
+        science = json.loads((ROOT / 'docs/evidence/import-city-science-entry.json').read_text())
+        handoff = json.loads((ROOT / 'docs/evidence/import-input-handoff.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(science[key], handoff[key])
+        cases = science['cases']
+        for name, proposed in [('pinned', 0), ('one_science', 1), ('one_science_with_advice', 1)]:
+            row = cases[name]
+            self.assertEqual(row['city_slot'], 5)
+            self.assertEqual(row['computed_science'], 0)
+            self.assertEqual(row['accumulation'], {'civ': 4, 'points': proposed})
+            self.assertEqual(row['after']['progress'], proposed)
+            self.assertEqual(row['after']['target'], -1)
+        self.assertEqual([row['stop'] for row in cases.values()],
+                         ['00100000', '004a1436', '00477030'])
+
+    def test_round_handoff_preserves_the_pinned_human_context(self):
+        report = json.loads((ROOT / 'docs/evidence/import-round-handoff.json').read_text())
+        handoff = json.loads((ROOT / 'docs/evidence/import-input-handoff.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(report[key], handoff[key])
+        saved = report['saved_options']
+        advanced = report['cleared_preference_bit_0x40']
+        self.assertEqual(int(saved['options'], 16) ^ int(advanced['options'], 16), 0x40)
+        self.assertEqual(saved['before'], saved['after'])
+        self.assertEqual(saved['after'], advanced['before'])
+        self.assertEqual(advanced['after']['turn'], advanced['before']['turn'])
+        self.assertEqual((advanced['after']['active_civ'], advanced['after']['resume_civ']), (5, 0))
+        self.assertEqual(advanced['after']['research_target'], -1)
+        self.assertEqual(advanced['city_slot'], 6)
+        selected = report['spend_saved_movement']
+        self.assertEqual(selected['options'], saved['options'])
+        self.assertEqual(selected['after'], advanced['after'])
+        self.assertEqual(selected['city_slot'], advanced['city_slot'])
+        self.assertEqual([(m['character'], m['active_slot']) for m in selected['dispatched']],
+                         [(32, 6), (32, 9), (32, 26), (32, 18)])
+        for case in (saved, advanced, selected):
+            self.assertTrue(case['viewer_civilization_and_map_knowledge_unchanged'])
+
+    def test_native_city_work_preserves_view_despite_an_unseen_birth(self):
+        city = json.loads((ROOT / 'docs/evidence/import-city-view.json').read_text())
+        handoff = json.loads((ROOT / 'docs/evidence/import-round-handoff.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(city[key], handoff[key])
+        observed = city['observed']
+        self.assertEqual(observed['city_slot'], handoff['spend_saved_movement']['city_slot'])
+        self.assertEqual(observed['viewer_explored_tiles'], 59)
+        self.assertFalse(observed['viewer_memory_changed'])
+        self.assertFalse(observed['previous_unit_knowledge_changed'])
+        self.assertEqual(observed['created_units'],
+                         [{'slot': 34, 'position': [43, 37], 'owner': 5,
+                           'tile_known': False, 'viewer_mask': False,
+                           'visibility_byte': 0, 'orders': 255}])
+        move = observed['prepared_opponent_move']
+        self.assertEqual(move['arguments'], [2, 1, 3])
+        self.assertEqual(move['explored_tiles'], 59)
+        self.assertFalse(move['viewer_memory_changed'])
+        self.assertEqual([unit['next'] for unit in move['after']], [-1, 2, 19])
+        empty = observed['prepared_opponent_empty_move']
+        self.assertEqual(empty['arguments'], [10, 7, 3])
+        self.assertEqual(empty['explored_tiles'], 59)
+        self.assertFalse(empty['viewer_memory_changed'])
+        self.assertEqual(empty['after'][0]['position'], [41, 37])
+        departure = observed['prepared_opponent_departure']
+        self.assertEqual(departure['arguments'], [19, 6, 3])
+        self.assertEqual(departure['explored_tiles'], 59)
+        self.assertFalse(departure['viewer_memory_changed'])
+        self.assertEqual([unit['next'] for unit in departure['after']], [-1, 2, -1])
+
+    def test_native_opponent_combat_preserves_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-combat-view.json').read_text())
+        city = json.loads((ROOT / 'docs/evidence/import-city-view.json').read_text())
+        for key in ('binary_sha256', 'source', 'rules'):
+            self.assertEqual(report[key], city[key])
+        for seed, damage in [('7', 0), ('1', 5)]:
+            case = report['cases'][seed]
+            self.assertEqual(case['crt_before'], int(seed))
+            self.assertEqual(case['observation_calls'], [[20, 1]])
+            self.assertEqual(case['rules_refresh']['rows_by_section']['UNITS'], 80)
+            self.assertEqual(case['viewer_explored_tiles'], 59)
+            self.assertFalse(case['viewer_memory_changed'])
+            self.assertEqual(case['after'][0]['damage'], damage)
+            self.assertEqual([u['alive'] for u in case['after']], [True, False])
+        stack = report['cases']['7']['following_field_stack']
+        self.assertEqual(stack['explored_tiles'], 59)
+        self.assertEqual(stack['after'][0]['position'], [9, 45])
+        self.assertEqual([unit['next'] for unit in stack['after']], [-1, 4])
+        self.assertFalse(stack['viewer_memory_changed'])
+        self.assertEqual(stack['after'][0]['spent'], 6)
+        self.assertEqual(report['cases']['7']['refused_departure']['return'], 0)
+        arrival = report['cases']['7']['following_city_arrival']
+        self.assertEqual(arrival['explored_tiles'], 59)
+        self.assertEqual(arrival['after'][0]['spent'], 1)
+        self.assertEqual([unit['next'] for unit in arrival['after']], [24, -1, -1])
+        partial = report['cases']['7']['following_partial_move']
+        self.assertEqual(partial['crt_before'], 0x0a14e6e2)
+        self.assertEqual(partial['crt_after'], 0x23e1f21d)
+        self.assertEqual(partial['roll'], 5)
+        self.assertFalse(partial['moved'])
+        self.assertEqual(partial['after'][0]['position'], [9, 45])
+        self.assertEqual(partial['after'][0]['spent'], 3)
+        self.assertEqual(
+            [(case['roll'], case['moved'], case['after'][0]['spent'])
+             for case in report['partial_movement_controls'].values()],
+            [(2, False, 3), (5, False, 3), (0, True, 7), (1, True, 7)],
+        )
+        singleton = report['cases']['7']['following_singleton_move']
+        self.assertEqual(singleton['crt_before'], partial['crt_after'])
+        self.assertEqual(singleton['crt_after'], 0x6f277c6c)
+        self.assertEqual(singleton['roll'], 6)
+        self.assertFalse(singleton['moved'])
+        self.assertEqual(singleton['after'][0]['position'], [13, 43])
+        self.assertEqual(singleton['after'][0]['spent'], 3)
+        self.assertEqual(
+            [(case['roll'], case['moved'], case['after'][0]['spent'])
+             for case in report['singleton_movement_controls'].values()],
+            [(2, False, 3), (0, True, 10)],
+        )
+        road = report['cases']['7']['following_unconnected_road']
+        self.assertEqual(road['after'][0]['position'], [9, 43])
+        self.assertEqual(road['after'][0]['spent'], 3)
+        self.assertEqual(road['crt_after'], singleton['crt_after'])
+        self.assertEqual(road['refused_followup']['return'], 0)
+        self.assertEqual(road['refused_followup']['before'], road['refused_followup']['after'])
+        departure = report['cases']['7']['following_city_departure']
+        self.assertEqual(departure['explored_tiles'], 59)
+        self.assertEqual(departure['after'][0]['spent'], 1)
+        self.assertEqual([unit['next'] for unit in departure['after']], [4, -1, -1])
+        self.assertEqual(
+            [tuple(case[key] for key in ('attack', 'destination_flags', 'spent',
+                                         'mover_previous', 'mover_next'))
+             for case in report['city_departure_controls']],
+            [(0, 16, 1, 4, -1), (1, 0, 6, -1, 4), (1, 48, 0, -1, 4)],
+        )
+        self.assertEqual(
+            [tuple(case[key] for key in ('attack', 'origin_flags', 'destination_flags',
+                                         'spent', 'mover_previous', 'mover_next'))
+             for case in report['city_arrival_controls']],
+            [(0, 16, 0, 1, 24, -1), (1, 0, 0, 3, -1, 24), (1, 48, 0, 0, -1, 24),
+             (1, 48, 48, 0, -1, 24), (1, 0, 48, 3, -1, 24)],
+        )
+        self.assertEqual(
+            [(case['origin_flags'], case['destination_flags'], case['spent'])
+             for case in report['route_controls']],
+            [(0, 0, 6), (0, 16, 6), (0, 48, 6), (16, 0, 6), (16, 16, 1),
+             (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
+        )
+
+    def test_native_opponent_zone_refusal_leaves_fog_and_only_increments_private_byte(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-zone.json').read_text())
+        contact = json.loads((ROOT / 'docs/evidence/import-opponent-contact.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], contact[key])
+        cases = report['cases']
+        for name, slot in (('adjacent_rival', 10), ('reverse_approach', 3)):
+            case = cases[name]
+            self.assertEqual(case['return'], 0)
+            self.assertEqual(case['after'], case['before'])
+            self.assertEqual(case['unit_record_changes'], [[slot, 16, 0, 1]])
+            self.assertTrue(case['other_captured_regions_unchanged'])
+            self.assertTrue(case['viewer_memory_unchanged'])
+            self.assertEqual(case['explored_tiles'], 59)
+        reverse = cases['reverse_approach']
+        self.assertEqual(reverse['crt_state'], 0x3b0ca297)
+        self.assertEqual(reverse['repeat']['additional_refusals'], 19)
+        self.assertEqual(reverse['repeat']['last_unit_byte'], 0)
+        self.assertEqual(reverse['repeat']['spent_after'], 6)
+        self.assertTrue(reverse['repeat']['other_captured_regions_unchanged'])
+        control = cases['distant_rival']
+        self.assertEqual(control['return'], 1)
+        self.assertEqual(control['after']['position'], [38, 34])
+        self.assertEqual(control['after']['spent'], 6)
+
+    def test_native_opponent_founding_consumes_unit_and_keeps_fog(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-founding.json').read_text())
+        zone = json.loads((ROOT / 'docs/evidence/import-opponent-zone.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], zone[key])
+        found = report['founding']
+        self.assertEqual(
+            (found['turn'], found['founder'], found['city_slot'], found['city_owner'], found['city_size']),
+            (47, 2, 9, 5, 1),
+        )
+        self.assertEqual(found['founder_deleted_coordinates'], [-600, -600])
+        self.assertEqual(found['crt_state'], zone['cases']['reverse_approach']['crt_state'])
+        self.assertEqual(found['memory_changes'], [[civ, 1702, 0, 2] for civ in range(1, 8)])
+        self.assertEqual(found['explored_tiles'], 59)
+        self.assertEqual(found['name_rows_read'], 1)
+        self.assertRegex(found['name_sha256'], r'^[0-9a-f]{64}$')
+        changes = found['map_changes']
+        self.assertEqual(len(changes), 22)
+        self.assertEqual(sum(offset % 6 == 2 and (old, new) == (0, 160)
+                             for offset, old, new in changes), 17)
+        self.assertEqual(sum(offset % 6 == 5 and old ^ new == 8
+                             for offset, old, new in changes), 4)
+        self.assertIn([10213, 1, 2], changes)
+
+        second = report['second_founding']
+        self.assertEqual(
+            (second['founder'], second['city_slot'], second['city_owner'], second['city_size']),
+            (37, 10, 6, 1),
+        )
+        self.assertEqual(second['founder_deleted_coordinates'], [-700, -700])
+        self.assertEqual(second['unit_extent'], [39, 39])
+        self.assertEqual(second['explored_tiles'], 59)
+        self.assertEqual(second['memory_changes'],
+                         [[civ, 693, int(civ == 6), 2] for civ in range(1, 8)])
+        self.assertEqual(len(second['map_changes']), 28)
+
+    def test_native_armed_arrival_is_a_head_insertion(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-armed-stack.json').read_text())
+        hut = json.loads((ROOT / 'docs/evidence/import-opponent-hut.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], hut[key])
+        arrival = report['arrival']
+        self.assertEqual(arrival['crt_state'], hut['hut']['crt_after'])
+        self.assertEqual(arrival['explored_tiles'], 59)
+        self.assertTrue(arrival['viewer_memory_unchanged'])
+        self.assertEqual(arrival['after'], [
+            {'slot': 24, 'position': [9, 47], 'previous': -1, 'next': 4, 'spent': 3, 'direction': 3},
+            {'slot': 4, 'position': [9, 47], 'previous': 24, 'next': -1, 'spent': 3, 'direction': 5},
+        ])
+        later = report['turn_45_arrival']
+        self.assertEqual(later['crt_state'], 0x34bba6a0)
+        self.assertTrue(later['viewer_memory_unchanged'])
+        self.assertEqual(later['explored_tiles'], 59)
+        self.assertEqual(later['after'], [
+            {'slot': 24, 'position': [9, 49], 'previous': -1, 'next': 4, 'spent': 6, 'direction': 3},
+            {'slot': 4, 'position': [9, 49], 'previous': 24, 'next': -1, 'spent': 6, 'direction': 5},
+        ])
+
+
+    def test_native_turn_close_naval_arrival_leaves_player_fog_intact(self):
+        data = json.loads((ROOT / 'docs/evidence/import-naval-arrival.json').read_text())
+        found = json.loads((ROOT / 'docs/evidence/import-opponent-founding.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(data[key], found[key])
+        arrival = data['arrival']
+        self.assertEqual((arrival['turn'], arrival['viewer'], arrival['explored_tiles']), (47, 4, 59))
+        self.assertTrue(arrival['viewer_memory_unchanged'])
+        self.assertEqual(arrival['crt_after_arrival'], 0x819a8b33)
+        units = arrival['units']
+        self.assertEqual([u['position'] for u in units], [[0, 40]] * 3)
+        self.assertEqual([u['owner'] for u in units], [0, 0, 0])
+        self.assertEqual(
+            [(u['type'], u['orders'], u['veteran'], u['previous'], u['next']) for u in units],
+            [(46, 3, False, 38, -1), (4, 3, False, 39, 22), (32, 255, True, -1, 38)],
+        )
+        self.assertIn([1600, 1, 0, 1], arrival['tile_changes'])
+        self.assertIn([1600, 5, 240, 0], arrival['tile_changes'])
+        self.assertEqual(len([x for x in arrival['tile_changes'] if x[1] == 4]), 9)
+        move = data['turn_48_movement']
+        self.assertEqual((move['unit'], move['from'], move['to']), (0, [62, 36], [64, 36]))
+        self.assertEqual((move['spent'], move['direction'], move['orders']), (6, 1, 7))
+        self.assertEqual(move['crt'], 0x29e9892a)
+        self.assertEqual(move['explored_tiles'], 59)
+        self.assertTrue(move['remote_stack_unchanged'])
+        self.assertTrue(move['viewer_memory_unchanged'])
+
+    def test_native_westward_arrival_requires_refreshed_movement(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-armed-stack.json').read_text())
+        west = report['turn_47_arrival']
+        self.assertEqual(west['before'][0]['spent'], 0)
+        self.assertEqual(west['stale_movement_refused'], {
+            'spent': 9, 'return': 0,
+            'unit_record_changes': [[28, 6, 0, 64], [28, 16, 0, 1], [28, 17, 1, 255]],
+        })
+        mover, resident = west['after']
+        self.assertEqual((mover['position'], mover['next'], mover['direction'], mover['spent']),
+                         ([10, 44], 7, 5, 6))
+        self.assertEqual((resident['previous'], resident['next']), (28, -1))
+        self.assertEqual(west['crt_state'], 0x3b0ca297)
+        self.assertEqual(west['explored_tiles'], 59)
+        self.assertTrue(west['viewer_memory_unchanged'])
+
+    def test_native_opponent_hut_retains_view_and_grants_the_current_project(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-hut.json').read_text())
+        attack = json.loads((ROOT / 'docs/evidence/import-opponent-city-combat.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], attack[key])
+        hut = report['hut']
+        self.assertEqual(hut['crt_before'], attack['closed_panel_attack']['crt_after'])
+        self.assertEqual(hut['crt_after'], 0x44bc0476)
+        self.assertEqual(hut['grant_arguments'], [[6, 1, 6, 0, 0]])
+        self.assertEqual(hut['observation_calls'], [[37, 1]])
+        self.assertTrue(hut['viewer_map_and_memory_unchanged'])
+        self.assertEqual(hut['before']['position'], [28, 12])
+        self.assertEqual(hut['after'], {
+            'position': [27, 13], 'spent': 9, 'direction': 4, 'advance_byte': 2,
+            'acquired': 8, 'research_progress': 12, 'research_target': -1,
+            'explored_tiles': 59,
+        })
+
+    def test_native_opponent_city_attack_clears_remembered_occupancy_at_return(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-city-combat.json').read_text())
+        contact = json.loads((ROOT / 'docs/evidence/import-opponent-contact.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], contact[key])
+        attack = report['attack']
+        self.assertEqual(attack['crt_before'], contact['engine_seed_control']['crt_after'])
+        self.assertEqual(attack['crt_after'], 605269276)
+        self.assertEqual(attack['arguments'], [35, 1, 3])
+        self.assertEqual(attack['before']['city'], {'slot': 9, 'size': 1, 'live': True, 'tile_flags': 3})
+        self.assertEqual(attack['after']['city'], {'slot': 9, 'size': 0, 'live': False, 'tile_flags': 0})
+        attacker, defender = attack['after']['units']
+        self.assertEqual(attacker, {'slot': 35, 'live': True, 'position': [46, 28], 'spent': 6, 'damage': 8})
+        self.assertEqual(defender, {'slot': 36, 'live': False, 'position': [-700, -700], 'spent': 0, 'damage': 10})
+        self.assertEqual(attack['after']['explored_tiles'], 59)
+        self.assertTrue(attack['viewer_exploration_unchanged'])
+        self.assertEqual(attack['viewer_memory_changes'], [])
+        self.assertEqual(attack['stopped_at'], '00584467')
+        closed = report['closed_panel_attack']
+        self.assertEqual(closed['stopped_at'], '00100000')
+        self.assertEqual(closed['return'], 0)
+        self.assertEqual(attack['after'], closed['after'])
+        self.assertEqual(attack['crt_after'], closed['crt_after'])
+        self.assertTrue(closed['viewer_exploration_unchanged'])
+        self.assertEqual(closed['viewer_memory_changes'], [[1144, 2, 0]])
+        self.assertEqual(closed['map_changes'], attack['map_changes'])
+        self.assertEqual(closed['all_memory_changes'], [
+            [civ, 1144, 3 if civ == 6 else 2, 0] for civ in range(1, 8)
+        ])
+
+
+
+    def test_native_first_opponent_contact_is_not_the_between_trade_turn_return(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-contact.json').read_text())
+        reference = json.loads((ROOT / 'docs/evidence/import-human-city-stack-returns.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], reference[key])
+        self.assertEqual(report['pair'], [5, 6])
+        self.assertEqual(report['contact'], [48, 28, 0])
+        first, repeat, due = report['cases'].values()
+        self.assertEqual(first['prior_treaty_words'], [0, 0])
+        self.assertEqual(first['treaty_words'], [0x4401, 0x4401])
+        self.assertEqual(first['first_grant_arguments'], [5, 39, 6, 0, 0])
+        self.assertEqual((first['stopped_at'], repeat['stopped_at'], due['stopped_at']),
+                         ('0049dedf', '00100000', '0049dedf'))
+        self.assertEqual(repeat['treaty_words'], [0x401, 0x401])
+        later = report['known_turn_46']
+        self.assertEqual(later['pair'], [2, 5])
+        self.assertEqual(later['contact'], [39, 35, 0])
+        self.assertEqual(later['crt_state'], 0xd9f16a1a)
+        self.assertEqual(later['stopped_at'], '00100000')
+        self.assertEqual(later['prior_treaty_words'], [0x405, 0x405])
+        self.assertEqual(later['treaty_words'], [0x405, 0x405])
+        self.assertEqual(later['trade_calls'], 0)
+        self.assertIsNone(later['first_grant_arguments'])
+        self.assertTrue(later['unit_city_map_and_viewer_memory_unchanged'])
+
+        self.assertEqual([row['trade_calls'] for row in (first, repeat, due)], [1, 0, 1])
+        self.assertTrue(all(row['explored_tiles'] == 59 and
+                            row['unit_city_map_and_viewer_memory_unchanged']
+                            for row in (first, repeat, due)))
+
+        for key, seed, advances in (
+            ('complete', 1, [39, 46]),
+            ('engine_seed_control', 0xd766ce46, [39, 46]),
+        ):
+            control = report[key]
+            self.assertEqual(control['crt_before'], seed)
+            self.assertEqual(control['crt_draws'], 9)
+            self.assertEqual(control['treaty_words'], [0x4405, 0x4405])
+            self.assertEqual(control['stopped_at'], '00100000')
+            self.assertEqual(control['host_calls'], {'SetRect': 162})
+            self.assertEqual(control['explored_tiles'], 59)
+            self.assertTrue(control['unit_city_map_and_viewer_memory_unchanged'])
+            self.assertEqual([grant[1] for grant in control['grant_arguments']], advances)
+            state = seed
+            best = {}
+            candidates = control['candidate_scores']
+            self.assertEqual(len(candidates), 9)
+            self.assertEqual(sorted(row[1] for row in candidates), [row[1] for row in candidates])
+            for recipient, advance, value, score in candidates:
+                state = (state * 214013 + 2531011) & 0xffffffff
+                self.assertEqual(score, value + ((state >> 16) & 0x7fff) % 3)
+                if recipient not in best or score > best[recipient][0]:
+                    best[recipient] = (score, advance)
+            self.assertEqual(state, control['crt_after'])
+            self.assertEqual([best[civ][1] for civ in (5, 6)], advances)
+
+    def test_native_human_city_stack_returns_link_the_arriving_unit_first(self):
+        report = json.loads((ROOT / 'docs/evidence/import-human-city-stack-returns.json').read_text())
+        departure = json.loads((ROOT / 'docs/evidence/import-human-city-stack-orders.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], departure[key])
+        self.assertEqual(set(report['cases']), {'22', '26'})
+        for actor, resident in ((22, 26), (26, 22)):
+            case = report['cases'][str(actor)]
+            self.assertEqual(case['city_stack'], [actor, resident])
+            self.assertEqual(case['move_arguments'], [[actor, 2, 3]])
+            self.assertEqual(case['observation_arguments'], [[actor, 1]])
+            self.assertEqual(case['unit_position_before'], [52, 8])
+            self.assertEqual(case['unit_position_after'], [53, 9])
+            self.assertIn({'slot': actor, 'byte': 10, 'before': 0, 'after': 6},
+                          case['unit_byte_changes'])
+            self.assertEqual(case['tile_byte_changes'], [[2077, 1, 0]])
+            self.assertEqual(case['cache_byte_changes'], [[4, 346, 1, 0]])
+            self.assertEqual(case['explored_tiles'], 59)
+
+    def test_native_human_city_stack_orders_have_measured_deltas(self):
+        report = json.loads((ROOT / 'docs/evidence/import-human-city-stack-orders.json').read_text())
+        city = json.loads((ROOT / 'docs/evidence/import-human-city-birth.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], city[key])
+        head, tail = city['human_city_birth']['focus']['original_stack']
+        self.assertEqual(set(report['cases']), {str(head), str(tail)})
+        for actor, other in ((head, tail), (tail, head)):
+            case = report['cases'][str(actor)]
+            wait, move = case['wait'], case['move_northwest']
+            self.assertEqual((wait['before']['active_slot'], wait['after']['active_slot']),
+                             (actor, other))
+            self.assertEqual(wait['observation_arguments'], [[other, 1]])
+            self.assertEqual(wait['tile_byte_changes'], [])
+            self.assertEqual(wait['cache_byte_changes'], [])
+            self.assertEqual(move['move_arguments'], [[actor, 6, 3]])
+            self.assertEqual(move['unit_position_after'], [52, 8])
+            self.assertIn({'slot': actor, 'byte': 10, 'before': 0, 'after': 6},
+                          move['unit_byte_changes'])
+            self.assertEqual(move['tile_byte_changes'], [[2077, 0, 1], [2081, 240, 64]])
+            self.assertEqual(move['cache_byte_changes'], [[4, 346, 0, 1]])
+            self.assertEqual((wait['explored_tiles'], move['explored_tiles']), (59, 59))
+            skip = case['skip']
+            self.assertEqual(skip['observation_arguments'], [[actor, 1]])
+            self.assertEqual(skip['unit_byte_changes'],
+                             [{'slot': actor, 'byte': 10, 'before': 0, 'after': 3},
+                              {'slot': actor, 'byte': 13, 'before': 0 if actor == head else 5,
+                               'after': 255}])
+            self.assertEqual((skip['tile_byte_changes'], skip['cache_byte_changes'],
+                              skip['explored_tiles']), ([], [], 59))
+
+    def test_native_human_city_birth_reaches_input_with_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-human-city-birth.json').read_text())
+        purchase = json.loads((ROOT / 'docs/evidence/import-saved-purchase.json').read_text())
+        workers = json.loads((ROOT / 'docs/evidence/import-saved-citizens.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], purchase[key])
+            self.assertEqual(report[key], workers[key])
+        birth = report['human_city_birth']
+        self.assertEqual(birth['applied_worker'], workers['cases'][0]['after'])
+        self.assertEqual(birth['shields_before'], purchase['pinned']['shields_after'])
+        self.assertEqual(birth['shields_after'], 0)
+        self.assertEqual(birth['shield_writes'], [
+            ['004c62e0', 20, 22], ['004c6607', 22, 2], ['004c748e', 2, 0],
+        ])
+        self.assertEqual(report['surplus_control']['shield_writes'], [
+            ['004c62e0', 25, 27], ['004c6607', 27, 7], ['004c748e', 7, 0],
+        ])
+        self.assertEqual([birth[key] for key in ('explored_before', 'explored_after',
+                                                 'explored_at_poll')], [59, 59, 59])
+        self.assertEqual((birth['tile_byte_changes'], birth['remembered_bytes_changed']), ([], 0))
+        self.assertEqual(birth['unit'],
+                         {'slot': 22, 'type': 3, 'owner': 4, 'position': [53, 9], 'spent': 0})
+        self.assertEqual(birth['observation_arguments'], [[22, 1]])
+        self.assertEqual(birth['focus'], {
+            'anchors': [[51, 9], [53, 9], [54, 8], [61, 5], [0, 0]],
+            'choices': [18, 22, 22, 9, 6],
+            'reversed_head_choices': [18, 22, 22, 9, 6],
+            'original_stack': [22, 26],
+        })
+        self.assertEqual(birth['first_poll']['active_slot'], 18)
+
+    def test_native_production_purchase_preserves_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-saved-purchase.json').read_text())
+        production = json.loads((ROOT / 'docs/evidence/import-saved-production.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], production[key])
+        fields = ('city', 'item', 'price', 'admitted', 'treasury_before', 'treasury_after',
+                  'shields_before', 'shields_after', 'explored_tiles', 'tile_bytes_changed',
+                  'remembered_bytes_changed')
+        self.assertEqual(tuple(report['pinned'][key] for key in fields),
+                         (5, 3, 19, True, 25, 6, 12, 20, 59, 0, 0))
+        self.assertEqual(report['pinned']['rebased_shields'], 20)
+        self.assertEqual(tuple(report['short_treasury'][key] for key in fields),
+                         (5, 3, 19, False, 18, 18, 12, 12, 59, 0, 0))
+
+    def test_native_worker_edits_preserve_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-saved-citizens.json').read_text())
+        production = json.loads((ROOT / 'docs/evidence/import-saved-production.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], production[key])
+        self.assertEqual((report['entry'], report['stop']), ('004dddc6', '004dd04b'))
+        self.assertEqual([case['tile'] for case in report['cases']], [4, 4, 20])
+        self.assertEqual([case['after'] for case in report['cases']], [
+            {'worked': 68157568, 'specialists': 1}, {'worked': 1048720, 'specialists': 0},
+            {'worked': 1048720, 'specialists': 0},
+        ])
+        self.assertTrue(all(case['explored_tiles'] == 59 and case['tile_bytes_changed'] == 0
+                            and case['remembered_bytes_changed'] == 0 for case in report['cases']))
+
+    def test_native_production_commit_preserves_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-saved-production.json').read_text())
+        rates = json.loads((ROOT / 'docs/evidence/import-saved-rates.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], rates[key])
+        self.assertEqual((report['entry'], report['stop']), ('00434e58', '00434ee4'))
+        self.assertEqual([(case['city'], case['item'], case['shields'])
+                          for case in report['cases']], [(5, 3, 12), (5, -42, 6)])
+        self.assertTrue(all(case['explored_tiles'] == 59 and case['tile_bytes_changed'] == 0
+                            and case['remembered_bytes_changed'] == 0 for case in report['cases']))
+
+    def test_native_rate_commit_preserves_saved_knowledge(self):
+        report = json.loads((ROOT / 'docs/evidence/import-saved-rates.json').read_text())
+        pinned = json.loads((ROOT / 'docs/evidence/import-pending-choice.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], pinned[key])
+        self.assertEqual((report['entry'], report['stop']), ('0040b4fa', '0040b6e3'))
+        self.assertEqual([(case['science'], case['tax'], case['refreshed_cities'])
+                          for case in report['cases']], [(6, 4, []), (4, 4, [5]), (4, 6, [5])])
+        self.assertTrue(all(case['explored_tiles'] == 59 and case['tile_bytes_changed'] == 0
+                            and case['remembered_bytes_changed'] == 0 for case in report['cases']))
+
+    def test_pending_choice_controls_reach_input_without_a_new_project(self):
+        report = json.loads((ROOT / 'docs/evidence/import-pending-choice.json').read_text())
+        viewport = json.loads((ROOT / 'docs/evidence/import-saved-viewport.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], viewport[key])
+        self.assertEqual(report['anchor'], [61, 5])
+        for name, government, progress in [('pinned', 1, 0), ('stored_progress', 1, 1), ('anarchy', 0, 0)]:
+            case = report['cases'][name]
+            self.assertEqual(case['government_at_poll'], government)
+            self.assertEqual(case['input']['research_target'], -1)
+            self.assertEqual(case['input']['research_progress'], progress)
+            self.assertEqual(case['input']['active_slot'], 9)
+            self.assertEqual(case['input']['stop_at_call'], case['idle']['next_general_poll'])
+            self.assertEqual([branch['dispatches'] for branch in case['round_start_controls']], [False, True, True])
+
+    def test_prepared_resume_keeps_native_victory_marks(self):
+        report = json.loads((ROOT / 'docs/evidence/import-pending-choice.json').read_text())
+        for name, active, spent in [('pinned', False, False), ('active_event', True, False),
+                                    ('spent_event', False, True)]:
+            case = report['cases'][name]
+            self.assertEqual(case['event_marks_at_poll'], {
+                'active': [active, False], 'spent': [spent, False],
+            })
+            self.assertEqual(case['input']['active_slot'], 9)
+            self.assertFalse(case['round_start_controls'][0]['dispatches'])
+
+    def test_native_wait_records_deferral_without_spending_movement(self):
+        report = json.loads((ROOT / 'docs/evidence/import-wait.json').read_text())
+        viewport = json.loads((ROOT / 'docs/evidence/import-saved-viewport.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], viewport[key])
+        self.assertEqual(report['anchor'], [61, 5])
+        self.assertEqual([step['selected'] for step in report['waits']], [6, 26, 18, 26, 9, 6])
+        self.assertEqual(report['waits'][3]['deferred'], [18])
+        self.assertFalse(report['waits'][3]['foreign_deferred'])
+        self.assertTrue(all(step['spent'] == [0, 0, 0, 0] for step in report['waits']))
+        self.assertTrue(all(step['selected'] == 9 and not step['deferred'] for step in report['one_ready']))
+        self.assertEqual(report['writer_unit_bytes'], 1520)
+        self.assertEqual([case['selected'] for case in report['reload'].values()], [6, 9])
+        self.assertEqual(report['skip_with_slot_9_deferred'], [6, 26, 18, 9])
+        self.assertEqual(report['move_after_wait'], {
+            'actor': 6, 'selected': 26, 'deferred': [9], 'explored_tiles': 60, 'position': [62, 4],
+        })
+
+    def test_native_annual_update_retains_the_saved_projection(self):
+        close = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
+        combat = json.loads((ROOT / 'docs/evidence/import-opponent-combat-view.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(close[key], combat[key])
+        self.assertEqual(close['last_move']['after'][0]['position'], [10, 42])
+        self.assertEqual(close['last_move']['explored_tiles'], 59)
+        step = close['annual_update']
+        self.assertEqual(step['before']['crt'], combat['cases']['7']['following_unconnected_road']['crt_after'])
+        self.assertEqual(step['before']['turn'], 43)
+        self.assertEqual(step['after'], {'turn': 44, 'crt': 0xd766ce46, 'explored': 59})
+        self.assertTrue(step['cleared_wait_flag'])
+        self.assertEqual(step['crt_draws'], 2)
+        self.assertEqual(step['observation_calls'], [])
+        self.assertFalse(step['viewer_memory_changed'])
+
+    def test_fresh_human_input_keeps_saved_knowledge_and_ready_units(self):
+        report = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
+        fresh = report['fresh_human_input']
+        self.assertTrue(fresh['autosave_disabled'])
+        self.assertEqual(fresh['spent_after_annual_update'], dict.fromkeys(('6', '9', '18', '26'), 0))
+        handoff = fresh['handoff']
+        self.assertEqual(handoff['explored_tiles_after'], 59)
+        self.assertEqual(handoff['human_memory_bytes_changed'], 0)
+        self.assertEqual(handoff['observation_calls'], [[18, 1], [18, 1]])
+        first_poll = handoff['observation_to_input']['first_poll']
+        self.assertEqual(first_poll['active_slot'], 18)
+        self.assertEqual((first_poll['research_target'], first_poll['research_progress']), (-1, 0))
+
+    def test_saved_viewport_changes_the_prepared_resume_selection(self):
+        report = json.loads((ROOT / 'docs/evidence/import-saved-viewport.json').read_text())
+        prefix = json.loads((ROOT / 'docs/evidence/import-event-tail.json').read_text())
+        self.assertEqual(report['source'], prefix['source'])
+        self.assertEqual(report['binary_sha256'], prefix['binary_sha256'])
+        self.assertEqual(report['fields'], {
+            '00461836': {'target': '005f46fc', 'post_city_offset': 63},
+            '00461860': {'target': '005f46f8', 'post_city_offset': 65},
+        })
+        for label, anchor, slot in [('zero_anchor', [0, 0], 6), ('saved_anchor', [61, 5], 9)]:
+            case = report['cases'][label]
+            self.assertEqual(case['anchor'], anchor)
+            handoff = case['handoff']
+            self.assertEqual(handoff['active_slot'], slot)
+            self.assertEqual(handoff['explored_tiles_after'], 59)
+            self.assertEqual(handoff['human_memory_bytes_changed'], 0)
+            self.assertEqual(handoff['observation_to_input']['first_poll']['active_slot'], slot)
+            self.assertEqual(case['skip_order'], [9, 6, 26, 18] if label == 'saved_anchor' else [6, 9, 26, 18])
+            self.assertEqual(case['after_skip_anchor'], [51, 9])
+            self.assertEqual(case['opponent_city_slot'], 6)
+
+    def test_fresh_human_focus_raster_covers_every_tile(self):
+        report = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
+        focus = report['fresh_human_input']['focus']
+        self.assertEqual(focus['entry'], '0056cb3d')
+        self.assertEqual(focus['anchor'], [51, 9])
+        self.assertEqual(focus['selected'], 18)
+        self.assertEqual((focus['width'], focus['height']), (80, 50))
+        self.assertEqual(set(focus['selected_counts']), {'6', '9', '18', '26'})
+        self.assertEqual(sum(focus['selected_counts'].values()), 2000)
+        self.assertRegex(focus['raster_fnv64'], r'^[0-9a-f]{16}$')
+
+    def test_fresh_human_orders_match_native_budget_and_view_deltas(self):
+        report = json.loads((ROOT / 'docs/evidence/import-round-close.json').read_text())
+        skip = report['fresh_orders']['skip']
+        self.assertEqual(skip['explored_tiles'], 59)
+        self.assertEqual(skip['tile_byte_changes'], [])
+        self.assertEqual(skip['cache_byte_changes'], [])
+        self.assertEqual(skip['unit_byte_changes'], [{'slot': 18, 'byte': 10, 'before': 0, 'after': 3}])
+        move = report['fresh_orders']['move_northwest']
+        self.assertEqual(move['observation_arguments'], [[18, 1]])
+        self.assertEqual(move['unit_position_after'], [50, 8])
+        self.assertEqual(move['explored_tiles'], 60)
+        self.assertEqual(move['tile_byte_changes'], [[2068, 0, 16], [2071, 0, 1], [2075, 240, 64], [2311, 1, 0]])
+        self.assertEqual(move['cache_byte_changes'], [[4, 345, 0, 1], [4, 385, 1, 0]])
+
     def test_unit_setup_witness_extends_the_saved_phase_evidence(self):
         setup = json.loads((ROOT / 'docs/evidence/import-unit-setup.json').read_text())
         phase = json.loads((ROOT / 'docs/evidence/import-phase.json').read_text())

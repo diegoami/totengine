@@ -1,0 +1,475 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "city_names": {
+    "path": "Original/City.txt",
+    "sha256": "8155cce5e5771520feab366948c9d3ffaa34738ccc0b48a6ec09a73aba399c87"
+  },
+  "founding": {
+    "turn": 47,
+    "founder": 2,
+    "location": [
+      44,
+      42
+    ],
+    "city_slot": 9,
+    "city_owner": 5,
+    "city_size": 1,
+    "city_flags": 2048,
+    "native_build": 0,
+    "native_worked": 0,
+    "native_city_id": 1,
+    "name_sha256": "8f05af7d72c32a604b0c1f7da596ea995cd0df8aeed784a639dfe95fa78ca6db",
+    "unit_extent": [
+      38,
+      38
+    ],
+    "founder_deleted_coordinates": [
+      -600,
+      -600
+    ],
+    "crt_state": 990683799,
+    "explored_tiles": 59,
+    "map_changes": [
+      [
+        9740,
+        0,
+        160
+      ],
+      [
+        9962,
+        0,
+        160
+      ],
+      [
+        9968,
+        0,
+        160
+      ],
+      [
+        9974,
+        0,
+        160
+      ],
+      [
+        9980,
+        0,
+        160
+      ],
+      [
+        9983,
+        94,
+        86
+      ],
+      [
+        10208,
+        0,
+        160
+      ],
+      [
+        10213,
+        1,
+        2
+      ],
+      [
+        10214,
+        0,
+        160
+      ],
+      [
+        10220,
+        0,
+        160
+      ],
+      [
+        10223,
+        93,
+        85
+      ],
+      [
+        10442,
+        0,
+        160
+      ],
+      [
+        10448,
+        0,
+        160
+      ],
+      [
+        10454,
+        0,
+        160
+      ],
+      [
+        10460,
+        0,
+        160
+      ],
+      [
+        10688,
+        0,
+        160
+      ],
+      [
+        10694,
+        0,
+        160
+      ],
+      [
+        10697,
+        45,
+        37
+      ],
+      [
+        10700,
+        0,
+        160
+      ],
+      [
+        10928,
+        0,
+        160
+      ],
+      [
+        10934,
+        0,
+        160
+      ],
+      [
+        11177,
+        42,
+        34
+      ]
+    ],
+    "memory_changes": [
+      [
+        1,
+        1702,
+        0,
+        2
+      ],
+      [
+        2,
+        1702,
+        0,
+        2
+      ],
+      [
+        3,
+        1702,
+        0,
+        2
+      ],
+      [
+        4,
+        1702,
+        0,
+        2
+      ],
+      [
+        5,
+        1702,
+        0,
+        2
+      ],
+      [
+        6,
+        1702,
+        0,
+        2
+      ],
+      [
+        7,
+        1702,
+        0,
+        2
+      ]
+    ],
+    "civ_record_changes": [
+      [
+        5,
+        22,
+        26,
+        47
+      ],
+      [
+        5,
+        112,
+        2,
+        3
+      ],
+      [
+        5,
+        224,
+        2,
+        1
+      ],
+      [
+        5,
+        384,
+        1,
+        2
+      ]
+    ],
+    "name_rows_read": 1,
+    "host_calls": {
+      "GetCurrentDirectoryA": 2,
+      "SetCurrentDirectoryA": 2,
+      "SetEnvironmentVariableA": 2
+    }
+  },
+  "second_founding": {
+    "turn": 47,
+    "founder": 37,
+    "location": [
+      27,
+      17
+    ],
+    "city_slot": 10,
+    "city_owner": 6,
+    "city_size": 1,
+    "city_flags": 128,
+    "native_build": 0,
+    "native_worked": 0,
+    "native_city_id": 1,
+    "name_sha256": "bbe414f450639c6480258ef3c356d6c1cebe2c0ae90549d83527fcbef5b7d377",
+    "unit_extent": [
+      39,
+      39
+    ],
+    "founder_deleted_coordinates": [
+      -700,
+      -700
+    ],
+    "crt_state": 990683799,
+    "explored_tiles": 59,
+    "map_changes": [
+      [
+        3197,
+        252,
+        244
+      ],
+      [
+        3440,
+        0,
+        192
+      ],
+      [
+        3446,
+        0,
+        192
+      ],
+      [
+        3674,
+        0,
+        192
+      ],
+      [
+        3680,
+        0,
+        192
+      ],
+      [
+        3686,
+        0,
+        192
+      ],
+      [
+        3914,
+        0,
+        192
+      ],
+      [
+        3917,
+        253,
+        245
+      ],
+      [
+        3920,
+        0,
+        192
+      ],
+      [
+        3923,
+        253,
+        245
+      ],
+      [
+        3926,
+        0,
+        192
+      ],
+      [
+        3932,
+        0,
+        192
+      ],
+      [
+        4154,
+        0,
+        192
+      ],
+      [
+        4159,
+        1,
+        2
+      ],
+      [
+        4160,
+        0,
+        192
+      ],
+      [
+        4163,
+        107,
+        99
+      ],
+      [
+        4166,
+        0,
+        192
+      ],
+      [
+        4394,
+        0,
+        192
+      ],
+      [
+        4397,
+        107,
+        99
+      ],
+      [
+        4400,
+        0,
+        192
+      ],
+      [
+        4406,
+        0,
+        192
+      ],
+      [
+        4412,
+        0,
+        192
+      ],
+      [
+        4634,
+        0,
+        192
+      ],
+      [
+        4640,
+        0,
+        192
+      ],
+      [
+        4646,
+        0,
+        192
+      ],
+      [
+        4880,
+        0,
+        192
+      ],
+      [
+        4886,
+        0,
+        192
+      ],
+      [
+        5363,
+        108,
+        100
+      ]
+    ],
+    "memory_changes": [
+      [
+        1,
+        693,
+        0,
+        2
+      ],
+      [
+        2,
+        693,
+        0,
+        2
+      ],
+      [
+        3,
+        693,
+        0,
+        2
+      ],
+      [
+        4,
+        693,
+        0,
+        2
+      ],
+      [
+        5,
+        693,
+        0,
+        2
+      ],
+      [
+        6,
+        693,
+        1,
+        2
+      ],
+      [
+        7,
+        693,
+        0,
+        2
+      ]
+    ],
+    "civ_record_changes": [
+      [
+        6,
+        22,
+        38,
+        47
+      ],
+      [
+        6,
+        112,
+        2,
+        3
+      ],
+      [
+        6,
+        224,
+        2,
+        1
+      ],
+      [
+        6,
+        384,
+        1,
+        2
+      ]
+    ],
+    "name_rows_read": 1,
+    "host_calls": {
+      "GetCurrentDirectoryA": 2,
+      "SetCurrentDirectoryA": 2,
+      "SetEnvironmentVariableA": 2
+    }
+  },
+  "scope": "Measure two prepared hidden opponent founding callbacks.\n\nSupply the checked settler, the emptied city slot, and the engine CRT\nstate in the pinned round-close context. The original founding callback\nruns through return. Host directory and rectangle operations and city\nname section/row I/O are supplied. Native names stay outside the report."
+}

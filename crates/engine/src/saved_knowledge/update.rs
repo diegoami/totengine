@@ -33,7 +33,10 @@ pub fn unit_knowledge_after(
     rules: &Rules,
     scout_slot: usize,
 ) -> Result<SaveFile, String> {
-    observe(save, rules, scout_slot, true, false, |_, error| Err(error)).map_err(|e| e.to_string())
+    observe(save, rules, scout_slot, true, false, false, |_, error| {
+        Err(error)
+    })
+    .map_err(|e| e.to_string())
 }
 
 /// A native contact-call boundary, before any conversation is executed.
@@ -99,6 +102,7 @@ pub fn unit_observation_after(
         scout_slot,
         false,
         active_contacts,
+        false,
         |_, error| Err(error),
     )
 }
@@ -120,9 +124,18 @@ pub(crate) fn unit_observation_with_contacts(
     save: &SaveFile,
     rules: &Rules,
     scout_slot: usize,
+    allow_remote_barbarians: bool,
     contact: impl FnMut(&mut SaveFile, UnitObservationError) -> Result<(), UnitObservationError>,
 ) -> Result<SaveFile, UnitObservationError> {
-    observe(save, rules, scout_slot, false, true, contact)
+    observe(
+        save,
+        rules,
+        scout_slot,
+        false,
+        true,
+        allow_remote_barbarians,
+        contact,
+    )
 }
 
 fn observe(
@@ -131,6 +144,7 @@ fn observe(
     scout_slot: usize,
     strict: bool,
     active_contacts: bool,
+    allow_remote_barbarians: bool,
     mut encounter: impl FnMut(&mut SaveFile, UnitObservationError) -> Result<(), UnitObservationError>,
 ) -> Result<SaveFile, UnitObservationError> {
     let map = surface(save)?;
@@ -144,10 +158,21 @@ fn observe(
             .filter(|_| (u32::from(x) + u32::from(y)) % 2 == 0)
             .ok_or_else(|| "unit knowledge record has invalid coordinates".to_string())
     };
+    let scout = save
+        .units
+        .get(scout_slot)
+        .filter(|u| u.id() != 0 && (1..8).contains(&u.owner()))
+        .ok_or("unit knowledge scout requires a live player unit")?;
+    let neighborhood = nearby(save, scout.x(), scout.y())?;
     let mut stacks: BTreeMap<usize, Vec<usize>> = BTreeMap::new();
     let mut sights = vec![None; save.units.len()];
     for (slot, u) in save.units.iter().enumerate().filter(|(_, u)| u.id() != 0) {
-        if u.raw[4..6] != [0, 0] || !(1..8).contains(&u.owner()) {
+        let tile = index(u.x(), u.y())?;
+        let remote_barbarian = allow_remote_barbarians
+            && u.owner() == 0
+            && map.terrain(tile) == 10
+            && neighborhood.iter().all(|&(_, near)| near != tile);
+        if u.raw[4..6] != [0, 0] || (!(1..8).contains(&u.owner()) && !remote_barbarian) {
             return Err("unit knowledge requires unflagged surface units from civs 1..7".into());
         }
         if strict && u.orders() != 255 {
@@ -175,12 +200,11 @@ fn observe(
             submarine: flags & 8 != 0,
             detects_submarines: !strict && flags & 0x4000 != 0,
         });
-        stacks.entry(index(u.x(), u.y())?).or_default().push(slot);
+        stacks.entry(tile).or_default().push(slot);
     }
     let Some(sight) = sights.get(scout_slot).copied().flatten() else {
         return Err("unit knowledge scout slot is not a live unit".into());
     };
-    let scout = &save.units[scout_slot];
     let owner = scout.owner();
     let origin = index(scout.x(), scout.y())?;
     let mut cities = BTreeMap::new();
@@ -253,7 +277,7 @@ fn observe(
     }
     let origin_city = cities.contains_key(&origin);
     let origin_ocean = map.terrain(origin) == 10;
-    for (k, i) in nearby(save, scout.x(), scout.y())? {
+    for (k, i) in neighborhood {
         if k == 20 {
             continue;
         }

@@ -782,3 +782,17 @@ to move to (64, 36) before the human input poll.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_naval_arrival_check.py --out /tmp/import-naval-arrival.json
 cmp docs/evidence/import-naval-arrival.json /tmp/import-naval-arrival.json
 ```
+
+### Turn-48 input with the distant naval stack
+
+The [prepared inland move](evidence/import-naval-arrival.json) retains
+the native naval stack offshore while civ 2's settler moves from (62, 36)
+to (64, 36). The move charges six thirds and changes neither the remote
+stack nor the human's saved map and memory.
+
+Schema 18 keeps the occupancy and stack checks for offshore barbarians
+beyond the moving unit's observation neighborhood. Nearby barbarians
+still require their own observation and wake evidence. The checked
+Original route reaches the turn-48 human input with all 59 tiles and
+replays the player's departure from the occupied city. Earlier schemas
+keep their original fallback boundaries.

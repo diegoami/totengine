@@ -762,6 +762,24 @@ impl HumanSession {
         )
     }
 
+    /// Retain saved observation during movement away from the hidden naval stack.
+    pub fn scenario_initialized_saved_remote_naval_stack(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1,
+        )
+    }
+
     fn scenario_initialized_recipe(
         input: ScenarioInput<'_>,
         human: u8,
@@ -810,6 +828,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         ) {
             crate::scenario::phase::saved_human_entry(&saved, &input.rules, human)?;
             crate::scenario::snapshot::CheckedSnapshot::read(input.snapshot, &input.rules)?;
@@ -855,6 +874,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         ) {
             session.saved_move_state = Some(saved.clone());
         }
@@ -950,6 +970,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                     | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                    | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
             )
             .then(StagedRound::default),
             game,
@@ -1343,6 +1364,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         ) {
             data.push_str(if self.saved_move_state.is_some() {
                 " saved-land-movement-active"
@@ -1857,8 +1879,11 @@ impl HumanSession {
         .then_some(self.human);
         let mut kept_view = false;
         let mut observed_arrival = None;
-        let watched = self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedNavalArrivalV1
-            && self.game.world.turn == 47;
+        let watched = matches!(
+            self.knowledge_recipe,
+            ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+        ) && self.game.world.turn == 47;
         let saved = watched.then(|| self.saved_move_state.clone()).flatten();
         let human = self.human;
         self.record_turn_notices(true, |game| {

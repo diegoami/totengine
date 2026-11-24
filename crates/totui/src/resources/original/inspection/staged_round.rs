@@ -641,7 +641,7 @@ pub(super) fn check_saved_human_production(
     let rules = &capture.resources().rules;
     let events = files.events.clone().map(EventEngine::new);
     let identity = capture.identity();
-    let mut session = HumanSession::scenario_initialized_saved_naval_arrival(
+    let mut session = HumanSession::scenario_initialized_saved_remote_naval_stack(
         ScenarioInput {
             path: &files.path,
             snapshot: &files.bytes,
@@ -980,6 +980,51 @@ pub(super) fn check_saved_human_production(
     {
         return Err("the checked naval arrival did not retain the human view on replay".into());
     }
+    if contact.advance(4) != 4 {
+        return Err("the checked turn-48 inland movement did not advance".into());
+    }
+    let moved = contact.view();
+    let movement_checkpoint = contact.checkpoint(identity);
+    let replay = restore(&movement_checkpoint)?;
+    if moved.observation.seen != post_return.observation.seen
+        || moved.observation.cities != post_return.observation.cities
+        || replay.view() != moved
+        || replay.checkpoint(identity) != movement_checkpoint
+    {
+        return Err("the checked turn-48 inland movement did not preserve the human view".into());
+    }
+    contact.advance(128);
+    let turn_48 = contact.view();
+    if turn_48.phase != Phase::Human
+        || turn_48.observation.turn != 48
+        || turn_48.observation.seen != post_return.observation.seen
+    {
+        return Err("checked continuation did not retain the saved human view into turn 48".into());
+    }
+    let response = submit(
+        &mut contact,
+        Command::Move {
+            unit: actor,
+            to: (52, 8),
+        },
+    )?;
+    let departed = contact.view();
+    let departure_checkpoint = contact.checkpoint(identity);
+    let replay = restore(&departure_checkpoint)?;
+    if response.result != Some(OrderResult::Moved)
+        || departed.observation.seen != turn_48.observation.seen
+        || !departed
+            .observation
+            .units
+            .iter()
+            .any(|u| u.index == actor.slot && (u.x, u.y, u.moves_left) == (52, 8, 0))
+        || replay.view() != departed
+        || replay.checkpoint(identity) != departure_checkpoint
+    {
+        return Err(
+            "the checked turn-48 city departure did not preserve the human view on replay".into(),
+        );
+    }
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
@@ -995,6 +1040,8 @@ pub(super) fn check_saved_human_production(
         "turn_47_hidden_founding_replays": 2,
         "turn_47_opponent_stack_replays": true,
         "turn_48_naval_arrival_replays": true,
+        "turn_48_inland_movement_replays": true,
+        "turn_48_city_departure_replays": true,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],

@@ -99,6 +99,7 @@ pub(crate) enum StackMovement {
     StockArmedTurn46,
     StockZone,
     StockWestward,
+    StockRemoteNaval,
 }
 
 /// Execute ordinary land movement and update the affected stack links.
@@ -193,7 +194,7 @@ pub(crate) fn stage(
     };
     if matches!(
         mode,
-        StackMovement::StockZone | StackMovement::StockWestward
+        StackMovement::StockZone | StackMovement::StockWestward | StackMovement::StockRemoteNaval
     ) && world.human_mask == 16
         && (world.diplomacy[5][2], world.diplomacy[2][5]) == (0x405, 0x405)
         && unit.orders == 255
@@ -242,6 +243,7 @@ pub(crate) fn stage(
                 | StackMovement::StockArmedTurn46
                 | StackMovement::StockZone
                 | StackMovement::StockWestward
+                | StackMovement::StockRemoteNaval
         ) && (world.turn, civ, slot, origin, to) == (44, 6, 37, (28, 12), (27, 13))
             && world.human_mask == 16
             && world.combat_rng.state() == 0x2413ad1c
@@ -267,6 +269,7 @@ pub(crate) fn stage(
             | StackMovement::StockArmedTurn46
             | StackMovement::StockZone
             | StackMovement::StockWestward
+            | StackMovement::StockRemoteNaval
     ) && field_to_field
         && (civ, slot) == (7, 24)
         && source == [24]
@@ -283,6 +286,7 @@ pub(crate) fn stage(
                     StackMovement::StockArmedTurn46
                         | StackMovement::StockZone
                         | StackMovement::StockWestward
+                        | StackMovement::StockRemoteNaval
                 ) && world.movement_allowance(rules, 2, civ, unit.damage) == 3 =>
             {
                 Some(6)
@@ -292,9 +296,11 @@ pub(crate) fn stage(
     } else {
         None
     };
-    let western_arrival = mode == StackMovement::StockWestward
-        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
-            == (47, 7, 28, (12, 44), (10, 44), 0x3b0ca297)
+    let western_arrival = matches!(
+        mode,
+        StackMovement::StockWestward | StackMovement::StockRemoteNaval
+    ) && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+        == (47, 7, 28, (12, 44), (10, 44), 0x3b0ca297)
         && world.human_mask == 16
         && source == [28]
         && members == [7]
@@ -313,9 +319,27 @@ pub(crate) fn stage(
         && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [4, 1, 224, 2, 128, 112]
         && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [3, 1, 224, 2, 128, 112];
     let armed_cost = if western_arrival { Some(6) } else { armed_cost };
+    let eastward_settler = mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (48, 2, 0, (62, 36), (64, 36), 0x29e9892a)
+        && (
+            unit.type_id,
+            unit.moves_left,
+            unit.orders,
+            record.moves_spent(),
+        ) == (0, 3, 7, 0)
+        && source == [0]
+        && members.is_empty()
+        && city.is_none()
+        && origin_city.is_none()
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [8, 1, 0, 2, 4, 32]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [9, 0, 0, 2, 4, 32];
     let witnessed_armed = armed_cost.is_some();
-    let partial_movement =
-        field_departure || unstacked_road_boundary || witnessed_hut || armed_cost == Some(6);
+    let partial_movement = field_departure
+        || unstacked_road_boundary
+        || witnessed_hut
+        || armed_cost == Some(6)
+        || eastward_settler;
     if field_to_field && attack != Some(0) && !witnessed_armed || city_transfer && attack.is_none()
     {
         return Err("saved field-stack arrival has an unchecked mover attack value".into());
@@ -413,6 +437,13 @@ pub(crate) fn stage(
         updated.units[slot].raw[10] = cost as u8;
         updated.units[slot].raw[13] = if western_arrival { 5 } else { 3 };
     }
+    if eastward_settler {
+        if result.cost_thirds != 6 || world.combat_rng.state() != crt {
+            return Err("saved eastward movement differed from the witness".into());
+        }
+        updated.units[slot].raw[6] |= 0x40;
+        updated.units[slot].raw[13] = 1;
+    }
     let observed = if matches!(
         mode,
         StackMovement::StockContact
@@ -421,19 +452,27 @@ pub(crate) fn stage(
             | StackMovement::StockArmedTurn46
             | StackMovement::StockZone
             | StackMovement::StockWestward
+            | StackMovement::StockRemoteNaval
     ) {
-        unit_observation_with_contacts(&updated, rules, slot, |observed, error| {
-            if matches!(
-                mode,
-                StackMovement::StockArmedTurn46
-                    | StackMovement::StockZone
-                    | StackMovement::StockWestward
-            ) && apply_known_opponent_contact(observed, world, &error)
-            {
-                return Ok(());
-            }
-            apply_stock_contact(observed, rules, world, &error).ok_or(error)
-        })
+        unit_observation_with_contacts(
+            &updated,
+            rules,
+            slot,
+            mode == StackMovement::StockRemoteNaval,
+            |observed, error| {
+                if matches!(
+                    mode,
+                    StackMovement::StockArmedTurn46
+                        | StackMovement::StockZone
+                        | StackMovement::StockWestward
+                        | StackMovement::StockRemoteNaval
+                ) && apply_known_opponent_contact(observed, world, &error)
+                {
+                    return Ok(());
+                }
+                apply_stock_contact(observed, rules, world, &error).ok_or(error)
+            },
+        )
     } else {
         unit_observation_after(&updated, rules, slot, true)
     }

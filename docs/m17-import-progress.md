@@ -394,6 +394,11 @@ the engine-allocated stack with the measured tile occupancy and barbarian
 visibility writes. Civ 2's subsequent move to (64, 36) still falls back
 before the human input poll.
 
+Schema 18 retains the distant naval stack while reproducing the native
+settler movement to (64, 36). The checked route reaches the human's
+turn-48 input with the 59-tile map and replays the departure from the
+occupied city. This remains an experimental route.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

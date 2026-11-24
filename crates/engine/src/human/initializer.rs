@@ -38,6 +38,7 @@ pub enum ScenarioKnowledgeRecipe {
     SavedOpponentFoundingV1,
     SavedOpponentWestwardV1,
     SavedNavalArrivalV1,
+    SavedRemoteNavalStackV1,
 }
 
 impl ScenarioKnowledgeRecipe {
@@ -55,6 +56,7 @@ impl ScenarioKnowledgeRecipe {
                 | Self::SavedOpponentFoundingV1
                 | Self::SavedOpponentWestwardV1
                 | Self::SavedNavalArrivalV1
+                | Self::SavedRemoteNavalStackV1
         )
     }
 }
@@ -118,6 +120,8 @@ impl ScenarioInitializer {
     pub const SAVED_OPPONENT_ARMED_STACK_V2_PROFILE: &'static str =
         "experimental-saved-opponent-armed-stack-v2";
 
+    pub const SAVED_REMOTE_NAVAL_STACK_PROFILE: &'static str =
+        "experimental-saved-remote-naval-stack-v1";
     pub const SAVED_NAVAL_ARRIVAL_PROFILE: &'static str = "experimental-saved-naval-arrival-v1";
     pub const SAVED_OPPONENT_WESTWARD_PROFILE: &'static str =
         "experimental-saved-opponent-westward-v1";
@@ -144,6 +148,7 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedOpponentFoundingV1 => 15,
             ScenarioKnowledgeRecipe::SavedOpponentWestwardV1 => 16,
             ScenarioKnowledgeRecipe::SavedNavalArrivalV1 => 17,
+            ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 => 18,
         }
     }
     pub fn profile(&self) -> &'static str {
@@ -175,6 +180,9 @@ impl ScenarioInitializer {
                 Self::SAVED_OPPONENT_WESTWARD_PROFILE
             }
             ScenarioKnowledgeRecipe::SavedNavalArrivalV1 => Self::SAVED_NAVAL_ARRIVAL_PROFILE,
+            ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 => {
+                Self::SAVED_REMOTE_NAVAL_STACK_PROFILE
+            }
         }
     }
 
@@ -314,6 +322,11 @@ impl ScenarioInitializer {
                 Self::SAVED_NAVAL_ARRIVAL_PROFILE,
                 "saved-naval-arrival-then-engine-v1",
             ),
+            ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 => (
+                18,
+                Self::SAVED_REMOTE_NAVAL_STACK_PROFILE,
+                "saved-remote-naval-stack-then-engine-v1",
+            ),
         };
         format!(
             "initializer {schema} profile {profile} source {} {} {:016x} mode {mode} saved {} {} {} {} human {} phase {:?} cursor {} policy {} seed {} movement {movement} knowledge {knowledge} world {:016x} memory {:016x} choice {:016x} events {:016x} {:016x} rng {:08x} {} {:08x} {} dependencies {} {:016x} {}",
@@ -412,6 +425,11 @@ impl ScenarioInitializer {
             Self::SAVED_NAVAL_ARRIVAL_PROFILE
         )) {
             Ok(ScenarioKnowledgeRecipe::SavedNavalArrivalV1)
+        } else if line.starts_with(&format!(
+            "initializer 18 profile {} ",
+            Self::SAVED_REMOTE_NAVAL_STACK_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1)
         } else {
             Err("unsupported scenario initializer version or profile".into())
         }

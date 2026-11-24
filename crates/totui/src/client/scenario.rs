@@ -319,6 +319,11 @@ impl Client {
                         Some("17"),
                         Some("profile"),
                         Some(ScenarioInitializer::SAVED_NAVAL_ARRIVAL_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("18"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_REMOTE_NAVAL_STACK_PROFILE)
                     )
                 )
             });

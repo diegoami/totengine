@@ -52,7 +52,7 @@ fn installed_prepare_original_replay_writes_loadable_private_checkpoint() {
         .lines()
         .nth(5)
         .unwrap()
-        .starts_with("initializer 17 profile "));
+        .starts_with("initializer 18 profile "));
     let capture = OriginalCapture::capture(Path::new(&home), source).unwrap();
     assert_eq!(
         HumanSession::checkpoint_scenario(&checkpoint).unwrap().path,
@@ -338,6 +338,8 @@ fn installed_save_reports_checked_records_phase_and_view() {
             "turn_47_hidden_founding_replays": 2,
             "turn_47_opponent_stack_replays": true,
             "turn_48_naval_arrival_replays": true,
+            "turn_48_inland_movement_replays": true,
+            "turn_48_city_departure_replays": true,
             "native_unit_slot": 22,
             "engine_shields": 0,
             "native_shields": 0,

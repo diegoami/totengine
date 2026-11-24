@@ -28,6 +28,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                     | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                    | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
             );
         let before = keep_view.then(|| self.game.world.clone());
         if !keep_view {
@@ -778,6 +779,7 @@ staged-round-test
             (ScenarioKnowledgeRecipe::SavedOpponentFoundingV1, 59, 0),
             (ScenarioKnowledgeRecipe::SavedOpponentWestwardV1, 59, 0),
             (ScenarioKnowledgeRecipe::SavedNavalArrivalV1, 59, 0),
+            (ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1, 59, 0),
         ] {
             let mut session = HumanSession::scenario_initialized_recipe(
                 ScenarioInput {
@@ -1048,6 +1050,7 @@ staged-round-test
                     | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                     | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                    | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
             ) {
                 let before = contact.view();
                 let draws = contact.game.world.combat_rng.draws();
@@ -1076,6 +1079,7 @@ staged-round-test
                         | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                         | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                         | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                        | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
                 ) {
                     let prior = contact.saved_move_state.as_ref().unwrap().clone();
                     assert_eq!(contact.advance(1), 1);
@@ -1105,6 +1109,7 @@ staged-round-test
                             | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                             | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                             | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                            | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
                     ) {
                         assert_eq!(contact.advance(8), 8);
                         let prior = contact.view();
@@ -1124,6 +1129,7 @@ staged-round-test
                                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
                         ) {
                             assert_eq!(contact.advance(4), 4);
                             let prior = contact.view();
@@ -1171,6 +1177,7 @@ staged-round-test
                                     | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                                     | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                                    | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
                             ) {
                                 submit(&mut contact, Command::EndTurn);
                                 assert_eq!(contact.advance(22), 22);
@@ -1217,6 +1224,7 @@ staged-round-test
                                         | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                                         | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                                         | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                                        | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
                                 ) {
                                     submit(&mut contact, Command::EndTurn);
                                     assert_eq!(contact.advance(2), 2);
@@ -1310,6 +1318,7 @@ staged-round-test
                                         ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                                             | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                                             | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                                            | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
                                     ) {
                                         let saved = contact.saved_move_state.as_ref().unwrap();
                                         assert_eq!(saved.cities[9].city_id(), 11);
@@ -1345,6 +1354,7 @@ staged-round-test
                                             recipe,
                                             ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                                                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                                                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
                                         ) {
                                             assert_eq!(contact.advance(5), 5);
                                             let saved = contact.saved_move_state.as_ref().unwrap();
@@ -1365,9 +1375,7 @@ staged-round-test
                                             assert_eq!(replay.checkpoint(deps), stacked);
                                             assert_eq!(replay.view(), contact.view());
                                             assert_eq!(contact.advance(3), 3);
-                                            if recipe
-                                                == ScenarioKnowledgeRecipe::SavedNavalArrivalV1
-                                            {
+                                            if matches!(recipe, ScenarioKnowledgeRecipe::SavedNavalArrivalV1 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1) {
                                                 let saved =
                                                     contact.saved_move_state.as_ref().unwrap();
                                                 assert_eq!(saved.units[37].stack_next(), 36);
@@ -1386,6 +1394,35 @@ staged-round-test
                                                 let replay = restore(&arrived);
                                                 assert_eq!(replay.checkpoint(deps), arrived);
                                                 assert_eq!(replay.view(), contact.view());
+                                                assert_eq!(contact.advance(4), 4);
+                                                if recipe == ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 {
+                                                    let saved = contact.saved_move_state.as_ref().unwrap();
+                                                    assert_eq!((saved.units[0].x(), saved.units[0].y()), (64, 36));
+                                                    assert_eq!(saved.units[0].moves_spent(), 6);
+                                                    assert_eq!(saved.units[0].raw[13], 1);
+                                                    assert_eq!(saved.units[37].stack_next(), 36);
+                                                    assert_eq!(contact.view().observation.seen, fresh.observation.seen);
+                                                    let moved = contact.checkpoint(deps);
+                                                    let replay = restore(&moved);
+                                                    assert_eq!(replay.checkpoint(deps), moved);
+                                                    assert_eq!(replay.view(), contact.view());
+                                                    contact.advance(128);
+                                                    let poll = contact.view();
+                                                    assert_eq!(poll.phase, Phase::Human);
+                                                    assert_eq!(poll.observation.turn, 48);
+                                                    assert_eq!(poll.observation.seen, fresh.observation.seen);
+                                                    assert_eq!(submit(&mut contact, Command::Move {
+                                                        unit: actor, to: (52, 8),
+                                                    }).result, Some(OrderResult::Moved));
+                                                    assert!(contact.saved_move_state.is_some());
+                                                    assert_eq!(contact.view().observation.seen, poll.observation.seen);
+                                                    let departed = contact.checkpoint(deps);
+                                                    let replay = restore(&departed);
+                                                    assert_eq!(replay.checkpoint(deps), departed);
+                                                    assert_eq!(replay.view(), contact.view());
+                                                } else {
+                                                    assert!(contact.saved_move_state.is_none());
+                                                }
                                             } else {
                                                 assert!(contact.saved_move_state.is_none());
                                             }

@@ -132,5 +132,31 @@
       "0x569c88"
     ]
   },
+  "turn_48_movement": {
+    "turn": 48,
+    "unit": 0,
+    "from": [
+      62,
+      36
+    ],
+    "to": [
+      64,
+      36
+    ],
+    "spent": 6,
+    "direction": 1,
+    "orders": 7,
+    "unit_flags": 576,
+    "crt": 703170858,
+    "remote_stack_unchanged": true,
+    "viewer_memory_unchanged": true,
+    "explored_tiles": 59,
+    "host_substitutes": [
+      "PeekMessageA"
+    ],
+    "display_substitutes": [
+      "00467d19"
+    ]
+  },
   "scope": "Measure the stock barbarian sea arrival at the close of turn 47.\n\nRun the native arrival routine in the prepared stock round context with\nthe checked turn and CRT. Restore the saved landmass table. Presentation\nand network calls are suppressed. Allocation and orders execute natively."
 }

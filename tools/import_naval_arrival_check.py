@@ -13,7 +13,7 @@ from pathlib import Path
 from unicorn import UC_HOOK_CODE
 from import_round_close_check import prepare_round
 from import_event_tail_check import digest
-from import_opponent_combat_view_check import CRT, TILES
+from import_opponent_combat_view_check import CRT, TILES, run_attack
 from import_unit_setup_check import UNIT_RECORDS
 from import_phase_check import read
 from totctl import parse_rules, walk_save_bytes
@@ -88,6 +88,59 @@ def arrivals(original, viewer, _city, source):
     }
 
 
+def field_move(original, viewer, arrival):
+    """Run the eastward turn-48 order with the distant native stack still present."""
+    cpu = original.cpu
+    original.write(CRT, 0x29e9892a, '<I')
+    original.write(0x607648, 48, '<h')
+    original.write(0x607655, 2, '<B')
+    unit = UNIT_RECORDS
+    origin = tuple(read(original, unit + offset, '<h') for offset in (0, 2))
+    assert tuple(read(original, unit + offset, '<h') for offset in (26, 28)) == (-1, -1)
+    width = read(original, 0x6705a0, '<h')
+    area = read(original, 0x6705a4, '<h')
+
+    def tile(x, y):
+        return TILES + 6 * (y * (width // 2) + x // 2)
+
+    old = tile(*origin) + 1
+    original.write(old, read(original, old, '<B') & ~1, '<B')
+    for offset, value in ((0, 62), (2, 36), (26, -1), (28, -1)):
+        original.write(unit + offset, value, '<h')
+    for offset, value in ((6, 0), (7, 2), (8, 0), (9, 2), (10, 0), (11, 0),
+                          (12, 0), (13, 2), (16, 0), (17, 7), (18, 255)):
+        original.write(unit + offset, value, '<B')
+    cpu.mem_write(tile(62, 36), bytes([8, 1, 0, 2, 4, 32]))
+    cpu.mem_write(tile(64, 36), bytes([9, 0, 0, 2, 4, 32]))
+    remembered = read(original, 0x5DEAD0 + 4 * viewer, '<I')
+
+    def capture():
+        return (
+            [bytes(cpu.mem_read(UNIT_RECORDS + 40 * record['slot'], 40)) for record in arrival['units']],
+            [byte & (1 << viewer) for byte in cpu.mem_read(TILES, area * 6)[4::6]],
+            bytes(cpu.mem_read(remembered, area)),
+        )
+
+    before = capture()
+    result, hosts, display, observation = run_attack(original, (0, 1, 3))
+    after = capture()
+    assert before == after
+    assert result == 1 and observation == [[0, 1]]
+    position = tuple(read(original, unit + offset, '<h') for offset in (0, 2))
+    assert position == (64, 36)
+    spent, direction, orders = (read(original, unit + offset, '<B') for offset in (10, 13, 17))
+    assert (spent, direction, orders) == (6, 1, 7)
+    assert read(original, CRT, '<I') == 0x29e9892a
+    return {
+        'turn': 48, 'unit': 0, 'from': [62, 36], 'to': position,
+        'spent': spent, 'direction': direction, 'orders': orders,
+        'unit_flags': read(original, unit + 6, '<H'), 'crt': read(original, CRT, '<I'),
+        'remote_stack_unchanged': True, 'viewer_memory_unchanged': True,
+        'explored_tiles': sum(bool(mask) for mask in after[1]),
+        'host_substitutes': hosts, 'display_substitutes': display,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
@@ -101,16 +154,20 @@ def main():
     assert digest(source) == pinned['source']['sha256']
     assert digest(rules_path.read_bytes()) == pinned['rules']['sha256']
     assert digest(binary) == pinned['binary_sha256']
-    prepared, native = prepare_round(
+    def measure(original, viewer, city):
+        arrival = arrivals(original, viewer, city, source)
+        return arrival, field_move(original, viewer, arrival)
+
+    prepared, (native, movement) = prepare_round(
         home, binary, pinned['source']['path'], parse_rules(rules_path),
-        lambda original, viewer, city: arrivals(original, viewer, city, source),
+        measure,
     )
     assert prepared['annual_update'] == pinned['annual_update']
     assert native['explored_tiles'] == 59
     with args.out.open('x') as out:
         keys = ('source', 'rules', 'binary_sha256')
         out.write(json.dumps({'schema': 1, **{key: pinned[key] for key in keys},
-                              'arrival': native, 'scope': __doc__.strip()}, indent=2) + '\n')
+                              'arrival': native, 'turn_48_movement': movement, 'scope': __doc__.strip()}, indent=2) + '\n')
 
 
 if __name__ == '__main__':

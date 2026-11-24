@@ -102,6 +102,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         ) {
             return None;
         }
@@ -164,6 +165,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         ) || !saved.maps[0].has_city(destination)
         {
             return None;
@@ -468,6 +470,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                     | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                    | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
             );
         let mut births = Vec::new();
         for (slot, unit) in world.units.iter().enumerate() {
@@ -526,7 +529,11 @@ impl HumanSession {
             self.knowledge_recipe,
             ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         ) && (world.turn, civ) == (47, 7);
+        let checked_opponent_reset = checked_opponent_reset
+            || self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                && (world.turn, civ) == (48, 2);
         if human_pass || checked_opponent_reset {
             for (slot, unit) in world.units.iter().enumerate() {
                 if unit.id == 0 || unit.owner != civ || births.iter().any(|&(born, _)| born == slot)
@@ -558,6 +565,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         ) {
             crate::scenario::opponent_stack::record_city_births(
                 &mut observed,
@@ -623,6 +631,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         ) || self.saved_move_state.is_none()
         {
             return false;
@@ -649,6 +658,7 @@ impl HumanSession {
             ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         ) {
             return None;
         }
@@ -702,6 +712,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         ) {
             return None;
         }
@@ -733,6 +744,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentFoundingV1
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
+                | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
         );
         let city_before = world.city_at(to.0, to.1);
         let (observed, result) = if is_combat {
@@ -756,7 +768,9 @@ impl HumanSession {
                 civ,
                 unit,
                 to,
-                if matches!(
+                if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 {
+                    crate::scenario::opponent_stack::StackMovement::StockRemoteNaval
+                } else if matches!(
                     self.knowledge_recipe,
                     ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                         | ScenarioKnowledgeRecipe::SavedNavalArrivalV1

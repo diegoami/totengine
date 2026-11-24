@@ -335,6 +335,13 @@ class GoldenMetadata(unittest.TestCase):
         self.assertIn([1600, 1, 0, 1], arrival['tile_changes'])
         self.assertIn([1600, 5, 240, 0], arrival['tile_changes'])
         self.assertEqual(len([x for x in arrival['tile_changes'] if x[1] == 4]), 9)
+        move = data['turn_48_movement']
+        self.assertEqual((move['unit'], move['from'], move['to']), (0, [62, 36], [64, 36]))
+        self.assertEqual((move['spent'], move['direction'], move['orders']), (6, 1, 7))
+        self.assertEqual(move['crt'], 0x29e9892a)
+        self.assertEqual(move['explored_tiles'], 59)
+        self.assertTrue(move['remote_stack_unchanged'])
+        self.assertTrue(move['viewer_memory_unchanged'])
 
     def test_native_westward_arrival_requires_refreshed_movement(self):
         report = json.loads((ROOT / 'docs/evidence/import-opponent-armed-stack.json').read_text())

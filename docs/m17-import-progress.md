@@ -405,6 +405,26 @@ records. Checked allocation retains the 59-tile map through turn 48,
 and the required research project can be chosen and reloaded without
 refreshing the saved view.
 
+### Next continuation case
+
+On the alternate End Turn route, choose the first offered research project on
+turn 48 and end the turn again. The first saved-view fallback is civ 6 moving
+unit slot 1 (type 15) south from (27, 15) into its own empty city in slot 10
+at (27, 17). At the attempted move the unit has six thirds left, order 28,
+and CRT state `0x29e9892a`. The current stage in
+`crates/engine/src/scenario/opponent_stack.rs` rejects entry into an empty city.
+The engine accepts the move through its normal path and the human reaches
+turn 49 with 60 explored tiles instead of the 59 at the end of turn 48.
+
+This is an engine diagnostic. Measure the native callback and its occupancy,
+stack, and human-map writes before changing the saved-view stage. The local
+working trace is `/tmp/totengine-m17-turn49-empty-city.log`. The
+`m17-turn49-boundary` worktree at
+`/home/diego/review-tmp/totengine-m17-turn49-boundary` contains uncommitted
+diagnostic logging in `human/saved_view.rs` and `human/staged_round.rs`.
+Leave those diagnostics out of production commits. If the temporary log is
+gone, reproduce the route described above using the checked Original export.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

@@ -399,6 +399,12 @@ settler movement to (64, 36). The checked route reaches the human's
 turn-48 input with the 59-tile map and replays the departure from the
 occupied city. This remains an experimental route.
 
+Schema 19 tests an alternate route that ends every turn without buying
+or moving a unit. The same naval arrival reuses a different set of
+records. Checked allocation retains the 59-tile map through turn 48,
+and the required research project can be chosen and reloaded without
+refreshing the saved view.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

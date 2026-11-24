@@ -780,6 +780,24 @@ impl HumanSession {
         )
     }
 
+    /// Retain saved observation through the checked naval arrival with alternate unit slots.
+    pub fn scenario_initialized_saved_naval_allocation(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedNavalAllocationV1,
+        )
+    }
+
     fn scenario_initialized_recipe(
         input: ScenarioInput<'_>,
         human: u8,
@@ -829,6 +847,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) {
             crate::scenario::phase::saved_human_entry(&saved, &input.rules, human)?;
             crate::scenario::snapshot::CheckedSnapshot::read(input.snapshot, &input.rules)?;
@@ -875,6 +894,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) {
             session.saved_move_state = Some(saved.clone());
         }
@@ -971,6 +991,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                     | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                     | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                    | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
             )
             .then(StagedRound::default),
             game,
@@ -1365,6 +1386,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) {
             data.push_str(if self.saved_move_state.is_some() {
                 " saved-land-movement-active"
@@ -1883,16 +1905,24 @@ impl HumanSession {
             self.knowledge_recipe,
             ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) && self.game.world.turn == 47;
         let saved = watched.then(|| self.saved_move_state.clone()).flatten();
         let human = self.human;
+        let variable_slots =
+            self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedNavalAllocationV1;
         self.record_turn_notices(true, |game| {
             if staged {
                 let (summary, kept) =
                     game.close_staged_turn(saved_viewer, |before, world, arrivals| {
                         observed_arrival = saved.as_ref().and_then(|save| {
                             crate::scenario::opponent_stack::stage_naval_arrival(
-                                save, before, world, human, arrivals,
+                                save,
+                                before,
+                                world,
+                                human,
+                                arrivals,
+                                variable_slots,
                             )
                         });
                         observed_arrival.is_some()

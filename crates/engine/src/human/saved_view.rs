@@ -103,6 +103,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) {
             return None;
         }
@@ -166,6 +167,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) || !saved.maps[0].has_city(destination)
         {
             return None;
@@ -471,6 +473,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                     | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                     | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                    | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
             );
         let mut births = Vec::new();
         for (slot, unit) in world.units.iter().enumerate() {
@@ -530,10 +533,14 @@ impl HumanSession {
             ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) && (world.turn, civ) == (47, 7);
         let checked_opponent_reset = checked_opponent_reset
-            || self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
-                && (world.turn, civ) == (48, 2);
+            || matches!(
+                self.knowledge_recipe,
+                ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                    | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+            ) && (world.turn, civ) == (48, 2);
         if human_pass || checked_opponent_reset {
             for (slot, unit) in world.units.iter().enumerate() {
                 if unit.id == 0 || unit.owner != civ || births.iter().any(|&(born, _)| born == slot)
@@ -566,6 +573,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) {
             crate::scenario::opponent_stack::record_city_births(
                 &mut observed,
@@ -632,6 +640,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) || self.saved_move_state.is_none()
         {
             return false;
@@ -659,6 +668,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) {
             return None;
         }
@@ -713,6 +723,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         ) {
             return None;
         }
@@ -745,6 +756,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
         );
         let city_before = world.city_at(to.0, to.1);
         let (observed, result) = if is_combat {
@@ -768,7 +780,11 @@ impl HumanSession {
                 civ,
                 unit,
                 to,
-                if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 {
+                if matches!(
+                    self.knowledge_recipe,
+                    ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                        | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+                ) {
                     crate::scenario::opponent_stack::StackMovement::StockRemoteNaval
                 } else if matches!(
                     self.knowledge_recipe,
@@ -866,14 +882,17 @@ impl HumanSession {
                 }
                 world = self.game.world.clone();
                 use crate::scenario::snapshot::LandMoveObservation;
-                let observation =
-                    if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 {
-                        LandMoveObservation::RemoteNaval
-                    } else if checked_replay {
-                        LandMoveObservation::Checked
-                    } else {
-                        LandMoveObservation::Legacy
-                    };
+                let observation = if matches!(
+                    self.knowledge_recipe,
+                    ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                        | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+                ) {
+                    LandMoveObservation::RemoteNaval
+                } else if checked_replay {
+                    LandMoveObservation::Checked
+                } else {
+                    LandMoveObservation::Legacy
+                };
                 let step = crate::scenario::snapshot::stage_saved_land_move(
                     saved,
                     &self.game.rules,
@@ -896,6 +915,22 @@ impl HumanSession {
                     self.saved_city_mate(saved, unit),
                 );
                 (step, OrderResult::Skipped)
+            }
+            Order::SetResearch { .. }
+                if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+                    && matches!(self.decision, Some(Decision::Research { .. }))
+                    && self.game.world.free_research[usize::from(self.human)] == 0 =>
+            {
+                let before = &self.game.world;
+                world = before.clone();
+                let result = world.apply_order(&self.game.rules, None, self.human, order);
+                if result != OrderResult::ResearchSet {
+                    return Ok(None);
+                }
+                let mut updated = saved.clone();
+                let civ = usize::from(self.human);
+                updated.research[civ] = world.research[civ];
+                (Ok(updated), result)
             }
             Order::SetRates { .. }
             | Order::QuotedProduction { .. }

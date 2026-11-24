@@ -29,6 +29,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                     | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                     | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                    | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
             );
         let before = keep_view.then(|| self.game.world.clone());
         if !keep_view {
@@ -98,6 +99,97 @@ mod tests {
             .unwrap(),
         );
         Some((snapshot, rules, events))
+    }
+
+    #[test]
+    fn installed_turn_48_with_alternate_naval_slots_keeps_research_and_fog() {
+        let Some((snapshot, rules, events)) = installed_original() else {
+            return;
+        };
+        let deps = "totengine-scenario-dependencies 1\nalternate-turn-48-test\n";
+        let make = |recipe| {
+            HumanSession::scenario_initialized_recipe(
+                ScenarioInput {
+                    path: "Original/Ph_Auto2.SAV",
+                    snapshot: &snapshot,
+                    rules: rules.clone(),
+                    events: Some(events.clone()),
+                },
+                4,
+                AiPolicy::BuiltIn1,
+                7,
+                deps,
+                recipe,
+            )
+            .unwrap()
+        };
+        let submit = |session: &mut HumanSession, command| {
+            let revision = session.view().revision;
+            session
+                .submit(Request {
+                    civ: 4,
+                    revision,
+                    id: revision + 1,
+                    command,
+                })
+                .unwrap()
+        };
+        for recipe in [
+            ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1,
+            ScenarioKnowledgeRecipe::SavedNavalAllocationV1,
+        ] {
+            let mut session = make(recipe);
+            let start = session.view();
+            for _ in 0..5 {
+                submit(&mut session, Command::EndTurn);
+                session.advance(1024);
+            }
+            let view = session.view();
+            assert_eq!((view.observation.turn, view.phase), (48, Phase::Human));
+            let Some(Decision::Research {
+                id, ref available, ..
+            }) = view.decision
+            else {
+                panic!("the alternate route should require a new research project");
+            };
+            if recipe == ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 {
+                assert!(session.saved_move_state.is_none());
+                assert_eq!(view.observation.seen.iter().flatten().count(), 60);
+                continue;
+            }
+            assert_eq!(view.observation.seen, start.observation.seen);
+            let saved = session.saved_move_state.as_ref().unwrap();
+            assert_eq!(
+                (saved.units[38].type_id(), saved.units[38].stack_next()),
+                (32, 37)
+            );
+            assert_eq!(saved.units[37].stack_next(), 2);
+            let pending = session.checkpoint(deps);
+            let restore = |bytes: &str| {
+                HumanSession::restore_with(
+                    rules.clone(),
+                    deps,
+                    bytes,
+                    Some((&snapshot, Some(events.clone()))),
+                )
+                .unwrap()
+            };
+            assert_eq!(restore(&pending).view(), view);
+            let choice = available[0];
+            let result = submit(
+                &mut session,
+                Command::Research {
+                    decision: id,
+                    advance: choice,
+                },
+            );
+            assert_eq!(result.result, Some(OrderResult::ResearchSet));
+            assert_eq!(session.view().observation.seen, start.observation.seen);
+            assert!(session.view().decision.is_none());
+            let chosen = session.checkpoint(deps);
+            assert_eq!(restore(&chosen).checkpoint(deps), chosen);
+            assert_eq!(restore(&chosen).view(), session.view());
+        }
     }
 
     #[test]
@@ -780,6 +872,7 @@ staged-round-test
             (ScenarioKnowledgeRecipe::SavedOpponentWestwardV1, 59, 0),
             (ScenarioKnowledgeRecipe::SavedNavalArrivalV1, 59, 0),
             (ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1, 59, 0),
+            (ScenarioKnowledgeRecipe::SavedNavalAllocationV1, 59, 0),
         ] {
             let mut session = HumanSession::scenario_initialized_recipe(
                 ScenarioInput {
@@ -1051,6 +1144,7 @@ staged-round-test
                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                     | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                     | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                    | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
             ) {
                 let before = contact.view();
                 let draws = contact.game.world.combat_rng.draws();
@@ -1080,6 +1174,7 @@ staged-round-test
                         | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                         | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                         | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                        | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
                 ) {
                     let prior = contact.saved_move_state.as_ref().unwrap().clone();
                     assert_eq!(contact.advance(1), 1);
@@ -1110,6 +1205,7 @@ staged-round-test
                             | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                             | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                             | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                            | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
                     ) {
                         assert_eq!(contact.advance(8), 8);
                         let prior = contact.view();
@@ -1130,6 +1226,7 @@ staged-round-test
                                 | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
                         ) {
                             assert_eq!(contact.advance(4), 4);
                             let prior = contact.view();
@@ -1178,6 +1275,7 @@ staged-round-test
                                     | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                                     | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                                     | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                                    | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
                             ) {
                                 submit(&mut contact, Command::EndTurn);
                                 assert_eq!(contact.advance(22), 22);
@@ -1225,6 +1323,7 @@ staged-round-test
                                         | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                                         | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                                         | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                                        | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
                                 ) {
                                     submit(&mut contact, Command::EndTurn);
                                     assert_eq!(contact.advance(2), 2);
@@ -1319,6 +1418,7 @@ staged-round-test
                                             | ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                                             | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                                             | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                                            | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
                                     ) {
                                         let saved = contact.saved_move_state.as_ref().unwrap();
                                         assert_eq!(saved.cities[9].city_id(), 11);
@@ -1355,6 +1455,7 @@ staged-round-test
                                             ScenarioKnowledgeRecipe::SavedOpponentWestwardV1
                                                 | ScenarioKnowledgeRecipe::SavedNavalArrivalV1
                                                 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1
+                                                | ScenarioKnowledgeRecipe::SavedNavalAllocationV1
                                         ) {
                                             assert_eq!(contact.advance(5), 5);
                                             let saved = contact.saved_move_state.as_ref().unwrap();
@@ -1375,7 +1476,7 @@ staged-round-test
                                             assert_eq!(replay.checkpoint(deps), stacked);
                                             assert_eq!(replay.view(), contact.view());
                                             assert_eq!(contact.advance(3), 3);
-                                            if matches!(recipe, ScenarioKnowledgeRecipe::SavedNavalArrivalV1 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1) {
+                                            if matches!(recipe, ScenarioKnowledgeRecipe::SavedNavalArrivalV1 | ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 | ScenarioKnowledgeRecipe::SavedNavalAllocationV1) {
                                                 let saved =
                                                     contact.saved_move_state.as_ref().unwrap();
                                                 assert_eq!(saved.units[37].stack_next(), 36);
@@ -1395,7 +1496,7 @@ staged-round-test
                                                 assert_eq!(replay.checkpoint(deps), arrived);
                                                 assert_eq!(replay.view(), contact.view());
                                                 assert_eq!(contact.advance(4), 4);
-                                                if recipe == ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 {
+                                                if matches!(recipe, ScenarioKnowledgeRecipe::SavedRemoteNavalStackV1 | ScenarioKnowledgeRecipe::SavedNavalAllocationV1) {
                                                     let saved = contact.saved_move_state.as_ref().unwrap();
                                                     assert_eq!((saved.units[0].x(), saved.units[0].y()), (64, 36));
                                                     assert_eq!(saved.units[0].moves_spent(), 6);

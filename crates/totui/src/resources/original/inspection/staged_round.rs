@@ -3,7 +3,7 @@ use super::OriginalCapture;
 use engine::{
     campaign::AiPolicy,
     events::EventEngine,
-    human::{Command, HumanSession, HumanView, Phase, Request, ScenarioInput},
+    human::{Command, Decision, HumanSession, HumanView, Phase, Request, ScenarioInput},
     player::OrderResult,
 };
 use serde_json::{json, Value};
@@ -641,7 +641,7 @@ pub(super) fn check_saved_human_production(
     let rules = &capture.resources().rules;
     let events = files.events.clone().map(EventEngine::new);
     let identity = capture.identity();
-    let mut session = HumanSession::scenario_initialized_saved_remote_naval_stack(
+    let mut session = HumanSession::scenario_initialized_saved_naval_allocation(
         ScenarioInput {
             path: &files.path,
             snapshot: &files.bytes,
@@ -653,6 +653,7 @@ pub(super) fn check_saved_human_production(
         7,
         identity,
     )?;
+    let alternate_start = session.checkpoint(identity);
     let initial = session.view();
     let city = *initial
         .cities
@@ -1025,6 +1026,53 @@ pub(super) fn check_saved_human_production(
             "the checked turn-48 city departure did not preserve the human view on replay".into(),
         );
     }
+    let mut alternate = restore(&alternate_start)?;
+    for turn in 44..=48 {
+        submit(&mut alternate, Command::EndTurn)?;
+        alternate.advance(128);
+        let view = alternate.view();
+        if view.phase != Phase::Human
+            || view.observation.turn != turn
+            || view.observation.seen != initial.observation.seen
+        {
+            return Err("unchecked saved fog on the alternate End Turn route".into());
+        }
+    }
+    let pending = alternate.view();
+    let Some(Decision::Research {
+        id, ref available, ..
+    }) = pending.decision
+    else {
+        return Err("the alternate turn-48 research choice is missing".into());
+    };
+    let pending_checkpoint = alternate.checkpoint(identity);
+    let replay = restore(&pending_checkpoint)?;
+    if replay.view() != pending || replay.checkpoint(identity) != pending_checkpoint {
+        return Err("the alternate turn-48 research choice did not replay".into());
+    }
+    let selected = *available
+        .first()
+        .ok_or("the alternate research choice is empty")?;
+    let chosen = submit(
+        &mut alternate,
+        Command::Research {
+            decision: id,
+            advance: selected,
+        },
+    )?;
+    let after = alternate.view();
+    let checkpoint = alternate.checkpoint(identity);
+    let replay = restore(&checkpoint)?;
+    if chosen.result != Some(OrderResult::ResearchSet)
+        || after.decision.is_some()
+        || after.observation.seen != pending.observation.seen
+        || replay.view() != after
+        || replay.checkpoint(identity) != checkpoint
+    {
+        return Err(
+            "setting the alternate turn-48 research project changed saved fog or replay".into(),
+        );
+    }
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
@@ -1042,6 +1090,7 @@ pub(super) fn check_saved_human_production(
         "turn_48_naval_arrival_replays": true,
         "turn_48_inland_movement_replays": true,
         "turn_48_city_departure_replays": true,
+        "turn_48_research_choice_replays": true,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],

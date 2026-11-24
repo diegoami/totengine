@@ -796,3 +796,18 @@ still require their own observation and wake evidence. The checked
 Original route reaches the turn-48 human input with all 59 tiles and
 replays the player's departure from the occupied city. Earlier schemas
 keep their original fallback boundaries.
+
+### Turn-48 research on the End Turn route
+
+Ending each turn without the city purchase or unit orders reaches the same
+offshore arrival with different free unit slots. Schema 19 validates the
+same stack roles, location, ownership and CRT before recording the slots
+returned by the engine allocator. It links the ship and its two units in
+the measured order, including cases that extend the unit table.
+
+This alternate route reaches turn 48 with the original 59 explored tiles
+and a required research choice. The ordinary project selection sets the
+target and preserves saved fog. Checkpoints reproduce both the pending
+choice and the accepted project. Free-advance choices keep the earlier
+fallback. The checked purchase route and previous schemas remain
+replayable.

@@ -610,3 +610,28 @@ its resulting checkpoint. Schema 8 preserves its original replay.
 This path covers the witnessed stock encounter. The next action on the
 checked route attacks an occupied city and still triggers engine sight.
 Full turn-45 saved observation and faithful entry remain open.
+
+
+### Opponent attack on the occupied city
+
+The [prepared native attack](evidence/import-opponent-city-combat.json)
+uses the post-contact CRT and treaty words. Unit 35 attacks east from
+(46, 28) and remains there, with six thirds spent and eight damage.
+Unit 36 is deleted. City slot 9 loses its final citizen and becomes
+inactive, with its tile occupancy flags cleared. The human view and
+remembered improvements stay intact through the first city-panel
+font import. Closing the native panel allows the callback to return.
+It keeps all 59 explored tiles and clears the city occupancy bit in
+viewer-memory byte 1144.
+
+Initializer schema 10 stages the witnessed attack in checked replay.
+It verifies the combat result and CRT state, applies the existing
+surface-city destruction mechanic, and clears the native occupancy
+bits in the remembered tile. The saved view stays at 59 tiles. The
+inspector replays a checkpoint from immediately after the attack.
+Earlier initializers keep their original combat behavior.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_city_combat_check.py --out /tmp/import-opponent-city-combat.json
+cmp docs/evidence/import-opponent-city-combat.json /tmp/import-opponent-city-combat.json
+```

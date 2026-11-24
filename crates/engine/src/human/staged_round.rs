@@ -20,6 +20,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
                     | ScenarioKnowledgeRecipe::SavedHumanProductionV1
                     | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
             );
         let before = keep_view.then(|| self.game.world.clone());
         if !keep_view {
@@ -762,6 +763,7 @@ staged-round-test
             (ScenarioKnowledgeRecipe::SavedOpponentCombatV1, 60, 2),
             (ScenarioKnowledgeRecipe::SavedHumanProductionV1, 59, 0),
             (ScenarioKnowledgeRecipe::SavedOpponentContactV1, 59, 0),
+            (ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1, 59, 0),
         ] {
             let mut session = HumanSession::scenario_initialized_recipe(
                 ScenarioInput {
@@ -1021,7 +1023,11 @@ staged-round-test
                 let values = if civ == 5 { &values5 } else { &values6 };
                 assert_eq!(values[advance].value, native);
             }
-            if recipe == ScenarioKnowledgeRecipe::SavedOpponentContactV1 {
+            if matches!(
+                recipe,
+                ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
+            ) {
                 let before = contact.view();
                 let draws = contact.game.world.combat_rng.draws();
                 assert_eq!(contact.advance(1), 1);
@@ -1039,6 +1045,32 @@ staged-round-test
                 let replay = restore(&reached);
                 assert_eq!(replay.checkpoint(deps), reached);
                 assert_eq!(replay.view(), contact.view());
+                if recipe == ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1 {
+                    let prior = contact.saved_move_state.as_ref().unwrap().clone();
+                    assert_eq!(contact.advance(1), 1);
+                    assert_eq!(contact.game.world.combat_rng.state(), 0x2413ad1c);
+                    assert_eq!(contact.game.world.units[35].damage, 8);
+                    assert_eq!(contact.game.world.units[36].id, 0);
+                    assert!(contact.game.world.city_at(48, 28).is_none());
+                    let after = contact.saved_move_state.as_ref().unwrap();
+                    let offset = 3 * prior.map_header.surface();
+                    let memory = offset..offset + prior.map_header.surface();
+                    assert_eq!(
+                        differences(
+                            &prior.maps[0].visibility[memory.clone()],
+                            &after.maps[0].visibility[memory]
+                        ),
+                        [(1144, 2, 0)]
+                    );
+                    assert_eq!(contact.view().observation.seen, before.observation.seen);
+                    let fought = contact.checkpoint(deps);
+                    assert_eq!(restore(&fought).checkpoint(deps), fought);
+                } else {
+                    assert_eq!(contact.advance(1), 1);
+                    assert!(contact.saved_move_state.is_none());
+                    let old = contact.checkpoint(deps);
+                    assert_eq!(restore(&old).checkpoint(deps), old);
+                }
             }
         }
     }

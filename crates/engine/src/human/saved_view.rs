@@ -94,6 +94,7 @@ impl HumanSession {
             self.knowledge_recipe,
             ScenarioKnowledgeRecipe::SavedHumanProductionV1
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
         ) {
             return None;
         }
@@ -387,6 +388,7 @@ impl HumanSession {
                 self.knowledge_recipe,
                 ScenarioKnowledgeRecipe::SavedHumanProductionV1
                     | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
             );
         let mut births = Vec::new();
         for (slot, unit) in world.units.iter().enumerate() {
@@ -466,6 +468,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
                 | ScenarioKnowledgeRecipe::SavedHumanProductionV1
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
         ) {
             crate::scenario::opponent_stack::record_city_births(
                 &mut observed,
@@ -523,6 +526,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
                 | ScenarioKnowledgeRecipe::SavedHumanProductionV1
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
         ) || self.saved_move_state.is_none()
         {
             return false;
@@ -543,6 +547,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentCombatV1
                 | ScenarioKnowledgeRecipe::SavedHumanProductionV1
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
         ) {
             return None;
         }
@@ -564,6 +569,9 @@ impl HumanSession {
                 .iter()
                 .any(|u| u.id != 0 && u.owner != civ && (u.x, u.y) == to);
         let mut events = None;
+        let city_recipe =
+            self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1;
+        let city_before = world.city_at(to.0, to.1);
         let (observed, result) = if is_combat {
             events = self.game.events.clone();
             let observed = crate::scenario::opponent_combat::stage(
@@ -571,9 +579,9 @@ impl HumanSession {
                 &self.game.rules,
                 &mut world,
                 events.as_mut(),
-                civ,
-                unit,
+                (civ, unit),
                 to,
+                city_recipe,
             )
             .ok()?;
             (observed, OrderResult::Attacked { won: true })
@@ -585,7 +593,9 @@ impl HumanSession {
                 civ,
                 unit,
                 to,
-                if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentContactV1 {
+                if city_recipe
+                    || self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedOpponentContactV1
+                {
                     crate::scenario::opponent_stack::StackMovement::StockContact
                 } else if self.knowledge_recipe.checked_replay() {
                     crate::scenario::opponent_stack::StackMovement::Extended
@@ -599,9 +609,23 @@ impl HumanSession {
         let area = saved.map_header.surface();
         let offset = (usize::from(self.human) - 1) * area;
         let memory = offset..offset + area;
-        if before != after
-            || saved.maps[0].visibility[memory.clone()] != observed.maps[0].visibility[memory]
+        let prior_memory = &saved.maps[0].visibility[memory.clone()];
+        let new_memory = &observed.maps[0].visibility[memory];
+        let memory_matches = if city_recipe
+            && is_combat
+            && city_before.is_some()
+            && world.city_at(to.0, to.1).is_none()
         {
+            let tile = world.map.stored_index(to.0, to.1)?;
+            prior_memory
+                .iter()
+                .zip(new_memory)
+                .enumerate()
+                .all(|(i, (&prior, &new))| new == if i == tile { prior & !3 } else { prior })
+        } else {
+            prior_memory == new_memory
+        };
+        if before != after || !memory_matches {
             return None;
         }
         let view = Self::prepare_saved_view(&world, self.human, after).ok()?;

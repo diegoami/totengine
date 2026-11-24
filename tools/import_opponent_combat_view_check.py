@@ -11,6 +11,7 @@ import argparse
 import hashlib
 import json
 import os
+import struct
 from pathlib import Path
 
 from unicorn import UC_HOOK_CODE
@@ -30,6 +31,64 @@ IMPORTS = {
     b'\xff\x15\xe8\x17\x69\x00': ('GetTickCount', 0),
     b'\xff\x15\xa0\x17\x69\x00': ('OutputDebugStringA', 4),
 }
+
+
+def run_attack(original, arguments, *, city_panel_boundary=False):
+    cpu = original.cpu
+    tick = 0
+    hosts = []
+    display = []
+    observes = []
+
+    def boundary(emu, at, size, _data):
+        nonlocal tick
+        sp = emu.reg_read(UC_X86_REG_ESP)
+        if at == 0x41F704:
+            observes.append([read(original, sp + off) for off in (4, 8)])
+        instruction = bytes(emu.mem_read(at, size))
+        if city_panel_boundary and instruction == b'\xff\x15\xd8\x16\x69\x00':
+            emu.emu_stop()
+        elif city_panel_boundary and instruction == b'\xff\x15\x84\x1a\x69\x00':
+            hosts.append('SetRect')
+            emu.mem_write(read(original, sp), bytes(emu.mem_read(sp + 4, 16)))
+            emu.reg_write(UC_X86_REG_EAX, 1)
+            emu.reg_write(UC_X86_REG_ESP, sp + 20)
+            emu.reg_write(UC_X86_REG_EIP, at + size)
+        elif instruction in IMPORTS:
+            name, arguments = IMPORTS[instruction]
+            hosts.append(name)
+            if name != 'OutputDebugStringA':
+                tick += 1000
+                emu.reg_write(UC_X86_REG_EAX, tick)
+            emu.reg_write(UC_X86_REG_ESP, sp + arguments)
+            emu.reg_write(UC_X86_REG_EIP, at + size)
+        elif at == IDLE_FILTER_CALL:
+            hosts.append('PeekMessageA')
+            assert [read(original, sp + off) for off in (4, 8, 12, 16)] == [0, 0x3BD, 0x3BD, 1]
+            emu.reg_write(UC_X86_REG_EAX, 0)
+            emu.reg_write(UC_X86_REG_ESP, sp + 20)
+            emu.reg_write(UC_X86_REG_EIP, at + size)
+        elif at in PRESENTATION:
+            display.append(f'{at:08x}')
+            emu.reg_write(UC_X86_REG_EAX, 0)
+            emu.reg_write(UC_X86_REG_ESP, sp + 4)
+            emu.reg_write(UC_X86_REG_EIP, read(original, sp, '<I'))
+
+    hook = cpu.hook_add(UC_HOOK_CODE, boundary)
+    try:
+        if city_panel_boundary:
+            cpu.mem_map(0, 4096)
+            original.write(0, 0xffffffff, '<I')
+            cpu.mem_write(0x108000, struct.pack('<4I', 0x100000, *arguments))
+            cpu.reg_write(original.sp, 0x108000)
+            cpu.emu_start(0x54C69B, 0x100000, count=20000000)
+            assert cpu.reg_read(original.ip) == 0x584467, hex(cpu.reg_read(original.ip))
+            result = None
+        else:
+            result = original.call(0x54C69B, *arguments)
+    finally:
+        cpu.hook_del(hook)
+    return result, hosts, display, observes
 
 
 def execute(original, viewer, city, rules, seed):
@@ -63,42 +122,7 @@ def execute(original, viewer, city, rules, seed):
     original.write(CRT, seed, '<I')
     before = [unit(slot) for slot in (20, 22)]
     saved = knowledge()
-    tick = 0
-    hosts = []
-    display = []
-    observes = []
-
-    def boundary(emu, at, size, _data):
-        nonlocal tick
-        sp = emu.reg_read(UC_X86_REG_ESP)
-        if at == 0x41F704:
-            observes.append([read(original, sp + off) for off in (4, 8)])
-        instruction = bytes(emu.mem_read(at, size))
-        if instruction in IMPORTS:
-            name, arguments = IMPORTS[instruction]
-            hosts.append(name)
-            if name != 'OutputDebugStringA':
-                tick += 1000
-                emu.reg_write(UC_X86_REG_EAX, tick)
-            emu.reg_write(UC_X86_REG_ESP, sp + arguments)
-            emu.reg_write(UC_X86_REG_EIP, at + size)
-        elif at == IDLE_FILTER_CALL:
-            hosts.append('PeekMessageA')
-            assert [read(original, sp + off) for off in (4, 8, 12, 16)] == [0, 0x3BD, 0x3BD, 1]
-            emu.reg_write(UC_X86_REG_EAX, 0)
-            emu.reg_write(UC_X86_REG_ESP, sp + 20)
-            emu.reg_write(UC_X86_REG_EIP, at + size)
-        elif at in PRESENTATION:
-            display.append(f'{at:08x}')
-            emu.reg_write(UC_X86_REG_EAX, 0)
-            emu.reg_write(UC_X86_REG_ESP, sp + 4)
-            emu.reg_write(UC_X86_REG_EIP, read(original, sp, '<I'))
-
-    hook = cpu.hook_add(UC_HOOK_CODE, boundary)
-    try:
-        result = original.call(0x54C69B, 20, 4, 3)
-    finally:
-        cpu.hook_del(hook)
+    result, hosts, display, observes = run_attack(original, (20, 4, 3))
     after = [unit(slot) for slot in (20, 22)]
     assert result == 1 and [u['alive'] for u in before] == [True, True]
     assert [u['alive'] for u in after] == [True, False]

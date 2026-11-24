@@ -641,7 +641,7 @@ pub(super) fn check_saved_human_production(
     let rules = &capture.resources().rules;
     let events = files.events.clone().map(EventEngine::new);
     let identity = capture.identity();
-    let mut session = HumanSession::scenario_initialized_saved_opponent_contact(
+    let mut session = HumanSession::scenario_initialized_saved_opponent_city_combat(
         ScenarioInput {
             path: &files.path,
             snapshot: &files.bytes,
@@ -804,6 +804,14 @@ pub(super) fn check_saved_human_production(
     if reloaded.view() != contact.view() || reloaded.checkpoint(identity) != contact_checkpoint {
         return Err("saved opponent contact did not replay".into());
     }
+    if contact.advance(1) != 1 || before.observation.seen != contact.view().observation.seen {
+        return Err("saved occupied-city attack changed the human view".into());
+    }
+    let attack_checkpoint = contact.checkpoint(identity);
+    let reloaded = restore(&attack_checkpoint)?;
+    if reloaded.view() != contact.view() || reloaded.checkpoint(identity) != attack_checkpoint {
+        return Err("saved occupied-city attack did not replay".into());
+    }
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
@@ -811,6 +819,7 @@ pub(super) fn check_saved_human_production(
         "focus_cases": anchors.len(),
         "stack_order_cases": order_cases,
         "contact_checkpoint_replays": true,
+        "city_attack_checkpoint_replays": true,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],

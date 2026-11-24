@@ -232,6 +232,38 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_opponent_city_attack_clears_remembered_occupancy_at_return(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-city-combat.json').read_text())
+        contact = json.loads((ROOT / 'docs/evidence/import-opponent-contact.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], contact[key])
+        attack = report['attack']
+        self.assertEqual(attack['crt_before'], contact['engine_seed_control']['crt_after'])
+        self.assertEqual(attack['crt_after'], 605269276)
+        self.assertEqual(attack['arguments'], [35, 1, 3])
+        self.assertEqual(attack['before']['city'], {'slot': 9, 'size': 1, 'live': True, 'tile_flags': 3})
+        self.assertEqual(attack['after']['city'], {'slot': 9, 'size': 0, 'live': False, 'tile_flags': 0})
+        attacker, defender = attack['after']['units']
+        self.assertEqual(attacker, {'slot': 35, 'live': True, 'position': [46, 28], 'spent': 6, 'damage': 8})
+        self.assertEqual(defender, {'slot': 36, 'live': False, 'position': [-700, -700], 'spent': 0, 'damage': 10})
+        self.assertEqual(attack['after']['explored_tiles'], 59)
+        self.assertTrue(attack['viewer_exploration_unchanged'])
+        self.assertEqual(attack['viewer_memory_changes'], [])
+        self.assertEqual(attack['stopped_at'], '00584467')
+        closed = report['closed_panel_attack']
+        self.assertEqual(closed['stopped_at'], '00100000')
+        self.assertEqual(closed['return'], 0)
+        self.assertEqual(attack['after'], closed['after'])
+        self.assertEqual(attack['crt_after'], closed['crt_after'])
+        self.assertTrue(closed['viewer_exploration_unchanged'])
+        self.assertEqual(closed['viewer_memory_changes'], [[1144, 2, 0]])
+        self.assertEqual(closed['map_changes'], attack['map_changes'])
+        self.assertEqual(closed['all_memory_changes'], [
+            [civ, 1144, 3 if civ == 6 else 2, 0] for civ in range(1, 8)
+        ])
+
+
+
     def test_native_first_opponent_contact_is_not_the_between_trade_turn_return(self):
         report = json.loads((ROOT / 'docs/evidence/import-opponent-contact.json').read_text())
         reference = json.loads((ROOT / 'docs/evidence/import-human-city-stack-returns.json').read_text())

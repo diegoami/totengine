@@ -345,6 +345,16 @@ observation through the measured encounter. The next civ-5 order attacks
 the occupied city at (48, 28), outside the checked field-combat scope.
 The turn-45 view still reaches engine observation at that boundary.
 
+The [prepared occupied-city attack](evidence/import-opponent-city-combat.json)
+uses the outgoing CRT and treaty from the contact witness. Native removes
+the defender and the size-one city while the attacker stays at (46, 28).
+The closed-panel control reaches callback return with 59 human
+explored tiles and clears the destroyed city's occupancy bit at
+viewer-memory index 1144. The first city-panel font boundary precedes
+that memory write. Checked schema 10 now traverses the attack and
+restores its resulting checkpoint. The next saved-view fallback on the
+same route is civ 6 moving into (27, 13).
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

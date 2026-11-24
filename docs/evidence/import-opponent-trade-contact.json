@@ -533,6 +533,78 @@
       "explored_tiles": 59,
       "observation_calls": [],
       "city_slot": 9
+    },
+    "overspent_stack_join": {
+      "arguments": [
+        41,
+        1,
+        3
+      ],
+      "return": 1,
+      "mover_raw_changes": [
+        [
+          0,
+          42,
+          44
+        ],
+        [
+          6,
+          0,
+          64
+        ],
+        [
+          10,
+          5,
+          8
+        ],
+        [
+          13,
+          0,
+          1
+        ],
+        [
+          28,
+          255,
+          19
+        ],
+        [
+          29,
+          255,
+          0
+        ]
+      ],
+      "resident_raw_changes": [
+        [
+          26,
+          255,
+          41
+        ],
+        [
+          27,
+          255,
+          0
+        ]
+      ],
+      "tile_changes": [],
+      "crt_state": 324690329,
+      "crt_after": 3972996600,
+      "partial_movement_roll": true,
+      "stack_head": 41,
+      "cache_changes": [
+        [
+          5,
+          1622,
+          0,
+          1
+        ]
+      ],
+      "explored_tiles": 59,
+      "observation_calls": [
+        [
+          41,
+          1
+        ]
+      ]
     }
   },
   "scope": "Measure the Turn-49 trade-turn exchange and the following zone refusal.\n\nReuse both measured foundings so the valuation context matches the\nchecked engine's city list, then supply the engine's knowledge rows,\ntreaties, mask table, research rows, caches and CRT for civ 2's eastward\napproach to the civ 5 unit at (42, 36). Native movement runs through\nreturn with the closed-panel substitutions; the trade-turn exchange\ngrants both sides and the mover's next southward order is refused by the\nzone of control without spending movement."

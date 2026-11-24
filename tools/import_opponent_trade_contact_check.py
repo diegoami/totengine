@@ -275,6 +275,41 @@ def entry(original, viewer, city_region, rules, city_lines):
     assert read(original, CRT, '<I') == crt_before4
     visible4 = bytes(b & (1 << viewer) for b in tiles4_after[4::6])
     assert sum(bool(b) for b in visible4) == 59
+
+    # Civ 5's new city-9 build (slot 41) joins the fortified unit with one
+    # third left: the partial-movement chance roll admits the overspent
+    # move at the full terrain cost and the newcomer becomes stack head.
+    MOVER41 = bytes([42, 0, 40, 0, 0, 0, 0, 0, 15, 5, 5, 0, 0, 0, 0, 0, 0, 255,
+                     0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 59, 0,
+                     0, 0, 0, 0, 0, 0, 0, 0])
+    RESIDENT19 = bytes([44, 0, 40, 0, 0, 0, 64, 1, 2, 5, 3, 0, 0, 255, 57, 0, 1, 2,
+                        6, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 27, 0,
+                        0, 0, 2, 0, 2, 0, 0, 0])
+    cpu.mem_write(UNIT_RECORDS + 40 * 41, MOVER41)
+    cpu.mem_write(UNIT_RECORDS + 40 * 19, RESIDENT19)
+    raw41_before = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 41, 40))
+    raw19_before4 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 19, 40))
+    tiles5_before = bytes(cpu.mem_read(TILES, area * 6))
+    caches5_before = [bytes(cpu.mem_read(c, area)) for c in caches]
+    crt_before5 = read(original, CRT, '<I')
+    result5, _hosts5, _display5, observations5 = run_attack(original, (41, 1, 3), memory_rects=True)
+    raw41_after = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 41, 40))
+    raw19_after5 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 19, 40))
+    tiles5_after = bytes(cpu.mem_read(TILES, area * 6))
+    assert result5 == 1 and observations5 == [[41, 1]]
+    assert differences(raw41_before, raw41_after) == [
+        [0, 42, 44], [6, 0, 64], [10, 5, 8], [13, 0, 1], [28, 255, 19], [29, 255, 0]]
+    assert differences(raw19_before4, raw19_after5) == [[26, 255, 41], [27, 255, 0]]
+    assert tiles5_before == tiles5_after
+    assert read(original, CRT, '<I') == 0xECCF1DF8
+    cache_changes5 = [(seat, *change)
+                      for seat, (old, new) in enumerate(zip(caches5_before,
+                                                            [bytes(cpu.mem_read(c, area)) for c in caches],
+                                                            strict=True), 1)
+                      for change in differences(old, new)]
+    assert cache_changes5 == [(5, 1622, 0, 1)], cache_changes5
+    visible5 = bytes(b & (1 << viewer) for b in tiles5_after[4::6])
+    assert sum(bool(b) for b in visible5) == 59
     return {
         'arguments': [3, 1, 3], 'return': result, 'crt_state': CRT_STATE,
         'crt_after_exchange': CRT_AFTER,
@@ -302,6 +337,17 @@ def entry(original, viewer, city_region, rules, city_lines):
             'mover_raw_changes': [[6, 0, 64], [16, 0, 1]], 'tile_changes': [],
             'crt_unchanged': True, 'explored_tiles': 59,
             'observation_calls': observations4, 'city_slot': 9,
+        },
+        'overspent_stack_join': {
+            'arguments': [41, 1, 3], 'return': result5,
+            'mover_raw_changes': [
+                [0, 42, 44], [6, 0, 64], [10, 5, 8], [13, 0, 1],
+                [28, 255, 19], [29, 255, 0]],
+            'resident_raw_changes': [[26, 255, 41], [27, 255, 0]],
+            'tile_changes': [], 'crt_state': 0x135A6199, 'crt_after': 0xECCF1DF8,
+            'partial_movement_roll': True, 'stack_head': 41,
+            'cache_changes': [[5, 1622, 0, 1]], 'explored_tiles': 59,
+            'observation_calls': observations5,
         },
     }
 

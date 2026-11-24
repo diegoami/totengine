@@ -95,6 +95,7 @@ pub(crate) enum StackMovement {
     Extended,
     StockContact,
     StockHut,
+    StockArmed,
 }
 
 /// Execute ordinary land movement and update the affected stack links.
@@ -192,7 +193,7 @@ pub(crate) fn stage(
         && !world.map.rail[dest];
     let hut = world.map.hut_at(to.0, to.1);
     let witnessed_hut = hut
-        && mode == StackMovement::StockHut
+        && matches!(mode, StackMovement::StockHut | StackMovement::StockArmed)
         && (world.turn, civ, slot, origin, to) == (44, 6, 37, (28, 12), (27, 13))
         && world.human_mask == 16
         && world.combat_rng.state() == 0x2413ad1c
@@ -212,7 +213,17 @@ pub(crate) fn stage(
     let field_to_field =
         field_stack && !members.is_empty() && city.is_none() && origin_city.is_none();
     let attack = rules.unit_attack(usize::from(unit.type_id));
-    if field_to_field && attack != Some(0) || city_transfer && attack.is_none() {
+    let witnessed_armed = mode == StackMovement::StockArmed
+        && field_to_field
+        && (world.turn, civ, slot, origin, to) == (44, 7, 24, (9, 45), (9, 47))
+        && source == [24]
+        && members == [4]
+        && (unit.type_id, unit.orders, unit.moves_left) == (2, 2, 3)
+        && attack.is_some_and(|value| value != 0)
+        && world.units[4].type_id == 0
+        && world.combat_rng.state() == 0x44bc0476;
+    if field_to_field && attack != Some(0) && !witnessed_armed || city_transfer && attack.is_none()
+    {
         return Err("saved field-stack arrival has an unchecked mover attack value".into());
     }
     // In a checked city transfer the city connects to the route on the field tile.
@@ -236,6 +247,11 @@ pub(crate) fn stage(
     let result = world.move_unit_with_routes(rules, slot, to.0, to.1, route, partial_movement);
     if result.battle.is_some() || (result.hut && !witnessed_hut) || result.zoc_ended {
         return Err("saved stack move did not resolve as ordinary movement".into());
+    }
+    if witnessed_armed
+        && (!result.moved || result.cost_thirds != 3 || world.combat_rng.state() != 0x44bc0476)
+    {
+        return Err("saved armed arrival differed from the witnessed movement".into());
     }
     if witnessed_hut
         && (!result.moved
@@ -265,7 +281,7 @@ pub(crate) fn stage(
     if !result.moved {
         return Ok((updated, OrderResult::MovementExhausted));
     }
-    if city_transfer && attack.is_some_and(|value| value != 0) {
+    if witnessed_armed || city_transfer && attack.is_some_and(|value| value != 0) {
         members.insert(0, slot);
     } else {
         members.push(slot);
@@ -297,7 +313,15 @@ pub(crate) fn stage(
         updated.units[slot].raw[6] |= 0x40;
         updated.units[slot].raw[13] = 4;
     }
-    let observed = if matches!(mode, StackMovement::StockContact | StackMovement::StockHut) {
+    if witnessed_armed {
+        updated.units[slot].raw[6] |= 0x40;
+        updated.units[slot].raw[10] = 3;
+        updated.units[slot].raw[13] = 3;
+    }
+    let observed = if matches!(
+        mode,
+        StackMovement::StockContact | StackMovement::StockHut | StackMovement::StockArmed
+    ) {
         unit_observation_with_contacts(&updated, rules, slot, |observed, error| {
             apply_stock_contact(observed, rules, world, &error).ok_or(error)
         })

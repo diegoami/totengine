@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "arrival": {
+    "arguments": [
+      24,
+      3,
+      3
+    ],
+    "before": [
+      {
+        "slot": 24,
+        "position": [
+          9,
+          45
+        ],
+        "previous": -1,
+        "next": -1,
+        "spent": 0,
+        "direction": 0
+      },
+      {
+        "slot": 4,
+        "position": [
+          9,
+          47
+        ],
+        "previous": -1,
+        "next": -1,
+        "spent": 3,
+        "direction": 5
+      }
+    ],
+    "after": [
+      {
+        "slot": 24,
+        "position": [
+          9,
+          47
+        ],
+        "previous": -1,
+        "next": 4,
+        "spent": 3,
+        "direction": 3
+      },
+      {
+        "slot": 4,
+        "position": [
+          9,
+          47
+        ],
+        "previous": 24,
+        "next": -1,
+        "spent": 3,
+        "direction": 5
+      }
+    ],
+    "crt_state": 1153172598,
+    "explored_tiles": 59,
+    "viewer_memory_unchanged": true,
+    "observation_calls": [
+      [
+        24,
+        1
+      ]
+    ],
+    "host_substitutes": [
+      "PeekMessageA"
+    ],
+    "display_substitutes": [
+      "00467d19"
+    ]
+  },
+  "scope": "Measure the prepared armed arrival into a friendly field stack.\n\nUse the pinned round-close context, then supply the measured mover and\nresident records, map bytes and CRT from the checked engine approach.\nNative movement runs through return with the established closed-panel\npresentation substitutions."
+}

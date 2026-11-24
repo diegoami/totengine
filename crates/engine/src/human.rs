@@ -654,6 +654,24 @@ impl HumanSession {
         )
     }
 
+    /// Retain the checked saved view through the witnessed armed field arrival.
+    pub fn scenario_initialized_saved_opponent_armed_stack(
+        input: ScenarioInput<'_>,
+        human: u8,
+        policy: crate::campaign::AiPolicy,
+        seed: u64,
+        dependencies: &str,
+    ) -> Result<Self, String> {
+        Self::scenario_initialized_recipe(
+            input,
+            human,
+            policy,
+            seed,
+            dependencies,
+            ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1,
+        )
+    }
+
     fn scenario_initialized_recipe(
         input: ScenarioInput<'_>,
         human: u8,
@@ -696,6 +714,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                 | ScenarioKnowledgeRecipe::SavedOpponentHutV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
         ) {
             crate::scenario::phase::saved_human_entry(&saved, &input.rules, human)?;
             crate::scenario::snapshot::CheckedSnapshot::read(input.snapshot, &input.rules)?;
@@ -735,6 +754,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                 | ScenarioKnowledgeRecipe::SavedOpponentHutV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
         ) {
             session.saved_move_state = Some(saved.clone());
         }
@@ -824,6 +844,7 @@ impl HumanSession {
                     | ScenarioKnowledgeRecipe::SavedOpponentContactV1
                     | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                     | ScenarioKnowledgeRecipe::SavedOpponentHutV1
+                    | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
             )
             .then(StagedRound::default),
             game,
@@ -1211,6 +1232,7 @@ impl HumanSession {
                 | ScenarioKnowledgeRecipe::SavedOpponentContactV1
                 | ScenarioKnowledgeRecipe::SavedOpponentCityCombatV1
                 | ScenarioKnowledgeRecipe::SavedOpponentHutV1
+                | ScenarioKnowledgeRecipe::SavedOpponentArmedStackV1
         ) {
             data.push_str(if self.saved_move_state.is_some() {
                 " saved-land-movement-active"

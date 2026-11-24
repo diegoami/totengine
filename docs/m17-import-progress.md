@@ -356,8 +356,13 @@ restores its resulting checkpoint. The next saved-view fallback on the
 same route was civ 6 moving into (27, 13). The [native hut
 witness](evidence/import-opponent-hut.json) confirms that this move
 grants advance 1 and retains the saved map. Checked schema 11 now
-stages that reward. The next fallback is the civ-7 armed arrival
-from (9, 45) into the friendly field stack at (9, 47).
+stages that reward. The next boundary was the civ-7 armed arrival
+from (9, 45) into the friendly field stack at (9, 47). The
+[native witness](evidence/import-opponent-armed-stack.json) and
+schema 12 put the armed unit at the head with the same saved view.
+The checked route reaches turn 45 with all 59 tiles and supports
+the player's return into the occupied city on the refreshed budget.
+The inspector replays a checkpoint from after that return.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

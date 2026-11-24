@@ -656,3 +656,25 @@ field stack.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_hut_check.py --out /tmp/import-opponent-hut.json
 cmp docs/evidence/import-opponent-hut.json /tmp/import-opponent-hut.json
 ```
+
+
+### Saved observation through turn 45
+
+The [prepared armed arrival](evidence/import-opponent-armed-stack.json)
+moves unit 24 from (9, 45) into the friendly stack at (9, 47). It takes
+the head, spends three thirds, and leaves the CRT and human knowledge
+unchanged.
+
+Initializer schema 12 stages the measured stack arrival. The checked
+Original route then continues through the rest of turn 44 and opens
+turn 45 with the full original 59-tile view. The returned movement
+budget permits the earlier Phalanx to re-enter its city, where it
+takes the head of the pair. The inspector checks the actual turn
+transition and compares the restored post-return checkpoint. Earlier
+recipes retain their original behavior at the relevant boundaries.
+This remains an experimental replay profile.
+
+```sh
+CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_armed_stack_check.py --out /tmp/import-opponent-armed-stack.json
+cmp docs/evidence/import-opponent-armed-stack.json /tmp/import-opponent-armed-stack.json
+```

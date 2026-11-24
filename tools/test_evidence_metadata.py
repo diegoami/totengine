@@ -232,6 +232,20 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_armed_arrival_is_a_head_insertion(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-armed-stack.json').read_text())
+        hut = json.loads((ROOT / 'docs/evidence/import-opponent-hut.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], hut[key])
+        arrival = report['arrival']
+        self.assertEqual(arrival['crt_state'], hut['hut']['crt_after'])
+        self.assertEqual(arrival['explored_tiles'], 59)
+        self.assertTrue(arrival['viewer_memory_unchanged'])
+        self.assertEqual(arrival['after'], [
+            {'slot': 24, 'position': [9, 47], 'previous': -1, 'next': 4, 'spent': 3, 'direction': 3},
+            {'slot': 4, 'position': [9, 47], 'previous': 24, 'next': -1, 'spent': 3, 'direction': 5},
+        ])
+
     def test_native_opponent_hut_retains_view_and_grants_the_current_project(self):
         report = json.loads((ROOT / 'docs/evidence/import-opponent-hut.json').read_text())
         attack = json.loads((ROOT / 'docs/evidence/import-opponent-city-combat.json').read_text())

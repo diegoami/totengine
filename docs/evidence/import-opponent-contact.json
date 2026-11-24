@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "pair": [
+    5,
+    6
+  ],
+  "contact": [
+    48,
+    28,
+    0
+  ],
+  "cases": {
+    "first_contact": {
+      "turn": 44,
+      "prior_treaty_words": [
+        0,
+        0
+      ],
+      "treaty_words": [
+        17409,
+        17409
+      ],
+      "trade_calls": 1,
+      "first_grant_arguments": [
+        5,
+        39,
+        6,
+        0,
+        0
+      ],
+      "stopped_at": "0049dedf",
+      "explored_tiles": 59,
+      "unit_city_map_and_viewer_memory_unchanged": true
+    },
+    "known_between_trade_turns": {
+      "turn": 44,
+      "prior_treaty_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        1025,
+        1025
+      ],
+      "trade_calls": 0,
+      "first_grant_arguments": null,
+      "stopped_at": "00100000",
+      "explored_tiles": 59,
+      "unit_city_map_and_viewer_memory_unchanged": true
+    },
+    "known_on_trade_turn": {
+      "turn": 45,
+      "prior_treaty_words": [
+        1,
+        1
+      ],
+      "treaty_words": [
+        1025,
+        1025
+      ],
+      "trade_calls": 1,
+      "first_grant_arguments": [
+        5,
+        39,
+        6,
+        0,
+        0
+      ],
+      "stopped_at": "0049dedf",
+      "explored_tiles": 59,
+      "unit_city_map_and_viewer_memory_unchanged": true
+    }
+  },
+  "scope": "Measure the native contact prefix for the prepared turn-44 opponent pair.\n\nLoad the pinned snapshot and stock Rules, then set the observed engine\npair, treaty words, turn, and single-player viewer. The scenario gate\nis clear. Native callees run until return or the first advance grant.\nThe later grant and remaining encounter logic stay outside this probe."
+}

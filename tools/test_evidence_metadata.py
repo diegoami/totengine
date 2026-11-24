@@ -232,6 +232,25 @@ class GoldenMetadata(unittest.TestCase):
              (16, 48, 1), (48, 0, 6), (48, 16, 1), (48, 48, 0)],
         )
 
+    def test_native_first_opponent_contact_is_not_the_between_trade_turn_return(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-contact.json').read_text())
+        reference = json.loads((ROOT / 'docs/evidence/import-human-city-stack-returns.json').read_text())
+        for key in ('source', 'rules', 'binary_sha256'):
+            self.assertEqual(report[key], reference[key])
+        self.assertEqual(report['pair'], [5, 6])
+        self.assertEqual(report['contact'], [48, 28, 0])
+        first, repeat, due = report['cases'].values()
+        self.assertEqual(first['prior_treaty_words'], [0, 0])
+        self.assertEqual(first['treaty_words'], [0x4401, 0x4401])
+        self.assertEqual(first['first_grant_arguments'], [5, 39, 6, 0, 0])
+        self.assertEqual((first['stopped_at'], repeat['stopped_at'], due['stopped_at']),
+                         ('0049dedf', '00100000', '0049dedf'))
+        self.assertEqual(repeat['treaty_words'], [0x401, 0x401])
+        self.assertEqual([row['trade_calls'] for row in (first, repeat, due)], [1, 0, 1])
+        self.assertTrue(all(row['explored_tiles'] == 59 and
+                            row['unit_city_map_and_viewer_memory_unchanged']
+                            for row in (first, repeat, due)))
+
     def test_native_human_city_stack_returns_link_the_arriving_unit_first(self):
         report = json.loads((ROOT / 'docs/evidence/import-human-city-stack-returns.json').read_text())
         departure = json.loads((ROOT / 'docs/evidence/import-human-city-stack-orders.json').read_text())

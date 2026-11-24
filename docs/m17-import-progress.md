@@ -328,6 +328,16 @@ of the pair, and leave 59 explored tiles. Native clears the unit marker
 on the field tile in the map and remembered array. The next runtime
 work covers re-entry on a supported budget.
 
+The [prepared opponent contact witness](evidence/import-opponent-contact.json)
+uses the civ 5 to civ 6 pair that stops checked observation during
+turn 44. The checked engine has zero treaty words in both directions
+before that move. Native first contact sets both words to `0x4401`
+and reaches the first advance grant, advance 39 from civ 6 to civ 5,
+with the human map and remembered improvements intact through that
+boundary. An already-known encounter can return after updating only
+treaty words, or can reach a grant on a trade turn. The first-contact
+grant and subsequent encounter effects remain open.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

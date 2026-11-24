@@ -557,7 +557,15 @@ prepared input, and drives it southeast to (53, 9). The native arrival
 spends six thirds, links the returning Phalanx ahead of the resident,
 and removes the field unit marker from the saved map and memory. The
 view keeps 59 explored tiles. The budget reset is a controlled input.
-The checked engine's re-entry path remains open.
+
+Checked schema-8 movement now handles the witnessed southeast transfer
+from an unstacked field unit into a known own city with one matching
+awake land unit. The move requires a full three-third budget and the
+witnessed six-third cost. It inserts the entrant at the head, clears
+the former field tile's occupancy, and stages saved observation.
+The installed engine regression compares both native return cases
+using the same controlled budget. The live route still falls back
+during the intervening opponent encounter before turn 45.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_human_city_birth_check.py --returns --out /tmp/import-human-city-stack-returns.json

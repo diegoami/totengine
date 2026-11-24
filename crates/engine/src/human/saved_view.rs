@@ -133,6 +133,64 @@ impl HumanSession {
         .then_some(neighbor)
     }
 
+    fn saved_city_stack_move(
+        &self,
+        saved: &tot_kit::SaveFile,
+        slot: usize,
+        to: (u16, u16),
+        destination: usize,
+    ) -> Option<crate::scenario::snapshot::CityStackMove> {
+        use crate::scenario::snapshot::CityStackMove;
+        if let Some(mate) = self.saved_city_mate(saved, slot) {
+            return Some(CityStackMove::Departure { mate });
+        }
+        if self.knowledge_recipe != ScenarioKnowledgeRecipe::SavedHumanProductionV1
+            || !saved.maps[0].has_city(destination)
+        {
+            return None;
+        }
+        let world = &self.game.world;
+        let mover = world.units.get(slot)?;
+        let city = world.cities.iter().position(|city| {
+            city.city_id != 0
+                && (city.owner, city.map_id, city.x, city.y)
+                    == (u16::from(self.human), 0, to.0, to.1)
+        })?;
+        let record = saved.cities.get(city)?;
+        if record.city_id() != world.cities[city].city_id
+            || (record.owner(), record.map_id(), record.x(), record.y())
+                != (u16::from(self.human), 0, to.0, to.1)
+            || self
+                .game
+                .rules
+                .unit_attack(usize::from(mover.type_id))
+                .is_none_or(|a| a == 0)
+        {
+            return None;
+        }
+        let mut occupants = world
+            .units
+            .iter()
+            .enumerate()
+            .filter(|(_, unit)| unit.id != 0 && (unit.x, unit.y) == to);
+        let (resident, unit) = occupants.next()?;
+        let record = saved.units.get(resident)?;
+        (occupants.next().is_none()
+            && !unit.is_leader
+            && (unit.owner, unit.type_id, unit.orders, unit.stack_pos)
+                == (self.human, mover.type_id, 255, 0)
+            && (
+                record.id(),
+                record.owner(),
+                record.type_id(),
+                record.map_id(),
+                record.x(),
+                record.y(),
+            ) == (unit.id, unit.owner, unit.type_id, 0, to.0, to.1)
+            && (record.stack_prev(), record.stack_next()) == (-1, -1))
+            .then_some(CityStackMove::Arrival { resident })
+    }
+
     fn saved_wait_candidates(&self, actor: Entity) -> Option<Vec<SavedFocusCandidate>> {
         let unit = self.game.world.units.get(actor.slot)?;
         if unit.id == 0 || unit.id != actor.id || unit.owner != self.human || unit.moves_left == 0 {
@@ -632,7 +690,7 @@ impl HumanSession {
                     unit,
                     to,
                     checked_replay,
-                    self.saved_city_mate(saved, unit),
+                    self.saved_city_stack_move(saved, unit, to, index),
                 );
                 (step, OrderResult::Moved)
             }

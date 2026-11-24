@@ -325,8 +325,10 @@ The [prepared city re-entry witness](evidence/import-human-city-stack-returns.js
 resets the departing actor's spent movement and drives it southeast
 into the occupied city. Both actors spend six thirds, become the head
 of the pair, and leave 59 explored tiles. Native clears the unit marker
-on the field tile in the map and remembered array. The next runtime
-work covers re-entry on a supported budget.
+on the field tile in the map and remembered array. The checked engine
+matches both cases under the same controlled budget. The live route
+still reaches the opponent-contact fallback before an ordinary return
+on turn 45.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

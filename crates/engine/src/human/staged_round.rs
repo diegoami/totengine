@@ -968,6 +968,66 @@ staged-round-test
                 let reloaded = restore(&destination);
                 assert_eq!(reloaded.checkpoint(deps), destination);
                 assert_eq!(reloaded.view(), moved.view());
+                assert!(moved
+                    .submit(Request {
+                        civ: 4,
+                        revision: moved.view().revision,
+                        id: moved.next_request_id().unwrap(),
+                        command: Command::Move {
+                            unit: actor,
+                            to: (53, 9)
+                        },
+                    })
+                    .is_err());
+                assert_eq!(moved.checkpoint(deps), destination);
+
+                // Match the native return witness by restoring only the
+                // departing unit's budget before the southeast step.
+                moved.game.world.units[actor.slot].moves_left = 3;
+                let saved = moved.saved_move_state.as_mut().unwrap();
+                saved.units[actor.slot].raw[10] = 0;
+                let before_return = saved.clone();
+                moved.view_cache.get_mut().take();
+                let result = submit(
+                    &mut moved,
+                    Command::Move {
+                        unit: actor,
+                        to: (53, 9),
+                    },
+                );
+                assert_eq!(result.result, Some(OrderResult::Moved));
+                let returned = moved.saved_move_state.as_ref().unwrap();
+                let head = &returned.units[actor.slot];
+                let tail = &returned.units[mate.slot];
+                assert_eq!(
+                    (head.x(), head.y(), head.moves_spent(), head.raw[13]),
+                    (53, 9, 6, 2)
+                );
+                assert_eq!(
+                    (head.stack_prev(), head.stack_next()),
+                    (-1, mate.slot as i16)
+                );
+                assert_eq!(
+                    (tail.stack_prev(), tail.stack_next()),
+                    (actor.slot as i16, -1)
+                );
+                assert_eq!(moved.game.world.units[actor.slot].stack_pos, 0);
+                assert_eq!(moved.game.world.units[mate.slot].stack_pos, 1);
+                assert_eq!(
+                    differences(
+                        &before_return.maps[0].tile_fields,
+                        &returned.maps[0].tile_fields
+                    ),
+                    [(2077, 1, 0)]
+                );
+                assert_eq!(
+                    differences(
+                        &before_return.maps[0].visibility,
+                        &returned.maps[0].visibility
+                    ),
+                    [(3 * area + 346, 1, 0)]
+                );
+                assert_eq!(moved.view().observation.seen.iter().flatten().count(), 59);
             }
         }
     }

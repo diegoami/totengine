@@ -102,6 +102,12 @@ impl CheckedSnapshot {
     }
 }
 
+#[derive(Clone, Copy)]
+pub(crate) enum CityStackMove {
+    Departure { mate: usize },
+    Arrival { resident: usize },
+}
+
 /// Stage a checked relocation and its saved observation on a temporary world.
 pub(crate) fn stage_saved_land_move(
     save: &SaveFile,
@@ -110,8 +116,10 @@ pub(crate) fn stage_saved_land_move(
     slot: usize,
     to: (u16, u16),
     keep_native_budget: bool,
-    city_mate: Option<usize>,
+    city_stack: Option<CityStackMove>,
 ) -> Result<SaveFile, String> {
+    let leaving_city = matches!(city_stack, Some(CityStackMove::Departure { .. }));
+    let entering_city = matches!(city_stack, Some(CityStackMove::Arrival { .. }));
     let player = save.player_civ;
     let unit = save
         .units
@@ -119,7 +127,7 @@ pub(crate) fn stage_saved_land_move(
         .filter(|u| u.id() != 0)
         .ok_or("saved land step requires a live unit")?;
     if unit.owner() != player
-        || (city_mate.is_none() && (unit.stack_prev(), unit.stack_next()) != (-1, -1))
+        || (!leaving_city && (unit.stack_prev(), unit.stack_next()) != (-1, -1))
         || unit.orders() != 255
         || rules.unit_domain(usize::from(unit.type_id())) != Some(0)
     {
@@ -157,14 +165,12 @@ pub(crate) fn stage_saved_land_move(
     let from = index((unit.x(), unit.y()))?;
     let dest = index(to)?;
     let map = &save.maps[0];
-    if map.has_city(from) != city_mate.is_some()
-        || map.has_city(dest)
-        || map.has_unit(dest)
+    if map.has_city(from) != leaving_city
+        || map.has_city(dest) != entering_city
+        || map.has_unit(dest) != entering_city
         || map.terrain(dest) == 10
     {
-        return Err(
-            "saved land step requires a checked origin and an empty land destination".into(),
-        );
+        return Err("saved land step requires checked origin and destination occupancy".into());
     }
 
     if world.map.hut_at(to.0, to.1) {
@@ -175,23 +181,29 @@ pub(crate) fn stage_saved_land_move(
     let first_step = keep_native_budget
         && live.moves_left
             == world.movement_allowance(rules, usize::from(live.type_id), player, live.damage);
-    if city_mate.is_some_and(|mate| {
-        !first_step
+    if let Some(stack) = city_stack {
+        let (mate, expected) = match stack {
+            CityStackMove::Departure { mate } => {
+                (mate, (unit.x().checked_sub(1), unit.y().checked_sub(1)))
+            }
+            CityStackMove::Arrival { resident } => {
+                (resident, (unit.x().checked_add(1), unit.y().checked_add(1)))
+            }
+        };
+        if !first_step
             || live.moves_left != 3
             || unit.moves_spent() != 0
             || save.units[mate].orders() != 255
             || save.units[mate].type_id() != unit.type_id()
-            || unit.x().checked_sub(1) != Some(to.0)
-            || unit.y().checked_sub(1) != Some(to.1)
-    }) {
-        return Err(
-            "saved city-stack departure requires the checked full-budget northwest step".into(),
-        );
+            || expected != (Some(to.0), Some(to.1))
+        {
+            return Err("saved city-stack transfer requires the witnessed full-budget step".into());
+        }
     }
     let moved = if first_step {
         let routes = crate::movement::MovementRoute {
-            road: (city_mate.is_some() || world.map.road[from]) && world.map.road[dest],
-            rail: (city_mate.is_some() || world.map.rail[from]) && world.map.rail[dest],
+            road: (leaving_city || world.map.road[from]) && (entering_city || world.map.road[dest]),
+            rail: (leaving_city || world.map.rail[from]) && (entering_city || world.map.rail[dest]),
         };
         world.move_unit_with_routes(rules, slot, to.0, to.1, Some(routes), true)
     } else {
@@ -200,12 +212,12 @@ pub(crate) fn stage_saved_land_move(
     if !moved.moved || moved.zoc_ended || moved.battle.is_some() || moved.hut {
         return Err("saved land step did not resolve as ordinary movement".into());
     }
-    if city_mate.is_some() && moved.cost_thirds != 6 {
-        return Err("saved city-stack departure has an unchecked movement cost".into());
+    if city_stack.is_some() && moved.cost_thirds != 6 {
+        return Err("saved city-stack transfer has an unchecked movement cost".into());
     }
     let moved_unit = &world.units[slot];
     let position = (moved_unit.x, moved_unit.y);
-    let mut changed = if city_mate.is_some() {
+    let mut changed = if city_stack.is_some() {
         crate::saved_knowledge::clear_unit_stack_visibility(save, slot)?
     } else {
         save.clone()
@@ -240,19 +252,28 @@ pub(crate) fn stage_saved_land_move(
         raw[13] = direction as u8;
     }
     let tile_bytes = &mut changed.maps[0].tile_fields;
-    if city_mate.is_none() {
+    if !leaving_city {
         tile_bytes[6 * from + 1] &= !1;
     }
     tile_bytes[6 * dest + 1] |= 1;
     tile_bytes[6 * dest + 5] = (tile_bytes[6 * dest + 5] & 15) | (world.map.owner[dest] << 4);
-    let observed = if let Some(mate) = city_mate {
-        changed.units[slot].raw[26..30].fill(255);
-        changed.units[mate].raw[26..30].fill(255);
-        world.units[slot].stack_pos = 0;
-        world.units[mate].stack_pos = 0;
-        unit_observation_after(&changed, rules, slot, true)
-    } else {
-        unit_observation_after_reset(&changed, rules, slot, true)
+    let observed = match city_stack {
+        Some(CityStackMove::Departure { mate }) => {
+            changed.units[slot].raw[26..30].fill(255);
+            changed.units[mate].raw[26..30].fill(255);
+            world.units[slot].stack_pos = 0;
+            world.units[mate].stack_pos = 0;
+            unit_observation_after(&changed, rules, slot, true)
+        }
+        Some(CityStackMove::Arrival { resident }) => {
+            let new_head = &mut changed.units[slot].raw;
+            new_head[28..30].copy_from_slice(&(resident as i16).to_le_bytes());
+            changed.units[resident].raw[26..28].copy_from_slice(&(slot as i16).to_le_bytes());
+            world.units[slot].stack_pos = 0;
+            world.units[resident].stack_pos = 1;
+            unit_observation_after(&changed, rules, slot, true)
+        }
+        None => unit_observation_after_reset(&changed, rules, slot, true),
     }
     .map_err(|error| format!("saved land step observation: {error}"))?;
     apply_saved_observation(world, &observed);

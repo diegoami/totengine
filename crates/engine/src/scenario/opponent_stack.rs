@@ -195,6 +195,45 @@ pub(crate) fn stage(
         })
         && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [9, 1, 192, 2, 64, 96]
         && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [2, 2, 192, 2, 64, 99];
+    // The measured turn-49 refusal of civ 5's fortified unit ordered into
+    // its own empty city 9: native marks the unit done and records the
+    // attempt without spending movement or touching the tile.
+    // (docs/evidence/import-opponent-trade-contact.json)
+    if mode == StackMovement::StockRemoteNaval
+        && (world.turn, civ, slot, origin, to, world.combat_rng.state())
+            == (49, 5, 19, (44, 40), (44, 42), 0x135a6199)
+        && world.human_mask == 16
+        && source == [slot]
+        && members.is_empty()
+        && friendly_city(city)
+        && origin_city.is_none()
+        && world.city_at(to.0, to.1) == Some(9)
+        && city.is_some_and(|city| city.size == 1)
+        && (
+            unit.type_id,
+            unit.moves_left,
+            unit.orders,
+            record.moves_spent(),
+        ) == (2, 3, 2, 3)
+        && record.raw[6] == 0
+        && record.raw[7] == 1
+        && record.raw[13] == 255
+        && record.raw[16] == 0
+        && record.visibility() == 0
+        && world.map.terrain[from] == 2
+        && world.map.terrain[dest] == 2
+        && !world.map.road[from]
+        && !world.map.road[dest]
+        && !world.map.rail[from]
+        && !world.map.rail[dest]
+        && saved.maps[0].tile_fields[6 * from..6 * from + 6] == [130, 1, 160, 2, 36, 87]
+        && saved.maps[0].tile_fields[6 * dest..6 * dest + 6] == [130, 2, 160, 2, 36, 87]
+    {
+        let mut refused = saved.clone();
+        refused.units[slot].raw[6] |= 0x40;
+        refused.units[slot].raw[16] += 1;
+        return Ok((refused, OrderResult::Rejected("fortified opponent move")));
+    }
     if members.is_empty() {
         if city.is_some() && !own_empty_city_entry {
             return Err(

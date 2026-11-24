@@ -441,20 +441,31 @@ movement. Two findings came out of the measurement:
   turn-49 tuple; the destination terrain moved into each case's witness
   tuple (the turn-49 square is terrain 5).
 
-The next fallback is the same empty-city context again, now for civ 5:
-slot 19 (type 2, alone, spent 3, orders 2, home 6, raw6 0, raw13 255,
-CRT `0x135a6199`) steps south from (44, 40) into its own size-one city 9
-at (44, 42); both tiles terrain 2 without road or rail, tiles
-`[130, 1, ...]` and `[130, 2, ...]`, city 9 raw `[44, 0, 42, 0, ..., 5,
-1, 5, ..., 11, 0, 0, 0]` (city id 11, city table index 9). The native
-witness for the civ-6 entry applies unchanged; the staging needs its own
-pinned tuple with these values. Beyond it the route continues into the
-rest of the turn-49 close.
+Civ 5's pass then staged the same empty-city approach measured for its
+own fortified unit: slot 19 (type 2, alone, spent 3, orders 2, CRT
+`0x135a6199`) stepping south from (44, 40) into its own size-one city 9
+at (44, 42) is **refused natively** — the mover keeps its position and
+movement, gains the done marker (`raw6` 0→64) and one refusal byte
+(`raw16` 0→1), and the tiles, CRT and human view are untouched. The
+staged refusal pins that whole context (tile bytes, terrain, road/rail,
+city index and size) ahead of the empty-city guard.
+
+The next fallback is civ 5's new city-9 build, slot 41 (type 15, id 59,
+alone, moves_left 1, orders 255, raw6 0, raw13 0, CRT `0x135a6199`, unit
+extent 42): after staging `move 41 42 40` it orders east from (42, 40)
+to (44, 40), where the fortified slot 19 now sits (`raw6` 64, `raw16` 1 —
+the staged refusal's own writes, matching the measurement). Both tiles
+terrain 2 without road or rail, `[130, 1, 160, 2, 36, 87]`. The mover
+cannot afford the three-thirds cost, so the expected native behavior is
+another refusal class; measure it (scratch probe extension
+`/home/diego/review-tmp/opencode/probe_contact.py`, supplies plus
+`run_attack(original, (41, 1, 3))`) before staging. Beyond it the route
+continues into the rest of the turn-49 close.
 
 This is an engine diagnostic. The `m17-turn49-boundary` worktree at
 `/home/diego/review-tmp/totengine-m17-turn49-boundary` contains
 uncommitted diagnostic logging in `human/saved_view.rs` and
-`human/staged_round.rs` (CONTACT2 and CITY9 dumps); leave those
+`human/staged_round.rs` (CONTACT2, CITY9 and SLOT41 dumps); leave those
 diagnostics out of production commits. The local working trace is
 `/tmp/totengine-m17-turn49-empty-city.log`; the scratch probes are
 `/home/diego/review-tmp/opencode/probe_contact.py` and

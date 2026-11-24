@@ -53,6 +53,14 @@ WORLD_TREATIES = {(2, 5): 0x405, (5, 2): 0x405, (5, 6): 0x4405, (6, 5): 0x4405,
 TILE_ORIGIN = [5, 1, 0, 2, 36, 32]
 TILE_DEST = [2, 0, 160, 2, 36, 85]
 TILE_RESIDENT = [129, 1, 160, 2, 36, 86]
+MOVER5 = bytes([44, 0, 40, 0, 0, 0, 0, 1, 2, 5, 3, 0, 0, 255, 57, 0, 0, 2,
+                6, 0, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 27, 0,
+                0, 0, 2, 0, 2, 0, 0, 0])
+CITY9 = bytes([44, 0, 42, 0, 0, 0, 0, 0, 2, 0, 5, 1, 5, 0, 0, 0, 0, 0, 0, 0,
+               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 51, 0, 0, 0, 0,
+               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 16, 0, 0, 0, 0, 0, 0, 3,
+               0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+               0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0])
 
 
 def differences(before, after):
@@ -247,6 +255,26 @@ def entry(original, viewer, city_region, rules, city_lines):
     assert read(original, CRT, '<I') == crt_before2 == CRT_AFTER
     visible3 = bytes(b & (1 << viewer) for b in tiles3_after[4::6])
     assert sum(bool(b) for b in visible3) == 59
+
+    # Civ 5's fortified unit ordered into its own empty city 9: native
+    # marks the unit done and records the refusal attempt.
+    original.write(0x607655, 5, '<B')
+    cpu.mem_write(UNIT_RECORDS + 40 * 19, MOVER5)
+    cpu.mem_write(city_region[0] + 92 * 9, CITY9)
+    cpu.mem_write(tile(44, 40), bytes([130, 1, 160, 2, 36, 87]))
+    cpu.mem_write(tile(44, 42), bytes([130, 2, 160, 2, 36, 87]))
+    raw19_before = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 19, 40))
+    tiles4_before = bytes(cpu.mem_read(TILES, area * 6))
+    crt_before4 = read(original, CRT, '<I')
+    result4, _hosts4, _display4, observations4 = run_attack(original, (19, 3, 3), memory_rects=True)
+    raw19_after = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 19, 40))
+    tiles4_after = bytes(cpu.mem_read(TILES, area * 6))
+    assert result4 == 0 and observations4 == []
+    assert differences(raw19_before, raw19_after) == [[6, 0, 64], [16, 0, 1]]
+    assert tiles4_before == tiles4_after
+    assert read(original, CRT, '<I') == crt_before4
+    visible4 = bytes(b & (1 << viewer) for b in tiles4_after[4::6])
+    assert sum(bool(b) for b in visible4) == 59
     return {
         'arguments': [3, 1, 3], 'return': result, 'crt_state': CRT_STATE,
         'crt_after_exchange': CRT_AFTER,
@@ -268,6 +296,12 @@ def entry(original, viewer, city_region, rules, city_lines):
             'mover_raw_changes': [[16, 0, 1]], 'tile_changes': [],
             'crt_unchanged': True, 'explored_tiles': 59,
             'observation_calls': observations2,
+        },
+        'fortified_refusal': {
+            'arguments': [19, 3, 3], 'return': result4,
+            'mover_raw_changes': [[6, 0, 64], [16, 0, 1]], 'tile_changes': [],
+            'crt_unchanged': True, 'explored_tiles': 59,
+            'observation_calls': observations4, 'city_slot': 9,
         },
     }
 

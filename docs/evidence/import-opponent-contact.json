@@ -227,20 +227,20 @@
       [
         6,
         1,
-        6,
-        8
-      ],
-      [
-        6,
-        12,
         5,
         7
       ],
       [
         6,
-        36,
+        12,
+        4,
+        6
+      ],
+      [
         6,
-        7
+        36,
+        7,
+        8
       ],
       [
         5,
@@ -251,14 +251,14 @@
       [
         6,
         46,
-        7,
-        9
+        8,
+        10
       ],
       [
         6,
         47,
-        5,
-        6
+        4,
+        5
       ],
       [
         5,
@@ -275,8 +275,8 @@
       [
         6,
         88,
-        5,
-        6
+        3,
+        4
       ]
     ],
     "crt_before": 1,
@@ -317,7 +317,7 @@
       ],
       [
         6,
-        1,
+        46,
         5,
         0,
         0
@@ -356,18 +356,6 @@
       ],
       [
         6,
-        18,
-        1,
-        255
-      ],
-      [
-        6,
-        19,
-        0,
-        255
-      ],
-      [
-        6,
         24,
         6,
         7
@@ -386,27 +374,27 @@
       ],
       [
         6,
-        96,
+        101,
         0,
-        2
+        64
       ],
       [
         6,
-        125,
+        170,
         255,
         5
       ]
     ],
     "tech_owner_mask_changes": [
       [
-        1,
-        164,
-        228
-      ],
-      [
         39,
         64,
         96
+      ],
+      [
+        46,
+        164,
+        228
       ]
     ],
     "prepared_technology_masks": [
@@ -445,20 +433,20 @@
       [
         6,
         1,
-        6,
-        7
+        5,
+        6
       ],
       [
         6,
         12,
-        5,
-        7
+        4,
+        6
       ],
       [
         6,
         36,
-        6,
-        6
+        7,
+        7
       ],
       [
         5,
@@ -469,14 +457,14 @@
       [
         6,
         46,
-        7,
-        7
+        8,
+        8
       ],
       [
         6,
         47,
-        5,
-        7
+        4,
+        6
       ],
       [
         5,
@@ -493,8 +481,8 @@
       [
         6,
         88,
-        5,
-        5
+        3,
+        3
       ]
     ],
     "crt_before": 3613838918,
@@ -504,5 +492,5 @@
       "SetRect": 162
     }
   },
-  "scope": "Measure the native contact prefix for the prepared turn-44 opponent pair.\n\nLoad the pinned snapshot and stock Rules, then set the observed engine\npair, treaty words, turn, and single-player viewer. The scenario gate\nis clear. Native callees run until return or the first advance grant.\nThe full control supplies a minimal exception-chain page and handles\nSetRect as a memory write. Full controls include the CRT state from\nthe checked engine checkpoint immediately before the encounter."
+  "scope": "Measure the native contact prefix for the prepared turn-44 opponent pair.\n\nLoad the pinned snapshot and stock Rules and valuation tables, then set the engine\npair, treaty words, turn, and single-player viewer. The scenario gate\nis clear. Native callees run until return or the first advance grant.\nThe full control supplies a minimal exception-chain page and handles\nSetRect as a memory write. Full controls include the CRT state from\nthe checked engine checkpoint immediately before the encounter."
 }

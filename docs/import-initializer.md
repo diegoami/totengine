@@ -582,9 +582,11 @@ after updating both words to `0x401`. The same pair on turn 45 reaches
 the trade grant. Full first contact leaves both treaty words at
 `0x4405`. With the prepared loader CRT seed of 1, the exchange grants
 39 to civ 5 and 46 to civ 6. With CRT state `0xd766ce46` captured
-before the engine encounter, native grants 39 and 1. Both cases make
-nine CRT draws. The report records the candidate scores, grant
-arguments and changed technology masks. The live checked replay
+before the engine encounter, native selects the same advances. Both
+cases make nine CRT draws. The probe loads the complete stock
+valuation tables. All nine native base scores match the checked engine
+context before the encounter. The report records the candidate scores,
+grant arguments and changed technology masks. The live checked replay
 currently uses engine sight at the first-contact boundary. Applying
 these encounter effects during continued play remains open.
 

@@ -969,6 +969,56 @@ staged-round-test
                 assert_eq!(reloaded.checkpoint(deps), destination);
                 assert_eq!(reloaded.view(), moved.view());
             }
+            // Reproduce the actual checked route so first-contact inputs
+            // can be compared to the prepared native exchange independently.
+            let mut contact = restore(&checkpoint);
+            submit(&mut contact, Command::Wait { unit: unit(26) });
+            submit(
+                &mut contact,
+                Command::Move {
+                    unit: unit(new_unit.index),
+                    to: (52, 8),
+                },
+            );
+            submit(&mut contact, Command::EndTurn);
+            assert_eq!(contact.advance(8), 8);
+            let mut world = contact.game.world.clone();
+            let saved = contact.saved_move_state.as_ref().unwrap();
+            assert_eq!((world.turn, contact.cursor), (44, 5));
+            assert_eq!((world.diplomacy[5][6], world.diplomacy[6][5]), (0, 0));
+            assert_eq!(world.combat_rng.state(), 0xd766ce46);
+            let rejected = crate::scenario::opponent_stack::stage(
+                saved,
+                &rules,
+                &mut world,
+                5,
+                35,
+                (46, 28),
+                true,
+            )
+            .unwrap_err();
+            assert_eq!(rejected, "saved opponent stack observation: native contact required: civ 5 with 6 at (48,28) on map 0");
+
+            let mut world = contact.game.world.clone();
+            // The native prefix sets these treaty words before valuation.
+            world.diplomacy[5][6] = 0x4401;
+            world.diplomacy[6][5] = 0x4401;
+            let values5 = world.native_research_candidates(&rules, 5).unwrap();
+            let values6 = world.native_research_candidates(&rules, 6).unwrap();
+            for (civ, advance, native) in [
+                (6, 1, 5),
+                (6, 12, 4),
+                (6, 36, 7),
+                (5, 39, 6),
+                (6, 46, 8),
+                (6, 47, 4),
+                (5, 56, 6),
+                (5, 86, 5),
+                (6, 88, 3),
+            ] {
+                let values = if civ == 5 { &values5 } else { &values6 };
+                assert_eq!(values[advance].value, native);
+            }
         }
     }
 

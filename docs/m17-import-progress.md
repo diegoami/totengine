@@ -339,7 +339,8 @@ treaty words, or can reach a grant on a trade turn. The full prepared
 controls reach return with both words set to `0x4405` and the human
 view intact. The native exchange draws from the CRT nine times. With
 the engine's pre-contact CRT state, the prepared native exchange
-grants 39 and 1. Runtime contact integration remains open.
+grants 39 and 46. The nine stock native base scores match the checked
+engine at the contact boundary. Runtime contact integration remains open.
 
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice

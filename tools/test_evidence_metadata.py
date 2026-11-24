@@ -253,7 +253,7 @@ class GoldenMetadata(unittest.TestCase):
 
         for key, seed, advances in (
             ('complete', 1, [39, 46]),
-            ('engine_seed_control', 0xd766ce46, [39, 1]),
+            ('engine_seed_control', 0xd766ce46, [39, 46]),
         ):
             control = report[key]
             self.assertEqual(control['crt_before'], seed)

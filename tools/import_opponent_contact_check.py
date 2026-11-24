@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Measure the native contact prefix for the prepared turn-44 opponent pair.
 
-Load the pinned snapshot and stock Rules, then set the observed engine
+Load the pinned snapshot and stock Rules and valuation tables, then set the engine
 pair, treaty words, turn, and single-player viewer. The scenario gate
 is clear. Native callees run until return or the first advance grant.
 The full control supplies a minimal exception-chain page and handles
@@ -17,6 +17,7 @@ import struct
 from unicorn import UC_HOOK_CODE
 from unicorn.x86_const import UC_X86_REG_EAX, UC_X86_REG_EBP, UC_X86_REG_EBX
 
+from ai_research_adapter_check import prepare as prepare_values
 from import_event_tail_check import digest
 from import_loader_exit_check import rules_refresh
 from import_phase_check import CIV, FRAME, STRIDE, frame, read
@@ -39,6 +40,7 @@ def encounter(home, binary, path, rules, turn, known, *, complete=False, crt_see
     original.write(FRAME - 0x1990, 1, '<I')
     original.write(FRAME - 0xE9C, 0, '<I')
     rules_refresh(original, rules)
+    prepare_values(home, original, path)
     assert viewer == 4
     if complete:
         original.cpu.mem_map(0, 4096)
@@ -166,7 +168,7 @@ def main():
     assert all(case['explored_tiles'] == 59 for case in cases.values())
     complete = encounter(*context, 44, 0, complete=True)
     seeded = encounter(*context, 44, 0, complete=True, crt_seed=ENGINE_CONTACT_CRT)
-    assert complete['grant_arguments'] == [[5, 39, 6, 0, 0], [6, 46, 5, 0, 0]]
+    assert complete['grant_arguments'] == seeded['grant_arguments'] == [[5, 39, 6, 0, 0], [6, 46, 5, 0, 0]]
     report = {'schema': 1, **{key: reference[key] for key in ('source', 'rules', 'binary_sha256')},
               'pair': PAIR, 'contact': CONTACT, 'cases': cases, 'complete': complete,
               'engine_seed_control': seeded, 'scope': __doc__.strip()}

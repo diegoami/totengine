@@ -251,6 +251,32 @@ class GoldenMetadata(unittest.TestCase):
                             row['unit_city_map_and_viewer_memory_unchanged']
                             for row in (first, repeat, due)))
 
+        for key, seed, advances in (
+            ('complete', 1, [39, 46]),
+            ('engine_seed_control', 0xd766ce46, [39, 1]),
+        ):
+            control = report[key]
+            self.assertEqual(control['crt_before'], seed)
+            self.assertEqual(control['crt_draws'], 9)
+            self.assertEqual(control['treaty_words'], [0x4405, 0x4405])
+            self.assertEqual(control['stopped_at'], '00100000')
+            self.assertEqual(control['host_calls'], {'SetRect': 162})
+            self.assertEqual(control['explored_tiles'], 59)
+            self.assertTrue(control['unit_city_map_and_viewer_memory_unchanged'])
+            self.assertEqual([grant[1] for grant in control['grant_arguments']], advances)
+            state = seed
+            best = {}
+            candidates = control['candidate_scores']
+            self.assertEqual(len(candidates), 9)
+            self.assertEqual(sorted(row[1] for row in candidates), [row[1] for row in candidates])
+            for recipient, advance, value, score in candidates:
+                state = (state * 214013 + 2531011) & 0xffffffff
+                self.assertEqual(score, value + ((state >> 16) & 0x7fff) % 3)
+                if recipient not in best or score > best[recipient][0]:
+                    best[recipient] = (score, advance)
+            self.assertEqual(state, control['crt_after'])
+            self.assertEqual([best[civ][1] for civ in (5, 6)], advances)
+
     def test_native_human_city_stack_returns_link_the_arriving_unit_first(self):
         report = json.loads((ROOT / 'docs/evidence/import-human-city-stack-returns.json').read_text())
         departure = json.loads((ROOT / 'docs/evidence/import-human-city-stack-orders.json').read_text())

@@ -572,14 +572,21 @@ runs the native contact entry for civs 5 and 6 at (48, 28). The first
 encounter on turn 44 changes both treaty words from zero to `0x4401`.
 It reaches advance grant entry with advance 39 going from civ 6 to civ
 5. Unit and city records, the human's 59 explored tiles and remembered
-improvements all remain intact up to the grant. The probe stops there.
+improvements all remain intact up to the grant. Two full controls run
+the grant and remaining encounter through native return. They supply
+an exception-chain page and substitute SetRect with its memory write.
+Neither full control changes the prepared human map or memory.
 
 With symmetric known treaty words of 1, the turn-44 control returns
 after updating both words to `0x401`. The same pair on turn 45 reaches
-the trade grant. The live checked replay currently uses engine sight
-at the first-contact boundary. The advance-grant effects and the rest
-of the encounter still need verification before that route can retain
-the saved view.
+the trade grant. Full first contact leaves both treaty words at
+`0x4405`. With the prepared loader CRT seed of 1, the exchange grants
+39 to civ 5 and 46 to civ 6. With CRT state `0xd766ce46` captured
+before the engine encounter, native grants 39 and 1. Both cases make
+nine CRT draws. The report records the candidate scores, grant
+arguments and changed technology masks. The live checked replay
+currently uses engine sight at the first-contact boundary. Applying
+these encounter effects during continued play remains open.
 
 ```sh
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_contact_check.py --out /tmp/import-opponent-contact.json

@@ -746,3 +746,17 @@ remains open.
 CIVTOT_HOME=... PYTHONPATH=/path/to/unicorn:tools python3 tools/import_opponent_founding_check.py --out /tmp/import-opponent-founding.json
 cmp docs/evidence/import-opponent-founding.json /tmp/import-opponent-founding.json
 ```
+
+### Westward opponent stack arrival on turn 47
+
+The [prepared arrival](evidence/import-opponent-armed-stack.json) compares
+two movement inputs for civ 7's warrior. With nine spent thirds left in
+its record, native refuses the move and writes three private unit bytes.
+With refreshed movement, the warrior moves west to (10, 44), spends six
+thirds and becomes the stack head. The native callback uses no CRT draw
+and preserves all 59 human explored tiles and remembered improvements.
+
+Schema 16 mirrors the movement refresh for civ 7's checked turn-47 city
+pass, then stages the arrival and replays across it. Earlier schemas
+retain their existing behavior. The saved view still hands off to engine
+sight at the next annual update in this route.

@@ -73,6 +73,90 @@ def arrival(original, viewer, _city, seed, *, later=False):
     }
 
 
+def turn_47_arrival(original, viewer, _city):
+    width = read(original, 0x6705A0, '<h')
+    area = read(original, 0x6705A4, '<h')
+    seed = 0x3b0ca297
+    original.write(CRT, seed, '<I')
+    original.write(0x607655, 7, '<B')
+    original.write(0x607648, 47, '<h')
+    original.write(0x5D156C, 0, '<B')
+    cache = read(original, 0x5DEAD0 + 4 * viewer, '<I')
+    cpu = original.cpu
+
+    def tile(x, y):
+        return TILES + 6 * (y * (width // 2) + x // 2)
+
+    def knowledge():
+        tiles = cpu.mem_read(TILES, area * 6)
+        return bytes(b & (1 << viewer) for b in tiles[4::6]), bytes(cpu.mem_read(cache, area))
+
+    def address(slot):
+        return UNIT_RECORDS + slot * 40
+
+    def snapshot(slot):
+        at = address(slot)
+        return {
+            'slot': slot, 'position': [read(original, at + off, '<h') for off in (0, 2)],
+            'previous': read(original, at + 26, '<h'), 'next': read(original, at + 28, '<h'),
+            'spent': read(original, at + 10, '<B'), 'direction': read(original, at + 13, '<B'),
+        }
+
+    for slot, x, spent, orders in ((28, 12, 0, 1), (7, 10, 6, 28)):
+        at = address(slot)
+        previous, next_unit = (read(original, at + off, '<h') for off in (26, 28))
+        if previous >= 0:
+            original.write(address(previous) + 28, next_unit, '<h')
+        if next_unit >= 0:
+            original.write(address(next_unit) + 26, previous, '<h')
+        if previous == next_unit == -1:
+            old = tile(*snapshot(slot)['position']) + 1
+            original.write(old, read(original, old, '<B') & ~1, '<B')
+        for off, value in ((0, x), (2, 44), (26, -1), (28, -1)):
+            original.write(at + off, value, '<h')
+        for off, value in ((6, 0), (10, spent), (12, 0), (13, 255), (17, orders)):
+            original.write(at + off, value, '<B')
+    cpu.mem_write(tile(12, 44), bytes([4, 1, 224, 2, 128, 112]))
+    cpu.mem_write(tile(10, 44), bytes([3, 1, 224, 2, 128, 112]))
+
+    visible, memory = knowledge()
+    args = (28, 5, 3)
+    # The old observation snapshot carried nine spent thirds into this turn.
+    # Run that input first and require the move to be refused without writes.
+    original.write(address(28) + 10, 9, '<B')
+    capture = [(address(slot), 40) for slot in (28, 7)] + [(TILES, area * 6), (cache, area)]
+    saved = [bytes(cpu.mem_read(start, size)) for start, size in capture]
+    refused, _, _, refused_observations = run_attack(original, args)
+    assert refused == 0 and not refused_observations
+    after_refusal = [bytes(cpu.mem_read(start, size)) for start, size in capture]
+    assert saved[2:] == after_refusal[2:]
+    refused_changes = [(slot, offset, before, after)
+                       for slot, old, new in zip((28, 7), saved[:2], after_refusal[:2], strict=True)
+                       for offset, (before, after) in enumerate(zip(old, new, strict=True))
+                       if before != after]
+    for (start, _), data in zip(capture[:2], saved[:2], strict=True):
+        cpu.mem_write(start, data)
+    assert read(original, CRT, '<I') == seed
+
+    original.write(address(28) + 10, 0, '<B')
+    before = [snapshot(28), snapshot(7)]
+    result, hosts, display, observations = run_attack(original, args)
+    after = [snapshot(28), snapshot(7)]
+    assert result == 1 and observations == [[28, 1]], (result, observations, after)
+    assert after == [
+        {'slot': 28, 'position': [10, 44], 'previous': -1, 'next': 7, 'spent': 6, 'direction': 5},
+        {'slot': 7, 'position': [10, 44], 'previous': 28, 'next': -1, 'spent': 6, 'direction': 255},
+    ]
+    assert read(original, address(28) + 6, '<B') == 0x40, read(original, address(28) + 6, '<B')
+    assert (visible, memory) == knowledge() and read(original, CRT, '<I') == seed
+    return {
+        'arguments': args, 'before': before, 'after': after, 'crt_state': seed,
+        'stale_movement_refused': {'spent': 9, 'return': refused, 'unit_record_changes': refused_changes},
+        'explored_tiles': sum(bool(mask) for mask in visible), 'viewer_memory_unchanged': True,
+        'observation_calls': observations, 'host_substitutes': hosts, 'display_substitutes': display,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, required=True)
@@ -99,9 +183,14 @@ def main():
     )
     assert prepared['annual_update'] == annual['annual_update']
     assert later['explored_tiles'] == 59
+    prepared, turn_47 = prepare_round(
+        home, binary, hut['source']['path'], rules, turn_47_arrival,
+    )
+    assert prepared['annual_update'] == annual['annual_update']
+    assert turn_47['explored_tiles'] == 59
     with args.out.open('x') as output:
         out = {'schema': 1, **{key: hut[key] for key in ('source', 'rules', 'binary_sha256')},
-               'arrival': result, 'turn_45_arrival': later, 'scope': __doc__.strip()}
+               'arrival': result, 'turn_45_arrival': later, 'turn_47_arrival': turn_47, 'scope': __doc__.strip()}
         output.write(json.dumps(out, indent=2) + '\n')
 
 

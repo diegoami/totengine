@@ -316,6 +316,22 @@ class GoldenMetadata(unittest.TestCase):
         ])
 
 
+    def test_native_westward_arrival_requires_refreshed_movement(self):
+        report = json.loads((ROOT / 'docs/evidence/import-opponent-armed-stack.json').read_text())
+        west = report['turn_47_arrival']
+        self.assertEqual(west['before'][0]['spent'], 0)
+        self.assertEqual(west['stale_movement_refused'], {
+            'spent': 9, 'return': 0,
+            'unit_record_changes': [[28, 6, 0, 64], [28, 16, 0, 1], [28, 17, 1, 255]],
+        })
+        mover, resident = west['after']
+        self.assertEqual((mover['position'], mover['next'], mover['direction'], mover['spent']),
+                         ([10, 44], 7, 5, 6))
+        self.assertEqual((resident['previous'], resident['next']), (28, -1))
+        self.assertEqual(west['crt_state'], 0x3b0ca297)
+        self.assertEqual(west['explored_tiles'], 59)
+        self.assertTrue(west['viewer_memory_unchanged'])
+
     def test_native_opponent_hut_retains_view_and_grants_the_current_project(self):
         report = json.loads((ROOT / 'docs/evidence/import-opponent-hut.json').read_text())
         attack = json.loads((ROOT / 'docs/evidence/import-opponent-city-combat.json').read_text())

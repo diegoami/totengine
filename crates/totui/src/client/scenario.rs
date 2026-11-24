@@ -309,6 +309,11 @@ impl Client {
                         Some("15"),
                         Some("profile"),
                         Some(ScenarioInitializer::SAVED_OPPONENT_FOUNDING_PROFILE)
+                    ) | (
+                        Some("initializer"),
+                        Some("16"),
+                        Some("profile"),
+                        Some(ScenarioInitializer::SAVED_OPPONENT_WESTWARD_PROFILE)
                     )
                 )
             });

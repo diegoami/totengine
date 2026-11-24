@@ -641,7 +641,7 @@ pub(super) fn check_saved_human_production(
     let rules = &capture.resources().rules;
     let events = files.events.clone().map(EventEngine::new);
     let identity = capture.identity();
-    let mut session = HumanSession::scenario_initialized_saved_opponent_founding(
+    let mut session = HumanSession::scenario_initialized_saved_opponent_westward(
         ScenarioInput {
             path: &files.path,
             snapshot: &files.bytes,
@@ -951,6 +951,21 @@ pub(super) fn check_saved_human_production(
             );
         }
     }
+    if contact.advance(6) != 6 {
+        return Err("checked turn-47 westward arrival did not advance".into());
+    }
+    let stacked = contact.view();
+    let arrival_checkpoint = contact.checkpoint(identity);
+    let replay = restore(&arrival_checkpoint)?;
+    if stacked.observation.seen != post_return.observation.seen
+        || stacked.observation.cities != post_return.observation.cities
+        || replay.view() != stacked
+        || replay.checkpoint(identity) != arrival_checkpoint
+    {
+        return Err(
+            "checked turn-47 westward arrival did not retain the human view on replay".into(),
+        );
+    }
     Ok(json!({
         "verified": true,
         "explored_tiles": native["explored_at_poll"],
@@ -964,6 +979,7 @@ pub(super) fn check_saved_human_production(
         "turn_46_city_departure_replays": true,
         "turn_47_city_return_replays": true,
         "turn_47_hidden_founding_replays": 2,
+        "turn_47_opponent_stack_replays": true,
         "native_unit_slot": native["unit"]["slot"],
         "engine_shields": shields,
         "native_shields": native["shields_after"],

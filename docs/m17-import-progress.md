@@ -382,6 +382,12 @@ and 10. Measured occupancy, site and fertility changes preserve the 59-tile
 human view. The hidden cities use engine policy for labels, identities,
 workers and production. The inspector replays both founding boundaries.
 
+Schema 16 mirrors refreshed movement in civ 7's turn-47 city pass
+and keeps the saved view through the [westward stack arrival](evidence/import-opponent-armed-stack.json).
+The native callback puts the warrior at the head and charges six thirds.
+The checked human map still has 59 explored tiles at that checkpoint.
+The next annual update remains outside the saved-view route.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

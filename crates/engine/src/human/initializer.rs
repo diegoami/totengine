@@ -36,6 +36,7 @@ pub enum ScenarioKnowledgeRecipe {
     SavedOpponentArmedStackV2,
     SavedOpponentZoneV1,
     SavedOpponentFoundingV1,
+    SavedOpponentWestwardV1,
 }
 
 impl ScenarioKnowledgeRecipe {
@@ -51,6 +52,7 @@ impl ScenarioKnowledgeRecipe {
                 | Self::SavedOpponentArmedStackV2
                 | Self::SavedOpponentZoneV1
                 | Self::SavedOpponentFoundingV1
+                | Self::SavedOpponentWestwardV1
         )
     }
 }
@@ -114,6 +116,8 @@ impl ScenarioInitializer {
     pub const SAVED_OPPONENT_ARMED_STACK_V2_PROFILE: &'static str =
         "experimental-saved-opponent-armed-stack-v2";
 
+    pub const SAVED_OPPONENT_WESTWARD_PROFILE: &'static str =
+        "experimental-saved-opponent-westward-v1";
     pub const SAVED_OPPONENT_FOUNDING_PROFILE: &'static str =
         "experimental-saved-opponent-founding-v1";
     pub const SAVED_OPPONENT_ZONE_PROFILE: &'static str = "experimental-saved-opponent-zone-v1";
@@ -135,6 +139,7 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedOpponentArmedStackV2 => 13,
             ScenarioKnowledgeRecipe::SavedOpponentZoneV1 => 14,
             ScenarioKnowledgeRecipe::SavedOpponentFoundingV1 => 15,
+            ScenarioKnowledgeRecipe::SavedOpponentWestwardV1 => 16,
         }
     }
     pub fn profile(&self) -> &'static str {
@@ -161,6 +166,9 @@ impl ScenarioInitializer {
             ScenarioKnowledgeRecipe::SavedOpponentZoneV1 => Self::SAVED_OPPONENT_ZONE_PROFILE,
             ScenarioKnowledgeRecipe::SavedOpponentFoundingV1 => {
                 Self::SAVED_OPPONENT_FOUNDING_PROFILE
+            }
+            ScenarioKnowledgeRecipe::SavedOpponentWestwardV1 => {
+                Self::SAVED_OPPONENT_WESTWARD_PROFILE
             }
         }
     }
@@ -291,6 +299,11 @@ impl ScenarioInitializer {
                 Self::SAVED_OPPONENT_FOUNDING_PROFILE,
                 "saved-opponent-founding-then-engine-v1",
             ),
+            ScenarioKnowledgeRecipe::SavedOpponentWestwardV1 => (
+                16,
+                Self::SAVED_OPPONENT_WESTWARD_PROFILE,
+                "saved-opponent-westward-then-engine-v1",
+            ),
         };
         format!(
             "initializer {schema} profile {profile} source {} {} {:016x} mode {mode} saved {} {} {} {} human {} phase {:?} cursor {} policy {} seed {} movement {movement} knowledge {knowledge} world {:016x} memory {:016x} choice {:016x} events {:016x} {:016x} rng {:08x} {} {:08x} {} dependencies {} {:016x} {}",
@@ -379,6 +392,11 @@ impl ScenarioInitializer {
             Self::SAVED_OPPONENT_FOUNDING_PROFILE
         )) {
             Ok(ScenarioKnowledgeRecipe::SavedOpponentFoundingV1)
+        } else if line.starts_with(&format!(
+            "initializer 16 profile {} ",
+            Self::SAVED_OPPONENT_WESTWARD_PROFILE
+        )) {
+            Ok(ScenarioKnowledgeRecipe::SavedOpponentWestwardV1)
         } else {
             Err("unsupported scenario initializer version or profile".into())
         }

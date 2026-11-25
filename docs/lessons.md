@@ -297,3 +297,13 @@ names. Two rules follow for this repo:
   then `docs/ui/screen-contracts.md`, then the guide — so a later
   session cannot mistake the description for the spec and implement to
   match itself.
+- **A user guide needs real screenshots, captured and linked in the
+  same change.** The guide's first draft described behavior without a
+  single image of the running client — to a new player the look and
+  feel was simply undefined, the same gap as the goal2 manual whose
+  screenshots existed but were not correctly linked. Capture from the
+  real clients (the browser harness drives the actual artwork), commit
+  the PNGs next to the guide, and reference them with relative links
+  in the same commit so neither half can drift. The capture script
+  (`tools/manual_screenshots.cjs`) is committed with the shots so the
+  images stay reproducible.

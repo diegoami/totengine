@@ -18,6 +18,11 @@ Developer and contributor documentation lives alongside this file
 reference](ui/original-controls.md) and the [evidence
 index](evidence/README.md)).
 
+Every screenshot in this guide was captured from the real browser
+client running an installed Original profile (Linux, Chromium); the
+capture script is [tools/manual_screenshots.cjs](../tools/manual_screenshots.cjs).
+The desktop client shows the same screens in its own window.
+
 ## Requirements
 
 - Your original **Test of Time** installation with the Original profile
@@ -66,6 +71,8 @@ press **Start**.
 Both clients scale the 1024×768 picture to any window size. Full screen
 is **Alt+Enter** or **View > Full screen**.
 
+![The setup screen: installation directory, seed, civilizations, human seat, difficulty and map size, with Quick Start, checkpoint loading and the experimental scenario entry](screenshots/setup.png)
+
 ## The map screen
 
 The map screen keeps the original arrangement: a **menu bar** along the
@@ -81,6 +88,12 @@ Cities), **View** (Moving/Viewing, center, zoom, full screen), **Orders**
 science), **World** (world reports, Messages) and **Civilopedia**. An
 entry that cannot run right now is greyed out and says why. **F10** opens
 the menu bar from the keyboard.
+
+![The map screen after founding a city: menu bar, the map with your settler and city, and the right column with minimap, turn, treasury, rates, research, the city panel and the end-of-turn prompt](screenshots/map.png)
+
+On wide windows the messages join as their own column:
+
+![The same map at a wide window size, with the messages column between the map and the right column](screenshots/map-wide.png)
 
 ### Units: selecting and moving
 
@@ -116,6 +129,8 @@ the menu bar from the keyboard.
   here, what is built, and the mood. The **Sort** button reorders these
   lists; it changes only the display.
 
+![The city window: citizens strip, city resources, food storage and production on the left, the radius map in the middle, and the information panels on the right](screenshots/city-window.png)
+
 ### Your civilization
 
 - **Research** (Advisors menu) opens the required research choice when a
@@ -131,6 +146,12 @@ the menu bar from the keyboard.
 - **Civilopedia** shows your installation's own reference text by
   category. It needs a ToT installation; the Open demo has no
   Civilopedia text.
+
+![The F6 science advisor: the running project, the goal setter and the available and known advances](screenshots/science.png)
+
+![The Shift+T rates dialog with the government's per-share limit, locks, and the treasury and science effect preview](screenshots/rates.png)
+
+![The F1 city status report with the report switcher, one row per city and sorting](screenshots/report-cities.png)
 
 ### Messages and help
 
@@ -153,6 +174,8 @@ the menu bar from the keyboard.
   version that saved it, and it verifies your installation's resources
   on load. There is no autosave — save before closing.
 
+![The save dialog with its name field and accept/cancel entries](screenshots/save-dialog.png)
+
 ## Optional enhancements
 
 **Game > Settings** (or **Enhancements…** on setup) holds optional
@@ -171,6 +194,8 @@ during a game — lists the `.scn` and `.sav` files in your installation
 and shows a **preflight** before anything starts: the turn, map size,
 playable civilizations, and every gap the engine knows about. Nothing
 starts until you accept it.
+
+![The experimental scenario listing over setup: the installation's .scn and .sav files, paged, with the gaps-disclosed-before-starting note](screenshots/scenario-preflight.png)
 
 What works: the scenario's own Rules, Events and art; event text boxes,
 flags and a growing set of event actions; dates as the original writes

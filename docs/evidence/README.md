@@ -5664,3 +5664,39 @@ save offset `o` in the game block maps to RAM `0x6073ac + o`: turn @668 is
   never saw that tile. The original's reveal rules are not decoded.
 - **Unit test.** `resumed_save_keeps_remembered_improvements_out_of_sight`
   covers the remembered-improvement path on the synthetic save.
+
+## Leader-trait slot sensitivity and the loaded-game presentation (#turn-50 follow-up, corrected)
+
+The built-in research selection derives its leader modifier from Rules
+(`LEADERS` column 9); the standalone native comparisons matched on that
+basis because the harness writes the modifier into `0x606f4a +
+leader*60`. This probe (`tools/research_trait_live_check.py`,
+`docs/evidence/import-research-trait-live.json`) measures the slot's
+score impact and what the prepared-save native paths do with it.
+An earlier revision of this section claimed the live game presents an
+all-zero table; that claim is **retracted** - the prepared-save driver
+starts from zeroed emulation memory, and its zero readings were harness
+defaults, not game behavior (review finding #431).
+
+- **The slot matters.** Direct native comparisons on the standalone
+  harness - leader-trait slot zeroed versus the Rules modifier written -
+  differ in 56, 68 and 73 of 100 advance scores (leaders 0, 1, 2; Rules
+  modifier +1 each). The research valuation's leader trait is not
+  cosmetic.
+- **The observed play paths never touch the table.** The nonzero control
+  preloads all 21 trait slots with the Rules modifiers, then runs the
+  same observation/input handoff, city-entry sequence and turn-44
+  annual: every preloaded value survives unchanged at each point. These
+  paths neither clear nor rewrite the trait table.
+- **Consequence.** The engine's Rules-derived basis matches every
+  behavior this probe can observe: nothing in the measured play paths
+  modifies the Rules-populated presentation. Where the table's values
+  come from in a real session (boot-time Rules population versus save
+  restoration - the save carries 60-byte blocks for human leaders that
+  the decoder skips) is not established by this probe and needs a true
+  boot-path measurement. Static accessor references to `0x606f4a` show
+  several index scalings (32/48/60 by call site), an open decoding
+  detail; the harness's stride-60 convention is what the 12,800-value
+  comparison validated. The earlier engine-divergence claim and the
+  trade-turn staging decision it motivated remain under the owner's
+  review; no engine change is implied by this evidence.

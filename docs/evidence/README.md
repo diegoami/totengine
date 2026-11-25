@@ -1427,6 +1427,17 @@ frozen "Dec 429" for turns).
   (moving from enemy-adjacent to enemy-adjacent tile ends movement);
   domain gating (sea↔ocean, land↔non-ocean). ROMFALL boots with 641/710
   units movable.
+  **Correction (2026-11-25, measured):** the native does not merely end
+  such moves — it **refuses** the same-enemy crossing outright. Two
+  native dispatcher measurements (turn-49 `zone_refusal` and turn-50
+  `turn50_zoc_refusal` in `import-opponent-trade-contact.json`) show
+  return 0 with only the done-flag write, no relocation, no spend and
+  no tile change. The engine kernel's relocate-and-zero reading for
+  this class diverges from the native; `scenario::opponent_stack`
+  never admitted it (`stage` rejects `zoc_ended`), and the staged
+  replay now stages the measured refusal. Correcting
+  `engine::movement` itself is an open owner decision because it
+  touches core movement semantics, campaign goldens and AI behavior.
 - In-world input on the rig: winject's SendInput was being discarded
   until a **`winject focus <hwnd>`** command (thread-attach +
   SetForegroundWindow + SetActiveWindow + SetFocus) made the game the

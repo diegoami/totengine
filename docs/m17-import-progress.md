@@ -502,16 +502,35 @@ annual's only change is the two barbarian births). The real drop is an
 now witnessed (`import-opponent-founding.json` `third_founding`:
 deletion marker -300, two extra site offsets, ten fertility clears,
 every viewer's cache byte at the site set to 2) and staged as the third
-`FoundingCase`, with the knowledge surviving the founding. The next
-unstaged context is civ 2's `Move { unit: 3, to: (42, 38) }`, which
-drops the knowledge again; the refresh then legitimately includes the
-one ocean tile (flat seen index 58, terrain 10) accumulated since the
-turn-43 snapshot.
+`FoundingCase`, with the knowledge surviving the founding.
 
-Next: witness and stage civ 2's unit-3 move (and each following
-turn-50 context) the same way. The route's per-context staging
-continues; nothing here claims faithful import (#197/#198) or changes
-the experimental `playable_import` gate.
+Civ 2's next order — unit 3's southward hop to (42, 38) — completed the
+round. The focused native measurement
+(`import-opponent-trade-contact.json` `turn50_zoc_refusal`, context
+mirroring the engine's pre-order snapshot verbatim) shows the native
+**refuses** this move outright: return 0, only the done-flag write
+(`raw[16] 0→1`), no relocation, no spend, no tile/cache change, CRT
+untouched, all 59 human tiles retained. This is the same-enemy
+zone-of-control crossing (the mover starts adjacent to the civ 5 unit
+at (43, 37) and the destination is adjacent to it too), and it is
+staged as a fourth `zone_case` so the knowledge survives the refusal.
+
+That measurement also **corrects the movement kernel's ZOC reading**:
+`docs/evidence/README.md` carried "moving from enemy-adjacent to
+enemy-adjacent tile ends movement", and `engine::movement` implements
+exactly that (relocate, zero `moves_left`, flag `zoc_ended`). The
+measured native behavior for this class is a refusal without
+relocation. The staged route is unaffected (it never admitted the
+relocation — `stage` rejects `zoc_ended`), but ordinary engine play
+(AI v1, human sessions) would execute such moves divergently. Correcting
+the kernel touches core movement semantics, campaign goldens and AI
+behavior, so it is flagged for an owner decision rather than folded
+into this slice.
+
+With the founding and the refusal staged, the whole turn-49→50 round
+replays: the human enters turn 50 with every explored tile retained and
+a checkpoint-stable view. Nothing here claims faithful import
+(#197/#198) or changes the experimental `playable_import` gate.
 
 This is an engine diagnostic. The `m17-turn49-boundary` worktree at
 `/home/diego/review-tmp/totengine-m17-turn49-boundary` contains

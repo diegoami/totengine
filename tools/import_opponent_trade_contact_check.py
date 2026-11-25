@@ -7,7 +7,10 @@ treaties, mask table, research rows, caches and CRT for civ 2's eastward
 approach to the civ 5 unit at (42, 36). Native movement runs through
 return with the closed-panel substitutions; the trade-turn exchange
 grants both sides and the mover's next southward order is refused by the
-zone of control without spending movement.
+zone of control without spending movement. The turn-50 continuation
+mirrors the checked engine's pre-order snapshot and measures the same
+refusal class after the witnessed founding: the southward hop to (42, 38)
+is refused outright with only the done-flag write.
 """
 import argparse
 import json
@@ -369,7 +372,66 @@ def entry(original, viewer, city_region, rules, city_lines):
     assert read(original, CRT, '<I') == crt_before7 == 0xECCF1DF8
     visible7 = bytes(b & (1 << viewer) for b in tiles7_after[4::6])
     assert sum(bool(b) for b in visible7) == 59
+
+    # The checked route's turn-50 continuation: after civ 2's witnessed
+    # founding, its unit 3 hops onto the vacated contact tile (42, 36)
+    # and then orders south to (42, 38), whose tile is inside the zone of
+    # control of the civ 5 unit at (43, 37). The native refuses the
+    # same-enemy crossing outright: only the done flag moves, no tile,
+    # cache or CRT change, and the human's 59 explored tiles stand.
+    # The three records and the local tiles are the checked engine's
+    # pre-order snapshot written verbatim; the save's own slot-2 record
+    # stays wherever the round-close context holds it and does not touch
+    # the scanned window.
+    TURN50 = bytes([42, 0, 36, 0, 0, 0, 64, 0, 16, 2, 6, 32, 0, 1, 49, 0, 0,
+                    255, 255, 255, 48, 0, 28, 0, 255, 255, 255, 255, 255,
+                    255, 11, 0, 0, 0, 2, 0, 1, 0, 0, 0])
+    NEIGHBOR34 = bytes([43, 0, 37, 0, 0, 0, 0, 0, 3, 5, 0, 0, 0, 0, 0, 0, 0,
+                        255, 6, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 51,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0])
+    RESIDENT10_TURN50 = bytes([44, 0, 36, 0, 0, 0, 64, 4, 2, 5, 9, 4, 0, 5,
+                               49, 0, 1, 255, 0, 0, 23, 0, 47, 0, 255, 255,
+                               255, 255, 255, 255, 15, 0, 0, 0, 2, 0, 6, 0,
+                               0, 0])
+    original.write(0x607648, 50, '<h')
+    original.write(0x607655, 2, '<B')
+    original.write(CRT, 0xB404D22D, '<I')
+    for slot, record in ((3, TURN50), (34, NEIGHBOR34), (10, RESIDENT10_TURN50)):
+        address = UNIT_RECORDS + 40 * slot
+        prev, nxt = (read(original, address + off, '<h') for off in (26, 28))
+        if prev >= 0:
+            original.write(UNIT_RECORDS + 40 * prev + 28, nxt, '<h')
+        if nxt >= 0:
+            original.write(UNIT_RECORDS + 40 * nxt + 26, prev, '<h')
+        cpu.mem_write(address, bytes(record))
+    cpu.mem_write(tile(42, 36), bytes([129, 1, 160, 2, 36, 38]))
+    cpu.mem_write(tile(42, 38), bytes([5, 0, 160, 2, 36, 80]))
+    cpu.mem_write(tile(43, 37), bytes([130, 3, 160, 2, 36, 87]))
+    cpu.mem_write(tile(41, 35), bytes([2, 0, 160, 2, 36, 37]))
+    raw3_t50 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 3, 40))
+    raw34_t50 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 34, 40))
+    raw10_t50 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 10, 40))
+    tiles8_before = bytes(cpu.mem_read(TILES, area * 6))
+    caches8_before = [bytes(cpu.mem_read(c, area)) for c in caches]
+    crt_before8 = read(original, CRT, '<I')
+    result8, _hosts8, _display8, observations8 = run_attack(original, (3, 3, 3), memory_rects=True)
+    raw3_after8 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 3, 40))
+    raw34_after8 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 34, 40))
+    raw10_after8 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 10, 40))
+    tiles8_after = bytes(cpu.mem_read(TILES, area * 6))
+    assert result8 == 0 and observations8 == []
+    assert differences(raw3_t50, raw3_after8) == [[16, 0, 1]]
+    assert raw34_t50 == raw34_after8 and raw10_t50 == raw10_after8
+    assert tiles8_before == tiles8_after
+    assert all(old == new for old, new in zip(caches8_before,
+                                              [bytes(cpu.mem_read(c, area)) for c in caches],
+                                              strict=True))
+    assert read(original, CRT, '<I') == crt_before8 == 0xB404D22D
+    visible8 = bytes(b & (1 << viewer) for b in tiles8_after[4::6])
+    assert sum(bool(b) for b in visible8) == 59
+
     return {
+        'arguments': [3, 1, 3], 'return': result, 'crt_state': CRT_STATE,
         'arguments': [3, 1, 3], 'return': result, 'crt_state': CRT_STATE,
         'crt_after_exchange': CRT_AFTER,
         'founding_setup': {'city_slots': [9, 10], 'explored_tiles': 59},
@@ -426,6 +488,18 @@ def entry(original, viewer, city_region, rules, city_lines):
             'crt_state': 0xECCF1DF8, 'crt_unchanged': True,
             'self_linked_pair': True, 'road_cost_thirds': 1,
             'explored_tiles': 59, 'observation_calls': observations7,
+        },
+        'turn50_zoc_refusal': {
+            'arguments': [3, 3, 3], 'return': result8,
+            'mover_raw_changes': [[16, 0, 1]],
+            'neighbor_raw_changes': [], 'resident_raw_changes': [],
+            'tile_changes': [], 'cache_changes': [],
+            'crt_state': 0xB404D22D, 'crt_unchanged': True,
+            'context': ('records and local tiles mirror the checked engine '
+                        'pre-order snapshot verbatim; the save slot-2 record '
+                        'stays at its round-close position outside the '
+                        'scanned window'),
+            'explored_tiles': 59, 'observation_calls': observations8,
         },
     }
 

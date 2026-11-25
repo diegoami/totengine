@@ -485,7 +485,6 @@ def entry(original, viewer, city_region, rules, city_lines):
 
     return {
         'arguments': [3, 1, 3], 'return': result, 'crt_state': CRT_STATE,
-        'arguments': [3, 1, 3], 'return': result, 'crt_state': CRT_STATE,
         'crt_after_exchange': CRT_AFTER,
         'founding_setup': {'city_slots': [9, 10], 'explored_tiles': 59},
         'before': before_units, 'after': after_units,

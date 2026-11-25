@@ -307,3 +307,15 @@ names. Two rules follow for this repo:
   in the same commit so neither half can drift. The capture script
   (`tools/manual_screenshots.cjs`) is committed with the shots so the
   images stay reproducible.
+- **The guide's look-and-feel reference is the original game, not the
+  engine.** Engine screenshots alone document what we have built; the
+  reader expects the original Civilization: Test of Time. Owner
+  decision (2026-11-25): the guide may commit original-game screenshots
+  as the look-and-feel reference — an explicit exception to the
+  original-screenshots-stay-outside-Git practice, scoped to the user
+  guide's reference section. The November 2025 interface-study
+  captures (launch, map, city window, Civilopedia) now sit in
+  `docs/manual/screenshots/original/`, and every engine screenshot is
+  captioned as the current implementation. Without that framing the
+  guide quietly redefines the target as whatever the engine happens to
+  render today.

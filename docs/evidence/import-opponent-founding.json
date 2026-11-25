@@ -471,5 +471,259 @@
       "SetEnvironmentVariableA": 2
     }
   },
-  "scope": "Measure two prepared hidden opponent founding callbacks.\n\nSupply the checked settler, the emptied city slot, and the engine CRT\nstate in the pinned round-close context. The original founding callback\nruns through return. Host directory and rectangle operations and city\nname section/row I/O are supplied. Native names stay outside the report."
+  "third_founding": {
+    "turn": 50,
+    "founder": 0,
+    "location": [
+      66,
+      36
+    ],
+    "city_slot": 11,
+    "city_owner": 2,
+    "city_size": 1,
+    "city_flags": 2048,
+    "native_build": 0,
+    "native_worked": 0,
+    "native_city_id": 1,
+    "name_sha256": "348260ed7e9266777cc0c720fd0ec7a6fd93707e25d70739633d182427792842",
+    "unit_extent": [
+      38,
+      38
+    ],
+    "founder_deleted_coordinates": [
+      -300,
+      -300
+    ],
+    "crt_state": 3020214829,
+    "explored_tiles": 59,
+    "map_changes": [
+      [
+        8120,
+        0,
+        64
+      ],
+      [
+        8360,
+        0,
+        64
+      ],
+      [
+        8366,
+        0,
+        64
+      ],
+      [
+        8369,
+        253,
+        245
+      ],
+      [
+        8588,
+        0,
+        64
+      ],
+      [
+        8594,
+        0,
+        64
+      ],
+      [
+        8600,
+        0,
+        64
+      ],
+      [
+        8603,
+        252,
+        244
+      ],
+      [
+        8606,
+        0,
+        64
+      ],
+      [
+        8834,
+        0,
+        64
+      ],
+      [
+        8839,
+        1,
+        2
+      ],
+      [
+        8840,
+        0,
+        64
+      ],
+      [
+        8843,
+        45,
+        37
+      ],
+      [
+        8846,
+        0,
+        64
+      ],
+      [
+        9068,
+        0,
+        64
+      ],
+      [
+        9074,
+        0,
+        64
+      ],
+      [
+        9080,
+        0,
+        64
+      ],
+      [
+        9086,
+        0,
+        64
+      ],
+      [
+        9314,
+        0,
+        64
+      ],
+      [
+        9320,
+        0,
+        64
+      ],
+      [
+        9323,
+        255,
+        247
+      ],
+      [
+        9326,
+        0,
+        64
+      ],
+      [
+        9554,
+        0,
+        64
+      ],
+      [
+        9557,
+        255,
+        247
+      ],
+      [
+        9560,
+        0,
+        64
+      ],
+      [
+        9563,
+        255,
+        247
+      ],
+      [
+        9569,
+        254,
+        246
+      ],
+      [
+        9803,
+        255,
+        247
+      ],
+      [
+        9809,
+        255,
+        247
+      ],
+      [
+        10043,
+        255,
+        247
+      ]
+    ],
+    "memory_changes": [
+      [
+        1,
+        1473,
+        0,
+        2
+      ],
+      [
+        2,
+        1473,
+        1,
+        2
+      ],
+      [
+        3,
+        1473,
+        0,
+        2
+      ],
+      [
+        4,
+        1473,
+        0,
+        2
+      ],
+      [
+        5,
+        1473,
+        0,
+        2
+      ],
+      [
+        6,
+        1473,
+        0,
+        2
+      ],
+      [
+        7,
+        1473,
+        0,
+        2
+      ]
+    ],
+    "civ_record_changes": [
+      [
+        2,
+        22,
+        31,
+        50
+      ],
+      [
+        2,
+        112,
+        2,
+        3
+      ],
+      [
+        2,
+        224,
+        1,
+        0
+      ],
+      [
+        2,
+        384,
+        1,
+        2
+      ]
+    ],
+    "name_rows_read": 1,
+    "host_calls": {
+      "GetCurrentDirectoryA": 2,
+      "SetCurrentDirectoryA": 2,
+      "SetEnvironmentVariableA": 2
+    }
+  },
+  "scope": "Measure three prepared hidden opponent founding callbacks.\n\nSupply the checked settler, the emptied city slot, and the engine CRT\nstate in the pinned round-close context. The original founding callback\nruns through return. Host directory and rectangle operations and city\nname section/row I/O are supplied. Native names stay outside the report."
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure two prepared hidden opponent founding callbacks.
+"""Measure three prepared hidden opponent founding callbacks.
 
 Supply the checked settler, the emptied city slot, and the engine CRT
 state in the pinned round-close context. The original founding callback
@@ -28,20 +28,39 @@ def differences(before, after):
     return [(i, old, new) for i, (old, new) in enumerate(zip(before, after, strict=True)) if old != new]
 
 
+CASES = {
+    5: {'unit_slot': 2, 'city_slot': 9, 'location': (44, 42),
+        'site': [130, 1, 0, 2, 36, 87], 'turn': 47, 'crt': 0x3B0CA297,
+        'founder_fields': (), 'founder_id': None},
+    6: {'unit_slot': 37, 'city_slot': 10, 'location': (27, 17),
+        'site': [2, 1, 0, 2, 64, 107], 'turn': 47, 'crt': 0x3B0CA297,
+        'founder_fields': ((6, 64), (8, 0), (9, 6), (10, 9), (11, 0),
+                           (12, 0), (13, 4), (16, 0), (17, 12)),
+        'founder_id': 49},
+    2: {'unit_slot': 0, 'city_slot': 11, 'location': (66, 36),
+        'site': [2, 1, 0, 2, 4, 45], 'turn': 50, 'crt': 0xB404D22D,
+        'founder_fields': ((6, 64), (7, 2), (8, 0), (9, 2), (10, 6), (11, 0),
+                           (12, 0), (13, 1), (16, 0), (17, 255), (18, 255)),
+        'founder_id': 1},
+}
+
+
 def measure(original, viewer, city_region, rules, city_lines, civ):
+    case = CASES[civ]
     first = civ == 5
-    unit_slot, city_slot, location, site = (
-        (2, 9, (44, 42), [130, 1, 0, 2, 36, 87]) if first else
-        (37, 10, (27, 17), [2, 1, 0, 2, 64, 107])
-    )
+    unit_slot = case['unit_slot']
+    city_slot = case['city_slot']
+    location = case['location']
+    site = case['site']
+    seed = case['crt']
     cpu = original.cpu
     width = read(original, 0x6705A0, '<h')
     area = read(original, 0x6705A4, '<h')
-    original.write(0x607648, 47, '<h')
+    original.write(0x607648, case['turn'], '<h')
     original.write(0x607655, civ, '<B')
     original.write(0x5D156C, 0, '<B')
     original.write(0x6031B8, 1, '<h')
-    original.write(CRT, SEED, '<I')
+    original.write(CRT, seed, '<I')
 
     def tile(x, y):
         return TILES + 6 * (y * (width // 2) + x // 2)
@@ -54,7 +73,31 @@ def measure(original, viewer, city_region, rules, city_lines, civ):
         original.write(UNIT_RECORDS + 36 * 40 + 30, 0, '<I')
         vacated_city_tile = tile(48, 28) + 1
         original.write(vacated_city_tile, read(original, vacated_city_tile, '<B') & ~3, '<B')
-    original.write(CIV + 6 * STRIDE + 112, 2, '<h')
+    original.write(CIV + civ * STRIDE + 112, 2, '<h')
+    if civ == 2:
+        # Mirror the checked engine's route city list: civ 5's and civ 6's
+        # turn-47 foundings occupy slots 9 and 10, so the founding creates
+        # slot 11, and the native save's own city at the founding site is
+        # absent in that route. The records are the engine's staged saves.
+        city9 = [
+                 44, 0, 42, 0, 0, 0, 0, 0, 2, 0, 5, 1, 5, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 51,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 16, 0,
+                 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0,
+                 0, 0
+        ]
+        city10 = [
+                 27, 0, 17, 0, 0, 0, 128, 0, 2, 0, 6, 1, 6, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 32, 51,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18, 0,
+                 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0,
+                 0, 0
+        ]
+        cpu.mem_write(city_region[0] + 9 * 92, bytes(city9))
+        cpu.mem_write(city_region[0] + 10 * 92, bytes(city10))
+        cpu.mem_write(city_region[0] + 10 * 92, bytes(city10))
 
     founder = UNIT_RECORDS + unit_slot * 40
     x, y = (read(original, founder + i, '<h') for i in (0, 2))
@@ -70,12 +113,13 @@ def measure(original, viewer, city_region, rules, city_lines, civ):
         original.write(founder + 10, 0, '<B')
         original.write(founder + 13, 7, '<B')
     else:
-        # The checked engine produced this settler. Prepare its relevant
-        # fields, including its home, current order and transient identity.
-        for off, value in ((6, 64), (8, 0), (9, 6), (10, 9), (11, 0),
-                           (12, 0), (13, 4), (16, 0), (17, 12)):
+        # Mirror the checked engine's staged record for this settler,
+        # including its home, current order and transient identity.
+        for off, value in case['founder_fields']:
             original.write(founder + off, value, '<B')
-        original.write(founder + 30, 49, '<I')
+        if case['founder_id'] is not None:
+            original.write(founder + 30, case['founder_id'], '<I')
+    if civ == 6:
         # Keep the paid Phalanx after the settler in the unit table, as
         # in the checked engine sequence, to preserve the unit extent.
         phalanx = UNIT_RECORDS + 38 * 40
@@ -178,9 +222,7 @@ def measure(original, viewer, city_region, rules, city_lines, civ):
         cpu.hook_del(hook)
     after_map, after_civs, after_memory = snapshot()
     assert cpu.reg_read(original.ip) == 0x100000
-    assert read(original, CRT, '<I') == SEED
-    assert read(original, 0x607668, '<h') == city_slot + 1
-    assert read(original, founder + 30, '<I') == 0
+    assert read(original, CRT, '<I') == seed
     assert [bool(b & (1 << viewer)) for b in before_map[4::6]] == [
         bool(b & (1 << viewer)) for b in after_map[4::6]
     ]
@@ -191,14 +233,14 @@ def measure(original, viewer, city_region, rules, city_lines, civ):
         (seat, site_index, int(not first and seat == civ), 2) for seat in range(1, 8)
     ]
     return {
-        'turn': 47, 'founder': unit_slot, 'location': location, 'city_slot': city_slot,
+        'turn': case['turn'], 'founder': unit_slot, 'location': location, 'city_slot': city_slot,
         'city_owner': read(original, city + 10, '<B'), 'city_size': read(original, city + 11, '<B'),
         'city_flags': read(original, city + 6), 'native_build': read(original, city + 59, '<b'),
         'native_worked': read(original, city + 50), 'native_city_id': read(original, city + 86),
         'name_sha256': digest(bytes(cpu.mem_read(city + 34, 16)).split(b'\0', 1)[0]),
         'unit_extent': [unit_extent, read(original, 0x607666, '<h')],
         'founder_deleted_coordinates': [read(original, founder + off, '<h') for off in (0, 2)],
-        'crt_state': SEED, 'explored_tiles': sum(bool(b & (1 << viewer)) for b in after_map[4::6]),
+        'crt_state': seed, 'explored_tiles': sum(bool(b & (1 << viewer)) for b in after_map[4::6]),
         'map_changes': differences(before_map, after_map), 'memory_changes': memory_changes,
         'civ_record_changes': [(i // STRIDE, i % STRIDE, old, new)
                                for i, old, new in differences(before_civs, after_civs)],
@@ -222,7 +264,7 @@ def main():
     city_file = home / 'Original/City.txt'
     names = city_file.read_bytes()
     cases = {}
-    for civ, key in ((5, 'founding'), (6, 'second_founding')):
+    for civ, key in ((5, 'founding'), (6, 'second_founding'), (2, 'third_founding')):
         prepared, result = prepare_round(
             home, binary, reference['source']['path'], rules,
             lambda original, viewer, city: measure(original, viewer, city, rules, names.splitlines(), civ),

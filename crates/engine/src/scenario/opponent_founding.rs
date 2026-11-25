@@ -1,4 +1,5 @@
-//! Map and hidden-city transition for the checked Original turn-47 founding.
+//! Map and hidden-city transition for the checked Original turn-47 and
+//! turn-50 founding callbacks.
 use crate::WorldState;
 use tot_kit::{CityRecord, Rules, SaveFile};
 
@@ -59,6 +60,28 @@ pub(crate) fn stage(
             deleted_at: -700,
             extra_site_offsets: &[(-1, -3), (1, -3), (-2, -2), (0, -2)],
             fertility_offsets: &[(-2, -4), (-3, -1), (-1, -1), (0, 0), (-3, 1), (-1, 5)],
+        },
+        // The measured turn-50 founding: civ 2's settler at (66, 36)
+        // founds the civilization's third city inside its own territory.
+        (50, 2, 0, 0xb404d22d) => FoundingCase {
+            city: 11,
+            site: (66, 36),
+            tile_fields: [2, 1, 0, 2, 4, 45],
+            orders: 7,
+            deleted_at: -300,
+            extra_site_offsets: &[(0, -3), (0, -2)],
+            fertility_offsets: &[
+                (-2, 3),
+                (0, -1),
+                (0, 0),
+                (0, 2),
+                (0, 3),
+                (0, 4),
+                (0, 5),
+                (2, -2),
+                (2, 3),
+                (2, 4),
+            ],
         },
         _ => return None,
     };

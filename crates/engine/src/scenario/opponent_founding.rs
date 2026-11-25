@@ -1,4 +1,5 @@
-//! Map and hidden-city transition for the checked Original turn-47 founding.
+//! Map and hidden-city transition for the checked Original turn-47 and
+//! turn-50 founding callbacks.
 use crate::WorldState;
 use tot_kit::{CityRecord, Rules, SaveFile};
 

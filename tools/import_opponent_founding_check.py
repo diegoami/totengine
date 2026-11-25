@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Measure two prepared hidden opponent founding callbacks.
+"""Measure three prepared hidden opponent founding callbacks.
 
 Supply the checked settler, the emptied city slot, and the engine CRT
 state in the pinned round-close context. The original founding callback

@@ -42,7 +42,7 @@
     "crates/totui/src/client/play.js": "bcd50c52ceacdc0363e3a7cd1d2e2fa2be40ec83e0c4a051c73ebb5b6f49d6f2",
     "crates/totui/src/client/pedia.rs": "daaeb8d7b9c34661a2f0cafa9fd0a030fae6bbfb22b897119fc16902c1feeb43",
     "crates/engine/src/movement.rs": "3f2f6452a665adf11bc7400b6a56dfc7b744de0ec8104ac712f18232cbbfe5d0",
-    "crates/engine/src/scenario/opponent_founding.rs": "fc07953f39abf59b3b8e5eb09ca2b53a036b6e9f506e96132d0caab75e126db4"
+    "crates/engine/src/scenario/opponent_founding.rs": "c5454d0c15caf6754275abaa4bc62642faaa3c8df59add6959af2516367e44f2"
   },
   "triggers": {
     "TURN": {

@@ -502,15 +502,45 @@ annual's only change is the two barbarian births). The real drop is an
 now witnessed (`import-opponent-founding.json` `third_founding`:
 deletion marker -300, two extra site offsets, ten fertility clears,
 every viewer's cache byte at the site set to 2) and staged as the third
-`FoundingCase`, with the knowledge surviving the founding. The next
-unstaged context is civ 2's `Move { unit: 3, to: (42, 38) }`, which
-drops the knowledge again; the refresh then legitimately includes the
-one ocean tile (flat seen index 58, terrain 10) accumulated since the
-turn-43 snapshot.
+`FoundingCase`, with the knowledge surviving the founding.
 
-Next: witness and stage civ 2's unit-3 move (and each following
-turn-50 context) the same way. The route's per-context staging
-continues; nothing here claims faithful import (#197/#198) or changes
+Civ 2's next orders — unit 3's recorded turn-50 moves — are where the
+checked range now ends, and the first measurement pass taught more than
+it staged. The native measurements in
+`import-opponent-trade-contact.json` (`turn50_exhaustion_reset`,
+`turn50_zoc_refusal_snapshot_state`) establish:
+
+- The end-of-turn-49 exhaustion of the civ 2 mover is real and
+  measured: the twentieth southward refusal resets the private byte to
+  zero and the spent byte takes the mover's full allowance (6 thirds
+  for type 16), matching the witnessed slot-19 rule at 3 thirds.
+- From the staged snapshot's round-close state (the engine's
+  construction — its record still holds the end-of-49 exhaustion),
+  the native refuses the recorded southward order outright (done flag
+  only) and additionally claims the origin tile owner byte for civ 2
+  (tile byte 8771: 86→38). An earlier draft of this slice reported
+  that state as "the engine's pre-order snapshot verbatim" with "no
+  tile change"; both claims were wrong and are corrected by the
+  computed diffs in the artifact.
+- The staged snapshot's stale exhaustion is not unique to this unit:
+  the same gap exists for any opponent acting on consecutive turns
+  (first seen at turn 44). The native's runtime movement state at each
+  order is not established by any witness — the save record's spent
+  byte is a saved value, not the runtime tracker — so staging these
+  orders byte-faithfully requires witnessing the native per-civ
+  turn-start movement refresh first. That is #197-phase territory and
+  an owner decision; until then the route keeps the #433 boundary (the
+  knowledge drops at civ 2's turn-50 unit-3 orders and the human
+  enters turn 50 with the refreshed 60-tile view).
+
+The measured refusal also **corrects the movement kernel's ZOC
+reading** (recorded in `docs/evidence/README.md`): the native refuses
+the same-enemy zone-of-control crossing outright while
+`engine::movement` relocates the mover and zeroes its movement. The
+staged route never admitted the relocation (`stage` rejects
+`zoc_ended`); correcting the kernel touches core movement semantics,
+campaign goldens and AI behavior, and stays flagged for an owner
+decision. Nothing here claims faithful import (#197/#198) or changes
 the experimental `playable_import` gate.
 
 This is an engine diagnostic. The `m17-turn49-boundary` worktree at

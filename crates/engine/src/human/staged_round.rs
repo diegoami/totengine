@@ -1693,12 +1693,29 @@ staged-round-test
         // (import-opponent-trade-contact.json), so the knowledge drops
         // and the human enters turn 50 with the refreshed view.
         submit(&mut session, Command::EndTurn);
-        for _ in 0..16 {
+        let mut founded = false;
+        for _ in 0..2000 {
             if session.view().phase == Phase::Human {
                 break;
             }
-            session.advance(256);
+            session.advance(1);
+            if session.last_ai == Some(OrderResult::Founded(11)) {
+                assert!(session.saved_move_state.is_some());
+                assert_eq!(tiles(&session), 59);
+                founded = true;
+                let founded_cp = session.checkpoint(deps);
+                let replay = HumanSession::restore_with(
+                    rules.clone(),
+                    deps,
+                    &founded_cp,
+                    Some((&snapshot, Some(events.clone()))),
+                )
+                .unwrap();
+                assert_eq!(replay.checkpoint(deps), founded_cp);
+                assert_eq!(replay.view(), session.view());
+            }
         }
+        assert!(founded);
         let boundary = session.view();
         assert_eq!(boundary.phase, Phase::Human);
         assert_eq!(boundary.observation.turn, 50);

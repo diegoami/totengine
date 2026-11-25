@@ -23,7 +23,7 @@
     "crates/engine/src/saved_knowledge/update.rs": "93889cf1bc92083d4db74a3113c496e62ee542c165979c9a992fe3736676a7b6",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
     "crates/engine/src/human/saved_view.rs": "7ba6bbaacf5c857022f33b0661c8bc4db61b6cd82e23d6229322124e31b94695",
-    "crates/engine/src/human/staged_round.rs": "10d7a1818592d2fa7501dd9ad5f8169c1ba074bdc0cdbd6118facb57196c0de5",
+    "crates/engine/src/human/staged_round.rs": "9b27feb095a02024c6a770ef849dc66ae7c3359c8a572aa001bec4c63d2a6d71",
     "crates/totui/src/resources/original.rs": "0f443050b8d3394e04d1504270010ace3383a89194d53d47caea632cd09d0611",
     "crates/engine/src/scenario/phase.rs": "f919b6adeab6b2beed51bca5bf57de45387d65351bb779938595d68ce5bde9c9",
     "crates/engine/src/scenario/snapshot.rs": "97d646d6bc448115a98dd8cc4d9085288356a701c4053ffa041ee26c211629f1",

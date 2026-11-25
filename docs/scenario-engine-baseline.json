@@ -23,7 +23,7 @@
     "crates/engine/src/saved_knowledge/update.rs": "93889cf1bc92083d4db74a3113c496e62ee542c165979c9a992fe3736676a7b6",
     "crates/engine/src/saved_knowledge/city_memory.rs": "82951cf9147f2e61397150f4c1d471ca5d152d3fd6a28eee7422bd8791319efe",
     "crates/engine/src/human/saved_view.rs": "7ba6bbaacf5c857022f33b0661c8bc4db61b6cd82e23d6229322124e31b94695",
-    "crates/engine/src/human/staged_round.rs": "339cf17bab8173e70817026f656a68d3ce6294d8004b806fb2ba18de0261b231",
+    "crates/engine/src/human/staged_round.rs": "c5ec2ec427f3a6429e1de6afac569623340345364f5445af2ee254b1937f53d6",
     "crates/totui/src/resources/original.rs": "0f443050b8d3394e04d1504270010ace3383a89194d53d47caea632cd09d0611",
     "crates/engine/src/scenario/phase.rs": "f919b6adeab6b2beed51bca5bf57de45387d65351bb779938595d68ce5bde9c9",
     "crates/engine/src/scenario/snapshot.rs": "97d646d6bc448115a98dd8cc4d9085288356a701c4053ffa041ee26c211629f1",
@@ -42,7 +42,7 @@
     "crates/totui/src/client/play.js": "bcd50c52ceacdc0363e3a7cd1d2e2fa2be40ec83e0c4a051c73ebb5b6f49d6f2",
     "crates/totui/src/client/pedia.rs": "daaeb8d7b9c34661a2f0cafa9fd0a030fae6bbfb22b897119fc16902c1feeb43",
     "crates/engine/src/movement.rs": "3f2f6452a665adf11bc7400b6a56dfc7b744de0ec8104ac712f18232cbbfe5d0",
-    "crates/engine/src/scenario/opponent_founding.rs": "dbb2e6a91cbd12a9e32fbc740e4db1925e2309c61ad6f7e40a04711fe4c78397"
+    "crates/engine/src/scenario/opponent_founding.rs": "fc07953f39abf59b3b8e5eb09ca2b53a036b6e9f506e96132d0caab75e126db4"
   },
   "triggers": {
     "TURN": {

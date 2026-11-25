@@ -1683,20 +1683,42 @@ staged-round-test
         .unwrap();
         assert_eq!(replay.checkpoint(deps), refused);
         assert_eq!(replay.view(), session.view());
-        // The human's turn-49 end replays civs 5-7 and stops at the designed
-        // turn-50 keep_view boundary: the annual processes the human's own
-        // city pass, the staged knowledge drops and the refresh adds the one
-        // ocean tile the human's new build now sees.
+        // The human's turn-49 end replays civs 5-7, the annual, and civs
+        // 1-2's turn-50 passes. Civ 2's witnessed founding creates city 11
+        // inside the staged view and the knowledge survives it; civ 2's
+        // next order (unit 3's move to (42, 38), not yet witnessed) drops
+        // it, and the human enters turn 50 with the refreshed view.
         submit(&mut session, Command::EndTurn);
-        for _ in 0..16 {
+        let mut founded = false;
+        let mut dropped = false;
+        for _ in 0..2000 {
             if session.view().phase == Phase::Human {
                 break;
             }
-            session.advance(256);
+            session.advance(1);
+            if session.last_ai == Some(OrderResult::Founded(11)) {
+                assert!(session.saved_move_state.is_some());
+                assert_eq!(tiles(&session), 59);
+                founded = true;
+                let founded_cp = session.checkpoint(deps);
+                let replay = HumanSession::restore_with(
+                    rules.clone(),
+                    deps,
+                    &founded_cp,
+                    Some((&snapshot, Some(events.clone()))),
+                )
+                .unwrap();
+                assert_eq!(replay.checkpoint(deps), founded_cp);
+                assert_eq!(replay.view(), session.view());
+            }
+            if founded && session.saved_move_state.is_none() {
+                dropped = true;
+            }
         }
-        let boundary = session.view();
-        assert_eq!(boundary.phase, Phase::Human);
-        assert_eq!(boundary.observation.turn, 50);
+        assert!(founded && dropped);
+        let turn50 = session.view();
+        assert_eq!(turn50.phase, Phase::Human);
+        assert_eq!(turn50.observation.turn, 50);
         assert_eq!(tiles(&session), 60);
         assert!(session.saved_move_state.is_none());
     }

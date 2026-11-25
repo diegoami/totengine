@@ -1,8 +1,10 @@
 {
-  "baseline_sha256": "94978534aa684a44c6d007c3dae30a12a14c8b8917297a8bd1c7222d588e35de",
+  "baseline_sha256": "ef09b0885d122c19ff9fe68a8e95bc30f2a5046175e34ccd108dcadf42c0ce0e",
   "engine_audit": {
-    "changed_or_missing": [],
-    "matches_current_source": true,
+    "changed_or_missing": [
+      "crates/engine/src/human.rs"
+    ],
+    "matches_current_source": false,
     "meaning": "Manually audited implementation coverage, not native conformance or runtime admission. Source changes require a new audit.",
     "ref": "v0.16.0",
     "sha": "2f37ab49a56dbcb2091977162518604ae3b6ea0b"
@@ -60,6 +62,7 @@
       "blockers": [
         "no_runtime_conformance_or_import_acceptance",
         "objectives_and_house_rules_not_inferred",
+        "engine_source_audit_stale",
         "macro_requires_unsupported_or_partial_semantics"
       ],
       "declared_features": [
@@ -227,7 +230,7 @@
       "support": {
         "engine_boot": "not_run",
         "human_campaign": "not_validated",
-        "human_entry": "not_implemented",
+        "human_entry": "audit_required",
         "inspection": "report_available",
         "native_export": "not_admitted",
         "observation": "not_validated_for_input",
@@ -283,6 +286,7 @@
       "blockers": [
         "no_runtime_conformance_or_import_acceptance",
         "objectives_and_house_rules_not_inferred",
+        "engine_source_audit_stale",
         "macro_requires_unsupported_or_partial_semantics"
       ],
       "declared_features": [
@@ -552,7 +556,7 @@
       "support": {
         "engine_boot": "not_run",
         "human_campaign": "not_validated",
-        "human_entry": "not_implemented",
+        "human_entry": "audit_required",
         "inspection": "report_available",
         "native_export": "not_admitted",
         "observation": "not_validated_for_input",
@@ -608,6 +612,7 @@
       "blockers": [
         "no_runtime_conformance_or_import_acceptance",
         "objectives_and_house_rules_not_inferred",
+        "engine_source_audit_stale",
         "macro_requires_unsupported_or_partial_semantics"
       ],
       "declared_features": [
@@ -981,7 +986,7 @@
       "support": {
         "engine_boot": "not_run",
         "human_campaign": "not_validated",
-        "human_entry": "not_implemented",
+        "human_entry": "audit_required",
         "inspection": "incomplete",
         "native_export": "not_admitted",
         "observation": "not_validated_for_input",
@@ -1037,6 +1042,7 @@
       "blockers": [
         "no_runtime_conformance_or_import_acceptance",
         "objectives_and_house_rules_not_inferred",
+        "engine_source_audit_stale",
         "multiple_map_simulation_not_implemented",
         "macro_requires_unsupported_or_partial_semantics",
         "native_transport_state_requires_map_audit"
@@ -1464,7 +1470,7 @@
       "support": {
         "engine_boot": "not_run",
         "human_campaign": "not_validated",
-        "human_entry": "not_implemented",
+        "human_entry": "audit_required",
         "inspection": "incomplete",
         "native_export": "not_admitted",
         "observation": "not_validated_for_input",
@@ -1523,6 +1529,7 @@
       "blockers": [
         "no_runtime_conformance_or_import_acceptance",
         "objectives_and_house_rules_not_inferred",
+        "engine_source_audit_stale",
         "lua_execution_not_implemented",
         "extended_save_not_admitted",
         "macro_absence_not_proven_by_manifest_null"
@@ -1649,7 +1656,7 @@
       "support": {
         "engine_boot": "not_run",
         "human_campaign": "not_validated",
-        "human_entry": "not_implemented",
+        "human_entry": "audit_required",
         "inspection": "report_available",
         "native_export": "not_admitted",
         "observation": "not_validated_for_input",
@@ -1657,8 +1664,8 @@
       }
     }
   ],
-  "full_report_bytes": 186438,
-  "full_report_sha256": "a7e147fd1e6a1340eea569c781995107f7ca9d2c0b1d00342a4a19d7bc811c2f",
+  "full_report_bytes": 186659,
+  "full_report_sha256": "2ec313f0f3fa640028189b046d7bd963c40181f4d4c6e3e173985db7ddfec69d",
   "manifest_sha256": "c0255663e537b65e2aad7ab67369242744333dd21fdbd14e7989fee5aa72a0b4",
   "producer": {
     "format_probe_sha256": "70a4f8fe1b5fb88a0e121c9040dea4e835111a82aa0f3671b46247fb80272a0f",

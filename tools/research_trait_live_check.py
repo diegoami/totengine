@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
-"""Measure the live leader-trait presentation against research valuation.
+"""Measure the leader-trait slot's research-valuation impact and what the
+prepared-save native paths do with it.
 
 The engine's built-in research selection derives its leader modifier from
 Rules (`LEADERS` column 9) and the standalone native comparisons matched
-with that basis: the harness wrote the modifier into `0x606f4a +
+with that basis: the harness writes the modifier into `0x606f4a +
 leader*60`, and the research valuation's scores move measurably with that
-byte. The live original zeroes the same table during play (recorded for
-the trade-turn valuation in import-opponent-trade-contact.json), so the
-loaded game presents modifier 0 wherever Rules carry a nonzero value.
+byte.
 
-This check measures both halves on the pinned save:
+This check measures, on the pinned save's tooling:
 
-1. Standalone (proven harness): the trait slot moves 56-77 of 100 advance
-   scores between the Rules modifier and zero.
-2. Live: the pinned save's leader ids and the presented trait table at the
-   turn-43 idle and after the turn-44 annual - all zero at both points.
+1. Standalone (proven harness): direct zero-trait versus Rules-modifier
+   comparisons move 56/68/73 of 100 advance scores (leaders 0, 1, 2).
+2. Nonzero control: a preloaded table (all 21 Rules modifiers) survives
+   the observation/input handoff, city entry and the turn-44 annual
+   unchanged - those paths neither clear nor rewrite the table.
 
-Together: the engine's Rules-derived research valuation diverges from live
-original behavior for every civ whose leader carries a nonzero Rules
-modifier. Recorded as a finding; no engine change is implied here.
+An earlier revision read all-zero tables here and concluded the live
+game presents zeroed traits; that interpretation was retracted on
+review (#431): the prepared-save driver starts from zeroed emulation
+memory, so its zero readings were harness defaults. The loaded-game
+presentation itself (boot-time Rules population versus save
+restoration) is not established by this probe. Recorded as evidence
+only; no engine change is implied here.
 """
 import argparse
 import json

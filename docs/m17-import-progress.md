@@ -431,25 +431,27 @@ exchange grants `[2←39, 5←20]` over three CRT draws
 and the refusal bumps the mover's private byte to one without spending
 movement. Two findings came out of the measurement:
 
-- The live runtime keeps the leader-modifier table zeroed during play;
-  the engine's Rules-derived modifier (leader 1 = 1) was the whole
-  base-value swap for advances 39/47. The staged contact therefore
-  evaluates its two `ValueContext`s with modifier zero. The research-side
-  follow-up check ran
+- The first turn-49 measurement read the leader-modifier table as
+  zeroed during play, and the engine's Rules-derived modifier
+  (leader 1 = 1) was the whole base-value swap for advances 39/47, so
+  the staged contact evaluates its two `ValueContext`s with modifier
+  zero. That live-zero reading is now a **retracted initial
+  interpretation** (#431): the prepared-save driver starts from zeroed
+  emulation memory, so its zero readings were harness defaults; the
+  nonzero control shows the measured play paths leave a preloaded
+  table untouched. The staged contact remains pinned to the
+  harness-measured context, and whether the loaded game presents Rules
+  modifiers or something else - the staging basis question - stays an
+  open owner decision. The research-side follow-up check
   (`tools/research_trait_live_check.py`,
   `docs/evidence/import-research-trait-live.json`, evidence README
-  §Leader-trait slot sensitivity) and its first revision's live-zero
-  claim was **retracted on review (#431)**: the prepared-save driver
-  starts from zeroed emulation memory, so those zero readings were
-  harness defaults. The corrected probe keeps two established facts:
-  the trait slot moves 56-73 of 100 advance scores (zero vs Rules
-  modifier, direct comparisons), and the observed play paths leave a
-  preloaded nonzero table untouched, so nothing measured clears the
-  Rules-populated presentation. Where a real session's table values
-  come from (boot-time Rules population versus save restoration) needs
-  a true boot-path measurement; the engine-divergence question and the
-  trade-turn staging basis stay under owner review, with no engine
-  change implied by the evidence.
+  §Leader-trait slot sensitivity) keeps the two established facts: the
+  trait slot moves 56-73 of 100 advance scores (zero vs Rules modifier,
+  direct comparisons), and the observed play paths leave a preloaded
+  nonzero table untouched. Where a real session's table values come
+  from (boot-time Rules population versus save restoration) needs a
+  true boot-path measurement; no engine change is implied by the
+  evidence.
 - The zone refusal extends the pinned `zone_case` table with the
   turn-49 tuple; the destination terrain moved into each case's witness
   tuple (the turn-49 square is terrain 5).

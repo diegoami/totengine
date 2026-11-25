@@ -97,7 +97,6 @@ def measure(original, viewer, city_region, rules, city_lines, civ):
         ]
         cpu.mem_write(city_region[0] + 9 * 92, bytes(city9))
         cpu.mem_write(city_region[0] + 10 * 92, bytes(city10))
-        cpu.mem_write(city_region[0] + 10 * 92, bytes(city10))
 
     founder = UNIT_RECORDS + unit_slot * 40
     x, y = (read(original, founder + i, '<h') for i in (0, 2))
@@ -223,6 +222,8 @@ def measure(original, viewer, city_region, rules, city_lines, civ):
     after_map, after_civs, after_memory = snapshot()
     assert cpu.reg_read(original.ip) == 0x100000
     assert read(original, CRT, '<I') == seed
+    assert read(original, 0x607668, '<h') == city_slot + 1
+    assert read(original, founder + 30, '<I') == 0
     assert [bool(b & (1 << viewer)) for b in before_map[4::6]] == [
         bool(b & (1 << viewer)) for b in after_map[4::6]
     ]

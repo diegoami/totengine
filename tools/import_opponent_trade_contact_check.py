@@ -7,10 +7,13 @@ treaties, mask table, research rows, caches and CRT for civ 2's eastward
 approach to the civ 5 unit at (42, 36). Native movement runs through
 return with the closed-panel substitutions; the trade-turn exchange
 grants both sides and the mover's next southward order is refused by the
-zone of control without spending movement. The turn-50 continuation
-mirrors the checked engine's pre-order snapshot and measures the same
-refusal class after the witnessed founding: the southward hop to (42, 38)
-is refused outright with only the done-flag write.
+zone of control without spending movement. The turn-50 boundary is then
+measured from the reconstructed exhaustion state: attempt twenty resets
+the private byte and the spent byte takes the full allowance, and the
+recorded southward order from the staged snapshot's round-close state is
+refused outright while the native claims the origin tile owner byte for
+civ 2. The staged snapshot is the engine's construction; the native
+runtime movement state at this order is not established by any witness.
 """
 import argparse
 import json
@@ -373,19 +376,51 @@ def entry(original, viewer, city_region, rules, city_lines):
     visible7 = bytes(b & (1 << viewer) for b in tiles7_after[4::6])
     assert sum(bool(b) for b in visible7) == 59
 
-    # The checked route's turn-50 continuation: after civ 2's witnessed
-    # founding, its unit 3 hops onto the vacated contact tile (42, 36)
-    # and then orders south to (42, 38), whose tile is inside the zone of
-    # control of the civ 5 unit at (43, 37). The native refuses the
-    # same-enemy crossing outright: only the done flag moves, no tile,
-    # cache or CRT change, and the human's 59 explored tiles stand.
-    # The three records and the local tiles are the checked engine's
-    # pre-order snapshot written verbatim; the save's own slot-2 record
-    # stays wherever the round-close context holds it and does not touch
-    # the scanned window.
-    TURN50 = bytes([42, 0, 36, 0, 0, 0, 64, 0, 16, 2, 6, 32, 0, 1, 49, 0, 0,
-                    255, 255, 255, 48, 0, 28, 0, 255, 255, 255, 255, 255,
-                    255, 11, 0, 0, 0, 2, 0, 1, 0, 0, 0])
+    # The checked route's turn-50 boundary. First the end-of-turn-49
+    # exhaustion state of civ 2's unit 3 is reconstructed measuredly: the
+    # witnessed southward refusal repeats until the twentieth attempt
+    # resets the private byte and the spent byte takes the mover's full
+    # allowance. Then the staged snapshot's round-close records are
+    # written and the local tiles are set to the checked snapshot's
+    # values, and the recorded southward order is measured from that
+    # state. The staged snapshot is the engine's construction, not a
+    # measured native pre-order state: its record still holds the
+    # end-of-49 exhaustion while the native runtime movement state at
+    # this order is not established by any witness. The measurement
+    # below is still well-defined for that state and reports every write
+    # the native makes, computed from the run.
+    turn50_trajectory = []
+    for attempt in range(2, 21):
+        before16 = read(original, UNIT_RECORDS + 40 * 3 + 16, '<B')
+        before10 = read(original, UNIT_RECORDS + 40 * 3 + 10, '<B')
+        before_tiles = bytes(cpu.mem_read(TILES, area * 6))
+        before_crt = read(original, CRT, '<I')
+        result_a, _ha, _da, _oa = run_attack(original, (3, 3, 3), memory_rects=True)
+        after16 = read(original, UNIT_RECORDS + 40 * 3 + 16, '<B')
+        after10 = read(original, UNIT_RECORDS + 40 * 3 + 10, '<B')
+        assert result_a == 0
+        assert read(original, CRT, '<I') == before_crt
+        assert before_tiles == bytes(cpu.mem_read(TILES, area * 6))
+        turn50_trajectory.append([attempt, before16, after16, after10, result_a])
+    assert turn50_trajectory == (
+        [[a, a - 1, a, 3, 0] for a in range(2, 20)]
+        + [[20, 19, 0, 6, 0]]
+    ), turn50_trajectory
+    assert read(original, UNIT_RECORDS + 40 * 3 + 16, '<B') == 0
+    assert read(original, UNIT_RECORDS + 40 * 3 + 10, '<B') == 6
+    visible_r = bytes(b & (1 << viewer) for b in bytes(cpu.mem_read(TILES, area * 6))[4::6])
+    assert sum(bool(b) for b in visible_r) == 59
+
+    # The staged snapshot's round-close state: the checked engine's
+    # records for the civ 5 neighbour and the departed resident, and the
+    # snapshot's local tile values. The mover's record keeps the
+    # reconstructed exhaustion state and its (42, 36) position.
+    TURN50_TILES = {
+        (42, 36): [129, 0, 160, 2, 36, 86],
+        (42, 38): [5, 0, 160, 2, 36, 80],
+        (43, 37): [130, 3, 160, 2, 36, 87],
+        (41, 35): [2, 1, 160, 2, 36, 37],
+    }
     NEIGHBOR34 = bytes([43, 0, 37, 0, 0, 0, 0, 0, 3, 5, 0, 0, 0, 0, 0, 0, 0,
                         255, 6, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 51,
                         0, 0, 0, 0, 0, 0, 0, 0, 0])
@@ -393,42 +428,60 @@ def entry(original, viewer, city_region, rules, city_lines):
                                49, 0, 1, 255, 0, 0, 23, 0, 47, 0, 255, 255,
                                255, 255, 255, 255, 15, 0, 0, 0, 2, 0, 6, 0,
                                0, 0])
+    MOVER_SNAPSHOT = bytes([42, 0, 36, 0, 0, 0, 64, 0, 16, 2, 6, 32, 0, 1, 49,
+                            0, 0, 255, 255, 255, 48, 0, 28, 0, 255, 255, 255,
+                            255, 255, 255, 11, 0, 0, 0, 2, 0, 1, 0, 0, 0])
     original.write(0x607648, 50, '<h')
     original.write(0x607655, 2, '<B')
     original.write(CRT, 0xB404D22D, '<I')
-    for slot, record in ((3, TURN50), (34, NEIGHBOR34), (10, RESIDENT10_TURN50)):
+    for slot, record in ((3, MOVER_SNAPSHOT), (34, NEIGHBOR34), (10, RESIDENT10_TURN50)):
         address = UNIT_RECORDS + 40 * slot
         prev, nxt = (read(original, address + off, '<h') for off in (26, 28))
         if prev >= 0:
             original.write(UNIT_RECORDS + 40 * prev + 28, nxt, '<h')
         if nxt >= 0:
-            original.write(UNIT_RECORDS + 40 * nxt + 26, prev, '<h')
+            original.write(UNIT_RECORDS + 40 * nxt + 26, prev, '<h>')
         cpu.mem_write(address, bytes(record))
-    cpu.mem_write(tile(42, 36), bytes([129, 1, 160, 2, 36, 38]))
-    cpu.mem_write(tile(42, 38), bytes([5, 0, 160, 2, 36, 80]))
-    cpu.mem_write(tile(43, 37), bytes([130, 3, 160, 2, 36, 87]))
-    cpu.mem_write(tile(41, 35), bytes([2, 0, 160, 2, 36, 37]))
-    raw3_t50 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 3, 40))
-    raw34_t50 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 34, 40))
-    raw10_t50 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 10, 40))
-    tiles8_before = bytes(cpu.mem_read(TILES, area * 6))
-    caches8_before = [bytes(cpu.mem_read(c, area)) for c in caches]
-    crt_before8 = read(original, CRT, '<I')
-    result8, _hosts8, _display8, observations8 = run_attack(original, (3, 3, 3), memory_rects=True)
-    raw3_after8 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 3, 40))
-    raw34_after8 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 34, 40))
-    raw10_after8 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 10, 40))
-    tiles8_after = bytes(cpu.mem_read(TILES, area * 6))
-    assert result8 == 0 and observations8 == []
-    assert differences(raw3_t50, raw3_after8) == [[16, 0, 1]]
-    assert raw34_t50 == raw34_after8 and raw10_t50 == raw10_after8
-    assert tiles8_before == tiles8_after
-    assert all(old == new for old, new in zip(caches8_before,
-                                              [bytes(cpu.mem_read(c, area)) for c in caches],
-                                              strict=True))
-    assert read(original, CRT, '<I') == crt_before8 == 0xB404D22D
-    visible8 = bytes(b & (1 << viewer) for b in tiles8_after[4::6])
-    assert sum(bool(b) for b in visible8) == 59
+    for xy, fields in TURN50_TILES.items():
+        cpu.mem_write(tile(*xy), bytes(fields))
+    assert read(original, UNIT_RECORDS + 40 * 3 + 30, '<I') == 11
+    assert bytes(cpu.mem_read(UNIT_RECORDS + 40 * 3, 4)) == bytes([42, 0, 36, 0])
+
+    # The recorded southward order from the staged snapshot state: the
+    # native refuses it outright and additionally claims the origin
+    # tile's owner byte for civ 2. Every diff is computed from the run.
+    before_raw3 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 3, 40))
+    before_raw34 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 34, 40))
+    before_raw10 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 10, 40))
+    before_tiles = bytes(cpu.mem_read(TILES, area * 6))
+    before_caches = [bytes(cpu.mem_read(c, area)) for c in caches]
+    crt_before_t50 = read(original, CRT, '<I')
+    result_t50, _hosts_t50, _display_t50, observations_t50 = run_attack(
+        original, (3, 3, 3), memory_rects=True)
+    after_raw3 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 3, 40))
+    after_raw34 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 34, 40))
+    after_raw10 = bytes(cpu.mem_read(UNIT_RECORDS + 40 * 10, 40))
+    after_tiles = bytes(cpu.mem_read(TILES, area * 6))
+    mover_changes_t50 = differences(before_raw3, after_raw3)
+    neighbor_changes_t50 = differences(before_raw34, after_raw34)
+    resident_changes_t50 = differences(before_raw10, after_raw10)
+    tile_changes_t50 = [[i, old, new] for i, (old, new)
+                        in enumerate(zip(before_tiles, after_tiles, strict=True))
+                        if old != new]
+    cache_changes_t50 = [(seat, *change)
+                         for seat, (old, new)
+                         in enumerate(zip(before_caches,
+                                          [bytes(cpu.mem_read(c, area)) for c in caches],
+                                          strict=True), 1)
+                         for change in differences(old, new)]
+    assert result_t50 == 0 and observations_t50 == []
+    assert mover_changes_t50 == [[16, 0, 1]], mover_changes_t50
+    assert neighbor_changes_t50 == [] and resident_changes_t50 == []
+    assert tile_changes_t50 == [[tile(42, 36) - TILES + 5, 86, 38]], tile_changes_t50
+    assert cache_changes_t50 == [], cache_changes_t50
+    assert read(original, CRT, '<I') == crt_before_t50 == 0xB404D22D
+    visible_t50 = bytes(b & (1 << viewer) for b in after_tiles[4::6])
+    assert sum(bool(b) for b in visible_t50) == 59
 
     return {
         'arguments': [3, 1, 3], 'return': result, 'crt_state': CRT_STATE,
@@ -489,17 +542,33 @@ def entry(original, viewer, city_region, rules, city_lines):
             'self_linked_pair': True, 'road_cost_thirds': 1,
             'explored_tiles': 59, 'observation_calls': observations7,
         },
-        'turn50_zoc_refusal': {
-            'arguments': [3, 3, 3], 'return': result8,
-            'mover_raw_changes': [[16, 0, 1]],
-            'neighbor_raw_changes': [], 'resident_raw_changes': [],
-            'tile_changes': [], 'cache_changes': [],
+        'turn50_exhaustion_reset': {
+            'arguments': [3, 3, 3], 'trajectory': turn50_trajectory,
+            'trajectory_scope': ('refusal attempts 2-20 for the civ 2 mover '
+                                 'after the turn-49 measured refusal; attempt '
+                                 '20 resets the private byte to zero and the '
+                                 "spent byte takes the mover's full "
+                                 'allowance (6 thirds for type 16), matching '
+                                 'the slot-19 rule at 3 thirds'),
+            'final_private_byte': 0, 'final_spent': 6,
+            'tile_changes': [], 'crt_unchanged': True, 'explored_tiles': 59,
+        },
+        'turn50_zoc_refusal_snapshot_state': {
+            'arguments': [3, 3, 3], 'return': result_t50,
+            'mover_raw_changes': mover_changes_t50,
+            'neighbor_raw_changes': neighbor_changes_t50,
+            'resident_raw_changes': resident_changes_t50,
+            'tile_changes': tile_changes_t50, 'cache_changes': cache_changes_t50,
             'crt_state': 0xB404D22D, 'crt_unchanged': True,
-            'context': ('records and local tiles mirror the checked engine '
-                        'pre-order snapshot verbatim; the save slot-2 record '
-                        'stays at its round-close position outside the '
-                        'scanned window'),
-            'explored_tiles': 59, 'observation_calls': observations8,
+            'context': ("the staged snapshot's round-close records and "
+                        'tiles, written verbatim; this is the engine\'s '
+                        'construction, not a measured native pre-order '
+                        'state - the record still holds the end-of-49 '
+                        'exhaustion while the native runtime movement '
+                        'state at this order is not established by any '
+                        'witness. The measured refusal additionally '
+                        'claims the origin tile owner byte for civ 2.'),
+            'explored_tiles': 59, 'observation_calls': observations_t50,
         },
     }
 

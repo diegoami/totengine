@@ -504,33 +504,44 @@ deletion marker -300, two extra site offsets, ten fertility clears,
 every viewer's cache byte at the site set to 2) and staged as the third
 `FoundingCase`, with the knowledge surviving the founding.
 
-Civ 2's next order — unit 3's southward hop to (42, 38) — completed the
-round. The focused native measurement
-(`import-opponent-trade-contact.json` `turn50_zoc_refusal`, context
-mirroring the engine's pre-order snapshot verbatim) shows the native
-**refuses** this move outright: return 0, only the done-flag write
-(`raw[16] 0→1`), no relocation, no spend, no tile/cache change, CRT
-untouched, all 59 human tiles retained. This is the same-enemy
-zone-of-control crossing (the mover starts adjacent to the civ 5 unit
-at (43, 37) and the destination is adjacent to it too), and it is
-staged as a fourth `zone_case` so the knowledge survives the refusal.
+Civ 2's next orders — unit 3's recorded turn-50 moves — are where the
+checked range now ends, and the first measurement pass taught more than
+it staged. The native measurements in
+`import-opponent-trade-contact.json` (`turn50_exhaustion_reset`,
+`turn50_zoc_refusal_snapshot_state`) establish:
 
-That measurement also **corrects the movement kernel's ZOC reading**:
-`docs/evidence/README.md` carried "moving from enemy-adjacent to
-enemy-adjacent tile ends movement", and `engine::movement` implements
-exactly that (relocate, zero `moves_left`, flag `zoc_ended`). The
-measured native behavior for this class is a refusal without
-relocation. The staged route is unaffected (it never admitted the
-relocation — `stage` rejects `zoc_ended`), but ordinary engine play
-(AI v1, human sessions) would execute such moves divergently. Correcting
-the kernel touches core movement semantics, campaign goldens and AI
-behavior, so it is flagged for an owner decision rather than folded
-into this slice.
+- The end-of-turn-49 exhaustion of the civ 2 mover is real and
+  measured: the twentieth southward refusal resets the private byte to
+  zero and the spent byte takes the mover's full allowance (6 thirds
+  for type 16), matching the witnessed slot-19 rule at 3 thirds.
+- From the staged snapshot's round-close state (the engine's
+  construction — its record still holds the end-of-49 exhaustion),
+  the native refuses the recorded southward order outright (done flag
+  only) and additionally claims the origin tile owner byte for civ 2
+  (tile byte 8771: 86→38). An earlier draft of this slice reported
+  that state as "the engine's pre-order snapshot verbatim" with "no
+  tile change"; both claims were wrong and are corrected by the
+  computed diffs in the artifact.
+- The staged snapshot's stale exhaustion is not unique to this unit:
+  the same gap exists for any opponent acting on consecutive turns
+  (first seen at turn 44). The native's runtime movement state at each
+  order is not established by any witness — the save record's spent
+  byte is a saved value, not the runtime tracker — so staging these
+  orders byte-faithfully requires witnessing the native per-civ
+  turn-start movement refresh first. That is #197-phase territory and
+  an owner decision; until then the route keeps the #433 boundary (the
+  knowledge drops at civ 2's turn-50 unit-3 orders and the human
+  enters turn 50 with the refreshed 60-tile view).
 
-With the founding and the refusal staged, the whole turn-49→50 round
-replays: the human enters turn 50 with every explored tile retained and
-a checkpoint-stable view. Nothing here claims faithful import
-(#197/#198) or changes the experimental `playable_import` gate.
+The measured refusal also **corrects the movement kernel's ZOC
+reading** (recorded in `docs/evidence/README.md`): the native refuses
+the same-enemy zone-of-control crossing outright while
+`engine::movement` relocates the mover and zeroes its movement. The
+staged route never admitted the relocation (`stage` rejects
+`zoc_ended`); correcting the kernel touches core movement semantics,
+campaign goldens and AI behavior, and stays flagged for an owner
+decision. Nothing here claims faithful import (#197/#198) or changes
+the experimental `playable_import` gate.
 
 This is an engine diagnostic. The `m17-turn49-boundary` worktree at
 `/home/diego/review-tmp/totengine-m17-turn49-boundary` contains

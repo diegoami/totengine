@@ -28,7 +28,10 @@ Exact original-AI #117 remains separate, not a prerequisite for every AI option.
   `feasibility.md`, `evidence/` (all proven format findings), `decisions/`,
   `refs/` (vendored ToTPP Lua API), `milestone-review.md` (release process),
   `environment.md` (machine setup/quirks), `lessons.md` (distilled
-  process/rig lessons — read before driving the oracle)
+  process/rig lessons — read before driving the oracle), `manual.md`
+  (player-facing user guide; describes shipped behavior — the UI spec
+  hierarchy stays original observation, then `docs/ui/screen-contracts.md`,
+  then this guide)
 - `docs/evidence/` + `tools/golden.sh` — golden corpus; `make
   evidence-regen` after *intentional* format changes, then commit
 

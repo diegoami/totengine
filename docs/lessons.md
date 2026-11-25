@@ -275,3 +275,25 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   presentation call sites into a separate CRT state, record all remaining
   callers, and restore the hooks. Document that isolation explicitly;
   comparing only the final global state without call sites is misleading.
+
+## Documentation the agent cannot discover is documentation that does not exist
+
+Paid for in the owner's separate goal2 recreation: the agent authored a
+user manual by walking through the running game — a captured behavioral
+spec — but the file was never referenced from the project's agent
+orientation (AGENTS.md), so later sessions never found it and programmed
+their own thing, drifting from the captured behavior. The failure is not
+authorship but wiring: an agent only consults what its orientation file
+names. Two rules follow for this repo:
+
+- **Wire every behavioral reference into `AGENTS.md`.** The orientation
+  file is the session's discovery surface; anything behavioral that
+  sessions should consult (manual, controls reference, screen contracts,
+  evidence index) must be listed there with its role, not merely exist
+  in the tree.
+- **State the hierarchy when wiring.** A player-facing guide describes
+  shipped behavior; it is not the UI spec. `AGENTS.md`'s entry for
+  `docs/manual.md` names the order explicitly: original observation,
+  then `docs/ui/screen-contracts.md`, then the guide — so a later
+  session cannot mistake the description for the spec and implement to
+  match itself.

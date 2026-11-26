@@ -275,3 +275,53 @@ mistakes. See also `tools/oracle/README.md` for rig mechanics.
   presentation call sites into a separate CRT state, record all remaining
   callers, and restore the hooks. Document that isolation explicitly;
   comparing only the final global state without call sites is misleading.
+
+## Documentation the agent cannot discover is documentation that does not exist
+
+Paid for in the owner's separate goal2 recreation: the agent authored a
+user manual by walking through the running game — a captured behavioral
+spec — but the file was never referenced from the project's agent
+orientation (AGENTS.md), so later sessions never found it and programmed
+their own thing, drifting from the captured behavior. The failure is not
+authorship but wiring: an agent only consults what its orientation file
+names. Two rules follow for this repo:
+
+- **Wire every behavioral reference into `AGENTS.md`.** The orientation
+  file is the session's discovery surface; anything behavioral that
+  sessions should consult (manual, controls reference, screen contracts,
+  evidence index) must be listed there with its role, not merely exist
+  in the tree.
+- **State the hierarchy when wiring.** A player-facing guide describes
+  shipped behavior; it is not the UI spec. `AGENTS.md`'s entry for
+  `docs/manual.md` names the order explicitly: original observation,
+  then `docs/ui/screen-contracts.md`, then the guide — so a later
+  session cannot mistake the description for the spec and implement to
+  match itself.
+- **A user guide needs real screenshots, captured and linked in the
+  same change.** The guide's first draft described behavior without a
+  single image of the running client — to a new player the look and
+  feel was simply undefined, the same gap as the goal2 manual whose
+  screenshots existed but were not correctly linked. Capture from the
+  real clients (the browser harness drives the actual artwork), commit
+  the PNGs next to the guide, and reference them with relative links
+  in the same commit so neither half can drift. The capture script
+  (`tools/manual_screenshots.cjs`) is committed with the shots so the
+  images stay reproducible — and it verifies every image reference in
+  the guide resolves from `docs/` before finishing, because the first
+  push linked `screenshots/…` from a manual living in `docs/`, so
+  every image resolved one directory above its file and 404'd on
+  GitHub. Relative links are correct for GitHub blob pages *when they
+  resolve*; a link that is merely plausible is not a link that works.
+  Verify rendered paths against the tree, not against intention.
+- **The guide's look-and-feel reference is the original game, not the
+  engine.** Engine screenshots alone document what we have built; the
+  reader expects the original Civilization: Test of Time. Owner
+  decision (2026-11-25): the guide may commit original-game screenshots
+  as the look-and-feel reference — an explicit exception to the
+  original-screenshots-stay-outside-Git practice, scoped to the user
+  guide's reference section. The November 2025 interface-study
+  captures (launch, map, city window, Civilopedia) now sit in
+  `docs/manual/screenshots/original/`, and every engine screenshot is
+  captioned as the current implementation. Without that framing the
+  guide quietly redefines the target as whatever the engine happens to
+  render today.

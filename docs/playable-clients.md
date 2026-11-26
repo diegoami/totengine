@@ -1,5 +1,9 @@
 # Playable browser and desktop clients
 
+A player-oriented guide to installing, starting and playing the game is in
+the [user guide](manual.md); this page documents the same behavior for
+contributors.
+
 The current [mission](mission.md) and [delivery plan](plan.md) target the full
 ToT interface and scenario play on both clients using original resources. The
 routes below describe shipped behavior and explicitly labeled candidates.

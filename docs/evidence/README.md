@@ -5712,3 +5712,55 @@ defaults, not game behavior (review finding #431).
   comparison validated. The earlier engine-divergence claim and the
   trade-turn staging decision it motivated remain under the owner's
   review; no engine change is implied by this evidence.
+
+## Turn-start movement refresh at the civ-2 turn-50 boundary (#turn-50 continuation)
+
+`tools/import_turn_start_refresh_check.py`
+(`docs/evidence/import-turn-start-refresh.json`) reuses the measured
+turn-49 trade-turn reconstruction so the probe's state is the checked
+engine's staged snapshot context, restores the pre-order substitutions,
+and runs the two native candidates for the movement refresh with write
+hooks on the unit-record region. The published turn-50 refusal
+measurement used the staged snapshot's stale end-of-49 exhaustion
+record; this witness establishes the runtime state the orders actually
+execute from. Byte-identical across reruns.
+
+- **The annual refreshes movement.** The round-close entry
+  (`0x4702fc`, completed) zeroes the spent byte (`raw[10]`, u8@10 —
+  the decoded `moves_spent`) and the order counter (`raw[16]`) of
+  every live slot (positive transient id at +30; deletion markers
+  `-100*(civ+1)` and empty slots are skipped): the civ-2 mover's spent
+  6 thirds writes `[6] -> [0]`. The flag word at +6 is stored back
+  unchanged. One CRT draw; viewer caches unchanged; the only map
+  writes are seven byte-1 bookkeeping flags (unit-presence and
+  improvement mirrors reconciled after the round's moves — no terrain,
+  visibility or owner byte moves, so no knowledge row changes).
+- **The per-civ turn start clears done flags.** `0x4725c8` for civ 2
+  (stopped at its first map write, before any AI order) rewrites the
+  +6 word of exactly the live owner-2 slots `{0, 3, 8, 13, 23, 25,
+  27}` clearing only bit `0x40` (PC `0x471d85`), plus a same-value
+  rewrite at `0x4c1e8f`. Zero CRT draws. Its first map write is tile
+  record 1271 (31,31) byte +2 — the open-meaning attribute byte —
+  64 -> 0 on a tile unseen by the viewer; presentation-scoped, not
+  staged.
+- **The refreshed order matches the engine's refusal shape.** The
+  recorded southward order measured from the refreshed state (flag 0,
+  spent 0, counter 0 — the refreshed mover record is retained
+  verbatim in the artifact) returns 0 with mover writes
+  `[[6, 0, 64], [16, 0, 1]]` — the done flag set by the refusal plus
+  the counter bump, exactly the write shape `scenario::opponent_stack`'s
+  refusal paths already apply — and the same origin-tile owner claim
+  `[8771, 86, 38]` as the stale-state measurement. CRT unchanged;
+  59 tiles retained.
+- **Consequence.** `raw[10]` is spent movement; the annual zeroes it
+  (matching the orig-A consecutive-save readings of acting units), and
+  the attempt-20 reset's `spent := allowance` is the exhaustion marker
+  for the rest of the round. Staging civ 2's unit-3 order
+  byte-faithfully requires applying the witnessed annual refresh and
+  turn-start flag clears at the staged boundary, then admitting the
+  refusal with its owner-byte claim; the route boundary itself is
+  unchanged by this measurement, and the staging change is the next
+  slice. The turn-start map write is presentation-scoped out
+  (open-meaning attribute byte, unseen tile); the annual's byte-1
+  reconciliation is covered by the staged orders' own witnessed tile
+  writes and the engine's unit model.

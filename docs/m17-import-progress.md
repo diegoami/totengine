@@ -525,11 +525,19 @@ it staged. The native measurements in
 - The staged snapshot's stale exhaustion is not unique to this unit:
   the same gap exists for any opponent acting on consecutive turns
   (first seen at turn 44). The native's runtime movement state at each
-  order is not established by any witness — the save record's spent
-  byte is a saved value, not the runtime tracker — so staging these
-  orders byte-faithfully requires witnessing the native per-civ
-  turn-start movement refresh first. That is #197-phase territory and
-  an owner decision; until then the route keeps the #433 boundary (the
+  order is now witnessed (`import-turn-start-refresh.json`, owner
+  decision 2026-11-26 to enter this territory): the annual zeroes
+  every live unit's spent byte and order counter, and the per-civ
+  turn start clears the done flags of the pass's own units, so civ 2's
+  unit-3 order executes from flag 0 / spent 0 / counter 0 — not the
+  snapshot's end-of-49 exhaustion record. The order measured from that
+  refreshed state returns the refusal with the done-flag write
+  `[[6, 0, 64], [16, 0, 1]]` — exactly the shape
+  `scenario::opponent_stack`'s refusal paths already apply — plus the
+  origin tile owner claim `[8771, 86, 38]`. Staging the order requires
+  applying the witnessed refresh at the staged boundary and admitting
+  the refusal with its owner-byte claim; until that staging change
+  lands, the route keeps the #433 boundary (the
   knowledge drops at civ 2's turn-50 unit-3 orders and the human
   enters turn 50 with the refreshed 60-tile view).
 

@@ -164,7 +164,7 @@ impl Client {
             if !(0.0..1.0).contains(&sx) || !(0.0..1.0).contains(&sy) {
                 continue;
             }
-            let sprite = self.atlas()?.sprites.get(&format!("unit-{}", u.type_id))?;
+            let sprite = self.atlas()?.sprites.get(&self.unit_sprite(u.type_id))?;
             let col = (sx * f64::from(sprite.w)) as usize;
             let row = (sy * f64::from(sprite.h)) as usize;
             // Use source alpha, not the current animated frame: a hidden blink

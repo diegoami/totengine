@@ -130,6 +130,14 @@ The map screen follows the original's frame (layout B, [design record](ui/layout
 - **Messages** (**World** menu) keeps every turn's notices for the session, newest first and paged. Messages are presentation-only: checkpoints do not store them.
 - **Mouse wheel** pages the list under the pointer: reports, Civilopedia, Messages, choice lists, the checkpoint list and the city panels. It does nothing over the map. In the city window, the **Sort** button reorders the Info, Support and Improvements lists (listed order, name, shields, food or upkeep, largest numbers first); it only changes the display.
 - **Settings** (**Game** menu), or **Enhancements…** on the setup screen, holds optional improvements that differ from the original. All are off by default and saved in `enhancements.json` beside the saves folder, shared by both clients; delete the file to reset. *New-messages overlay on the map* lists a turn's notices over the map (with **Open messages** / **Dismiss**). *Confirm every move* asks before each unit move; attacks and captures always ask. *Map tooltips* describes a known tile when the pointer rests on it: terrain, river/road, city and units, from your civilization's view only. *Goal estimates in the science advisor* adds the goal path and turn estimate to F6 (see below). *Order buttons under the map* adds a strip with the selected unit's orders (Move/View, Wait, Skip, Found city, Activate), each doing exactly what its key does; the map gets a little shorter. *Message log in the right column* keeps the latest messages beside the map, newest first, with **All messages** opening the full log; the minimap gets smaller to make room. *Path preview with turn counts* works the same way while a unit is selected to move: the tip shows the cheapest route over tiles your civilization knows (gold dots, a number where each turn's moves run out) and how many turns it takes; it follows the engine's move costs and only the foreign units you can see, so it is an estimate, and it gives no goto order. None of them affect checkpoints, recordings or rules.
+- **Classic resource icons** in Settings adds food, shields, science, tax and
+  luxury glyphs to city readouts and the selected-city panel. The glyphs come
+  from the classic `Icons.gif` in the install root. Both clients keep text
+  readouts when a compatible sheet is unavailable. The
+  [glyph evidence](evidence/classic-resource-icons.json) records the measured
+  cells and pixel hashes. Set `TOTENGINE_CLASSIC_ICONS=1` for the browser
+  or Linux real-input checks to exercise the option and compare checkpoints
+  in separate scratch save folders.
 - **Double-click an own city on the map** (including its garrison) or use
   **Manage city** to open its workspace. The first city click only selects or
   inspects; use movement keys to move into an own city. Click a radius tile

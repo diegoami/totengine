@@ -18,8 +18,8 @@ pub(super) const GOVERNMENTS: [&str; 7] = [
     "Democracy",
 ];
 const ROWS: [&str; 3] = ["Tax", "Luxury", "Science"];
-/// Vertical step between Settings rows (seven rows fit above the footer note).
-const SETTINGS_STEP: f64 = 52.;
+/// Vertical step between Settings rows and their descriptions.
+const SETTINGS_STEP: f64 = 41.;
 
 pub(super) fn government_name(id: u8) -> String {
     GOVERNMENTS
@@ -571,6 +571,16 @@ impl Client {
                 "Message log in the right column",
                 self.enhancements.message_dock,
             ),
+            (
+                Enhancement::ClassicIcons,
+                "Classic resource icons",
+                self.enhancements.classic_icons,
+            ),
+            (
+                Enhancement::ClassicUnits,
+                "Classic unit art",
+                self.enhancements.classic_units,
+            ),
         ]
     }
 
@@ -583,6 +593,8 @@ impl Client {
             "F6 shows the path to your goal with a turn estimate, and sorts advances.",
             "Buttons for the selected unit's orders, with their keys; the map gets shorter.",
             "The latest messages stay visible beside the map, with a link to the full log.",
+            "Shows resource glyphs from Icons.gif in the installation root when available.",
+            "Uses the installation's Units.gif sprites with stock Original games.",
         ];
         for (i, line) in explain.iter().enumerate() {
             draws.push(text(

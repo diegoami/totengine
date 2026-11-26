@@ -4125,6 +4125,208 @@ fn enhancements_default_off_toggle_persist_and_never_touch_the_game() {
 }
 
 #[test]
+fn classic_resource_icons_toggle_without_changing_the_game() {
+    let f = Fixture::new();
+    let path = f.0.join("Icons.gif");
+    let mut sheet = image::RgbaImage::from_pixel(640, 480, image::Rgba([255, 159, 163, 255]));
+    for (_, x, y) in super::atlas::CLASSIC_CELLS {
+        sheet.put_pixel(x + 10, y + 10, image::Rgba([0, 200, 0, 255]));
+    }
+    sheet.save(&path).unwrap();
+
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    let before = c.checkpoint().unwrap();
+    let assets = c.assets.clone();
+    let shows = |c: &Client, expected: &str| {
+        c.frame()
+            .draws
+            .iter()
+            .any(|d| matches!(d, Draw::Sprite { sprite, .. } if sprite == expected))
+    };
+    assert!(!shows(&c, "classic-food"));
+    button(&mut c, "Settings");
+    button(&mut c, "[ ] Classic resource icons");
+    key(&mut c, "Escape");
+    assert!(shows(&c, "classic-food"));
+    button(&mut c, "Manage city");
+    for glyph in ["food", "shields", "science", "tax", "luxury"] {
+        assert!(shows(&c, &format!("classic-{glyph}")));
+    }
+    key(&mut c, "Escape");
+    assert_eq!(c.checkpoint().unwrap(), before);
+    assert_eq!(c.assets, assets);
+    assert!(f.client().enhancements.classic_icons);
+
+    fs::write(path, b"not a GIF").unwrap();
+    let mut fallback = f.client();
+    start(&mut fallback);
+    founding(&mut fallback);
+    assert!(!shows(&fallback, "classic-food"));
+    assert!(!fallback
+        .atlas()
+        .unwrap()
+        .sprites
+        .contains_key("classic-food"));
+    assert_eq!(fallback.checkpoint().unwrap(), before);
+}
+
+#[test]
+fn installed_classic_resource_icons_have_visible_distinct_glyphs() {
+    use sha2::{Digest, Sha256};
+    let Some(home) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let home = Path::new(&home);
+    let Some(sheet) = crate::resources::classic_icon_sheet(home) else {
+        return;
+    };
+    let resources = Resources::load(home, "Original").unwrap();
+    let atlas = Atlas::load_for_install(&resources, home).unwrap();
+    let mut evidence = BTreeMap::new();
+    for (glyph, x, y) in super::atlas::CLASSIC_CELLS {
+        let sprite = &atlas.sprites[glyph];
+        let visible = sprite
+            .rgba
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .filter(|pixel| pixel[3] > 0)
+            .count();
+        assert!((1..196).contains(&visible), "{glyph}");
+        evidence.insert(
+            glyph,
+            serde_json::json!({
+                "x": x, "y": y, "width": sprite.w, "height": sprite.h, "visible_pixels": visible,
+                "rgba_sha256": format!("{:x}", Sha256::digest(&sprite.rgba)),
+            }),
+        );
+    }
+    let hashes: std::collections::BTreeSet<_> = evidence
+        .values()
+        .map(|sprite| sprite["rgba_sha256"].as_str().unwrap())
+        .collect();
+    assert_eq!(hashes.len(), 5);
+    if let Some(out) = std::env::var_os("TOTENGINE_CLASSIC_ICON_EVIDENCE") {
+        let report = serde_json::json!({
+            "schema": 1, "source": "Icons.gif", "sheet_size": [sheet.width(), sheet.height()],
+            "decoded_rgba_sha256": format!("{:x}", Sha256::digest(sheet.as_raw())),
+            "sprites": evidence,
+        });
+        fs::write(out, serde_json::to_string_pretty(&report).unwrap() + "\n").unwrap();
+    }
+}
+
+#[test]
+fn installed_classic_unit_art_uses_the_displayed_alpha_and_preserves_checkpoints() {
+    let Some(home) = std::env::var_os("CIVTOT_HOME") else {
+        return;
+    };
+    let home = Path::new(&home);
+    let mut resources = Resources::load(home, "Original").unwrap();
+    let Some(sheet) = crate::resources::classic_unit_sheet(&resources, home) else {
+        return;
+    };
+    let atlas = Atlas::load_for_install(&resources, home).unwrap();
+    for id in 0..54 {
+        let sprite = &atlas.sprites[&format!("classic-unit-{id}")];
+        assert_eq!((sprite.w, sprite.h), (64, 64));
+        assert!(sprite.rgba[..64 * 16 * 4].iter().all(|&value| value == 0));
+        let mut visible = 0;
+        for (i, pixel) in sprite.rgba[64 * 16 * 4..]
+            .as_chunks::<4>()
+            .0
+            .iter()
+            .enumerate()
+        {
+            let x = 1 + (id % 9) * 65 + i as u32 % 64;
+            let y = 1 + (id / 9) * 49 + i as u32 / 64;
+            let original = sheet.get_pixel(x, y);
+            let alpha = match original.0[..3] {
+                [255, 0, 255] | [135, 83, 135] => 0,
+                _ => original[3],
+            };
+            assert_eq!(&pixel[..3], &original.0[..3]);
+            assert_eq!(pixel[3], alpha);
+            visible += usize::from(alpha > 0);
+        }
+        assert!((1..64 * 48).contains(&visible));
+    }
+    assert!(!atlas.sprites.contains_key("classic-unit-54"));
+    let art = resources.sources.get_mut("units").unwrap();
+    art.fingerprint ^= 1;
+    assert!(crate::resources::classic_unit_sheet(&resources, home).is_none());
+    resources.sources.get_mut("units").unwrap().fingerprint ^= 1;
+    resources.profile = "Scenario (experimental): Other/custom.scn".into();
+    assert!(crate::resources::classic_unit_sheet(&resources, home).is_none());
+
+    let temp = tempfile::tempdir().unwrap();
+    let saves = temp.path().join("saves");
+    let mut c = seeded_client(home.to_string_lossy().into_owned(), saves.clone());
+    start(&mut c);
+    let before = c.checkpoint();
+    let assets = c.assets.clone();
+    let drawn_unit = |c: &Client| {
+        c.frame()
+            .draws
+            .into_iter()
+            .find_map(|d| match d {
+                Draw::UnitSprite {
+                    x,
+                    y,
+                    w,
+                    h,
+                    sprite,
+                    unit,
+                    selected: true,
+                    ..
+                } => Some((x, y, w, h, sprite, unit)),
+                _ => None,
+            })
+            .unwrap()
+    };
+    assert_eq!(drawn_unit(&c).4, "unit-0");
+    button(&mut c, "Settings");
+    button(&mut c, "[ ] Classic unit art");
+    key(&mut c, "Escape");
+    let (x, y, w, h, sprite, slot) = drawn_unit(&c);
+    assert_eq!(sprite, "classic-unit-0");
+    let sprite = &c.atlas().unwrap().sprites[&sprite];
+    let pixel = sprite
+        .rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .position(|pixel| pixel[3] > 0)
+        .unwrap();
+    let (col, row) = ((pixel % 64) as f64 + 0.5, (pixel / 64) as f64 + 0.5);
+    let view = c.view().unwrap();
+    assert_eq!(
+        c.hit_unit(&view, x + w * col / 64., y + h * row / 64.)
+            .unwrap()
+            .index,
+        slot
+    );
+    assert!(c
+        .hit_unit(&view, x + w * col / 64., y + h * 0.5 / 64.)
+        .is_none());
+    assert_eq!(c.unit_sprite(54), "unit-54");
+    assert_eq!(c.checkpoint(), before);
+    assert_eq!(c.assets, assets);
+    assert!(
+        seeded_client(home.to_string_lossy().into_owned(), saves)
+            .enhancements
+            .classic_units
+    );
+    button(&mut c, "Settings");
+    button(&mut c, "[x] Classic unit art");
+    key(&mut c, "Escape");
+    assert_eq!(drawn_unit(&c).4, "unit-0");
+    assert_eq!(c.checkpoint(), before);
+}
+
+#[test]
 fn mouse_wheel_scrolls_lists_only_and_never_touches_the_game() {
     let f = Fixture::new();
     let mut c = f.client();

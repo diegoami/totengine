@@ -983,16 +983,32 @@ impl Client {
                 style::TEXT,
             ));
             if let Some(e) = o.city_economy.iter().find(|e| e.index == c.index) {
-                draws.push(text(
-                    cx,
-                    top + 44.,
-                    &format!(
-                        "Food {:+} · shields {} · sci {}",
-                        e.food_surplus, e.net_shields, e.finance.science
-                    ),
-                    style::TYPE_SMALL,
-                    style::TEXT_DIM,
-                ));
+                let y = top + 44.;
+                if self.classic_icons_active() {
+                    for (i, (icon, label)) in [
+                        ("classic-food", format!("{:+}", e.food_surplus)),
+                        ("classic-shields", e.net_shields.to_string()),
+                        ("classic-science", e.finance.science.to_string()),
+                    ]
+                    .into_iter()
+                    .enumerate()
+                    {
+                        let x = cx + i as f64 * 72.;
+                        draws.extend(self.classic_icon(icon, x, y));
+                        draws.push(text(x + 20., y, &label, style::TYPE_SMALL, style::TEXT_DIM));
+                    }
+                } else {
+                    draws.push(text(
+                        cx,
+                        y,
+                        &format!(
+                            "Food {:+} · shields {} · sci {}",
+                            e.food_surplus, e.net_shields, e.finance.science
+                        ),
+                        style::TYPE_SMALL,
+                        style::TEXT_DIM,
+                    ));
+                }
                 draws.push(text(
                     cx,
                     top + 60.,

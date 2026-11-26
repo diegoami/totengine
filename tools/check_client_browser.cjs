@@ -96,6 +96,23 @@ fs.mkdirSync(out,{recursive:true});
  }
  await idle();await click('Generated seed');await fill('7');await click(startLabel);
  await click('Save pending choice');await save('research');await research();
+ if(process.env.TOTENGINE_CLASSIC_UNITS==='1'){
+  const saves=process.env.TOTENGINE_CLIENT_SAVES;
+  if(!saves)throw Error('set TOTENGINE_CLIENT_SAVES');
+  const unit=(f,prefix)=>f.draws.find(d=>d.sprite?.startsWith(prefix));
+  if(!unit(await state(),'unit-')||unit(await state(),'classic-unit-'))throw Error('classic unit art is on by default');
+  await key('Control+s');await save('unitbefore');
+  await click('Game');await click('Settings…');await click('[ ] Classic unit art');await key('Escape');
+  const map=await state(),art=unit(map,'classic-unit-');
+  if(!art)throw Error('classic unit art missing from map');
+  const sprite=await page.request.get(origin+'/sprite/'+map.assets+'/'+art.sprite);
+  if(!sprite.ok()||(await sprite.body()).length!==8+64*64*4)throw Error('classic unit sprite was not served');
+  await key('Control+s');await save('unitclassic');
+  const read=name=>fs.readFileSync(require('path').join(saves,name+'.cth'));
+  if(!read('unitbefore').equals(read('unitclassic')))throw Error('classic unit art affected the checkpoint');
+  await click('Game');await click('Settings…');await click('[x] Classic unit art');await key('Escape');
+  if(!unit(await state(),'unit-')||unit(await state(),'classic-unit-'))throw Error('classic unit art did not turn off');
+ }
  await key('F3');
  if(!has(await state(),'Known contacts')||!has(await state(),'No known contacts.'))throw Error('F3 contact panel missing');
  await key('Escape');
@@ -103,6 +120,26 @@ fs.mkdirSync(out,{recursive:true});
  await click('Choose production');
  for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes(unitChoice)))break}
  await key('Enter');await key('Control+s');await save('normal');
+ if(process.env.TOTENGINE_CLASSIC_ICONS==='1'){
+  const path=require('path'),saves=process.env.TOTENGINE_CLIENT_SAVES;
+  if(!saves)throw Error('set TOTENGINE_CLIENT_SAVES');
+  const glyph=(f,name)=>f.draws.some(d=>d.kind==='sprite'&&d.sprite==='classic-'+name);
+  if(glyph(await state(),'food'))throw Error('classic icons are on by default');
+  await click('Game');await click('Settings…');
+  await click('[ ] Classic resource icons');await key('Escape');
+  const hud=await state();
+  if(!glyph(hud,'food'))throw Error('classic food glyph missing from map');
+  const sprite=await page.request.get(origin+'/sprite/'+hud.assets+'/classic-food');
+  if(!sprite.ok()||(await sprite.body()).length!==8+14*14*4)throw Error('classic sprite was not served');
+  await click('Manage city');
+  const city=await state();
+  if(!['food','shields','science','tax','luxury'].every(name=>glyph(city,name)))throw Error('classic glyph missing from city');
+  await key('Escape');await key('Control+s');await save('classicicons');
+  const read=name=>fs.readFileSync(path.join(saves,name+'.cth'));
+  if(!read('classicicons').equals(read('normal')))throw Error('changing icons affected the checkpoint');
+  await click('Game');await click('Settings…');await click('[x] Classic resource icons');await key('Escape');
+  if(glyph(await state(),'food'))throw Error('turning icons off left a glyph on the map');
+ }
  await page.screenshot({path:out+'/browser-map.png'});
  for(let n=0;n<10;n++){
   await research();const turn=turnOf(await state());

@@ -240,23 +240,50 @@ impl Client {
         {
             let output = c.output.unwrap_or_default();
             let lines = [
-                format!("Food surplus {:+}", e.food_surplus),
-                format!("Shields {} (support {})", e.net_shields, detail.support),
-                format!("Trade {} · corruption {}", output.trade, output.corruption),
-                format!("Waste {}", output.waste),
-                format!("Science {}", e.finance.science),
-                format!("Tax {} · luxury {}", e.finance.taxes, e.finance.luxuries),
-                format!("Happy {} · unhappy {}", e.happy, e.unhappy),
-                format!("Upkeep {}", e.upkeep),
+                (
+                    Some("classic-food"),
+                    format!("Food surplus {:+}", e.food_surplus),
+                ),
+                (
+                    Some("classic-shields"),
+                    format!("Shields {} (support {})", e.net_shields, detail.support),
+                ),
+                (
+                    None,
+                    format!("Trade {} · corruption {}", output.trade, output.corruption),
+                ),
+                (None, format!("Waste {}", output.waste)),
+                (
+                    Some("classic-science"),
+                    format!("Science {}", e.finance.science),
+                ),
+                (
+                    Some("classic-tax"),
+                    format!("Tax {} · luxury {}", e.finance.taxes, e.finance.luxuries),
+                ),
+                (None, format!("Happy {} · unhappy {}", e.happy, e.unhappy)),
+                (None, format!("Upkeep {}", e.upkeep)),
             ];
-            for (i, line) in lines.iter().enumerate() {
-                draws.push(text(
-                    22.,
-                    BODY_Y + 30. + i as f64 * 20.,
-                    line,
-                    style::TYPE_SMALL,
-                    style::TEXT,
-                ));
+            for (i, (icon, line)) in lines.iter().enumerate() {
+                let y = BODY_Y + 30. + i as f64 * 20.;
+                if *icon == Some("classic-tax") && self.classic_icons_active() {
+                    for (x, icon, label) in [
+                        (22., "classic-tax", format!("Tax {}", e.finance.taxes)),
+                        (
+                            130.,
+                            "classic-luxury",
+                            format!("Luxury {}", e.finance.luxuries),
+                        ),
+                    ] {
+                        draws.extend(self.classic_icon(icon, x, y));
+                        draws.push(text(x + 20., y, &label, style::TYPE_SMALL, style::TEXT));
+                    }
+                } else {
+                    let sprite = icon.and_then(|name| self.classic_icon(name, 22., y));
+                    let x = if sprite.is_some() { 42. } else { 22. };
+                    draws.extend(sprite);
+                    draws.push(text(x, y, line, style::TYPE_SMALL, style::TEXT));
+                }
             }
             let warning = if detail.food_box < 0 {
                 "Food debt: famine pending"

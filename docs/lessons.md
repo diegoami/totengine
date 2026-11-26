@@ -306,7 +306,13 @@ names. Two rules follow for this repo:
   the PNGs next to the guide, and reference them with relative links
   in the same commit so neither half can drift. The capture script
   (`tools/manual_screenshots.cjs`) is committed with the shots so the
-  images stay reproducible.
+  images stay reproducible — and it verifies every image reference in
+  the guide resolves from `docs/` before finishing, because the first
+  push linked `screenshots/…` from a manual living in `docs/`, so
+  every image resolved one directory above its file and 404'd on
+  GitHub. Relative links are correct for GitHub blob pages *when they
+  resolve*; a link that is merely plausible is not a link that works.
+  Verify rendered paths against the tree, not against intention.
 - **The guide's look-and-feel reference is the original game, not the
   engine.** Engine screenshots alone document what we have built; the
   reader expects the original Civilization: Test of Time. Owner

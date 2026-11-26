@@ -34,15 +34,15 @@ study — this is the game you know, and the standard the clients aim at.
 
 The original's main menu and its map screen after founding a city:
 
-![The original Test of Time main menu with the comet artwork and the single-player, multiplayer, hall of fame, credits and ToTPP entries](screenshots/original/launch.png)
+![The original Test of Time main menu with the comet artwork and the single-player, multiplayer, hall of fame, credits and ToTPP entries](manual/screenshots/original/launch.png)
 
-![The original map screen: stone-textured interface, the Game/Kingdom/View/Orders/Advisors/World/Cheat/Map/Civilopedia menu bar, the population/date/treasury panel, the End of Turn prompt and the circular minimap, with Madrid founded on the river](screenshots/original/map.png)
+![The original map screen: stone-textured interface, the Game/Kingdom/View/Orders/Advisors/World/Cheat/Map/Civilopedia menu bar, the population/date/treasury panel, the End of Turn prompt and the circular minimap, with Madrid founded on the river](manual/screenshots/original/map.png)
 
 The original's city window and one of its Civilopedia research pages:
 
-![The original city window for Madrid: City Resources, the Build box with Warriors at 4/10 and the Buy price, the citizen-occupied radius map, the Info/Support/Improvements/Happy buttons and the Food Storage box](screenshots/original/city.png)
+![The original city window for Madrid: City Resources, the Build box with Warriors at 4/10 and the Buy price, the citizen-occupied radius map, the Info/Support/Improvements/Happy buttons and the Food Storage box](manual/screenshots/original/city.png)
 
-![The original Civilopedia research page for Pottery: prerequisites, what it allows with Map Making, the Granary and Hanging Gardens, with Go Back, Tree, Description and Close](screenshots/original/research.png)
+![The original Civilopedia research page for Pottery: prerequisites, what it allows with Map Making, the Granary and Hanging Gardens, with Go Back, Tree, Description and Close](manual/screenshots/original/research.png)
 
 The engine screenshots that follow show **ToTEngine's current
 implementation** of the same flow. Where a screen still looks different,
@@ -96,7 +96,7 @@ press **Start**.
 Both clients scale the 1024×768 picture to any window size. Full screen
 is **Alt+Enter** or **View > Full screen**.
 
-![ToTEngine today — the setup screen: installation directory, seed, civilizations, human seat, difficulty and map size, with Quick Start, checkpoint loading and the experimental scenario entry](screenshots/setup.png)
+![ToTEngine today — the setup screen: installation directory, seed, civilizations, human seat, difficulty and map size, with Quick Start, checkpoint loading and the experimental scenario entry](manual/screenshots/setup.png)
 
 ## The map screen
 
@@ -114,11 +114,11 @@ science), **World** (world reports, Messages) and **Civilopedia**. An
 entry that cannot run right now is greyed out and says why. **F10** opens
 the menu bar from the keyboard.
 
-![ToTEngine today — the map screen after founding a city: menu bar, the map with your settler and city, and the right column with minimap, turn, treasury, rates, research, the city panel and the end-of-turn prompt](screenshots/map.png)
+![ToTEngine today — the map screen after founding a city: menu bar, the map with your settler and city, and the right column with minimap, turn, treasury, rates, research, the city panel and the end-of-turn prompt](manual/screenshots/map.png)
 
 On wide windows the messages join as their own column:
 
-![ToTEngine today — the same map at a wide window size, with the messages column between the map and the right column](screenshots/map-wide.png)
+![ToTEngine today — the same map at a wide window size, with the messages column between the map and the right column](manual/screenshots/map-wide.png)
 
 ### Units: selecting and moving
 
@@ -154,7 +154,7 @@ On wide windows the messages join as their own column:
   here, what is built, and the mood. The **Sort** button reorders these
   lists; it changes only the display.
 
-![ToTEngine today — the city window: citizens strip, city resources, food storage and production on the left, the radius map in the middle, and the information panels on the right](screenshots/city-window.png)
+![ToTEngine today — the city window: citizens strip, city resources, food storage and production on the left, the radius map in the middle, and the information panels on the right](manual/screenshots/city-window.png)
 
 ### Your civilization
 
@@ -172,11 +172,11 @@ On wide windows the messages join as their own column:
   category. It needs a ToT installation; the Open demo has no
   Civilopedia text.
 
-![ToTEngine today — the F6 science advisor: the running project, the goal setter and the available and known advances](screenshots/science.png)
+![ToTEngine today — the F6 science advisor: the running project, the goal setter and the available and known advances](manual/screenshots/science.png)
 
-![ToTEngine today — the Shift+T rates dialog with the government's per-share limit, locks, and the treasury and science effect preview](screenshots/rates.png)
+![ToTEngine today — the Shift+T rates dialog with the government's per-share limit, locks, and the treasury and science effect preview](manual/screenshots/rates.png)
 
-![ToTEngine today — the F1 city status report with the report switcher, one row per city and sorting](screenshots/report-cities.png)
+![ToTEngine today — the F1 city status report with the report switcher, one row per city and sorting](manual/screenshots/report-cities.png)
 
 ### Messages and help
 
@@ -199,7 +199,7 @@ On wide windows the messages join as their own column:
   version that saved it, and it verifies your installation's resources
   on load. There is no autosave — save before closing.
 
-![ToTEngine today — the save dialog with its name field and accept/cancel entries](screenshots/save-dialog.png)
+![ToTEngine today — the save dialog with its name field and accept/cancel entries](manual/screenshots/save-dialog.png)
 
 ## Optional enhancements
 
@@ -220,7 +220,7 @@ and shows a **preflight** before anything starts: the turn, map size,
 playable civilizations, and every gap the engine knows about. Nothing
 starts until you accept it.
 
-![ToTEngine today — the experimental scenario listing over setup: the installation's .scn and .sav files, paged, with the gaps-disclosed-before-starting note](screenshots/scenario-preflight.png)
+![ToTEngine today — the experimental scenario listing over setup: the installation's .scn and .sav files, paged, with the gaps-disclosed-before-starting note](manual/screenshots/scenario-preflight.png)
 
 What works: the scenario's own Rules, Events and art; event text boxes,
 flags and a growing set of event actions; dates as the original writes

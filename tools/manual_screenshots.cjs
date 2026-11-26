@@ -147,6 +147,15 @@ async function waitForServer(){
     await shot('map-wide');
   }catch(e){console.error('map-wide failed:',e.message)}
 
+  // Every image reference in the guide must resolve from docs/, where
+  // manual.md lives. The first push linked screenshots/… instead of
+  // manual/screenshots/… and every image on GitHub 404'd.
+  const manual=path.join(repo,'docs','manual.md');
+  const refs=[...fs.readFileSync(manual,'utf8').matchAll(/\]\(([^)]+\.png)\)/g)].map(m=>m[1]);
+  const broken=refs.filter(ref=>!path.isAbsolute(ref)&&!fs.existsSync(path.resolve(repo,'docs',ref)));
+  if(broken.length)throw Error('guide image references do not resolve: '+broken.join(', '));
+  console.log('verified',refs.length,'guide image references resolve');
+
   await browser.close();
 })().catch(e=>{console.error('FATAL',e);process.exitCode=1})
   .finally(()=>{server.kill('SIGKILL');setTimeout(()=>process.exit(process.exitCode||0),500)});

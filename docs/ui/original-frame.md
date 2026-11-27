@@ -73,8 +73,11 @@ The city screen floats stone panels over the map, as the original:
 Every Layout B panel, command and immediate-edit rule is kept; the footer
 Save/Load/Research and Previous/Next city buttons are gone, as the original's
 city window does not show them (Ctrl+S/Ctrl+L, F6, PageUp/PageDown and the
-menus keep those commands). The map, band and menu bar stay visible behind
-the panels, as in the capture.
+menus keep those commands). As in the capture, the menu bar and the band's
+first lines (status, `Loc:`, the centre prompt) stay visible above the city
+surface; the surface then covers the band before the panels begin. The cut
+sits on a band text line boundary (`city::CITY_TOP`) so no prompt is left
+half-visible between panels; a client test pins that.
 
 Gaps: the install exposes no resource or improvement icon sheet here, so the
 City Resources markers and tile yields are drawn or numeric rather than the

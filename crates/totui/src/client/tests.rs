@@ -4888,6 +4888,48 @@ fn layout_b_city_and_science_windows_rearrange_without_touching_the_game() {
 }
 
 #[test]
+fn city_window_starts_on_a_band_text_boundary() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    open_city(&mut c);
+    let draws = c.frame().draws;
+    // The band stays at the top (menu + first lines); the city surface then
+    // covers it before the panels, as the original city screen does. The cut
+    // sits on a text line boundary: a band line must never straddle it, or a
+    // prompt would peek out from under a panel (#439).
+    let cover = draws
+        .iter()
+        .position(|d| {
+            matches!(d, Draw::Rect { x, y, w, color, .. }
+                if *x == 0.
+                    && *y == city::CITY_TOP
+                    && *w == f64::from(WIDTH)
+                    && color == style::INSET)
+        })
+        .expect("the city surface covers the band below its top strip");
+    for d in &draws[..cover] {
+        if let Draw::Text { y, size, .. } = d {
+            assert!(
+                *y + f64::from(*size) <= city::CITY_TOP || *y >= city::CITY_TOP,
+                "band text at {y} straddles the city surface at {}",
+                city::CITY_TOP
+            );
+        }
+    }
+    // Hidden band prompts are painted, then covered; city text follows.
+    assert!(draws[..cover]
+        .iter()
+        .any(|d| matches!(d, Draw::Text { y, .. } if y >= &city::CITY_TOP)));
+    let title = draws
+        .iter()
+        .position(|d| matches!(d, Draw::Text { text, .. } if text == "Athena"))
+        .unwrap();
+    assert!(title > cover, "the city panels paint over the cover");
+}
+
+#[test]
 fn layout_b_order_strip_and_message_dock_are_opt_in_and_inert() {
     let f = Fixture::new();
     let mut c = f.client();

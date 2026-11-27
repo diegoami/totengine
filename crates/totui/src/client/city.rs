@@ -9,6 +9,10 @@ use super::style;
 use super::*;
 use engine::yields::{RADIUS_DX, RADIUS_DY};
 
+/// Where the city surface begins over the band. The original keeps the
+/// band's first lines (status, Loc, Viewing Pieces) and covers the rest; the
+/// value sits on a band text boundary so no prompt is cut in half.
+pub(super) const CITY_TOP: f64 = 92.;
 /// City Resources panel `(x, y, w, h)` at the top left.
 pub(super) const RESOURCES: (f64, f64, f64, f64) = (44., 96., 240., 200.);
 /// Build panel at the left, below City Resources.

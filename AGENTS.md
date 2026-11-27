@@ -87,8 +87,96 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
   design; move screens toward the original's top-band frame and look
   without asking, keep departures opt-in, and do not defend provisional
   layouts (owner, 2026-11-27).
+  Reference: `docs/manual/screenshots/original/`, `docs/ui/discovery.md`
+  (U04 = the map frame); frame rework #439.
 
 ## Status shorthand
+
+### Current work (2026-11-27, design direction and handover)
+
+**Client design direction is merged** — #440 at `261b6bb` (tree == CI-passed
+head `a084400`). Decision 0009 (`docs/decisions/0009-client-design-direction.md`):
+the original Test of Time interface is the look-and-layout target for both
+clients; the owner chose the original's **top-band frame** (status panel,
+info panel, circular overview over a full-width map) over Layout B's right
+column, which came from a canvas drawn without original screenshots. The
+v0.11 prototype/proposal and shipped chrome are provisional; dated owner
+decisions listed in 0009 stay binding. Delivery: **#439** (top-band map
+frame and floating city window, both clients) — the natural next UI work.
+Also merged: the repo-only durable-state rule and the review-posting rule
+(Hard rules).
+
+**Turn-50 continuation — first boundary measured, nothing staged.** After
+the human ends turn 50 on the end-turn-only `SavedNavalAllocationV1` route,
+civ 5's first order (`move 10 → (44,38)`) keeps the saved view; its second,
+`move 19 → (44,42)` — the fortified slot-19 unit stepping south into its own
+city 9, which native **refused** on turn 49 — resolves in-engine as a plain
+move and the saved view drops (60 tiles). Unwitnessed: what native does with
+that order from the refreshed turn-50 state; note the witnessed turn-start
+done-flag clear is staged for civ 2 only. Details and the reproduction recipe:
+`docs/m17-import-progress.md` §Turn-50 continuation. Start from fresh main.
+
+Worktree cleanup candidates: `review-tmp/totengine-m17-turn50-continuation`
+(branch `design-direction-0009`, merged) and
+`review-tmp/totengine-handover-2026-11-27` once its PR lands, plus the
+obsolete `m17-turn49-boundary` diagnostics.
+
+### Current work (2026-11-27)
+
+The checked Original replay now runs through civ 2's **whole turn-50 pass**:
+#438 merged at `314f783` (detached-worktree merge, tree == reviewed head
+`886dcad`; AGREE re-review after one honesty MUST-FIX the fix closed), with
+the user guide #432 merged just before at `0ee0eba` (owner-accepted; original
+game screenshots as the look-and-feel reference + ToTEngine-today captures,
+per the owner's scoped policy exception).
+
+What landed, and why it matters: the witnessed kernels — the annual
+round-close zeroes every live unit's spent byte (`raw[10]` = the decoded
+`moves_spent`) and order counter at the turn-49 → 50 close, and civ 2's turn
+start clears the pass's done flags — are staged scoped to
+`SavedNavalAllocationV1` at turn 50, and the re-admitted turn-50 zone case
+stages the southward refusal (done flag, counter bump, origin-tile owner
+claim). The route reaches human turn 50 with all 59 tiles, the saved view and
+checkpoint determinism intact — the #433 boundary is gone. Witness:
+`docs/evidence/import-turn-start-refresh.json` +
+`tools/import_turn_start_refresh_check.py` (byte-identical reruns). The
+attempt-20 reset is the round exhaustion marker. Honest caveat (review,
+pinned by the route test): the engine's staged turn-49 hop (41,35)→(42,36)
+claims its destination tile via the generic move path — an unwitnessed staged
+reconstruction; the native claims record 1420 at hop time — so the refusal's
+owner write is a no-op in-engine (owner nibble 2 / mirror byte 38 at record
+1461 are asserted).
+
+Also this session: the PR queue was cleaned — 47 superseded stacked drafts
+(#353-era through #425) closed with verification-backed comments (head
+ancestor-of-main, or patch-identical to a main commit). Process lesson:
+closures must be driven by the verified result set, never a number-range
+filter — an over-broad filter briefly mis-closed the four live drafts
+(#377/#379/#380/#381), reopened with correction comments. Open PRs now:
+#353 (m17 handover doc), #377 (SAV follow-ups), #379 (desktop seat
+observer), #380 (classic unit art — owner branch, keep intact), #381
+(experiment-run recovery).
+
+Next candidates: witness the civ 5–7 turn-50 passes and the human's own
+turn-50 orders (the route currently ends at the human-50 entry); then the
+owner decisions still pending — `engine::movement` ZOC kernel correction,
+trade-turn staging basis, boot-path trait probe. The
+`m17-turn49-boundary` worktree's diagnostic logging (CONTACT2/CITY9/SLOT41)
+is obsolete now that the boundary it diagnosed is staged — cleanup
+candidate. `m17-turn50-refresh` worktree removed post-merge (branch merged).
+
+### Current work (2026-11-24) — integrated since
+
+Milestone 17 (#197/#198). Drafts #422–#426 (turns 47–48, alternate research
+handoff; schemas 15–19) were reviewed AGREE (Kimi K3.1 Pro, cumulative range
+`5e6b37a..6ec5cca`) and integrated at `ac358c3`; the turn-49 close followed
+at `9a922f5` (#427), then the turn-50 founding and honest boundary
+measurements at #433/#436/#437 (main `067ddc3`). The full picture lives in
+`docs/m17-import-progress.md` on main. The `m17-turn49-boundary` worktree
+under `/home/diego/review-tmp` held the boundary diagnostics; see the
+2026-11-27 section for its current status. Keep the owner checkout's
+`classic-resource-icons` branch and existing edits intact.
+`CIVTOT_HOME=/mnt/d/games/CIVTOT`.
 
 ### Current work (2026-11-22)
 
@@ -109,8 +197,15 @@ The owner launches milestone reviews.
 
 The owner directed work to milestone 19 (#201/#202). The existing reports
 and Civilopedia shipped in v0.19.0. Current work on `m19-scenario-reference`
-checks scenario-specific reference text and the return to the research chooser.
+checked scenario-specific reference text and the return to the research chooser.
+#378 merged at `e006ded` after independent AGREE at `2819f1c`; the merged
+tree matches exactly. Owner acceptance on both clients remains open.
 See `docs/ui/reports-milestone.md` for scope and acceptance.
+
+The owner clarified the next observer target as watching from a chosen
+civilization's normal player view while AI plays that seat. The
+`desktop-seat-observer` branch adds desktop pacing, pause and single-step
+through validated player commands. See `docs/browser-observer.md`.
 
 ### Current work (2026-11-21)
 

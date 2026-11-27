@@ -40,7 +40,8 @@ confirm U04. The right column comes from Civilization II, not Test of Time.
    2026-11-27 over keeping Layout B's right column. It has a menu bar, then
    three stone-textured panels across the top: the status panel, the info
    panel and the circular overview. The full-width map sits below them.
-   Layout B's right column is reclassified as provisional.
+   Layout B's right column is reclassified as provisional. Delivery:
+   [#439](https://github.com/diegoami/totengine/issues/439).
 3. **Layout B's opt-in conveniences remain**, as Settings options that are off
    by default. They are the order strip, message dock, tooltips, path preview,
    sorting and goal estimates. With every option off, the client should look

@@ -10,6 +10,23 @@ pub(super) struct StagedRound {
 
 impl HumanSession {
     pub(super) fn run_staged_city_pass(&mut self, civ: u8) {
+        // The witnessed per-civ turn start (import-turn-start-refresh.json):
+        // civ 2's turn-50 pass begins with the native turn start clearing the
+        // done flag of the pass's own live unit records. Scoped to the naval
+        // allocation route's witnessed boundary.
+        if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+            && civ == 2
+            && self.game.world.turn == 50
+        {
+            if let Some(saved) = self.saved_move_state.as_mut() {
+                for unit in &mut saved.units {
+                    let id = u32::from_le_bytes(unit.raw[30..34].try_into().unwrap());
+                    if 0 < id && id < 0x8000_0000 && unit.raw[9] == 2 {
+                        unit.raw[6] &= !0x40;
+                    }
+                }
+            }
+        }
         let human = civ == self.human;
         let keep_view = self.saved_move_state.is_some()
             && (!human || self.knowledge_recipe.checked_replay())
@@ -1564,10 +1581,14 @@ staged-round-test
 
     /// The end-turn-only alternate route from the canonical entry replays
     /// civ 2's witnessed turn-49 exchange approach and its zone refusal with
-    /// the human's saved view intact, and stops at the designed turn-50
-    /// keep_view boundary. Mirrors the recorded native witness for slot 3:
-    /// the eastward approach writes spent 3 and direction 1, the refusal
-    /// changes only the refusal byte.
+    /// the human's saved view intact, then — after the witnessed movement
+    /// refresh at the turn-49 -> 50 boundary — civ 2's whole turn-50 pass:
+    /// the founding, the westward hop, and the southward refusal staged from
+    /// the refreshed state with its owner-byte claim. Mirrors the recorded
+    /// native witnesses: the eastward approach writes spent 3 and direction
+    /// 1, the refusal changes only the refusal byte, and the refreshed
+    /// turn-50 refusal writes the done flag and the counter while claiming
+    /// the origin tile for civ 2.
     #[test]
     fn installed_turn49_exchange_approach_writes_the_witnessed_direction() {
         let Some((snapshot, rules, events)) = installed_original() else {
@@ -1683,17 +1704,15 @@ staged-round-test
         .unwrap();
         assert_eq!(replay.checkpoint(deps), refused);
         assert_eq!(replay.view(), session.view());
-        // The human's turn-49 end replays civs 5-7, the annual, and the
-        // turn-50 passes up to civ 2's unit-3 orders. The staged founding
-        // creates city 11 inside the view and the knowledge survives it;
-        // unit 3's recorded southward order then cannot stage because the
-        // engine's zone-of-control kernel relocates the mover while the
-        // measured native refusal only writes the done flag and claims
-        // the origin tile owner byte
-        // (import-opponent-trade-contact.json), so the knowledge drops
-        // and the human enters turn 50 with the refreshed view.
+        // The human's turn-49 end replays civs 5-7, the annual (with the
+        // witnessed movement refresh), and civ 2's whole turn-50 pass: the
+        // witnessed turn-start flag clears, the staged founding (city 11,
+        // knowledge retained), the recorded westward hop to (42, 36), and
+        // the re-admitted zone case staging unit 3's southward refusal
+        // with its owner-byte claim (import-turn-start-refresh.json).
         submit(&mut session, Command::EndTurn);
         let mut founded = false;
+        let mut refused50 = false;
         for _ in 0..2000 {
             if session.view().phase == Phase::Human {
                 break;
@@ -1714,13 +1733,49 @@ staged-round-test
                 assert_eq!(replay.checkpoint(deps), founded_cp);
                 assert_eq!(replay.view(), session.view());
             }
+            if founded && !refused50 {
+                let Some(saved) = session.saved_move_state.as_ref() else {
+                    continue;
+                };
+                let mover = &saved.units[3];
+                if (mover.x(), mover.y()) == (42, 36)
+                    && mover.raw[16] == 1
+                    && mover.raw[6] & 0x40 != 0
+                {
+                    // The staged turn-50 refusal: the witnessed writes are the
+                    // done flag and the counter bump from the refreshed state
+                    // (spent stays 0); the origin tile owner claim changes no
+                    // knowledge row, so the saved view keeps all 59 tiles.
+                    assert_eq!(mover.moves_spent(), 0);
+                    assert_eq!(tiles(&session), 59);
+                    // The origin tile (42,36) is record 1461; its +5 byte is
+                    // civ 2's claim (owner nibble 2, fertility 6) — a no-op
+                    // in this route (the staged turn-49 hop already claimed
+                    // it), pinned so it cannot silently move.
+                    assert_eq!(session.game.world.map.owner[1461], 2);
+                    assert_eq!(saved.maps[0].tile_fields[8771], 38);
+                    refused50 = true;
+                    let refused_cp = session.checkpoint(deps);
+                    let replay = HumanSession::restore_with(
+                        rules.clone(),
+                        deps,
+                        &refused_cp,
+                        Some((&snapshot, Some(events.clone()))),
+                    )
+                    .unwrap();
+                    assert_eq!(replay.checkpoint(deps), refused_cp);
+                    assert_eq!(replay.view(), session.view());
+                }
+            }
         }
-        assert!(founded);
+        assert!(founded && refused50);
         let boundary = session.view();
         assert_eq!(boundary.phase, Phase::Human);
         assert_eq!(boundary.observation.turn, 50);
-        assert_eq!(tiles(&session), 60);
-        assert!(session.saved_move_state.is_none());
+        // The staged refusal keeps the saved view: all 59 tiles and the
+        // saved records survive civ 2's whole turn-50 pass.
+        assert_eq!(tiles(&session), 59);
+        assert!(session.saved_move_state.is_some());
     }
 
     #[test]

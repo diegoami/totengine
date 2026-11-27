@@ -320,6 +320,7 @@ pub(crate) fn stage(
         (46, 5, 10, (39, 35), (38, 34), 0xd9f16a1a) => Some(((2, 3, 5, 4), (3, 2, 16, 39, 33))),
         (47, 2, 3, (39, 33), (38, 34), 0x3b0ca297) => Some(((16, 6, 9, 4), (10, 5, 2, 39, 35))),
         (49, 2, 3, (41, 35), (41, 37), 0x135a6199) => Some(((16, 3, 2, 5), (10, 5, 2, 42, 36))),
+        (50, 2, 3, (42, 36), (42, 38), 0xb404d22d) => Some(((16, 3, 1, 5), (34, 5, 3, 43, 37))),
         _ => None,
     };
     if matches!(
@@ -350,6 +351,22 @@ pub(crate) fn stage(
     {
         let mut refused = saved.clone();
         let raw = &mut refused.units[slot].raw;
+        // The witnessed refusal writes [[6, 0, 64], [16, 0, 1]] and the
+        // native origin-tile owner transition 86 -> 38 at record 1461
+        // (import-turn-start-refresh.json, measured from the probe's
+        // substituted tile input). In this route both owner writes are
+        // currently no-ops: the engine's staged turn-49 hop (41,35) ->
+        // (42,36) runs the generic move path, whose destination owner
+        // claim is itself an unwitnessed staged reconstruction (the
+        // native's turn-49 trade measurement claims record 1420 at hop
+        // time and leaves 1461 at owner 5 for the turn-50 refusal to
+        // claim). The observable outcome matches: the tile ends owned by
+        // civ 2 either way. The flag write is load-bearing: the turn-start
+        // refresh cleared it, so the refusal sets it here.
+        raw[6] |= 0x40;
+        world.map.owner[from] = civ;
+        refused.maps[0].tile_fields[6 * from + 5] =
+            (civ << 4) | (refused.maps[0].tile_fields[6 * from + 5] & 0x0F);
         // The twentieth native refusal resets this byte and exhausts the mover.
         if raw[16] == 19 {
             raw[16] = 0;

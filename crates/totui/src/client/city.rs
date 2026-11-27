@@ -197,9 +197,9 @@ impl Client {
                         _ => "Unused",
                     };
                     add(
-                        90. + (i % 6) as f64 * 84.,
+                        84. + (i % 6) as f64 * 90.,
                         708. + (i / 6) as f64 * 22.,
-                        80.,
+                        88.,
                         20.,
                         &format!("{}: {name}", i + 1),
                         Action::Specialist(city, i as u8),

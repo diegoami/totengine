@@ -479,7 +479,7 @@ impl Client {
         if pages > 1 {
             draws.push(text(
                 x,
-                py + 288.,
+                py + 334.,
                 &format!("List {} / {pages}", page + 1),
                 style::TYPE_SMALL,
                 style::TEXT_DIM,

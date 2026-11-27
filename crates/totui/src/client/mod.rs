@@ -3182,6 +3182,10 @@ impl Client {
             } else if matches!(b.action, Action::ReportSort(_)) {
                 // Column headers match the table cells beneath them.
                 style::TYPE_SMALL
+            } else if matches!(b.action, Action::Specialist(..)) {
+                // The citizen strip's role keys are narrow: the fine step
+                // keeps the whole role name inside its key.
+                style::TYPE_FINE
             } else {
                 row_size(b.y)
             };

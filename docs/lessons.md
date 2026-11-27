@@ -292,11 +292,13 @@ names. Two rules follow for this repo:
   evidence index) must be listed there with its role, not merely exist
   in the tree.
 - **State the hierarchy when wiring.** A player-facing guide describes
-  shipped behavior; it is not the UI spec. `AGENTS.md`'s entry for
-  `docs/manual.md` names the order explicitly: original observation,
-  then `docs/ui/screen-contracts.md`, then the guide — so a later
-  session cannot mistake the description for the spec and implement to
-  match itself.
+  shipped behavior; it is not the UI spec. The order of authority lives
+  in `docs/decisions/0009-client-design-direction.md` (owner decisions,
+  then the original game, then owner-chosen designs for gaps, then the
+  screen contracts for engine boundaries only, with the v0.11 prototype
+  and shipped chrome historical), and `AGENTS.md` points there — so a
+  later session cannot mistake the description for the spec and
+  implement to match itself.
 - **A user guide needs real screenshots, captured and linked in the
   same change.** The guide's first draft described behavior without a
   single image of the running client — to a new player the look and
@@ -325,3 +327,21 @@ names. Two rules follow for this repo:
   captioned as the current implementation. Without that framing the
   guide quietly redefines the target as whatever the engine happens to
   render today.
+- **A provisional design hardens unless it is labeled provisional where
+  sessions read it.** The v0.11 prototype was accepted only "as a
+  prototype", but `AGENTS.md` told sessions to use it as "the planning
+  basis without asking for prototype acceptance again", and every
+  delivery doc cited it as accepted. Later sessions treated its chrome as
+  a decision and resisted changing it; the owner had meant it as a
+  provisional client to get started (2026-11-27, decision 0009). Record
+  the status (provisional, target, historical) on the document itself
+  and in the orientation file, not only in the conversation where the
+  owner said it.
+- **Draw "like the original" designs from the original, with the
+  reference open.** The Layout B canvas (2026-11-17) was drawn without
+  original screenshots and labeled its right column "like the
+  original"; Test of Time actually has a top band, which the reference
+  inventory had recorded since v0.11 (discovery U04). The owner chose a
+  frame on a false premise, and two client milestones were built on it.
+  A design claim about the original must cite the screenshot or capture
+  it was drawn from.

@@ -27,7 +27,10 @@ availability nor similar rules prove that another engine can run our scenarios.
    first-class programs. Build useful bounded slices with existing policies;
    they do not depend on external AI transport or a complete native-AI port.
 3. Retain ToT's full interface/controls as the compatibility baseline and the
-   existing accepted prototype/contracts as the planning basis. Review proposed
+   existing accepted prototype/contracts as the planning basis. *(Amended
+   2026-11-27 by [decision 0009](0009-client-design-direction.md): the
+   prototype was provisional; the original game is the look-and-layout target,
+   and the contracts bind engine/session boundaries, not visual layout.)* Review proposed
    additions against reference behavior. City production queues, rally points
    and alternative UI settings are explicit optional scope, not deferred
    automatically until all other work is complete.

@@ -77,7 +77,9 @@ no scripts/game and admits no runtime continuation. See
 | [Mission](docs/mission.md) | Product targets, compatibility, resources and reuse boundaries |
 | [Delivery plan](docs/plan.md) | Workstreams, dependencies, sequencing and acceptance |
 | [Backlog](BACKLOG.md) | Map to live GitHub programs and story/release conventions |
-| [Client packages](docs/ui/client-milestones.md) | Both-client delivery, original UI contracts and human acceptance |
+| [Client design direction](docs/decisions/0009-client-design-direction.md) | **Start here for any client UI work:** the original game is the design target; what is binding and what was provisional |
+| [Client packages](docs/ui/client-milestones.md) | Both-client delivery packages and human acceptance (historical v0.11 planning) |
+| [User guide](docs/manual.md) | Player guide, with the original game's screens as the look-and-feel reference |
 | [Headless campaigns](docs/generated-campaign.md) | Seeded fresh games, AI autoplay and deterministic checkpoints |
 | [Browser observer](docs/browser-observer.md) | Live/replay usage, fog modes and stream semantics |
 | [Evidence](docs/evidence/README.md) | Measured format/mechanics findings and reproducible checks |

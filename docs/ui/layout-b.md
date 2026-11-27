@@ -1,5 +1,14 @@
 # Layout B: classic frame with optional panels
 
+> **Amended 2026-11-27 by [decision 0009](../decisions/0009-client-design-direction.md).**
+> The right-column frame below is provisional: the canvas assumed a "right
+> column like the original", but Test of Time's frame is a top band (status
+> panel, info panel, circular overview) over a full-width map — see
+> [discovery U04](discovery.md) and the
+> [original screenshots](../manual.md#the-look-and-feel-the-original-game).
+> The owner chose the original frame as the target. The opt-in panels in the
+> Optional column, off by default, and the wide-screen side column remain.
+
 Owner decision, 2026-11-17: of the three layout options on the design canvas
 (A classic, B classic plus optional panels, C full-window map), the owner chose
 **B** ("go with B"). It refines decision A+B from #266: the original-faithful

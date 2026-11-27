@@ -37,7 +37,9 @@ event work. An adopted AI or client cannot compensate for absent ToT mechanics.
 2. Milestone 16, science/rates/government on both clients (#194–#196), is
    released as v0.18.0 after first-round independent AGREE #244; its stories stay open until
    the owner accepts the routes on both clients ([readiness](docs/v0.18.0-readiness.md);
-   from [client milestones](docs/ui/client-milestones.md)). Original-save/scenario entry remains a
+   from [client milestones](docs/ui/client-milestones.md); client look and layout follow
+   [decision 0009](docs/decisions/0009-client-design-direction.md): the original game is the
+   target, earlier chrome was provisional). Original-save/scenario entry remains a
    separate package with its conditional import gates. Complete remaining original
    features in further
    coherent slices, not a single optimistic full-client milestone.

@@ -236,6 +236,7 @@ try {
     [void](Wait-Scene {param($s) $s.entry -and $s.entry.value -eq 'athena'})
     Send-Key 13
     [void](Wait-Scene {param($s) $s.status -eq 'founded 0'})
+    Open-City
     Focus-Button 'Choose production'
     for($n=0;$n -lt 80;$n++) {
         Send-Key 40
@@ -244,6 +245,7 @@ try {
     }
     Send-Key 13
     [void](Wait-Scene {param($s) $s.status -eq 'prod-set'})
+    Send-Key 27
     Send-Chord 83;Save-Dialog 'normal'
     for($round=0;$round -lt 10;$round++) {
         Research
@@ -261,13 +263,14 @@ try {
     function Load-Slot([string]$Name) { Send-Chord 76; Save-Dialog $Name }
     Load-Slot 'research';Research;Send-Text 'b';Focus-Button 'Save pending choice';Save-Dialog 'researchnext'
     Send-Key 27;Load-Slot 'founding';Send-Text 'athena';Send-Key 13
+    Open-City
     Focus-Button 'Choose production'
     for($n=0;$n -lt 80;$n++) {
         Send-Key 40
         $s=Read-Scene
         if(@($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith([string][char]0x25cf) -and $_.text.Contains($unitChoice)}).Count -gt 0){break}
     }
-    Send-Key 13;Send-Chord 83;Save-Dialog 'foundingnext'
+    Send-Key 13;Send-Key 27;Send-Chord 83;Save-Dialog 'foundingnext'
     Load-Slot 'normal';Send-Chord 78
     if(Has-Text (Read-Scene) 'End your turn with movable units?'){Send-Key 13}
     [void](Wait-Scene {param($s) $s.phase -eq 'Human' -and @($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith('Turn 2 ')}).Count -gt 0})

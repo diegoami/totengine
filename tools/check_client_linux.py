@@ -144,11 +144,13 @@ def run():
                 def click_at(xpos,ypos,clicks=1):
                     old=scene()["revision"]
                     attr=Attributes();get_attributes(display,window,c.byref(attr))
-                    # SDL uses a centered logical 1024x768 viewport on resize.
-                    scale=min(attr.width/1024,attr.height/768)
+                    # SDL scales the logical stage (1024 wide at 4:3, wider up
+                    # to 1792 on a wide window) and centres it (#321/#337).
+                    logical=min(1792,max(1024,int(attr.width*768/attr.height)))
+                    scale=min(attr.width/logical,attr.height/768)
                     xx=c.c_int();yy=c.c_int();child=ul()
                     translate(display,window,root,0,0,c.byref(xx),c.byref(yy),c.byref(child))
-                    motion(display,-1,xx.value+int((attr.width-1024*scale)/2+xpos*scale),yy.value+int((attr.height-768*scale)/2+ypos*scale),0)
+                    motion(display,-1,xx.value+int((attr.width-logical*scale)/2+xpos*scale),yy.value+int((attr.height-768*scale)/2+ypos*scale),0)
                     for n in range(clicks):
                         mouse(display,1,1,0);mouse(display,1,0,0);sync(display,0)
                         if n+1<clicks:time.sleep(.07)
@@ -166,6 +168,13 @@ def run():
                     if city is None:key("c");city=city_now()
                     if city is None:raise RuntimeError("no own city sprite to open")
                     click_at(city["x"]+city["w"]/2,city["y"]+city["h"]*.6,2)
+                    for _ in range(60):
+                        if has(scene(),"Currently producing:"):return
+                        time.sleep(.03)
+                    s=scene()
+                    raise RuntimeError("city did not open; city=%s status=%s texts=%s"%(
+                        city,s.get("status"),
+                        " | ".join(d.get("text","") for d in s["draws"] if d.get("kind")=="text" and d.get("y",0)<220)))
                 def research():
                     if has(scene(),"Choose research"):
                         key("Down");key("Return");wait(lambda s:s["status"]=="research-set")
@@ -193,11 +202,14 @@ def run():
                 key("Escape")
                 key("b");wait(lambda s:has(s,"Name your city"));button("Save pending choice");save_dialog("founding")
                 wait(lambda s:has(s,"Name your city"));write("athenx");key("BackSpace");key("a");key("Return");wait(lambda s:s["status"]=="founded 0")
-                button("Choose production")
+                # #439: the map has no city buttons; open the city tile.
+                open_city();button("Choose production")
                 for _ in range(80):
                     key("Down")
                     if any(d.get("text","").startswith("●") and unit_choice in d["text"] for d in scene()["draws"]):break
-                key("Return");wait(lambda s:s["status"]=="prod-set");key("Ctrl+s");save_dialog("normal")
+                key("Return");wait(lambda s:s["status"]=="prod-set")
+                # End the captured production budget before saving on the map.
+                key("Escape");key("Ctrl+s");save_dialog("normal")
                 for _ in range(10):
                     research();turn=turn_of(scene())
                     key("Ctrl+n")
@@ -208,11 +220,11 @@ def run():
                     key("Ctrl+l");save_dialog(name)
                 load("research");research();key("b");button("Save pending choice");save_dialog("researchnext")
                 key("Escape");load("founding");write("athena");key("Return")
-                button("Choose production")
+                open_city();button("Choose production")
                 for _ in range(80):
                     key("Down")
                     if any(d.get("text","").startswith("●") and unit_choice in d["text"] for d in scene()["draws"]):break
-                key("Return");key("Ctrl+s");save_dialog("foundingnext")
+                key("Return");key("Escape");key("Ctrl+s");save_dialog("foundingnext")
                 load("normal");key("Ctrl+n")
                 if has(scene(),"End your turn with movable units?"):key("Return")
                 wait(lambda s:s["phase"]=="Human" and turn_of(s)==2)

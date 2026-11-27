@@ -8,6 +8,14 @@ floating city window. Owner acceptance on both clients is still open.
 - `docs/manual/screenshots/original/map.png` (1024×768): the frame this slice
   targets. The user guide's reference section is the owner's scoped exception
   for original screenshots; no original art is committed.
+- `docs/manual/screenshots/original/moving-units.png` (1024×742): the Moving
+  Units branch with a selected unit, captured 2026-11-27 from the original
+  ToTPP build. Recipe: launch `civ2.exe` on a private Xvfb, choose
+  `Load a Saved Game`, double-click `Original/Ph_Auto2.SAV`, accept the
+  difficulty plate, then resize the world window to 1024×768 (no in-world
+  input is needed). The panel shows a unit icon, `Moves: 1`, the order
+  `NONE`, the nationality `Spanish` and `Archers (Hills)`; `Loc:` is absent
+  while Moving Units.
 - [Discovery U04](discovery.md): "Menu strip; empire figures upper left,
   selected-unit details and mode across top, overview upper right, diamond map
   below."
@@ -125,10 +133,13 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   arrows switch planes; the client has one surface plane, so `Loc:` omits the
   number. The arrows scroll the map horizontally; that behavior is inferred,
   not measured from the reference.
-- **Selected-unit details**: the original's documented layout ("selected-unit
-  details and mode across top") places more detail in the info panel than the
-  current unit name, moves and health lines. The full branch needs a reference
-  capture with a selected unit.
+- **Selected-unit details**: the capture above shows the original's Moving
+  Units panel: a unit icon, `Moves: N`, the unit's current order (`NONE`), its
+  nationality (`Spanish`) and `Archers (Hills)`; `Loc:` is not drawn in this
+  mode. The client shows the active unit's name, moves and health and keeps
+  `Loc:` in both modes; the order and nationality branch is the next slice
+  (it needs two filtered view fields — an engine/human change, not
+  presentation-only). This stays a documented departure until that lands.
 - **Panel textures**: the band uses the install's `City.gif` stone centred on
   the capture's measured tone; the exact source tile and native tiling are not
   identified, so the speckle pattern is not necessarily the same pixels.
@@ -139,8 +150,9 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
 
 ## Verification in this slice
 
-- `cargo test -p totui`: 87 passed, 12 ignored (install-backed), including the
-  menu/band route test, the city-window panels and the real-input route tests.
+- `cargo test -p totui`: 88 passed, 12 ignored (install-backed), including the
+  menu/band route test, the city-surface boundary, the city-window panels and
+  the real-input route tests.
 - The desktop client rendered the band, the research dialog and the serif TTF
   path under Xvfb. Manual XTest clicks first missed because SDL centres its
   1024×768 window on a larger display and the absolute coordinates ignored
@@ -148,7 +160,9 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   (load a checkpoint, double-click the city tile, inspect the panels, choose
   production) was driven and captured on the desktop client too. The Linux
   real-input check computes the window offset itself and drives the same route
-  on its own Xvfb without a window manager.
+  on its own Xvfb without a window manager. It passes at 1400×1000 including
+  the generated population-five fixture (specialist cycling, auto-workers,
+  resume and navigation with byte-identical checkpoints).
 - The retained packaged-client fixtures are version-bound; the panel/selection
   scripts were updated to the new route and text but were not rerun here (the
   retained v0.15 checkpoints do not load in this engine version).
@@ -175,7 +189,10 @@ Map screen:
 - [x] opt-ins preserved and re-placed; wide-screen message column at the right;
 - [ ] `Cheat` and `Map` menu entries (the client has no commands for them);
 - [ ] the original's bitmap font (serif system face approximated);
-- [ ] the selected-unit info branch from a reference capture;
+- [x] selected-unit reference capture (`moving-units.png`), content recorded
+      above;
+- [ ] the Moving Units branch itself (unit icon, order, nationality, `Loc:`
+      hidden) — needs order/nationality fields in the human view;
 - [ ] `Loc:` plane number and the arrows' measured behavior.
 
 City window:

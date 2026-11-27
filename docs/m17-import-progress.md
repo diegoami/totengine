@@ -617,10 +617,14 @@ spends its 3 thirds, sets the done flag and direction, and raises the order
 observation; the annual's spent/counter reset is the enabler, not the
 turn-start flag clear (annual-only and manually cleared-flag cases match).
 The turn-49 refusal class does not apply after the refresh, so the engine's
-plain-move resolution is consistent with the native movement; the saved-view
-drop is the projection boundary, not a movement divergence. Scope: the staged
-snapshot is the engine's construction and civs 2-4's turn-50 passes are not
-witnessed. Nothing is staged by this measurement.
+plain-move resolution matches the native movement; the saved-view drop is the
+projection boundary, not a movement divergence. The route test now pins the
+engine side too: after the human ends turn 50 it steps three times, logs
+`T 50 C 5 move 10 44 38 = moved` then `T 50 C 5 move 19 44 42 = moved`, and
+leaves slot 19 at (44,42) with no moves left — the same endpoint and 3-thirds
+cost the native witness measured. Scope: the staged snapshot is the engine's
+construction and civs 2-4's turn-50 passes are not witnessed. Nothing is
+staged by this measurement.
 
 Reproduction: drive the session as
 `installed_turn49_exchange_approach_writes_the_witnessed_direction`

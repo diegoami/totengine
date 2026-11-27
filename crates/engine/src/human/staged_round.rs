@@ -1776,6 +1776,40 @@ staged-round-test
         // saved records survive civ 2's whole turn-50 pass.
         assert_eq!(tiles(&session), 59);
         assert!(session.saved_move_state.is_some());
+
+        // Turn-50 continuation: end the turn and step until the saved-view
+        // projection falls back. The witnessed native order from the refreshed
+        // state moves slot 19 from (44,40) to (44,42) and spends its 3 thirds
+        // (import-turn50-civ5.json); pin the same engine outcome and the two
+        // recorded orders here.
+        session
+            .submit(Request {
+                civ: 4,
+                revision: session.view().revision,
+                id: 300,
+                command: Command::EndTurn,
+            })
+            .unwrap();
+        let mut new_log = String::new();
+        let mut steps = 0;
+        while session.saved_move_state.is_some() {
+            let before = session.game.log().len();
+            assert_eq!(session.advance(1), 1);
+            new_log.push_str(&session.game.log()[before..]);
+            steps += 1;
+            assert!(steps < 500, "the fallback did not arrive");
+        }
+        assert_eq!(steps, 3);
+        assert_eq!(
+            new_log,
+            "T 50 C 5 move 10 44 38 = moved\nT 50 C 5 move 19 44 42 = moved\n"
+        );
+        let unit = &session.game.world.units[19];
+        assert_eq!(
+            (unit.type_id, unit.owner, unit.x, unit.y, unit.moves_left),
+            (2, 5, 44, 42, 0),
+            "civ 5's slot 19 moves into its own city and spends its 3 thirds"
+        );
     }
 
     #[test]

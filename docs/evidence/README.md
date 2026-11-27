@@ -5801,8 +5801,11 @@ reruns.
   movement, so the enabler is the annual's spent/counter reset, not the
   turn-start flag clear.
 - **Consequence.** The refusal class measured on turn 49 does not carry over
-  after the annual reset. The engine's plain-move resolution of this order is
-  consistent with the native movement; the saved-view fallback is the
-  projection boundary, not a movement divergence. Scope: the staged snapshot
-  is the engine's construction, the native state after civs 2-4's turn-50
-  passes is not witnessed, and nothing is staged by this measurement.
+  after the annual reset. The engine's plain-move resolution of this order
+  matches the native movement: the staged route test now steps three times
+  after the human ends turn 50, logs the two recorded orders and pins slot 19
+  at (44,42) with no moves left — the same endpoint and 3-thirds cost measured
+  here. The saved-view fallback is the projection boundary, not a movement
+  divergence. Scope: the staged snapshot is the engine's construction, the
+  native state after civs 2-4's turn-50 passes is not witnessed, and nothing
+  is staged by this measurement.

@@ -351,12 +351,18 @@ pub(crate) fn stage(
     {
         let mut refused = saved.clone();
         let raw = &mut refused.units[slot].raw;
-        // The witnessed refusal marks the unit done and claims the origin
-        // tile for the moving civ (import-turn-start-refresh.json: the
-        // refreshed turn-50 measurement writes [[6, 0, 64], [16, 0, 1]] and
-        // the origin owner byte 86 -> 38 with fertility kept; the earlier
-        // zone refusals saw the same writes with the flag already set and
-        // the tile already own-civ, so both writes are no-ops there).
+        // The witnessed refusal writes [[6, 0, 64], [16, 0, 1]] and the
+        // native origin-tile owner transition 86 -> 38 at record 1461
+        // (import-turn-start-refresh.json, measured from the probe's
+        // substituted tile input). In this route both owner writes are
+        // currently no-ops: the engine's staged turn-49 hop (41,35) ->
+        // (42,36) runs the generic move path, whose destination owner
+        // claim is itself an unwitnessed staged reconstruction (the
+        // native's turn-49 trade measurement claims record 1420 at hop
+        // time and leaves 1461 at owner 5 for the turn-50 refusal to
+        // claim). The observable outcome matches: the tile ends owned by
+        // civ 2 either way. The flag write is load-bearing: the turn-start
+        // refresh cleared it, so the refusal sets it here.
         raw[6] |= 0x40;
         world.map.owner[from] = civ;
         refused.maps[0].tile_fields[6 * from + 5] =

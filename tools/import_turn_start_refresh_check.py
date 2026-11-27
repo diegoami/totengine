@@ -10,8 +10,11 @@ writes into the records with the writing PC, whether the map, viewer caches
 and CRT move, and therefore the runtime movement state that civ 2's unit-3
 orders execute from. The recorded southward order is then measured again from
 the refreshed state, because the published measurement used the staged
-snapshot's stale end-of-49 exhaustion record. Every diff is computed from the
-run.
+snapshot's stale end-of-49 exhaustion record. Bound: the record scan covers
+the snapshot's 38 slots - the witnessed state's array - so units created after
+the snapshot (the engine's slots 38/39 by turn 50) are outside the witness;
+their flag bytes are already clear in the engine, making the staged clear a
+no-op there. Every diff is computed from the run.
 """
 import argparse
 import json

@@ -1748,6 +1748,12 @@ staged-round-test
                     // knowledge row, so the saved view keeps all 59 tiles.
                     assert_eq!(mover.moves_spent(), 0);
                     assert_eq!(tiles(&session), 59);
+                    // The origin tile (42,36) is record 1461; its +5 byte is
+                    // civ 2's claim (owner nibble 2, fertility 6) — a no-op
+                    // in this route (the staged turn-49 hop already claimed
+                    // it), pinned so it cannot silently move.
+                    assert_eq!(session.game.world.map.owner[1461], 2);
+                    assert_eq!(saved.maps[0].tile_fields[8771], 38);
                     refused50 = true;
                     let refused_cp = session.checkpoint(deps);
                     let replay = HumanSession::restore_with(

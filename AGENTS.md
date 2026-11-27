@@ -70,6 +70,16 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
   reference-only (no code copying). MIT vendors keep their notices.
 - The checkout dir may be named `civtotre` while the remote is `totengine`;
   pass explicit working directories.
+- **Durable state lives in the repo, never in an agent's private memory.**
+  Sessions here run different agents (Claude, Codex and others), so
+  anything a later session needs — decisions, direction, current work,
+  lessons, owner preferences — goes into `AGENTS.md`, `docs/` or GitHub
+  issues/PRs, not a tool-specific memory store (owner, 2026-11-27).
+- Any review prompt written for the owner to launch (PR or milestone)
+  tells the reviewer to **post** the verdict and findings on GitHub
+  (`gh pr review --comment` / `gh issue comment`), printing the full text
+  if posting fails; findings stranded in a reviewer session are lost
+  (owner, 2026-11-09; milestone template: `docs/milestone-review.md`).
 - **Client design: the original game is the target** — read
   `docs/decisions/0009-client-design-direction.md` before any UI work. The
   v0.11 prototype/design proposal and the shipped chrome (including Layout

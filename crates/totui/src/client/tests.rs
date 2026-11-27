@@ -571,6 +571,30 @@ pub(super) fn founding(c: &mut Client) {
 }
 
 #[test]
+fn dialog_buttons_inside_the_band_range_stay_drawn() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    button(&mut c, "Start game");
+    assert!(matches!(c.modal, Some(Modal::Research)), "{}", c.status);
+    // "Save pending choice" sits at y=120, inside the band's y range. The
+    // band's own-key skip must not apply to a dialog, or the button is
+    // invisible and the label-driven routes cannot find it.
+    let save = c
+        .buttons()
+        .into_iter()
+        .find(|b| b.label == "Save pending choice")
+        .expect("the research dialog offers a pending-choice save");
+    assert!(
+        save.y >= chrome::MENU_H && save.y < chrome::MENU_H + chrome::BAND_H,
+        "the test button must sit inside the band range"
+    );
+    assert!(c.frame().draws.iter().any(|d| matches!(
+        d,
+        Draw::Text { text, .. } if text == "Save pending choice"
+    )));
+}
+
+#[test]
 fn shared_ui_plays_ten_rounds_and_resumes_required_choices() {
     let f = Fixture::new();
     let mut c = f.client();

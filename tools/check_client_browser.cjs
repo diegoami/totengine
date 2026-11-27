@@ -106,6 +106,8 @@ fs.mkdirSync(out,{recursive:true});
   if((await state()).phase!==setupPhase)throw Error('cancelled preflight changed setup');
  }
  await idle();await click('Generated seed');await fill('7');await click(startLabel);
+ // The required-choice dialog opens asynchronously after the start click.
+ await page.waitForFunction(()=>frame.draws.some(d=>d.kind==='text'&&d.text==='Save pending choice'),{timeout:30000});
  await click('Save pending choice');await save('research');await research();
  await key('F3');
  if(!has(await state(),'Known contacts')||!has(await state(),'No known contacts.'))throw Error('F3 contact panel missing');

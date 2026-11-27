@@ -3131,8 +3131,14 @@ impl Client {
             }
             // The band draws its own keys and prompts (decision 0009, #439):
             // generic button chrome would put provisional boxes over the
-            // original's frame.
-            if map_screen && b.y >= chrome::MENU_H && b.y < chrome::MENU_H + chrome::BAND_H {
+            // original's frame. Dialogs keep their own buttons: several sit
+            // inside the band's y range (Save pending choice, Civilopedia).
+            if map_screen
+                && self.modal.is_none()
+                && !self.city_open
+                && b.y >= chrome::MENU_H
+                && b.y < chrome::MENU_H + chrome::BAND_H
+            {
                 continue;
             }
             let primary = matches!(b.action, Action::QuickStart);

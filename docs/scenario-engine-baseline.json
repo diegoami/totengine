@@ -14,7 +14,7 @@
     "crates/engine/src/human/checkpoint.rs": "0535f1639abd19284ce828042399d169d4c4d6e39f4ba1df737f5b739408d368",
     "crates/engine/src/lib.rs": "8a2bb9704eb55b058fd15c745c59119b94e04bf1199fcf708ea60f64cbc03204",
     "crates/tot-kit/src/rules.rs": "4db8db7d4050bf8df961c8fc7a8dd22f32adf4b03016e2c6a17a9a254eeaef18",
-    "crates/totui/src/client/mod.rs": "ecf4e05561edf04558636366d5d1a278b93446210db7c966a93535305ca9b97a",
+    "crates/totui/src/client/mod.rs": "67b4e84f27e487bd62cbfb07862cb5826722f5aba4cb78eeff86fb33ef44150d",
     "crates/totui/src/resources.rs": "9209415b886285d8b330d2601c3d6f5a76a2456d487ad7e09f067b907b14c3f4",
     "crates/lua-host/src/lib.rs": "6b007b10ce03d7c0d713a45e53a8b89b89394a67b05873991ae23a41827cbbc8",
     "crates/engine/src/human/initializer.rs": "bb7bb0e8eb19b213c60a504001404871df87de409e12fb555d09ceafcc6d3b38",

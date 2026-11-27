@@ -137,7 +137,16 @@ def run():
                         rects=[(d["x"],d["y"],d["color"]) for d in s["draws"] if d.get("kind")=="rect"]
                         if (t["x"]-7,t["y"]-7,"#e8c85a") in rects and (t["x"]-6,t["y"]-6,"#6b7057") in rects:key("Return");return
                         key("Tab")
-                    raise RuntimeError("button could not focus: "+label)
+                    # Fine-type city keys centre their label, so the focus
+                    # chrome probe above does not find them; activate by
+                    # pointer, which is real input too.
+                    s=scene()
+                    t=next((d for d in s["draws"]
+                            if d.get("kind")=="text" and d.get("text")==label),None)
+                    if t is None:
+                        raise RuntimeError("missing button: "+label)
+                    click_at(t["x"]+3,t["y"]+4)
+                    return
                 motion=bind(xt,"XTestFakeMotionEvent",c.c_int,ptr,c.c_int,c.c_int,c.c_int,ul)
                 mouse=bind(xt,"XTestFakeButtonEvent",c.c_int,ptr,ui,c.c_int,ul)
                 translate=bind(x,"XTranslateCoordinates",c.c_int,ptr,ul,ul,c.c_int,c.c_int,c.POINTER(c.c_int),c.POINTER(c.c_int),c.POINTER(ul))

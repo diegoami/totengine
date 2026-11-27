@@ -1,0 +1,420 @@
+{
+  "schema": 1,
+  "source": {
+    "path": "Original/Ph_Auto2.SAV",
+    "sha256": "5a09001f4068503704ec7353092ea5cf1fbfa501240ace4b5779f98d47087eef"
+  },
+  "rules": {
+    "path": "Original/Rules.txt",
+    "sha256": "640ae61d6c6e871131a01647099983913e1a1bb98ce1e6503be5b9bc9da8adef"
+  },
+  "binary_sha256": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "refresh_evidence": "f9d20fc09287e96ca6ee95118294ebbc4db857cc9da672608d89d10bb1a1fd14",
+  "annual": {
+    "mover_raw_changes": [
+      [
+        10,
+        3,
+        0
+      ],
+      [
+        16,
+        1,
+        0
+      ]
+    ],
+    "draws": 1,
+    "crt_before": "b404d22d",
+    "crt_after": "a2731c3c"
+  },
+  "cases": [
+    {
+      "case": "turn-49 pre-order snapshot (no refresh)",
+      "turn_start": false,
+      "before": [
+        44,
+        0,
+        40,
+        0,
+        0,
+        0,
+        0,
+        1,
+        2,
+        5,
+        3,
+        0,
+        0,
+        255,
+        57,
+        0,
+        0,
+        2,
+        6,
+        0,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        27,
+        0,
+        0,
+        0,
+        2,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      "return": 0,
+      "mover_raw_changes": [
+        [
+          6,
+          0,
+          64
+        ],
+        [
+          16,
+          0,
+          1
+        ]
+      ],
+      "tile_changes": [],
+      "observation_calls": [],
+      "explored_tiles": 59
+    },
+    {
+      "case": "refreshed (annual + civ 5 turn start)",
+      "turn_start": true,
+      "annual_draws": 1,
+      "turn_start_draws": 0,
+      "turn_start_stopped_at": [
+        "007027e6"
+      ],
+      "turn_start_writes_on_slot": [
+        [
+          "00471d85",
+          19,
+          6,
+          2,
+          [
+            64,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ]
+      ],
+      "before": [
+        44,
+        0,
+        40,
+        0,
+        0,
+        0,
+        0,
+        1,
+        2,
+        5,
+        0,
+        0,
+        0,
+        255,
+        57,
+        0,
+        0,
+        2,
+        6,
+        0,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        27,
+        0,
+        0,
+        0,
+        2,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      "return": 1,
+      "mover_raw_changes": [
+        [
+          2,
+          40,
+          42
+        ],
+        [
+          6,
+          0,
+          64
+        ],
+        [
+          7,
+          1,
+          0
+        ],
+        [
+          10,
+          0,
+          3
+        ],
+        [
+          13,
+          255,
+          3
+        ]
+      ],
+      "tile_changes": [
+        [
+          9733,
+          1,
+          0
+        ],
+        [
+          10213,
+          2,
+          3
+        ]
+      ],
+      "cache_changes": [
+        [
+          5,
+          1622,
+          1,
+          0
+        ],
+        [
+          5,
+          1702,
+          2,
+          3
+        ]
+      ],
+      "crt_before": "a2731c3c",
+      "crt_after": "a2731c3c",
+      "observation_calls": [
+        [
+          19,
+          1
+        ]
+      ],
+      "explored_tiles": 59
+    },
+    {
+      "case": "annual only (done flag stays set)",
+      "turn_start": false,
+      "annual_draws": 1,
+      "turn_start_draws": 0,
+      "turn_start_stopped_at": [],
+      "turn_start_writes_on_slot": [],
+      "before": [
+        44,
+        0,
+        40,
+        0,
+        0,
+        0,
+        64,
+        1,
+        2,
+        5,
+        0,
+        0,
+        0,
+        255,
+        57,
+        0,
+        0,
+        2,
+        6,
+        0,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        27,
+        0,
+        0,
+        0,
+        2,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      "return": 1,
+      "mover_raw_changes": [
+        [
+          2,
+          40,
+          42
+        ],
+        [
+          7,
+          1,
+          0
+        ],
+        [
+          10,
+          0,
+          3
+        ],
+        [
+          13,
+          255,
+          3
+        ]
+      ],
+      "tile_changes": [
+        [
+          9733,
+          1,
+          0
+        ],
+        [
+          10213,
+          2,
+          3
+        ]
+      ],
+      "cache_changes": [],
+      "crt_before": "a2731c3c",
+      "crt_after": "a2731c3c",
+      "observation_calls": [
+        [
+          19,
+          1
+        ]
+      ],
+      "explored_tiles": 59
+    },
+    {
+      "case": "annual + cleared flag (no turn start)",
+      "turn_start": false,
+      "annual_draws": 1,
+      "turn_start_draws": 0,
+      "turn_start_stopped_at": [],
+      "turn_start_writes_on_slot": [],
+      "before": [
+        44,
+        0,
+        40,
+        0,
+        0,
+        0,
+        0,
+        1,
+        2,
+        5,
+        0,
+        0,
+        0,
+        255,
+        57,
+        0,
+        0,
+        2,
+        6,
+        0,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        255,
+        27,
+        0,
+        0,
+        0,
+        2,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      "return": 1,
+      "mover_raw_changes": [
+        [
+          2,
+          40,
+          42
+        ],
+        [
+          6,
+          0,
+          64
+        ],
+        [
+          7,
+          1,
+          0
+        ],
+        [
+          10,
+          0,
+          3
+        ],
+        [
+          13,
+          255,
+          3
+        ]
+      ],
+      "tile_changes": [
+        [
+          9733,
+          1,
+          0
+        ],
+        [
+          10213,
+          2,
+          3
+        ]
+      ],
+      "cache_changes": [],
+      "crt_before": "a2731c3c",
+      "crt_after": "a2731c3c",
+      "observation_calls": [
+        [
+          19,
+          1
+        ]
+      ],
+      "explored_tiles": 59
+    }
+  ],
+  "scope": "Measure civ 5's turn-50 order from the refreshed staged-snapshot state.\n\nThe handover boundary after the human's turn 50: civ 5's second recorded order\nis `move 19 -> (44,42)`, the fortified slot-19 type-2 unit at (44,40) stepping\nsouth into civ 5's own size-one city 9. On turn 49 native refused this same\norder (done flag 0->64, counter bump, no movement spent). This witness asks\nwhat native does from the state the engine's staged route presents at civ 5's\nturn-50 pass:\n\n- the staged snapshot's records/tiles (the published reconstruction),\n- slot 19 and city 9 at their recorded squares,\n- the measured annual round-close reset (spent and counter zeroed; the flag\n  word stored back unchanged),\n- the measured per-civ turn start for civ 5 (0x4725c8), stopped at its first\n  map write as the civ-2 witness does, and\n- the recorded southward order (native movement entry, direction 3).\n\nScope: the staged snapshot is the engine's construction, not a native\npre-order trajectory, and the turn-50 state after civs 2-4 is not witnessed\nhere. The result describes the native kernel from this refreshed state, which\nis the same bounded convention as the published civ-2 turn-50 measurement.\nEvery diff is computed from the run; byte-identical across reruns."
+}

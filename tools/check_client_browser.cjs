@@ -111,9 +111,14 @@ fs.mkdirSync(out,{recursive:true});
  if(!has(await state(),'Known contacts')||!has(await state(),'No known contacts.'))throw Error('F3 contact panel missing');
  await key('Escape');
  await key('b');await click('Save pending choice');await save('founding');await fill('athenx');await page.keyboard.press('Backspace');await page.keyboard.type('a');await page.waitForFunction(()=>frame.entry?.value==='athena'&&!busy);await key('Enter');
- await click('Choose production');
+ // Decision 0009 / #439: the city opens from its tile; the map screen has
+ // no city buttons, so choose production in the city window and close it.
+ await openCity();await click('Choose production');
  for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes(unitChoice)))break}
- await key('Enter');await key('Control+s');await save('normal');
+ await key('Enter');
+ // Close the city before saving: the captured production budget ends with
+ // the workspace, so the checkpoint is the map state the old route saved.
+ await key('Escape');await key('Control+s');await save('normal');
  await page.screenshot({path:out+'/browser-map.png'});
  for(let n=0;n<10;n++){
   await research();const turn=turnOf(await state());
@@ -127,10 +132,10 @@ fs.mkdirSync(out,{recursive:true});
  await resizeViewport(1024,768);
  async function load(name){await key('Control+l');await fill(name);await key('Enter')}
  await load('research');await research();await key('b');await click('Save pending choice');await save('researchnext');
- await loadPending('founding');await fill('athena');await key('Enter');
+ await loadPending('founding');await fill('athena');await key('Enter');await openCity();
  await click('Choose production');
  for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes(unitChoice)))break}
- await key('Enter');await key('Control+s');await save('foundingnext');
+ await key('Enter');await key('Escape');await key('Control+s');await save('foundingnext');
  await load('normal');await key('Control+n');if(has(await state(),'End your turn with movable units?'))await key('Enter');
  await page.waitForFunction(()=>frame.phase==='Human'&&frame.draws.some(d=>/(?:^| · )Turn 2(?:$| · )/.test(d.text)));await idle();
  await research();await key('Control+s');await save('normalnext');

@@ -227,7 +227,7 @@ fs.mkdirSync(out,{recursive:true});
   async function compare(name,expected){await key('Control+s');await save(name);if(!fs.readFileSync(path.join(saves,name+'.cth')).equals(fs.readFileSync(path.join(citizens,expected+'.cth'))))throw Error('citizen checkpoint differs '+name)}
   await load('mature');await openCity();
   if(!has(await state(),'Currently producing:'))throw Error('current production label missing');
-  if(!(await state()).draws.some(d=>d.text?.includes('population 5')))throw Error('mature city missing');
+  if(!(await state()).draws.some(d=>d.text==='Population 50,000'))throw Error('mature city missing');
   const x=500+[1,2,1,0,-1,-2,-1,0,2,2,-2,-2,1,3,3,1,-1,-3,-3,-1,0][meta.worker_tile]*45;
   const y=300+[-1,0,1,2,1,0,-1,-2,-2,2,2,-2,-3,-1,1,3,3,1,-1,-3,0][meta.worker_tile]*25;
   await page.mouse.click(x,y);await idle();await compare('cityentertainer','after-entertainer');
@@ -242,8 +242,8 @@ fs.mkdirSync(out,{recursive:true});
   await key('Escape');await openCity();
   if(process.env.TOTENGINE_NAVIGATION_FIXTURE){
    fs.copyFileSync(process.env.TOTENGINE_NAVIGATION_FIXTURE,path.join(saves,'navigation.cth'));await load('navigation');
-   const first=(await state()).draws.find(d=>d.text?.includes(' — population ')).text;
-   await key('PageDown');if((await state()).draws.find(d=>d.text?.includes(' — population ')).text===first)throw Error('city navigation did not change city');
+   const first=(await state()).draws.find(d=>d.size===20&&d.y===96).text;
+   await key('PageDown');if((await state()).draws.find(d=>d.size===20&&d.y===96).text===first)throw Error('city navigation did not change city');
    await key('PageUp');await key('Control+s');await save('citynavigation');
    if(!fs.readFileSync(path.join(saves,'citynavigation.cth')).equals(fs.readFileSync(process.env.TOTENGINE_NAVIGATION_FIXTURE)))throw Error('navigation mutated gameplay');
   }

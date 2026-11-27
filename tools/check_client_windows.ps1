@@ -300,9 +300,9 @@ try {
         if($env:TOTENGINE_NAVIGATION_FIXTURE) {
             Copy-Item $env:TOTENGINE_NAVIGATION_FIXTURE (Join-Path $env:TOTENGINE_SAVES 'navigation.cth')
             Load-Slot 'navigation'
-            $first=@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.text.Contains('population')})[0].text
+            $first=@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.size -eq 20 -and $_.y -eq 96})[0].text
             Send-Key 34
-            $next=@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.text.Contains('population')})[0].text
+            $next=@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.size -eq 20 -and $_.y -eq 96})[0].text
             if($first -eq $next){throw 'city navigation did not change city'}
             Send-Key 33;Send-Chord 83;Save-Dialog 'citynavigation'
             if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES 'citynavigation.cth')).Hash -ne (Get-FileHash $env:TOTENGINE_NAVIGATION_FIXTURE).Hash){throw 'city navigation changed gameplay'}
@@ -467,11 +467,11 @@ try {
     if(-not $MovementOnly -and -not $SelectionOnly -and $env:TOTENGINE_CITY_OPEN_FIXTURE) {
         Copy-Item $env:TOTENGINE_CITY_OPEN_FIXTURE (Join-Path $env:TOTENGINE_SAVES 'cityopen.cth')
         Load-Slot 'cityopen'
-        if(Has-Text (Read-Scene) 'Return to map [Esc]'){Send-Key 27}
+        if(Has-Text (Read-Scene) 'Close [Esc]'){Send-Key 27}
         $city=@((Read-Scene).draws | Where-Object {$_.kind -eq 'sprite' -and $_.sprite.StartsWith('city-')})[0]
         if(-not $city){throw 'city sprite absent'}
         [SpikeWindow]::DoubleClick($window,$app.Id,($city.x+$city.w/2),($city.y+$city.h*0.6))
-        [void](Wait-Scene {param($s) @($s.draws | Where-Object {$_.kind -eq 'text' -and $_.y -lt 66 -and $_.text.Contains(' — population ')}).Count -gt 0})
+        [void](Wait-Scene {param($s) @($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith('Population ')}).Count -gt 0})
         Send-Chord 83;Save-Dialog 'citydouble'
         if((Get-FileHash (Join-Path $env:TOTENGINE_SAVES 'citydouble.cth')).Hash -ne (Get-FileHash $env:TOTENGINE_CITY_OPEN_FIXTURE).Hash){throw 'double click changed gameplay'}
         Send-Key 27

@@ -2810,6 +2810,19 @@ impl Client {
         let view = self.view();
         if let Some(v) = &view {
             if self.city_open {
+                // Decision 0009 / #439: the original's city window floats
+                // over the map screen, not over an empty background.
+                draws.push(Draw::Tile {
+                    x: 0.,
+                    y: self.frame_top() - 4.,
+                    w: self.stage_w,
+                    h: 768. - self.frame_top() + 4.,
+                    sprite: "panel-mid".into(),
+                });
+                let (mx, my, mw, mh) = self.map_rect();
+                draws.push(rect(mx, my, mw, mh, style::INSET));
+                self.map_draw(&mut draws, v);
+                self.band_draw(&mut draws, v);
                 let start = draws.len();
                 self.city_draw(&mut draws, v);
                 shift(&mut draws[start..], self.dx());

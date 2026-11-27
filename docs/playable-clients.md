@@ -139,8 +139,10 @@ the target is the original's top-band frame ([decision 0009](decisions/0009-clie
 - **Settings** (**Game** menu), or **Enhancements…** on the setup screen, holds optional improvements that differ from the original. All are off by default and saved in `enhancements.json` beside the saves folder, shared by both clients; delete the file to reset. *New-messages overlay on the map* lists a turn's notices over the map (with **Open messages** / **Dismiss**). *Confirm every move* asks before each unit move; attacks and captures always ask. *Map tooltips* describes a known tile when the pointer rests on it: terrain, river/road, city and units, from your civilization's view only. *Goal estimates in the science advisor* adds the goal path and turn estimate to F6 (see below). *Order buttons under the map* adds a strip with the selected unit's orders (Move/View, Wait, Skip, Found city, Activate), each doing exactly what its key does; the map gets a little shorter. *Message log panel* keeps the latest messages in a floating panel over the map, newest first, with **All messages** opening the full log. *Path preview with turn counts* works the same way while a unit is selected to move: the tip shows the cheapest route over tiles your civilization knows (gold dots, a number where each turn's moves run out) and how many turns it takes; it follows the engine's move costs and only the foreign units you can see, so it is an estimate, and it gives no goto order. None of them affect checkpoints, recordings or rules.
 - **Double-click an own city on the map** (including its garrison) to open its
   workspace, the original's route; **Kingdom > Cities** cycles city windows
-  from the keyboard. The first city click only selects or inspects; use
-  movement keys to move into an own city. Click a radius tile
+  from the keyboard. The workspace floats stone panels over the map: City
+  Resources, Build with the buy price, the enlarged radius map, title and
+  information pane, Food Storage and the citizen strip. The first city click
+  only selects or inspects; use movement keys to move into an own city. Click a radius tile
   to remove/assign its worker; arrows select a tile and **Space** changes it.
   Removing a worker creates an entertainer. Click a specialist to cycle
   entertainer → tax collector → scientist; tax/scientist roles need population

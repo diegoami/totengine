@@ -2,9 +2,9 @@
 const fs=require('fs'),path=require('path');
 exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out})=>{
  fs.copyFileSync(fixture,path.join(saves,'cityopen.cth'));
- async function map(){await load('cityopen');if((await state()).draws.some(d=>d.text==='Return to map [Esc]'))await key('Escape');await idle()}
+ async function map(){await load('cityopen');if((await state()).draws.some(d=>d.text==='Close [Esc]'))await key('Escape');await idle()}
  async function point(f){const d=f.draws.find(d=>d.kind==='sprite'&&d.sprite.startsWith('city-'));if(!d)throw Error('city sprite absent');const r=await page.locator('#game').boundingBox();return [r.x+(d.x+d.w/2)*r.width/1024,r.y+(d.y+d.h*.6)*r.height/768]}
- async function opened(){await page.waitForFunction(()=>frame.draws.some(d=>d.kind==='text'&&d.x===18&&d.y===14&&d.text.includes('population')));await idle()}
+ async function opened(){await page.waitForFunction(()=>frame.draws.some(d=>d.kind==='text'&&d.x===18&&d.y===14&&/population/i.test(d.text)));await idle()}
  async function compare(name){await key('Control+s');await save(name);if(!fs.readFileSync(path.join(saves,name+'.cth')).equals(fs.readFileSync(fixture)))throw Error('double click changed gameplay '+name)}
  await map();let [x,y]=await point(await state());await page.mouse.dblclick(x,y,{delay:50});await opened();await compare('citydouble');
  await page.screenshot({path:path.join(out,'city-double-click.png')});

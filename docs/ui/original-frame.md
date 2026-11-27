@@ -1,8 +1,7 @@
 # The original's top-band map frame (decision 0009, #439)
 
-Status: first delivery on both clients — the map screen's top band. The
-floating city window is a follow-up slice (see *Remaining* below). Owner
-acceptance on both clients is still open.
+Status: delivered on both clients — the map screen's top band and the
+floating city window. Owner acceptance on both clients is still open.
 
 ## Reference
 
@@ -49,6 +48,38 @@ in the browser and desktop clients together.
   - the new-messages overlay is unchanged;
   - the wide-screen side column (on by default from 1264 logical pixels) sits
     below the band at the right, and the map ends before it.
+
+## City window (second slice)
+
+The city screen floats stone panels over the map, as the original:
+
+- **City Resources** top left: Net Food, Net Taxes, Net Luxury, Net Science
+  and Net Production with their own markers, plus the trade/happy/upkeep
+  detail the Layout B window showed.
+- **Build** at the left: the current item, progress bar, the unit picture,
+  shields and turns, and `Choose production` / `Buy production` with its
+  price / `Improvements / sell`.
+- **Radius map** in the centre, enlarged toward the original's size, with the
+  worker markers, the selected-tile outline and per-tile yields.
+- **Title** top right: the name, `Population N`, `Treasury: N Gold` and the
+  PgUp/PgDn city keys.
+- **Info / Support / Improvements / Happy** stacked keys and the information
+  pane at the right, with the same lists, sorting, paging and sale
+  confirmations.
+- **Food Storage** bottom right: the bar, the store and `Next Citizen`.
+- **Citizen strip** along the bottom: portrait, worker/specialist counts and
+  the specialist role keys.
+
+Every Layout B panel, command and immediate-edit rule is kept; the footer
+Save/Load/Research and Previous/Next city buttons are gone, as the original's
+city window does not show them (Ctrl+S/Ctrl+L, F6, PageUp/PageDown and the
+menus keep those commands). The map, band and menu bar stay visible behind
+the panels, as in the capture.
+
+Gaps: the install exposes no resource or improvement icon sheet here, so the
+City Resources markers and tile yields are drawn or numeric rather than the
+original's sprites; the city bitmap font is the same gap as the map screen;
+the exact panel stone crop is approximated as on the map screen.
 
 ## Type and texture
 
@@ -100,16 +131,16 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   identified, so the speckle pattern is not necessarily the same pixels.
 - **Window chrome**: the original capture includes its OS window border; the
   browser/desktop stage has none.
-- **City window**: still the boxed v0.14–v0.21 layout. The original's floating
-  stone panels (City Resources, Build, radius map, title/panels, Food Storage,
-  citizen strip) are the next #439 slice.
 - **Menu-bar title**: the client's scenario/rules title and date at the right
   of the menu bar are ours; the original's window title carries them.
 
 ## Verification in this slice
 
 - `cargo test -p totui`: 87 passed, 12 ignored (install-backed), including the
-  menu/band route test and the real-input route tests.
+  menu/band route test, the city-window panels and the real-input route tests.
+- The retained packaged-client fixtures are version-bound; the panel/selection
+  scripts were updated to the new route and text but were not rerun here (the
+  retained v0.15 checkpoints do not load in this engine version).
 - `python3 -m unittest discover -s tools -p 'test_*.py'`: 90 passed.
 - `docs/scenario-engine-baseline.json` and
   `docs/evidence/scenario-inventory-v1.json` refreshed for the presentation
@@ -118,4 +149,5 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
 - Screenshots taken against the original capture at 1024×768 and on a 16:9
   stage; the real-input scripts (`tools/check_client_{browser,linux,windows}`,
   `check_city_panels`, `manual_screenshots`) now open a city from its map tile
-  instead of clicking the removed sidebar button.
+  instead of clicking the removed sidebar button, and locate the city title
+  and panels by content rather than the old fixed coordinates.

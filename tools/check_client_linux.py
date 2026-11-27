@@ -256,7 +256,7 @@ def run():
                         assert (work/"saves"/(name+".cth")).read_bytes()==(fixtures_root/(expected+".cth")).read_bytes(),name
                     load("mature");open_city()
                     assert has(scene(),"Currently producing:")
-                    assert any("population 5" in d.get("text","") for d in scene()["draws"])
+                    assert any(d.get("text")=="Population 50,000" for d in scene()["draws"])
                     for _ in range(21):
                         if has(scene(),"Tile "+str(meta["worker_tile"])):break
                         key("Right")
@@ -274,9 +274,9 @@ def run():
                     navigation=os.environ.get("TOTENGINE_NAVIGATION_FIXTURE")
                     if navigation:
                         shutil.copyfile(navigation,work/"saves/navigation.cth");load("navigation")
-                        first=next(d["text"] for d in scene()["draws"] if " — population " in d.get("text",""))
+                        first=next(d["text"] for d in scene()["draws"] if d.get("size")==20 and d.get("y")==96)
                         key("Next")
-                        assert next(d["text"] for d in scene()["draws"] if " — population " in d.get("text",""))!=first
+                        assert next(d["text"] for d in scene()["draws"] if d.get("size")==20 and d.get("y")==96)!=first
                         key("Prior");key("Ctrl+s");save_dialog("citynavigation")
                         assert (work/"saves/citynavigation.cth").read_bytes()==Path(navigation).read_bytes()
                     key("Escape")

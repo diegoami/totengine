@@ -2368,7 +2368,7 @@ fn generated_city_panels_fixture() {
         inputs: Vec<serde_json::Value>,
     ) {
         mark(c, out, name, "after");
-        routes.push(serde_json::json!({"name":name,"inputs":inputs,"open_city":true,"panel":c.city_panel.label(),"heading":c.frame().draws.iter().find_map(|d|match d {Draw::Text{x,y,text,..} if *x==18. && *y==14.=>Some(text),_=>None}).unwrap()}));
+        routes.push(serde_json::json!({"name":name,"inputs":inputs,"open_city":true,"panel":c.city_panel.label(),"heading":c.frame().draws.iter().find_map(|d|match d {Draw::Text{y,text,size,..} if *y>=88. && *y<170. && *size==style::TYPE_TITLE=>Some(text.clone()),_=>None}).unwrap()}));
     }
     let mature = base.join("citizens/mature.cth");
     load_city(&mut c, &mature);
@@ -4807,14 +4807,17 @@ fn layout_b_city_and_science_windows_rearrange_without_touching_the_game() {
             })
             .collect()
     };
-    // #314: the city window is one framed window with a title bar, the
-    // citizens strip, three columns and a footer.
+    // Decision 0009 / #439: the city window floats over the map in stone
+    // panels: title, resources, build, radius, info pane, food and citizens.
     open_city(&mut c);
     assert!(c.city_open);
     assert!(matches!(c.buttons()[0].action, Action::CloseCity));
     assert!(texts(&c)
         .iter()
-        .any(|(_, y, t, _)| (30.0..66.0).contains(y) && t.contains(" — population ")));
+        .any(|(_, y, t, _)| (88.0..130.0).contains(y) && t == "Athena"));
+    assert!(texts(&c)
+        .iter()
+        .any(|(_, _, t, _)| t == "Population 10,000"));
     // The menu bar stays visible but inert over the city window.
     assert!(texts(&c).iter().any(|(_, y, t, color)| *y < chrome::MENU_H
         && t == "Orders"
@@ -4833,8 +4836,8 @@ fn layout_b_city_and_science_windows_rearrange_without_touching_the_game() {
         }
     }
     button(&mut c, "Info");
-    assert!(texts(&c).iter().any(|(_, _, t, _)| t == "City resources"));
-    assert!(texts(&c).iter().any(|(_, _, t, _)| t == "Food storage"));
+    assert!(texts(&c).iter().any(|(_, _, t, _)| t == "City Resources"));
+    assert!(texts(&c).iter().any(|(_, _, t, _)| t == "Food Storage"));
     assert!(texts(&c).iter().any(|(_, _, t, _)| t.starts_with("Tile ")));
     key(&mut c, "PageDown");
     assert!(c.city_open);

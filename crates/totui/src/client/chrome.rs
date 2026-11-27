@@ -1231,7 +1231,7 @@ impl Client {
 }
 
 /// A raised (`band` texture) or sunken (`panel` texture) stone frame.
-fn panel_frame(draws: &mut Vec<Draw>, x: f64, y: f64, w: f64, h: f64, raised: bool) {
+pub(super) fn panel_frame(draws: &mut Vec<Draw>, x: f64, y: f64, w: f64, h: f64, raised: bool) {
     draws.push(rect(x, y, w, h, style::INSET));
     draws.push(Draw::Tile {
         x: x + 2.,
@@ -1257,7 +1257,7 @@ fn estimate(s: &str, size: u32) -> f64 {
 }
 
 /// Population grouped as the original writes it (`10,000`).
-fn group_digits(n: u64) -> String {
+pub(super) fn group_digits(n: u64) -> String {
     let digits = n.to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {

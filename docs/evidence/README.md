@@ -5755,12 +5755,13 @@ execute from. Byte-identical across reruns.
 - **Consequence.** `raw[10]` is spent movement; the annual zeroes it
   (matching the orig-A consecutive-save readings of acting units), and
   the attempt-20 reset's `spent := allowance` is the exhaustion marker
-  for the rest of the round. Staging civ 2's unit-3 order
-  byte-faithfully requires applying the witnessed annual refresh and
-  turn-start flag clears at the staged boundary, then admitting the
-  refusal with its owner-byte claim; the route boundary itself is
-  unchanged by this measurement, and the staging change is the next
-  slice. The turn-start map write is presentation-scoped out
-  (open-meaning attribute byte, unseen tile); the annual's byte-1
+  for the rest of the round. Staged (2026-11-27): the naval-allocation
+  route applies this refresh at the witnessed boundary — the annual's
+  spent/counter zeroing at the turn-49 -> 50 close, the turn start's
+  flag clears at civ 2's turn-50 pass start — and the re-admitted
+  turn-50 zone case stages the southward refusal with its owner-byte
+  claim; the route now replays civ 2's whole turn-50 pass with all 59
+  human tiles retained. The turn-start map write is presentation-scoped
+  out (open-meaning attribute byte, unseen tile); the annual's byte-1
   reconciliation is covered by the staged orders' own witnessed tile
   writes and the engine's unit model.

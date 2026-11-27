@@ -1937,6 +1937,24 @@ impl HumanSession {
             if let Some(saved) = observed_arrival {
                 self.saved_move_state = Some(saved);
             }
+            // The witnessed annual movement refresh
+            // (import-turn-start-refresh.json): at the turn-49 -> 50 close
+            // the native round-close zeroes the spent byte and the order
+            // counter of every live unit record. Scoped to the naval
+            // allocation route's witnessed boundary.
+            if self.knowledge_recipe == ScenarioKnowledgeRecipe::SavedNavalAllocationV1
+                && self.game.world.turn == 50
+            {
+                if let Some(saved) = self.saved_move_state.as_mut() {
+                    for unit in &mut saved.units {
+                        let id = u32::from_le_bytes(unit.raw[30..34].try_into().unwrap());
+                        if 0 < id && id < 0x8000_0000 {
+                            unit.raw[10] = 0;
+                            unit.raw[16] = 0;
+                        }
+                    }
+                }
+            }
             self.reset_saved_deferrals();
         } else {
             self.finish_saved_movement();

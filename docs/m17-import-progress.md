@@ -534,12 +534,24 @@ it staged. The native measurements in
   refreshed state returns the refusal with the done-flag write
   `[[6, 0, 64], [16, 0, 1]]` — exactly the shape
   `scenario::opponent_stack`'s refusal paths already apply — plus the
-  origin tile owner claim `[8771, 86, 38]`. Staging the order requires
-  applying the witnessed refresh at the staged boundary and admitting
-  the refusal with its owner-byte claim; until that staging change
-  lands, the route keeps the #433 boundary (the
-  knowledge drops at civ 2's turn-50 unit-3 orders and the human
-  enters turn 50 with the refreshed 60-tile view).
+  origin tile owner claim `[8771, 86, 38]`.
+- **Staged (2026-11-27):** the naval-allocation route now applies the
+  witnessed annual refresh at the turn-49 -> 50 close and the
+  witnessed turn-start flag clears at civ 2's turn-50 pass start, and
+  the re-admitted turn-50 zone case stages the southward refusal with
+  its owner-byte claim (world owner nibble and the saved tile mirror;
+  no knowledge row changes, matching the witness). The recorded
+  westward hop (41,35) -> (42,36) stages first on the existing path,
+  so the refusal runs from the witnessed refreshed state with
+  `moves_left` 3. The route now replays civ 2's whole turn-50 pass
+  with all 59 human tiles retained and reaches the human's turn 50
+  with the saved view and checkpoint determinism intact — the #433
+  boundary is gone. Scope-outs stand: the turn-start's unseen-tile
+  attribute byte and the annual's byte-1 presence/improvement
+  reconciliation are presentation ground truth the staged orders'
+  witnessed tile writes already cover; the refresh kernels and the
+  owner claim are scoped to the witnessed naval-allocation boundary,
+  not generalized.
 
 The measured refusal also **corrects the movement kernel's ZOC
 reading** (recorded in `docs/evidence/README.md`): the native refuses

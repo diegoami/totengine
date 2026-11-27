@@ -2700,11 +2700,11 @@ impl Client {
             );
             return b;
         }
-        // Layout B (#310/#311): every map-screen command lives in the menu
-        // bar; the right column keeps the stack under the cursor, the
-        // selected city's two entries and the end-of-turn slot.
+        // Decision 0009 / #439: every map-screen command lives in the menu
+        // bar; the top band keeps the stack under the cursor, the end-of-turn
+        // slot and the overview's scroll keys.
         if let Some(v) = self.view() {
-            for cb in self.column_buttons(&v) {
+            for cb in self.band_buttons(&v) {
                 add(cb.x, cb.y, cb.w, cb.h, cb.label, cb.action);
             }
         }
@@ -2815,26 +2815,30 @@ impl Client {
                 shift(&mut draws[start..], self.dx());
                 self.menu_bar_draw(&mut draws, &title);
             } else {
+                // Decision 0009 / #439: the original's top band over a
+                // full-width map. The band replaces the provisional right
+                // column; the map's stone surround stays visible at the
+                // edges.
+                draws.push(Draw::Tile {
+                    x: 0.,
+                    y: self.frame_top() - 4.,
+                    w: self.stage_w,
+                    h: 768. - self.frame_top() + 4.,
+                    sprite: "panel-mid".into(),
+                });
                 let (mx, my, mw, mh) = self.map_rect();
                 draws.push(rect(mx, my, mw, mh, style::INSET));
+                draws.push(rect(mx, my, mw, 1., style::BAND_EDGE));
+                draws.push(rect(mx, my, 1., mh, style::BAND_EDGE));
+                draws.push(rect(mx, my + mh - 1., mw, 1., style::INSET));
+                draws.push(rect(mx + mw - 1., my, 1., mh, style::INSET));
+                draws.push(rect(mx + 1., my + 1., mw - 2., 1., "#2b3028"));
                 self.map_draw(&mut draws, v);
-                self.column_draw(&mut draws, v);
+                self.band_draw(&mut draws, v);
+                self.dock_draw(&mut draws);
                 self.side_draw(&mut draws, v);
                 self.strip_draw(&mut draws, v);
                 self.menu_bar_draw(&mut draws, &title);
-                let notices = v
-                    .notices
-                    .iter()
-                    .map(|n| self.notice_text(v, n))
-                    .collect::<Vec<_>>()
-                    .join(" · ");
-                draws.push(text(
-                    16.,
-                    722.,
-                    &notices.chars().take(100).collect::<String>(),
-                    style::TYPE_SMALL,
-                    style::TEXT_DIM,
-                ));
             }
         } else {
             draws.push(text(
@@ -3125,6 +3129,12 @@ impl Client {
             if matches!(b.action, Action::Menu(_) | Action::MenuItem(..)) {
                 continue;
             }
+            // The band draws its own keys and prompts (decision 0009, #439):
+            // generic button chrome would put provisional boxes over the
+            // original's frame.
+            if map_screen && b.y >= chrome::MENU_H && b.y < chrome::MENU_H + chrome::BAND_H {
+                continue;
+            }
             let primary = matches!(b.action, Action::QuickStart);
             let focused = i == self.focus_button;
             let fill = if primary {
@@ -3220,10 +3230,11 @@ impl Client {
             ));
             shift(&mut draws[start..], self.dx());
         }
-        draws.push(rect(0., 744., self.stage_w, 24., style::STATUS_BG));
+        // Decision 0009: the original has no bottom status bar. The client's
+        // one-line feedback stays, as map text over the stone surround.
         draws.push(text(
-            10.,
-            749.,
+            30.,
+            758.,
             &self.feedback().chars().take(145).collect::<String>(),
             style::TYPE_SMALL,
             style::GOLD,

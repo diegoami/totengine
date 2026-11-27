@@ -8,6 +8,8 @@
 > [original screenshots](../manual.md#the-look-and-feel-the-original-game).
 > The owner chose the original frame as the target. The opt-in panels in the
 > Optional column, off by default, and the wide-screen side column remain.
+> The map screen's right column has since been replaced by the band; see
+> [the original's top-band map frame](original-frame.md).
 
 Owner decision, 2026-11-17: of the three layout options on the design canvas
 (A classic, B classic plus optional panels, C full-window map), the owner chose

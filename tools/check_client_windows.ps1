@@ -169,6 +169,16 @@ try {
         [SpikeWindow]::Click($window,$app.Id,$X,$Y)
         [void](Wait-Scene {param($s) $s.revision -gt $oldRevision})
     }
+    function Open-City {
+        # Decision 0009 / #439: the original opens a city from its map tile;
+        # the sidebar "Manage city" button is gone.
+        $scene=Read-Scene
+        $city=@($scene.draws | Where-Object {$_.kind -eq 'sprite' -and $_.sprite.StartsWith('city-')})[0]
+        if(-not $city){Send-Text 'c';$scene=Read-Scene;$city=@($scene.draws | Where-Object {$_.kind -eq 'sprite' -and $_.sprite.StartsWith('city-')})[0]}
+        if(-not $city){throw 'no own city sprite to open'}
+        [SpikeWindow]::DoubleClick($window,$app.Id,($city.x+$city.w/2),($city.y+$city.h*.6))
+        [void](Wait-Scene {param($s) $s.revision -gt $scene.revision})
+    }
     function Click-Button([string]$Label) {
         $t=@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.text -eq $Label})[0]
         if(-not $t){throw "Button absent: $Label"}
@@ -272,7 +282,7 @@ try {
             $wanted=(Get-FileHash (Join-Path $citizens ($Expected+'.cth')) -Algorithm SHA256).Hash
             if($actual -ne $wanted){throw "Citizen checkpoint differs: $Name"}
         }
-        Load-Slot 'mature';Focus-Button 'Manage city'
+        Load-Slot 'mature';Open-City
         if(-not (Has-Text (Read-Scene) 'Currently producing:')){throw 'current production label missing'}
         for($n=0;$n -lt 21;$n++) {if(Has-Text (Read-Scene) ('Tile '+$meta.worker_tile)){break};Send-Key 39}
         Send-Key 32;Compare-Citizens 'cityentertainer' 'after-entertainer'
@@ -283,7 +293,7 @@ try {
         Focus-Button 'Auto workers (centre tile)';Load-Slot 'citycycle'
         for($n=0;$n -lt 21;$n++) {if(Has-Text (Read-Scene) ('Tile '+$meta.worker_tile)){break};Send-Key 39}
         Send-Key 32;Compare-Citizens 'cityresume' 'after-resume'
-        Send-Key 27;Focus-Button 'Manage city'
+        Send-Key 27;Open-City
         if($env:TOTENGINE_NAVIGATION_FIXTURE) {
             Copy-Item $env:TOTENGINE_NAVIGATION_FIXTURE (Join-Path $env:TOTENGINE_SAVES 'navigation.cth')
             Load-Slot 'navigation'
@@ -401,7 +411,7 @@ try {
             $name='panel'+$route.name
             Copy-Item (Join-Path $env:TOTENGINE_PANELS_FIXTURES ($route.name+'-before.cth')) (Join-Path $env:TOTENGINE_SAVES ($name+'.cth'))
             Load-Slot $name
-            if(Has-Text (Read-Scene) 'Manage city'){Click-Button 'Manage city'}
+            Open-City
             Click-Button 'Info'
             foreach($step in $route.inputs) {
                 $item=$step.input

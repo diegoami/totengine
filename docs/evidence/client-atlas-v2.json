@@ -2,6 +2,13 @@
   "resource_identity": "totengine-resources 1\nprofile original\ncities original/cities.bmp 614454 56382f8f81c42664\ncity original/city.bmp 960054 bf070eb4fa26ab6c\ndialog original/dialog.bmp 666382 e4126cd4ae8563bc\nicons original/icons.bmp 614454 6b986bdac4ac1b38\npeople original/people.bmp 614454 d8d82992adecf0cf\nrules original/rules.txt 46102 a9ef2d861874b2fa\nterrain1 original/terrain1.bmp 614454 a76ddcddb2df395b\nterrain2 original/terrain2.bmp 614454 a1c6e863af2b9bf2\nunits original/units.bmp 750134 679cf7982ee5f90c\n",
   "sprites": [
     {
+      "height": 110,
+      "name": "band",
+      "nontransparent": 12100,
+      "rgba_fnv64": "f48b8ca613685fb9",
+      "width": 110
+    },
+    {
       "height": 92,
       "name": "chrome",
       "nontransparent": 8464,
@@ -223,6 +230,13 @@
       "name": "panel",
       "nontransparent": 12100,
       "rgba_fnv64": "ae67c2331feec004",
+      "width": 110
+    },
+    {
+      "height": 110,
+      "name": "panel-mid",
+      "nontransparent": 12100,
+      "rgba_fnv64": "8f0ddea97d55ea86",
       "width": 110
     },
     {

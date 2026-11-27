@@ -86,9 +86,18 @@ pub const MOVE_SOME: &str = "#edd35a";
 pub const MOVE_NONE: &str = "#e57660";
 pub const WHITE: &str = "#ffffff";
 
+// Top band (decision 0009, #439): the original's light stone band and menu
+// bar over a full-width map.
+/// Highlight edge of the raised band stone.
+pub const BAND_LIGHT: &str = "#d8d6cc";
+/// Shadow edge of a sunken band panel.
+pub const BAND_EDGE: &str = "#8f9188";
+/// Fill of the small raised stone keys in the info panel.
+pub const BAND_KEY: &str = "#b9b7ab";
+
 // Menu bar (layout B, #310): the original's light bar with dark text.
 /// Menu bar fill.
-pub const MENU_BAR: &str = "#cfcbb3";
+pub const MENU_BAR: &str = "#f2f0e6";
 /// Open dropdown fill.
 pub const MENU_DROP: &str = "#e6e2cb";
 /// Menu bar and dropdown edges.
@@ -103,7 +112,7 @@ pub const MENU_SELECT: &str = "#2e3a5c";
 pub const MENU_SELECT_TEXT: &str = "#f4f0d8";
 /// Drop shadow under an open menu.
 pub const SHADOW: &str = "#050704";
-/// Dividers between the right column's boxes (#311).
+/// Dim gold dividers and hairlines.
 pub const GOLD_DIM: &str = "#6f6440";
 
 fn rect(x: f64, y: f64, w: f64, h: f64, color: &str) -> Draw {

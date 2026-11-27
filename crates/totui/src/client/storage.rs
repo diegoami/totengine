@@ -265,7 +265,7 @@ pub struct Enhancements {
     /// Order buttons for the active unit under the map (#312).
     #[serde(default)]
     pub order_strip: bool,
-    /// The message log docked in the map's right column (#313).
+    /// The message log in a floating panel over the map (#313).
     #[serde(default)]
     pub message_dock: bool,
 }

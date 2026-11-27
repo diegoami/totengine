@@ -156,6 +156,16 @@ def run():
                 def click_button(label):
                     t=next(d for d in scene()["draws"] if d.get("kind")=="text" and d.get("text")==label)
                     click_at(t["x"]+12,t["y"]+8)
+                def open_city():
+                    # Decision 0009 / #439: the original's route is a
+                    # double-click on the city's map tile.
+                    def city_now():
+                        return next((d for d in scene()["draws"]
+                                     if d.get("kind")=="sprite" and d.get("sprite","").startswith("city-")),None)
+                    city=city_now()
+                    if city is None:key("c");city=city_now()
+                    if city is None:raise RuntimeError("no own city sprite to open")
+                    click_at(city["x"]+city["w"]/2,city["y"]+city["h"]*.6,2)
                 def research():
                     if has(scene(),"Choose research"):
                         key("Down");key("Return");wait(lambda s:s["status"]=="research-set")
@@ -232,7 +242,7 @@ def run():
                     def compare(name,expected):
                         key("Ctrl+s");save_dialog(name)
                         assert (work/"saves"/(name+".cth")).read_bytes()==(fixtures_root/(expected+".cth")).read_bytes(),name
-                    load("mature");button("Manage city")
+                    load("mature");open_city()
                     assert has(scene(),"Currently producing:")
                     assert any("population 5" in d.get("text","") for d in scene()["draws"])
                     for _ in range(21):
@@ -248,7 +258,7 @@ def run():
                         if has(scene(),"Tile "+str(meta["worker_tile"])):break
                         key("Right")
                     key("space");compare("cityresume","after-resume")
-                    key("Escape");button("Manage city")
+                    key("Escape");open_city()
                     navigation=os.environ.get("TOTENGINE_NAVIGATION_FIXTURE")
                     if navigation:
                         shutil.copyfile(navigation,work/"saves/navigation.cth");load("navigation")

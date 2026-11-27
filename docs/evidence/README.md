@@ -127,7 +127,7 @@ tools/import_dependencies_check.py --out /tmp/dependencies.json`.
 
 The Rust adapter captures each file once and parses/decodes those owned buffers;
 Python independently verifies every reported content hash. Captured sheets and
-the resulting 145-sprite shared atlas equal the existing Original adapter.
+the resulting 147-sprite shared atlas equal the existing Original adapter.
 Authored fixtures cover missing/changed inputs (including same-length edits),
 case ambiguity, root-fallback refusal, Lua, escaped paths, immutable captures
 and failed revalidation. Raw original bytes/text never enter public evidence.

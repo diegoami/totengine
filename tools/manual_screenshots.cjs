@@ -92,7 +92,8 @@ async function waitForServer(){
 
   // Start a fresh Original-rules game, found Athens, choose production.
   await click('Generated seed');await fill('7');await click('Start game (Original rules)');
-  await click('Save pending choice');await save('research');await research();
+  if(has(await state(),'Save pending choice')){await click('Save pending choice');await save('research')}
+  await research();
   await key('b');
   if(has(await state(),'Save pending choice')){
     await click('Save pending choice');await fill('founding');await key('Enter');
@@ -101,21 +102,25 @@ async function waitForServer(){
   const afterName=await state();
   console.log('after name:',JSON.stringify({status:afterName.status,
     texts:afterName.draws.filter(d=>d.kind==='text').map(d=>d.text).slice(0,14)}));
-  await click('Choose production');
-  for(let n=0;n<80;n++){await key('ArrowDown');
-    if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes('Warriors')))break}
-  await key('Enter');
-  await key('Control+s');await save('normal');
-  await shot('map');
-
-  // Own city window (Manage city in the right column; double-click is
-  // the classic route but needs sprite hit-testing that the checks own).
+  // The original's route opens the city from its map tile (decision 0009,
+  // #439); production is chosen inside the city window.
   try{
-    await click('Manage city');
+    let f=await state();
+    let city=f.draws.find(d=>d.kind==='sprite'&&d.sprite&&d.sprite.startsWith('city-'));
+    if(!city){await key('c');f=await state();city=f.draws.find(d=>d.kind==='sprite'&&d.sprite&&d.sprite.startsWith('city-'))}
+    const rect=await page.locator('#game').boundingBox();
+    await page.mouse.dblclick(rect.x+(city.x+city.w/2)*rect.width/f.width,rect.y+(city.y+city.h*.6)*rect.height/768);
+    await idle();
     await page.waitForFunction(()=>frame.draws.some(d=>d.kind==='text'&&d.text.includes('population')),{timeout:15000});
+    await click('Choose production');
+    for(let n=0;n<80;n++){await key('ArrowDown');
+      if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes('Warriors')))break}
+    await key('Enter');
     await shot('city-window');
     await key('Escape');
   }catch(e){console.error('city-window failed:',e.message)}
+  await key('Control+s');await save('normal');
+  await shot('map');
 
   // Science advisor.
   try{await key('F6');await shot('science');await key('Escape')}

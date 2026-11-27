@@ -568,7 +568,7 @@ impl Client {
             ),
             (
                 Enhancement::MessageDock,
-                "Message log in the right column",
+                "Message log panel",
                 self.enhancements.message_dock,
             ),
         ]

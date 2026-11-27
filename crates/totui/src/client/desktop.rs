@@ -184,11 +184,25 @@ fn font_path() -> PathBuf {
     }
     #[cfg(windows)]
     {
-        PathBuf::from(std::env::var_os("WINDIR").unwrap_or_else(|| "C:/Windows".into()))
-            .join("Fonts/arial.ttf")
+        let fonts =
+            PathBuf::from(std::env::var_os("WINDIR").unwrap_or_else(|| "C:/Windows".into()))
+                .join("Fonts");
+        // The original draws a serif face (decision 0009); Times New Roman
+        // ships with Windows. Fall back to the sans face only if it is absent.
+        let serif = fonts.join("times.ttf");
+        if serif.exists() {
+            return serif;
+        }
+        fonts.join("arial.ttf")
     }
     #[cfg(not(windows))]
     {
+        // The original's serif treatment; DejaVu Serif ships with the common
+        // Linux font packages and falls back to the sans face if absent.
+        let serif = PathBuf::from("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf");
+        if serif.exists() {
+            return serif;
+        }
         PathBuf::from("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
     }
 }

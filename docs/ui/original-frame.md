@@ -138,6 +138,10 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
 
 - `cargo test -p totui`: 87 passed, 12 ignored (install-backed), including the
   menu/band route test, the city-window panels and the real-input route tests.
+- The desktop client rendered the band, the research dialog and the serif TTF
+  path under Xvfb + xfwm4. Automated desktop input was blocked by the window's
+  initial focus guard (the known #286-class limitation), so the city route was
+  driven only in the browser client.
 - The retained packaged-client fixtures are version-bound; the panel/selection
   scripts were updated to the new route and text but were not rerun here (the
   retained v0.15 checkpoints do not load in this engine version).

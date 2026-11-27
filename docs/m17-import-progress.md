@@ -580,6 +580,45 @@ diagnostics out of production commits. The local working trace is
 `/home/diego/review-tmp/opencode/bisect_value.py`. If those are gone,
 reproduce the route described above using the checked Original export.
 
+### Turn-50 continuation
+
+First measurement after the human's turn 50 (2026-11-27, engine diagnostic
+only, nothing staged). On the end-turn-only `SavedNavalAllocationV1` route,
+the human (civ 4) ends turn 50 with no unit orders and no pending decision.
+The opponents then run:
+
+- civ 5, order 1: `move 10 → (44, 38)` keeps the saved view (59 tiles);
+- civ 5, order 2: `move 19 → (44, 42)` is the **first fallback**. The saved
+  view drops and the engine view shows 60 tiles.
+
+Slot 19 is civ 5's fortified type-2 unit at (44, 40). The order steps it
+south into civ 5's own size-one city 9. On turn 49 native **refused** this
+order: done marker `raw6` 0→64, one refusal byte, no movement spent (see
+§Next continuation case). On turn 50 the engine resolves it as an ordinary
+move, so `try_saved_opponent_move` rejects the projection and the saved
+view ends.
+
+Open questions for the witness:
+
+- What does native do with this order from the refreshed turn-50 state?
+  The annual zeroed spent/counter for every unit, but the witnessed
+  turn-start done-flag clear is staged only for civ 2's pass. Civ 5's pass
+  start has not been measured.
+- Does the turn-49 refusal class (empty-city approach, attempt-20 reset
+  without exhaustion) still apply?
+
+Measure that before staging anything.
+
+Reproduction: drive the session as
+`installed_turn49_exchange_approach_writes_the_witnessed_direction`
+(`crates/engine/src/human/staged_round.rs`) does. That means EndTurn only,
+choosing `available[0]` at the turn-48 research prompt, until
+`view().observation.turn == 50` in `Phase::Human`. Then submit
+`Command::EndTurn` and step with `advance(1)`. Print each new
+`game.log()` line, and stop when `saved_move_state` goes from `Some` to
+`None`. The log lines are `T 50 C 5 move 10 44 38 = moved` and
+`T 50 C 5 move 19 44 42 = moved`.
+
 Next, satisfy the admitted **saved-human-view/continuation** recipe and stock
 resource/record/phase predicates, including any unresolved pending-choice
 context. Declare and measure normalization without waiving unknown native

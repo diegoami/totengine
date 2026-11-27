@@ -607,7 +607,20 @@ Open questions for the witness:
 - Does the turn-49 refusal class (empty-city approach, attempt-20 reset
   without exhaustion) still apply?
 
-Measure that before staging anything.
+**Measured (2026-11-27).** `tools/import_turn50_civ5_check.py`
+(`docs/evidence/import-turn50-civ5.json`, byte-identical reruns) rebuilds the
+published staged snapshot, applies the measured annual reset and civ 5's turn
+start, and runs the recorded order. The turn-49 pre-order control reproduces
+the published refusal (done flag 0->64, counter 0->1, nothing spent). From the
+refreshed state native **accepts** the order: the unit moves to (44,42),
+spends its 3 thirds, sets the done flag and direction, and raises the order
+observation; the annual's spent/counter reset is the enabler, not the
+turn-start flag clear (annual-only and manually cleared-flag cases match).
+The turn-49 refusal class does not apply after the refresh, so the engine's
+plain-move resolution is consistent with the native movement; the saved-view
+drop is the projection boundary, not a movement divergence. Scope: the staged
+snapshot is the engine's construction and civs 2-4's turn-50 passes are not
+witnessed. Nothing is staged by this measurement.
 
 Reproduction: drive the session as
 `installed_turn49_exchange_approach_writes_the_witnessed_direction`

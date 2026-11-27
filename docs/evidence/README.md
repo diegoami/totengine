@@ -5777,3 +5777,32 @@ execute from. Byte-identical across reruns.
   reconciliation scoping-out is an argument from the staged orders'
   witnessed tile writes and the engine's unit model, not a measured
   equivalence to the native's reconciliation pass.
+
+## Civ 5's turn-50 order from the refreshed state (#turn-50 continuation)
+
+`tools/import_turn50_civ5_check.py`
+(`docs/evidence/import-turn50-civ5.json`) answers the question left open
+after the turn-start refresh witness: civ 5's order 2 on the naval-allocation
+route, slot 19's fortified type-2 unit at (44,40) stepping south into its own
+size-one city 9 at (44,42). The tool rebuilds the published staged snapshot,
+places the civ-5 record and city, applies the measured annual round-close
+reset and civ 5's per-civ turn start (`0x4725c8`), then runs the recorded
+southward order through the native movement entry. Byte-identical across
+reruns.
+
+- **Control, no refresh.** The turn-49 pre-order record returns the published
+  refusal: done flag `raw6` 0->64, counter 0->1, no movement spent, no tile,
+  cache or observation change.
+- **Refreshed state.** The order is **accepted**. Native moves the unit from
+  (44,40) to (44,42), spends its 3 thirds, sets the done flag and direction,
+  raises the order observation and updates civ 5's knowledge caches; the
+  viewer's 59-tile explored count is unchanged. The annual alone (done flag
+  still set) and the flag cleared without the turn start give the same
+  movement, so the enabler is the annual's spent/counter reset, not the
+  turn-start flag clear.
+- **Consequence.** The refusal class measured on turn 49 does not carry over
+  after the annual reset. The engine's plain-move resolution of this order is
+  consistent with the native movement; the saved-view fallback is the
+  projection boundary, not a movement divergence. Scope: the staged snapshot
+  is the engine's construction, the native state after civs 2-4's turn-50
+  passes is not witnessed, and nothing is staged by this measurement.

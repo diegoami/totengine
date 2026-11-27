@@ -29,9 +29,8 @@ Exact original-AI #117 remains separate, not a prerequisite for every AI option.
   `refs/` (vendored ToTPP Lua API), `milestone-review.md` (release process),
   `environment.md` (machine setup/quirks), `lessons.md` (distilled
   process/rig lessons — read before driving the oracle), `manual.md`
-  (player-facing user guide; describes shipped behavior — the UI spec
-  hierarchy stays original observation, then `docs/ui/screen-contracts.md`,
-  then this guide)
+  (player-facing user guide; describes shipped behavior; its original-game
+  screenshots are the look-and-feel reference)
 - `docs/evidence/` + `tools/golden.sh` — golden corpus; `make
   evidence-regen` after *intentional* format changes, then commit
 
@@ -71,6 +70,23 @@ ToTPP-patched one the oracle runs (details: `docs/environment.md`).
   reference-only (no code copying). MIT vendors keep their notices.
 - The checkout dir may be named `civtotre` while the remote is `totengine`;
   pass explicit working directories.
+- **Durable state lives in the repo, never in an agent's private memory.**
+  Sessions here run different agents (Claude, Codex and others), so
+  anything a later session needs — decisions, direction, current work,
+  lessons, owner preferences — goes into `AGENTS.md`, `docs/` or GitHub
+  issues/PRs, not a tool-specific memory store (owner, 2026-11-27).
+- Any review prompt written for the owner to launch (PR or milestone)
+  tells the reviewer to **post** the verdict and findings on GitHub
+  (`gh pr review --comment` / `gh issue comment`), printing the full text
+  if posting fails; findings stranded in a reviewer session are lost
+  (owner, 2026-11-09; milestone template: `docs/milestone-review.md`).
+- **Client design: the original game is the target** — read
+  `docs/decisions/0009-client-design-direction.md` before any UI work. The
+  v0.11 prototype/design proposal and the shipped chrome (including Layout
+  B's right column) were a provisional client to get started, not the
+  design; move screens toward the original's top-band frame and look
+  without asking, keep departures opt-in, and do not defend provisional
+  layouts (owner, 2026-11-27).
 
 ## Status shorthand
 
@@ -525,8 +541,8 @@ delivery categories. `docs/ui/screen-contracts.md` specifies proposed decision/v
 command/persistence boundaries; `docs/ui/client-milestones.md` proposes the first
 human-controlled standard-game turn and dependent delivery packages, without
 assigning versions. Owner accepted revision 02 as a prototype on 2026-11-06
-("ok for a prototype is ok"); use it as the planning basis without asking for
-prototype acceptance again. The owner then explicitly answered five questions:
+("ok for a prototype is ok") — provisional, to get started; for look and
+layout it is superseded by decision 0009 (the original game is the target). The owner then explicitly answered five questions:
 “1 yes 2 both 3 yes 4 option 1 5 like the original”. Local browser hosting is
 accepted; browser and standalone desktop land together in the first playable
 milestone; generated-standard-game scope is accepted, before import/deeper

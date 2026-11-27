@@ -1,5 +1,9 @@
 # Playable client: reference discovery
 
+This inventory is part of the design reference under
+[decision 0009](../decisions/0009-client-design-direction.md) (the original game is
+the target); U04 records the original map frame.
+
 Status: representative reference inventory for released v0.11 (#107). The owner
 accepted the prototype and first delivery/interaction scope on 2026-11-06.
 [Decision 0005](../decisions/0005-playable-client-planning.md) governs

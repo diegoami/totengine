@@ -1,5 +1,10 @@
 # Playable client: design proposal 02
 
+> **Historical and provisional.** This proposal started the first client; it is
+> not the design target. For look and layout the original game is the target
+> — see [decision 0009](../decisions/0009-client-design-direction.md). Do not
+> cite this document to keep a layout.
+
 **Status: prototype and first playable delivery/interaction scope accepted by owner (2026-11-06).** For #107,
 v0.11, under [decision 0005](../decisions/0005-playable-client-planning.md).
 [Reference findings](discovery.md) distinguish inspected behavior from unknowns.

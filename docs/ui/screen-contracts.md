@@ -11,6 +11,11 @@ viewpoint, camera and notes. Define new controls/settings in a concrete reviewed
 contract before implementation; preserve both client surfaces and original
 scenario behavior. Scenario entry/author assistance is tracked by #183.
 
+Scope, 2026-11-27 ([decision 0009](../decisions/0009-client-design-direction.md)):
+these contracts bind engine/session boundaries — decisions, filtered views,
+validated commands, persistence — and the owner decisions recorded in them.
+They do not fix visual layout; the original game is the look-and-layout target.
+
 Owner-reviewed planning contracts under #107 / decision 0005 (2026-11-06). This specifies proposed
 behavior and required information, not implemented engine APIs. Route IDs refer
 to [reference discovery](discovery.md) and its capture manifest. The

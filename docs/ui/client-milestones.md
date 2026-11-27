@@ -1,5 +1,9 @@
 # Playable client: accepted first slice and delivery breakdown
 
+Design direction: [decision 0009](../decisions/0009-client-design-direction.md) —
+the original game is the look-and-layout target; the prototype referenced below
+was provisional.
+
 Owner-reviewed delivery plan, #107 / v0.11. The owner accepted design
 revision 02 as a prototype and the first-slice scope on 2026-11-06. v0.12–v0.15
 are released client slices; the complete clients remain unfinished. Later

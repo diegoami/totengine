@@ -5,6 +5,12 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **Client design direction** ([decision 0009](docs/decisions/0009-client-design-direction.md)):
+  the original game is the look-and-layout target for both clients, with the
+  original's top-band frame chosen over Layout B's right column. The v0.11
+  prototype and shipped chrome are marked provisional where sessions read
+  them. Documentation only.
+
 - **Scenario previews suspend opponents** (#198). The running game stays at
   the same point through file selection, preflight, and failed confirmation.
   Cancelling resumes opponent work only if it was running before.

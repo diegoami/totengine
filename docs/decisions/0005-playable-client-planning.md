@@ -5,6 +5,10 @@ Current mission/roadmap: [decision 0008](0008-scenario-platform.md), accepted
 is superseded where inconsistent. Both-client UI fidelity and client-first AI
 implementation gates remain; native-AI reproduction is not the only AI route.
 
+**Design direction, 2026-11-27: [decision 0009](0009-client-design-direction.md).** The
+design proposal and prototype this decision produced were a provisional client to
+get started; for look and layout the original game is the target.
+
 Status: accepted, owner discussion 2026-11-04. Supersedes the earlier
 assumption that v0.11.0 delivers a complete minimal playable SDL2 client.
 

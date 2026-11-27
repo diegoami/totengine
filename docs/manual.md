@@ -46,7 +46,8 @@ The original's city window and one of its Civilopedia research pages:
 
 The engine screenshots that follow show **ToTEngine's current
 implementation** of the same flow. Where a screen still looks different,
-that difference is the remaining work, not the intent.
+that difference is the remaining work, not the intent
+([design direction](decisions/0009-client-design-direction.md)).
 
 ## Requirements
 

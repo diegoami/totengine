@@ -83,7 +83,8 @@ the labels do not add new unlocks or change the demo into full ToT rules.
 The supported map commands follow the original Test of Time manual and installed
 menu; [reference and remaining differences](https://github.com/diegoami/totengine/blob/main/docs/ui/original-controls.md).
 
-The map screen follows the original's frame (layout B, [design record](ui/layout-b.md)):
+The map screen currently uses the provisional layout B frame ([design record](ui/layout-b.md));
+the target is the original's top-band frame ([decision 0009](decisions/0009-client-design-direction.md)):
 
 - A **menu bar** along the top holds every map command, each with its key:
   **Game** (save, load, new game, Settings, Keys, Close client), **Kingdom**

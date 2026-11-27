@@ -4839,6 +4839,30 @@ fn layout_b_city_and_science_windows_rearrange_without_touching_the_game() {
     assert!(texts(&c).iter().any(|(_, _, t, _)| t == "City Resources"));
     assert!(texts(&c).iter().any(|(_, _, t, _)| t == "Food Storage"));
     assert!(texts(&c).iter().any(|(_, _, t, _)| t.starts_with("Tile ")));
+    // The five net rows share one value column. A width estimate from the
+    // label must stay left of it with a conservative serif metric, so the
+    // wider desktop face cannot run the label into its value.
+    let draws = c.frame().draws;
+    let label_x = city::RESOURCES.0 + 10. + 16.;
+    let mut rows = 0;
+    for label in draws.iter().filter_map(|d| match d {
+        Draw::Text { x, y, text, .. } if *x == label_x => Some((*y, text.clone())),
+        _ => None,
+    }) {
+        let value = draws.iter().find_map(|d| match d {
+            Draw::Text { x, y, .. } if *y == label.0 && *x > label_x => Some(*x),
+            _ => None,
+        });
+        let Some(value) = value else { continue };
+        rows += 1;
+        let needed = label_x + label.1.chars().count() as f64 * 8.1 + 4.;
+        assert!(
+            value >= needed,
+            "{} value at {value} overlaps its label (needs {needed})",
+            label.1
+        );
+    }
+    assert_eq!(rows, 5, "five net rows carry a value");
     key(&mut c, "PageDown");
     assert!(c.city_open);
     key(&mut c, "Escape");

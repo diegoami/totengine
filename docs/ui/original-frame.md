@@ -142,9 +142,12 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
 - `cargo test -p totui`: 87 passed, 12 ignored (install-backed), including the
   menu/band route test, the city-window panels and the real-input route tests.
 - The desktop client rendered the band, the research dialog and the serif TTF
-  path under Xvfb + xfwm4. Automated desktop input was blocked by the window's
-  initial focus guard (the known #286-class limitation), so the city route was
-  driven only in the browser client.
+  path under Xvfb + xfwm4. Automated desktop input was blocked when the client
+  started before any window manager; with xfwm4 running first, XTest input
+  reaches the window, and the city route (load a checkpoint, double-click the
+  city tile, inspect the panels, choose production) was driven and captured on
+  the desktop client too. The initial-focus guard still applies to a client
+  launched without a window manager.
 - The retained packaged-client fixtures are version-bound; the panel/selection
   scripts were updated to the new route and text but were not rerun here (the
   retained v0.15 checkpoints do not load in this engine version).
@@ -187,5 +190,7 @@ City window:
 Both clients:
 - [x] one shared Draw list; browser walkthrough at 1024 and 1365;
 - [x] desktop client renders the band, dialogs and serif TTF path under Xvfb;
-- [ ] owner acceptance on both clients, including the desktop city route and
-      the final side-by-side comparison.
+- [x] desktop city route driven with real X input under Xvfb + xfwm4 (the
+      window manager must start before the client);
+- [ ] owner acceptance on both clients, including the final side-by-side
+      comparison.

@@ -15,8 +15,9 @@ use engine::yields::{RADIUS_DX, RADIUS_DY};
 pub(super) const CITY_TOP: f64 = 92.;
 /// City Resources panel `(x, y, w, h)` at the top left.
 pub(super) const RESOURCES: (f64, f64, f64, f64) = (44., 96., 240., 200.);
-/// Build panel at the left, below City Resources.
-pub(super) const BUILD: (f64, f64, f64, f64) = (44., 376., 176., 276.);
+/// Build panel at the left, below City Resources. Slightly wider than the
+/// original's so the buy price clears the button with either serif face.
+pub(super) const BUILD: (f64, f64, f64, f64) = (44., 376., 200., 276.);
 /// Title panel at the top right: name, population and treasury.
 pub(super) const TITLE: (f64, f64, f64, f64) = (608., 88., 388., 78.);
 /// Left edge and top of the stacked Info/Support/Improvements/Happy/Close
@@ -273,8 +274,11 @@ impl Client {
     ) {
         self.resource_icon(draws, x, y + 1., kind);
         draws.push(text(x + 16., y, label, style::TYPE_SMALL, style::TEXT));
+        // A fixed value column: the original aligns the five values, and an
+        // estimate of the label's width overlaps them with a wider serif face
+        // (the desktop build).
         draws.push(text(
-            x + 16. + label.chars().count() as f64 * 7. + 6.,
+            x + 16. + 170.,
             y,
             &value,
             style::TYPE_SMALL,
@@ -466,7 +470,7 @@ impl Client {
             }
             if let Ok(q) = &p.hurry {
                 draws.push(text(
-                    BUILD.0 + 118.,
+                    BUILD.0 + 128.,
                     BUILD.1 + 214.,
                     &format!("{} gold", q.price),
                     style::TYPE_SMALL,

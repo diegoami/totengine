@@ -155,3 +155,34 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   `check_city_panels`, `manual_screenshots`) now open a city from its map tile
   instead of clicking the removed sidebar button, and locate the city title
   and panels by content rather than the old fixed coordinates.
+
+## Acceptance checklist (#439)
+
+Map screen:
+- [x] menu bar with the client's menus;
+- [x] top band: status panel, info panel, circular overview over a full-width
+      map;
+- [x] provisional right column, sidebar city buttons and bottom status bar
+      removed; feedback stays as map text;
+- [x] cities open from their map tile (double-click), the original's route;
+- [x] opt-ins preserved and re-placed; wide-screen message column at the right;
+- [ ] `Cheat` and `Map` menu entries (the client has no commands for them);
+- [ ] the original's bitmap font (serif system face approximated);
+- [ ] the selected-unit info branch from a reference capture;
+- [ ] `Loc:` plane number and the arrows' measured behavior.
+
+City window:
+- [x] floating stone panels: City Resources, Build, radius map, title/info
+      pane, Food Storage, citizen strip;
+- [x] every Layout B list, page, sort, sale confirmation and immediate
+      worker/specialist edit kept; footer-only buttons removed with their keys
+      and menus retained;
+- [ ] the install's resource/improvement icons (drawn markers and numeric
+      yields instead; the classic-art branch #380 would supply icons);
+- [ ] the exact panel stone crop.
+
+Both clients:
+- [x] one shared Draw list; browser walkthrough at 1024 and 1365;
+- [x] desktop client renders the band, dialogs and serif TTF path under Xvfb;
+- [ ] owner acceptance on both clients, including the desktop city route and
+      the final side-by-side comparison.

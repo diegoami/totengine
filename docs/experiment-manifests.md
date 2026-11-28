@@ -1,16 +1,16 @@
 # Headless experiment manifests — format 1
 
-Status: **generated-world slice of [#203](https://github.com/diegoami/totengine/issues/203);
-not released, not owner-accepted.** Program: [#184](https://github.com/diegoami/totengine/issues/184).
-Scenario starts wait for admitted scenario entry
-([#197](https://github.com/diegoami/totengine/issues/197)). Batches with
-interrupt/resume, first-divergence comparison and outcome reports are
-[#204](https://github.com/diegoami/totengine/issues/204).
+The generated-world manifest shipped with v0.19.0
+([#203](https://github.com/diegoami/totengine/issues/203)). The generated campaign
+batch and replay slice advances [#204](https://github.com/diegoami/totengine/issues/204).
+Scenario starts require the admitted initializer tracked in
+[#197](https://github.com/diegoami/totengine/issues/197).
+Program [#184](https://github.com/diegoami/totengine/issues/184).
 
 An experiment manifest says exactly what to run headlessly and how runs differ.
 Running it produces one verifiable [recording](recording-bundles.md) per run and
-deterministic summaries. The same manifest always reproduces byte-identical
-output.
+deterministic summaries. Successful runs with the same manifest, engine, Rules
+and round limit produce byte-identical output.
 
 ## Manifest
 
@@ -66,8 +66,12 @@ output.
 
 ```sh
 totctl experiment check difficulty.json             # validate and list the runs
-totctl experiment run difficulty.json --out results # execute into a new folder
+totctl experiment run difficulty.json --out results --checkpoint-every 10
 totctl record verify results/hard-s3.totrec Rules.txt
+totctl experiment run difficulty.json --out pause --round-limit 40
+totctl experiment resume difficulty.json --from pause --out resumed
+totctl experiment compare difficulty.json results/easy-s3.totrec resumed/easy-s3.totrec
+totctl experiment compare difficulty.json results/easy-s3.totrec results/hard-s3.totrec
 ```
 
 `check` prints the manifest and Rules identities, the engine, and each run's id,
@@ -76,6 +80,7 @@ seed, policy, setup descriptor and changed parameters.
 `run` requires that `--out` **does not exist yet**. It never overwrites results
 or author files. It writes:
 
+- `batch.identity`: engine version, manifest text identity and canonical Rules identity;
 - `<run>.totrec`: a reproducible campaign recording per run (`stop` is the
   replayed outcome; producer `totctl experiment <name>: run <id>`);
 - `summary.json` (`totengine-experiment-summary 1`): the manifest and Rules
@@ -88,18 +93,49 @@ A run that fails at runtime is listed as `failed` with its error, never as a
 result. The summaries contain no timestamps or paths, so rerunning a manifest
 gives byte-identical files.
 
-Each run is exactly the corresponding `totctl campaign` invocation. For example,
+Without a round limit override, each run is exactly the corresponding `totctl campaign` invocation. For example,
 `hard-s3` above equals
 `totctl campaign Rules.txt --policy ai-v1 --seed 3 --difficulty 4 --width 40 --height 30 --turns 100`,
 which the tests check.
+
+## Resume and compare
+
+Use `--round-limit N` to save a checkpoint for each run after at most N
+rounds. N must be between 1 and the manifest's target. Runs with further
+rounds pending show `paused` and record the `Stopped` stop reason.
+Runs that reach a terminal outcome retain that outcome.
+
+`resume` requires the same engine, manifest bytes and canonical Rules.
+It replays each checkpoint to verify its orders, progress, policy and
+outcome, then continues to the original target. An interrupted command
+may leave only `batch.identity` and some completed recordings. Resume can
+use these without a summary, and starts any missing run from round zero.
+`--checkpoint-every N` on either `run` or `resume` also syncs a recoverable
+journal at the start and every N rounds. A finished recording takes precedence.
+When the recording is missing, `resume` verifies the journal's last complete
+checkpoint and discards any torn suffix in memory. It retains source files
+and removes its own journal after publishing the new recording. A damaged
+recording or unverifiable journal marks its run failed while other runs
+continue. If a journal approaches the recording reader's 64 MiB budget, use
+a longer checkpoint interval for subsequent output.
+Artifacts written before this feature require a fresh batch because they
+lack `batch.identity`. The finished output is byte-identical to an
+uninterrupted run when all recordings verify.
+
+`compare` verifies two recordings against the expanded manifest. Keep
+each original run filename so the command can identify its setup and
+policy. It prints the first differing canonical log line, including the
+number of matching completed rounds and both values. If one verified
+log ends before the other and every overlapping line matches, it reports
+the matching prefix. Lines cover setup, the starting fingerprint, order
+results and round fingerprints.
 
 ## Not in this slice
 
 - Scenario starts (#197).
 - Per-civilization policies: they need a campaign format with one policy per
   civ.
-- Resume of a partly completed batch, first-divergence comparison and outcome
-  reports (#204).
+- Scenario event and objective outcome reports (#204).
 - An MCP tool for experiments. The server never writes, so it would return
   summaries inline.
 - Agent (#256) seats in experiments.

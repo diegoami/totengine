@@ -9,6 +9,12 @@ acceptance on both clients is still open.
 - `docs/manual/screenshots/original/map.png` (1024×768): the frame this slice
   targets. The user guide's reference section is the owner's scoped exception
   for original screenshots; no original art is committed.
+- `docs/manual/screenshots/original/moving-units.png` (1024×742): the Moving
+  Units band with a selected unit, captured 2026-11-27 from the original
+  ToTPP build (load `Original/Ph_Auto2.SAV`, accept the difficulty plate,
+  resize the world window; no in-world input needed). It shows the icon,
+  `Moves: 1`, the order `NONE`, the nationality `Spanish` and
+  `Archers (Hills)`, with no `Loc:` line.
 - [Discovery U04](discovery.md): "Menu strip; empire figures upper left,
   selected-unit details and mode across top, overview upper right, diamond map
   below."
@@ -33,6 +39,10 @@ in the browser and desktop clients together.
     `Opponents Playing`), the inspected tile and terrain, the active unit,
     the `End of Turn (Press ENTER)` prompt (the prompt area is the click
     target), the stack's `Activate unit N` keys and two stone scroll keys.
+  - **Moving Units branch**: with a unit under orders the panel shows its
+    icon, `Unit (Terrain)`, `Moves: N` with health, and the order and
+    nationality (`NONE · Spanish`), and no `Loc:` line or bottom prompt, as
+    the capture above. `Viewing Pieces` keeps the inspected tile.
   - **Circular overview**: the known world clipped to a dark disc, unit/city
     dots, the map view outline, and a click that recentres the map.
 - **Full-width map** below the band; the map's stone surround stays visible at
@@ -91,10 +101,13 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   arrows switch planes; the client has one surface plane, so `Loc:` omits the
   number. The arrows scroll the map horizontally; that behavior is inferred,
   not measured from the reference.
-- **Selected-unit details**: the original's documented layout ("selected-unit
-  details and mode across top") places more detail in the info panel than the
-  current unit name, moves and health lines. The full branch needs a reference
-  capture with a selected unit.
+- **Selected-unit details**: the branch is implemented against the capture
+  above, but the band is shorter than the original's, so the order and
+  nationality share one line (`NONE · Spanish`) instead of three stacked
+  lines, health is numeric instead of an icon bar, and the unit picture is
+  smaller. The order names are mapped only for the measured bytes
+  (`0xff` none, `1` fortifying, `2` fortified); other orders show a dash
+  until their names are decoded.
 - **Panel textures**: the band uses the install's `City.gif` stone centred on
   the capture's measured tone; the exact source tile and native tiling are not
   identified, so the speckle pattern is not necessarily the same pixels.
@@ -119,3 +132,8 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   stage; the real-input scripts (`tools/check_client_{browser,linux,windows}`,
   `check_city_panels`, `manual_screenshots`) now open a city from its map tile
   instead of clicking the removed sidebar button.
+- The Moving Units branch has a client test: with a unit active it draws
+  `Moves:`, the order + nationality, `Unit (Terrain)` and no `Loc:`; after
+  `v` (Viewing Pieces) the `Loc:` line returns. The new view fields are
+  `Observation::unit_orders` (own visible units only, so foreign orders stay
+  hidden) and `Observation::civ_names`.

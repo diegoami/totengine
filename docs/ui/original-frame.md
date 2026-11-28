@@ -39,6 +39,11 @@ in the browser and desktop clients together.
   the edges. The provisional right column, its city buttons and the bottom
   status bar are gone from the map screen. The client's one-line feedback
   stays as map text over the stone surround.
+- **Dialog chrome**: with a game loaded, every modal (science advisor, rates,
+  reports, Civilopedia, save/load, confirmations) is the original's raised
+  stone panel from the install's own texture, with the title centred on it,
+  instead of the provisional flat olive box. The setup screen, which has no
+  atlas, keeps the flat panel.
 - **Cities open from their tile** (single click selects; double-click opens),
   as in the original. The sidebar's `Manage city` / `Choose production`
   entries are gone; `Kingdom > Cities` still cycles city windows.
@@ -98,6 +103,10 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
 - **Panel textures**: the band uses the install's `City.gif` stone centred on
   the capture's measured tone; the exact source tile and native tiling are not
   identified, so the speckle pattern is not necessarily the same pixels.
+- **Dialogs**: the frame material and centred title follow the original, but
+  each dialog's internal layout is still ours (the original sizes and places
+  its per-screen lists, portraits and buttons differently); the type ladder
+  is also ours pending the #283 review.
 - **Window chrome**: the original capture includes its OS window border; the
   browser/desktop stage has none.
 - **City window**: still the boxed v0.14–v0.21 layout. The original's floating

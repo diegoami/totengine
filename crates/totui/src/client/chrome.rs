@@ -691,7 +691,7 @@ impl Client {
         let top = self.frame_top();
         let w = SIDE_W;
         let h = 768. - 8. - top;
-        panel_frame(draws, x, top, w, h, false);
+        style::panel_frame(draws, x, top, w, h, false);
         let cx = x + 6.;
         let bottom = top + h - 44.;
         let mut y = top + 8.;
@@ -776,10 +776,10 @@ impl Client {
             style::INSET,
         ));
         let (sx, sy, sw, sh) = Self::status_rect();
-        panel_frame(draws, sx, sy, sw, sh, true);
+        style::panel_frame(draws, sx, sy, sw, sh, true);
         self.status_panel_draw(draws, v, (sx, sy, sw, sh));
         let (ix, iy, iw, ih) = self.info_rect();
-        panel_frame(draws, ix, iy, iw, ih, false);
+        style::panel_frame(draws, ix, iy, iw, ih, false);
         self.info_panel_draw(draws, v, (ix, iy, iw, ih));
         self.overview_draw(draws, v);
     }
@@ -1065,7 +1065,7 @@ impl Client {
     /// outline and the scroll arrows' ring.
     fn overview_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
         let (x, y, w, h) = self.overview_rect();
-        panel_frame(draws, x, y, w, h, false);
+        style::panel_frame(draws, x, y, w, h, false);
         let (cx, cy, r) = self.overview_circle();
         // A dark disc, row by row, before the known-world cells: the original
         // overview is an opaque circle rather than a square minimap.
@@ -1170,7 +1170,7 @@ impl Client {
         let Some((x, y, w, h)) = self.dock_rect() else {
             return;
         };
-        panel_frame(draws, x, y, w, h, false);
+        style::panel_frame(draws, x, y, w, h, false);
         draws.push(text(
             x + 8.,
             y + 18.,
@@ -1228,27 +1228,6 @@ impl Client {
         self.status = "Map centred from the overview.".into();
         true
     }
-}
-
-/// A raised (`band` texture) or sunken (`panel` texture) stone frame.
-fn panel_frame(draws: &mut Vec<Draw>, x: f64, y: f64, w: f64, h: f64, raised: bool) {
-    draws.push(rect(x, y, w, h, style::INSET));
-    draws.push(Draw::Tile {
-        x: x + 2.,
-        y: y + 2.,
-        w: w - 4.,
-        h: h - 4.,
-        sprite: if raised { "band" } else { "panel-mid" }.into(),
-    });
-    let light = if raised {
-        style::BAND_LIGHT
-    } else {
-        style::BAND_EDGE
-    };
-    draws.push(rect(x + 2., y + 2., w - 4., 1., light));
-    draws.push(rect(x + 2., y + 2., 1., h - 4., light));
-    draws.push(rect(x + 2., y + h - 3., w - 4., 1., style::SHADOW));
-    draws.push(rect(x + w - 3., y + 2., 1., h - 4., style::SHADOW));
 }
 
 /// Rough width of a string at one type step, for right-aligned band text.

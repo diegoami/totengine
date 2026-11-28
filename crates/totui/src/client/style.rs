@@ -125,11 +125,39 @@ fn rect(x: f64, y: f64, w: f64, h: f64, color: &str) -> Draw {
     }
 }
 
-/// The shared modal frame (#282): a gold hairline around the panel fill.
+/// A raised (`band` texture) or sunken (`panel-mid` texture) stone frame,
+/// shared by the top band, the city panels and the dialogs (#439).
+pub fn panel_frame(draws: &mut Vec<Draw>, x: f64, y: f64, w: f64, h: f64, raised: bool) {
+    draws.push(rect(x, y, w, h, INSET));
+    draws.push(Draw::Tile {
+        x: x + 2.,
+        y: y + 2.,
+        w: w - 4.,
+        h: h - 4.,
+        sprite: if raised { "band" } else { "panel-mid" }.into(),
+    });
+    let light = if raised { BAND_LIGHT } else { BAND_EDGE };
+    draws.push(rect(x + 2., y + 2., w - 4., 1., light));
+    draws.push(rect(x + 2., y + 2., 1., h - 4., light));
+    draws.push(rect(x + 2., y + h - 3., w - 4., 1., SHADOW));
+    draws.push(rect(x + w - 3., y + 2., 1., h - 4., SHADOW));
+}
+
+/// The shared modal frame (#282, #439): with a game loaded, the original's
+/// raised stone panel; otherwise the flat panel fill of the setup screen.
 /// Screens pass their own geometry and draw titles and content on top.
-pub fn modal(draws: &mut Vec<Draw>, x: f64, y: f64, w: f64, h: f64) {
-    draws.push(rect(x, y, w, h, GOLD));
-    draws.push(rect(x + 2., y + 2., w - 4., h - 4., PANEL));
+pub fn modal(draws: &mut Vec<Draw>, x: f64, y: f64, w: f64, h: f64, stone: bool) {
+    if stone {
+        panel_frame(draws, x, y, w, h, true);
+    } else {
+        draws.push(rect(x, y, w, h, GOLD));
+        draws.push(rect(x + 2., y + 2., w - 4., h - 4., PANEL));
+    }
+}
+
+/// Rough width of a string at one type step, for centring titles.
+pub fn text_width(s: &str, size: u32) -> f64 {
+    s.chars().count() as f64 * 0.52 * f64::from(size)
 }
 
 /// A focused button gets a gold hairline so keyboard focus is always visible

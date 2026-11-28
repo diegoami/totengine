@@ -4607,6 +4607,69 @@ fn path_preview_is_opt_in_knowledge_bounded_and_never_touches_the_game() {
 }
 
 #[test]
+fn order_names_claim_only_the_measured_bytes() {
+    assert_eq!(chrome::order_text(0xff), "NONE");
+    assert_eq!(chrome::order_text(1), "Fortifying");
+    assert_eq!(chrome::order_text(2), "Fortified");
+    // Native goto wake clears orders whose low nibble is 12.
+    assert_eq!(chrome::order_text(12), "Go To");
+    assert_eq!(chrome::order_text(0x1c), "Go To");
+    assert_eq!(chrome::order_text(5), "\u{2014}");
+}
+
+#[test]
+fn moving_units_band_matches_the_reference_branch() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    assert!(c.moving, "{}", c.status);
+    let view = c.view().unwrap();
+    let o = &view.observation;
+    let unit = o
+        .units
+        .iter()
+        .find(|u| c.active.is_some_and(|e| e.slot == u.index))
+        .expect("the starting unit is active");
+    let rules = &c.loaded.as_ref().unwrap().resources.rules;
+    let name = rules.unit_names()[unit.type_id as usize].to_string();
+    let terrain = rules.base_terrain_names()[o
+        .seen
+        .get(paths::stored(o, unit.x, unit.y))
+        .copied()
+        .flatten()
+        .unwrap()
+        .terrain as usize]
+        .to_string();
+    let nation = o.civ_names[o.civ as usize].clone();
+    let texts = |c: &Client| -> Vec<String> {
+        c.frame()
+            .draws
+            .into_iter()
+            .filter_map(|d| match d {
+                Draw::Text { text, .. } => Some(text),
+                _ => None,
+            })
+            .collect()
+    };
+    // Moving Units: the reference's unit branch, and no Loc line.
+    let drawn = texts(&c);
+    // The original's stack: Moves, order and nationality beside the icon,
+    // then the unit and its terrain under it.
+    assert!(drawn.contains(&format!("Moves: {}", tips::moves_text(unit.moves_left))));
+    assert!(drawn.contains(&"NONE".to_string()));
+    assert!(drawn.contains(&nation));
+    assert!(drawn.contains(&name));
+    assert!(drawn.contains(&format!("({terrain})")));
+    assert!(!drawn.iter().any(|t| t.starts_with("Loc:")));
+    // Viewing Pieces keeps the inspected tile.
+    key(&mut c, "v");
+    assert!(!c.moving);
+    let drawn = texts(&c);
+    assert!(drawn.iter().any(|t| t.starts_with("Loc:")));
+    assert!(!drawn.iter().any(|t| t.starts_with("Moves: ")));
+}
+
+#[test]
 fn map_screen_menus_and_band_reach_every_command_and_never_touch_the_game() {
     let f = Fixture::new();
     let mut c = f.client();

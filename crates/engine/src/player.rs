@@ -375,6 +375,13 @@ pub struct Observation {
     /// `None` where it has never seen it.
     pub seen: Vec<Option<TileView>>,
     pub units: Vec<UnitView>,
+    /// The civ's own visible units' order bytes (0xff none, 1 fortifying,
+    /// 2 fortified; other values are not decoded), keyed by unit slot.
+    /// Foreign orders stay hidden, as before this field existed.
+    pub unit_orders: Vec<(usize, u8)>,
+    /// Civilization names (the plural the original's unit panel shows, e.g.
+    /// "Spanish") indexed by owner; empty where the scenario defines none.
+    pub civ_names: Vec<String>,
     pub cities: Vec<CityView>,
     pub city_economy: Vec<CityEconomyView>,
     /// Effective maintenance fees for ordinary improvements under this civ's
@@ -481,13 +488,16 @@ impl WorldState {
     pub fn observe(&self, rules: &Rules, civ: u8, last: Option<OrderResult>) -> Observation {
         let bit = 1u8 << (civ & 7);
         let c = civ as usize;
-        let units = self
+        let visible: Vec<(usize, &crate::Unit)> = self
             .units
             .iter()
             .enumerate()
             .filter(|(_, u)| u.id != 0 && (u.owner == civ || self.sees_now(civ, u.x, u.y)))
+            .collect();
+        let units: Vec<UnitView> = visible
+            .iter()
             .map(|(i, u)| UnitView {
-                index: i,
+                index: *i,
                 type_id: u.type_id,
                 owner: u.owner,
                 x: u.x,
@@ -495,6 +505,11 @@ impl WorldState {
                 moves_left: if u.owner == civ { u.moves_left } else { 0 },
                 veteran: u.veteran,
             })
+            .collect();
+        let unit_orders = visible
+            .iter()
+            .filter(|(_, u)| u.owner == civ)
+            .map(|(i, u)| (*i, u.orders))
             .collect();
         let cities: Vec<_> = self
             .cities
@@ -622,6 +637,8 @@ impl WorldState {
                 })
                 .collect(),
             units,
+            unit_orders,
+            civ_names: (0..=7).map(|c| self.civ_name(c)).collect(),
             cities,
             city_economy,
             improvement_upkeep,

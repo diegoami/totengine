@@ -59,6 +59,22 @@ pub(super) fn civ_color(owner: u8) -> &'static str {
 
 /// Minimap colour of a terrain type: a few broad classes, game data rather
 /// than chrome.
+/// The order names the reference proves (none/fortifying/fortified); other
+/// bytes exist but their names are not decoded, so they stay a dash.
+/// The order names the evidence proves: none (`0xff`), fortifying (`1`),
+/// fortified (`2`) and go-to (low nibble 12, the value the native goto wake
+/// clears; the install's `Menu.txt` calls the command `Go To`). Other bytes
+/// exist but their names are not decoded, so they stay a dash.
+pub(super) fn order_text(orders: u8) -> &'static str {
+    match orders {
+        0xff => "NONE",
+        1 => "Fortifying",
+        2 => "Fortified",
+        order if order & 0x0f == 12 => "Go To",
+        _ => "\u{2014}",
+    }
+}
+
 fn terrain_color(terrain: u8) -> &'static str {
     match terrain {
         10 => "#2e4a6b",
@@ -912,75 +928,167 @@ impl Client {
                     .find(|u| u.owner == o.civ)
                     .map(|u| (u.x, u.y))
             });
-        if let Some((tx, ty)) = at {
-            draws.push(text(
-                x + 10.,
-                y + 42.,
-                &format!("Loc: ({tx}, {ty})"),
-                style::TYPE_SMALL,
-                style::TEXT_BRIGHT,
-            ));
-            let rules = self.loaded.as_ref().map(|l| &l.resources.rules);
-            if let (Some(tile), Some(rules)) = (
-                o.seen.get(paths::stored(o, tx, ty)).copied().flatten(),
-                rules,
-            ) {
-                let terrain = rules
-                    .base_terrain_names()
-                    .get(tile.terrain as usize)
-                    .map_or_else(|| "Terrain".to_string(), ToString::to_string);
-                let mut parts = vec![terrain];
-                if tile.river {
-                    parts.push("River".into());
-                }
-                if tile.rail {
-                    parts.push("Railroad".into());
-                } else if tile.road {
-                    parts.push("Road".into());
-                }
-                draws.push(text(
-                    x + 10.,
-                    y + 58.,
-                    &format!("({})", parts.join(", ")),
-                    style::TYPE_SMALL,
-                    style::TEXT,
-                ));
-            }
-        }
         let rules = self.loaded.as_ref().map(|l| &l.resources.rules);
-        if let (Some(u), Some(rules)) = (active, rules) {
+        if let (Some(u), Some(rules), true) = (active, rules, self.moving) {
+            // The original's Moving Units block (reference moving-units.png):
+            // the icon with a health bar over it, `Moves:`, the order and the
+            // nationality at its right, and `Unit` / `(Terrain)` under it.
+            // `Loc:` is not drawn in this mode.
             let name = rules
                 .unit_names()
                 .get(u.type_id as usize)
                 .map_or_else(|| "Unit".to_string(), ToString::to_string);
-            let vet = if u.veteran { " (veteran)" } else { "" };
-            draws.push(text(
-                x + 200.,
-                y + 42.,
-                &format!("{name} #{}{vet}", u.index),
-                style::TYPE_SMALL,
-                style::GOLD,
-            ));
-            let health = v
+            let terrain = o
+                .seen
+                .get(paths::stored(o, u.x, u.y))
+                .copied()
+                .flatten()
+                .and_then(|tile| {
+                    rules
+                        .base_terrain_names()
+                        .get(tile.terrain as usize)
+                        .map(ToString::to_string)
+                })
+                .unwrap_or_else(|| "Terrain".into());
+            draws.push(rect(x + 10., y + 28., 30., 4., style::INSET));
+            if let Some((_, hp, max)) = v
                 .unit_health
                 .iter()
                 .find(|(slot, _, _)| *slot == u.index)
-                .map_or_else(String::new, |(_, hp, max)| format!(" · {hp}/{max} hp"));
+                .copied()
+            {
+                if max > 0 {
+                    draws.push(rect(
+                        x + 11.,
+                        y + 29.,
+                        28. * f64::from(hp.min(max)) / f64::from(max),
+                        2.,
+                        style::MOVE_OK,
+                    ));
+                }
+            }
+            draws.push(Draw::Sprite {
+                x: x + 10.,
+                y: y + 34.,
+                w: 30.,
+                h: 30.,
+                sprite: format!("unit-{}", u.type_id),
+            });
             draws.push(text(
-                x + 200.,
-                y + 58.,
-                &format!("Moves {}{health}", tips::moves_text(u.moves_left)),
+                x + 10.,
+                y + 82.,
+                &name,
+                style::TYPE_SMALL,
+                style::GOLD,
+            ));
+            draws.push(text(
+                x + 10.,
+                y + 96.,
+                &format!("({terrain})"),
+                style::TYPE_SMALL,
+                style::GOLD,
+            ));
+            draws.push(text(
+                x + 46.,
+                y + 40.,
+                &format!("Moves: {}", tips::moves_text(u.moves_left)),
+                style::TYPE_SMALL,
+                style::TEXT_BRIGHT,
+            ));
+            let order = o
+                .unit_orders
+                .iter()
+                .find(|(slot, _)| *slot == u.index)
+                .map_or("—", |(_, order)| order_text(*order));
+            draws.push(text(
+                x + 46.,
+                y + 54.,
+                order,
+                style::TYPE_SMALL,
+                style::TEXT,
+            ));
+            let nation = o
+                .civ_names
+                .get(u.owner as usize)
+                .filter(|name| !name.is_empty())
+                .map_or("—", String::as_str);
+            draws.push(text(
+                x + 46.,
+                y + 68.,
+                nation,
                 style::TYPE_SMALL,
                 style::TEXT,
             ));
         } else {
-            draws.push(text(
-                x + 200.,
-                y + 42.,
-                "No unit selected",
-                style::TYPE_SMALL,
-                style::TEXT_DIM,
-            ));
+            if let Some((tx, ty)) = at {
+                draws.push(text(
+                    x + 10.,
+                    y + 42.,
+                    &format!("Loc: ({tx}, {ty})"),
+                    style::TYPE_SMALL,
+                    style::TEXT_BRIGHT,
+                ));
+                let rules = self.loaded.as_ref().map(|l| &l.resources.rules);
+                if let (Some(tile), Some(rules)) = (
+                    o.seen.get(paths::stored(o, tx, ty)).copied().flatten(),
+                    rules,
+                ) {
+                    let terrain = rules
+                        .base_terrain_names()
+                        .get(tile.terrain as usize)
+                        .map_or_else(|| "Terrain".to_string(), ToString::to_string);
+                    let mut parts = vec![terrain];
+                    if tile.river {
+                        parts.push("River".into());
+                    }
+                    if tile.rail {
+                        parts.push("Railroad".into());
+                    } else if tile.road {
+                        parts.push("Road".into());
+                    }
+                    draws.push(text(
+                        x + 10.,
+                        y + 58.,
+                        &format!("({})", parts.join(", ")),
+                        style::TYPE_SMALL,
+                        style::TEXT,
+                    ));
+                }
+            }
+            if let (Some(u), Some(rules)) = (active, rules) {
+                let name = rules
+                    .unit_names()
+                    .get(u.type_id as usize)
+                    .map_or_else(|| "Unit".to_string(), ToString::to_string);
+                let vet = if u.veteran { " (veteran)" } else { "" };
+                draws.push(text(
+                    x + 200.,
+                    y + 42.,
+                    &format!("{name} #{}{vet}", u.index),
+                    style::TYPE_SMALL,
+                    style::GOLD,
+                ));
+                let health = v
+                    .unit_health
+                    .iter()
+                    .find(|(slot, _, _)| *slot == u.index)
+                    .map_or_else(String::new, |(_, hp, max)| format!(" · {hp}/{max} hp"));
+                draws.push(text(
+                    x + 200.,
+                    y + 58.,
+                    &format!("Moves {}{health}", tips::moves_text(u.moves_left)),
+                    style::TYPE_SMALL,
+                    style::TEXT,
+                ));
+            } else {
+                draws.push(text(
+                    x + 200.,
+                    y + 42.,
+                    "No unit selected",
+                    style::TYPE_SMALL,
+                    style::TEXT_DIM,
+                ));
+            }
         }
         // Units on the inspected tile, as small stone keys (the original
         // shows a stack chooser when units share a tile).
@@ -999,51 +1107,49 @@ impl Client {
                 style::MENU_TEXT,
             ));
         }
-        // The end-of-turn prompt, or what the opponents are doing.
-        let (line, sub) = match v.phase {
+        // The end-of-turn prompt, or what the opponents are doing. The
+        // original shows no bottom prompt while Moving Units (reference
+        // moving-units.png); the mode line at the top already says it.
+        let prompt = match v.phase {
             Phase::Human if v.decision.is_some() => {
-                ("Resolve the required choice", Some("Advisors reopen it"))
+                Some(("Resolve the required choice", Some("Advisors reopen it")))
             }
-            Phase::Human if idle => ("End of Turn", Some("(Press ENTER)")),
-            Phase::Human => (
-                if self.moving {
-                    "Moving Units"
-                } else {
-                    "Viewing Pieces"
-                },
-                None,
-            ),
-            Phase::Opponents => (
+            Phase::Human if idle => Some(("End of Turn", Some("(Press ENTER)"))),
+            Phase::Human if self.moving => None,
+            Phase::Human => Some(("Viewing Pieces", None)),
+            Phase::Opponents => Some((
                 if self.advancing {
                     "Opponents are playing"
                 } else {
                     "Opponents paused"
                 },
                 None,
-            ),
-            Phase::Eliminated => ("No cities or units remain", None),
-            Phase::TurnLimit => ("Turn limit reached", Some("Save a checkpoint")),
-            Phase::GameOver => ("Game over: scenario event", None),
+            )),
+            Phase::Eliminated => Some(("No cities or units remain", None)),
+            Phase::TurnLimit => Some(("Turn limit reached", Some("Save a checkpoint"))),
+            Phase::GameOver => Some(("Game over: scenario event", None)),
         };
-        draws.push(text(
-            x + 10.,
-            y + h - 42.,
-            line,
-            style::TYPE_SMALL,
-            if line == "End of Turn" {
-                style::GOLD
-            } else {
-                style::TEXT_BRIGHT
-            },
-        ));
-        if let Some(sub) = sub {
+        if let Some((line, sub)) = prompt {
             draws.push(text(
                 x + 10.,
-                y + h - 26.,
-                sub,
+                y + h - 42.,
+                line,
                 style::TYPE_SMALL,
-                style::TEXT_DIM,
+                if line == "End of Turn" {
+                    style::GOLD
+                } else {
+                    style::TEXT_BRIGHT
+                },
             ));
+            if let Some(sub) = sub {
+                draws.push(text(
+                    x + 10.,
+                    y + h - 26.,
+                    sub,
+                    style::TYPE_SMALL,
+                    style::TEXT_DIM,
+                ));
+            }
         }
         // The overview arrows: raised stone keys that scroll the map.
         for (ax, glyph) in [(x + w - 58., "<"), (x + w - 30., ">")] {

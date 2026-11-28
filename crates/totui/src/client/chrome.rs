@@ -925,10 +925,10 @@ impl Client {
             });
         let rules = self.loaded.as_ref().map(|l| &l.resources.rules);
         if let (Some(u), Some(rules), true) = (active, rules, self.moving) {
-            // The original's Moving Units block: icon, unit and terrain,
-            // moves, then the order and nationality. `Loc:` is not drawn in
-            // this mode (reference moving-units.png). The panel is shorter
-            // than the original's, so the order and nationality share a line.
+            // The original's Moving Units block (reference moving-units.png):
+            // the icon with a health bar over it, `Moves:`, the order and the
+            // nationality at its right, and `Unit` / `(Terrain)` under it.
+            // `Loc:` is not drawn in this mode.
             let name = rules
                 .unit_names()
                 .get(u.type_id as usize)
@@ -945,30 +945,49 @@ impl Client {
                         .map(ToString::to_string)
                 })
                 .unwrap_or_else(|| "Terrain".into());
-            draws.push(Draw::Sprite {
-                x: x + 10.,
-                y: y + 28.,
-                w: 24.,
-                h: 24.,
-                sprite: format!("unit-{}", u.type_id),
-            });
-            draws.push(text(
-                x + 40.,
-                y + 24.,
-                &format!("{name} ({terrain})"),
-                style::TYPE_SMALL,
-                style::GOLD,
-            ));
-            let health = v
+            draws.push(rect(x + 10., y + 28., 30., 4., style::INSET));
+            if let Some((_, hp, max)) = v
                 .unit_health
                 .iter()
                 .find(|(slot, _, _)| *slot == u.index)
-                .map_or_else(String::new, |(_, hp, max)| format!(" · {hp}/{max} hp"));
+                .copied()
+            {
+                if max > 0 {
+                    draws.push(rect(
+                        x + 11.,
+                        y + 29.,
+                        28. * f64::from(hp.min(max)) / f64::from(max),
+                        2.,
+                        style::MOVE_OK,
+                    ));
+                }
+            }
+            draws.push(Draw::Sprite {
+                x: x + 10.,
+                y: y + 34.,
+                w: 30.,
+                h: 30.,
+                sprite: format!("unit-{}", u.type_id),
+            });
             draws.push(text(
-                x + 40.,
+                x + 10.,
+                y + 82.,
+                &name,
+                style::TYPE_SMALL,
+                style::GOLD,
+            ));
+            draws.push(text(
+                x + 10.,
+                y + 96.,
+                &format!("({terrain})"),
+                style::TYPE_SMALL,
+                style::GOLD,
+            ));
+            draws.push(text(
+                x + 46.,
                 y + 40.,
-                &format!("Moves: {}{health}", tips::moves_text(u.moves_left)),
-                style::TYPE_FINE,
+                &format!("Moves: {}", tips::moves_text(u.moves_left)),
+                style::TYPE_SMALL,
                 style::TEXT_BRIGHT,
             ));
             let order = o
@@ -976,16 +995,23 @@ impl Client {
                 .iter()
                 .find(|(slot, _)| *slot == u.index)
                 .map_or("—", |(_, order)| order_text(*order));
+            draws.push(text(
+                x + 46.,
+                y + 54.,
+                order,
+                style::TYPE_SMALL,
+                style::TEXT,
+            ));
             let nation = o
                 .civ_names
                 .get(u.owner as usize)
                 .filter(|name| !name.is_empty())
                 .map_or("—", String::as_str);
             draws.push(text(
-                x + 40.,
-                y + 52.,
-                &format!("{order} · {nation}"),
-                style::TYPE_FINE,
+                x + 46.,
+                y + 68.,
+                nation,
+                style::TYPE_SMALL,
                 style::TEXT,
             ));
         } else {

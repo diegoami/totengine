@@ -39,10 +39,11 @@ in the browser and desktop clients together.
     `Opponents Playing`), the inspected tile and terrain, the active unit,
     the `End of Turn (Press ENTER)` prompt (the prompt area is the click
     target), the stack's `Activate unit N` keys and two stone scroll keys.
-  - **Moving Units branch**: with a unit under orders the panel shows its
-    icon, `Unit (Terrain)`, `Moves: N` with health, and the order and
-    nationality (`NONE · Spanish`), and no `Loc:` line or bottom prompt, as
-    the capture above. `Viewing Pieces` keeps the inspected tile.
+  - **Moving Units branch**: with a unit under orders the panel shows the
+    icon with a health bar over it, `Moves:`, the order and the nationality
+    beside it, and `Unit` / `(Terrain)` under it, and no `Loc:` line or
+    bottom prompt, as the capture above. `Viewing Pieces` keeps the inspected
+    tile.
   - **Circular overview**: the known world clipped to a dark disc, unit/city
     dots, the map view outline, and a click that recentres the map.
 - **Full-width map** below the band; the map's stone surround stays visible at
@@ -101,11 +102,11 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   arrows switch planes; the client has one surface plane, so `Loc:` omits the
   number. The arrows scroll the map horizontally; that behavior is inferred,
   not measured from the reference.
-- **Selected-unit details**: the branch is implemented against the capture
-  above, but the band is shorter than the original's, so the order and
-  nationality share one line (`NONE · Spanish`) instead of three stacked
-  lines, health is numeric instead of an icon bar, and the unit picture is
-  smaller. The order names are mapped only for the measured bytes
+- **Selected-unit details**: the branch follows the capture's stack (icon,
+  health bar, `Moves:`, order, nationality, then `Unit` / `(Terrain)`), but
+  the panel is our stone texture rather than the original's, and the stack's
+  `Activate unit N` keys occupy the panel's right side where the reference
+  leaves it empty. The order names are mapped only for the measured bytes
   (`0xff` none, `1` fortifying, `2` fortified); other orders show a dash
   until their names are decoded.
 - **Panel textures**: the band uses the install's `City.gif` stone centred on
@@ -133,7 +134,7 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   `check_city_panels`, `manual_screenshots`) now open a city from its map tile
   instead of clicking the removed sidebar button.
 - The Moving Units branch has a client test: with a unit active it draws
-  `Moves:`, the order + nationality, `Unit (Terrain)` and no `Loc:`; after
-  `v` (Viewing Pieces) the `Loc:` line returns. The new view fields are
-  `Observation::unit_orders` (own visible units only, so foreign orders stay
-  hidden) and `Observation::civ_names`.
+  `Moves:`, the order, the nationality, the unit name and `(Terrain)`, and no
+  `Loc:`; after `v` (Viewing Pieces) the `Loc:` line returns. The new view
+  fields are `Observation::unit_orders` (own visible units only, so foreign
+  orders stay hidden) and `Observation::civ_names`.

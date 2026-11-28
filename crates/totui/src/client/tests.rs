@@ -4642,13 +4642,13 @@ fn moving_units_band_matches_the_reference_branch() {
     };
     // Moving Units: the reference's unit branch, and no Loc line.
     let drawn = texts(&c);
-    assert!(drawn
-        .iter()
-        .any(|t| t.starts_with(&format!("Moves: {}", tips::moves_text(unit.moves_left)))));
-    assert!(drawn
-        .iter()
-        .any(|t| t.starts_with("NONE · ") && t.ends_with(&nation)));
-    assert!(drawn.contains(&format!("{name} ({terrain})")));
+    // The original's stack: Moves, order and nationality beside the icon,
+    // then the unit and its terrain under it.
+    assert!(drawn.contains(&format!("Moves: {}", tips::moves_text(unit.moves_left))));
+    assert!(drawn.contains(&"NONE".to_string()));
+    assert!(drawn.contains(&nation));
+    assert!(drawn.contains(&name));
+    assert!(drawn.contains(&format!("({terrain})")));
     assert!(!drawn.iter().any(|t| t.starts_with("Loc:")));
     // Viewing Pieces keeps the inspected tile.
     key(&mut c, "v");

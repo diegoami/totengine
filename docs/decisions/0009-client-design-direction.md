@@ -116,6 +116,15 @@ bottom. ToTEngine shows a full-window boxed layout with text rows. Its radius
 map uses numeric yields, and it adds Previous/Next, Save, Load and Research
 buttons that the original city window does not have.
 
+## Delivery status
+
+- 2026-11-27: the map screen's top band (status panel, info panel, circular
+  overview over a full-width map) and the original's city-open route shipped on
+  both clients. The provisional right column, sidebar city buttons and bottom
+  status bar are gone from the map screen. Record, gaps and verification:
+  [the original's top-band map frame](../ui/original-frame.md). The floating
+  city window is the next slice of [#439](https://github.com/diegoami/totengine/issues/439).
+
 ## Working rules
 
 - Moving a screen toward the original look and layout is pre-authorized

@@ -5,7 +5,15 @@ exports.run=async ({page,state,key,click,save,load,idle,fixture,saves,out})=>{
   const name='panel'+route.name;
   fs.copyFileSync(path.join(fixture,route.name+'-before.cth'),path.join(saves,name+'.cth'));
   await load(name);
-  if((await state()).draws.some(d=>d.text==='Manage city'))await click('Manage city');
+  {
+   let f=await state();
+   let city=f.draws.find(d=>d.kind==='sprite'&&d.sprite&&d.sprite.startsWith('city-'));
+   if(!city){await key('c');f=await state();city=f.draws.find(d=>d.kind==='sprite'&&d.sprite&&d.sprite.startsWith('city-'))}
+   if(!city)throw Error('no own city sprite for panel route '+route.name);
+   const rect=await page.locator('#game').boundingBox();
+   await page.mouse.dblclick(rect.x+(city.x+city.w/2)*rect.width/f.width,rect.y+(city.y+city.h*.6)*rect.height/768);
+   await idle();
+  }
   await click('Info');
   for(const step of route.inputs){
    const input=step.input;

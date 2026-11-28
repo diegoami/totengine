@@ -10,8 +10,16 @@ def run_panels(scene, key, click_at, click_button, save_dialog, load, work, fixt
         name = 'panel'+route['name']
         shutil.copyfile(fixture/(route['name']+'-before.cth'), work/'saves'/(name+'.cth'))
         load(name)
-        if any(d.get('text') == 'Manage city' for d in scene()['draws']):
-            click_button('Manage city')
+        def city_now():
+            return next((d for d in scene()['draws']
+                         if d.get('kind') == 'sprite' and d['sprite'].startswith('city-')), None)
+        city = city_now()
+        if city is None:
+            key('c')
+            city = city_now()
+        if city is None:
+            raise RuntimeError('no own city sprite for panel route ' + route['name'])
+        click_at(city['x'] + city['w'] / 2, city['y'] + city['h'] * .6, 2)
         click_button('Info')
         keys = {'ArrowDown':'Down', 'ArrowUp':'Up', 'Enter':'Return', 'PageDown':'Next', 'PageUp':'Prior'}
         for step in route['inputs']:

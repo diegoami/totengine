@@ -5,6 +5,17 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
 
 ## [Unreleased]
 
+- **The original's top-band map frame** (#439, decision 0009): both clients
+  draw the menu bar and three stone panels — status (population, cities/units,
+  date, gold, rates, research), info (mode, location/terrain, active unit,
+  end-of-turn prompt, scroll keys) and the circular overview — over a
+  full-width map. The provisional right column, its city buttons and the
+  bottom status bar are gone; cities open from their tile as in the original.
+  Opt-in panels and the wide-screen message column keep their owner decisions.
+  Serif type and flattened install stone replace the sans/dark chrome. The
+  floating city window remains the next #439 slice. See
+  `docs/ui/original-frame.md`.
+
 - **Client design direction** ([decision 0009](docs/decisions/0009-client-design-direction.md)):
   the original game is the look-and-layout target for both clients, with the
   original's top-band frame chosen over Layout B's right column. The v0.11

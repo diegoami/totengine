@@ -96,20 +96,22 @@ the target is the original's top-band frame ([decision 0009](decisions/0009-clie
   Keys work exactly as before; the menus only make the commands visible.
 - **Wide and full-screen windows** (#321): the picture keeps 768 logical
   pixels of height and grows as wide as the window allows, up to 21:9. On the
-  map screen the extra width goes to the map, and the right column stays at the
+  map screen the extra width goes to the map, and the frame stays at the
   right edge. Dialogs, the city window and setup keep their layout, centred. **Alt+Enter** or
   **View > Full screen** toggles full screen (the browser asks for its own full
   screen; Esc there returns to a window). A 4:3 window looks as before.
 - **Side column on wide screens** (#337): from 16:9, a second column sits
-  left of the right column. It shows the latest turn's messages in full, then
+  right below the band. It shows the latest turn's messages in full, then
   earlier ones newest first, with **All messages** at the bottom. It replaces
   the message dock and the new-messages overlay there; the map gives up that
   width. It is on by default when the window is that wide. At 4:3 and 16:10
   nothing changes. It is presentation only and never changes the game.
-- The **right column** shows a **minimap** of what your civilization has seen
-  (a click centres the map there), your turn, government, treasury, rates and
-  research, the selected unit, the selected city with **Manage city** and
-  **Choose production**, and the end-of-turn prompt with **End turn**.
+- The **top band** (decision 0009) shows your population, cities/units with the
+  date, gold with the tax/luxury/science digits and research on the left; the
+  mode, the inspected tile and terrain, the selected unit, the end-of-turn
+  prompt (**Enter**) and horizontal scroll keys in the middle; and a **circular
+  overview** of what your civilization has seen on the right (a click centres
+  the map there). The map runs full width below the band.
 
 - Click an own ready unit to select it and enter Moving, in either mode.
   Selection takes priority over movement: clicking another own unit never moves
@@ -134,10 +136,11 @@ the target is the original's top-band frame ([decision 0009](decisions/0009-clie
 - Press **?** (or **Game > Keys…**) for the keyboard help: original keys plus ToTEngine additions.
 - **Messages** (**World** menu) keeps every turn's notices for the session, newest first and paged. Messages are presentation-only: checkpoints do not store them.
 - **Mouse wheel** pages the list under the pointer: reports, Civilopedia, Messages, choice lists, the checkpoint list and the city panels. It does nothing over the map. In the city window, the **Sort** button reorders the Info, Support and Improvements lists (listed order, name, shields, food or upkeep, largest numbers first); it only changes the display.
-- **Settings** (**Game** menu), or **Enhancements…** on the setup screen, holds optional improvements that differ from the original. All are off by default and saved in `enhancements.json` beside the saves folder, shared by both clients; delete the file to reset. *New-messages overlay on the map* lists a turn's notices over the map (with **Open messages** / **Dismiss**). *Confirm every move* asks before each unit move; attacks and captures always ask. *Map tooltips* describes a known tile when the pointer rests on it: terrain, river/road, city and units, from your civilization's view only. *Goal estimates in the science advisor* adds the goal path and turn estimate to F6 (see below). *Order buttons under the map* adds a strip with the selected unit's orders (Move/View, Wait, Skip, Found city, Activate), each doing exactly what its key does; the map gets a little shorter. *Message log in the right column* keeps the latest messages beside the map, newest first, with **All messages** opening the full log; the minimap gets smaller to make room. *Path preview with turn counts* works the same way while a unit is selected to move: the tip shows the cheapest route over tiles your civilization knows (gold dots, a number where each turn's moves run out) and how many turns it takes; it follows the engine's move costs and only the foreign units you can see, so it is an estimate, and it gives no goto order. None of them affect checkpoints, recordings or rules.
-- **Double-click an own city on the map** (including its garrison) or use
-  **Manage city** to open its workspace. The first city click only selects or
-  inspects; use movement keys to move into an own city. Click a radius tile
+- **Settings** (**Game** menu), or **Enhancements…** on the setup screen, holds optional improvements that differ from the original. All are off by default and saved in `enhancements.json` beside the saves folder, shared by both clients; delete the file to reset. *New-messages overlay on the map* lists a turn's notices over the map (with **Open messages** / **Dismiss**). *Confirm every move* asks before each unit move; attacks and captures always ask. *Map tooltips* describes a known tile when the pointer rests on it: terrain, river/road, city and units, from your civilization's view only. *Goal estimates in the science advisor* adds the goal path and turn estimate to F6 (see below). *Order buttons under the map* adds a strip with the selected unit's orders (Move/View, Wait, Skip, Found city, Activate), each doing exactly what its key does; the map gets a little shorter. *Message log panel* keeps the latest messages in a floating panel over the map, newest first, with **All messages** opening the full log. *Path preview with turn counts* works the same way while a unit is selected to move: the tip shows the cheapest route over tiles your civilization knows (gold dots, a number where each turn's moves run out) and how many turns it takes; it follows the engine's move costs and only the foreign units you can see, so it is an estimate, and it gives no goto order. None of them affect checkpoints, recordings or rules.
+- **Double-click an own city on the map** (including its garrison) to open its
+  workspace, the original's route; **Kingdom > Cities** cycles city windows
+  from the keyboard. The first city click only selects or inspects; use
+  movement keys to move into an own city. Click a radius tile
   to remove/assign its worker; arrows select a tile and **Space** changes it.
   Removing a worker creates an entertainer. Click a specialist to cycle
   entertainer → tax collector → scientist; tax/scientist roles need population

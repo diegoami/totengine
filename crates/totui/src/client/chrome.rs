@@ -1,31 +1,39 @@
-//! Layout B chrome (docs/ui/layout-b.md): the menu bar (#310) and the right
-//! column with minimap, status, unit and city boxes (#311).
+//! Map-screen chrome: the menu bar (#310) and the original's top band
+//! (decision 0009, #439) — the status panel, the info panel and the circular
+//! overview over a full-width map.
 //!
-//! Everything here is presentation. Every menu item and column button runs an
-//! `Action` the client already had before layout B, and every key keeps its
-//! meaning; menus only make the commands visible in one place. The minimap is
-//! drawn from the civilization's filtered view and a click on it only scrolls.
+//! Everything here is presentation. Every menu item and band key runs an
+//! `Action` the client already had, and every key keeps its meaning; menus
+//! only make the commands visible in one place. The overview is drawn from the
+//! civilization's filtered view and a click on it only scrolls.
 use super::*;
 
 /// Height of the menu bar along the top of the map screen.
 pub(super) const MENU_H: f64 = 26.;
+/// Height of the top band: the status panel, the info panel and the circular
+/// overview over the full-width map (decision 0009, #439).
+pub(super) const BAND_H: f64 = 140.;
 /// The map viewport `(x, y, w, h)` with every option off; the optional order
-/// strip (#312) takes its bottom edge.
-pub(super) const MAP: (f64, f64, f64, f64) = (8., 34., 768., 682.);
+/// strip (#312) takes its bottom edge. The map runs full width below the
+/// band, as in the original's frame.
+pub(super) const MAP: (f64, f64, f64, f64) = (20., 174., 984., 560.);
+/// The status panel `(x, y, w, h)` in the band: population, cities/units and
+/// the date, gold with rates, and the research icon.
+pub(super) const STATUS_PANEL: (f64, f64, f64, f64) = (10., 34., 224., 122.);
+/// Left edge and width of the info panel; its right edge meets the overview.
+pub(super) const INFO_X: f64 = 242.;
+/// Width of the circular-overview cell at the right of the band.
+pub(super) const OVERVIEW_W: f64 = 124.;
 /// Height the order strip takes from the map (#312).
 pub(super) const STRIP_H: f64 = 46.;
-/// The right column `(x, y, w, h)`.
-pub(super) const COLUMN: (f64, f64, f64, f64) = (784., 34., 232., 682.);
-/// Width of the side column a wide stage adds left of the right column
-/// (#337), and the gap between the two.
+/// Width of the side column a wide stage adds at the map's right (#337),
+/// and the gap between the two.
 pub(super) const SIDE_W: f64 = 232.;
 const SIDE_GAP: f64 = 8.;
 /// The narrowest stage that has the side column: 4:3 plus the column.
-/// 16:9 (1365) has it; 16:10 (1228) and 4:3 keep layout B as it was.
+/// 16:9 (1365) has it; 16:10 (1228) and 4:3 keep the frame as it was.
 pub(super) const WIDE_MIN: f64 = 1024. + SIDE_W + SIDE_GAP;
-/// The minimap inside the column's top box.
-const MINIMAP: (f64, f64, f64, f64) = (790., 40., 220., 126.);
-/// Width of text and buttons inside the column.
+/// Width of text and buttons inside the side column and the message dock.
 const CW: f64 = 220.;
 const ITEM_H: f64 = 26.;
 const DROP_W: f64 = 250.;
@@ -63,7 +71,7 @@ fn terrain_color(terrain: u8) -> &'static str {
 }
 
 fn title_w(title: &str) -> f64 {
-    (title.chars().count() as f64 * 0.62 * f64::from(style::TYPE_BODY) + 22.).ceil()
+    (title.chars().count() as f64 * 0.60 * f64::from(style::TYPE_SMALL) + 22.).ceil()
 }
 
 /// Left edge of each menu title.
@@ -112,33 +120,28 @@ impl Client {
     }
 
     /// Left edge of the side column (#337) when the stage is wide enough
-    /// for it: messages and notices move there from the right column's dock
-    /// and the new-messages overlay. Owner decision 2026-11-19: on by default
-    /// from `WIDE_MIN`, 4:3 unchanged.
+    /// for it: the messages and notices move there from the new-messages
+    /// overlay. Owner decision 2026-11-19: on by default from `WIDE_MIN`,
+    /// 4:3 unchanged. It sits at the stage's right edge, below the top band
+    /// (decision 0009).
     pub(super) fn side_x(&self) -> Option<f64> {
-        (self.stage_w >= WIDE_MIN).then(|| self.column_x() - SIDE_GAP - SIDE_W)
+        (self.stage_w >= WIDE_MIN).then_some(self.stage_w - SIDE_W - SIDE_GAP)
     }
 
-    /// Left edge of the right column: anchored to the stage's right edge, so
-    /// a wide window gives the map the extra width (#321).
-    pub(super) fn column_x(&self) -> f64 {
-        self.stage_w - (1024. - COLUMN.0)
+    /// Top of the side column and of the map's right edge: below the band.
+    pub(super) fn frame_top(&self) -> f64 {
+        MENU_H + BAND_H + 4.
     }
 
-    /// Left edge of text and buttons inside the column.
-    fn cx(&self) -> f64 {
-        self.column_x() + 6.
-    }
-
-    /// The map viewport `(x, y, w, h)`: shorter while the order strip shows.
+    /// The map viewport `(x, y, w, h)`: full width below the band, shorter
+    /// while the order strip shows and on a wide stage beside the side
+    /// column (#337).
     pub(super) fn map_rect(&self) -> (f64, f64, f64, f64) {
-        let (x, y, w, h) = MAP;
-        let side = if self.side_x().is_some() {
-            SIDE_W + SIDE_GAP
-        } else {
-            0.
-        };
-        let w = w + self.stage_w - 1024. - side;
+        let (x, y, _, h) = MAP;
+        let right = self
+            .side_x()
+            .map_or(self.stage_w - MAP.0, |sx| sx - SIDE_GAP);
+        let w = (right - x).max(64.);
         if self.enhancements.order_strip {
             (x, y, w, h - STRIP_H)
         } else {
@@ -358,7 +361,7 @@ impl Client {
         Some(Ok(()))
     }
 
-    /// The menu bar, drawn under the column and map: its background and the
+    /// The menu bar, drawn under the band and map: its background and the
     /// window title at the right end.
     pub(super) fn menu_bar_draw(&self, draws: &mut Vec<Draw>, title: &str) {
         draws.push(rect(0., 0., self.stage_w, MENU_H, style::MENU_BAR));
@@ -368,8 +371,7 @@ impl Client {
         let width = |t: &str| t.chars().count() as f64 * 0.58 * f64::from(style::TYPE_SMALL);
         // The browser's licence link sits at the top-right corner; a long
         // title (a scenario name) first drops the turn, then the date (#330),
-        // both of which the right column also shows, then ends in an
-        // ellipsis.
+        // both of which the band also shows, then ends in an ellipsis.
         let room = self.stage_w - 198. - (title_x(MENUS.len()) + 8.);
         let mut title = title.to_string();
         if width(&title) > room {
@@ -389,7 +391,7 @@ impl Client {
         let w = width(&title);
         draws.push(text(
             (self.stage_w - 198. - w).max(title_x(MENUS.len()) + 8.),
-            7.,
+            8.,
             &title,
             style::TYPE_SMALL,
             style::MENU_TEXT,
@@ -415,9 +417,9 @@ impl Client {
             }
             draws.push(text(
                 x + 11.,
-                5.,
+                6.,
                 title,
-                style::TYPE_BODY,
+                style::TYPE_SMALL,
                 if on { style::MENU_SELECT_TEXT } else { idle },
             ));
         }
@@ -471,34 +473,6 @@ impl Client {
                     color,
                 ));
             }
-        }
-    }
-
-    /// Where the right column's boxes start. With the message dock off these
-    /// are the fixed positions of #311; the dock (#313) takes the space the
-    /// minimap and empty rows leave.
-    fn column_layout(&self, v: &HumanView) -> ColumnLayout {
-        let stack = self.stack_at_cursor(v).len().min(3) as f64;
-        // The side column carries the messages on a wide stage (#337).
-        if !self.enhancements.message_dock || self.side_x().is_some() {
-            return ColumnLayout {
-                minimap: (self.cx(), MINIMAP.1, MINIMAP.2, MINIMAP.3),
-                status: 176.,
-                unit: 304.,
-                city: self.city.map(|_| 484.),
-                dock: None,
-            };
-        }
-        let unit = 252.;
-        let unit_end = unit + 96. + stack * 28.;
-        let city = self.city.map(|_| unit_end + 4.);
-        let top = city.map_or(unit_end, |c| c + 146.) + 4.;
-        ColumnLayout {
-            minimap: (self.cx(), MINIMAP.1, MINIMAP.2, 74.),
-            status: 124.,
-            unit,
-            city,
-            dock: (630. - top >= 62.).then_some((top, 630.)),
         }
     }
 
@@ -573,12 +547,40 @@ impl Client {
         ));
     }
 
-    /// Buttons in the right column: the stack under the cursor, the selected
-    /// city's two entries and the end-of-turn slot.
-    pub(super) fn column_buttons(&self, v: &HumanView) -> Vec<Button> {
-        let cx = self.cx();
-        let l = self.column_layout(v);
+    /// The status panel `(x, y, w, h)` in the band.
+    fn status_rect() -> (f64, f64, f64, f64) {
+        STATUS_PANEL
+    }
+
+    /// The info panel `(x, y, w, h)`: it stretches from the status panel to
+    /// the circular overview.
+    fn info_rect(&self) -> (f64, f64, f64, f64) {
+        let (ox, _, _, _) = self.overview_rect();
+        (INFO_X, STATUS_PANEL.1, ox - INFO_X - 8., STATUS_PANEL.3)
+    }
+
+    /// The overview cell `(x, y, w, h)` at the right of the band.
+    fn overview_rect(&self) -> (f64, f64, f64, f64) {
+        (
+            self.stage_w - OVERVIEW_W - 4.,
+            MENU_H + 4.,
+            OVERVIEW_W - 4.,
+            BAND_H - 8.,
+        )
+    }
+
+    /// Centre and radius of the circular overview.
+    fn overview_circle(&self) -> (f64, f64, f64) {
+        let (x, y, w, h) = self.overview_rect();
+        (x + w / 2., y + h / 2., (w.min(h) / 2. - 12.).max(8.))
+    }
+
+    /// Buttons of the top band (#439): the end-of-turn slot (or the pacer),
+    /// the stack under the inspected tile, the overview's scroll arrows and
+    /// the optional dock's message link.
+    pub(super) fn band_buttons(&self, v: &HumanView) -> Vec<Button> {
         let mut b = self.strip_buttons(v);
+        let (ix, iy, iw, ih) = self.info_rect();
         let mut add = |x, y, w, h, label: String, action| {
             b.push(Button {
                 x,
@@ -591,38 +593,20 @@ impl Client {
         };
         for (i, e) in self.stack_at_cursor(v).iter().take(3).enumerate() {
             add(
-                cx,
-                l.unit + 96. + i as f64 * 28.,
-                CW,
-                26.,
+                ix + iw - 190.,
+                iy + 34. + i as f64 * 26.,
+                182.,
+                24.,
                 format!("Activate unit {}", e.slot),
                 Action::Unit(*e),
             );
         }
-        if let (Some(city), Some(top)) = (self.city, l.city) {
-            add(
-                cx,
-                top + 80.,
-                CW,
-                28.,
-                "Manage city".into(),
-                Action::OpenCity,
-            );
-            add(
-                cx,
-                top + 112.,
-                CW,
-                28.,
-                "Choose production".into(),
-                Action::Production(city),
-            );
-        }
         if v.phase == Phase::Opponents {
             add(
-                cx,
-                672.,
-                CW,
-                38.,
+                ix + 6.,
+                iy + ih - 48.,
+                150.,
+                40.,
                 if self.advancing {
                     "Pause opponents"
                 } else {
@@ -632,25 +616,47 @@ impl Client {
                 Action::Work,
             );
         } else {
-            add(cx, 672., CW, 38., "End turn [Ctrl+N]".into(), Action::End);
-        }
-        if let Some((_, bottom)) = l.dock {
             add(
-                cx,
-                bottom - 30.,
-                CW,
+                ix + 6.,
+                iy + ih - 48.,
+                150.,
+                40.,
+                "End turn [Ctrl+N]".into(),
+                Action::End,
+            );
+        }
+        add(
+            ix + iw - 58.,
+            iy + ih - 28.,
+            24.,
+            20.,
+            "Scroll map left".into(),
+            Action::Pan(iw * 0.6, 0.),
+        );
+        add(
+            ix + iw - 30.,
+            iy + ih - 28.,
+            24.,
+            20.,
+            "Scroll map right".into(),
+            Action::Pan(-iw * 0.6, 0.),
+        );
+        if let Some((x, y, w, h)) = self.dock_rect() {
+            add(
+                x + 6.,
+                y + h - 32.,
+                w - 12.,
                 26.,
                 format!("All messages ({})", self.notice_log.len()),
                 Action::Messages,
             );
         }
         if let Some(sx) = self.side_x() {
-            let (_, y, _, h) = COLUMN;
             add(
                 sx + 6.,
-                y + h - 38.,
+                768. - 8. - 30.,
                 CW,
-                30.,
+                26.,
                 format!("All messages ({})", self.notice_log.len()),
                 Action::Messages,
             );
@@ -682,14 +688,10 @@ impl Client {
         let Some(x) = self.side_x() else {
             return;
         };
-        let (_, top, w, h) = COLUMN;
-        draws.push(Draw::Tile {
-            x,
-            y: top,
-            w,
-            h,
-            sprite: "panel".into(),
-        });
+        let top = self.frame_top();
+        let w = SIDE_W;
+        let h = 768. - 8. - top;
+        panel_frame(draws, x, top, w, h, false);
         let cx = x + 6.;
         let bottom = top + h - 44.;
         let mut y = top + 8.;
@@ -754,284 +756,450 @@ impl Client {
         }
     }
 
-    /// The column's frames, minimap and text (its buttons draw with the rest).
-    pub(super) fn column_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
-        let cx = self.cx();
-        let (_, y, w, h) = COLUMN;
-        let x = self.column_x();
+    /// The band's frame, the status panel, the info panel's map report and
+    /// the circular overview (decision 0009, #439).
+    pub(super) fn band_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
         draws.push(Draw::Tile {
-            x,
-            y,
-            w,
-            h,
-            sprite: "panel".into(),
+            x: 0.,
+            y: MENU_H,
+            w: self.stage_w,
+            h: BAND_H,
+            sprite: "band".into(),
         });
-        let l = self.column_layout(v);
-        let mut tops = vec![l.status, l.unit];
-        tops.extend(l.city);
-        tops.extend(l.dock.map(|(t, _)| t));
-        tops.push(634.);
-        for top in tops {
-            draws.push(rect(x, top - 4., w, 1., style::INSET));
-            draws.push(rect(x, top - 1., w, 1., style::GOLD_DIM));
-        }
-        self.minimap_draw(draws, v);
+        draws.push(rect(0., MENU_H, self.stage_w, 1., style::INSET));
+        draws.push(rect(0., MENU_H + 1., self.stage_w, 1., style::BAND_LIGHT));
+        draws.push(rect(
+            0.,
+            MENU_H + BAND_H - 1.,
+            self.stage_w,
+            1.,
+            style::INSET,
+        ));
+        let (sx, sy, sw, sh) = Self::status_rect();
+        panel_frame(draws, sx, sy, sw, sh, true);
+        self.status_panel_draw(draws, v, (sx, sy, sw, sh));
+        let (ix, iy, iw, ih) = self.info_rect();
+        panel_frame(draws, ix, iy, iw, ih, false);
+        self.info_panel_draw(draws, v, (ix, iy, iw, ih));
+        self.overview_draw(draws, v);
+    }
+
+    /// The status panel: population, cities/units with the date, gold with
+    /// the tax/luxury/science digits and the research icon.
+    fn status_panel_draw(
+        &self,
+        draws: &mut Vec<Draw>,
+        v: &HumanView,
+        (x, y, w, _h): (f64, f64, f64, f64),
+    ) {
         let o = &v.observation;
-        let mut line = |y: f64, s: &str, size: u32, color: &str| {
-            draws.push(text(cx, y, s, size, color));
-        };
-        // Status: date and turn (#330), government and treasury, rates and
-        // research.
-        let head = match self.date_label(o) {
-            Some(date) => format!("{date} · Turn {}", o.turn),
-            None => format!("Turn {}", o.turn),
-        };
-        line(
-            l.status + 6.,
-            &head,
-            style::button_label_size(&head, CW),
+        let own = |owner: u8| owner == o.civ;
+        let cities = o.cities.iter().filter(|c| own(c.owner)).count();
+        let units = o.units.iter().filter(|u| own(u.owner)).count();
+        let population: u64 = o
+            .cities
+            .iter()
+            .filter(|c| own(c.owner))
+            .map(|c| u64::from(c.size) * 10_000)
+            .sum();
+        draws.push(text(
+            x + 10.,
+            y + 22.,
+            &format!("{} People", group_digits(population)),
+            style::TYPE_BODY,
             style::TEXT_BRIGHT,
-        );
-        let purse = format!(
-            "{} · {} gold",
-            routes::government_name(o.government),
-            o.treasury
-        );
-        line(
-            l.status + 28.,
-            &purse,
-            style::button_label_size(&purse, CW),
+        ));
+        draws.push(text(
+            x + 10.,
+            y + 44.,
+            &format!("{cities}C {units}U"),
+            style::TYPE_SMALL,
             style::TEXT,
-        );
-        if let Some(r) = &v.rates {
-            line(
-                l.status + 50.,
-                &format!(
-                    "Tax {}% · Lux {}% · Sci {}%",
-                    u32::from(r.tax) * 10,
-                    u32::from(r.luxury) * 10,
-                    u32::from(r.science) * 10
-                ),
+        ));
+        if let Some(date) = self.date_label(o) {
+            draws.push(text(
+                x + w - 10. - estimate(&date, style::TYPE_SMALL),
+                y + 44.,
+                &date,
                 style::TYPE_SMALL,
-                style::TEXT_DIM,
-            );
+                style::TEXT,
+            ));
         }
-        line(
-            l.status + 70.,
-            &o.research.target.map_or_else(
-                || "Topic: none chosen".into(),
-                |t| format!("Topic: {}", self.tech_name(t)),
-            ),
+        let rates = v.rates.map_or_else(
+            || "0.0.0".to_string(),
+            |r| format!("{}.{}.{}", r.tax, r.luxury, r.science),
+        );
+        draws.push(text(
+            x + 10.,
+            y + 64.,
+            &format!("{} Gold {rates}", o.treasury),
             style::TYPE_SMALL,
             style::TEXT_BRIGHT,
-        );
+        ));
+        // The research icon: a small flask over the panel stone. The install
+        // exposes no font or icon sheet here, so the glyph is drawn.
+        let fx = x + 10.;
+        let fy = y + 76.;
+        draws.push(rect(fx + 9., fy, 5., 7., style::TEXT));
+        draws.push(rect(fx + 6., fy + 7., 11., 10., style::TEXT));
+        draws.push(rect(fx + 7., fy + 11., 9., 5., style::GOLD));
+        let topic = o
+            .research
+            .target
+            .map_or_else(|| "No research".to_string(), |t| self.tech_name(t));
         let cost = o.research.cost.unwrap_or(0);
-        draws.push(rect(cx, l.status + 90., CW, 8., style::INSET));
-        if cost > 0 {
-            let done = (f64::from(o.research.progress) / f64::from(cost)).clamp(0., 1.);
-            draws.push(rect(cx, l.status + 90., CW * done, 8., style::LINK));
-        }
         draws.push(text(
-            cx,
-            l.status + 104.,
+            x + 30.,
+            y + 86.,
+            &topic,
+            style::TYPE_SMALL,
+            style::TEXT_BRIGHT,
+        ));
+        draws.push(text(
+            x + 30.,
+            y + 102.,
             &format!(
-                "Research: {} / {}",
+                "{} / {}",
                 o.research.progress,
-                o.research
-                    .cost
-                    .map_or_else(|| "unavailable".into(), |n| n.to_string())
+                if cost > 0 {
+                    cost.to_string()
+                } else {
+                    "—".to_string()
+                }
             ),
             style::TYPE_SMALL,
             style::TEXT_DIM,
         ));
-        // The active unit.
+    }
+
+    /// The info panel: the mode across the top, the location and terrain of
+    /// the inspected tile, the active unit, the end-of-turn prompt and the
+    /// overview arrows.
+    fn info_panel_draw(
+        &self,
+        draws: &mut Vec<Draw>,
+        v: &HumanView,
+        (x, y, w, h): (f64, f64, f64, f64),
+    ) {
+        let o = &v.observation;
+        let idle = !o.units.iter().any(|u| u.owner == o.civ && u.moves_left > 0);
+        let mode = match v.phase {
+            Phase::Human if v.decision.is_some() => "Choice Required",
+            Phase::Human if self.moving => "Moving Units",
+            Phase::Human => "Viewing Pieces",
+            Phase::Opponents => "Opponents Playing",
+            Phase::Eliminated => "Civilization Eliminated",
+            Phase::TurnLimit => "Turn Limit Reached",
+            Phase::GameOver => "Game Over",
+        };
+        draws.push(text(
+            x + (w - estimate(mode, style::TYPE_BODY)) / 2.,
+            y + 20.,
+            mode,
+            style::TYPE_BODY,
+            style::TEXT_BRIGHT,
+        ));
+        // The inspected tile: the viewing cursor, else the selected unit.
+        let active = self
+            .active
+            .and_then(|e| o.units.iter().find(|u| u.index == e.slot));
+        let at = self
+            .inspect
+            .or_else(|| active.map(|u| (u.x, u.y)))
+            .or_else(|| {
+                o.units
+                    .iter()
+                    .find(|u| u.owner == o.civ)
+                    .map(|u| (u.x, u.y))
+            });
+        if let Some((tx, ty)) = at {
+            draws.push(text(
+                x + 10.,
+                y + 42.,
+                &format!("Loc: ({tx}, {ty})"),
+                style::TYPE_SMALL,
+                style::TEXT_BRIGHT,
+            ));
+            let rules = self.loaded.as_ref().map(|l| &l.resources.rules);
+            if let (Some(tile), Some(rules)) = (
+                o.seen.get(paths::stored(o, tx, ty)).copied().flatten(),
+                rules,
+            ) {
+                let terrain = rules
+                    .base_terrain_names()
+                    .get(tile.terrain as usize)
+                    .map_or_else(|| "Terrain".to_string(), ToString::to_string);
+                let mut parts = vec![terrain];
+                if tile.river {
+                    parts.push("River".into());
+                }
+                if tile.rail {
+                    parts.push("Railroad".into());
+                } else if tile.road {
+                    parts.push("Road".into());
+                }
+                draws.push(text(
+                    x + 10.,
+                    y + 58.,
+                    &format!("({})", parts.join(", ")),
+                    style::TYPE_SMALL,
+                    style::TEXT,
+                ));
+            }
+        }
         let rules = self.loaded.as_ref().map(|l| &l.resources.rules);
-        if let (Some(u), Some(rules)) = (
-            self.active
-                .and_then(|e| o.units.iter().find(|u| u.index == e.slot)),
-            rules,
-        ) {
+        if let (Some(u), Some(rules)) = (active, rules) {
             let name = rules
                 .unit_names()
                 .get(u.type_id as usize)
                 .map_or_else(|| "Unit".to_string(), ToString::to_string);
             let vet = if u.veteran { " (veteran)" } else { "" };
             draws.push(text(
-                cx,
-                l.unit + 6.,
+                x + 200.,
+                y + 42.,
                 &format!("{name} #{}{vet}", u.index),
-                style::TYPE_BODY,
+                style::TYPE_SMALL,
                 style::GOLD,
             ));
             let health = v
                 .unit_health
                 .iter()
                 .find(|(slot, _, _)| *slot == u.index)
-                .map_or_else(String::new, |(_, hp, max)| format!(" · health {hp}/{max}"));
+                .map_or_else(String::new, |(_, hp, max)| format!(" · {hp}/{max} hp"));
             draws.push(text(
-                cx,
-                l.unit + 28.,
+                x + 200.,
+                y + 58.,
                 &format!("Moves {}{health}", tips::moves_text(u.moves_left)),
                 style::TYPE_SMALL,
                 style::TEXT,
             ));
-            let at = paths::stored(o, u.x, u.y);
-            if let Some(tile) = o.seen.get(at).copied().flatten() {
-                let terrain = rules
-                    .base_terrain_names()
-                    .get(tile.terrain as usize)
-                    .map_or_else(|| "Terrain".to_string(), ToString::to_string);
-                let extra = if tile.rail {
-                    " · railroad"
-                } else if tile.road {
-                    " · road"
-                } else {
-                    ""
-                };
-                draws.push(text(
-                    cx,
-                    l.unit + 46.,
-                    &format!("{terrain} ({}, {}){extra}", u.x, u.y),
-                    style::TYPE_SMALL,
-                    style::TEXT_DIM,
-                ));
-            }
-            let others = o
-                .units
-                .iter()
-                .filter(|w| (w.x, w.y) == (u.x, u.y) && w.index != u.index)
-                .count();
-            if others > 0 {
-                draws.push(text(
-                    cx,
-                    l.unit + 64.,
-                    &format!(
-                        "{others} more unit{} here",
-                        if others == 1 { "" } else { "s" }
-                    ),
-                    style::TYPE_SMALL,
-                    style::TEXT_DIM,
-                ));
-            }
         } else {
             draws.push(text(
-                cx,
-                l.unit + 6.,
+                x + 200.,
+                y + 42.,
                 "No unit selected",
                 style::TYPE_SMALL,
                 style::TEXT_DIM,
             ));
         }
-        // The selected own city.
-        if let (Some(c), Some(top)) = (
-            self.city
-                .and_then(|e| o.cities.iter().find(|c| c.index == e.slot)),
-            l.city,
-        ) {
+        // Units on the inspected tile, as small stone keys (the original
+        // shows a stack chooser when units share a tile).
+        for (i, e) in self.stack_at_cursor(v).iter().take(3).enumerate() {
+            let kx = x + w - 190.;
+            let ky = y + 34. + i as f64 * 26.;
+            draws.push(rect(kx, ky, 182., 24., style::INSET));
+            draws.push(rect(kx + 1., ky + 1., 180., 22., style::BAND_KEY));
+            draws.push(rect(kx + 1., ky + 1., 180., 1., style::BAND_LIGHT));
+            let label = format!("Activate unit {}", e.slot);
             draws.push(text(
-                cx,
-                top + 6.,
-                &format!("{} · size {}", c.name, c.size),
-                style::TYPE_BODY,
-                style::GOLD,
-            ));
-            draws.push(text(
-                cx,
-                top + 28.,
-                &format!(
-                    "{} · shields {}",
-                    self.item_name(c.building.unwrap_or(0)),
-                    c.shield_box.unwrap_or(0)
-                ),
+                kx + 8.,
+                ky + 5.,
+                &label,
                 style::TYPE_SMALL,
-                style::TEXT,
+                style::MENU_TEXT,
             ));
-            if let Some(e) = o.city_economy.iter().find(|e| e.index == c.index) {
-                draws.push(text(
-                    cx,
-                    top + 44.,
-                    &format!(
-                        "Food {:+} · shields {} · sci {}",
-                        e.food_surplus, e.net_shields, e.finance.science
-                    ),
-                    style::TYPE_SMALL,
-                    style::TEXT_DIM,
-                ));
-                draws.push(text(
-                    cx,
-                    top + 60.,
-                    &format!(
-                        "Tax {} · happy {} · unhappy {}",
-                        e.finance.taxes, e.happy, e.unhappy
-                    ),
-                    style::TYPE_SMALL,
-                    style::TEXT_DIM,
-                ));
-            }
         }
-        // The message dock (#313): newest first, as many as fit.
-        if let Some((top, bottom)) = l.dock {
-            draws.push(text(
-                cx,
-                top + 6.,
-                "Messages",
-                style::TYPE_SMALL,
-                style::TEXT_BRIGHT,
-            ));
-            let rows = ((bottom - 34. - (top + 26.)) / 16.).floor().max(0.) as usize;
-            if self.notice_log.is_empty() {
-                draws.push(text(
-                    cx,
-                    top + 26.,
-                    "No messages yet.",
-                    style::TYPE_SMALL,
-                    style::TEXT_DIM,
-                ));
+        // The end-of-turn prompt, or what the opponents are doing.
+        let (line, sub) = match v.phase {
+            Phase::Human if v.decision.is_some() => {
+                ("Resolve the required choice", Some("Advisors reopen it"))
             }
-            for (i, (turn, line)) in self.notice_log.iter().rev().take(rows).enumerate() {
-                let mut s = format!("T{turn} {line}");
-                if s.chars().count() > 31 {
-                    s = s.chars().take(30).collect::<String>() + "…";
-                }
-                draws.push(text(
-                    cx,
-                    top + 26. + i as f64 * 16.,
-                    &s,
-                    style::TYPE_SMALL,
-                    style::TEXT,
-                ));
-            }
-        }
-        // The turn: what the player is doing, and the end-of-turn prompt.
-        let idle = !o.units.iter().any(|u| u.owner == o.civ && u.moves_left > 0);
-        let phase = match v.phase {
-            Phase::Human if v.decision.is_some() => "Choice required",
-            Phase::Human if self.moving => "Moving units",
-            Phase::Human if idle => "End of turn",
-            Phase::Human => "Viewing pieces",
-            Phase::Opponents => "Opponents playing",
-            Phase::Eliminated => "Your civilization is eliminated",
-            Phase::TurnLimit => "Turn limit reached",
-            Phase::GameOver => "Game over: scenario event",
+            Phase::Human if idle => ("End of Turn", Some("(Press ENTER)")),
+            Phase::Human => (
+                if self.moving {
+                    "Moving Units"
+                } else {
+                    "Viewing Pieces"
+                },
+                None,
+            ),
+            Phase::Opponents => (
+                if self.advancing {
+                    "Opponents are playing"
+                } else {
+                    "Opponents paused"
+                },
+                None,
+            ),
+            Phase::Eliminated => ("No cities or units remain", None),
+            Phase::TurnLimit => ("Turn limit reached", Some("Save a checkpoint")),
+            Phase::GameOver => ("Game over: scenario event", None),
         };
         draws.push(text(
-            cx,
-            640.,
-            phase,
-            style::TYPE_BODY,
-            if phase == "End of turn" {
+            x + 10.,
+            y + h - 42.,
+            line,
+            style::TYPE_SMALL,
+            if line == "End of Turn" {
                 style::GOLD
             } else {
-                style::TEXT
+                style::TEXT_BRIGHT
             },
         ));
-        if phase == "End of turn" {
+        if let Some(sub) = sub {
             draws.push(text(
-                cx,
-                656.,
-                "(Press Enter or Ctrl+N)",
+                x + 10.,
+                y + h - 26.,
+                sub,
                 style::TYPE_SMALL,
                 style::TEXT_DIM,
+            ));
+        }
+        // The overview arrows: raised stone keys that scroll the map.
+        for (ax, glyph) in [(x + w - 58., "<"), (x + w - 30., ">")] {
+            let ay = y + h - 28.;
+            draws.push(rect(ax, ay, 24., 20., style::INSET));
+            draws.push(rect(ax + 1., ay + 1., 22., 18., style::BAND_KEY));
+            draws.push(rect(ax + 1., ay + 1., 22., 1., style::BAND_LIGHT));
+            draws.push(text(
+                ax + 9.,
+                ay + 3.,
+                glyph,
+                style::TYPE_SMALL,
+                style::MENU_TEXT,
+            ));
+        }
+    }
+
+    /// The circular overview: the known world clipped to a disc, the view
+    /// outline and the scroll arrows' ring.
+    fn overview_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
+        let (x, y, w, h) = self.overview_rect();
+        panel_frame(draws, x, y, w, h, false);
+        let (cx, cy, r) = self.overview_circle();
+        // A dark disc, row by row, before the known-world cells: the original
+        // overview is an opaque circle rather than a square minimap.
+        let mut yy = -r;
+        while yy < r {
+            let half = (r * r - yy * yy).sqrt();
+            draws.push(rect(cx - half, cy + yy, 2. * half, 2., style::FIELD));
+            yy += 2.;
+        }
+        let m = (cx - r, cy - r, 2. * r, 2. * r);
+        let o = &v.observation;
+        let (cw, ch) = Self::minimap_cell(o, m);
+        let cols = usize::from(o.w2 / 2);
+        for row in 0..usize::from(o.h) {
+            let row_y = m.1 + row as f64 * ch + ch / 2.;
+            let dy = row_y - cy;
+            if dy.abs() >= r {
+                continue;
+            }
+            let half = (r * r - dy * dy).sqrt();
+            let (left, right) = (cx - half, cx + half);
+            let shift = if row % 2 == 1 { cw / 2. } else { 0. };
+            let mut run: Option<(usize, &str)> = None;
+            for col in 0..=cols {
+                let here = (col < cols)
+                    .then(|| o.seen.get(row * cols + col).copied().flatten())
+                    .flatten()
+                    .map(|t| terrain_color(t.terrain));
+                if run.map(|(_, c)| Some(c)) != Some(here) {
+                    if let Some((start, c)) = run {
+                        let x0 = (m.0 + shift + start as f64 * cw).max(left);
+                        let x1 = (m.0 + shift + col as f64 * cw).min(right);
+                        if x1 > x0 {
+                            draws.push(rect(x0, m.1 + row as f64 * ch, x1 - x0, ch, c));
+                        }
+                    }
+                    run = here.map(|c| (col, c));
+                }
+            }
+        }
+        let dot = |x: u16, y: u16| (m.0 + f64::from(x) * cw / 2., m.1 + f64::from(y) * ch);
+        let inside = |px: f64, py: f64| (px - cx).powi(2) + (py - cy).powi(2) <= (r - 1.).powi(2);
+        for u in &o.units {
+            let (px, py) = dot(u.x, u.y);
+            if inside(px, py) {
+                draws.push(rect(px, py, 2., 2., civ_color(u.owner)));
+            }
+        }
+        for c in &o.cities {
+            let (px, py) = dot(c.x, c.y);
+            if inside(px, py) {
+                draws.push(rect(px - 1., py - 1., 4., 4., civ_color(c.owner)));
+            }
+        }
+        // The map view's outline, clipped to the disc.
+        let z = self.zoom;
+        let lx = |sx: f64| ((sx - self.pan.0) / (32. * z)).clamp(0., f64::from(o.w2));
+        let ly = |sy: f64| ((sy - self.pan.1) / (16. * z)).clamp(0., f64::from(o.h));
+        let map = self.map_rect();
+        let (x0, y0) = (m.0 + lx(map.0) * cw / 2., m.1 + ly(map.1) * ch);
+        let (x1, y1) = (
+            (m.0 + lx(map.0 + map.2) * cw / 2.).min(m.0 + m.2 - 1.),
+            (m.1 + ly(map.1 + map.3) * ch).min(m.1 + m.3 - 1.),
+        );
+        for (px, py, pw, ph) in [
+            (x0, y0, x1 - x0, 1.),
+            (x0, y1, x1 - x0 + 1., 1.),
+            (x0, y0, 1., y1 - y0),
+            (x1, y0, 1., y1 - y0),
+        ] {
+            if inside(px, py) {
+                draws.push(rect(px, py, pw.max(1.), ph.max(1.), style::TEXT_BRIGHT));
+            }
+        }
+        // A thin dark rim around the disc, drawn in short segments.
+        for i in 0..48 {
+            let a = std::f64::consts::TAU * i as f64 / 48.;
+            let b = std::f64::consts::TAU * (i + 1) as f64 / 48.;
+            draws.push(Draw::Line {
+                x: cx + a.cos() * r,
+                y: cy + a.sin() * r,
+                x2: cx + b.cos() * r,
+                y2: cy + b.sin() * r,
+                color: style::INSET.into(),
+                width: 2.,
+            });
+        }
+    }
+
+    /// The optional message dock (#313): a floating panel over the map's
+    /// right side, newest first, as many rows as fit.
+    pub(super) fn dock_rect(&self) -> Option<(f64, f64, f64, f64)> {
+        if !self.enhancements.message_dock || self.side_x().is_some() {
+            return None;
+        }
+        let (mx, my, mw, mh) = self.map_rect();
+        let h = (mh - 48.).min(300.);
+        Some((mx + mw - 232., my + 24., 224., h))
+    }
+
+    pub(super) fn dock_draw(&self, draws: &mut Vec<Draw>) {
+        let Some((x, y, w, h)) = self.dock_rect() else {
+            return;
+        };
+        panel_frame(draws, x, y, w, h, false);
+        draws.push(text(
+            x + 8.,
+            y + 18.,
+            "Messages",
+            style::TYPE_SMALL,
+            style::TEXT_BRIGHT,
+        ));
+        let rows = ((h - 40.) / 16.).floor().max(0.) as usize;
+        if self.notice_log.is_empty() {
+            draws.push(text(
+                x + 8.,
+                y + 38.,
+                "No messages yet.",
+                style::TYPE_SMALL,
+                style::TEXT_DIM,
+            ));
+            return;
+        }
+        for (i, (turn, line)) in self.notice_log.iter().rev().take(rows).enumerate() {
+            let mut s = format!("T{turn} {line}");
+            if s.chars().count() > 31 {
+                s = s.chars().take(30).collect::<String>() + "…";
+            }
+            draws.push(text(
+                x + 8.,
+                y + 38. + i as f64 * 16.,
+                &s,
+                style::TYPE_SMALL,
+                style::TEXT,
             ));
         }
     }
@@ -1043,82 +1211,62 @@ impl Client {
         (m.2 / (cols + 0.5), m.3 / rows)
     }
 
-    fn minimap_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
-        let m = self.column_layout(v).minimap;
-        let (mx, my, mw, mh) = m;
-        draws.push(rect(mx, my, mw, mh, style::FIELD));
-        let o = &v.observation;
-        let (cw, ch) = Self::minimap_cell(o, m);
-        let cols = usize::from(o.w2 / 2);
-        // One rectangle per run of equal colour in a row keeps frames small.
-        for row in 0..usize::from(o.h) {
-            let shift = if row % 2 == 1 { cw / 2. } else { 0. };
-            let mut run: Option<(usize, &str)> = None;
-            for col in 0..=cols {
-                let here = (col < cols)
-                    .then(|| o.seen.get(row * cols + col).copied().flatten())
-                    .flatten()
-                    .map(|t| terrain_color(t.terrain));
-                if run.map(|(_, c)| Some(c)) != Some(here) {
-                    if let Some((start, c)) = run {
-                        draws.push(rect(
-                            mx + shift + start as f64 * cw,
-                            my + row as f64 * ch,
-                            (col - start) as f64 * cw,
-                            ch,
-                            c,
-                        ));
-                    }
-                    run = here.map(|c| (col, c));
-                }
-            }
-        }
-        let dot = |x: u16, y: u16| (mx + f64::from(x) * cw / 2., my + f64::from(y) * ch);
-        for u in &o.units {
-            let (px, py) = dot(u.x, u.y);
-            draws.push(rect(px, py, 2., 2., civ_color(u.owner)));
-        }
-        for c in &o.cities {
-            let (px, py) = dot(c.x, c.y);
-            draws.push(rect(px - 1., py - 1., 4., 4., civ_color(c.owner)));
-        }
-        // The map view's outline, clipped to the minimap.
-        let z = self.zoom;
-        let lx = |sx: f64| ((sx - self.pan.0) / (32. * z)).clamp(0., f64::from(o.w2));
-        let ly = |sy: f64| ((sy - self.pan.1) / (16. * z)).clamp(0., f64::from(o.h));
-        let map = self.map_rect();
-        let (x0, y0) = (mx + lx(map.0) * cw / 2., my + ly(map.1) * ch);
-        let (x1, y1) = (
-            (mx + lx(map.0 + map.2) * cw / 2.).min(mx + mw - 1.),
-            (my + ly(map.1 + map.3) * ch).min(my + mh - 1.),
-        );
-        for (x, y, w, h) in [
-            (x0, y0, x1 - x0, 1.),
-            (x0, y1, x1 - x0 + 1., 1.),
-            (x0, y0, 1., y1 - y0),
-            (x1, y0, 1., y1 - y0),
-        ] {
-            draws.push(rect(x, y, w.max(1.), h.max(1.), style::TEXT_BRIGHT));
-        }
-    }
-
     /// A click on the minimap centres the map there; it never selects or
     /// orders anything. `false` when the point is not on the minimap.
     pub(super) fn minimap_click(&mut self, x: f64, y: f64) -> bool {
         let Some(v) = self.view() else { return false };
-        let m = self.column_layout(&v).minimap;
-        let (mx, my, mw, mh) = m;
-        if !self.map_surface() || !(mx..mx + mw).contains(&x) || !(my..my + mh).contains(&y) {
+        let (cx, cy, r) = self.overview_circle();
+        if !self.map_surface() || (x - cx).powi(2) + (y - cy).powi(2) > r * r {
             return false;
         }
+        let m = (cx - r, cy - r, 2. * r, 2. * r);
         let (cw, ch) = Self::minimap_cell(&v.observation, m);
-        let lx = (x - mx) / (cw / 2.);
-        let ly = (y - my) / ch;
+        let lx = (x - m.0) / (cw / 2.);
+        let ly = (y - m.1) / ch;
         let (ax, ay) = self.anchor();
         self.pan = (ax - lx * 32. * self.zoom, ay - ly * 16. * self.zoom);
-        self.status = "Map centred from the minimap.".into();
+        self.status = "Map centred from the overview.".into();
         true
     }
+}
+
+/// A raised (`band` texture) or sunken (`panel` texture) stone frame.
+fn panel_frame(draws: &mut Vec<Draw>, x: f64, y: f64, w: f64, h: f64, raised: bool) {
+    draws.push(rect(x, y, w, h, style::INSET));
+    draws.push(Draw::Tile {
+        x: x + 2.,
+        y: y + 2.,
+        w: w - 4.,
+        h: h - 4.,
+        sprite: if raised { "band" } else { "panel-mid" }.into(),
+    });
+    let light = if raised {
+        style::BAND_LIGHT
+    } else {
+        style::BAND_EDGE
+    };
+    draws.push(rect(x + 2., y + 2., w - 4., 1., light));
+    draws.push(rect(x + 2., y + 2., 1., h - 4., light));
+    draws.push(rect(x + 2., y + h - 3., w - 4., 1., style::SHADOW));
+    draws.push(rect(x + w - 3., y + 2., 1., h - 4., style::SHADOW));
+}
+
+/// Rough width of a string at one type step, for right-aligned band text.
+fn estimate(s: &str, size: u32) -> f64 {
+    s.chars().count() as f64 * 0.52 * f64::from(size)
+}
+
+/// Population grouped as the original writes it (`10,000`).
+fn group_digits(n: u64) -> String {
+    let digits = n.to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i).is_multiple_of(3) {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
 }
 
 /// Characters per side-column line (the dock's 220 px measure).
@@ -1150,13 +1298,4 @@ fn wrap(line: &str, width: usize) -> Vec<String> {
         out.push(cur);
     }
     out
-}
-
-/// Top edges of the right column's boxes (#311/#313).
-struct ColumnLayout {
-    minimap: (f64, f64, f64, f64),
-    status: f64,
-    unit: f64,
-    city: Option<f64>,
-    dock: Option<(f64, f64)>,
 }

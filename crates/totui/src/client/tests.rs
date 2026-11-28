@@ -89,7 +89,7 @@ fn demo_research_names_preserve_rules_and_old_checkpoint_identity() {
         .frame()
         .draws
         .iter()
-        .any(|d| matches!(d, Draw::Text{text,..} if text == "Topic: Agriculture")));
+        .any(|d| matches!(d, Draw::Text{text,..} if text == "Agriculture")));
 }
 
 fn fallback_pack(root: &std::path::Path) -> PathBuf {
@@ -440,6 +440,17 @@ fn button(c: &mut Client, label: &str) {
         input(c, Input::Click { x, y });
         return;
     }
+    // The sidebar's production entry is gone with #439: the selected city's
+    // picker still opens from the map exactly as that entry did.
+    if label == "Choose production" && !c.city_open {
+        let city = c
+            .city
+            .or_else(|| c.view().and_then(|v| v.cities.first().copied()))
+            .expect("an own city");
+        c.city = Some(city);
+        c.action(Action::Production(city)).unwrap();
+        return;
+    }
     let (m, row) = (0..chrome::MENUS.len())
         .find_map(|m| {
             let items = c.menu_items(m);
@@ -451,6 +462,52 @@ fn button(c: &mut Client, label: &str) {
         })
         .unwrap_or_else(|| panic!("missing button {label}"));
     menu_entry(c, m, row);
+}
+/// The two pointer inputs that open the selected own city from the map: the
+/// original's route, a double-click on its tile. The sidebar "Manage city"
+/// button is gone with #439.
+fn city_open_inputs(c: &mut Client) -> Vec<Input> {
+    let city = c
+        .city
+        .or_else(|| c.view().and_then(|v| v.cities.first().copied()))
+        .expect("an own city");
+    c.city = Some(city);
+    let (x, y) = c
+        .view()
+        .unwrap()
+        .observation
+        .cities
+        .iter()
+        .find(|e| e.index == city.slot)
+        .map(|e| (e.x, e.y))
+        .expect("city tile");
+    let (ax, ay) = c.anchor();
+    c.pan = (
+        ax - f64::from(x) * 32. * c.zoom,
+        ay - f64::from(y) * 16. * c.zoom,
+    );
+    let (px, py) = (
+        c.pan.0 + f64::from(x) * 32. * c.zoom,
+        c.pan.1 + f64::from(y) * 16. * c.zoom - 8.,
+    );
+    let first = c.receipts.len() as u64 + 1;
+    vec![
+        Input::Click { x: px, y: py },
+        Input::DoubleClick {
+            x: px,
+            y: py,
+            first_click: first,
+        },
+    ]
+}
+fn open_city(c: &mut Client) {
+    if c.city_open {
+        return;
+    }
+    for i in city_open_inputs(c) {
+        input(c, i);
+    }
+    assert!(c.city_open, "the city window opens: {}", c.status);
 }
 /// Opens menu `m` by clicking its title and clicks entry `row`.
 fn menu_entry(c: &mut Client, m: usize, row: usize) {
@@ -511,6 +568,30 @@ pub(super) fn founding(c: &mut Client) {
     edit(c, "Athena");
     key(c, "Enter");
     assert!(c.status.starts_with("founded"), "{}", c.status);
+}
+
+#[test]
+fn dialog_buttons_inside_the_band_range_stay_drawn() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    button(&mut c, "Start game");
+    assert!(matches!(c.modal, Some(Modal::Research)), "{}", c.status);
+    // "Save pending choice" sits at y=120, inside the band's y range. The
+    // band's own-key skip must not apply to a dialog, or the button is
+    // invisible and the label-driven routes cannot find it.
+    let save = c
+        .buttons()
+        .into_iter()
+        .find(|b| b.label == "Save pending choice")
+        .expect("the research dialog offers a pending-choice save");
+    assert!(
+        save.y >= chrome::MENU_H && save.y < chrome::MENU_H + chrome::BAND_H,
+        "the test button must sit inside the band range"
+    );
+    assert!(c.frame().draws.iter().any(|d| matches!(
+        d,
+        Draw::Text { text, .. } if text == "Save pending choice"
+    )));
 }
 
 #[test]
@@ -648,7 +729,7 @@ fn city_workspace_edits_commit_close_and_resume_without_retargeting() {
     start(&mut c);
     founding(&mut c);
     let original = c.checkpoint().unwrap();
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     assert!(c.city_open);
     assert_eq!(original, c.checkpoint().unwrap(), "opening is inert");
     assert!(c
@@ -705,7 +786,7 @@ fn city_workspace_edits_commit_close_and_resume_without_retargeting() {
     key(&mut c, "Ctrl+s");
     edit(&mut c, "citizens");
     key(&mut c, "Enter");
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     button(&mut c, "Auto workers");
     assert_ne!(edited, c.checkpoint().unwrap());
     key(&mut c, "Ctrl+l");
@@ -789,7 +870,7 @@ fn generated_population_five_city_fixture() {
                 .take(20)
                 .position(|t| t.worked)
                 .unwrap() as u8;
-            button(&mut c, "Manage city");
+            open_city(&mut c);
             for _ in 0..21 {
                 if c.city_tile == tile {
                     break;
@@ -1076,7 +1157,7 @@ fn installed_atlas_matches_retained_numeric_manifest() {
     }
     assert_eq!(
         atlas.sprites.len(),
-        65 + resources.rules.unit_names().len().min(80)
+        67 + resources.rules.unit_names().len().min(80)
     );
 }
 
@@ -1126,7 +1207,7 @@ fn production_draft_budget_and_city_lifecycle_resume_without_double_penalty() {
     let initial = c.view().unwrap().city_production[0].stored;
     assert!(initial >= 10);
     assert_eq!(c.view().unwrap().production_context_city, None);
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     let before = c.checkpoint().unwrap();
     fn select(c: &mut Client, item: i8) {
         button(c, "Choose production");
@@ -1166,7 +1247,7 @@ fn production_draft_budget_and_city_lifecycle_resume_without_double_penalty() {
     assert_eq!(active, c.checkpoint().unwrap());
     key(&mut c, "Escape");
     assert_eq!(c.view().unwrap().production_context_city, None);
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     select(&mut c, 0);
     let new_retained = retained - retained / 2;
     assert!(c.frame().draws.iter().any(|d| matches!(d,Draw::Text{text,..} if text.contains(&format!("Shields: {retained} → {new_retained}")))));
@@ -1190,7 +1271,7 @@ fn quoted_city_purchase_and_sale_confirm_cancel_and_resume() {
     let mut c = f.client();
     start(&mut c);
     founding(&mut c);
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     button(&mut c, "Choose production");
     let at = c
         .current_choices()
@@ -1227,7 +1308,7 @@ fn quoted_city_purchase_and_sale_confirm_cancel_and_resume() {
         }
         key(&mut c, "Escape");
         end_round(&mut c);
-        button(&mut c, "Manage city");
+        open_city(&mut c);
     }
     let quote = expected.expect("recorded play must fund the quote");
     let before = c.checkpoint().unwrap();
@@ -1259,7 +1340,7 @@ fn quoted_city_purchase_and_sale_confirm_cancel_and_resume() {
     key(&mut c, "Enter");
     key(&mut c, "Escape");
     end_round(&mut c);
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     assert!(c.view().unwrap().observation.city_economy[0].buildings[0] & (1 << 4) != 0);
     fn open_sale(c: &mut Client) {
         button(c, "Improvements / sell");
@@ -1747,7 +1828,7 @@ fn exhaustion_selects_next_then_end_turn_without_retargeting_queued_input() {
         .frame()
         .draws
         .iter()
-        .any(|d| matches!(d,Draw::Text{text,..} if text=="End of turn")));
+        .any(|d| matches!(d,Draw::Text{text,..} if text=="End of Turn")));
     input(&mut c, Input::Tick);
     assert_eq!(c.view().unwrap().observation.turn, turn);
     assert!(matches!(c.buttons()[c.focus_button].action, Action::End));
@@ -1756,7 +1837,7 @@ fn exhaustion_selects_next_then_end_turn_without_retargeting_queued_input() {
     key(&mut c, "ShiftTab");
     assert!(matches!(c.buttons()[c.focus_button].action, Action::End));
     // Returning from city inspection restores the visible end-turn default.
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     key(&mut c, "Escape");
     assert!(matches!(c.buttons()[c.focus_button].action, Action::End));
     let old_revision = c.revision;
@@ -1917,6 +1998,13 @@ fn generated_city_production_fixture() {
         .unwrap();
         let mut inputs = Vec::new();
         for (kind, value) in actions {
+            if *kind == "button" && *value == "Manage city" && !c.city_open {
+                for i in city_open_inputs(c) {
+                    input(c, i.clone());
+                    inputs.push(i);
+                }
+                continue;
+            }
             if *kind == "button" {
                 let b = c
                     .buttons()
@@ -2020,7 +2108,7 @@ fn generated_city_production_fixture() {
             & (1 << (building % 8)),
         0
     );
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     button(&mut c, "Improvements / sell");
     let at = c
         .current_choices()
@@ -2123,7 +2211,7 @@ fn city_panels_inspect_without_orders_and_retain_panel_through_navigation_and_re
         end_round(&mut c);
     }
     assert!(!c.view().unwrap().city_info[0].supported.is_empty());
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     let before = c.checkpoint().unwrap();
     for (label, panel) in [
         ("Info", CityPanel::Info),
@@ -2235,7 +2323,7 @@ fn generated_city_panels_fixture() {
         edit(c, &name);
         key(c, "Enter");
         if !c.city_open {
-            button(c, "Manage city");
+            open_city(c);
         }
         button(c, "Info");
     }
@@ -2391,7 +2479,7 @@ fn generated_city_panels_fixture() {
             "normal own-city route must not need a combat choice"
         );
     }
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     button(&mut c, "Info");
     assert!(c.view().unwrap().cities.len() >= 2);
     mark(&c, &out, "navigation", "before");
@@ -2462,7 +2550,7 @@ fn checkpoint_load_defaults_to_info_only_after_leaving_city_workspace() {
     let mut c = f.client();
     start(&mut c);
     founding(&mut c);
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     button(&mut c, "Choose production");
     key(&mut c, "ArrowDown");
     key(&mut c, "Enter");
@@ -2771,7 +2859,7 @@ fn city_list_previous_uses_the_visible_page_after_a_boundary_sale() {
         }
         assert_eq!(c.view().unwrap().city_info[0].improvements.len(), count + 1);
     }
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     button(&mut c, "Improvements");
     button(&mut c, "Next list");
     button(&mut c, "Next list");
@@ -2791,7 +2879,7 @@ fn city_list_previous_uses_the_visible_page_after_a_boundary_sale() {
     edit(&mut c, "paged");
     key(&mut c, "Enter");
     assert!(!c.city_open);
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     assert_eq!(c.city_panel, CityPanel::Info);
     assert_eq!(c.city_panel_page, 0, "closed workspace discards old page");
     assert_eq!(c.checkpoint().unwrap(), saved);
@@ -3345,9 +3433,12 @@ fn turn_feedback_banner_and_title_round() {
             _ => None,
         })
     };
-    // The date reads as the original writes it (#330); the turn follows
-    // where the bar has room, and the right column always shows both.
-    assert_eq!(title(&c).as_deref(), Some("Original rules · 4000 B.C."));
+    // The date reads as the original writes it (#330); the round follows the
+    // title in the bar (the band carries the same date).
+    assert_eq!(
+        title(&c).as_deref(),
+        Some("Original rules · 4000 B.C. · Turn 1")
+    );
     let stage = c.stage_w;
     c.stage_w = 1600.;
     assert_eq!(
@@ -3992,7 +4083,7 @@ fn keyboard_help_opens_from_map_button_and_city_and_is_inert() {
     assert!(c.modal.is_none());
     assert_eq!(c.checkpoint().unwrap(), before, "help is inert");
     founding(&mut c);
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     assert!(c.city_open);
     key(&mut c, "?");
     assert!(matches!(c.modal, Some(Modal::Help)));
@@ -4173,7 +4264,7 @@ fn mouse_wheel_scrolls_lists_only_and_never_touches_the_game() {
         key(&mut c, "Escape");
     }
     // In the city window only the panel scrolls; one page stays put.
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     wheel(&mut c, 300., 1);
     wheel(&mut c, 900., 1);
     assert_eq!(c.city_panel_page, 0);
@@ -4193,7 +4284,7 @@ fn city_panel_lists_sort_by_presentation_order_only() {
     let mut c = f.client();
     start(&mut c);
     founding(&mut c);
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     let before = c.checkpoint().unwrap();
     let sort_label = |c: &Client| {
         c.buttons()
@@ -4322,7 +4413,7 @@ fn map_tooltips_are_opt_in_describe_the_filtered_view_and_never_touch_the_game()
         "tooltips are presentation-only"
     );
     founding(&mut c);
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     assert!(c.frame().tips.is_empty());
     key(&mut c, "Escape");
     let city = c.frame();
@@ -4516,7 +4607,7 @@ fn path_preview_is_opt_in_knowledge_bounded_and_never_touches_the_game() {
 }
 
 #[test]
-fn layout_b_menus_and_column_reach_every_command_and_never_touch_the_game() {
+fn map_screen_menus_and_band_reach_every_command_and_never_touch_the_game() {
     let f = Fixture::new();
     let mut c = f.client();
     start(&mut c);
@@ -4524,10 +4615,10 @@ fn layout_b_menus_and_column_reach_every_command_and_never_touch_the_game() {
     assert!(c.modal.is_none(), "{}", c.status);
     let before = c.checkpoint().unwrap();
     // The two button bars are gone: map-screen buttons are menu titles or
-    // live in the right column (#310/#311).
+    // live in the top band (#439, decision 0009).
     for b in c.buttons() {
         assert!(
-            matches!(b.action, Action::Menu(_)) || b.x >= chrome::COLUMN.0,
+            matches!(b.action, Action::Menu(_)) || b.x >= chrome::INFO_X,
             "stray map-screen button {} at ({}, {})",
             b.label,
             b.x,
@@ -4644,31 +4735,44 @@ fn layout_b_menus_and_column_reach_every_command_and_never_touch_the_game() {
     assert!(c.zoom > 1.);
     button(&mut c, "Standard zoom");
     assert_eq!(c.zoom, 1.);
-    // The right column: minimap, status and the end-of-turn slot.
+    // The top band: status figures, the date and the end-of-turn slot.
     let shows = |c: &Client, s: &str| {
         c.frame()
             .draws
             .iter()
-            .any(|d| matches!(d, Draw::Text { text, x, .. } if *x >= chrome::COLUMN.0 && text.starts_with(s)))
+            .any(|d| matches!(d, Draw::Text { text, x, .. } if *x >= chrome::STATUS_PANEL.0 && text.starts_with(s)))
     };
-    // The status opens with the date and turn (#330).
-    assert!(shows(&c, "4000 B.C. · Turn "));
-    assert!(shows(&c, "Despotism · "));
-    assert!(shows(&c, "Research: "));
-    assert!(shows(&c, "Athena · size 1"));
+    // The status opens with population and the original's date (#330).
+    assert!(shows(&c, "10,000 People"));
+    assert!(shows(&c, "1C "));
+    assert!(shows(&c, "4000 B.C."));
+    assert!(c
+        .frame()
+        .draws
+        .iter()
+        .any(|d| matches!(d, Draw::Text { text, .. } if text.contains(" Gold "))));
     assert!(c
         .buttons()
         .iter()
-        .any(|b| matches!(b.action, Action::End) && b.x >= chrome::COLUMN.0));
-    // A minimap click only scrolls.
+        .any(|b| matches!(b.action, Action::End) && b.x >= chrome::INFO_X));
+    // A click on the circular overview only scrolls.
     let pan = c.pan;
-    input(&mut c, Input::Click { x: 1000., y: 160. });
+    let (ox, oy, _) = {
+        let (x, y, w, h) = (
+            c.stage_w - chrome::OVERVIEW_W - 4.,
+            chrome::MENU_H + 4.,
+            chrome::OVERVIEW_W - 4.,
+            chrome::BAND_H - 8.,
+        );
+        (x + w / 2., y + h / 2., 0.)
+    };
+    input(&mut c, Input::Click { x: ox, y: oy });
     assert_ne!(c.pan, pan);
     assert!(c.modal.is_none() && c.menu.is_none());
     assert_eq!(
         c.checkpoint().unwrap(),
         before,
-        "menus, the column and the minimap never touch the game"
+        "menus, the band and the overview never touch the game"
     );
 }
 
@@ -4705,7 +4809,7 @@ fn layout_b_city_and_science_windows_rearrange_without_touching_the_game() {
     };
     // #314: the city window is one framed window with a title bar, the
     // citizens strip, three columns and a footer.
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     assert!(c.city_open);
     assert!(matches!(c.buttons()[0].action, Action::CloseCity));
     assert!(texts(&c)
@@ -4809,7 +4913,7 @@ fn layout_b_order_strip_and_message_dock_are_opt_in_and_inert() {
     button(&mut c, "Settings");
     assert_no_overlaps(&c, "settings with seven rows");
     button(&mut c, "[ ] Order buttons under the map");
-    button(&mut c, "[ ] Message log in the right column");
+    button(&mut c, "[ ] Message log panel");
     key(&mut c, "Escape");
     let saved = storage::load_enhancements(&f.saves());
     assert!(saved.order_strip && saved.message_dock);
@@ -4844,7 +4948,7 @@ fn layout_b_order_strip_and_message_dock_are_opt_in_and_inert() {
         .draws
         .into_iter()
         .filter_map(|d| match d {
-            Draw::Text { x, text, .. } if x >= chrome::COLUMN.0 => Some(text),
+            Draw::Text { x, text, .. } if x >= 768. => Some(text),
             _ => None,
         })
         .collect();
@@ -4909,16 +5013,15 @@ fn wide_stage_widens_the_map_centres_windows_and_toggles_full_screen() {
     display(&mut c, 500, false);
     assert_eq!(c.frame().width, f64::from(WIDTH));
     display(&mut c, 1365, false);
-    // The map takes the extra width less the side column (#337); the column
-    // stays at the right edge.
+    // The map takes the extra width less the side column (#337); the side
+    // column stays at the right edge below the band.
     let (mx, _, mw, _) = c.map_rect();
-    assert_eq!((mx, mw), (8., 768. + 341. - 240.));
+    assert_eq!((mx, mw), (20., 1365. - 232. - 8. - 8. - 20.));
     assert!(c.on_map(860., 300.));
-    assert!(!c.on_map(900., 300.), "the side column is not map");
-    assert_eq!(c.side_x(), Some(1365. - 480.));
-    assert_eq!(c.column_x(), 1365. - 240.);
+    assert!(!c.on_map(1130., 300.), "the side column is not map");
+    assert_eq!(c.side_x(), Some(1365. - 232. - 8.));
     for b in c.buttons() {
-        if !matches!(b.action, Action::Menu(_)) {
+        if !matches!(b.action, Action::Menu(_)) && b.y >= chrome::MENU_H + chrome::BAND_H {
             assert!(
                 b.x >= c.side_x().unwrap(),
                 "{} left of the columns",
@@ -4934,7 +5037,7 @@ fn wide_stage_widens_the_map_centres_windows_and_toggles_full_screen() {
     if c.active.is_none() {
         let city = c.view().unwrap().observation.cities[0].clone();
         let px = c.pan.0 + f64::from(city.x) * 32. * c.zoom;
-        assert_eq!(px, 380. + 50.5);
+        assert_eq!(px, 380. + (c.map_rect().2 - chrome::MAP.2) / 2.);
     }
     // Dialogs keep their layout, centred: Help's Close sits 170 px right.
     key(&mut c, "?");
@@ -4956,7 +5059,7 @@ fn wide_stage_widens_the_map_centres_windows_and_toggles_full_screen() {
     assert_eq!(c.frame().entry.unwrap().x, 212. + 170.);
     key(&mut c, "Escape");
     // The city window too.
-    button(&mut c, "Manage city");
+    open_city(&mut c);
     for b in c.buttons() {
         assert!(
             b.x >= 170. && b.x + b.w <= 170. + 1024.,
@@ -6026,9 +6129,9 @@ fn installed_victory_input_fixture() {
     );
 }
 
-/// #337 (owner 2026-11-19): from 16:9 a side column left of the right column
-/// holds the messages, replacing the dock and the new-messages overlay; 4:3
-/// and 16:10 keep layout B unchanged. Presentation only.
+/// #337 (owner 2026-11-19, re-placed by decision 0009): from 16:9 a side
+/// column below the band holds the messages, replacing the dock and the
+/// new-messages overlay; 4:3 and 16:10 keep the dock. Presentation only.
 #[test]
 fn wide_stage_moves_messages_into_a_side_column() {
     let f = Fixture::new();
@@ -6088,11 +6191,12 @@ fn wide_stage_moves_messages_into_a_side_column() {
     for width in [1024, 1228] {
         display(&mut c, width);
         assert_eq!(c.side_x(), None, "{width}");
-        assert_eq!(c.map_rect().2, 768. + f64::from(width) - 1024.);
+        assert_eq!(c.map_rect().2, 984. + f64::from(width) - 1024.);
         assert!(c.notice_overlay(), "{width}");
+        let (mx, _, mw, _) = c.map_rect();
         assert_eq!(
             all(&mut c),
-            vec![c.column_x() + 6.],
+            vec![mx + mw - 232. + 6.],
             "{width}: the dock's button"
         );
     }

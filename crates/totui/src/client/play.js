@@ -107,9 +107,10 @@ function drawCanvas() {
         break;
       case "text":
         ctx.fillStyle = d.color;
-        // Same face family as the desktop client (DejaVu Sans), so both clients
-        // share one type ladder and label-width estimate (#283).
-        ctx.font = `${d.size}px "DejaVu Sans",Verdana,"Segoe UI",sans-serif`;
+        // Same serif face family as the desktop client, matching the
+        // original's serif treatment (decision 0009, #439); the desktop client
+        // loads a serif TTF for the same reason.
+        ctx.font = `${d.size}px "Times New Roman","Liberation Serif",Tinos,"DejaVu Serif",Georgia,serif`;
         ctx.textBaseline = "top";
         ctx.fillText(d.text, d.x, d.y);
         break;

@@ -31,6 +31,17 @@ fs.mkdirSync(out,{recursive:true});
   await page.mouse.click(rect.x+(t.x+18)*rect.width/f.width,rect.y+(t.y+9)*rect.height/768);
   await idle();
  }
+ async function openCity(){
+  // Decision 0009 / #439: the city opens from its map tile (double-click),
+  // as in the original; the sidebar "Manage city" button is gone.
+  let f=await state();
+  let city=f.draws.find(d=>d.kind==='sprite'&&d.sprite&&d.sprite.startsWith('city-'));
+  if(!city){await key('c');f=await state();city=f.draws.find(d=>d.kind==='sprite'&&d.sprite&&d.sprite.startsWith('city-'))}
+  if(!city)throw Error('no own city sprite to open');
+  const rect=await page.locator('#game').boundingBox();
+  await page.mouse.dblclick(rect.x+(city.x+city.w/2)*rect.width/f.width,rect.y+(city.y+city.h*.6)*rect.height/768);
+  await idle();
+ }
  async function fill(value){await idle();await page.locator('#entry').fill(value);await page.waitForFunction(v=>frame.entry?.value===v&&!busy,value);await idle()}
  function has(f,t){return f.draws.some(d=>d.kind==='text'&&d.text===t)}
  function turnOf(f){return +f.draws.map(d=>d.text?.match(/(?:^| · )Turn (\d+)(?:$| · )/)).find(Boolean)[1]}
@@ -95,14 +106,21 @@ fs.mkdirSync(out,{recursive:true});
   if((await state()).phase!==setupPhase)throw Error('cancelled preflight changed setup');
  }
  await idle();await click('Generated seed');await fill('7');await click(startLabel);
+ // The required-choice dialog opens asynchronously after the start click.
+ await page.waitForFunction(()=>frame.draws.some(d=>d.kind==='text'&&d.text==='Save pending choice'),{timeout:30000});
  await click('Save pending choice');await save('research');await research();
  await key('F3');
  if(!has(await state(),'Known contacts')||!has(await state(),'No known contacts.'))throw Error('F3 contact panel missing');
  await key('Escape');
  await key('b');await click('Save pending choice');await save('founding');await fill('athenx');await page.keyboard.press('Backspace');await page.keyboard.type('a');await page.waitForFunction(()=>frame.entry?.value==='athena'&&!busy);await key('Enter');
- await click('Choose production');
+ // Decision 0009 / #439: the city opens from its tile; the map screen has
+ // no city buttons, so choose production in the city window and close it.
+ await openCity();await click('Choose production');
  for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes(unitChoice)))break}
- await key('Enter');await key('Control+s');await save('normal');
+ await key('Enter');
+ // Close the city before saving: the captured production budget ends with
+ // the workspace, so the checkpoint is the map state the old route saved.
+ await key('Escape');await key('Control+s');await save('normal');
  await page.screenshot({path:out+'/browser-map.png'});
  for(let n=0;n<10;n++){
   await research();const turn=turnOf(await state());
@@ -116,10 +134,10 @@ fs.mkdirSync(out,{recursive:true});
  await resizeViewport(1024,768);
  async function load(name){await key('Control+l');await fill(name);await key('Enter')}
  await load('research');await research();await key('b');await click('Save pending choice');await save('researchnext');
- await loadPending('founding');await fill('athena');await key('Enter');
+ await loadPending('founding');await fill('athena');await key('Enter');await openCity();
  await click('Choose production');
  for(let n=0;n<80;n++){await key('ArrowDown');if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes(unitChoice)))break}
- await key('Enter');await key('Control+s');await save('foundingnext');
+ await key('Enter');await key('Escape');await key('Control+s');await save('foundingnext');
  await load('normal');await key('Control+n');if(has(await state(),'End your turn with movable units?'))await key('Enter');
  await page.waitForFunction(()=>frame.phase==='Human'&&frame.draws.some(d=>/(?:^| · )Turn 2(?:$| · )/.test(d.text)));await idle();
  await research();await key('Control+s');await save('normalnext');
@@ -207,7 +225,7 @@ fs.mkdirSync(out,{recursive:true});
   fs.copyFileSync(path.join(citizens,'mature.cth'),path.join(saves,'mature.cth'));
   const meta=JSON.parse(fs.readFileSync(path.join(citizens,'route.json'),'utf8'));
   async function compare(name,expected){await key('Control+s');await save(name);if(!fs.readFileSync(path.join(saves,name+'.cth')).equals(fs.readFileSync(path.join(citizens,expected+'.cth'))))throw Error('citizen checkpoint differs '+name)}
-  await load('mature');await click('Manage city');
+  await load('mature');await openCity();
   if(!has(await state(),'Currently producing:'))throw Error('current production label missing');
   if(!(await state()).draws.some(d=>d.text?.includes('population 5')))throw Error('mature city missing');
   const x=500+[1,2,1,0,-1,-2,-1,0,2,2,-2,-2,1,3,3,1,-1,-3,-3,-1,0][meta.worker_tile]*45;
@@ -221,7 +239,7 @@ fs.mkdirSync(out,{recursive:true});
   await click('Auto workers (centre tile)');await load('citycycle');
   for(let i=0;i<21;i++){if(has(await state(),'Tile '+meta.worker_tile))break;await key('ArrowRight')}
   await key('Space');await compare('cityresume','after-resume');
-  await key('Escape');await click('Manage city');
+  await key('Escape');await openCity();
   if(process.env.TOTENGINE_NAVIGATION_FIXTURE){
    fs.copyFileSync(process.env.TOTENGINE_NAVIGATION_FIXTURE,path.join(saves,'navigation.cth'));await load('navigation');
    const first=(await state()).draws.find(d=>d.text?.includes(' — population ')).text;

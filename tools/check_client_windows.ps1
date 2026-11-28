@@ -169,6 +169,16 @@ try {
         [SpikeWindow]::Click($window,$app.Id,$X,$Y)
         [void](Wait-Scene {param($s) $s.revision -gt $oldRevision})
     }
+    function Open-City {
+        # Decision 0009 / #439: the original opens a city from its map tile;
+        # the sidebar "Manage city" button is gone.
+        $scene=Read-Scene
+        $city=@($scene.draws | Where-Object {$_.kind -eq 'sprite' -and $_.sprite.StartsWith('city-')})[0]
+        if(-not $city){Send-Text 'c';$scene=Read-Scene;$city=@($scene.draws | Where-Object {$_.kind -eq 'sprite' -and $_.sprite.StartsWith('city-')})[0]}
+        if(-not $city){throw 'no own city sprite to open'}
+        [SpikeWindow]::DoubleClick($window,$app.Id,($city.x+$city.w/2),($city.y+$city.h*.6))
+        [void](Wait-Scene {param($s) $s.revision -gt $scene.revision})
+    }
     function Click-Button([string]$Label) {
         $t=@((Read-Scene).draws | Where-Object {$_.kind -eq 'text' -and $_.text -eq $Label})[0]
         if(-not $t){throw "Button absent: $Label"}
@@ -226,6 +236,7 @@ try {
     [void](Wait-Scene {param($s) $s.entry -and $s.entry.value -eq 'athena'})
     Send-Key 13
     [void](Wait-Scene {param($s) $s.status -eq 'founded 0'})
+    Open-City
     Focus-Button 'Choose production'
     for($n=0;$n -lt 80;$n++) {
         Send-Key 40
@@ -234,6 +245,7 @@ try {
     }
     Send-Key 13
     [void](Wait-Scene {param($s) $s.status -eq 'prod-set'})
+    Send-Key 27
     Send-Chord 83;Save-Dialog 'normal'
     for($round=0;$round -lt 10;$round++) {
         Research
@@ -251,13 +263,14 @@ try {
     function Load-Slot([string]$Name) { Send-Chord 76; Save-Dialog $Name }
     Load-Slot 'research';Research;Send-Text 'b';Focus-Button 'Save pending choice';Save-Dialog 'researchnext'
     Send-Key 27;Load-Slot 'founding';Send-Text 'athena';Send-Key 13
+    Open-City
     Focus-Button 'Choose production'
     for($n=0;$n -lt 80;$n++) {
         Send-Key 40
         $s=Read-Scene
         if(@($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith([string][char]0x25cf) -and $_.text.Contains($unitChoice)}).Count -gt 0){break}
     }
-    Send-Key 13;Send-Chord 83;Save-Dialog 'foundingnext'
+    Send-Key 13;Send-Key 27;Send-Chord 83;Save-Dialog 'foundingnext'
     Load-Slot 'normal';Send-Chord 78
     if(Has-Text (Read-Scene) 'End your turn with movable units?'){Send-Key 13}
     [void](Wait-Scene {param($s) $s.phase -eq 'Human' -and @($s.draws | Where-Object {$_.kind -eq 'text' -and $_.text.StartsWith('Turn 2 ')}).Count -gt 0})
@@ -272,7 +285,7 @@ try {
             $wanted=(Get-FileHash (Join-Path $citizens ($Expected+'.cth')) -Algorithm SHA256).Hash
             if($actual -ne $wanted){throw "Citizen checkpoint differs: $Name"}
         }
-        Load-Slot 'mature';Focus-Button 'Manage city'
+        Load-Slot 'mature';Open-City
         if(-not (Has-Text (Read-Scene) 'Currently producing:')){throw 'current production label missing'}
         for($n=0;$n -lt 21;$n++) {if(Has-Text (Read-Scene) ('Tile '+$meta.worker_tile)){break};Send-Key 39}
         Send-Key 32;Compare-Citizens 'cityentertainer' 'after-entertainer'
@@ -283,7 +296,7 @@ try {
         Focus-Button 'Auto workers (centre tile)';Load-Slot 'citycycle'
         for($n=0;$n -lt 21;$n++) {if(Has-Text (Read-Scene) ('Tile '+$meta.worker_tile)){break};Send-Key 39}
         Send-Key 32;Compare-Citizens 'cityresume' 'after-resume'
-        Send-Key 27;Focus-Button 'Manage city'
+        Send-Key 27;Open-City
         if($env:TOTENGINE_NAVIGATION_FIXTURE) {
             Copy-Item $env:TOTENGINE_NAVIGATION_FIXTURE (Join-Path $env:TOTENGINE_SAVES 'navigation.cth')
             Load-Slot 'navigation'
@@ -401,7 +414,7 @@ try {
             $name='panel'+$route.name
             Copy-Item (Join-Path $env:TOTENGINE_PANELS_FIXTURES ($route.name+'-before.cth')) (Join-Path $env:TOTENGINE_SAVES ($name+'.cth'))
             Load-Slot $name
-            if(Has-Text (Read-Scene) 'Manage city'){Click-Button 'Manage city'}
+            Open-City
             Click-Button 'Info'
             foreach($step in $route.inputs) {
                 $item=$step.input

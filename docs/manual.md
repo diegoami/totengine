@@ -101,11 +101,13 @@ is **Alt+Enter** or **View > Full screen**.
 
 ## The map screen
 
-The map screen keeps the original arrangement: a **menu bar** along the
-top, the map in the middle and a **right column** with the minimap, your
-turn, government, treasury, rates, research, the selected unit and city,
-and the end-of-turn prompt. On wide (16:9-and-wider) windows a second
-column beside the right column shows the latest messages in full.
+The map screen follows the original's frame: a **menu bar** along the
+top, then a stone **top band** with the status panel (population,
+cities/units and the date, gold with your rates, research), the info panel
+(mode, the tile under the pointer, the selected unit, the end-of-turn
+prompt and the scroll keys) and the **circular overview** of the known
+world, with the map full width below. On wide (16:9-and-wider) windows a
+side column at the right shows the latest messages in full.
 
 Every map command is in the menu bar with its key: **Game** (save, load,
 new game, Settings, Keys, Close client), **Kingdom** (rates, revolution,
@@ -115,11 +117,11 @@ science), **World** (world reports, Messages) and **Civilopedia**. An
 entry that cannot run right now is greyed out and says why. **F10** opens
 the menu bar from the keyboard.
 
-![ToTEngine today — the map screen after founding a city: menu bar, the map with your settler and city, and the right column with minimap, turn, treasury, rates, research, the city panel and the end-of-turn prompt](manual/screenshots/map.png)
+![ToTEngine today — the map screen after founding a city: menu bar, the top band with population, date, gold, rates and research on the left, the mode, location and end-of-turn prompt in the middle, the circular overview on the right, and the map full width below](manual/screenshots/map.png)
 
 On wide windows the messages join as their own column:
 
-![ToTEngine today — the same map at a wide window size, with the messages column between the map and the right column](manual/screenshots/map-wide.png)
+![ToTEngine today — the same map at a wide window size, with the messages column at the right below the band](manual/screenshots/map-wide.png)
 
 ### Units: selecting and moving
 
@@ -140,10 +142,10 @@ On wide windows the messages join as their own column:
 
 ### Cities
 
-- **Double-click** one of your cities (or its garrison) — or use
-  **Manage city** in the right column — to open the city window in the
-  classic arrangement: citizens strip, resources, food storage and
-  production, the radius map, and the information panels.
+- **Double-click** one of your cities (or its garrison) to open the city
+  window, as in the original: citizens strip, resources, food storage and
+  production, the radius map, and the information panels. **Kingdom >
+  Cities** opens each city in turn from the keyboard.
 - Click a radius tile to move a citizen there or off it; click a
   specialist to cycle entertainer → tax collector → scientist. Changes
   apply immediately. **PageUp/PageDown** move between your cities,
@@ -209,7 +211,7 @@ conveniences that differ from the original. All are off by default and
 shared by both clients (`enhancements.json` beside the saves; delete the
 file to reset). Currently offered: a new-messages overlay on the map,
 confirm-every-move, map tooltips, goal estimates in the science advisor,
-an order strip under the map, a message log in the right column, and a
+an order strip under the map, a message log panel over the map, and a
 path preview with turn counts while moving. None of them change rules,
 checkpoints or recordings.
 

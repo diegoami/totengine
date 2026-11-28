@@ -3099,9 +3099,9 @@ pub(super) fn title(c: &Client) -> serde_json::Value {
         .draws
         .iter()
         .find_map(|d| match d {
-            Draw::Text {
-                x, y, text, size, ..
-            } if (*x, *y, *size) == (212., 125., style::TYPE_TITLE) => Some(text.clone().into()),
+            Draw::Text { y, text, size, .. } if (*y, *size) == (125., style::TYPE_TITLE) => {
+                Some(text.clone().into())
+            }
             _ => None,
         })
         .unwrap_or(serde_json::Value::Null)
@@ -3525,9 +3525,9 @@ fn reports_open_switch_sort_drill_down_and_return_without_mutation() {
     key(&mut c, "F1");
     let title = |c: &Client| {
         c.frame().draws.iter().find_map(|d| match d {
-            Draw::Text {
-                x, y, text, size, ..
-            } if (*x, *y, *size) == (212., 125., style::TYPE_TITLE) => Some(text.clone()),
+            Draw::Text { y, text, size, .. } if (*y, *size) == (125., style::TYPE_TITLE) => {
+                Some(text.clone())
+            }
             _ => None,
         })
     };

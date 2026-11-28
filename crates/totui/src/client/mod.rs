@@ -2871,7 +2871,7 @@ impl Client {
         }
         let modal_start = draws.len();
         if let Some(modal) = &self.modal {
-            style::modal(&mut draws, 180., 105., 664., 550.);
+            style::modal(&mut draws, 180., 105., 664., 550., self.loaded.is_some());
             // Advisors and reports carry the date, as the original's do.
             let dated = |t: &str| match self.view().and_then(|v| self.date_label(&v.observation)) {
                 Some(date) => format!("{t} · {date}"),
@@ -2914,8 +2914,9 @@ impl Client {
                 }
                 .to_string(),
             };
+            let title_x = 180. + (664. - style::text_width(&title, style::TYPE_TITLE)) / 2.;
             draws.push(text(
-                212.,
+                title_x.max(196.),
                 125.,
                 &title,
                 style::TYPE_TITLE,
@@ -3080,7 +3081,7 @@ impl Client {
         }
         if self.notice_overlay() {
             let (lines, (x, y, w, h)) = self.notice_overlay_rect();
-            style::modal(&mut draws, x, y, w, h);
+            style::modal(&mut draws, x, y, w, h, self.loaded.is_some());
             let more = self
                 .notice_log
                 .iter()
@@ -3219,7 +3220,7 @@ impl Client {
         let advancing = self.opponent_work_running();
         if advancing {
             let start = draws.len();
-            style::modal(&mut draws, 212., 360., 460., 52.);
+            style::modal(&mut draws, 212., 360., 460., 52., self.loaded.is_some());
             draws.push(text(
                 228.,
                 368.,

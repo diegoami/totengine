@@ -52,25 +52,41 @@ in the browser and desktop clients together.
 
 ## Type and texture
 
-The original draws a serif face from its own bitmap font; the install exposes
-no decodable font resource here. Both clients therefore use a serif system
-face: the browser asks for Georgia / Times New Roman / DejaVu Serif, and the
-desktop client loads `times.ttf` on Windows and `DejaVuSerif.ttf` on Linux,
-falling back to the sans face when absent. This is an approximation, recorded
-as a gap; it does not claim the original's glyphs.
+The original's UI face reads as Times New Roman, the Windows serif of its era;
+the install exposes no font resource of its own. Both clients therefore use a
+Times-style face rather than a generic serif: the browser asks for Times New
+Roman, then Liberation Serif / Tinos (metric-compatible clones), then DejaVu
+Serif / Georgia; the desktop client loads `times.ttf` on Windows and
+`LiberationSerif-Regular.ttf` on Linux, then DejaVu Serif, falling back to the
+sans face when none is present. This keeps the original's widths and shapes as
+closely as a system font can; it still does not claim the original's bitmap
+rasterisation, which remains a gap.
 
 The band stone is derived from the install's own `City.gif` panel crop that the
-client already used for its panels (`atlas.rs`): two flattened variants
-(`band` for raised stone, `panel-mid` for the sunken info panel and the side
-column) keep a third of the source variation around a chosen mid tone so band
-text stays readable. The atlas evidence (`docs/evidence/client-atlas-v2.json`)
-is regenerated for the two added sprites.
+client already used for its panels (`atlas.rs`). The reference capture shows a
+dark, visibly speckled band, not a smooth one: a sampled status-panel region
+(`docs/manual/screenshots/original/moving-units.png`, 20,100–210,135) averages
+about 60 grey with a standard deviation near 20, and the sunken info panel is
+equally dark. The two variants (`band` for raised stone, `panel-mid` for the
+sunken info panel and the side column) therefore keep the source speckle
+around those measured mid tones. The atlas evidence
+(`docs/evidence/client-atlas-v2.json`) is regenerated for the sprite hashes.
+
+The original menu bar's entries are specified by the install's own
+`Menu.txt` (`@GAME`, `@KINGDOM`, `@VIEW`, `@ORDERS`, `@ADVISORS`, `@WORLD`,
+`@CHEAT`, `@MAP`, `@PEDIA`); the client's menu labels and shortcuts follow it
+where a command exists (for example `Build &Road|r`, `&Fortify|f`,
+`Toggle Cheat Mode|Ctrl+K`).
 
 ## Explicit remaining differences
 
-- **Menus**: the captured bar also shows `Cheat` and `Map`. The client has no
-  commands for them yet, so they are omitted rather than drawn inert.
-- **Fonts**: a serif approximation, not the original bitmap face (above).
+- **Menus**: the captured bar also shows `Cheat` and `Map`. `Menu.txt` lists
+  their native entries (`Toggle Cheat Mode`, `Create Unit`, `Reveal Map`, the
+  scenario editors; `Select Map`, `Import Map`, `Export Map`). The client has
+  no commands for them yet — no cheat/scenario-edit contract and no multiple
+  map support — so they are omitted rather than drawn inert.
+- **Fonts**: a Times-style system face with matching widths, not the
+  original's bitmap rasterisation (above).
 - **Map planes**: the original's `Loc:` line carries the plane number and the
   arrows switch planes; the client has one surface plane, so `Loc:` omits the
   number. The arrows scroll the map horizontally; that behavior is inferred,
@@ -79,8 +95,9 @@ is regenerated for the two added sprites.
   details and mode across top") places more detail in the info panel than the
   current unit name, moves and health lines. The full branch needs a reference
   capture with a selected unit.
-- **Panel textures**: the exact crop of the original's band stone is not
-  identified; the flattened panel crop is an approximation.
+- **Panel textures**: the band uses the install's `City.gif` stone centred on
+  the capture's measured tone; the exact source tile and native tiling are not
+  identified, so the speckle pattern is not necessarily the same pixels.
 - **Window chrome**: the original capture includes its OS window border; the
   browser/desktop stage has none.
 - **City window**: still the boxed v0.14–v0.21 layout. The original's floating

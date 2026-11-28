@@ -38,8 +38,8 @@
     "crates/engine/src/human/diplomacy.rs": "09d1a2fe9aebd0d7b9a8b71198f44e6db95ca8536ccecd4b8b9a10c064e1c4dd",
     "crates/totui/src/client/routes.rs": "181ab3217a4db61a770acf32e83160aa4832c4d2b850a0bab0d43ce38bd264da",
     "crates/totui/src/client/chrome.rs": "fdaa5752e99804378d81866d89e8c51c83d82ec5b2f8e96ae270ec881781c0d0",
-    "crates/totui/src/client/desktop.rs": "6d9413852feee0d63ec68a2d130697399af114900ba3690bf2f5e25f0046c22c",
-    "crates/totui/src/client/play.js": "5d1d4962c5516e8d0701f80cfcbb317e06195f2a49fb1662a5153316798a4dc0",
+    "crates/totui/src/client/desktop.rs": "f2480e2fb11ac02f290b4c1e88fa5f3f12173110af5c642ac91b74fead69955f",
+    "crates/totui/src/client/play.js": "1f38921abb66bb367b7932796592f239045fda6b6a5b98a6318a39defdc5a82d",
     "crates/totui/src/client/pedia.rs": "daaeb8d7b9c34661a2f0cafa9fd0a030fae6bbfb22b897119fc16902c1feeb43",
     "crates/engine/src/movement.rs": "3f2f6452a665adf11bc7400b6a56dfc7b744de0ec8104ac712f18232cbbfe5d0",
     "crates/engine/src/scenario/opponent_founding.rs": "c5454d0c15caf6754275abaa4bc62642faaa3c8df59add6959af2516367e44f2"

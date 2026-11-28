@@ -110,7 +110,7 @@ function drawCanvas() {
         // Same serif face family as the desktop client, matching the
         // original's serif treatment (decision 0009, #439); the desktop client
         // loads a serif TTF for the same reason.
-        ctx.font = `${d.size}px Georgia,"Times New Roman","DejaVu Serif",serif`;
+        ctx.font = `${d.size}px "Times New Roman","Liberation Serif",Tinos,"DejaVu Serif",Georgia,serif`;
         ctx.textBaseline = "top";
         ctx.fillText(d.text, d.x, d.y);
         break;

@@ -162,11 +162,13 @@ impl Atlas {
         ] {
             add(name.into(), sheet, rect, Mask::default())?;
         }
-        // The source stone is a high-contrast speckle meant for small
-        // surfaces. Flatten it toward a quiet mid-grey so band text reads and
-        // the frame matches the original's smooth stone: keep a third of the
-        // variation around a chosen mid tone.
-        for (key, mid, contrast) in [("band", 138i32, 32i32), ("panel-mid", 76i32, 40)] {
+        // The reference capture (`docs/manual/screenshots/original/
+        // moving-units.png`) shows a dark, visibly speckled band: a sampled
+        // status-panel region averages ~60 grey with a standard deviation
+        // around 20, while the info panel is just as dark. Keep the sheet's
+        // variation, centred on a measured mid tone, so the texture matches
+        // the capture and light text still reads.
+        for (key, mid, contrast) in [("band", 62i32, 40i32), ("panel-mid", 58i32, 35)] {
             let sprite = sprites.get_mut(key).unwrap();
             let mut sum = 0u64;
             let mut n = 0u64;

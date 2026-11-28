@@ -197,11 +197,17 @@ fn font_path() -> PathBuf {
     }
     #[cfg(not(windows))]
     {
-        // The original's serif treatment; DejaVu Serif ships with the common
-        // Linux font packages and falls back to the sans face if absent.
-        let serif = PathBuf::from("/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf");
-        if serif.exists() {
-            return serif;
+        // The original's serif is Times New Roman (decision 0009). Prefer the
+        // metric-compatible Liberation Serif, then DejaVu Serif, then the sans
+        // face if neither is installed.
+        for serif in [
+            "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+            "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        ] {
+            let path = PathBuf::from(serif);
+            if path.exists() {
+                return path;
+            }
         }
         PathBuf::from("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
     }

@@ -111,7 +111,7 @@ async function waitForServer(){
     const rect=await page.locator('#game').boundingBox();
     await page.mouse.dblclick(rect.x+(city.x+city.w/2)*rect.width/f.width,rect.y+(city.y+city.h*.6)*rect.height/768);
     await idle();
-    await page.waitForFunction(()=>frame.draws.some(d=>d.kind==='text'&&d.text.includes('population')),{timeout:15000});
+    await page.waitForFunction(()=>frame.draws.some(d=>d.kind==='text'&&/population/i.test(d.text)),{timeout:15000});
     await click('Choose production');
     for(let n=0;n<80;n++){await key('ArrowDown');
       if((await state()).draws.some(d=>d.text?.startsWith('●')&&d.text.includes('Warriors')))break}

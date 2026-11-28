@@ -1,14 +1,21 @@
 # The original's top-band map frame (decision 0009, #439)
 
-Status: first delivery on both clients — the map screen's top band. The
-floating city window is a follow-up slice (see *Remaining* below). Owner
-acceptance on both clients is still open.
+Status: delivered on both clients — the map screen's top band and the
+floating city window. Owner acceptance on both clients is still open.
 
 ## Reference
 
 - `docs/manual/screenshots/original/map.png` (1024×768): the frame this slice
   targets. The user guide's reference section is the owner's scoped exception
   for original screenshots; no original art is committed.
+- `docs/manual/screenshots/original/moving-units.png` (1024×742): the Moving
+  Units branch with a selected unit, captured 2026-11-27 from the original
+  ToTPP build. Recipe: launch `civ2.exe` on a private Xvfb, choose
+  `Load a Saved Game`, double-click `Original/Ph_Auto2.SAV`, accept the
+  difficulty plate, then resize the world window to 1024×768 (no in-world
+  input is needed). The panel shows a unit icon, `Moves: 1`, the order
+  `NONE`, the nationality `Spanish` and `Archers (Hills)`; `Loc:` is absent
+  while Moving Units.
 - [Discovery U04](discovery.md): "Menu strip; empire figures upper left,
   selected-unit details and mode across top, overview upper right, diamond map
   below."
@@ -49,6 +56,41 @@ in the browser and desktop clients together.
   - the new-messages overlay is unchanged;
   - the wide-screen side column (on by default from 1264 logical pixels) sits
     below the band at the right, and the map ends before it.
+
+## City window (second slice)
+
+The city screen floats stone panels over the map, as the original:
+
+- **City Resources** top left: Net Food, Net Taxes, Net Luxury, Net Science
+  and Net Production with their own markers, plus the trade/happy/upkeep
+  detail the Layout B window showed.
+- **Build** at the left: the current item, progress bar, the unit picture,
+  shields and turns, and `Choose production` / `Buy production` with its
+  price / `Improvements / sell`.
+- **Radius map** in the centre, enlarged toward the original's size, with the
+  worker markers, the selected-tile outline and per-tile yields.
+- **Title** top right: the name, `Population N`, `Treasury: N Gold` and the
+  PgUp/PgDn city keys.
+- **Info / Support / Improvements / Happy** stacked keys and the information
+  pane at the right, with the same lists, sorting, paging and sale
+  confirmations.
+- **Food Storage** bottom right: the bar, the store and `Next Citizen`.
+- **Citizen strip** along the bottom: portrait, worker/specialist counts and
+  the specialist role keys.
+
+Every Layout B panel, command and immediate-edit rule is kept; the footer
+Save/Load/Research and Previous/Next city buttons are gone, as the original's
+city window does not show them (Ctrl+S/Ctrl+L, F6, PageUp/PageDown and the
+menus keep those commands). As in the capture, the menu bar and the band's
+first lines (status, `Loc:`, the centre prompt) stay visible above the city
+surface; the surface then covers the band before the panels begin. The cut
+sits on a band text line boundary (`city::CITY_TOP`) so no prompt is left
+half-visible between panels; a client test pins that.
+
+Gaps: the install exposes no resource or improvement icon sheet here, so the
+City Resources markers and tile yields are drawn or numeric rather than the
+original's sprites; the city bitmap font is the same gap as the map screen;
+the exact panel stone crop is approximated as on the map screen.
 
 ## Type and texture
 
@@ -91,25 +133,39 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   arrows switch planes; the client has one surface plane, so `Loc:` omits the
   number. The arrows scroll the map horizontally; that behavior is inferred,
   not measured from the reference.
-- **Selected-unit details**: the original's documented layout ("selected-unit
-  details and mode across top") places more detail in the info panel than the
-  current unit name, moves and health lines. The full branch needs a reference
-  capture with a selected unit.
+- **Selected-unit details**: the capture above shows the original's Moving
+  Units panel: a unit icon, `Moves: N`, the unit's current order (`NONE`), its
+  nationality (`Spanish`) and `Archers (Hills)`; `Loc:` is not drawn in this
+  mode. The client shows the active unit's name, moves and health and keeps
+  `Loc:` in both modes; the order and nationality branch is the next slice
+  (it needs two filtered view fields — an engine/human change, not
+  presentation-only). This stays a documented departure until that lands.
 - **Panel textures**: the band uses the install's `City.gif` stone centred on
   the capture's measured tone; the exact source tile and native tiling are not
   identified, so the speckle pattern is not necessarily the same pixels.
 - **Window chrome**: the original capture includes its OS window border; the
   browser/desktop stage has none.
-- **City window**: still the boxed v0.14–v0.21 layout. The original's floating
-  stone panels (City Resources, Build, radius map, title/panels, Food Storage,
-  citizen strip) are the next #439 slice.
 - **Menu-bar title**: the client's scenario/rules title and date at the right
   of the menu bar are ours; the original's window title carries them.
 
 ## Verification in this slice
 
-- `cargo test -p totui`: 87 passed, 12 ignored (install-backed), including the
-  menu/band route test and the real-input route tests.
+- `cargo test -p totui`: 88 passed, 12 ignored (install-backed), including the
+  menu/band route test, the city-surface boundary, the city-window panels and
+  the real-input route tests.
+- The desktop client rendered the band, the research dialog and the serif TTF
+  path under Xvfb. Manual XTest clicks first missed because SDL centres its
+  1024×768 window on a larger display and the absolute coordinates ignored
+  that offset; with xfwm4 the window sat at the origin and the city route
+  (load a checkpoint, double-click the city tile, inspect the panels, choose
+  production) was driven and captured on the desktop client too. The Linux
+  real-input check computes the window offset itself and drives the same route
+  on its own Xvfb without a window manager. It passes at 1400×1000 including
+  the generated population-five fixture (specialist cycling, auto-workers,
+  resume and navigation with byte-identical checkpoints).
+- The retained packaged-client fixtures are version-bound; the panel/selection
+  scripts were updated to the new route and text but were not rerun here (the
+  retained v0.15 checkpoints do not load in this engine version).
 - `python3 -m unittest discover -s tools -p 'test_*.py'`: 90 passed.
 - `docs/scenario-engine-baseline.json` and
   `docs/evidence/scenario-inventory-v1.json` refreshed for the presentation
@@ -118,4 +174,41 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
 - Screenshots taken against the original capture at 1024×768 and on a 16:9
   stage; the real-input scripts (`tools/check_client_{browser,linux,windows}`,
   `check_city_panels`, `manual_screenshots`) now open a city from its map tile
-  instead of clicking the removed sidebar button.
+  instead of clicking the removed sidebar button, and locate the city title
+  and panels by content rather than the old fixed coordinates.
+
+## Acceptance checklist (#439)
+
+Map screen:
+- [x] menu bar with the client's menus;
+- [x] top band: status panel, info panel, circular overview over a full-width
+      map;
+- [x] provisional right column, sidebar city buttons and bottom status bar
+      removed; feedback stays as map text;
+- [x] cities open from their map tile (double-click), the original's route;
+- [x] opt-ins preserved and re-placed; wide-screen message column at the right;
+- [ ] `Cheat` and `Map` menu entries (the client has no commands for them);
+- [ ] the original's bitmap font (serif system face approximated);
+- [x] selected-unit reference capture (`moving-units.png`), content recorded
+      above;
+- [ ] the Moving Units branch itself (unit icon, order, nationality, `Loc:`
+      hidden) — needs order/nationality fields in the human view;
+- [ ] `Loc:` plane number and the arrows' measured behavior.
+
+City window:
+- [x] floating stone panels: City Resources, Build, radius map, title/info
+      pane, Food Storage, citizen strip;
+- [x] every Layout B list, page, sort, sale confirmation and immediate
+      worker/specialist edit kept; footer-only buttons removed with their keys
+      and menus retained;
+- [ ] the install's resource/improvement icons (drawn markers and numeric
+      yields instead; the classic-art branch #380 would supply icons);
+- [ ] the exact panel stone crop.
+
+Both clients:
+- [x] one shared Draw list; browser walkthrough at 1024 and 1365;
+- [x] desktop client renders the band, dialogs and serif TTF path under Xvfb;
+- [x] desktop city route driven with real X input at 1024 (manual Xvfb +
+      xfwm4) and at 1400×1000 (the Linux check on its own Xvfb);
+- [ ] owner acceptance on both clients, including the final side-by-side
+      comparison.

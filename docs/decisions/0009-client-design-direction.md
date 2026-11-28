@@ -123,7 +123,9 @@ buttons that the original city window does not have.
   both clients. The provisional right column, sidebar city buttons and bottom
   status bar are gone from the map screen. Record, gaps and verification:
   [the original's top-band map frame](../ui/original-frame.md). The floating
-  city window is the next slice of [#439](https://github.com/diegoami/totengine/issues/439).
+  city window (stone panels over the map, the original's routes) followed on
+  the same branch; the same record covers it. Remaining from #439: the
+  `Cheat`/`Map` menus and a selected-unit reference capture.
 
 ## Working rules
 

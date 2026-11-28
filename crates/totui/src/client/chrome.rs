@@ -983,8 +983,15 @@ impl Client {
             ));
         }
         // Units on the inspected tile, as small stone keys (the original
-        // shows a stack chooser when units share a tile).
-        for (i, e) in self.stack_at_cursor(v).iter().take(3).enumerate() {
+        // shows a stack chooser when units share a tile). The city window
+        // floats over the band, so its keys are not drawn there.
+        for (i, e) in self
+            .stack_at_cursor(v)
+            .iter()
+            .take(3)
+            .enumerate()
+            .filter(|_| !self.city_open)
+        {
             let kx = x + w - 190.;
             let ky = y + 34. + i as f64 * 26.;
             draws.push(rect(kx, ky, 182., 24., style::INSET));
@@ -1045,19 +1052,22 @@ impl Client {
                 style::TEXT_DIM,
             ));
         }
-        // The overview arrows: raised stone keys that scroll the map.
-        for (ax, glyph) in [(x + w - 58., "<"), (x + w - 30., ">")] {
-            let ay = y + h - 28.;
-            draws.push(rect(ax, ay, 24., 20., style::INSET));
-            draws.push(rect(ax + 1., ay + 1., 22., 18., style::BAND_KEY));
-            draws.push(rect(ax + 1., ay + 1., 22., 1., style::BAND_LIGHT));
-            draws.push(text(
-                ax + 9.,
-                ay + 3.,
-                glyph,
-                style::TYPE_SMALL,
-                style::MENU_TEXT,
-            ));
+        // The overview arrows: raised stone keys that scroll the map. They
+        // belong to the map surface, not to the city window floating over it.
+        if !self.city_open {
+            for (ax, glyph) in [(x + w - 58., "<"), (x + w - 30., ">")] {
+                let ay = y + h - 28.;
+                draws.push(rect(ax, ay, 24., 20., style::INSET));
+                draws.push(rect(ax + 1., ay + 1., 22., 18., style::BAND_KEY));
+                draws.push(rect(ax + 1., ay + 1., 22., 1., style::BAND_LIGHT));
+                draws.push(text(
+                    ax + 9.,
+                    ay + 3.,
+                    glyph,
+                    style::TYPE_SMALL,
+                    style::MENU_TEXT,
+                ));
+            }
         }
     }
 
@@ -1231,7 +1241,7 @@ impl Client {
 }
 
 /// A raised (`band` texture) or sunken (`panel` texture) stone frame.
-fn panel_frame(draws: &mut Vec<Draw>, x: f64, y: f64, w: f64, h: f64, raised: bool) {
+pub(super) fn panel_frame(draws: &mut Vec<Draw>, x: f64, y: f64, w: f64, h: f64, raised: bool) {
     draws.push(rect(x, y, w, h, style::INSET));
     draws.push(Draw::Tile {
         x: x + 2.,
@@ -1257,7 +1267,7 @@ fn estimate(s: &str, size: u32) -> f64 {
 }
 
 /// Population grouped as the original writes it (`10,000`).
-fn group_digits(n: u64) -> String {
+pub(super) fn group_digits(n: u64) -> String {
     let digits = n.to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {

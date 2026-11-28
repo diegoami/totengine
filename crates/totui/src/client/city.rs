@@ -1,17 +1,44 @@
 //! Shared own-city workspace; adapters receive only filtered presentation.
+//!
+//! Decision 0009 / #439: the original draws floating stone panels over the
+//! map (City Resources, Build, radius map, title/panels, Food Storage and the
+//! citizen strip). Every string and command the Layout B window had is kept;
+//! only the presentation moves.
+use super::chrome::group_digits;
 use super::style;
 use super::*;
 use engine::yields::{RADIUS_DX, RADIUS_DY};
 
-/// Top of the city window's footer row (layout B, #314).
-const FOOTER_Y: f64 = 700.;
-/// Top of the window body under the citizens strip.
-const BODY_Y: f64 = 182.;
+/// Where the city surface begins over the band. The original keeps the
+/// band's first lines (status, Loc, Viewing Pieces) and covers the rest; the
+/// value sits on a band text boundary so no prompt is cut in half.
+pub(super) const CITY_TOP: f64 = 92.;
+/// City Resources panel `(x, y, w, h)` at the top left.
+pub(super) const RESOURCES: (f64, f64, f64, f64) = (44., 96., 240., 200.);
+/// Build panel at the left, below City Resources. Slightly wider than the
+/// original's so the buy price clears the button with either serif face.
+pub(super) const BUILD: (f64, f64, f64, f64) = (44., 376., 200., 276.);
+/// Title panel at the top right: name, population and treasury.
+pub(super) const TITLE: (f64, f64, f64, f64) = (608., 88., 388., 78.);
+/// Left edge and top of the stacked Info/Support/Improvements/Happy/Close
+/// keys.
+pub(super) const PANEL_KEY: (f64, f64) = (624., 176.);
+/// The info pane at the right.
+pub(super) const INFO_PANE: (f64, f64, f64, f64) = (766., 176., 230., 348.);
+/// Food Storage panel at the bottom right.
+pub(super) const FOOD: (f64, f64, f64, f64) = (770., 584., 226., 122.);
+/// Citizen strip along the bottom left.
+pub(super) const STRIP: (f64, f64, f64, f64) = (44., 682., 590., 74.);
+/// Centre of the city-radius diamonds and the step between tiles.
+const RADIUS_CENTRE: (f64, f64) = (500., 466.);
+const RADIUS_STEP: (f64, f64) = (60., 33.);
+/// Drawn size of one radius tile.
+const RADIUS_SIZE: (f64, f64) = (120., 66.);
 
 pub(super) fn spot(k: usize) -> (f64, f64) {
     (
-        500. + f64::from(RADIUS_DX[k]) * 45.,
-        300. + f64::from(RADIUS_DY[k]) * 25.,
+        RADIUS_CENTRE.0 + f64::from(RADIUS_DX[k]) * RADIUS_STEP.0,
+        RADIUS_CENTRE.1 + f64::from(RADIUS_DY[k]) * RADIUS_STEP.1,
     )
 }
 
@@ -25,7 +52,7 @@ impl Client {
     pub(super) fn city_click(&mut self, x: f64, y: f64) -> Result<(), String> {
         let nearest = (0..21).find(|&k| {
             let (cx, cy) = spot(k);
-            (x - cx).abs() / 45. + (y - cy).abs() / 25. <= 1.
+            (x - cx).abs() / RADIUS_STEP.0 + (y - cy).abs() / RADIUS_STEP.1 <= 1.
         });
         if let Some(k) = nearest {
             self.city_tile = k as u8;
@@ -70,58 +97,83 @@ impl Client {
                 action,
             })
         };
-        // Layout B (#314): the classic city window. Return to map stays the
-        // first button, so Enter on a freshly opened window still returns.
+        // Enter on a freshly opened window returns to the map, so Close is
+        // the first focus target; it draws at the bottom of the stack.
         add(
-            792.,
-            FOOTER_Y,
-            220.,
+            PANEL_KEY.0,
+            PANEL_KEY.1 + 4. * 38.,
+            136.,
             34.,
-            "Return to map [Esc]",
+            "Close [Esc]",
             Action::CloseCity,
         );
+        // The original's stacked panel keys above it.
+        for (i, panel) in [
+            CityPanel::Info,
+            CityPanel::Support,
+            CityPanel::Improvements,
+            CityPanel::Happy,
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            add(
+                PANEL_KEY.0,
+                PANEL_KEY.1 + i as f64 * 38.,
+                136.,
+                34.,
+                panel.label(),
+                Action::CityPanel(panel),
+            );
+        }
+        // City cycling arrows in the title panel (PgUp/PgDn keep working).
         add(
-            12.,
-            36.,
-            200.,
-            26.,
-            "Previous city [PgUp]",
+            TITLE.0 + TITLE.2 - 92.,
+            TITLE.1 + 8.,
+            40.,
+            20.,
+            "PgUp",
             Action::CityStep(-1),
         );
         add(
-            812.,
-            36.,
-            200.,
-            26.,
-            "Next city [PgDn]",
+            TITLE.0 + TITLE.2 - 48.,
+            TITLE.1 + 8.,
+            40.,
+            20.,
+            "PgDn",
             Action::CityStep(1),
         );
-        add(16., FOOTER_Y, 140., 34., "Save [Ctrl+S]", Action::Save);
-        add(164., FOOTER_Y, 140., 34., "Load [Ctrl+L]", Action::Load);
-        add(312., FOOTER_Y, 140., 34., "Research", Action::Research);
         if let Some(city) = self.city {
+            let (bx, by, _, _) = BUILD;
             add(
-                24.,
-                598.,
-                244.,
-                28.,
+                bx + 8.,
+                by + 178.,
+                160.,
+                26.,
                 "Choose production",
                 Action::Production(city),
             );
-            add(24., 630., 244., 28., "Buy production", Action::Buy(city));
             add(
-                24.,
-                662.,
-                244.,
-                28.,
+                bx + 8.,
+                by + 208.,
+                104.,
+                26.,
+                "Buy production",
+                Action::Buy(city),
+            );
+            add(
+                bx + 8.,
+                by + 238.,
+                160.,
+                26.,
                 "Improvements / sell",
                 Action::Improvements(city),
             );
             add(
-                320.,
-                440.,
-                380.,
-                36.,
+                300.,
+                626.,
+                190.,
+                26.,
                 if self.city_panel == CityPanel::Info {
                     "Toggle selected tile [Space]"
                 } else {
@@ -130,10 +182,10 @@ impl Client {
                 Action::Worker(city, self.city_tile),
             );
             add(
-                320.,
-                488.,
-                380.,
-                36.,
+                500.,
+                626.,
+                180.,
+                26.,
                 "Auto workers (centre tile)",
                 Action::Worker(city, 20),
             );
@@ -141,7 +193,7 @@ impl Client {
                 .view()
                 .and_then(|v| v.city_citizens.into_iter().find(|c| c.index == city.slot))
             {
-                // The citizens strip: specialists, six to a row under the workers.
+                // The citizens strip: specialists as role keys, six a row.
                 for (i, role) in detail.specialists.iter().take(12).enumerate() {
                     let name = match role {
                         1 => "Entertainer",
@@ -150,10 +202,10 @@ impl Client {
                         _ => "Unused",
                     };
                     add(
-                        16. + (i % 6) as f64 * 166.,
-                        108. + (i / 6) as f64 * 36.,
-                        160.,
-                        32.,
+                        84. + (i % 6) as f64 * 90.,
+                        708. + (i / 6) as f64 * 22.,
+                        88.,
+                        20.,
                         &format!("{}: {name}", i + 1),
                         Action::Specialist(city, i as u8),
                     );
@@ -164,8 +216,77 @@ impl Client {
         b
     }
 
+    /// One floating stone panel, framed like the band's inset panels.
+    fn city_panel(&self, draws: &mut Vec<Draw>, rect: (f64, f64, f64, f64)) {
+        chrome::panel_frame(draws, rect.0, rect.1, rect.2, rect.3, false);
+    }
+
+    /// A gold serif section heading, as the original's city panels use.
+    fn heading(&self, draws: &mut Vec<Draw>, x: f64, y: f64, label: &str) {
+        draws.push(text(x, y, label, style::TYPE_BODY, style::GOLD));
+        draws.push(rect(x, y + 20., 40., 1., style::GOLD_DIM));
+    }
+
+    /// A small trade/food/shield glyph for the resources rows: the install
+    /// exposes no resource icons here (the classic-art branch adds them), so
+    /// the marker is drawn.
+    fn resource_icon(&self, draws: &mut Vec<Draw>, x: f64, y: f64, kind: usize) {
+        match kind {
+            // Food: a green sheaf.
+            0 => {
+                draws.push(rect(x + 3., y + 2., 2., 9., style::MOVE_OK));
+                draws.push(rect(x + 7., y + 2., 2., 9., style::MOVE_OK));
+                draws.push(rect(x + 2., y + 8., 8., 2., style::MOVE_OK));
+            }
+            // Taxes: a gold coin.
+            1 => {
+                draws.push(rect(x + 2., y + 2., 8., 8., style::GOLD));
+                draws.push(rect(x + 4., y + 4., 4., 4., style::INSET));
+            }
+            // Luxury: a purple gem.
+            2 => {
+                draws.push(rect(x + 3., y + 1., 6., 6., "#c68add"));
+                draws.push(rect(x + 4., y + 7., 4., 3., "#8f5aa8"));
+            }
+            // Science: a blue flask.
+            3 => {
+                draws.push(rect(x + 5., y, 2., 5., style::TEXT));
+                draws.push(rect(x + 3., y + 5., 6., 6., style::LINK));
+            }
+            // Production: a grey shield.
+            _ => {
+                draws.push(rect(x + 3., y + 1., 6., 6., "#b9b7ab"));
+                draws.push(rect(x + 4., y + 7., 4., 3., "#8f9188"));
+            }
+        }
+    }
+
+    /// One labelled resource row: icon, label and value, as the original's
+    /// City Resources panel.
+    fn resource_row(
+        &self,
+        draws: &mut Vec<Draw>,
+        x: f64,
+        y: f64,
+        kind: usize,
+        label: &str,
+        value: String,
+    ) {
+        self.resource_icon(draws, x, y + 1., kind);
+        draws.push(text(x + 16., y, label, style::TYPE_SMALL, style::TEXT));
+        // A fixed value column: the original aligns the five values, and an
+        // estimate of the label's width overlaps them with a wider serif face
+        // (the desktop build).
+        draws.push(text(
+            x + 16. + 170.,
+            y,
+            &value,
+            style::TYPE_SMALL,
+            style::TEXT_BRIGHT,
+        ));
+    }
+
     pub(super) fn city_draw(&self, draws: &mut Vec<Draw>, v: &HumanView) {
-        draws.push(rect(0., 0., 1024., 744., style::BG));
         let Some(city) = self.city else { return };
         let Some(c) = v
             .observation
@@ -178,114 +299,207 @@ impl Client {
         let Some(detail) = v.city_citizens.iter().find(|d| d.index == city.slot) else {
             return;
         };
-        // Layout B (#314): one framed window under the (inactive) menu bar,
-        // with a title bar, the citizens strip, three columns and a footer.
-        draws.push(rect(4., 30., 1016., 712., style::GOLD));
-        draws.push(rect(6., 32., 1012., 708., style::BG));
-        draws.push(rect(6., 32., 1012., 34., style::MENU_SELECT));
-        let title = format!("{} — population {}", c.name, c.size);
-        let w = title.chars().count() as f64 * 0.56 * f64::from(style::TYPE_TITLE);
+        // The title panel: name, population and treasury (the original).
+        self.city_panel(draws, TITLE);
         draws.push(text(
-            (512. - w / 2.).max(220.),
-            38.,
-            &title,
+            TITLE.0 + 14.,
+            TITLE.1 + 8.,
+            &c.name,
             style::TYPE_TITLE,
-            style::MENU_SELECT_TEXT,
+            style::GOLD,
         ));
-        draws.push(rect(6., 66., 1012., 1., style::GOLD_DIM));
-        draws.push(rect(6., BODY_Y - 6., 1012., 1., style::GOLD_DIM));
-        draws.push(rect(6., FOOTER_Y - 6., 1012., 1., style::GOLD_DIM));
-        // Citizens strip: the workers, then the specialists (buttons).
-        let workers = detail.radius.iter().take(20).filter(|t| t.worked).count();
-        for i in 0..workers.min(16) {
-            draws.push(Draw::Sprite {
-                x: 16. + i as f64 * 28.,
-                y: 70.,
-                w: 27.,
-                h: 32.,
-                sprite: "citizen-0".into(),
-            });
-        }
+        let population = u64::from(c.size) * 10_000;
         draws.push(text(
-            24. + workers.min(16) as f64 * 28.,
-            78.,
-            &format!(
-                "Workers {workers} · specialists {} · click a specialist to cycle its role",
-                detail.specialists.len()
-            ),
+            TITLE.0 + 14.,
+            TITLE.1 + 38.,
+            &format!("Population {}", group_digits(population)),
             style::TYPE_SMALL,
             style::TEXT_BRIGHT,
         ));
-        for (x, y, w, h) in [(12., BODY_Y, 264., 508.), (730., BODY_Y, 282., 508.)] {
-            draws.push(Draw::Tile {
-                x,
-                y,
-                w,
-                h,
-                sprite: "panel".into(),
-            });
-        }
         draws.push(text(
-            22.,
-            BODY_Y + 6.,
-            "City resources",
-            style::TYPE_BODY,
-            style::TEXT_BRIGHT,
+            TITLE.0 + 14.,
+            TITLE.1 + 56.,
+            &format!("Treasury: {} Gold", v.observation.treasury),
+            style::TYPE_SMALL,
+            style::TEXT,
         ));
+        // City Resources: the original's five net rows.
+        self.city_panel(draws, RESOURCES);
+        self.heading(draws, RESOURCES.0 + 10., RESOURCES.1 + 8., "City Resources");
+        let (rx, ry) = (RESOURCES.0 + 10., RESOURCES.1 + 40.);
         if let Some(e) = v
             .observation
             .city_economy
             .iter()
             .find(|e| e.index == city.slot)
         {
-            let output = c.output.unwrap_or_default();
-            let lines = [
-                format!("Food surplus {:+}", e.food_surplus),
-                format!("Shields {} (support {})", e.net_shields, detail.support),
-                format!("Trade {} · corruption {}", output.trade, output.corruption),
-                format!("Waste {}", output.waste),
-                format!("Science {}", e.finance.science),
-                format!("Tax {} · luxury {}", e.finance.taxes, e.finance.luxuries),
-                format!("Happy {} · unhappy {}", e.happy, e.unhappy),
-                format!("Upkeep {}", e.upkeep),
-            ];
-            for (i, line) in lines.iter().enumerate() {
-                draws.push(text(
-                    22.,
-                    BODY_Y + 30. + i as f64 * 20.,
-                    line,
-                    style::TYPE_SMALL,
-                    style::TEXT,
+            self.resource_row(
+                draws,
+                rx,
+                ry,
+                0,
+                "Net Food",
+                format!("{:+}", e.food_surplus),
+            );
+            self.resource_row(
+                draws,
+                rx,
+                ry + 30.,
+                1,
+                "Net Taxes",
+                e.finance.taxes.to_string(),
+            );
+            self.resource_row(
+                draws,
+                rx,
+                ry + 60.,
+                2,
+                "Net Luxury",
+                e.finance.luxuries.to_string(),
+            );
+            self.resource_row(
+                draws,
+                rx,
+                ry + 90.,
+                3,
+                "Net Science",
+                e.finance.science.to_string(),
+            );
+            self.resource_row(
+                draws,
+                rx,
+                ry + 120.,
+                4,
+                "Net Production",
+                e.net_shields.to_string(),
+            );
+            // The Layout B detail stays available below the net rows.
+            draws.push(text(
+                rx,
+                ry + 150.,
+                &format!("Trade {}", c.output.unwrap_or_default().trade),
+                style::TYPE_SMALL,
+                style::TEXT_DIM,
+            ));
+            draws.push(text(
+                rx,
+                ry + 164.,
+                &format!("Happy {} · unhappy {}", e.happy, e.unhappy),
+                style::TYPE_SMALL,
+                style::TEXT_DIM,
+            ));
+            draws.push(text(
+                rx,
+                ry + 178.,
+                &format!("Upkeep {}", e.upkeep),
+                style::TYPE_SMALL,
+                style::TEXT_DIM,
+            ));
+        }
+        // Build: item, progress, picture, turns and the buy price.
+        self.city_panel(draws, BUILD);
+        self.heading(draws, BUILD.0 + 10., BUILD.1 + 8., "Build");
+        draws.push(text(
+            BUILD.0 + 10.,
+            BUILD.1 + 34.,
+            "Currently producing:",
+            style::TYPE_SMALL,
+            style::TEXT_DIM,
+        ));
+        let item_id = c.building;
+        let item = item_id
+            .map(|id| self.item_name(id))
+            .unwrap_or_else(|| "Unavailable".into());
+        let mut name: Vec<_> = item.chars().collect();
+        if name.len() > 22 {
+            name.truncate(21);
+            name.push('…');
+        }
+        draws.push(text(
+            BUILD.0 + 10.,
+            BUILD.1 + 50.,
+            &name.iter().collect::<String>(),
+            style::TYPE_BODY,
+            style::WHITE,
+        ));
+        if let Some(p) = v.city_production.iter().find(|p| p.index == city.slot) {
+            if let Some(cost) = p.required.filter(|c| *c > 0) {
+                let done = (f64::from(p.stored) / f64::from(cost)).clamp(0., 1.);
+                draws.push(rect(BUILD.0 + 10., BUILD.1 + 72., 156., 10., style::INSET));
+                draws.push(rect(
+                    BUILD.0 + 10.,
+                    BUILD.1 + 72.,
+                    156. * done,
+                    10.,
+                    style::GOLD,
                 ));
             }
-            let warning = if detail.food_box < 0 {
-                "Food debt: famine pending"
-            } else if e.food_surplus < 0 {
-                "Food deficit: starvation risk"
-            } else if e.growth_block.is_some() {
-                "Growth requires improvement"
-            } else if e.unhappy > e.happy {
-                "Unrest: disorder risk"
-            } else {
-                "Growth and mood stable"
+            let shields = p.required.map_or_else(
+                || format!("Shields: {}", p.stored),
+                |cost| format!("Shields: {} / {cost}", p.stored),
+            );
+            draws.push(text(
+                BUILD.0 + 10.,
+                BUILD.1 + 88.,
+                &shields,
+                style::TYPE_SMALL,
+                style::TEXT,
+            ));
+            let estimate = match (p.remaining, p.turns) {
+                (Some(0), _) => "Funded — next production phase".into(),
+                (Some(n), Some(turns)) => format!("Remaining: {n} (~{turns} turns)"),
+                (Some(n), None) => format!("Remaining: {n}; no current output"),
+                _ => "No finite shield target".into(),
             };
-            draws.push(text(22., 372., warning, style::TYPE_SMALL, style::WARN));
+            draws.push(text(
+                BUILD.0 + 10.,
+                BUILD.1 + 104.,
+                &estimate,
+                style::TYPE_SMALL,
+                style::TEXT,
+            ));
+            // The item's picture, as the original's Build panel shows.
+            if let Some(id) = item_id.filter(|id| *id > 0) {
+                draws.push(Draw::Sprite {
+                    x: BUILD.0 + 10.,
+                    y: BUILD.1 + 122.,
+                    w: 48.,
+                    h: 48.,
+                    sprite: format!("unit-{id}"),
+                });
+            }
+            if let Ok(q) = &p.hurry {
+                draws.push(text(
+                    BUILD.0 + 128.,
+                    BUILD.1 + 214.,
+                    &format!("{} gold", q.price),
+                    style::TYPE_SMALL,
+                    style::TEXT_BRIGHT,
+                ));
+            }
         }
-        // Food storage.
-        draws.push(text(
-            22.,
-            400.,
-            "Food storage",
-            style::TYPE_BODY,
-            style::TEXT_BRIGHT,
-        ));
+        // Food Storage, bottom right.
+        self.city_panel(draws, FOOD);
+        self.heading(draws, FOOD.0 + 10., FOOD.1 + 8., "Food Storage");
         let full = f64::from(detail.growth_threshold.max(1));
         let stored = f64::from(detail.food_box.max(0)).min(full);
-        draws.push(rect(24., 424., 240., 10., style::INSET));
-        draws.push(rect(24., 424., 240. * stored / full, 10., style::MOVE_OK));
+        draws.push(rect(
+            FOOD.0 + 12.,
+            FOOD.1 + 36.,
+            FOOD.2 - 24.,
+            10.,
+            style::INSET,
+        ));
+        draws.push(rect(
+            FOOD.0 + 12.,
+            FOOD.1 + 36.,
+            (FOOD.2 - 24.) * stored / full,
+            10.,
+            style::MOVE_OK,
+        ));
         draws.push(text(
-            22.,
-            440.,
+            FOOD.0 + 10.,
+            FOOD.1 + 52.,
             &format!(
                 "Food store {} / {}",
                 detail.food_box, detail.growth_threshold
@@ -293,71 +507,60 @@ impl Client {
             style::TYPE_SMALL,
             style::TEXT,
         ));
-        // Production.
+        let surplus = v
+            .observation
+            .city_economy
+            .iter()
+            .find(|e| e.index == city.slot)
+            .map_or(0, |e| e.food_surplus);
+        let stored_food = i32::from(detail.food_box);
+        let next = if surplus > 0 && stored_food < detail.growth_threshold {
+            let left = detail.growth_threshold - stored_food;
+            let turns = (left + surplus - 1) / surplus;
+            format!("Next Citizen: {turns} turns")
+        } else {
+            "Next Citizen: —".to_string()
+        };
         draws.push(text(
-            22.,
-            466.,
-            "Currently producing:",
-            style::TYPE_BODY,
+            FOOD.0 + 10.,
+            FOOD.1 + 92.,
+            &next,
+            style::TYPE_SMALL,
+            style::GOLD,
+        ));
+        // The citizen strip: portrait, worker count and the specialist keys.
+        self.city_panel(draws, STRIP);
+        draws.push(Draw::Sprite {
+            x: STRIP.0 + 8.,
+            y: STRIP.1 + 8.,
+            w: 27.,
+            h: 32.,
+            sprite: "citizen-0".into(),
+        });
+        let workers = detail.radius.iter().take(20).filter(|t| t.worked).count();
+        draws.push(text(
+            STRIP.0 + 46.,
+            STRIP.1 + 6.,
+            &format!(
+                "Workers {workers} · specialists {} · click a specialist to cycle its role",
+                detail.specialists.len()
+            ),
+            style::TYPE_SMALL,
             style::TEXT_BRIGHT,
         ));
-        let item = c
-            .building
-            .map(|id| self.item_name(id))
-            .unwrap_or_else(|| "Unavailable".into());
-        // Keep long scenario names inside the left column without clipping.
-        let mut name: Vec<_> = item.chars().collect();
-        if name.len() > 50 {
-            name.truncate(49);
-            name.push('…');
-        }
-        for (row, chunk) in name.chunks(25).enumerate() {
-            draws.push(text(
-                22.,
-                488. + row as f64 * 18.,
-                &chunk.iter().collect::<String>(),
-                style::TYPE_BODY,
-                style::WHITE,
-            ));
-        }
-        if let Some(p) = v.city_production.iter().find(|p| p.index == city.slot) {
-            if let Some(cost) = p.required.filter(|c| *c > 0) {
-                let done = (f64::from(p.stored) / f64::from(cost)).clamp(0., 1.);
-                draws.push(rect(24., 528., 240., 10., style::INSET));
-                draws.push(rect(24., 528., 240. * done, 10., style::GOLD));
-            }
-            let shields = p.required.map_or_else(
-                || format!("Shields: {}", p.stored),
-                |cost| format!("Shields: {} / {cost}", p.stored),
-            );
-            draws.push(text(22., 544., &shields, style::TYPE_SMALL, style::TEXT));
-            let estimate = match (p.remaining, p.turns) {
-                (Some(0), _) => "Funded — next production phase".into(),
-                (Some(n), Some(turns)) => format!("Remaining: {n} (~{turns} turns)"),
-                (Some(n), None) => format!("Remaining: {n}; no current output"),
-                _ => "No finite shield target".into(),
-            };
-            draws.push(text(22., 562., &estimate, style::TYPE_SMALL, style::TEXT));
-        }
-        draws.push(text(
-            305.,
-            BODY_Y,
-            "City radius · click a tile to change its worker",
-            style::TYPE_BODY,
-            style::TEXT_BRIGHT,
-        ));
-        // Back-to-front diamonds, with yields and authored work/selection markers.
+        // The radius map: bigger, as the original's city view, with yields.
         let mut tiles = (0..21).collect::<Vec<_>>();
         tiles.sort_by_key(|&k| RADIUS_DY[k]);
         for k in tiles {
             let t = &detail.radius[k];
             let (x, y) = spot(k);
+            let (tw, th) = RADIUS_SIZE;
             if let Some(t) = &t.terrain {
                 draws.push(Draw::Sprite {
-                    x: x - 45.,
-                    y: y - 25.,
-                    w: 90.,
-                    h: 50.,
+                    x: x - tw / 2.,
+                    y: y - th / 2.,
+                    w: tw,
+                    h: th,
                     sprite: format!("terrain-{}-0", t.terrain),
                 });
                 if let Some(name) = match t.terrain {
@@ -367,47 +570,47 @@ impl Client {
                     _ => None,
                 } {
                     draws.push(Draw::Sprite {
-                        x: x - 45.,
-                        y: y - 25.,
-                        w: 90.,
-                        h: 50.,
+                        x: x - tw / 2.,
+                        y: y - th / 2.,
+                        w: tw,
+                        h: th,
                         sprite: format!("{name}-0"),
                     });
                 }
                 if t.river || t.road || t.rail {
                     draws.push(Draw::Line {
-                        x: x - 12.,
-                        y: y + 6.,
-                        x2: x + 12.,
-                        y2: y + 6.,
+                        x: x - 16.,
+                        y: y + 8.,
+                        x2: x + 16.,
+                        y2: y + 8.,
                         color: if t.river { style::LINK } else { "#c1a780" }.into(),
                         width: 2.,
                     });
                 }
             } else {
-                draws.push(rect(x - 35., y - 15., 70., 30., style::INSET));
+                draws.push(rect(x - 48., y - 20., 96., 40., style::INSET));
             }
             if k == 20 {
                 draws.push(Draw::Sprite {
                     x: x - 32.,
-                    y: y - 38.,
+                    y: y - 44.,
                     w: 64.,
                     h: 48.,
                     sprite: format!("city-{}", usize::from(c.size >= 8)),
                 });
             }
             if t.worked {
-                draws.push(rect(x - 4., y - 20., 8., 8., style::GOLD));
+                draws.push(rect(x - 6., y - 28., 12., 10., style::GOLD));
             }
             if !t.available && k != 20 {
-                draws.push(text(x - 20., y - 12., "×", style::TYPE_TITLE, style::WARN));
+                draws.push(text(x - 22., y - 18., "×", style::TYPE_TITLE, style::WARN));
             }
             if self.city_tile as usize == k {
                 for (a, b, cc, dd) in [
-                    (x - 44., y, x, y - 24.),
-                    (x, y - 24., x + 44., y),
-                    (x + 44., y, x, y + 24.),
-                    (x, y + 24., x - 44., y),
+                    (x - 58., y, x, y - 32.),
+                    (x, y - 32., x + 58., y),
+                    (x + 58., y, x, y + 32.),
+                    (x, y + 32., x - 58., y),
                 ] {
                     draws.push(Draw::Line {
                         x: a,
@@ -419,19 +622,23 @@ impl Client {
                     });
                 }
             }
+            // Yields: the original's three icons; the install exposes no
+            // resource sheet here, so the numeric triple is kept.
             draws.push(text(
-                x - 25.,
-                y + 2.,
+                x - 30.,
+                y + 6.,
                 &format!("{}/{}/{}", t.yields[0], t.yields[1], t.yields[2]),
                 style::TYPE_SMALL,
                 style::WHITE,
             ));
         }
+        // The information pane and its content.
+        self.city_panel(draws, INFO_PANE);
         self.city_panel_draw(draws, v);
         if v.decision.is_some() {
             draws.push(text(
-                320.,
-                536.,
+                300.,
+                612.,
                 "Research or another choice is required.",
                 style::TYPE_SMALL,
                 style::WARN,

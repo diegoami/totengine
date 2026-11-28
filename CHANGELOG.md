@@ -13,7 +13,9 @@ are tags `vX.Y.Z` gated by the [milestone review](docs/milestone-review.md).
   bottom status bar are gone; cities open from their tile as in the original.
   Opt-in panels and the wide-screen message column keep their owner decisions.
   Serif type and flattened install stone replace the sans/dark chrome. The
-  floating city window remains the next #439 slice. See
+  city screen now floats the original's stone panels (City Resources, Build,
+  radius map, title/panels, Food Storage, citizen strip) over the map instead
+  of the boxed Layout B window, keeping every panel and edit route. See
   `docs/ui/original-frame.md`.
 
 - **Client design direction** ([decision 0009](docs/decisions/0009-client-design-direction.md)):

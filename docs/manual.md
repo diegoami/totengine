@@ -143,9 +143,11 @@ On wide windows the messages join as their own column:
 ### Cities
 
 - **Double-click** one of your cities (or its garrison) to open the city
-  window, as in the original: citizens strip, resources, food storage and
-  production, the radius map, and the information panels. **Kingdom >
-  Cities** opens each city in turn from the keyboard.
+  window, as in the original: floating stone panels over the map — City
+  Resources, Build, the radius map, the title with population and treasury,
+  Food Storage and the citizen strip — with **Info / Support / Improvements
+  / Happy** in the pane at the right. **Kingdom > Cities** opens each city in
+  turn from the keyboard.
 - Click a radius tile to move a citizen there or off it; click a
   specialist to cycle entertainer → tax collector → scientist. Changes
   apply immediately. **PageUp/PageDown** move between your cities,
@@ -157,7 +159,7 @@ On wide windows the messages join as their own column:
   here, what is built, and the mood. The **Sort** button reorders these
   lists; it changes only the display.
 
-![ToTEngine today — the city window: citizens strip, city resources, food storage and production on the left, the radius map in the middle, and the information panels on the right](manual/screenshots/city-window.png)
+![ToTEngine today — the city window: floating stone panels over the map, with city resources top left, build at the left, the radius map in the middle, the title and information pane at the right, food storage bottom right and the citizen strip along the bottom](manual/screenshots/city-window.png)
 
 ### Your civilization
 

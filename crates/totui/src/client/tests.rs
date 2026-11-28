@@ -2368,7 +2368,7 @@ fn generated_city_panels_fixture() {
         inputs: Vec<serde_json::Value>,
     ) {
         mark(c, out, name, "after");
-        routes.push(serde_json::json!({"name":name,"inputs":inputs,"open_city":true,"panel":c.city_panel.label(),"heading":c.frame().draws.iter().find_map(|d|match d {Draw::Text{x,y,text,..} if *x==18. && *y==14.=>Some(text),_=>None}).unwrap()}));
+        routes.push(serde_json::json!({"name":name,"inputs":inputs,"open_city":true,"panel":c.city_panel.label(),"heading":c.frame().draws.iter().find_map(|d|match d {Draw::Text{y,text,size,..} if *y>=88. && *y<170. && *size==style::TYPE_TITLE=>Some(text.clone()),_=>None}).unwrap()}));
     }
     let mature = base.join("citizens/mature.cth");
     load_city(&mut c, &mature);
@@ -4807,14 +4807,17 @@ fn layout_b_city_and_science_windows_rearrange_without_touching_the_game() {
             })
             .collect()
     };
-    // #314: the city window is one framed window with a title bar, the
-    // citizens strip, three columns and a footer.
+    // Decision 0009 / #439: the city window floats over the map in stone
+    // panels: title, resources, build, radius, info pane, food and citizens.
     open_city(&mut c);
     assert!(c.city_open);
     assert!(matches!(c.buttons()[0].action, Action::CloseCity));
     assert!(texts(&c)
         .iter()
-        .any(|(_, y, t, _)| (30.0..66.0).contains(y) && t.contains(" — population ")));
+        .any(|(_, y, t, _)| (88.0..130.0).contains(y) && t == "Athena"));
+    assert!(texts(&c)
+        .iter()
+        .any(|(_, _, t, _)| t == "Population 10,000"));
     // The menu bar stays visible but inert over the city window.
     assert!(texts(&c).iter().any(|(_, y, t, color)| *y < chrome::MENU_H
         && t == "Orders"
@@ -4833,9 +4836,33 @@ fn layout_b_city_and_science_windows_rearrange_without_touching_the_game() {
         }
     }
     button(&mut c, "Info");
-    assert!(texts(&c).iter().any(|(_, _, t, _)| t == "City resources"));
-    assert!(texts(&c).iter().any(|(_, _, t, _)| t == "Food storage"));
+    assert!(texts(&c).iter().any(|(_, _, t, _)| t == "City Resources"));
+    assert!(texts(&c).iter().any(|(_, _, t, _)| t == "Food Storage"));
     assert!(texts(&c).iter().any(|(_, _, t, _)| t.starts_with("Tile ")));
+    // The five net rows share one value column. A width estimate from the
+    // label must stay left of it with a conservative serif metric, so the
+    // wider desktop face cannot run the label into its value.
+    let draws = c.frame().draws;
+    let label_x = city::RESOURCES.0 + 10. + 16.;
+    let mut rows = 0;
+    for label in draws.iter().filter_map(|d| match d {
+        Draw::Text { x, y, text, .. } if *x == label_x => Some((*y, text.clone())),
+        _ => None,
+    }) {
+        let value = draws.iter().find_map(|d| match d {
+            Draw::Text { x, y, .. } if *y == label.0 && *x > label_x => Some(*x),
+            _ => None,
+        });
+        let Some(value) = value else { continue };
+        rows += 1;
+        let needed = label_x + label.1.chars().count() as f64 * 8.1 + 4.;
+        assert!(
+            value >= needed,
+            "{} value at {value} overlaps its label (needs {needed})",
+            label.1
+        );
+    }
+    assert_eq!(rows, 5, "five net rows carry a value");
     key(&mut c, "PageDown");
     assert!(c.city_open);
     key(&mut c, "Escape");
@@ -4882,6 +4909,48 @@ fn layout_b_city_and_science_windows_rearrange_without_touching_the_game() {
     assert!(texts(&c)
         .iter()
         .any(|(_, _, t, _)| t.contains("(estimate)") || t.contains("no estimate")));
+}
+
+#[test]
+fn city_window_starts_on_a_band_text_boundary() {
+    let f = Fixture::new();
+    let mut c = f.client();
+    start(&mut c);
+    founding(&mut c);
+    open_city(&mut c);
+    let draws = c.frame().draws;
+    // The band stays at the top (menu + first lines); the city surface then
+    // covers it before the panels, as the original city screen does. The cut
+    // sits on a text line boundary: a band line must never straddle it, or a
+    // prompt would peek out from under a panel (#439).
+    let cover = draws
+        .iter()
+        .position(|d| {
+            matches!(d, Draw::Rect { x, y, w, color, .. }
+                if *x == 0.
+                    && *y == city::CITY_TOP
+                    && *w == f64::from(WIDTH)
+                    && color == style::INSET)
+        })
+        .expect("the city surface covers the band below its top strip");
+    for d in &draws[..cover] {
+        if let Draw::Text { y, size, .. } = d {
+            assert!(
+                *y + f64::from(*size) <= city::CITY_TOP || *y >= city::CITY_TOP,
+                "band text at {y} straddles the city surface at {}",
+                city::CITY_TOP
+            );
+        }
+    }
+    // Hidden band prompts are painted, then covered; city text follows.
+    assert!(draws[..cover]
+        .iter()
+        .any(|d| matches!(d, Draw::Text { y, .. } if y >= &city::CITY_TOP)));
+    let title = draws
+        .iter()
+        .position(|d| matches!(d, Draw::Text { text, .. } if text == "Athena"))
+        .unwrap();
+    assert!(title > cover, "the city panels paint over the cover");
 }
 
 #[test]

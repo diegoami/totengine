@@ -2810,6 +2810,24 @@ impl Client {
         let view = self.view();
         if let Some(v) = &view {
             if self.city_open {
+                // Decision 0009 / #439: the original's city window floats
+                // over the map screen, not over an empty background. The
+                // original keeps the band's top strip (status, Loc, Viewing
+                // Pieces) and its city surface covers the band's lower part,
+                // so the band is drawn first and the surface starts on a text
+                // line boundary; otherwise a half-covered prompt peeks out
+                // between the panels.
+                self.band_draw(&mut draws, v);
+                draws.push(rect(
+                    0.,
+                    city::CITY_TOP,
+                    self.stage_w,
+                    768. - city::CITY_TOP,
+                    style::INSET,
+                ));
+                let (mx, my, mw, mh) = self.map_rect();
+                draws.push(rect(mx, my, mw, mh, style::INSET));
+                self.map_draw(&mut draws, v);
                 let start = draws.len();
                 self.city_draw(&mut draws, v);
                 shift(&mut draws[start..], self.dx());
@@ -3169,6 +3187,10 @@ impl Client {
             } else if matches!(b.action, Action::ReportSort(_)) {
                 // Column headers match the table cells beneath them.
                 style::TYPE_SMALL
+            } else if matches!(b.action, Action::Specialist(..)) {
+                // The citizen strip's role keys are narrow: the fine step
+                // keeps the whole role name inside its key.
+                style::TYPE_FINE
             } else {
                 row_size(b.y)
             };

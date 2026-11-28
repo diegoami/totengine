@@ -61,11 +61,16 @@ pub(super) fn civ_color(owner: u8) -> &'static str {
 /// than chrome.
 /// The order names the reference proves (none/fortifying/fortified); other
 /// bytes exist but their names are not decoded, so they stay a dash.
-fn order_text(orders: u8) -> &'static str {
+/// The order names the evidence proves: none (`0xff`), fortifying (`1`),
+/// fortified (`2`) and go-to (low nibble 12, the value the native goto wake
+/// clears; the install's `Menu.txt` calls the command `Go To`). Other bytes
+/// exist but their names are not decoded, so they stay a dash.
+pub(super) fn order_text(orders: u8) -> &'static str {
     match orders {
         0xff => "NONE",
         1 => "Fortifying",
         2 => "Fortified",
+        order if order & 0x0f == 12 => "Go To",
         _ => "\u{2014}",
     }
 }

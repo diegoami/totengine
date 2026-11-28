@@ -106,9 +106,11 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   health bar, `Moves:`, order, nationality, then `Unit` / `(Terrain)`), but
   the panel is our stone texture rather than the original's, and the stack's
   `Activate unit N` keys occupy the panel's right side where the reference
-  leaves it empty. The order names are mapped only for the measured bytes
-  (`0xff` none, `1` fortifying, `2` fortified); other orders show a dash
-  until their names are decoded.
+  leaves it empty. The order names are mapped only for the measured bytes:
+  `0xff` none, `1` fortifying, `2` fortified (native combat/observation
+  evidence) and low nibble `12` go to (the native goto wake clears it, and
+  `Menu.txt` names the command `Go To`). Other orders show a dash until their
+  names are decoded.
 - **Panel textures**: the band uses the install's `City.gif` stone centred on
   the capture's measured tone; the exact source tile and native tiling are not
   identified, so the speckle pattern is not necessarily the same pixels.
@@ -137,4 +139,6 @@ where a command exists (for example `Build &Road|r`, `&Fortify|f`,
   `Moves:`, the order, the nationality, the unit name and `(Terrain)`, and no
   `Loc:`; after `v` (Viewing Pieces) the `Loc:` line returns. The new view
   fields are `Observation::unit_orders` (own visible units only, so foreign
-  orders stay hidden) and `Observation::civ_names`.
+  orders stay hidden) and `Observation::civ_names`. A second test pins the
+  order-name table to the measured bytes and shows a dash for an unmeasured
+  one.

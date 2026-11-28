@@ -4607,6 +4607,17 @@ fn path_preview_is_opt_in_knowledge_bounded_and_never_touches_the_game() {
 }
 
 #[test]
+fn order_names_claim_only_the_measured_bytes() {
+    assert_eq!(chrome::order_text(0xff), "NONE");
+    assert_eq!(chrome::order_text(1), "Fortifying");
+    assert_eq!(chrome::order_text(2), "Fortified");
+    // Native goto wake clears orders whose low nibble is 12.
+    assert_eq!(chrome::order_text(12), "Go To");
+    assert_eq!(chrome::order_text(0x1c), "Go To");
+    assert_eq!(chrome::order_text(5), "\u{2014}");
+}
+
+#[test]
 fn moving_units_band_matches_the_reference_branch() {
     let f = Fixture::new();
     let mut c = f.client();
